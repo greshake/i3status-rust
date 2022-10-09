@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":[["InfoType",""]],"fn":[["run",""]],"macro":[["debug",""]],"struct":[["DiskSpaceConfig",""]]};
+window.SIDEBAR_ITEMS = {"enum":[["InfoType",""]],"fn":[["run",""]],"struct":[["DiskSpaceConfig",""]]};

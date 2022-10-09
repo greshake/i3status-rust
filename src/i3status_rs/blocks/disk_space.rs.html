@@ -185,11 +185,6 @@
 <span id="185">185</span>
 <span id="186">186</span>
 <span id="187">187</span>
-<span id="188">188</span>
-<span id="189">189</span>
-<span id="190">190</span>
-<span id="191">191</span>
-<span id="192">192</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Disk usage statistics</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Configuration</span>
@@ -224,8 +219,8 @@
 <span class="doccomment">//! alert_unit = &quot;GB&quot;</span>
 <span class="doccomment">//! alert = 10.0</span>
 <span class="doccomment">//! warning = 15.0</span>
-<span class="doccomment">//! format = &quot; $icon $available.eng(2) &quot;</span>
-<span class="doccomment">//! format_alt = &quot; $icon $available.eng(2) / $total.eng(2) &quot;</span>
+<span class="doccomment">//! format = &quot; $icon $available &quot;</span>
+<span class="doccomment">//! format_alt = &quot; $icon $available / $total &quot;</span>
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Update block on right click:</span>
@@ -241,7 +236,7 @@
 <span class="doccomment">//! # Icons Used</span>
 <span class="doccomment">//! - `disk_drive`</span>
 
-<span class="macro">make_log_macro!</span>(<span class="ident">debug</span>, <span class="string">&quot;disk_space&quot;</span>);
+<span class="comment">// make_log_macro!(debug, &quot;disk_space&quot;);</span>
 
 <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::formatting::prefix::Prefix</span>;
@@ -282,9 +277,7 @@
         <span class="prelude-val">None</span> =&gt; <span class="prelude-val">None</span>,
     };
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">api</span>
-        .<span class="ident">new_widget</span>()
-        .<span class="ident">with_format</span>(<span class="ident">format</span>.<span class="ident">clone</span>());
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">new_widget</span>().<span class="ident">with_format</span>(<span class="ident">format</span>.<span class="ident">clone</span>());
 
     <span class="kw">let</span> <span class="ident">unit</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">alert_unit</span>.<span class="ident">as_deref</span>() {
         <span class="prelude-val">Some</span>(<span class="string">&quot;TB&quot;</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">Prefix::Tera</span>),
@@ -336,8 +329,6 @@
             <span class="prelude-val">None</span> =&gt; <span class="ident">percentage</span>,
         };
 
-        <span class="macro">debug!</span>(<span class="string">&quot;alert_val_in_config_units = {alert_val_in_config_units}&quot;</span>);
-
         <span class="comment">// Compute state</span>
         <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">info_type</span> {
             <span class="ident">InfoType::Used</span> =&gt; {
@@ -379,7 +370,6 @@
                 }
             }
         }
-
     }
 }
 </code></pre></div>
