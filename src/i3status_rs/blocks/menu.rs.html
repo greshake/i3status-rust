@@ -237,7 +237,7 @@
     <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">Config::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
 
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">block</span> <span class="op">=</span> <span class="ident">Block</span> {
-        <span class="ident">widget</span>: <span class="ident">api</span>.<span class="ident">new_widget</span>(),
+        <span class="ident">widget</span>: <span class="ident">Widget::new</span>(),
         <span class="ident">api</span>,
         <span class="ident">text</span>: <span class="ident">config</span>.<span class="ident">text</span>,
         <span class="ident">items</span>: <span class="ident">config</span>.<span class="ident">items</span>,

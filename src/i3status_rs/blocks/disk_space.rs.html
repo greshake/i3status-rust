@@ -277,7 +277,7 @@
         <span class="prelude-val">None</span> =&gt; <span class="prelude-val">None</span>,
     };
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">new_widget</span>().<span class="ident">with_format</span>(<span class="ident">format</span>.<span class="ident">clone</span>());
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">Widget::new</span>().<span class="ident">with_format</span>(<span class="ident">format</span>.<span class="ident">clone</span>());
 
     <span class="kw">let</span> <span class="ident">unit</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">alert_unit</span>.<span class="ident">as_deref</span>() {
         <span class="prelude-val">Some</span>(<span class="string">&quot;TB&quot;</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">Prefix::Tera</span>),

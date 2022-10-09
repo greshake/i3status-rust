@@ -396,6 +396,10 @@
 <span id="396">396</span>
 <span id="397">397</span>
 <span id="398">398</span>
+<span id="399">399</span>
+<span id="400">400</span>
+<span id="401">401</span>
+<span id="402">402</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Pending updates available on pacman or an AUR helper.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Requires fakeroot to be installed (only required for pacman).</span>
@@ -556,11 +560,15 @@
 
 <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">PacmanConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">new_widget</span>();
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">Widget::new</span>();
 
     <span class="kw">let</span> <span class="ident">format</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon $pacman.eng(1) &quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">format_singular</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">format_singular</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon $pacman.eng(1) &quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">format_up_to_date</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">format_up_to_date</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon $pacman.eng(1) &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">format_singular</span> <span class="op">=</span> <span class="ident">config</span>
+        .<span class="ident">format_singular</span>
+        .<span class="ident">with_default</span>(<span class="string">&quot; $icon $pacman.eng(1) &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">format_up_to_date</span> <span class="op">=</span> <span class="ident">config</span>
+        .<span class="ident">format_up_to_date</span>
+        .<span class="ident">with_default</span>(<span class="string">&quot; $icon $pacman.eng(1) &quot;</span>)<span class="question-mark">?</span>;
 
     <span class="macro">macro_rules!</span> <span class="ident">any_format_contains</span> {
         (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">name</span>:<span class="ident">expr</span>) =&gt; {
@@ -665,7 +673,7 @@
             }
             <span class="ident">Watched::None</span> =&gt; (<span class="ident">HashMap::new</span>(), <span class="bool-val">false</span>, <span class="bool-val">false</span>, <span class="number">0</span>),
         };
-        <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;icon&quot;</span>.<span class="ident">into</span>(),  <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;update&quot;</span>)<span class="question-mark">?</span>));
+        <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;icon&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;update&quot;</span>)<span class="question-mark">?</span>));
 
         <span class="ident">widget</span>.<span class="ident">set_format</span>(<span class="kw">match</span> <span class="ident">total</span> {
             <span class="number">0</span> =&gt; <span class="ident">format_up_to_date</span>.<span class="ident">clone</span>(),

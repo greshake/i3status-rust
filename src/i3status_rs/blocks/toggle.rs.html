@@ -153,7 +153,6 @@
 <span id="153">153</span>
 <span id="154">154</span>
 <span id="155">155</span>
-<span id="156">156</span>
 </pre><pre class="rust"><code><span class="doccomment">//! A Toggle block</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! You can add commands to be executed to disable the toggle (`command_off`), and to enable it</span>
@@ -222,7 +221,7 @@
 <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">ToggleConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
     <span class="kw">let</span> <span class="ident">interval</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">interval</span>.<span class="ident">map</span>(<span class="ident">Duration::from_secs</span>);
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">new_widget</span>().<span class="ident">with_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>);
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">Widget::new</span>().<span class="ident">with_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>);
 
     <span class="kw">let</span> <span class="ident">icon_on</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">icon_on</span>.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;toggle_on&quot;</span>.<span class="ident">into</span>());
     <span class="kw">let</span> <span class="ident">icon_off</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">icon_off</span>.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;toggle_off&quot;</span>.<span class="ident">into</span>());
@@ -243,7 +242,6 @@
             .<span class="ident">error</span>(<span class="string">&quot;The output of command_state is invalid UTF-8&quot;</span>)<span class="question-mark">?</span>
             .<span class="ident">trim</span>()
             .<span class="ident">is_empty</span>();
-
 
         <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span>(
             <span class="string">&quot;icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(

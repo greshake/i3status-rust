@@ -70,6 +70,15 @@
 <span id="70">70</span>
 <span id="71">71</span>
 <span id="72">72</span>
+<span id="73">73</span>
+<span id="74">74</span>
+<span id="75">75</span>
+<span id="76">76</span>
+<span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
+<span id="80">80</span>
+<span id="81">81</span>
 </pre><pre class="rust"><code><span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">i3bar_block</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">i3bar_event</span>;
 
@@ -93,7 +102,12 @@
     <span class="comment">// The right most block should never be alternated</span>
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">alt</span> <span class="op">=</span> <span class="ident">blocks</span>.<span class="ident">iter</span>().<span class="ident">filter</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="op">!</span><span class="ident">x</span>.<span class="ident">is_empty</span>()).<span class="ident">count</span>() <span class="op">%</span> <span class="number">2</span> <span class="op">==</span> <span class="number">0</span>;
 
-    <span class="kw">for</span> <span class="kw-2">mut</span> <span class="ident">widgets</span> <span class="kw">in</span> <span class="ident">blocks</span>.<span class="ident">iter</span>().<span class="ident">filter</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="op">!</span><span class="ident">x</span>.<span class="ident">is_empty</span>()).<span class="ident">cloned</span>() {
+    <span class="kw">for</span> (<span class="ident">id</span>, <span class="kw-2">mut</span> <span class="ident">widgets</span>) <span class="kw">in</span> <span class="ident">blocks</span>
+        .<span class="ident">iter</span>()
+        .<span class="ident">cloned</span>()
+        .<span class="ident">enumerate</span>()
+        .<span class="ident">filter</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="op">!</span><span class="ident">x</span>.<span class="number">1</span>.<span class="ident">is_empty</span>())
+    {
         <span class="comment">// Apply tint for all widgets of every second block</span>
         <span class="comment">// TODO: Allow for other non-additive tints</span>
         <span class="kw">if</span> <span class="ident">alt</span> {
@@ -103,6 +117,10 @@
             }
         }
         <span class="ident">alt</span> <span class="op">=</span> <span class="op">!</span><span class="ident">alt</span>;
+
+        <span class="kw">for</span> <span class="ident">data</span> <span class="kw">in</span> <span class="kw-2">&amp;mut</span> <span class="ident">widgets</span> {
+            <span class="ident">data</span>.<span class="ident">name</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">id</span>.<span class="ident">to_string</span>());
+        }
 
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">separator</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">theme</span>.<span class="ident">separator</span> {
             <span class="comment">// The first widget&#39;s BG is used to get the FG color for the current separator</span>

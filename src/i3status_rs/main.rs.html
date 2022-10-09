@@ -485,6 +485,10 @@
 <span id="485">485</span>
 <span id="486">486</span>
 <span id="487">487</span>
+<span id="488">488</span>
+<span id="489">489</span>
+<span id="490">490</span>
+<span id="491">491</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">warn</span>(<span class="ident">clippy::match_same_arms</span>)]</span>
 <span class="attribute">#![<span class="ident">warn</span>(<span class="ident">clippy::semicolon_if_nothing_returned</span>)]</span>
 <span class="attribute">#![<span class="ident">warn</span>(<span class="ident">clippy::unnecessary_wraps</span>)]</span>
@@ -526,6 +530,7 @@
 <span class="kw">use</span> <span class="ident">config::Config</span>;
 <span class="kw">use</span> <span class="ident">config::SharedConfig</span>;
 <span class="kw">use</span> <span class="ident">errors</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident">escape::CollectEscaped</span>;
 <span class="kw">use</span> <span class="ident">formatting</span>::{<span class="ident">scheduling</span>, <span class="ident">Format</span>};
 <span class="kw">use</span> <span class="ident">protocol::i3bar_event::events_stream</span>;
 <span class="kw">use</span> <span class="ident">signals</span>::{<span class="ident">signals_stream</span>, <span class="ident">Signal</span>};
@@ -587,7 +592,10 @@
             <span class="ident">bar</span>.<span class="ident">run_event_loop</span>().<span class="kw">await</span>
         });
     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Err</span>(<span class="ident">error</span>) <span class="op">=</span> <span class="ident">result</span> {
-        <span class="kw">let</span> <span class="ident">error_widget</span> <span class="op">=</span> <span class="ident">Widget::new_error</span>(<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="ident">error</span>);
+        <span class="kw">let</span> <span class="ident">error_widget</span> <span class="op">=</span> <span class="ident">Widget::new</span>()
+            .<span class="ident">with_text</span>(<span class="ident">error</span>.<span class="ident">to_string</span>().<span class="ident">chars</span>().<span class="ident">collect_pango</span>())
+            .<span class="ident">with_state</span>(<span class="ident">State::Critical</span>);
+
         <span class="macro">println!</span>(
             <span class="string">&quot;{},&quot;</span>,
             <span class="ident">serde_json::to_string</span>(<span class="kw-2">&amp;</span><span class="ident">error_widget</span>.<span class="ident">get_data</span>(<span class="kw-2">&amp;</span><span class="ident">Default::default</span>()).<span class="ident">unwrap</span>()).<span class="ident">unwrap</span>()
@@ -641,7 +649,7 @@
     }
 
     <span class="kw">fn</span> <span class="ident">set_error</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">fullscreen</span>: <span class="ident">bool</span>, <span class="ident">error</span>: <span class="ident">Error</span>) {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">Widget::new</span>(<span class="self">self</span>.<span class="ident">id</span>)
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">Widget::new</span>()
             .<span class="ident">with_state</span>(<span class="ident">State::Critical</span>)
             .<span class="ident">with_format</span>(<span class="kw">if</span> <span class="ident">fullscreen</span> {
                 <span class="self">self</span>.<span class="ident">error_fullscreen_format</span>.<span class="ident">clone</span>()

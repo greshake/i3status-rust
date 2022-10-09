@@ -144,49 +144,22 @@
 <span id="144">144</span>
 <span id="145">145</span>
 <span id="146">146</span>
-<span id="147">147</span>
-<span id="148">148</span>
-<span id="149">149</span>
-<span id="150">150</span>
-<span id="151">151</span>
-<span id="152">152</span>
-<span id="153">153</span>
-<span id="154">154</span>
-<span id="155">155</span>
-<span id="156">156</span>
-<span id="157">157</span>
-<span id="158">158</span>
-<span id="159">159</span>
-<span id="160">160</span>
-<span id="161">161</span>
-<span id="162">162</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::config::SharedConfig</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errors</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::escape::CollectEscaped</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::formatting</span>::{<span class="ident">Format</span>, <span class="ident">Fragment</span>, <span class="ident">Values</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::protocol::i3bar_block::I3BarBlock</span>;
 <span class="kw">use</span> <span class="ident">serde::Deserialize</span>;
+<span class="kw">use</span> <span class="ident">smart_default::SmartDefault</span>;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Default</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Widget</span> {
     <span class="kw">pub</span> <span class="ident">state</span>: <span class="ident">State</span>,
-    <span class="ident">id</span>: <span class="ident">usize</span>,
     <span class="ident">source</span>: <span class="ident">Source</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">Widget</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">id</span>: <span class="ident">usize</span>) -&gt; <span class="self">Self</span> {
-        <span class="ident">Widget</span> {
-            <span class="ident">state</span>: <span class="ident">State::Idle</span>,
-            <span class="ident">id</span>,
-            <span class="ident">source</span>: <span class="ident">Source::Text</span>(<span class="ident">String::new</span>()),
-        }
-    }
-
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_error</span>(<span class="ident">id</span>: <span class="ident">usize</span>, <span class="ident">error</span>: <span class="kw-2">&amp;</span><span class="ident">Error</span>) -&gt; <span class="self">Self</span> {
-        <span class="ident"><span class="self">Self</span>::new</span>(<span class="ident">id</span>)
-            .<span class="ident">with_text</span>(<span class="ident">error</span>.<span class="ident">to_string</span>().<span class="ident">chars</span>().<span class="ident">collect_pango</span>())
-            .<span class="ident">with_state</span>(<span class="ident">State::Critical</span>)
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() -&gt; <span class="self">Self</span> {
+        <span class="ident"><span class="self">Self</span>::default</span>()
     }
 
     <span class="comment">/*
@@ -194,7 +167,7 @@
      */</span>
 
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">with_text</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">text</span>: <span class="ident">String</span>) -&gt; <span class="self">Self</span> {
-        <span class="self">self</span>.<span class="ident">source</span> <span class="op">=</span> <span class="ident">Source::Text</span>(<span class="ident">text</span>);
+        <span class="self">self</span>.<span class="ident">set_text</span>(<span class="ident">text</span>);
         <span class="self">self</span>
     }
 
@@ -246,7 +219,6 @@
         <span class="kw">let</span> (<span class="ident">key_bg</span>, <span class="ident">key_fg</span>) <span class="op">=</span> <span class="ident">shared_config</span>.<span class="ident">theme</span>.<span class="ident">get_colors</span>(<span class="self">self</span>.<span class="ident">state</span>);
         <span class="kw">let</span> (<span class="ident">full</span>, <span class="ident">short</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">source</span>.<span class="ident">render</span>(<span class="ident">shared_config</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">template</span> <span class="op">=</span> <span class="ident">I3BarBlock</span> {
-            <span class="ident">name</span>: <span class="prelude-val">Some</span>(<span class="self">self</span>.<span class="ident">id</span>.<span class="ident">to_string</span>()),
             <span class="ident">background</span>: <span class="ident">key_bg</span>,
             <span class="ident">color</span>: <span class="ident">key_fg</span>,
             ..<span class="ident">I3BarBlock::default</span>()
@@ -287,8 +259,9 @@
 }
 
 <span class="doccomment">/// State of the widget. Affects the theming.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">Deserialize</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">Deserialize</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">SmartDefault</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">State</span> {
+    <span class="attribute">#[<span class="ident">default</span>]</span>
     <span class="ident">Idle</span>,
     <span class="ident">Info</span>,
     <span class="ident">Good</span>,
@@ -296,16 +269,11 @@
     <span class="ident">Critical</span>,
 }
 
-<span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">State</span> {
-    <span class="kw">fn</span> <span class="ident">default</span>() -&gt; <span class="self">Self</span> {
-        <span class="ident"><span class="self">Self</span>::Idle</span>
-    }
-}
-
 <span class="doccomment">/// The source of text for widget</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">SmartDefault</span>)]</span>
 <span class="kw">enum</span> <span class="ident">Source</span> {
     <span class="doccomment">/// Collapsed widget (only icon will be displayed)</span>
+    <span class="attribute">#[<span class="ident">default</span>]</span>
     <span class="prelude-val">None</span>,
     <span class="doccomment">/// Simple text</span>
     <span class="ident">Text</span>(<span class="ident">String</span>),
