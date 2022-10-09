@@ -31,7 +31,7 @@ use chrono::{offset::Local, DateTime};
 use dirs_next::config_dir;
 use inotify::{Inotify, WatchMask};
 use serde::de::Deserializer;
-use std::{path::PathBuf};
+use std::path::PathBuf;
 use tokio::fs::read_to_string;
 
 use super::prelude::*;
@@ -48,7 +48,7 @@ struct WatsonConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = WatsonConfig::deserialize(config).config_error()?;
-    let mut widget = api.new_widget().with_format(config.format.with_default(" $text |")?);
+    let mut widget = Widget::new().with_format(config.format.with_default(" $text |")?);
 
     let mut show_time = config.show_time;
 

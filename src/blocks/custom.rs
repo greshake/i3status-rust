@@ -125,7 +125,7 @@ async fn update_bar(
         match serde_json::from_str::<Input>(stdout).error("Invalid JSON") {
             Ok(input) => {
                 text_empty = input.text.is_empty();
-                widget.set_values(map!{
+                widget.set_values(map! {
                     "text" => Value::text(input.text),
                     [if !input.icon.is_empty()] "icon" => Value::icon(api.get_icon(&input.icon)?),
                     [if let Some(t) = input.short_text] "short_text" => Value::text(t)
@@ -148,8 +148,10 @@ async fn update_bar(
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = CustomConfig::deserialize(config).config_error()?;
-    let mut widget = api.new_widget().with_format(
-        config.format.with_defaults("{ $icon|} $text ", "{ $icon|} $short_text |")?
+    let mut widget = Widget::new().with_format(
+        config
+            .format
+            .with_defaults("{ $icon|} $text ", "{ $icon|} $short_text |")?,
     );
 
     let mut timer = config.interval.timer();

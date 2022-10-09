@@ -46,9 +46,8 @@ struct DockerConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = DockerConfig::deserialize(config).config_error()?;
-    let mut widget = api
-        .new_widget()
-        .with_format(config.format.with_default(" $icon $running.eng(1) ")?);
+    let mut widget =
+        Widget::new().with_format(config.format.with_default(" $icon $running.eng(1) ")?);
     let socket_path = config.socket_path.expand()?;
 
     loop {

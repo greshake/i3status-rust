@@ -63,9 +63,7 @@ struct NotmuchConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = NotmuchConfig::deserialize(config).config_error()?;
-    let mut widget = api.new_widget().with_format(
-        config.format.with_default(" $icon $count ")?,
-    );
+    let mut widget = Widget::new().with_format(config.format.with_default(" $icon $count ")?);
 
     let db = config.maildir.expand()?;
     let mut timer = config.interval.timer();

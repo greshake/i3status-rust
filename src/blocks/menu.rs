@@ -108,7 +108,7 @@ pub async fn run(config: toml::Value, api: CommonApi) -> Result<()> {
     let config = Config::deserialize(config).config_error()?;
 
     let mut block = Block {
-        widget: api.new_widget(),
+        widget: Widget::new(),
         api,
         text: config.text,
         items: config.items,

@@ -154,19 +154,6 @@ pub struct CommonApi {
 }
 
 impl CommonApi {
-    /// A convenience function to create a new `Widget`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// let mut widget = api
-    ///     .new_widget()
-    ///     .with_format(config.format.with_default(" $icon $running.eng(1) ")?);
-    /// ```
-    pub fn new_widget(&self) -> Widget {
-        Widget::new(self.id)
-    }
-
     /// Sends the widget to be displayed.
     pub async fn set_widget(&self, widget: &Widget) -> Result<()> {
         self.request_sender

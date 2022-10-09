@@ -84,24 +84,20 @@ struct MemoryConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = MemoryConfig::deserialize(config).config_error()?;
-    let mut widget = api.new_widget();
+    let mut widget = Widget::new();
 
     let format_mem = config.format_mem.with_default(
         " $icon $mem_free.eng(3,B,M)/$mem_total.eng(3,B,M)($mem_total_used_percents.eng(2)) ",
     )?;
-    let format_swap = config
-        .format_swap
-        .with_default(" $icon $swap_free.eng(3,B,M)/$swap_total.eng(3,B,M)($swap_used_percents.eng(2)) ")?;
+    let format_swap = config.format_swap.with_default(
+        " $icon $swap_free.eng(3,B,M)/$swap_total.eng(3,B,M)($swap_used_percents.eng(2)) ",
+    )?;
 
     let clickable = config.clickable;
     let mut memtype = config.display_type;
     let (mut icon, mut format) = match memtype {
-        Memtype::Memory => {
-            ("memory_mem", &format_mem)
-        }
-        Memtype::Swap => {
-            ("memory_swap", &format_swap)
-        }
+        Memtype::Memory => ("memory_mem", &format_mem),
+        Memtype::Swap => ("memory_swap", &format_swap),
     };
 
     let mut timer = config.interval.timer();

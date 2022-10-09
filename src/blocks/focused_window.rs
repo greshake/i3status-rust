@@ -60,9 +60,7 @@ enum Driver {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = FocusedWindowConfig::deserialize(config).config_error()?;
-    let mut widget = api
-        .new_widget()
-        .with_format(config.format.with_default(" $title.str(0,21) |")?);
+    let mut widget = Widget::new().with_format(config.format.with_default(" $title.str(0,21) |")?);
 
     let mut backend: Box<dyn Backend> = match config.driver {
         Driver::Auto => match SwayIpc::new().await {

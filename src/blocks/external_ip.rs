@@ -76,9 +76,7 @@ struct ExternalIpConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = ExternalIpConfig::deserialize(config).config_error()?;
-    let mut widget = api
-        .new_widget()
-        .with_format(config.format.with_default(" $ip $country_flag ")?);
+    let mut widget = Widget::new().with_format(config.format.with_default(" $ip $country_flag ")?);
 
     type UpdatesStream = Pin<Box<dyn Stream<Item = ()>>>;
     let mut stream: UpdatesStream = if config.with_network_manager {

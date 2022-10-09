@@ -66,7 +66,7 @@ pub struct ToggleConfig {
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = ToggleConfig::deserialize(config).config_error()?;
     let interval = config.interval.map(Duration::from_secs);
-    let mut widget = api.new_widget().with_format(config.format.with_default(" $icon ")?);
+    let mut widget = Widget::new().with_format(config.format.with_default(" $icon ")?);
 
     let icon_on = config.icon_on.unwrap_or_else(|| "toggle_on".into());
     let icon_off = config.icon_off.unwrap_or_else(|| "toggle_off".into());
@@ -87,7 +87,6 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             .error("The output of command_state is invalid UTF-8")?
             .trim()
             .is_empty();
-
 
         widget.set_values(map!(
             "icon" => Value::icon(

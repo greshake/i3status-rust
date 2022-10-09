@@ -42,7 +42,7 @@ struct UptimeConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = UptimeConfig::deserialize(config).config_error()?;
-    let mut widget = api.new_widget().with_format(config.format.with_default(" $icon $text ")?);
+    let mut widget = Widget::new().with_format(config.format.with_default(" $icon $text ")?);
 
     loop {
         let uptime = read_to_string("/proc/uptime")

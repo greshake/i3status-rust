@@ -91,9 +91,8 @@ struct SoundConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = SoundConfig::deserialize(config).config_error()?;
-    let mut widget = api
-        .new_widget()
-        .with_format(config.format.with_default(" $icon {$volume.eng(2)|} ")?);
+    let mut widget =
+        Widget::new().with_format(config.format.with_default(" $icon {$volume.eng(2)|} ")?);
 
     let device_kind = config.device_kind;
     let step_width = config.step_width.clamp(0, 50) as i32;
@@ -187,13 +186,19 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         };
 
         if device.muted() {
-            values.insert("icon".into(), Value::icon(api.get_icon(&icon(0, &*device))?));
+            values.insert(
+                "icon".into(),
+                Value::icon(api.get_icon(&icon(0, &*device))?),
+            );
             widget.state = State::Warning;
             if !config.show_volume_when_muted {
                 values.remove("volume");
             }
         } else {
-            values.insert("icon".into(), Value::icon(api.get_icon(&icon(volume, &*device))?));
+            values.insert(
+                "icon".into(),
+                Value::icon(api.get_icon(&icon(volume, &*device))?),
+            );
             widget.state = State::Idle;
         }
 

@@ -62,7 +62,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         None => None,
     };
 
-    let mut widget = api.new_widget().with_format(format.clone());
+    let mut widget = Widget::new().with_format(format.clone());
 
     let boost_icon_on = api.get_icon("cpu_boost_on")?;
     let boost_icon_off = api.get_icon("cpu_boost_off")?;

@@ -75,7 +75,7 @@ struct HueshiftConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = HueshiftConfig::deserialize(config).config_error()?;
-    let mut widget = api.new_widget().with_format(config.format.with_default(" $temperature ")?);
+    let mut widget = Widget::new().with_format(config.format.with_default(" $temperature ")?);
 
     // limit too big steps at 500K to avoid too brutal changes
     let step = config.step.max(500);

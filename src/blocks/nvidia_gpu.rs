@@ -81,7 +81,7 @@ struct NvidiaGpuConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = NvidiaGpuConfig::deserialize(config).config_error()?;
-    let mut widget = api.new_widget().with_format(
+    let mut widget = Widget::new().with_format(
         config
             .format
             .with_default(" $icon $utilization $memory $temperature ")?,

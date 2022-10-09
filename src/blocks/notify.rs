@@ -53,9 +53,7 @@ enum DriverType {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = NotifyConfig::deserialize(config).config_error()?;
-    let mut widget = api
-        .new_widget()
-        .with_format(config.format.with_default(" $icon ")?);
+    let mut widget = Widget::new().with_format(config.format.with_default(" $icon ")?);
 
     let mut driver: Box<dyn Driver + Send + Sync> = match config.driver {
         DriverType::Dunst => Box::new(MakoDriver::new().await?),

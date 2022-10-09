@@ -113,7 +113,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let format_full = config.full_format.with_default(" $icon ")?;
     let format_empty = config.empty_format.with_default(" $icon ")?;
     let missing_format = config.missing_format.with_default(" $icon ")?;
-    let mut widget = api.new_widget();
+    let mut widget = Widget::new();
 
     let dev_name = DeviceName::new(config.device)?;
     let mut device: Box<dyn BatteryDevice + Send + Sync> = match config.driver {

@@ -132,7 +132,7 @@ struct OwnerChange {
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = MusicConfig::deserialize(config).config_error()?;
     let dbus_conn = new_dbus_connection().await?;
-    let mut widget = api.new_widget().with_format(
+    let mut widget = Widget::new().with_format(
         config
             .format
             .with_default(" $icon {$combo.rot-str() $play |}")?,

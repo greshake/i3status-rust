@@ -39,6 +39,7 @@ use click::ClickHandler;
 use config::Config;
 use config::SharedConfig;
 use errors::*;
+use escape::CollectEscaped;
 use formatting::{scheduling, Format};
 use protocol::i3bar_event::events_stream;
 use signals::{signals_stream, Signal};
@@ -100,7 +101,10 @@ fn main() {
             bar.run_event_loop().await
         });
     if let Err(error) = result {
-        let error_widget = Widget::new_error(0, &error);
+        let error_widget = Widget::new()
+            .with_text(error.to_string().chars().collect_pango())
+            .with_state(State::Critical);
+
         println!(
             "{},",
             serde_json::to_string(&error_widget.get_data(&Default::default()).unwrap()).unwrap()
@@ -154,7 +158,7 @@ impl Block {
     }
 
     fn set_error(&mut self, fullscreen: bool, error: Error) {
-        let mut widget = Widget::new(self.id)
+        let mut widget = Widget::new()
             .with_state(State::Critical)
             .with_format(if fullscreen {
                 self.error_fullscreen_format.clone()

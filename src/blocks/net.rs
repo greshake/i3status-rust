@@ -82,7 +82,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         None => None,
     };
 
-    let mut widget = api.new_widget().with_format(format.clone());
+    let mut widget = Widget::new().with_format(format.clone());
     let mut timer = config.interval.timer();
 
     let device_re = config

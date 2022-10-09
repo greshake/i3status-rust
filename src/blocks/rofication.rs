@@ -44,9 +44,7 @@ struct RoficationConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = RoficationConfig::deserialize(config).config_error()?;
-    let mut widget = api
-        .new_widget()
-        .with_format(config.format.with_default(" $icon $num.eng(1) ")?);
+    let mut widget = Widget::new().with_format(config.format.with_default(" $icon $num.eng(1) ")?);
 
     let path = config.socket_path.expand()?;
     let mut timer = config.interval.timer();

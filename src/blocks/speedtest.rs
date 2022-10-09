@@ -54,7 +54,7 @@ struct SpeedtestConfig {
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = SpeedtestConfig::deserialize(config).config_error()?;
     let mut widget =
-        api.new_widget().with_format(config.format.with_default(
+        Widget::new().with_format(config.format.with_default(
             " ^icon_ping $ping ^icon_net_down $speed_down ^icon_net_up $speed_up ",
         )?);
 

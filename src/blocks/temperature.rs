@@ -98,9 +98,11 @@ impl TemperatureScale {
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = TemperatureConfig::deserialize(config).config_error()?;
     let mut collapsed = config.collapsed;
-    let mut widget = api
-        .new_widget()
-        .with_format(config.format.with_default(" $icon{ $average avg, $max max|} ")?);
+    let mut widget = Widget::new().with_format(
+        config
+            .format
+            .with_default(" $icon{ $average avg, $max max|} ")?,
+    );
 
     let good = config
         .good

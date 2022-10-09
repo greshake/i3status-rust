@@ -79,7 +79,7 @@ struct Config {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = Config::deserialize(config).config_error()?;
-    let mut widget = api.new_widget().with_format(
+    let mut widget = Widget::new().with_format(
         config
             .format
             .with_default(" $icon $name{ $bat_icon $bat_charge|}{ $notif_icon|} ")?,
@@ -155,7 +155,10 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                     };
                 }
             } else {
-                values.insert("icon".into(), Value::icon(api.get_icon("phone_disconnected")?));
+                values.insert(
+                    "icon".into(),
+                    Value::icon(api.get_icon("phone_disconnected")?),
+                );
             }
 
             widget.set_values(values);

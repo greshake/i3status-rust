@@ -1,30 +1,19 @@
 use crate::config::SharedConfig;
 use crate::errors::*;
-use crate::escape::CollectEscaped;
 use crate::formatting::{Format, Fragment, Values};
 use crate::protocol::i3bar_block::I3BarBlock;
 use serde::Deserialize;
+use smart_default::SmartDefault;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Widget {
     pub state: State,
-    id: usize,
     source: Source,
 }
 
 impl Widget {
-    pub fn new(id: usize) -> Self {
-        Widget {
-            state: State::Idle,
-            id,
-            source: Source::Text(String::new()),
-        }
-    }
-
-    pub fn new_error(id: usize, error: &Error) -> Self {
-        Self::new(id)
-            .with_text(error.to_string().chars().collect_pango())
-            .with_state(State::Critical)
+    pub fn new() -> Self {
+        Self::default()
     }
 
     /*
@@ -32,7 +21,7 @@ impl Widget {
      */
 
     pub fn with_text(mut self, text: String) -> Self {
-        self.source = Source::Text(text);
+        self.set_text(text);
         self
     }
 
@@ -84,7 +73,6 @@ impl Widget {
         let (key_bg, key_fg) = shared_config.theme.get_colors(self.state);
         let (full, short) = self.source.render(shared_config)?;
         let mut template = I3BarBlock {
-            name: Some(self.id.to_string()),
             background: key_bg,
             color: key_fg,
             ..I3BarBlock::default()
@@ -125,8 +113,9 @@ impl Widget {
 }
 
 /// State of the widget. Affects the theming.
-#[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq, SmartDefault)]
 pub enum State {
+    #[default]
     Idle,
     Info,
     Good,
@@ -134,16 +123,11 @@ pub enum State {
     Critical,
 }
 
-impl Default for State {
-    fn default() -> Self {
-        Self::Idle
-    }
-}
-
 /// The source of text for widget
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, SmartDefault)]
 enum Source {
     /// Collapsed widget (only icon will be displayed)
+    #[default]
     None,
     /// Simple text
     Text(String),

@@ -183,9 +183,8 @@ impl WeatherResult {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = WeatherConfig::deserialize(config).config_error()?;
-    let mut widget = api
-        .new_widget()
-        .with_format(config.format.with_default(" $icon $weather $temp ")?);
+    let mut widget =
+        Widget::new().with_format(config.format.with_default(" $icon $weather $temp ")?);
 
     let provider: Box<dyn WeatherProvider + Send + Sync> = match config.service {
         WeatherService::MetNo(config) => Box::new(met_no::Service::new(&mut api, config).await?),

@@ -65,7 +65,7 @@ struct AptConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = AptConfig::deserialize(config).config_error()?;
-    let mut widget = api.new_widget();
+    let mut widget = Widget::new();
 
     let format = config.format.with_default(" $icon $count.eng(1) ")?;
     let format_singular = config.format_singular.with_default("$count.eng(1)")?;

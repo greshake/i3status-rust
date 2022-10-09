@@ -80,9 +80,8 @@ impl Default for TaskwarriorConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = TaskwarriorConfig::deserialize(config).config_error()?;
-    let mut widget = api
-        .new_widget()
-        .with_format(config.format.with_default(" $icon $done|$count.eng(1) ")?);
+    let mut widget =
+        Widget::new().with_format(config.format.with_default(" $icon $done|$count.eng(1) ")?);
 
     let mut filters = config.filters.iter().cycle();
     let mut filter = filters.next().error("failed to get next filter")?;

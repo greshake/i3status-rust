@@ -90,7 +90,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         None => None,
     };
 
-    let mut widget = api.new_widget().with_format(format.clone());
+    let mut widget = Widget::new().with_format(format.clone());
 
     let unit = match config.alert_unit.as_deref() {
         Some("TB") => Some(Prefix::Tera),

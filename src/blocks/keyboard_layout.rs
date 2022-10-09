@@ -107,9 +107,7 @@ enum KeyboardLayoutDriver {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = KeyboardLayoutConfig::deserialize(config).config_error()?;
-    let mut widget = api
-        .new_widget()
-        .with_format(config.format.with_default(" $layout ")?);
+    let mut widget = Widget::new().with_format(config.format.with_default(" $layout ")?);
 
     let mut backend: Box<dyn Backend> = match config.driver {
         KeyboardLayoutDriver::SetXkbMap => Box::new(SetXkbMap(config.interval)),

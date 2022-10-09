@@ -51,7 +51,7 @@ struct XrandrConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = XrandrConfig::deserialize(config).config_error()?;
-    let mut widget = api.new_widget().with_format(
+    let mut widget = Widget::new().with_format(
         config
             .format
             .with_default(" $icon $display $brightness_icon $brightness ")?,

@@ -39,7 +39,6 @@ use crate::formatting::config::DummyConfig;
 #[serde(deny_unknown_fields, default)]
 struct TimeConfig {
     format: DummyConfig,
-    // format_alt: Option<FormatConfig>,
     #[default(1.into())]
     interval: Seconds,
     timezone: Option<Tz>,
@@ -48,17 +47,14 @@ struct TimeConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = TimeConfig::deserialize(config).config_error()?;
-    let mut widget = api.new_widget();
+    let mut widget = Widget::new();
 
-    let /*mut*/ format = config.format.full.as_deref().unwrap_or(" $icon %a %d/%m %R ");
-    let /*mut*/ format_short = config.format.short.as_deref();
-
-    // let mut format_alt = config.format_alt.as_ref().map(|a| {
-    //     (
-    //         a.full.as_deref().unwrap_or("%a %d/%m %R"),
-    //         a.short.as_deref(),
-    //     )
-    // });
+    let format = config
+        .format
+        .full
+        .as_deref()
+        .unwrap_or(" $icon %a %d/%m %R ");
+    let format_short = config.format.short.as_deref();
 
     let timezone = config.timezone;
     let locale = match config.locale.as_deref() {
@@ -69,11 +65,6 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut timer = config.interval.timer();
 
     loop {
-        // if let Some(alt) = &mut format_alt {
-        //     std::mem::swap(&mut format, &mut alt.0);
-        //     std::mem::swap(&mut format_short, &mut alt.1);
-        // }
-
         if timezone.is_none() {
             // Update timezone because `chrono` will not do that for us.
             // https://github.com/chronotope/chrono/issues/272
@@ -81,12 +72,11 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         }
 
         let full_time = get_time(format, timezone, locale);
-        let short_time = format_short.map(|f| get_time(f, timezone, locale))
+        let short_time = format_short
+            .map(|f| get_time(f, timezone, locale))
             .unwrap_or_else(|| "".into());
 
-        widget.set_format(
-            FormatConfig::default().with_defaults(&full_time, &short_time)?
-        );
+        widget.set_format(FormatConfig::default().with_defaults(&full_time, &short_time)?);
         widget.set_values(map!("icon" => Value::icon(api.get_icon("time")?)));
 
         api.set_widget(&widget).await?;

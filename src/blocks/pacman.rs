@@ -158,11 +158,15 @@ struct PacmanConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = PacmanConfig::deserialize(config).config_error()?;
-    let mut widget = api.new_widget();
+    let mut widget = Widget::new();
 
     let format = config.format.with_default(" $icon $pacman.eng(1) ")?;
-    let format_singular = config.format_singular.with_default(" $icon $pacman.eng(1) ")?;
-    let format_up_to_date = config.format_up_to_date.with_default(" $icon $pacman.eng(1) ")?;
+    let format_singular = config
+        .format_singular
+        .with_default(" $icon $pacman.eng(1) ")?;
+    let format_up_to_date = config
+        .format_up_to_date
+        .with_default(" $icon $pacman.eng(1) ")?;
 
     macro_rules! any_format_contains {
         ($name:expr) => {
@@ -267,7 +271,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             }
             Watched::None => (HashMap::new(), false, false, 0),
         };
-        values.insert("icon".into(),  Value::icon(api.get_icon("update")?));
+        values.insert("icon".into(), Value::icon(api.get_icon("update")?));
 
         widget.set_format(match total {
             0 => format_up_to_date.clone(),

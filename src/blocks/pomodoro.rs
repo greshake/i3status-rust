@@ -231,7 +231,7 @@ impl Block {
 pub async fn run(block_config: toml::Value, api: CommonApi) -> Result<()> {
     let block_config = PomodoroConfig::deserialize(block_config).config_error()?;
     let format = FormatConfig::default().with_default(" $icon{ $message|} ")?;
-    let widget = api.new_widget().with_format(format);
+    let widget = Widget::new().with_format(format);
 
     let mut block = Block {
         widget,

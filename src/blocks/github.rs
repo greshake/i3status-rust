@@ -76,9 +76,8 @@ struct GithubConfig {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = GithubConfig::deserialize(config).config_error()?;
-    let mut widget = api
-        .new_widget()
-        .with_format(config.format.with_default(" $icon $total.eng(1) ")?);
+    let mut widget =
+        Widget::new().with_format(config.format.with_default(" $icon $total.eng(1) ")?);
 
     let mut interval = config.interval.timer();
     let token = config

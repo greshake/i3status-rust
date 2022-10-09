@@ -53,8 +53,8 @@
 //! - Send a signal on click?
 
 use super::prelude::*;
-use zbus::{dbus_interface, fdo};
 use std::env;
+use zbus::{dbus_interface, fdo};
 
 // Share DBus connection between multiple block instances
 static DBUS_CONNECTION: async_once_cell::OnceCell<Result<zbus::Connection>> =
@@ -89,7 +89,11 @@ fn block_values(block: &Block, api: &CommonApi) -> Result<HashMap<Cow<'static, s
 #[dbus_interface(name = "rs.i3status.custom")]
 impl Block {
     async fn set_icon(&mut self, icon: &str) -> fdo::Result<()> {
-        self.icon = if icon.is_empty() { None } else { Some(icon.to_string()) };
+        self.icon = if icon.is_empty() {
+            None
+        } else {
+            Some(icon.to_string())
+        };
         self.widget.set_values(block_values(self, &self.api)?);
         self.api.set_widget(&self.widget).await?;
         Ok(())
@@ -124,8 +128,10 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     api.event_receiver.close();
 
     let config = CustomDBusConfig::deserialize(config).config_error()?;
-    let widget = api.new_widget().with_format(
-        config.format.with_defaults("{ $icon|}{ $text|} ", "{ $icon|} $short_text |")?
+    let widget = Widget::new().with_format(
+        config
+            .format
+            .with_defaults("{ $icon|}{ $text|} ", "{ $icon|} $short_text |")?,
     );
 
     let dbus_conn = DBUS_CONNECTION
@@ -142,7 +148,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 api,
                 icon: None,
                 text: None,
-                short_text: None
+                short_text: None,
             },
         )
         .await
@@ -151,10 +157,9 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 }
 
 async fn dbus_conn() -> Result<zbus::Connection> {
-
     let dbus_interface_name = match env::var("I3RS_DBUS_NAME") {
         Ok(v) => format!("{}.{}", DBUS_NAME, v),
-        Err(_) => DBUS_NAME.to_string()
+        Err(_) => DBUS_NAME.to_string(),
     };
 
     let conn = new_dbus_connection().await?;
