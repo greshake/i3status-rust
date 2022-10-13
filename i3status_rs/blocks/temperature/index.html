@@ -9,9 +9,9 @@ are computed using all sensors displayed by <code>sensors</code>, or optionally 
 <p>Note that the colour of the block is always determined by the maximum temperature across all
 sensors, not the average. You may need to keep this in mind if you have a misbehaving sensor.</p>
 <h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Default</th></tr></thead><tbody>
-<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders</td><td><code>“ $icon{ $average avg, $max max|} “</code></td></tr>
+<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders</td><td><code>&quot; $icon $average avg, $max max &quot;</code></td></tr>
+<tr><td><code>format_alt</code></td><td>If set, block will switch between <code>format</code> and <code>format_alt</code> on every click</td><td><code>None</code></td></tr>
 <tr><td><code>interval</code></td><td>Update interval in seconds</td><td><code>5</code></td></tr>
-<tr><td><code>collapsed</code></td><td>Whether the block will be collapsed by default</td><td><code>true</code></td></tr>
 <tr><td><code>scale</code></td><td>Either <code>&quot;celsius&quot;</code> or <code>&quot;fahrenheit&quot;</code></td><td><code>&quot;celsius&quot;</code></td></tr>
 <tr><td><code>good</code></td><td>Maximum temperature to set state to good</td><td><code>20</code> °C (<code>68</code> °F)</td></tr>
 <tr><td><code>idle</code></td><td>Maximum temperature to set state to idle</td><td><code>45</code> °C (<code>113</code> °F)</td></tr>
@@ -29,7 +29,8 @@ sensors, not the average. You may need to keep this in mind if you have a misbeh
 <p>Note that when block is collapsed, no placeholders are provided.</p>
 <h2 id="example"><a href="#example">Example</a></h2><div class="example-wrap"><pre class="language-toml"><code>[[block]]
 block = &quot;temperature&quot;
-format = &quot; $icon {$min min, $max max, $average avg |}&quot;
+format = &quot; $icon $max max &quot;
+format_alt = &quot; $icon $min min, $max max, $average avg &quot;
 interval = 10
 chip = &quot;*-isa-*&quot;</code></pre></div><h2 id="icons-used"><a href="#icons-used">Icons Used</a></h2>
 <ul>
