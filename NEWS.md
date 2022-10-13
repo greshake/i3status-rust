@@ -84,7 +84,7 @@ This is a major release which rewrites the core code to be asynchronous.
 - **toggle**: `text` option is removed and now you can use `format` to set the text
 - **notmuch**: `name` option is removed and now you can use `format` to set the name
 - **{apt, dnf, pacman}**: `hide_when_uptodate` option is removed and now you can use `format_up_to_date = ""` to hide the block
-- **temperature**: `collapsed` option is removed and now you can use `format_alt = ""` to maintain the behavior
+- **temperature**: `collapsed` option is removed and now you can use `format_alt = " $icon "` to maintain the behavior
 
 ### New features and bugfixes
 - When blocks error they no longer take down the entire bar. Instead, they now enter error mode: "X" will be shown and on left click the full error message will be shown in the bar.
