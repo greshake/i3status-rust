@@ -18,7 +18,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders | <code>" $icon{ $average avg, $max max&vert;} "</code>
+//! `format` | A string to customise the output of this block. See below for available placeholders | `" $icon $average avg, $max max "`
 //! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
 //! `interval` | Update interval in seconds | `5`
 //! `scale` | Either `"celsius"` or `"fahrenheit"` | `"celsius"`
