@@ -89,8 +89,8 @@ This is a major release which rewrites the core code to be asynchronous.
   ```toml
   [[block]]
   block = "temperature"
-  format = " $icon{ $max|} "
-  format_alt = " $icon{ $average avg, $max max|} "
+  format = " $icon $max "
+  format_alt = " $icon $average avg, $max max "
   ```
 
 ### New features and bugfixes
