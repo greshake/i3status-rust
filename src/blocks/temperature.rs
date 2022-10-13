@@ -18,9 +18,9 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders | <code>" $icon{ $average avg, $max max&vert;} "</code>
+//! `format` | A string to customise the output of this block. See below for available placeholders | `" $icon $average avg, $max max "`
+//! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
 //! `interval` | Update interval in seconds | `5`
-//! `collapsed` | Whether the block will be collapsed by default | `true`
 //! `scale` | Either `"celsius"` or `"fahrenheit"` | `"celsius"`
 //! `good` | Maximum temperature to set state to good | `20` °C (`68` °F)
 //! `idle` | Maximum temperature to set state to idle | `45` °C (`113` °F)
@@ -42,7 +42,8 @@
 //! ```toml
 //! [[block]]
 //! block = "temperature"
-//! format = " $icon {$min min, $max max, $average avg |}"
+//! format = " $icon $max max "
+//! format_alt = " $icon $min min, $max max, $average avg "
 //! interval = 10
 //! chip = "*-isa-*"
 //! ```
@@ -64,10 +65,9 @@ const DEFAULT_WARN: f64 = 80.0;
 #[serde(deny_unknown_fields, default)]
 struct TemperatureConfig {
     format: FormatConfig,
+    format_alt: Option<FormatConfig>,
     #[default(5.into())]
     interval: Seconds,
-    #[default(true)]
-    collapsed: bool,
     scale: TemperatureScale,
     good: Option<f64>,
     idle: Option<f64>,
@@ -97,12 +97,13 @@ impl TemperatureScale {
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = TemperatureConfig::deserialize(config).config_error()?;
-    let mut collapsed = config.collapsed;
-    let mut widget = Widget::new().with_format(
-        config
-            .format
-            .with_default(" $icon{ $average avg, $max max|} ")?,
-    );
+
+    let mut format = config.format.with_default(" $icon $average avg, $max max ")?;
+    let mut format_alt = match config.format_alt {
+        Some(f) => Some(f.with_default("")?),
+        None => None,
+    };
+    let mut widget = Widget::new().with_format(format.clone());
 
     let good = config
         .good
@@ -183,16 +184,12 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         };
 
         'outer: loop {
-            if collapsed {
-                widget.set_values(map!("icon" => Value::icon(api.get_icon("thermometer")?)));
-            } else {
-                widget.set_values(map! {
-                    "icon" => Value::icon(api.get_icon("thermometer")?),
-                    "average" => Value::degrees(avg_temp),
-                    "min" => Value::degrees(min_temp),
-                    "max" => Value::degrees(max_temp),
-                });
-            }
+            widget.set_values(map! {
+                "icon" => Value::icon(api.get_icon("thermometer")?),
+                "average" => Value::degrees(avg_temp),
+                "min" => Value::degrees(min_temp),
+                "max" => Value::degrees(max_temp),
+            });
 
             api.set_widget(&widget).await?;
 
@@ -203,8 +200,11 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                         UpdateRequest => break 'outer,
                         Click(click) => {
                             if click.button == MouseButton::Left  {
-                                collapsed = !collapsed;
-                                break;
+                                if let Some(ref mut format_alt) = format_alt {
+                                    std::mem::swap(format_alt, &mut format);
+                                    widget.set_format(format.clone());
+                                    break;
+                                }
                             }
                         }
                     }
