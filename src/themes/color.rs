@@ -1,11 +1,211 @@
 use crate::errors::*;
-use color_space::{Hsv, Rgb};
 use serde::de::{self, Deserializer, Visitor};
 use serde::{Deserialize, Serialize, Serializer};
 use smart_default::SmartDefault;
 use std::fmt;
 use std::ops::Add;
 use std::str::FromStr;
+
+pub trait FromRgb {
+    /// Convert from an `Rgb` color.
+    fn from_rgb(rgb: &Rgb) -> Self;
+}
+
+pub trait ToRgb {
+    /// Convert into an `Rgb` color.
+    fn to_rgb(&self) -> Rgb;
+}
+
+pub trait FromColor<T: ToRgb> {
+    /// Convert from another color space `T`.
+    fn from_color(color: &T) -> Self;
+}
+/// An RGB color (red, green, blue).
+#[derive(Copy, Clone, Debug, Default)]
+pub struct Rgb {
+    pub r: f64,
+    pub g: f64,
+    pub b: f64,
+}
+
+impl Rgb {
+    /// Create a new RGB color.
+    ///
+    /// `r`: red component (0 to 255).
+    ///
+    /// `g`: green component (0 to 255).
+    ///
+    /// `b`: blue component (0 to 255).
+    #[inline]
+    pub fn new(r: f64, g: f64, b: f64) -> Self {
+        Self { r, g, b }
+    }
+
+    /// Create a new RGB color from the `hex` value.
+    ///
+    /// ```let cyan = Rgb::from_hex(0x00ffff);```
+    pub fn from_hex(hex: u32) -> Self {
+        Self {
+            r: (((hex >> 16) & 0xff) as f64),
+            g: (((hex >> 8) & 0xff) as f64),
+            b: ((hex & 0xff) as f64),
+        }
+    }
+}
+
+impl PartialEq for Rgb {
+    fn eq(&self, other: &Self) -> bool {
+        approx(self.r, other.r) && approx(self.g, other.g) && approx(self.b, other.b)
+    }
+}
+
+impl FromRgb for Rgb {
+    fn from_rgb(rgb: &Rgb) -> Self {
+        *rgb
+    }
+}
+
+impl ToRgb for Rgb {
+    fn to_rgb(&self) -> Rgb {
+        *self
+    }
+}
+
+/// An HSV color (hue, saturation, value).
+#[derive(Copy, Clone, Debug, Default)]
+pub struct Hsv {
+    pub h: f64,
+    pub s: f64,
+    pub v: f64,
+}
+
+impl Hsv {
+    /// Create a new HSV color.
+    ///
+    /// `h`: hue component (0 to 360)
+    ///
+    /// `s`: saturation component (0 to 1)
+    ///
+    /// `v`: value component (0 to 1)
+    #[inline]
+    pub fn new(h: f64, s: f64, v: f64) -> Self {
+        Self { h, s, v }
+    }
+}
+
+impl PartialEq for Hsv {
+    fn eq(&self, other: &Self) -> bool {
+        approx(self.h, other.h) && approx(self.s, other.s) && approx(self.v, other.v)
+    }
+}
+
+impl FromRgb for Hsv {
+    fn from_rgb(rgb: &Rgb) -> Self {
+        let r = rgb.r / 255.0;
+        let g = rgb.g / 255.0;
+        let b = rgb.b / 255.0;
+
+        let min = r.min(g.min(b));
+        let max = r.max(g.max(b));
+        let delta = max - min;
+
+        let v = max;
+        let s = match max > 1e-3 {
+            true => delta / max,
+            false => 0.0,
+        };
+        let h = match delta == 0.0 {
+            true => 0.0,
+            false => {
+                if r == max {
+                    (g - b) / delta
+                } else if g == max {
+                    2.0 + (b - r) / delta
+                } else {
+                    4.0 + (r - g) / delta
+                }
+            }
+        };
+        let h2 = ((h * 60.0) + 360.0) % 360.0;
+
+        Self::new(h2, s, v)
+    }
+}
+
+impl ToRgb for Hsv {
+    fn to_rgb(&self) -> Rgb {
+        let range = (self.h / 60.0) as u8;
+        let c = self.v * self.s;
+        let x = c * (1.0 - (((self.h / 60.0) % 2.0) - 1.0).abs());
+        let m = self.v - c;
+
+        match range {
+            0 => Rgb::new((c + m) * 255.0, (x + m) * 255.0, m * 255.0),
+            1 => Rgb::new((x + m) * 255.0, (c + m) * 255.0, m * 255.0),
+            2 => Rgb::new(m * 255.0, (c + m) * 255.0, (x + m) * 255.0),
+            3 => Rgb::new(m * 255.0, (x + m) * 255.0, (c + m) * 255.0),
+            4 => Rgb::new((x + m) * 255.0, m * 255.0, (c + m) * 255.0),
+            _ => Rgb::new((c + m) * 255.0, m * 255.0, (x + m) * 255.0),
+        }
+    }
+}
+
+impl FromColor<Rgb> for Rgb {
+    #[inline]
+    fn from_color(color: &Self) -> Self {
+        *color
+    }
+}
+
+impl FromColor<Rgb> for Hsv {
+    #[inline]
+    fn from_color(color: &Rgb) -> Self {
+        let rgb = color.to_rgb();
+        Self::from_rgb(&rgb)
+    }
+}
+impl From<Rgb> for Hsv {
+    #[inline]
+    fn from(color: Rgb) -> Self {
+        Self::from_color(&color)
+    }
+}
+
+impl FromColor<Hsv> for Hsv {
+    #[inline]
+    fn from_color(color: &Self) -> Self {
+        *color
+    }
+}
+
+impl FromColor<Hsv> for Rgb {
+    #[inline]
+    fn from_color(color: &Hsv) -> Self {
+        let rgb = color.to_rgb();
+        Self::from_rgb(&rgb)
+    }
+}
+impl From<Hsv> for Rgb {
+    #[inline]
+    fn from(color: Hsv) -> Self {
+        Self::from_color(&color)
+    }
+}
+
+pub fn approx(a: f64, b: f64) -> bool {
+    if a == b {
+        return true;
+    }
+    let eps = 1e-2;
+    let abs_a = a.abs();
+    let abs_b = b.abs();
+    let diff = (abs_a - abs_b).abs();
+    if a == 0.0 || b == 0.0 || abs_a + abs_b < std::f64::EPSILON {
+        diff < eps * std::f64::EPSILON
+    } else {
+        diff / (abs_a + abs_b).min(std::f64::MAX) < eps
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, SmartDefault)]
 pub enum Color {

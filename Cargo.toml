@@ -45,9 +45,6 @@ toml = "0.5"
 zbus = { version = "2.1", default-features = false, features = ["tokio"] }
 zvariant = "3.0"
 
-# TODO: remove
-color_space = "0.5"
-
 [dependencies.clap]
 version = "3.0"
 default-features = false
