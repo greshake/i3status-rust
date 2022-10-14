@@ -6,20 +6,6 @@ use std::fmt;
 use std::ops::Add;
 use std::str::FromStr;
 
-pub trait FromRgb {
-    /// Convert from an `Rgb` color.
-    fn from_rgb(rgb: &Rgb) -> Self;
-}
-
-pub trait ToRgb {
-    /// Convert into an `Rgb` color.
-    fn to_rgb(&self) -> Rgb;
-}
-
-pub trait FromColor<T: ToRgb> {
-    /// Convert from another color space `T`.
-    fn from_color(color: &T) -> Self;
-}
 /// An RGB color (red, green, blue).
 #[derive(Copy, Clone, Debug, Default)]
 pub struct Rgb {
@@ -59,18 +45,6 @@ impl PartialEq for Rgb {
     }
 }
 
-impl FromRgb for Rgb {
-    fn from_rgb(rgb: &Rgb) -> Self {
-        *rgb
-    }
-}
-
-impl ToRgb for Rgb {
-    fn to_rgb(&self) -> Rgb {
-        *self
-    }
-}
-
 /// An HSV color (hue, saturation, value).
 #[derive(Copy, Clone, Debug, Default)]
 pub struct Hsv {
@@ -91,15 +65,7 @@ impl Hsv {
     pub fn new(h: f64, s: f64, v: f64) -> Self {
         Self { h, s, v }
     }
-}
 
-impl PartialEq for Hsv {
-    fn eq(&self, other: &Self) -> bool {
-        approx(self.h, other.h) && approx(self.s, other.s) && approx(self.v, other.v)
-    }
-}
-
-impl FromRgb for Hsv {
     fn from_rgb(rgb: &Rgb) -> Self {
         let r = rgb.r / 255.0;
         let g = rgb.g / 255.0;
@@ -130,10 +96,8 @@ impl FromRgb for Hsv {
 
         Self::new(h2, s, v)
     }
-}
 
-impl ToRgb for Hsv {
-    fn to_rgb(&self) -> Rgb {
+    fn to_rgb(self) -> Rgb {
         let range = (self.h / 60.0) as u8;
         let c = self.v * self.s;
         let x = c * (1.0 - (((self.h / 60.0) % 2.0) - 1.0).abs());
@@ -150,45 +114,23 @@ impl ToRgb for Hsv {
     }
 }
 
-impl FromColor<Rgb> for Rgb {
-    #[inline]
-    fn from_color(color: &Self) -> Self {
-        *color
+impl PartialEq for Hsv {
+    fn eq(&self, other: &Self) -> bool {
+        approx(self.h, other.h) && approx(self.s, other.s) && approx(self.v, other.v)
     }
 }
 
-impl FromColor<Rgb> for Hsv {
-    #[inline]
-    fn from_color(color: &Rgb) -> Self {
-        let rgb = color.to_rgb();
-        Self::from_rgb(&rgb)
-    }
-}
 impl From<Rgb> for Hsv {
     #[inline]
     fn from(color: Rgb) -> Self {
-        Self::from_color(&color)
+        Self::from_rgb(&color)
     }
 }
 
-impl FromColor<Hsv> for Hsv {
-    #[inline]
-    fn from_color(color: &Self) -> Self {
-        *color
-    }
-}
-
-impl FromColor<Hsv> for Rgb {
-    #[inline]
-    fn from_color(color: &Hsv) -> Self {
-        let rgb = color.to_rgb();
-        Self::from_rgb(&rgb)
-    }
-}
 impl From<Hsv> for Rgb {
     #[inline]
     fn from(color: Hsv) -> Self {
-        Self::from_color(&color)
+        color.to_rgb()
     }
 }
 
