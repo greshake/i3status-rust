@@ -7,11 +7,11 @@ use std::ops::Add;
 use std::str::FromStr;
 
 /// An RGBA color (red, green, blue, alpha).
-#[derive(Copy, Clone, Debug, Default)]
+#[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
 pub struct Rgba {
-    pub r: f64,
-    pub g: f64,
-    pub b: f64,
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
     pub a: u8,
 }
 
@@ -24,9 +24,9 @@ impl Rgba {
     ///
     /// `b`: blue component (0 to 255).
     ///
-    /// `a`: alpha component (0 to 100).
+    /// `a`: alpha component (0 to 255).
     #[inline]
-    pub fn new(r: f64, g: f64, b: f64, a: u8) -> Self {
+    pub fn new(r: u8, g: u8, b: u8, a: u8) -> Self {
         Self { r, g, b, a }
     }
 
@@ -34,21 +34,20 @@ impl Rgba {
     ///
     /// ```let cyan = Rgba::from_hex(0xffffff);```
     pub fn from_hex(hex: u32) -> Self {
-        Self {
-            r: (((hex >> 24) & 0xff) as f64),
-            g: (((hex >> 16) & 0xff) as f64),
-            b: (((hex >> 8) & 0xff) as f64),
-            a: ((hex & 0xff) as u8),
-        }
+        let [r, g, b, a] = hex.to_be_bytes();
+        Self { r, g, b, a }
     }
 }
 
-impl PartialEq for Rgba {
-    fn eq(&self, other: &Self) -> bool {
-        approx(self.r, other.r)
-            && approx(self.g, other.g)
-            && approx(self.b, other.b)
-            && self.a == other.a
+impl Add for Rgba {
+    type Output = Self;
+    fn add(self, rhs: Self) -> Self::Output {
+        Rgba::new(
+            self.r.saturating_add(rhs.r),
+            self.g.saturating_add(rhs.g),
+            self.b.saturating_add(rhs.b),
+            self.a.saturating_add(rhs.a),
+        )
     }
 }
 
@@ -70,16 +69,16 @@ impl Hsva {
     ///
     /// `v`: value component (0 to 1)
     ///
-    /// `a`: alpha component (0 to 100).
+    /// `a`: alpha component (0 to 255).
     #[inline]
     pub fn new(h: f64, s: f64, v: f64, a: u8) -> Self {
         Self { h, s, v, a }
     }
 
     fn from_rgba(rgba: &Rgba) -> Self {
-        let r = rgba.r / 255.0;
-        let g = rgba.g / 255.0;
-        let b = rgba.b / 255.0;
+        let r = rgba.r as f64 / 255.0;
+        let g = rgba.g as f64 / 255.0;
+        let b = rgba.b as f64 / 255.0;
 
         let min = r.min(g.min(b));
         let max = r.max(g.max(b));
@@ -113,13 +112,17 @@ impl Hsva {
         let x = c * (1.0 - (((self.h / 60.0) % 2.0) - 1.0).abs());
         let m = self.v - c;
 
+        let cm_scaled = ((c + m) * 255.0) as u8;
+        let xm_scaled = ((x + m) * 255.0) as u8;
+        let m_scaled = (m * 255.0) as u8;
+
         match range {
-            0 => Rgba::new((c + m) * 255.0, (x + m) * 255.0, m * 255.0, self.a),
-            1 => Rgba::new((x + m) * 255.0, (c + m) * 255.0, m * 255.0, self.a),
-            2 => Rgba::new(m * 255.0, (c + m) * 255.0, (x + m) * 255.0, self.a),
-            3 => Rgba::new(m * 255.0, (x + m) * 255.0, (c + m) * 255.0, self.a),
-            4 => Rgba::new((x + m) * 255.0, m * 255.0, (c + m) * 255.0, self.a),
-            _ => Rgba::new((c + m) * 255.0, m * 255.0, (x + m) * 255.0, self.a),
+            0 => Rgba::new(cm_scaled, xm_scaled, m_scaled, self.a),
+            1 => Rgba::new(xm_scaled, cm_scaled, m_scaled, self.a),
+            2 => Rgba::new(m_scaled, cm_scaled, xm_scaled, self.a),
+            3 => Rgba::new(m_scaled, xm_scaled, cm_scaled, self.a),
+            4 => Rgba::new(xm_scaled, m_scaled, cm_scaled, self.a),
+            _ => Rgba::new(cm_scaled, m_scaled, xm_scaled, self.a),
         }
     }
 }
@@ -144,6 +147,18 @@ impl From<Hsva> for Rgba {
     #[inline]
     fn from(color: Hsva) -> Self {
         color.to_rgba()
+    }
+}
+
+impl Add for Hsva {
+    type Output = Self;
+    fn add(self, rhs: Self) -> Self::Output {
+        Hsva::new(
+            (self.h + rhs.h) % 360.,
+            (self.s + rhs.s).clamp(0., 1.),
+            (self.v + rhs.v).clamp(0., 1.),
+            self.a.saturating_add(rhs.a),
+        )
     }
 }
 
@@ -180,31 +195,17 @@ impl Color {
 impl Add for Color {
     type Output = Color;
     fn add(self, rhs: Self) -> Self::Output {
-        let add_hsva = |hsva1: Hsva, hsva2: Hsva| {
-            Hsva::new(
-                (hsva1.h + hsva2.h) % 360.,
-                (hsva1.s + hsva2.s).clamp(0., 1.),
-                (hsva1.v + hsva2.v).clamp(0., 1.),
-                hsva1.a.saturating_add(hsva2.a),
-            )
-        };
-
         match (self, rhs) {
             // Do nothing
             (x, Self::None | Self::Auto) | (Self::None | Self::Auto, x) => x,
             // Hsva + Hsva => Hsva
-            (Color::Hsva(hsva1), Color::Hsva(hsva2)) => Color::Hsva(add_hsva(hsva1, hsva2)),
+            (Color::Hsva(hsva1), Color::Hsva(hsva2)) => Color::Hsva(hsva1 + hsva2),
             // Rgba + Rgba => Rgba
-            (Color::Rgba(rgba1), Color::Rgba(rgba2)) => Color::Rgba(Rgba::new(
-                (rgba1.r + rgba2.r).clamp(0., 255.),
-                (rgba1.g + rgba2.g).clamp(0., 255.),
-                (rgba1.b + rgba2.b).clamp(0., 255.),
-                rgba1.a.saturating_add(rgba2.a),
-            )),
+            (Color::Rgba(rgba1), Color::Rgba(rgba2)) => Color::Rgba(rgba1 + rgba2),
             // Hsva + Rgba => Hsva
             // Rgba + Hsva => Hsva
             (Color::Hsva(hsva), Color::Rgba(rgba)) | (Color::Rgba(rgba), Color::Hsva(hsva)) => {
-                Color::Hsva(add_hsva(hsva, rgba.into()))
+                Color::Hsva(hsva + rgba.into())
             }
         }
     }
