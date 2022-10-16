@@ -44,7 +44,7 @@
 //! [[block]]
 //! block = "memory"
 //! format_mem = " $icon $mem_used_percents.eng(1) "
-//! clickable = false
+//! format_alt = " $icon $icon $swap_free.eng(3,B,M)/$swap_total.eng(3,B,M)($swap_used_percents.eng(2)) "
 //! interval = 30
 //! warning_mem = 70
 //! critical_mem = 90
@@ -64,12 +64,8 @@ use crate::util::read_file;
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 struct MemoryConfig {
-    format_mem: FormatConfig,
-    format_swap: FormatConfig,
-    #[default(Memtype::Memory)]
-    display_type: Memtype,
-    #[default(true)]
-    clickable: bool,
+    format: FormatConfig,
+    format_alt: Option<FormatConfig>,
     #[default(5.into())]
     interval: Seconds,
     #[default(80.0)]
@@ -86,19 +82,14 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let config = MemoryConfig::deserialize(config).config_error()?;
     let mut widget = Widget::new();
 
-    let format_mem = config.format_mem.with_default(
+    let mut format = config.format.with_default(
         " $icon $mem_free.eng(3,B,M)/$mem_total.eng(3,B,M)($mem_total_used_percents.eng(2)) ",
     )?;
-    let format_swap = config.format_swap.with_default(
-        " $icon $swap_free.eng(3,B,M)/$swap_total.eng(3,B,M)($swap_used_percents.eng(2)) ",
-    )?;
-
-    let clickable = config.clickable;
-    let mut memtype = config.display_type;
-    let (mut icon, mut format) = match memtype {
-        Memtype::Memory => ("memory_mem", &format_mem),
-        Memtype::Swap => ("memory_swap", &format_swap),
+    let mut format_alt = match config.format_alt {
+        Some(f) => Some(f.with_default(" $icon $swap_free.eng(3,B,M)/$swap_total.eng(3,B,M)($swap_used_percents.eng(2)) ")?),
+        None => None,
     };
+    
 
     let mut timer = config.interval.timer();
 
@@ -118,7 +109,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
         widget.set_format(format.clone());
         widget.set_values(map! {
-            "icon" => Value::icon(api.get_icon(icon)?),
+            "icon" => Value::icon(api.get_icon("memory_mem")?),
             "mem_total" => Value::bytes(mem_total),
             "mem_free" => Value::bytes(mem_free),
             "mem_free_percents" => Value::percents(mem_free / mem_total * 100.),
@@ -139,17 +130,10 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             "cached_percent" => Value::percents(cached / mem_total * 100.)
         });
 
-        widget.state = match memtype {
-            Memtype::Memory => match mem_used / mem_total * 100. {
-                x if x > config.critical_mem => State::Critical,
-                x if x > config.warning_mem => State::Warning,
-                _ => State::Idle,
-            },
-            Memtype::Swap => match swap_used / swap_total * 100. {
-                x if x > config.critical_swap => State::Critical,
-                x if x > config.warning_swap => State::Warning,
-                _ => State::Idle,
-            },
+        widget.state = match mem_used / mem_total * 100. {          
+                x if x > config.critical_mem || x > config.critical_swap => State::Critical,
+                x if x > config.warning_mem || x > config.warning_swap => State::Warning,
+                _ => State::Idle,           
         };
 
         api.set_widget(&widget).await?;
@@ -160,27 +144,22 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                 event = api.event() => match event {
                     UpdateRequest => break,
                     Click(click) => {
-                        if click.button == MouseButton::Left && clickable {
-                            match memtype {
-                                Memtype::Swap => {
-                                    format = &format_mem;
-                                    memtype = Memtype::Memory;
-                                    icon = "memory_mem";
-                                }
-                                Memtype::Memory => {
-                                    format = &format_swap;
-                                    memtype = Memtype::Swap;
-                                    icon = "memory_swap";
-                                }
+                        if click.button == MouseButton::Left {
+                            if let Some(ref mut format_alt) = format_alt {
+                                std::mem::swap(format_alt, &mut format);
+                                widget.set_format(format.clone());
+                                break;
                             }
-                            break;
-                        }
+                        }                               
                     }
+                            
                 }
             }
         }
     }
 }
+    
+
 
 #[derive(Deserialize, Clone, Copy, Debug)]
 #[serde(rename_all = "lowercase")]
