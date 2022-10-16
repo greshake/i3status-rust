@@ -43,7 +43,7 @@
 //! ```toml
 //! [[block]]
 //! block = "memory"
-//! format_mem = " $icon $mem_used_percents.eng(1) "
+//! format = " $icon $mem_used_percents.eng(1) "
 //! format_alt = " $icon $icon $swap_free.eng(3,B,M)/$swap_total.eng(3,B,M)($swap_used_percents.eng(2)) "
 //! interval = 30
 //! warning_mem = 70
