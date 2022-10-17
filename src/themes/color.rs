@@ -25,7 +25,6 @@ impl Rgba {
     /// `b`: blue component (0 to 255).
     ///
     /// `a`: alpha component (0 to 255).
-    #[inline]
     pub fn new(r: u8, g: u8, b: u8, a: u8) -> Self {
         Self { r, g, b, a }
     }
@@ -51,7 +50,7 @@ impl Add for Rgba {
     }
 }
 
-/// An HSV color (hue, saturation, value).
+/// An HSVA color (hue, saturation, value, alpha).
 #[derive(Copy, Clone, Debug, Default)]
 pub struct Hsva {
     pub h: f64,
@@ -70,12 +69,22 @@ impl Hsva {
     /// `v`: value component (0 to 1)
     ///
     /// `a`: alpha component (0 to 255).
-    #[inline]
     pub fn new(h: f64, s: f64, v: f64, a: u8) -> Self {
         Self { h, s, v, a }
     }
+}
 
-    fn from_rgba(rgba: &Rgba) -> Self {
+impl PartialEq for Hsva {
+    fn eq(&self, other: &Self) -> bool {
+        approx(self.h, other.h)
+            && approx(self.s, other.s)
+            && approx(self.v, other.v)
+            && self.a == other.a
+    }
+}
+
+impl From<Rgba> for Hsva {
+    fn from(rgba: Rgba) -> Self {
         let r = rgba.r as f64 / 255.0;
         let g = rgba.g as f64 / 255.0;
         let b = rgba.b as f64 / 255.0;
@@ -105,48 +114,27 @@ impl Hsva {
 
         Self::new(h2, s, v, rgba.a)
     }
+}
 
-    fn to_rgba(self) -> Rgba {
-        let range = (self.h / 60.0) as u8;
-        let c = self.v * self.s;
-        let x = c * (1.0 - (((self.h / 60.0) % 2.0) - 1.0).abs());
-        let m = self.v - c;
+impl From<Hsva> for Rgba {
+    fn from(hsva: Hsva) -> Self {
+        let range = (hsva.h / 60.0) as u8;
+        let c = hsva.v * hsva.s;
+        let x = c * (1.0 - (((hsva.h / 60.0) % 2.0) - 1.0).abs());
+        let m = hsva.v - c;
 
         let cm_scaled = ((c + m) * 255.0) as u8;
         let xm_scaled = ((x + m) * 255.0) as u8;
         let m_scaled = (m * 255.0) as u8;
 
         match range {
-            0 => Rgba::new(cm_scaled, xm_scaled, m_scaled, self.a),
-            1 => Rgba::new(xm_scaled, cm_scaled, m_scaled, self.a),
-            2 => Rgba::new(m_scaled, cm_scaled, xm_scaled, self.a),
-            3 => Rgba::new(m_scaled, xm_scaled, cm_scaled, self.a),
-            4 => Rgba::new(xm_scaled, m_scaled, cm_scaled, self.a),
-            _ => Rgba::new(cm_scaled, m_scaled, xm_scaled, self.a),
+            0 => Self::new(cm_scaled, xm_scaled, m_scaled, hsva.a),
+            1 => Self::new(xm_scaled, cm_scaled, m_scaled, hsva.a),
+            2 => Self::new(m_scaled, cm_scaled, xm_scaled, hsva.a),
+            3 => Self::new(m_scaled, xm_scaled, cm_scaled, hsva.a),
+            4 => Self::new(xm_scaled, m_scaled, cm_scaled, hsva.a),
+            _ => Self::new(cm_scaled, m_scaled, xm_scaled, hsva.a),
         }
-    }
-}
-
-impl PartialEq for Hsva {
-    fn eq(&self, other: &Self) -> bool {
-        approx(self.h, other.h)
-            && approx(self.s, other.s)
-            && approx(self.v, other.v)
-            && self.a == other.a
-    }
-}
-
-impl From<Rgba> for Hsva {
-    #[inline]
-    fn from(color: Rgba) -> Self {
-        Self::from_rgba(&color)
-    }
-}
-
-impl From<Hsva> for Rgba {
-    #[inline]
-    fn from(color: Hsva) -> Self {
-        color.to_rgba()
     }
 }
 
@@ -245,12 +233,8 @@ impl Serialize for Color {
     where
         S: Serializer,
     {
-        let format_rgba = |rgba: Rgba| {
-            format!(
-                "#{:02X}{:02X}{:02X}{:02X}",
-                rgba.r as u8, rgba.g as u8, rgba.b as u8, rgba.a
-            )
-        };
+        let format_rgba =
+            |rgba: Rgba| format!("#{:02X}{:02X}{:02X}{:02X}", rgba.r, rgba.g, rgba.b, rgba.a);
         match *self {
             Self::None | Self::Auto => serializer.serialize_none(),
             Self::Rgba(rgba) => serializer.serialize_str(&format_rgba(rgba)),
