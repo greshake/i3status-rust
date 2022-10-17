@@ -60,7 +60,6 @@ use tokio::io::{AsyncBufReadExt, BufReader};
 
 use super::prelude::*;
 use crate::util::read_file;
-use crate::widget;
 
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
