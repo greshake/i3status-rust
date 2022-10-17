@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":[["Memtype",""]],"fn":[["run",""]],"struct":[["MemoryConfig",""],["Memstate",""]]};
+window.SIDEBAR_ITEMS = {"fn":[["run",""]],"struct":[["MemoryConfig",""],["Memstate",""]]};
