@@ -1,5 +1,4 @@
 use crate::errors::*;
-use color_space::{Hsv, Rgb};
 use serde::de::{self, Deserializer, Visitor};
 use serde::{Deserialize, Serialize, Serializer};
 use smart_default::SmartDefault;
@@ -7,13 +6,184 @@ use std::fmt;
 use std::ops::Add;
 use std::str::FromStr;
 
+/// An RGBA color (red, green, blue, alpha).
+#[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
+pub struct Rgba {
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
+    pub a: u8,
+}
+
+impl Rgba {
+    /// Create a new RGBA color.
+    ///
+    /// `r`: red component (0 to 255).
+    ///
+    /// `g`: green component (0 to 255).
+    ///
+    /// `b`: blue component (0 to 255).
+    ///
+    /// `a`: alpha component (0 to 255).
+    #[inline]
+    pub fn new(r: u8, g: u8, b: u8, a: u8) -> Self {
+        Self { r, g, b, a }
+    }
+
+    /// Create a new RGBA color from the `hex` value.
+    ///
+    /// ```let cyan = Rgba::from_hex(0xffffff);```
+    pub fn from_hex(hex: u32) -> Self {
+        let [r, g, b, a] = hex.to_be_bytes();
+        Self { r, g, b, a }
+    }
+}
+
+impl Add for Rgba {
+    type Output = Self;
+    fn add(self, rhs: Self) -> Self::Output {
+        Rgba::new(
+            self.r.saturating_add(rhs.r),
+            self.g.saturating_add(rhs.g),
+            self.b.saturating_add(rhs.b),
+            self.a.saturating_add(rhs.a),
+        )
+    }
+}
+
+/// An HSV color (hue, saturation, value).
+#[derive(Copy, Clone, Debug, Default)]
+pub struct Hsva {
+    pub h: f64,
+    pub s: f64,
+    pub v: f64,
+    pub a: u8,
+}
+
+impl Hsva {
+    /// Create a new HSVA color.
+    ///
+    /// `h`: hue component (0 to 360)
+    ///
+    /// `s`: saturation component (0 to 1)
+    ///
+    /// `v`: value component (0 to 1)
+    ///
+    /// `a`: alpha component (0 to 255).
+    #[inline]
+    pub fn new(h: f64, s: f64, v: f64, a: u8) -> Self {
+        Self { h, s, v, a }
+    }
+
+    fn from_rgba(rgba: &Rgba) -> Self {
+        let r = rgba.r as f64 / 255.0;
+        let g = rgba.g as f64 / 255.0;
+        let b = rgba.b as f64 / 255.0;
+
+        let min = r.min(g.min(b));
+        let max = r.max(g.max(b));
+        let delta = max - min;
+
+        let v = max;
+        let s = match max > 1e-3 {
+            true => delta / max,
+            false => 0.0,
+        };
+        let h = match delta == 0.0 {
+            true => 0.0,
+            false => {
+                if r == max {
+                    (g - b) / delta
+                } else if g == max {
+                    2.0 + (b - r) / delta
+                } else {
+                    4.0 + (r - g) / delta
+                }
+            }
+        };
+        let h2 = ((h * 60.0) + 360.0) % 360.0;
+
+        Self::new(h2, s, v, rgba.a)
+    }
+
+    fn to_rgba(self) -> Rgba {
+        let range = (self.h / 60.0) as u8;
+        let c = self.v * self.s;
+        let x = c * (1.0 - (((self.h / 60.0) % 2.0) - 1.0).abs());
+        let m = self.v - c;
+
+        let cm_scaled = ((c + m) * 255.0) as u8;
+        let xm_scaled = ((x + m) * 255.0) as u8;
+        let m_scaled = (m * 255.0) as u8;
+
+        match range {
+            0 => Rgba::new(cm_scaled, xm_scaled, m_scaled, self.a),
+            1 => Rgba::new(xm_scaled, cm_scaled, m_scaled, self.a),
+            2 => Rgba::new(m_scaled, cm_scaled, xm_scaled, self.a),
+            3 => Rgba::new(m_scaled, xm_scaled, cm_scaled, self.a),
+            4 => Rgba::new(xm_scaled, m_scaled, cm_scaled, self.a),
+            _ => Rgba::new(cm_scaled, m_scaled, xm_scaled, self.a),
+        }
+    }
+}
+
+impl PartialEq for Hsva {
+    fn eq(&self, other: &Self) -> bool {
+        approx(self.h, other.h)
+            && approx(self.s, other.s)
+            && approx(self.v, other.v)
+            && self.a == other.a
+    }
+}
+
+impl From<Rgba> for Hsva {
+    #[inline]
+    fn from(color: Rgba) -> Self {
+        Self::from_rgba(&color)
+    }
+}
+
+impl From<Hsva> for Rgba {
+    #[inline]
+    fn from(color: Hsva) -> Self {
+        color.to_rgba()
+    }
+}
+
+impl Add for Hsva {
+    type Output = Self;
+    fn add(self, rhs: Self) -> Self::Output {
+        Hsva::new(
+            (self.h + rhs.h) % 360.,
+            (self.s + rhs.s).clamp(0., 1.),
+            (self.v + rhs.v).clamp(0., 1.),
+            self.a.saturating_add(rhs.a),
+        )
+    }
+}
+
+pub fn approx(a: f64, b: f64) -> bool {
+    if a == b {
+        return true;
+    }
+    let eps = 1e-2;
+    let abs_a = a.abs();
+    let abs_b = b.abs();
+    let diff = (abs_a - abs_b).abs();
+    if a == 0.0 || b == 0.0 || abs_a + abs_b < std::f64::EPSILON {
+        diff < eps * std::f64::EPSILON
+    } else {
+        diff / (abs_a + abs_b).min(std::f64::MAX) < eps
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, SmartDefault)]
 pub enum Color {
     #[default]
     None,
     Auto,
-    Rgba(Rgb, u8),
-    Hsva(Hsv, u8),
+    Rgba(Rgba),
+    Hsva(Hsva),
 }
 
 impl Color {
@@ -25,35 +195,17 @@ impl Color {
 impl Add for Color {
     type Output = Color;
     fn add(self, rhs: Self) -> Self::Output {
-        let add_hsv = |a: Hsv, b: Hsv| {
-            Hsv::new(
-                (a.h + b.h) % 360.,
-                (a.s + b.s).clamp(0., 1.),
-                (a.v + b.v).clamp(0., 1.),
-            )
-        };
-
         match (self, rhs) {
             // Do nothing
             (x, Self::None | Self::Auto) | (Self::None | Self::Auto, x) => x,
-            // Hsv + Hsv => Hsv
-            (Color::Hsva(hsv1, a1), Color::Hsva(hsv2, a2)) => {
-                Color::Hsva(add_hsv(hsv1, hsv2), a1.saturating_add(a2))
-            }
-            // Rgb + Rgb => Rgb
-            (Color::Rgba(rgb1, a1), Color::Rgba(rgb2, a2)) => Color::Rgba(
-                Rgb::new(
-                    (rgb1.r + rgb2.r).clamp(0., 255.),
-                    (rgb1.g + rgb2.g).clamp(0., 255.),
-                    (rgb1.b + rgb2.b).clamp(0., 255.),
-                ),
-                a1.saturating_add(a2),
-            ),
-            // Hsv + Rgb => Hsv
-            // Rgb + Hsv => Hsv
-            (Color::Hsva(hsv, a1), Color::Rgba(rgb, a2))
-            | (Color::Rgba(rgb, a1), Color::Hsva(hsv, a2)) => {
-                Color::Hsva(add_hsv(hsv, rgb.into()), a1.saturating_add(a2))
+            // Hsva + Hsva => Hsva
+            (Color::Hsva(hsva1), Color::Hsva(hsva2)) => Color::Hsva(hsva1 + hsva2),
+            // Rgba + Rgba => Rgba
+            (Color::Rgba(rgba1), Color::Rgba(rgba2)) => Color::Rgba(rgba1 + rgba2),
+            // Hsva + Rgba => Hsva
+            // Rgba + Hsva => Hsva
+            (Color::Hsva(hsva), Color::Rgba(rgba)) | (Color::Rgba(rgba), Color::Hsva(hsva)) => {
+                Color::Hsva(hsva + rgba.into())
             }
         }
     }
@@ -75,15 +227,15 @@ impl FromStr for Color {
             let s = components.next().or_error(err_msg)??;
             let v = components.next().or_error(err_msg)??;
             let a = components.next().unwrap_or(Ok(100.))?;
-            Color::Hsva(Hsv::new(h, s / 100., v / 100.), (a / 100. * 255.) as u8)
+            Color::Hsva(Hsva::new(h, s / 100., v / 100., (a / 100. * 255.) as u8))
         } else {
             let err_msg = || format!("'{}' is not a vaild RGBA color", color);
             let rgb = color.get(1..7).or_error(err_msg)?;
             let a = color.get(7..9).unwrap_or("FF");
-            Color::Rgba(
-                Rgb::from_hex(u32::from_str_radix(rgb, 16).or_error(err_msg)?),
-                u8::from_str_radix(a, 16).or_error(err_msg)?,
-            )
+            Color::Rgba(Rgba::from_hex(
+                (u32::from_str_radix(rgb, 16).or_error(err_msg)? << 8)
+                    + u32::from_str_radix(a, 16).or_error(err_msg)?,
+            ))
         })
     }
 }
@@ -93,16 +245,16 @@ impl Serialize for Color {
     where
         S: Serializer,
     {
-        let format_rgb = |rgb: Rgb, a: u8| {
+        let format_rgba = |rgba: Rgba| {
             format!(
                 "#{:02X}{:02X}{:02X}{:02X}",
-                rgb.r as u8, rgb.g as u8, rgb.b as u8, a
+                rgba.r as u8, rgba.g as u8, rgba.b as u8, rgba.a
             )
         };
         match *self {
             Self::None | Self::Auto => serializer.serialize_none(),
-            Self::Rgba(rgb, a) => serializer.serialize_str(&format_rgb(rgb, a)),
-            Self::Hsva(hsv, a) => serializer.serialize_str(&format_rgb(hsv.into(), a)),
+            Self::Rgba(rgba) => serializer.serialize_str(&format_rgba(rgba)),
+            Self::Hsva(hsva) => serializer.serialize_str(&format_rgba(hsva.into())),
         }
     }
 }
