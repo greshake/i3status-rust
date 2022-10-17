@@ -66,16 +66,6 @@ impl Prefix {
         }
     }
 
-    pub fn clamp(self, min: Self, max: Self) -> Self {
-        if self < min {
-            min
-        } else if self > max {
-            max
-        } else {
-            self
-        }
-    }
-
     pub fn apply(self, value: f64) -> f64 {
         value / MUL[self as usize]
     }

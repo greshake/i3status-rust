@@ -59,7 +59,9 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut widget = Widget::new().with_format(config.format.with_default(" $icon $status ")?);
 
     for inbox in &mut config.inboxes {
-        *inbox = shellexpand::full(inbox).error("Failed to expand string")?.to_string();
+        *inbox = shellexpand::full(inbox)
+            .error("Failed to expand string")?
+            .to_string();
     }
 
     loop {
