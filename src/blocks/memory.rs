@@ -42,7 +42,7 @@
 //! [[block]]
 //! block = "memory"
 //! format = " $icon $mem_used_percents.eng(1) "
-//! format_alt = " $icon $icon $swap_free.eng(3,B,M)/$swap_total.eng(3,B,M)($swap_used_percents.eng(2)) "
+//! format_alt = " $icon_swap $swap_free.eng(3,B,M)/$swap_total.eng(3,B,M)($swap_used_percents.eng(2)) "
 //! interval = 30
 //! warning_mem = 70
 //! critical_mem = 90
