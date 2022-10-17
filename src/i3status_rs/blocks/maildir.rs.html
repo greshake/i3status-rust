@@ -101,6 +101,8 @@
 <span id="101">101</span>
 <span id="102">102</span>
 <span id="103">103</span>
+<span id="104">104</span>
+<span id="105">105</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Unread mail. Only supports maildir format.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! Note that you need to enable `maildir` feature to use this block:</span>
@@ -162,7 +164,9 @@
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">Widget::new</span>().<span class="ident">with_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon $status &quot;</span>)<span class="question-mark">?</span>);
 
     <span class="kw">for</span> <span class="ident">inbox</span> <span class="kw">in</span> <span class="kw-2">&amp;mut</span> <span class="ident">config</span>.<span class="ident">inboxes</span> {
-        <span class="kw-2">*</span><span class="ident">inbox</span> <span class="op">=</span> <span class="ident">shellexpand::full</span>(<span class="ident">inbox</span>).<span class="ident">error</span>(<span class="string">&quot;Failed to expand string&quot;</span>)<span class="question-mark">?</span>.<span class="ident">to_string</span>();
+        <span class="kw-2">*</span><span class="ident">inbox</span> <span class="op">=</span> <span class="ident">shellexpand::full</span>(<span class="ident">inbox</span>)
+            .<span class="ident">error</span>(<span class="string">&quot;Failed to expand string&quot;</span>)<span class="question-mark">?</span>
+            .<span class="ident">to_string</span>();
     }
 
     <span class="kw">loop</span> {

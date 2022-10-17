@@ -184,7 +184,6 @@
 <span id="184">184</span>
 <span id="185">185</span>
 <span id="186">186</span>
-<span id="187">187</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Disk usage statistics</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! # Configuration</span>
@@ -296,11 +295,10 @@
     <span class="kw">loop</span> {
         <span class="kw">let</span> <span class="ident">statvfs</span> <span class="op">=</span> <span class="ident">statvfs</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">path</span>).<span class="ident">error</span>(<span class="string">&quot;failed to retrieve statvfs&quot;</span>)<span class="question-mark">?</span>;
 
-        <span class="kw">let</span> <span class="ident">total</span> <span class="op">=</span> (<span class="ident">statvfs</span>.<span class="ident">blocks</span>() <span class="kw">as</span> <span class="ident">u64</span>) <span class="op">*</span> (<span class="ident">statvfs</span>.<span class="ident">fragment_size</span>() <span class="kw">as</span> <span class="ident">u64</span>);
-        <span class="kw">let</span> <span class="ident">used</span> <span class="op">=</span> ((<span class="ident">statvfs</span>.<span class="ident">blocks</span>() <span class="kw">as</span> <span class="ident">u64</span>) <span class="op">-</span> (<span class="ident">statvfs</span>.<span class="ident">blocks_free</span>() <span class="kw">as</span> <span class="ident">u64</span>))
-            <span class="op">*</span> (<span class="ident">statvfs</span>.<span class="ident">fragment_size</span>() <span class="kw">as</span> <span class="ident">u64</span>);
-        <span class="kw">let</span> <span class="ident">available</span> <span class="op">=</span> (<span class="ident">statvfs</span>.<span class="ident">blocks_available</span>() <span class="kw">as</span> <span class="ident">u64</span>) <span class="op">*</span> (<span class="ident">statvfs</span>.<span class="ident">block_size</span>() <span class="kw">as</span> <span class="ident">u64</span>);
-        <span class="kw">let</span> <span class="ident">free</span> <span class="op">=</span> (<span class="ident">statvfs</span>.<span class="ident">blocks_free</span>() <span class="kw">as</span> <span class="ident">u64</span>) <span class="op">*</span> (<span class="ident">statvfs</span>.<span class="ident">block_size</span>() <span class="kw">as</span> <span class="ident">u64</span>);
+        <span class="kw">let</span> <span class="ident">total</span> <span class="op">=</span> <span class="ident">statvfs</span>.<span class="ident">blocks</span>() <span class="op">*</span> <span class="ident">statvfs</span>.<span class="ident">fragment_size</span>();
+        <span class="kw">let</span> <span class="ident">used</span> <span class="op">=</span> (<span class="ident">statvfs</span>.<span class="ident">blocks</span>() <span class="op">-</span> <span class="ident">statvfs</span>.<span class="ident">blocks_free</span>()) <span class="op">*</span> <span class="ident">statvfs</span>.<span class="ident">fragment_size</span>();
+        <span class="kw">let</span> <span class="ident">available</span> <span class="op">=</span> <span class="ident">statvfs</span>.<span class="ident">blocks_available</span>() <span class="op">*</span> <span class="ident">statvfs</span>.<span class="ident">block_size</span>();
+        <span class="kw">let</span> <span class="ident">free</span> <span class="op">=</span> <span class="ident">statvfs</span>.<span class="ident">blocks_free</span>() <span class="op">*</span> <span class="ident">statvfs</span>.<span class="ident">block_size</span>();
 
         <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">info_type</span> {
             <span class="ident">InfoType::Available</span> =&gt; <span class="ident">available</span>,
