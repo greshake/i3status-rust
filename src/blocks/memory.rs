@@ -1,7 +1,5 @@
 //! Memory and swap usage
 //!
-//! This module keeps track of both Swap and Memory. By default, a click switches between them.
-//!
 //! # Configuration
 //!
 //! Key | Values | Default
@@ -16,7 +14,8 @@
 //!
 //! Placeholder               | Value                                                                         | Type   | Unit
 //! --------------------------|-------------------------------------------------------------------------------|--------|-------
-//! `icon`                    | Icon based on displayed type of memory                                        | Icon   | -
+//! `icon`                    | Memory icon                                                                   | Icon   | -
+//! `icon_swap`               | Swap icon                                                                     | Icon   | -
 //! `mem_total`               | Memory total                                                                  | Number | Bytes
 //! `mem_free`                | Memory free                                                                   | Number | Bytes
 //! `mem_free_percents`       | Memory free                                                                   | Number | Percents
