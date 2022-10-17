@@ -60,6 +60,7 @@ use tokio::io::{AsyncBufReadExt, BufReader};
 
 use super::prelude::*;
 use crate::util::read_file;
+use crate::widget;
 
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
@@ -86,10 +87,11 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         " $icon $mem_free.eng(3,B,M)/$mem_total.eng(3,B,M)($mem_total_used_percents.eng(2)) ",
     )?;
     let mut format_alt = match config.format_alt {
-        Some(f) => Some(f.with_default(" $icon $swap_free.eng(3,B,M)/$swap_total.eng(3,B,M)($swap_used_percents.eng(2)) ")?),
+        Some(f) => Some(f.with_default(
+            " $icon $swap_free.eng(3,B,M)/$swap_total.eng(3,B,M)($swap_used_percents.eng(2)) ",
+        )?),
         None => None,
     };
-    
 
     let mut timer = config.interval.timer();
 
@@ -130,11 +132,25 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             "cached_percent" => Value::percents(cached / mem_total * 100.)
         });
 
-        widget.state = match mem_used / mem_total * 100. {          
-                x if x > config.critical_mem || x > config.critical_swap => State::Critical,
-                x if x > config.warning_mem || x > config.warning_swap => State::Warning,
-                _ => State::Idle,           
+        let mem_state = match mem_used / mem_total * 100. {
+            x if x > config.critical_mem => State::Critical,
+            x if x > config.warning_mem => State::Warning,
+            _ => State::Idle,
         };
+
+        let swap_state = match swap_used / swap_total * 100. {
+            x if x > config.critical_swap => State::Critical,
+            x if x > config.warning_swap => State::Warning,
+            _ => State::Idle,
+        };
+
+        if mem_state == State::Critical || swap_state == State::Critical {
+            widget.state = State::Critical;
+        } else if mem_state == State::Warning || swap_state == State::Warning {
+            widget.state = State::Warning;
+        } else {
+            widget.state = State::Idle;
+        }
 
         api.set_widget(&widget).await?;
 
@@ -150,22 +166,13 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
                                 widget.set_format(format.clone());
                                 break;
                             }
-                        }                               
+                        }
                     }
-                            
+
                 }
             }
         }
     }
-}
-    
-
-
-#[derive(Deserialize, Clone, Copy, Debug)]
-#[serde(rename_all = "lowercase")]
-pub enum Memtype {
-    Swap,
-    Memory,
 }
 
 #[derive(Clone, Copy, Debug, Default)]
