@@ -6,10 +6,8 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format_mem` | A string to customise the output of this block when in "Memory" view. See below for available placeholders. | `" $icon $mem_free.eng(3,B,M)/$mem_total.eng(3,B,M)($mem_total_used_percents.eng(2)) "`
-//! `format_swap` | A string to customise the output of this block when in "Swap" view. See below for available placeholders. | `" $icon $swap_free.eng(3,B,M)/$swap_total.eng(3,B,M)($swap_used_percents.eng(2)) "`
-//! `display_type` | Default view displayed on startup: "`memory`" or "`swap`" | `"memory"`
-//! `clickable` | Whether the view should switch between memory and swap on click | `true`
+//! `format` | A string to customise the output of this block when in "Memory" view. See below for available placeholders. | `" $icon $mem_free.eng(3,B,M)/$mem_total.eng(3,B,M)($mem_total_used_percents.eng(2)) "`
+//! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
 //! `interval` | Update interval in seconds | `5`
 //! `warning_mem` | Percentage of memory usage, where state is set to warning | `80.0`
 //! `warning_swap` | Percentage of swap usage, where state is set to warning | `80.0`
@@ -86,9 +84,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         " $icon $mem_free.eng(3,B,M)/$mem_total.eng(3,B,M)($mem_total_used_percents.eng(2)) ",
     )?;
     let mut format_alt = match config.format_alt {
-        Some(f) => Some(f.with_default(
-            " $icon $swap_free.eng(3,B,M)/$swap_total.eng(3,B,M)($swap_used_percents.eng(2)) ",
-        )?),
+        Some(f) => Some(f.with_default("")?),
         None => None,
     };
 
@@ -111,6 +107,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         widget.set_format(format.clone());
         widget.set_values(map! {
             "icon" => Value::icon(api.get_icon("memory_mem")?),
+            "icon_swap" => Value::icon(api.get_icon("memory_swap")?),
             "mem_total" => Value::bytes(mem_total),
             "mem_free" => Value::bytes(mem_free),
             "mem_free_percents" => Value::percents(mem_free / mem_total * 100.),
