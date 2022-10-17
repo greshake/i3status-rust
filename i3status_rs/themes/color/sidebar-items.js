@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":[["Color",""]]};
+window.SIDEBAR_ITEMS = {"enum":[["Color",""]],"fn":[["approx",""]],"struct":[["Hsva","An HSV color (hue, saturation, value)."],["Rgba","An RGBA color (red, green, blue, alpha)."]]};
