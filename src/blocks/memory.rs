@@ -143,13 +143,13 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
             _ => State::Idle,
         };
 
-        if mem_state == State::Critical || swap_state == State::Critical {
-            widget.state = State::Critical;
+        widget.state = if mem_state == State::Critical || swap_state == State::Critical {
+            State::Critical
         } else if mem_state == State::Warning || swap_state == State::Warning {
-            widget.state = State::Warning;
+            State::Warning
         } else {
-            widget.state = State::Idle;
-        }
+            State::Idle
+        };
 
         api.set_widget(&widget).await?;
 
