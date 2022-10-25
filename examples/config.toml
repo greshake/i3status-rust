@@ -29,9 +29,8 @@ format = " $icon root: $available.eng(2) "
 
 [[block]]
 block = "memory"
-display_type = "memory"
-format_mem = " $icon $mem_total_used_percents.eng(2) "
-format_swap = " $icon $swap_used_percents.eng(2) "
+format = " $icon $mem_total_used_percents.eng(2) "
+format_alt = " $icon_swap $swap_used_percents.eng(2) "
 
 [[block]]
 block = "sound"
