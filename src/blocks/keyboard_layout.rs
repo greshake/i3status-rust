@@ -85,8 +85,8 @@ use tokio::process::Command;
 use zbus::dbus_proxy;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default, deny_unknown_fields)]
-struct KeyboardLayoutConfig {
+#[serde(default)]
+pub struct Config {
     format: FormatConfig,
     driver: KeyboardLayoutDriver,
     #[default(60.into())]
@@ -105,8 +105,7 @@ enum KeyboardLayoutDriver {
     Sway,
 }
 
-pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let config = KeyboardLayoutConfig::deserialize(config).config_error()?;
+pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut widget = Widget::new().with_format(config.format.with_default(" $layout ")?);
 
     let mut backend: Box<dyn Backend> = match config.driver {

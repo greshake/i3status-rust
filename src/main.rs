@@ -34,10 +34,10 @@ use std::time::Duration;
 use tokio::process::Command;
 use tokio::sync::mpsc;
 
-use blocks::{BlockEvent, BlockFuture, BlockType, CommonApi, CommonConfig};
+use blocks::{BlockEvent, BlockFuture, CommonApi};
 use click::ClickHandler;
-use config::Config;
 use config::SharedConfig;
+use config::{BlockConfigEntry, Config};
 use errors::*;
 use escape::CollectEscaped;
 use formatting::{scheduling, Format};
@@ -196,7 +196,7 @@ pub enum RequestCmd {
 struct BarState {
     config: Config,
 
-    blocks: Vec<(Block, BlockType)>,
+    blocks: Vec<(Block, &'static str)>,
     fullscreen_block: Option<usize>,
     running_blocks: FuturesUnordered<BlockFuture>,
 
@@ -237,9 +237,8 @@ impl BarState {
         }
     }
 
-    async fn spawn_block(&mut self, mut block_config: toml::Value) -> Result<()> {
-        let common_config = CommonConfig::new(&mut block_config)?;
-        if let Some(cmd) = &common_config.if_command {
+    async fn spawn_block(&mut self, block_config: BlockConfigEntry) -> Result<()> {
+        if let Some(cmd) = &block_config.common.if_command {
             if !Command::new("sh")
                 .args(["-c", cmd])
                 .output()
@@ -252,17 +251,16 @@ impl BarState {
             }
         }
 
-        let block_type = common_config.block;
         let mut shared_config = self.config.shared.clone();
 
         // Overrides
-        if let Some(icons_format) = common_config.icons_format {
+        if let Some(icons_format) = block_config.common.icons_format {
             shared_config.icons_format = Arc::new(icons_format);
         }
-        if let Some(theme_overrides) = common_config.theme_overrides {
+        if let Some(theme_overrides) = block_config.common.theme_overrides {
             Arc::make_mut(&mut shared_config.theme).apply_overrides(theme_overrides)?;
         }
-        if let Some(icons_overrides) = common_config.icons_overrides {
+        if let Some(icons_overrides) = block_config.common.icons_overrides {
             Arc::make_mut(&mut shared_config.icons).apply_overrides(icons_overrides);
         }
 
@@ -275,17 +273,20 @@ impl BarState {
 
             request_sender: self.request_sender.clone(),
 
-            error_interval: Duration::from_secs(common_config.error_interval),
+            error_interval: Duration::from_secs(block_config.common.error_interval),
         };
 
-        let error_format = common_config
+        let error_format = block_config
+            .common
             .error_format
             .with_default(&self.config.error_format)?;
-        let error_fullscreen_format = common_config
+        let error_fullscreen_format = block_config
+            .common
             .error_fullscreen_format
             .with_default(&self.config.error_fullscreen_format)?;
 
-        let (block_fut, abort_handle) = abortable(block_type.run(block_config, api));
+        let block_name = block_config.config.name();
+        let (block_fut, abort_handle) = abortable(block_config.config.run(api));
 
         let block = Block {
             id: self.blocks.len(),
@@ -294,8 +295,8 @@ impl BarState {
             widget_updates_sender: self.widget_updates_sender.clone(),
             abort_handle,
 
-            click_handler: common_config.click,
-            signal: common_config.signal,
+            click_handler: block_config.common.click,
+            signal: block_config.common.signal,
             shared_config,
 
             error_format,
@@ -309,7 +310,7 @@ impl BarState {
                 Ok(res) => res,
                 Err(_aborted) => Ok(()),
             })));
-        self.blocks.push((block, block_type));
+        self.blocks.push((block, block_name));
         self.blocks_render_cache.push(Vec::new());
         Ok(())
     }
@@ -346,7 +347,7 @@ impl BarState {
             BlockState::Normal { widget } | BlockState::Error { widget, .. } => {
                 *data = widget
                     .get_data(&block.shared_config)
-                    .in_block(*block_type, id)?;
+                    .in_block(block_type, id)?;
             }
         }
         Ok(())
@@ -388,7 +389,7 @@ impl BarState {
                 match &mut block.state {
                     BlockState::None => (),
                     BlockState::Normal { .. } => {
-                        let post_actions = block.click_handler.handle(event.button).await.in_block(*block_type, event.id)?;
+                        let post_actions = block.click_handler.handle(event.button).await.in_block(block_type, event.id)?;
                         if let Some(sender) = &block.event_sender {
                             if post_actions.pass {
                                 let _ = sender.send(BlockEvent::Click(event)).await;

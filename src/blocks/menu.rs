@@ -35,8 +35,7 @@ use super::prelude::*;
 use crate::subprocess::spawn_shell;
 
 #[derive(Deserialize, Debug)]
-#[serde(deny_unknown_fields)]
-struct Config {
+pub struct Config {
     text: String,
     items: Vec<Item>,
 }
@@ -104,9 +103,7 @@ impl Block {
     }
 }
 
-pub async fn run(config: toml::Value, api: CommonApi) -> Result<()> {
-    let config = Config::deserialize(config).config_error()?;
-
+pub async fn run(config: Config, api: CommonApi) -> Result<()> {
     let mut block = Block {
         widget: Widget::new(),
         api,

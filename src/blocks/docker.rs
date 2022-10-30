@@ -35,8 +35,8 @@ use std::path::Path;
 use tokio::net::UnixStream;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-struct DockerConfig {
+#[serde(default)]
+pub struct Config {
     #[default(5.into())]
     interval: Seconds,
     format: FormatConfig,
@@ -44,8 +44,7 @@ struct DockerConfig {
     socket_path: ShellString,
 }
 
-pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let config = DockerConfig::deserialize(config).config_error()?;
+pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut widget =
         Widget::new().with_format(config.format.with_default(" $icon $running.eng(1) ")?);
     let socket_path = config.socket_path.expand()?;

@@ -43,8 +43,8 @@
 use super::prelude::*;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-struct NotmuchConfig {
+#[serde(default)]
+pub struct Config {
     format: FormatConfig,
     #[default(10.into())]
     interval: Seconds,
@@ -61,8 +61,7 @@ struct NotmuchConfig {
     threshold_good: u32,
 }
 
-pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let config = NotmuchConfig::deserialize(config).config_error()?;
+pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut widget = Widget::new().with_format(config.format.with_default(" $icon $count ")?);
 
     let db = config.maildir.expand()?;

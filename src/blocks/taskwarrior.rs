@@ -50,8 +50,8 @@ use inotify::{Inotify, WatchMask};
 use tokio::process::Command;
 
 #[derive(Deserialize, Debug)]
-#[serde(deny_unknown_fields, default)]
-struct TaskwarriorConfig {
+#[serde(default)]
+pub struct Config {
     interval: Seconds,
     warning_threshold: u32,
     critical_threshold: u32,
@@ -61,7 +61,7 @@ struct TaskwarriorConfig {
     data_location: ShellString,
 }
 
-impl Default for TaskwarriorConfig {
+impl Default for Config {
     fn default() -> Self {
         Self {
             interval: Seconds::new(600),
@@ -78,8 +78,7 @@ impl Default for TaskwarriorConfig {
     }
 }
 
-pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let config = TaskwarriorConfig::deserialize(config).config_error()?;
+pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut widget =
         Widget::new().with_format(config.format.with_default(" $icon $done|$count.eng(1) ")?);
 

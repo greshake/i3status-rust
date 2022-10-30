@@ -40,8 +40,8 @@ use regex::RegexSet;
 use tokio::process::Command;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-struct XrandrConfig {
+#[serde(default)]
+pub struct Config {
     #[default(5.into())]
     interval: Seconds,
     format: FormatConfig,
@@ -49,8 +49,7 @@ struct XrandrConfig {
     step_width: u32,
 }
 
-pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let config = XrandrConfig::deserialize(config).config_error()?;
+pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut widget = Widget::new().with_format(
         config
             .format

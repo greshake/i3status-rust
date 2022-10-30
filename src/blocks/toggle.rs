@@ -49,8 +49,7 @@ use std::env;
 use tokio::process::Command;
 
 #[derive(Deserialize, Debug)]
-#[serde(deny_unknown_fields)]
-pub struct ToggleConfig {
+pub struct Config {
     format: FormatConfig,
     command_on: String,
     command_off: String,
@@ -63,8 +62,7 @@ pub struct ToggleConfig {
     interval: Option<u64>,
 }
 
-pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let config = ToggleConfig::deserialize(config).config_error()?;
+pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let interval = config.interval.map(Duration::from_secs);
     let mut widget = Widget::new().with_format(config.format.with_default(" $icon ")?);
 

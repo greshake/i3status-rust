@@ -49,8 +49,7 @@ use zbus::fdo::{ObjectManagerProxy, PropertiesProxy};
 make_log_macro!(debug, "bluetooth");
 
 #[derive(Deserialize, Debug)]
-#[serde(deny_unknown_fields)]
-struct BluetoothConfig {
+pub struct Config {
     mac: String,
     #[serde(default)]
     adapter_mac: Option<String>,
@@ -60,8 +59,7 @@ struct BluetoothConfig {
     disconnected_format: FormatConfig,
 }
 
-pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let config = BluetoothConfig::deserialize(config).config_error()?;
+pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let format = config.format.with_default(" $icon $name{ $percentage|} ")?;
     let disconnected_format = config
         .disconnected_format

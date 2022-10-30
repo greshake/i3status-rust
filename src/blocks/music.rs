@@ -95,8 +95,8 @@ const NEXT_BTN: usize = 2;
 const PREV_BTN: usize = 3;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-struct MusicConfig {
+#[serde(default)]
+pub struct Config {
     format: FormatConfig,
     player: PlayerName,
     interface_name_exclude: Vec<String>,
@@ -129,8 +129,7 @@ struct OwnerChange {
     pub new_owner: Optional<String>,
 }
 
-pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let config = MusicConfig::deserialize(config).config_error()?;
+pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let dbus_conn = new_dbus_connection().await?;
     let mut widget = Widget::new().with_format(
         config

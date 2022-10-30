@@ -44,8 +44,8 @@ use regex::Regex;
 use tokio::process::Command;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-struct DnfConfig {
+#[serde(default)]
+pub struct Config {
     #[default(600.into())]
     interval: Seconds,
     format: FormatConfig,
@@ -55,8 +55,7 @@ struct DnfConfig {
     critical_updates_regex: Option<String>,
 }
 
-pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let config = DnfConfig::deserialize(config).config_error()?;
+pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut widget = Widget::new();
 
     let format = config.format.with_default(" $icon $count.eng(1) ")?;

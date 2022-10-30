@@ -62,8 +62,8 @@ use crate::subprocess::{spawn_shell, spawn_shell_sync};
 use std::time::Instant;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-struct PomodoroConfig {
+#[serde(default)]
+pub struct Config {
     format: FormatConfig,
     #[default("Pomodoro over! Take a break!".into())]
     message: String,
@@ -76,7 +76,7 @@ struct PomodoroConfig {
 struct Block {
     widget: Widget,
     api: CommonApi,
-    block_config: PomodoroConfig,
+    block_config: Config,
 }
 
 impl Block {
@@ -228,8 +228,7 @@ impl Block {
     }
 }
 
-pub async fn run(block_config: toml::Value, api: CommonApi) -> Result<()> {
-    let block_config = PomodoroConfig::deserialize(block_config).config_error()?;
+pub async fn run(block_config: Config, api: CommonApi) -> Result<()> {
     let format = FormatConfig::default().with_default(" $icon{ $message|} ")?;
     let widget = Widget::new().with_format(format);
 

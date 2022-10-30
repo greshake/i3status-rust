@@ -36,8 +36,8 @@ use super::prelude::*;
 use crate::formatting::config::DummyConfig;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-struct TimeConfig {
+#[serde(default)]
+pub struct Config {
     format: DummyConfig,
     #[default(1.into())]
     interval: Seconds,
@@ -45,8 +45,7 @@ struct TimeConfig {
     locale: Option<String>,
 }
 
-pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let config = TimeConfig::deserialize(config).config_error()?;
+pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut widget = Widget::new();
 
     let format = config

@@ -65,8 +65,8 @@ pub enum InfoType {
 }
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-struct DiskSpaceConfig {
+#[serde(default)]
+pub struct Config {
     #[default("/".into())]
     path: ShellString,
     info_type: InfoType,
@@ -81,9 +81,7 @@ struct DiskSpaceConfig {
     alert: f64,
 }
 
-pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let config = DiskSpaceConfig::deserialize(config).config_error()?;
-
+pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut format = config.format.with_default(" $icon $available ")?;
     let mut format_alt = match config.format_alt {
         Some(f) => Some(f.with_default("")?),

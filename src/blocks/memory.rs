@@ -59,8 +59,8 @@ use super::prelude::*;
 use crate::util::read_file;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-struct MemoryConfig {
+#[serde(default)]
+pub struct Config {
     format: FormatConfig,
     format_alt: Option<FormatConfig>,
     #[default(5.into())]
@@ -75,8 +75,7 @@ struct MemoryConfig {
     critical_swap: f64,
 }
 
-pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let config = MemoryConfig::deserialize(config).config_error()?;
+pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut widget = Widget::new();
 
     let mut format = config.format.with_default(

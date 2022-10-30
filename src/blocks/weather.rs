@@ -99,9 +99,8 @@ mod open_weather_map;
 
 const IP_API_URL: &str = "https://ipapi.co/json";
 
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct WeatherConfig {
+#[derive(Deserialize, Debug)]
+pub struct Config {
     #[serde(default = "default_interval")]
     interval: Seconds,
     #[serde(default)]
@@ -122,7 +121,7 @@ trait WeatherProvider {
         -> Result<WeatherResult>;
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[serde(tag = "name", rename_all = "lowercase")]
 enum WeatherService {
     OpenWeatherMap(open_weather_map::Config),
@@ -181,8 +180,7 @@ impl WeatherResult {
     }
 }
 
-pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let config = WeatherConfig::deserialize(config).config_error()?;
+pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut widget =
         Widget::new().with_format(config.format.with_default(" $icon $weather $temp ")?);
 

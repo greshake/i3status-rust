@@ -54,8 +54,8 @@ use crate::util::has_command;
 use futures::future::pending;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-struct HueshiftConfig {
+#[serde(default)]
+pub struct Config {
     format: FormatConfig,
     #[default(5.into())]
     interval: Seconds,
@@ -73,8 +73,7 @@ struct HueshiftConfig {
     click_temp: u16,
 }
 
-pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let config = HueshiftConfig::deserialize(config).config_error()?;
+pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut widget = Widget::new().with_format(config.format.with_default(" $temperature ")?);
 
     // limit too big steps at 500K to avoid too brutal changes

@@ -38,8 +38,8 @@ const ICON_ON: &str = "bell";
 const ICON_OFF: &str = "bell-slash";
 
 #[derive(Deserialize, Debug, Default)]
-#[serde(deny_unknown_fields, default)]
-struct NotifyConfig {
+#[serde(default)]
+pub struct Config {
     driver: DriverType,
     format: FormatConfig,
 }
@@ -51,8 +51,7 @@ enum DriverType {
     Dunst,
 }
 
-pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let config = NotifyConfig::deserialize(config).config_error()?;
+pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut widget = Widget::new().with_format(config.format.with_default(" $icon ")?);
 
     let mut driver: Box<dyn Driver + Send + Sync> = match config.driver {

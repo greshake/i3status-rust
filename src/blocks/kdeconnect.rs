@@ -61,8 +61,8 @@ use super::prelude::*;
 use crate::util::battery_level_icon;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-struct Config {
+#[serde(default)]
+pub struct Config {
     device_id: Option<String>,
     format: FormatConfig,
     #[default(60)]
@@ -77,8 +77,7 @@ struct Config {
     hide_disconnected: bool,
 }
 
-pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let config = Config::deserialize(config).config_error()?;
+pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut widget = Widget::new().with_format(
         config
             .format
