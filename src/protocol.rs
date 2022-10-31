@@ -77,5 +77,15 @@ pub fn print_blocks(blocks: &[Vec<I3BarBlock>], config: &SharedConfig) {
         }
     }
 
+    if let Some(end_separator) = &config.theme.end_separator {
+        let end_separator = I3BarBlock {
+            full_text: end_separator.clone(),
+            background: Color::None,
+            color: last_bg,
+            ..Default::default()
+        };
+        rendered_blocks.push(end_separator);
+    }
+
     println!("{},", serde_json::to_string(&rendered_blocks).unwrap());
 }

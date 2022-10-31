@@ -114,21 +114,22 @@ The tints are added to every second block counting from the right. They will the
 
 Feel free to take a look at the provided color schemes for reference.
 
-* `alternating_tint_bg`
-* `alternating_tint_fg`
-* `critical_bg`
-* `critical_fg`
-* `good_bg`
-* `good_fg`
 * `idle_bg`
 * `idle_fg`
+* `good_bg`
+* `good_fg`
+* `warning_bg`
+* `warning_fg`
+* `critical_bg`
+* `critical_fg`
 * `info_bg`
 * `info_fg`
+* `alternating_tint_bg`
+* `alternating_tint_fg`
 * `separator_bg`
 * `separator_fg`
 * `separator`
-* `warning_bg`
-* `warning_fg`
+* `end_separator`
 
 # Available icon overrides
 
