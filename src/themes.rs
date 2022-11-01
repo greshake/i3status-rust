@@ -26,6 +26,7 @@ pub struct Theme {
     pub separator_fg: Color,
     pub alternating_tint_bg: Color,
     pub alternating_tint_fg: Color,
+    pub end_separator: Option<String>,
 }
 
 impl Theme {
@@ -55,6 +56,9 @@ impl Theme {
             } else {
                 self.separator = Some(separator.clone());
             }
+        }
+        if let Some(end_separator) = overrides.get("end_separator") {
+            self.end_separator = Some(end_separator.clone());
         }
         macro_rules! apply {
             ($prop:tt) => {
