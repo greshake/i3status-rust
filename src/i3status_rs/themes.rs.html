@@ -99,6 +99,10 @@
 <span id="99">99</span>
 <span id="100">100</span>
 <span id="101">101</span>
+<span id="102">102</span>
+<span id="103">103</span>
+<span id="104">104</span>
+<span id="105">105</span>
 </pre><pre class="rust"><code><span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">color</span>;
 
 <span class="kw">use</span> <span class="ident">serde::Deserialize</span>;
@@ -127,6 +131,7 @@
     <span class="kw">pub</span> <span class="ident">separator_fg</span>: <span class="ident">Color</span>,
     <span class="kw">pub</span> <span class="ident">alternating_tint_bg</span>: <span class="ident">Color</span>,
     <span class="kw">pub</span> <span class="ident">alternating_tint_fg</span>: <span class="ident">Color</span>,
+    <span class="kw">pub</span> <span class="ident">end_separator</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">Theme</span> {
@@ -156,6 +161,9 @@
             } <span class="kw">else</span> {
                 <span class="self">self</span>.<span class="ident">separator</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">separator</span>.<span class="ident">clone</span>());
             }
+        }
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">end_separator</span>) <span class="op">=</span> <span class="ident">overrides</span>.<span class="ident">get</span>(<span class="string">&quot;end_separator&quot;</span>) {
+            <span class="self">self</span>.<span class="ident">end_separator</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">end_separator</span>.<span class="ident">clone</span>());
         }
         <span class="macro">macro_rules!</span> <span class="ident">apply</span> {
             (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">prop</span>:<span class="ident">tt</span>) =&gt; {
