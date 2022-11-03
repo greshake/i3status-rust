@@ -3,6 +3,7 @@
 pub mod prelude;
 
 use crate::formatting::config::Config as FormatConfig;
+use crate::themes::ThemeOverrides;
 use crate::BoxedFuture;
 use futures::future::FutureExt;
 use serde::de::{self, Deserializer};
@@ -292,7 +293,7 @@ pub struct CommonConfig {
     #[serde(default)]
     pub icons_format: Option<String>,
     #[serde(default)]
-    pub theme_overrides: Option<HashMap<String, String>>,
+    pub theme_overrides: Option<ThemeOverrides>,
     #[serde(default)]
     pub icons_overrides: Option<HashMap<String, String>>,
 

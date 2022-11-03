@@ -1,14 +1,16 @@
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use std::sync::Arc;
 use toml::value;
 
+use crate::errors::*;
 use crate::icons::Icons;
-use crate::themes::Theme;
+use crate::themes::{Theme, ThemeUserConfig};
 use crate::util::default;
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct SharedConfig {
     #[serde(default)]
+    #[serde(deserialize_with = "deserialize_theme_config")]
     pub theme: Arc<Theme>,
     #[serde(default)]
     pub icons: Arc<Icons>,
@@ -70,4 +72,13 @@ impl Config {
     fn default_error_fullscreen_format() -> String {
         " $full_error_message ".into()
     }
+}
+
+fn deserialize_theme_config<'de, D>(deserializer: D) -> Result<Arc<Theme>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let theme_config = ThemeUserConfig::deserialize(deserializer)?;
+    let theme = Theme::try_from(theme_config).serde_error()?;
+    Ok(Arc::new(theme))
 }

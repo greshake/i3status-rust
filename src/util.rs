@@ -94,10 +94,12 @@ pub fn battery_level_icon(level: u8, charging: bool) -> &'static str {
     }
 }
 
-pub fn deserialize_toml_file<T>(path: &Path) -> Result<T>
+pub fn deserialize_toml_file<T, P>(path: P) -> Result<T>
 where
     T: DeserializeOwned,
+    P: AsRef<Path>,
 {
+    let path = path.as_ref();
     let mut contents = String::new();
     let file = File::open(path).or_error(|| format!("Failed to open file: {}", path.display()))?;
     BufReader::new(file)

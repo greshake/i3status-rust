@@ -23,7 +23,6 @@ where `<file>` can be either a filename or a full path and will be checked in th
 Notes:
 - In case with icon sets, the file should be in `icons` subdirectory instead of `themes`.
 - You can omit the `.toml` extension while specifying `file` parameter.
-- `file` parameter is an alias to `name`, they are completely interchangeable.
 - All the predefined themes are provided as files, so you use them as examples of how to write your own themes/icon sets.
 
 # Available themes
@@ -78,8 +77,14 @@ Create a block in the configuration called `theme` or `icons` like so:
 [theme]
 theme = "solarized-dark"
 [theme.overrides]
+# Example: redefine `idle` colors
 idle_bg = "#123456"
 idle_fg = "#abcdef"
+# Example: swap `good` and `warning` colors
+good_fg = { link = "warning_fg" }
+good_bg = { link = "warning_bg" }
+warning_fg = { link = "good_fg" }
+warning_bg = { link = "good_bg" }
 
 [icons]
 icons = "awesome"
@@ -89,8 +94,6 @@ bat_full = " |X| "
 bat_charging = " |^| "
 bat_discharging = " |v| "
 ```
-
-Example configurations can be found as `example_theme.toml` and `example_icon.toml`.
 
 Besides global overrides you may also use per-block overrides using the `theme_overrides`, `icons_overrides` and `icons_format` options available for all blocks.
 For example:
