@@ -71,17 +71,30 @@
 <span id="71">71</span>
 <span id="72">72</span>
 <span id="73">73</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">serde::Deserialize</span>;
+<span id="74">74</span>
+<span id="75">75</span>
+<span id="76">76</span>
+<span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
+<span id="80">80</span>
+<span id="81">81</span>
+<span id="82">82</span>
+<span id="83">83</span>
+<span id="84">84</span>
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Deserializer</span>};
 <span class="kw">use</span> <span class="ident">std::sync::Arc</span>;
 <span class="kw">use</span> <span class="ident">toml::value</span>;
 
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errors</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::icons::Icons</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::themes::Theme</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::themes</span>::{<span class="ident">Theme</span>, <span class="ident">ThemeUserConfig</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::util::default</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SharedConfig</span> {
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
+    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deserialize_with</span> <span class="op">=</span> <span class="string">&quot;deserialize_theme_config&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">theme</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Theme</span><span class="op">&gt;</span>,
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
     <span class="kw">pub</span> <span class="ident">icons</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Icons</span><span class="op">&gt;</span>,
@@ -143,6 +156,15 @@
     <span class="kw">fn</span> <span class="ident">default_error_fullscreen_format</span>() -&gt; <span class="ident">String</span> {
         <span class="string">&quot; $full_error_message &quot;</span>.<span class="ident">into</span>()
     }
+}
+
+<span class="kw">fn</span> <span class="ident">deserialize_theme_config</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span>, <span class="ident">D</span><span class="op">&gt;</span>(<span class="ident">deserializer</span>: <span class="ident">D</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Theme</span><span class="op">&gt;</span>, <span class="ident">D::Error</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+    <span class="ident">D</span>: <span class="ident">Deserializer</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span>,
+{
+    <span class="kw">let</span> <span class="ident">theme_config</span> <span class="op">=</span> <span class="ident">ThemeUserConfig::deserialize</span>(<span class="ident">deserializer</span>)<span class="question-mark">?</span>;
+    <span class="kw">let</span> <span class="ident">theme</span> <span class="op">=</span> <span class="ident">Theme::try_from</span>(<span class="ident">theme_config</span>).<span class="ident">serde_error</span>()<span class="question-mark">?</span>;
+    <span class="prelude-val">Ok</span>(<span class="ident">Arc::new</span>(<span class="ident">theme</span>))
 }
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>

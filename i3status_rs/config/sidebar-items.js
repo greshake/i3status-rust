@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["Config",""],["SharedConfig",""]]};
+window.SIDEBAR_ITEMS = {"fn":[["deserialize_theme_config",""]],"struct":[["Config",""],["SharedConfig",""]]};

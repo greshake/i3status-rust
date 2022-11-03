@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":[["color",""]],"struct":[["Theme",""],["ThemeConfigRaw",""]]};
+window.SIDEBAR_ITEMS = {"enum":[["ColorOrLink",""]],"mod":[["color",""],["separator",""]],"struct":[["Theme",""],["ThemeOverrides",""],["ThemeUserConfig",""]]};

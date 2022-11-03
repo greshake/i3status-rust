@@ -337,11 +337,13 @@
 <span id="337">337</span>
 <span id="338">338</span>
 <span id="339">339</span>
+<span id="340">340</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The collection of blocks</span>
 
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">prelude</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::formatting::config::Config</span> <span class="kw">as</span> <span class="ident">FormatConfig</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::themes::ThemeOverrides</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::BoxedFuture</span>;
 <span class="kw">use</span> <span class="ident">futures::future::FutureExt</span>;
 <span class="kw">use</span> <span class="ident">serde::de</span>::{<span class="self">self</span>, <span class="ident">Deserializer</span>};
@@ -631,7 +633,7 @@
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
     <span class="kw">pub</span> <span class="ident">icons_format</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
-    <span class="kw">pub</span> <span class="ident">theme_overrides</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">theme_overrides</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ThemeOverrides</span><span class="op">&gt;</span>,
     <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
     <span class="kw">pub</span> <span class="ident">icons_overrides</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 
