@@ -81,7 +81,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut widget = Widget::new();
 
     let mut format = config.format.with_default(
-        " $icon $mem_available.eng(3,B,M)/$mem_total.eng(3,B,M)($mem_total_used_percents.eng(2)) ",
+        " $icon $mem_avail.eng(3,B,M)/$mem_total.eng(3,B,M)($mem_total_used_percents.eng(2)) ",
     )?;
     let mut format_alt = match config.format_alt {
         Some(f) => Some(f.with_default("")?),
