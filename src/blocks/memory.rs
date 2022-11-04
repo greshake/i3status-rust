@@ -12,28 +12,28 @@
 //! `critical_mem` | Percentage of memory usage, where state is set to critical | `95.0`
 //! `critical_swap` | Percentage of swap usage, where state is set to critical | `95.0`
 //!
-//! Placeholder               | Value                                                                         | Type   | Unit
-//! --------------------------|-------------------------------------------------------------------------------|--------|-------
-//! `icon`                    | Memory icon                                                                   | Icon   | -
-//! `icon_swap`               | Swap icon                                                                     | Icon   | -
-//! `mem_total`               | Memory total                                                                  | Number | Bytes
-//! `mem_free`                | Memory free                                                                   | Number | Bytes
-//! `mem_free_percents`       | Memory free                                                                   | Number | Percents
-//! `mem_total_used`          | Total memory used                                                             | Number | Bytes
-//! `mem_total_used_percents` | Total memory used                                                             | Number | Percents
-//! `mem_used`                | Memory used, excluding cached memory and buffers; similar to htop's green bar | Number | Bytes
-//! `mem_used_percents`       | Memory used, excluding cached memory and buffers; similar to htop's green bar | Number | Percents
-//! `mem_avail`               | Available memory, including cached memory and buffers                         | Number | Bytes
-//! `mem_avail_percents`      | Available memory, including cached memory and buffers                         | Number | Percents
-//! `swap_total`              | Swap total                                                                    | Number | Bytes
-//! `swap_free`               | Swap free                                                                     | Number | Bytes
-//! `swap_free_percents`      | Swap free                                                                     | Number | Percents
-//! `swap_used`               | Swap used                                                                     | Number | Bytes
-//! `swap_used_percents`      | Swap used                                                                     | Number | Percents
-//! `buffers`                 | Buffers, similar to htop's blue bar                                           | Number | Bytes
-//! `buffers_percent`         | Buffers, similar to htop's blue bar                                           | Number | Percents
-//! `cached`                  | Cached memory, similar to htop's yellow bar                                   | Number | Bytes
-//! `cached_percent`          | Cached memory, similar to htop's yellow bar                                   | Number | Percents
+//! Placeholder               | Value                                                                           | Type   | Unit
+//! --------------------------|---------------------------------------------------------------------------------|--------|-------
+//! `icon`                    | Memory icon                                                                     | Icon   | -
+//! `icon_swap`               | Swap icon                                                                       | Icon   | -
+//! `mem_total`               | Total physical ram available                                                    | Number | Bytes
+//! `mem_free`                | Free memory not yet used by the kernel or userspace                             | Number | Bytes
+//! `mem_free_percents`       | as above but as a percentage of total memory                                    | Number | Percents
+//! `mem_total_used`          | mem_total - mem_free                                                            | Number | Bytes
+//! `mem_total_used_percents` | as above but as a percentage of total memory                                    | Number | Percents
+//! `mem_used`                | Memory used, excluding cached memory and buffers; same as htop's green bar      | Number | Bytes
+//! `mem_used_percents`       | as above but as a percentage of total memory                                    | Number | Percents
+//! `mem_avail`               | Available memory, including cached memory and buffers                           | Number | Bytes
+//! `mem_avail_percents`      | as above but as a percentage of total memory                                    | Number | Percents
+//! `buffers`                 | Buffers, similar to htop's blue bar                                             | Number | Bytes
+//! `buffers_percent`         | as above but as a percentage of total memory                                    | Number | Percents
+//! `cached`                  | Cached memory (taking into account ZFS ARC cache), similar to htop's yellow bar | Number | Bytes
+//! `cached_percent`          | as above but as a percentage of total memory                                    | Number | Percents
+//! `swap_total`              | Swap total                                                                      | Number | Bytes
+//! `swap_free`               | Swap free                                                                       | Number | Bytes
+//! `swap_free_percents`      | as above but as a percentage of total memory                                    | Number | Percents
+//! `swap_used`               | Swap used                                                                       | Number | Bytes
+//! `swap_used_percents`      | as above but as a percentage of total memory                                    | Number | Percents
 //!
 //! # Example
 //!
