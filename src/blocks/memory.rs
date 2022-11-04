@@ -185,6 +185,7 @@ struct Memstate {
     shmem: u64,
     swap_total: u64,
     swap_free: u64,
+    swap_cached: u64,
     zfs_arc_cache: u64,
 }
 
