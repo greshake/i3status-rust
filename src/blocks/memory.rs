@@ -4,7 +4,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block when in "Memory" view. See below for available placeholders. | `" $icon $mem_free.eng(3,B,M)/$mem_total.eng(3,B,M)($mem_total_used_percents.eng(2)) "`
+//! `format` | A string to customise the output of this block when in "Memory" view. See below for available placeholders. | `" $icon $mem_avail.eng(3,B,M)/$mem_total.eng(3,B,M)($mem_total_used_percents.eng(2)) "`
 //! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
 //! `interval` | Update interval in seconds | `5`
 //! `warning_mem` | Percentage of memory usage, where state is set to warning | `80.0`
@@ -100,7 +100,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         // htop and such only display equivalent of `mem_used`
         let mem_total_used = mem_total - mem_free;
 
-        // dev note: difference between avail and free: 
+        // dev note: difference between avail and free:
         // https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=34e431b0ae398fc54ea69ff85ec700722c9da773
         // same logic as htop
         let mem_avail = if mem_state.mem_available != 0 {
