@@ -11,24 +11,24 @@
 </div><div><table><thead><tr><th>Placeholder</th><th>Value</th><th>Type</th><th>Unit</th></tr></thead><tbody>
 <tr><td><code>icon</code></td><td>Memory icon</td><td>Icon</td><td>-</td></tr>
 <tr><td><code>icon_swap</code></td><td>Swap icon</td><td>Icon</td><td>-</td></tr>
-<tr><td><code>mem_total</code></td><td>Memory total</td><td>Number</td><td>Bytes</td></tr>
-<tr><td><code>mem_free</code></td><td>Memory free</td><td>Number</td><td>Bytes</td></tr>
-<tr><td><code>mem_free_percents</code></td><td>Memory free</td><td>Number</td><td>Percents</td></tr>
-<tr><td><code>mem_total_used</code></td><td>Total memory used</td><td>Number</td><td>Bytes</td></tr>
-<tr><td><code>mem_total_used_percents</code></td><td>Total memory used</td><td>Number</td><td>Percents</td></tr>
-<tr><td><code>mem_used</code></td><td>Memory used, excluding cached memory and buffers; similar to htop’s green bar</td><td>Number</td><td>Bytes</td></tr>
-<tr><td><code>mem_used_percents</code></td><td>Memory used, excluding cached memory and buffers; similar to htop’s green bar</td><td>Number</td><td>Percents</td></tr>
+<tr><td><code>mem_total</code></td><td>Total physical ram available</td><td>Number</td><td>Bytes</td></tr>
+<tr><td><code>mem_free</code></td><td>Free memory not yet used by the kernel or userspace</td><td>Number</td><td>Bytes</td></tr>
+<tr><td><code>mem_free_percents</code></td><td>as above but as a percentage of total memory</td><td>Number</td><td>Percents</td></tr>
+<tr><td><code>mem_total_used</code></td><td>mem_total - mem_free</td><td>Number</td><td>Bytes</td></tr>
+<tr><td><code>mem_total_used_percents</code></td><td>as above but as a percentage of total memory</td><td>Number</td><td>Percents</td></tr>
+<tr><td><code>mem_used</code></td><td>Memory used, excluding cached memory and buffers; same as htop’s green bar</td><td>Number</td><td>Bytes</td></tr>
+<tr><td><code>mem_used_percents</code></td><td>as above but as a percentage of total memory</td><td>Number</td><td>Percents</td></tr>
 <tr><td><code>mem_avail</code></td><td>Available memory, including cached memory and buffers</td><td>Number</td><td>Bytes</td></tr>
-<tr><td><code>mem_avail_percents</code></td><td>Available memory, including cached memory and buffers</td><td>Number</td><td>Percents</td></tr>
+<tr><td><code>mem_avail_percents</code></td><td>as above but as a percentage of total memory</td><td>Number</td><td>Percents</td></tr>
+<tr><td><code>buffers</code></td><td>Buffers, similar to htop’s blue bar</td><td>Number</td><td>Bytes</td></tr>
+<tr><td><code>buffers_percent</code></td><td>as above but as a percentage of total memory</td><td>Number</td><td>Percents</td></tr>
+<tr><td><code>cached</code></td><td>Cached memory (taking into account ZFS ARC cache), similar to htop’s yellow bar</td><td>Number</td><td>Bytes</td></tr>
+<tr><td><code>cached_percent</code></td><td>as above but as a percentage of total memory</td><td>Number</td><td>Percents</td></tr>
 <tr><td><code>swap_total</code></td><td>Swap total</td><td>Number</td><td>Bytes</td></tr>
 <tr><td><code>swap_free</code></td><td>Swap free</td><td>Number</td><td>Bytes</td></tr>
-<tr><td><code>swap_free_percents</code></td><td>Swap free</td><td>Number</td><td>Percents</td></tr>
+<tr><td><code>swap_free_percents</code></td><td>as above but as a percentage of total memory</td><td>Number</td><td>Percents</td></tr>
 <tr><td><code>swap_used</code></td><td>Swap used</td><td>Number</td><td>Bytes</td></tr>
-<tr><td><code>swap_used_percents</code></td><td>Swap used</td><td>Number</td><td>Percents</td></tr>
-<tr><td><code>buffers</code></td><td>Buffers, similar to htop’s blue bar</td><td>Number</td><td>Bytes</td></tr>
-<tr><td><code>buffers_percent</code></td><td>Buffers, similar to htop’s blue bar</td><td>Number</td><td>Percents</td></tr>
-<tr><td><code>cached</code></td><td>Cached memory, similar to htop’s yellow bar</td><td>Number</td><td>Bytes</td></tr>
-<tr><td><code>cached_percent</code></td><td>Cached memory, similar to htop’s yellow bar</td><td>Number</td><td>Percents</td></tr>
+<tr><td><code>swap_used_percents</code></td><td>as above but as a percentage of total memory</td><td>Number</td><td>Percents</td></tr>
 </tbody></table>
 </div><h2 id="example"><a href="#example">Example</a></h2><div class="example-wrap"><pre class="language-toml"><code>[[block]]
 block = &quot;memory&quot;
