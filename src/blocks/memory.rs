@@ -115,6 +115,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         // TODO: see https://github.com/htop-dev/htop/pull/1003
         let zfs_arc_cache = mem_state.zfs_arc_cache as f64;
 
+        // See https://lore.kernel.org/lkml/1455827801-13082-1-git-send-email-hannes@cmpxchg.org/
         let cached = pagecache + reclaimable - shmem + zfs_arc_cache;
 
         let buffers = mem_state.buffers as f64 * 1024.;
