@@ -129,7 +129,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         };
 
         // account for ZFS ARC cache
-        let mem_used = mem_used - zfs_arc_cache
+        let mem_used = mem_used - zfs_arc_cache;
 
         let swap_total = mem_state.swap_total as f64 * 1024.;
         let swap_free = mem_state.swap_free as f64 * 1024.;
