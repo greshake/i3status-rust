@@ -91,17 +91,21 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
     loop {
         let mem_state = Memstate::new().await?;
+
         let mem_total = mem_state.mem_total as f64 * 1024.;
         let mem_free = mem_state.mem_free as f64 * 1024.;
-        let swap_total = mem_state.swap_total as f64 * 1024.;
-        let swap_free = mem_state.swap_free as f64 * 1024.;
-        let swap_used = swap_total - swap_free;
+
         let mem_total_used = mem_total - mem_free;
         let buffers = mem_state.buffers as f64 * 1024.;
         let cached = (mem_state.cached + mem_state.s_reclaimable - mem_state.shmem) as f64 * 1024.
             + mem_state.zfs_arc_cache as f64;
         let mem_used = mem_total_used - (buffers + cached);
         let mem_avail = mem_total - mem_used;
+
+        let swap_total = mem_state.swap_total as f64 * 1024.;
+        let swap_free = mem_state.swap_free as f64 * 1024.;
+        let swap_cached = mem_state.swap_cached as f64 * 1024.;
+        let swap_used = swap_total - swap_free - swap_cached;
 
         widget.set_format(format.clone());
         widget.set_values(map! {
@@ -223,6 +227,7 @@ impl Memstate {
                 "Shmem:" => mem_state.shmem = val,
                 "SwapTotal:" => mem_state.swap_total = val,
                 "SwapFree:" => mem_state.swap_free = val,
+                "SwapCached:" => mem_state.swap_cached = val,
                 _ => (),
             }
 
