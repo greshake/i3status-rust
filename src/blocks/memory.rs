@@ -97,7 +97,8 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
         let mem_total_used = mem_total - mem_free;
         let buffers = mem_state.buffers as f64 * 1024.;
-        let cached = (mem_state.cached + mem_state.s_reclaimable - mem_state.shmem) as f64 * 1024.
+        let cached = (mem_state.pagecache + mem_state.s_reclaimable - mem_state.shmem) as f64
+            * 1024.
             + mem_state.zfs_arc_cache as f64;
         let mem_used = mem_total_used - (buffers + cached);
         let mem_avail = mem_total - mem_used;
@@ -179,7 +180,7 @@ struct Memstate {
     mem_total: u64,
     mem_free: u64,
     buffers: u64,
-    cached: u64,
+    pagecache: u64,
     s_reclaimable: u64,
     shmem: u64,
     swap_total: u64,
@@ -189,6 +190,8 @@ struct Memstate {
 
 impl Memstate {
     async fn new() -> Result<Self> {
+        // Reference: https://www.kernel.org/doc/Documentation/filesystems/proc.txt
+
         let mut file = BufReader::new(
             File::open("/proc/meminfo")
                 .await
@@ -222,7 +225,7 @@ impl Memstate {
                 "MemTotal:" => mem_state.mem_total = val,
                 "MemFree:" => mem_state.mem_free = val,
                 "Buffers:" => mem_state.buffers = val,
-                "Cached:" => mem_state.cached = val,
+                "Cached:" => mem_state.pagecache = val,
                 "SReclaimable:" => mem_state.s_reclaimable = val,
                 "Shmem:" => mem_state.shmem = val,
                 "SwapTotal:" => mem_state.swap_total = val,
