@@ -277,6 +277,9 @@
 <span id="277">277</span>
 <span id="278">278</span>
 <span id="279">279</span>
+<span id="280">280</span>
+<span id="281">281</span>
+<span id="282">282</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Memory and swap usage
 //!
 //! # Configuration
@@ -394,18 +397,21 @@
         <span class="comment">// TODO: see https://github.com/htop-dev/htop/pull/1003
         </span><span class="kw">let </span>zfs_arc_cache = mem_state.zfs_arc_cache <span class="kw">as </span>f64;
 
-        <span class="kw">let </span>cached = pagecache + reclaimable - shmem + zfs_arc_cache;
+        <span class="comment">// See https://lore.kernel.org/lkml/1455827801-13082-1-git-send-email-hannes@cmpxchg.org/
+        </span><span class="kw">let </span>cached = pagecache + reclaimable - shmem + zfs_arc_cache;
 
         <span class="kw">let </span>buffers = mem_state.buffers <span class="kw">as </span>f64 * <span class="number">1024.</span>;
 
         <span class="comment">// same logic as htop
-        // TODO: consider zfs here too?
         </span><span class="kw">let </span>used_diff = mem_free + buffers + pagecache + reclaimable;
         <span class="kw">let </span>mem_used = <span class="kw">if </span>mem_total &gt;= used_diff {
             mem_total - used_diff
         } <span class="kw">else </span>{
             mem_total - mem_free
         };
+
+        <span class="comment">// account for ZFS ARC cache
+        </span><span class="kw">let </span>mem_used = mem_used - zfs_arc_cache;
 
         <span class="kw">let </span>swap_total = mem_state.swap_total <span class="kw">as </span>f64 * <span class="number">1024.</span>;
         <span class="kw">let </span>swap_free = mem_state.swap_free <span class="kw">as </span>f64 * <span class="number">1024.</span>;
