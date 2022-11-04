@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/sound.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>sound.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/sound.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>sound.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -273,232 +273,232 @@
 <span id="273">273</span>
 <span id="274">274</span>
 <span id="275">275</span>
-</pre><pre class="rust"><code><span class="doccomment">//! Volume level</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! This block displays the volume level (according to PulseAudio or ALSA). Right click to toggle mute, scroll to adjust volume.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Requires a PulseAudio installation or `alsa-utils` for ALSA.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Note that if you are using PulseAudio commands (such as `pactl`) to control your volume, you should select the `&quot;pulseaudio&quot;` (or `&quot;auto&quot;`) driver to see volume changes that exceed 100%.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Examples</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Change the default scrolling step width to 3 percent:</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;sound&quot;</span>
-<span class="doccomment">//! step_width = 3</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;sound&quot;</span>
-<span class="doccomment">//! format = &quot; $icon $output_description{ $volume|} &quot;</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;sound&quot;</span>
-<span class="doccomment">//! format = &quot; $icon $output_name{ $volume|} &quot;</span>
-<span class="doccomment">//! [block.mappings]</span>
-<span class="doccomment">//! &quot;alsa_output.usb-Harman_Multimedia_JBL_Pebbles_1.0.0-00.analog-stereo&quot; = &quot;🔈&quot;</span>
-<span class="doccomment">//! &quot;alsa_output.pci-0000_00_1b.0.analog-stereo&quot; = &quot;🎧&quot;</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Configuration</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Key | Values | Default</span>
-<span class="doccomment">//! ----|--------|--------</span>
-<span class="doccomment">//! `driver` | `&quot;auto&quot;`, `&quot;pulseaudio&quot;`, `&quot;alsa&quot;`. | `&quot;auto&quot;` (Pulseaudio with ALSA fallback)</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt; $icon {$volume.eng(2) &amp;vert;}&lt;/code&gt;</span>
-<span class="doccomment">//! `name` | PulseAudio device name, or the ALSA control name as found in the output of `amixer -D yourdevice scontrols`. | PulseAudio: `@DEFAULT_SINK@` / ALSA: `Master`</span>
-<span class="doccomment">//! `device` | ALSA device name, usually in the form &quot;hw:X&quot; or &quot;hw:X,Y&quot; where `X` is the card number and `Y` is the device number as found in the output of `aplay -l`. | `default`</span>
-<span class="doccomment">//! `device_kind` | PulseAudio device kind: `source` or `sink`. | `&quot;sink&quot;`</span>
-<span class="doccomment">//! `natural_mapping` | When using the ALSA driver, display the &quot;mapped volume&quot; as given by `alsamixer`/`amixer -M`, which represents the volume level more naturally with respect for the human ear. | `false`</span>
-<span class="doccomment">//! `step_width` | The percent volume level is increased/decreased for the selected audio device when scrolling. Capped automatically at 50. | `5`</span>
-<span class="doccomment">//! `max_vol` | Max volume in percent that can be set via scrolling. Note it can still be set above this value if changed by another application. | `None`</span>
-<span class="doccomment">//! `show_volume_when_muted` | Show the volume even if it is currently muted. | `false`</span>
-<span class="doccomment">//! `headphones_indicator` | Change icon when headphones are plugged in (pulseaudio only) | `false`</span>
-<span class="doccomment">//! `mappings` | Map `output_name` to custom name. | `None`</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Placeholder          | Value                             | Type   | Unit</span>
-<span class="doccomment">//! ---------------------|-----------------------------------|--------|---------------</span>
-<span class="doccomment">//! `icon`               | Icon based on volume              | Icon   | -</span>
-<span class="doccomment">//! `volume`             | Current volume. Missing if muted. | Number | %</span>
-<span class="doccomment">//! `output_name`        | PulseAudio or ALSA device name    | Text   | -</span>
-<span class="doccomment">//! `output_description` | PulseAudio device description, will fallback to `output_name` if no description is available and will be overwritten by mappings (mappings will still use `output_name`) | Text | -</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! #  Icons Used</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! - `microphone_muted`</span>
-<span class="doccomment">//! - `microphone_empty` (1 to 20%)</span>
-<span class="doccomment">//! - `microphone_half` (21 to 70%)</span>
-<span class="doccomment">//! - `microphone_full` (over 71%)</span>
-<span class="doccomment">//! - `volume_muted`</span>
-<span class="doccomment">//! - `volume_empty` (1 to 20%)</span>
-<span class="doccomment">//! - `volume_half` (21 to 70%)</span>
-<span class="doccomment">//! - `volume_full` (over 71%)</span>
-<span class="doccomment">//! - `headphones`</span>
+</pre><pre class="rust"><code><span class="doccomment">//! Volume level
+//!
+//! This block displays the volume level (according to PulseAudio or ALSA). Right click to toggle mute, scroll to adjust volume.
+//!
+//! Requires a PulseAudio installation or `alsa-utils` for ALSA.
+//!
+//! Note that if you are using PulseAudio commands (such as `pactl`) to control your volume, you should select the `&quot;pulseaudio&quot;` (or `&quot;auto&quot;`) driver to see volume changes that exceed 100%.
+//!
+//! # Examples
+//!
+//! Change the default scrolling step width to 3 percent:
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;sound&quot;
+//! step_width = 3
+//! ```
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;sound&quot;
+//! format = &quot; $icon $output_description{ $volume|} &quot;
+//! ```
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;sound&quot;
+//! format = &quot; $icon $output_name{ $volume|} &quot;
+//! [block.mappings]
+//! &quot;alsa_output.usb-Harman_Multimedia_JBL_Pebbles_1.0.0-00.analog-stereo&quot; = &quot;🔈&quot;
+//! &quot;alsa_output.pci-0000_00_1b.0.analog-stereo&quot; = &quot;🎧&quot;
+//! ```
+//!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `driver` | `&quot;auto&quot;`, `&quot;pulseaudio&quot;`, `&quot;alsa&quot;`. | `&quot;auto&quot;` (Pulseaudio with ALSA fallback)
+//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt; $icon {$volume.eng(2) &amp;vert;}&lt;/code&gt;
+//! `name` | PulseAudio device name, or the ALSA control name as found in the output of `amixer -D yourdevice scontrols`. | PulseAudio: `@DEFAULT_SINK@` / ALSA: `Master`
+//! `device` | ALSA device name, usually in the form &quot;hw:X&quot; or &quot;hw:X,Y&quot; where `X` is the card number and `Y` is the device number as found in the output of `aplay -l`. | `default`
+//! `device_kind` | PulseAudio device kind: `source` or `sink`. | `&quot;sink&quot;`
+//! `natural_mapping` | When using the ALSA driver, display the &quot;mapped volume&quot; as given by `alsamixer`/`amixer -M`, which represents the volume level more naturally with respect for the human ear. | `false`
+//! `step_width` | The percent volume level is increased/decreased for the selected audio device when scrolling. Capped automatically at 50. | `5`
+//! `max_vol` | Max volume in percent that can be set via scrolling. Note it can still be set above this value if changed by another application. | `None`
+//! `show_volume_when_muted` | Show the volume even if it is currently muted. | `false`
+//! `headphones_indicator` | Change icon when headphones are plugged in (pulseaudio only) | `false`
+//! `mappings` | Map `output_name` to custom name. | `None`
+//!
+//! Placeholder          | Value                             | Type   | Unit
+//! ---------------------|-----------------------------------|--------|---------------
+//! `icon`               | Icon based on volume              | Icon   | -
+//! `volume`             | Current volume. Missing if muted. | Number | %
+//! `output_name`        | PulseAudio or ALSA device name    | Text   | -
+//! `output_description` | PulseAudio device description, will fallback to `output_name` if no description is available and will be overwritten by mappings (mappings will still use `output_name`) | Text | -
+//!
+//! #  Icons Used
+//!
+//! - `microphone_muted`
+//! - `microphone_empty` (1 to 20%)
+//! - `microphone_half` (21 to 70%)
+//! - `microphone_full` (over 71%)
+//! - `volume_muted`
+//! - `volume_empty` (1 to 20%)
+//! - `volume_half` (21 to 70%)
+//! - `volume_full` (over 71%)
+//! - `headphones`
 
-<span class="kw">mod</span> <span class="ident">alsa</span>;
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;pulseaudio&quot;</span>)]</span>
-<span class="kw">mod</span> <span class="ident">pulseaudio</span>;
+</span><span class="kw">mod </span>alsa;
+<span class="attribute">#[cfg(feature = <span class="string">&quot;pulseaudio&quot;</span>)]
+</span><span class="kw">mod </span>pulseaudio;
 
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
+<span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
-<span class="kw">struct</span> <span class="ident">SoundConfig</span> {
-    <span class="ident">driver</span>: <span class="ident">SoundDriver</span>,
-    <span class="ident">name</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="ident">device</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="ident">device_kind</span>: <span class="ident">DeviceKind</span>,
-    <span class="ident">natural_mapping</span>: <span class="ident">bool</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">5</span>)]</span>
-    <span class="ident">step_width</span>: <span class="ident">u32</span>,
-    <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
-    <span class="ident">headphones_indicator</span>: <span class="ident">bool</span>,
-    <span class="ident">show_volume_when_muted</span>: <span class="ident">bool</span>,
-    <span class="ident">mappings</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    <span class="ident">max_vol</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
+<span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
+#[serde(deny_unknown_fields, default)]
+</span><span class="kw">struct </span>SoundConfig {
+    driver: SoundDriver,
+    name: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    device: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    device_kind: DeviceKind,
+    natural_mapping: bool,
+    <span class="attribute">#[default(<span class="number">5</span>)]
+    </span>step_width: u32,
+    format: FormatConfig,
+    headphones_indicator: bool,
+    show_volume_when_muted: bool,
+    mappings: <span class="prelude-ty">Option</span>&lt;HashMap&lt;String, String&gt;&gt;,
+    max_vol: <span class="prelude-ty">Option</span>&lt;u32&gt;,
 }
 
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">SoundConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span>
-        <span class="ident">Widget::new</span>().<span class="ident">with_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon {$volume.eng(2)|} &quot;</span>)<span class="question-mark">?</span>);
+<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span>config = SoundConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>widget =
+        Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon {$volume.eng(2)|} &quot;</span>)<span class="question-mark">?</span>);
 
-    <span class="kw">let</span> <span class="ident">device_kind</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">device_kind</span>;
-    <span class="kw">let</span> <span class="ident">step_width</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">step_width</span>.<span class="ident">clamp</span>(<span class="number">0</span>, <span class="number">50</span>) <span class="kw">as</span> <span class="ident">i32</span>;
+    <span class="kw">let </span>device_kind = config.device_kind;
+    <span class="kw">let </span>step_width = config.step_width.clamp(<span class="number">0</span>, <span class="number">50</span>) <span class="kw">as </span>i32;
 
-    <span class="kw">let</span> <span class="ident">icon</span> <span class="op">=</span> <span class="op">|</span><span class="ident">volume</span>: <span class="ident">u32</span>, <span class="ident">device</span>: <span class="kw-2">&amp;</span><span class="kw">dyn</span> <span class="ident">SoundDevice</span><span class="op">|</span> -&gt; <span class="ident">String</span> {
-        <span class="kw">if</span> <span class="ident">config</span>.<span class="ident">headphones_indicator</span> <span class="op">&amp;&amp;</span> <span class="ident">device_kind</span> <span class="op">==</span> <span class="ident">DeviceKind::Sink</span> {
-            <span class="kw">let</span> <span class="ident">headphones</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">device</span>.<span class="ident">form_factor</span>() {
-                <span class="comment">// form_factor&#39;s possible values are listed at:</span>
-                <span class="comment">// https://docs.rs/libpulse-binding/2.25.0/libpulse_binding/proplist/properties/constant.DEVICE_FORM_FACTOR.html</span>
-                <span class="prelude-val">Some</span>(<span class="string">&quot;headset&quot;</span>) <span class="op">|</span> <span class="prelude-val">Some</span>(<span class="string">&quot;headphone&quot;</span>) <span class="op">|</span> <span class="prelude-val">Some</span>(<span class="string">&quot;hands-free&quot;</span>) <span class="op">|</span> <span class="prelude-val">Some</span>(<span class="string">&quot;portable&quot;</span>) =&gt; <span class="bool-val">true</span>,
-                <span class="comment">// Per discussion at</span>
-                <span class="comment">// https://github.com/greshake/i3status-rust/pull/1363#issuecomment-1046095869,</span>
-                <span class="comment">// some sinks may not have the form_factor property, so we should fall back to the</span>
-                <span class="comment">// active_port if that property is not present.</span>
-                <span class="prelude-val">None</span> =&gt; <span class="ident">device</span>
-                    .<span class="ident">active_port</span>()
-                    .<span class="ident">map_or</span>(<span class="bool-val">false</span>, <span class="op">|</span><span class="ident">p</span><span class="op">|</span> <span class="ident">p</span>.<span class="ident">contains</span>(<span class="string">&quot;headphones&quot;</span>)),
-                <span class="comment">// form_factor is present and is some non-headphone value</span>
-                <span class="kw">_</span> =&gt; <span class="bool-val">false</span>,
+    <span class="kw">let </span>icon = |volume: u32, device: <span class="kw-2">&amp;</span><span class="kw">dyn </span>SoundDevice| -&gt; String {
+        <span class="kw">if </span>config.headphones_indicator &amp;&amp; device_kind == DeviceKind::Sink {
+            <span class="kw">let </span>headphones = <span class="kw">match </span>device.form_factor() {
+                <span class="comment">// form_factor&#39;s possible values are listed at:
+                // https://docs.rs/libpulse-binding/2.25.0/libpulse_binding/proplist/properties/constant.DEVICE_FORM_FACTOR.html
+                </span><span class="prelude-val">Some</span>(<span class="string">&quot;headset&quot;</span>) | <span class="prelude-val">Some</span>(<span class="string">&quot;headphone&quot;</span>) | <span class="prelude-val">Some</span>(<span class="string">&quot;hands-free&quot;</span>) | <span class="prelude-val">Some</span>(<span class="string">&quot;portable&quot;</span>) =&gt; <span class="bool-val">true</span>,
+                <span class="comment">// Per discussion at
+                // https://github.com/greshake/i3status-rust/pull/1363#issuecomment-1046095869,
+                // some sinks may not have the form_factor property, so we should fall back to the
+                // active_port if that property is not present.
+                </span><span class="prelude-val">None </span>=&gt; device
+                    .active_port()
+                    .map_or(<span class="bool-val">false</span>, |p| p.contains(<span class="string">&quot;headphones&quot;</span>)),
+                <span class="comment">// form_factor is present and is some non-headphone value
+                </span><span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
             };
-            <span class="kw">if</span> <span class="ident">headphones</span> {
-                <span class="kw">return</span> <span class="string">&quot;headphones&quot;</span>.<span class="ident">into</span>();
+            <span class="kw">if </span>headphones {
+                <span class="kw">return </span><span class="string">&quot;headphones&quot;</span>.into();
             }
         }
 
         <span class="macro">format!</span>(
             <span class="string">&quot;{}_{}&quot;</span>,
-            <span class="kw">match</span> <span class="ident">device_kind</span> {
-                <span class="ident">DeviceKind::Source</span> =&gt; <span class="string">&quot;microphone&quot;</span>,
-                <span class="ident">DeviceKind::Sink</span> =&gt; <span class="string">&quot;volume&quot;</span>,
+            <span class="kw">match </span>device_kind {
+                DeviceKind::Source =&gt; <span class="string">&quot;microphone&quot;</span>,
+                DeviceKind::Sink =&gt; <span class="string">&quot;volume&quot;</span>,
             },
-            <span class="kw">match</span> <span class="ident">volume</span> {
-                <span class="number">0</span> =&gt; <span class="string">&quot;muted&quot;</span>,
-                <span class="number">1</span>..<span class="op">=</span><span class="number">20</span> =&gt; <span class="string">&quot;empty&quot;</span>,
-                <span class="number">21</span>..<span class="op">=</span><span class="number">70</span> =&gt; <span class="string">&quot;half&quot;</span>,
-                <span class="kw">_</span> =&gt; <span class="string">&quot;full&quot;</span>,
+            <span class="kw">match </span>volume {
+                <span class="number">0 </span>=&gt; <span class="string">&quot;muted&quot;</span>,
+                <span class="number">1</span>..=<span class="number">20 </span>=&gt; <span class="string">&quot;empty&quot;</span>,
+                <span class="number">21</span>..=<span class="number">70 </span>=&gt; <span class="string">&quot;half&quot;</span>,
+                <span class="kw">_ </span>=&gt; <span class="string">&quot;full&quot;</span>,
             }
         )
     };
 
-    <span class="kw">type</span> <span class="ident">DeviceType</span> <span class="op">=</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">SoundDevice</span><span class="op">&gt;</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">device</span>: <span class="ident">DeviceType</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">driver</span> {
-        <span class="ident">SoundDriver::Alsa</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">alsa::Device::new</span>(
-            <span class="ident">config</span>.<span class="ident">name</span>.<span class="ident">clone</span>().<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;Master&quot;</span>.<span class="ident">into</span>()),
-            <span class="ident">config</span>.<span class="ident">device</span>.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;default&quot;</span>.<span class="ident">into</span>()),
-            <span class="ident">config</span>.<span class="ident">natural_mapping</span>,
+    <span class="kw">type </span>DeviceType = Box&lt;<span class="kw">dyn </span>SoundDevice&gt;;
+    <span class="kw">let </span><span class="kw-2">mut </span>device: DeviceType = <span class="kw">match </span>config.driver {
+        SoundDriver::Alsa =&gt; Box::new(alsa::Device::new(
+            config.name.clone().unwrap_or_else(|| <span class="string">&quot;Master&quot;</span>.into()),
+            config.device.unwrap_or_else(|| <span class="string">&quot;default&quot;</span>.into()),
+            config.natural_mapping,
         )<span class="question-mark">?</span>),
-        <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;pulseaudio&quot;</span>)]</span>
-        <span class="ident">SoundDriver::PulseAudio</span> =&gt; {
-            <span class="ident">Box::new</span>(<span class="ident">pulseaudio::Device::new</span>(<span class="ident">config</span>.<span class="ident">device_kind</span>, <span class="ident">config</span>.<span class="ident">name</span>)<span class="question-mark">?</span>)
+        <span class="attribute">#[cfg(feature = <span class="string">&quot;pulseaudio&quot;</span>)]
+        </span>SoundDriver::PulseAudio =&gt; {
+            Box::new(pulseaudio::Device::new(config.device_kind, config.name)<span class="question-mark">?</span>)
         }
-        <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;pulseaudio&quot;</span>)]</span>
-        <span class="ident">SoundDriver::Auto</span> =&gt; {
-            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">pulse</span>) <span class="op">=</span> <span class="ident">pulseaudio::Device::new</span>(<span class="ident">config</span>.<span class="ident">device_kind</span>, <span class="ident">config</span>.<span class="ident">name</span>.<span class="ident">clone</span>()) {
-                <span class="ident">Box::new</span>(<span class="ident">pulse</span>)
-            } <span class="kw">else</span> {
-                <span class="ident">Box::new</span>(<span class="ident">alsa::Device::new</span>(
-                    <span class="ident">config</span>.<span class="ident">name</span>.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;Master&quot;</span>.<span class="ident">into</span>()),
-                    <span class="ident">config</span>.<span class="ident">device</span>.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;default&quot;</span>.<span class="ident">into</span>()),
-                    <span class="ident">config</span>.<span class="ident">natural_mapping</span>,
+        <span class="attribute">#[cfg(feature = <span class="string">&quot;pulseaudio&quot;</span>)]
+        </span>SoundDriver::Auto =&gt; {
+            <span class="kw">if let </span><span class="prelude-val">Ok</span>(pulse) = pulseaudio::Device::new(config.device_kind, config.name.clone()) {
+                Box::new(pulse)
+            } <span class="kw">else </span>{
+                Box::new(alsa::Device::new(
+                    config.name.unwrap_or_else(|| <span class="string">&quot;Master&quot;</span>.into()),
+                    config.device.unwrap_or_else(|| <span class="string">&quot;default&quot;</span>.into()),
+                    config.natural_mapping,
                 )<span class="question-mark">?</span>)
             }
         }
-        <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;pulseaudio&quot;</span>))]</span>
-        <span class="ident">SoundDriver::Auto</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">alsa::Device::new</span>(
-            <span class="ident">config</span>.<span class="ident">name</span>.<span class="ident">clone</span>().<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;Master&quot;</span>.<span class="ident">into</span>()),
-            <span class="ident">config</span>.<span class="ident">device</span>.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;default&quot;</span>.<span class="ident">into</span>()),
-            <span class="ident">config</span>.<span class="ident">natural_mapping</span>,
+        <span class="attribute">#[cfg(not(feature = <span class="string">&quot;pulseaudio&quot;</span>))]
+        </span>SoundDriver::Auto =&gt; Box::new(alsa::Device::new(
+            config.name.clone().unwrap_or_else(|| <span class="string">&quot;Master&quot;</span>.into()),
+            config.device.unwrap_or_else(|| <span class="string">&quot;default&quot;</span>.into()),
+            config.natural_mapping,
         )<span class="question-mark">?</span>),
     };
 
-    <span class="kw">loop</span> {
-        <span class="ident">device</span>.<span class="ident">get_info</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">volume</span> <span class="op">=</span> <span class="ident">device</span>.<span class="ident">volume</span>();
+    <span class="kw">loop </span>{
+        device.get_info().<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let </span>volume = device.volume();
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">output_name</span> <span class="op">=</span> <span class="ident">device</span>.<span class="ident">output_name</span>();
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">m</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">mappings</span> {
-            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">mapped</span>) <span class="op">=</span> <span class="ident">m</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">output_name</span>) {
-                <span class="ident">output_name</span> <span class="op">=</span> <span class="ident">mapped</span>.<span class="ident">clone</span>();
+        <span class="kw">let </span><span class="kw-2">mut </span>output_name = device.output_name();
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(m) = <span class="kw-2">&amp;</span>config.mappings {
+            <span class="kw">if let </span><span class="prelude-val">Some</span>(mapped) = m.get(<span class="kw-2">&amp;</span>output_name) {
+                output_name = mapped.clone();
             }
         }
 
-        <span class="kw">let</span> <span class="ident">output_description</span> <span class="op">=</span> <span class="ident">device</span>
-            .<span class="ident">output_description</span>()
-            .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">output_name</span>.<span class="ident">clone</span>());
+        <span class="kw">let </span>output_description = device
+            .output_description()
+            .unwrap_or_else(|| output_name.clone());
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">values</span> <span class="op">=</span> <span class="macro">map!</span> {
-            <span class="string">&quot;volume&quot;</span> =&gt; <span class="ident">Value::percents</span>(<span class="ident">volume</span>),
-            <span class="string">&quot;output_name&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">output_name</span>),
-            <span class="string">&quot;output_description&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">output_description</span>),
+        <span class="kw">let </span><span class="kw-2">mut </span>values = <span class="macro">map! </span>{
+            <span class="string">&quot;volume&quot; </span>=&gt; Value::percents(volume),
+            <span class="string">&quot;output_name&quot; </span>=&gt; Value::text(output_name),
+            <span class="string">&quot;output_description&quot; </span>=&gt; Value::text(output_description),
         };
 
-        <span class="kw">if</span> <span class="ident">device</span>.<span class="ident">muted</span>() {
-            <span class="ident">values</span>.<span class="ident">insert</span>(
-                <span class="string">&quot;icon&quot;</span>.<span class="ident">into</span>(),
-                <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="kw-2">&amp;</span><span class="ident">icon</span>(<span class="number">0</span>, <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">device</span>))<span class="question-mark">?</span>),
+        <span class="kw">if </span>device.muted() {
+            values.insert(
+                <span class="string">&quot;icon&quot;</span>.into(),
+                Value::icon(api.get_icon(<span class="kw-2">&amp;</span>icon(<span class="number">0</span>, <span class="kw-2">&amp;*</span>device))<span class="question-mark">?</span>),
             );
-            <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Warning</span>;
-            <span class="kw">if</span> <span class="op">!</span><span class="ident">config</span>.<span class="ident">show_volume_when_muted</span> {
-                <span class="ident">values</span>.<span class="ident">remove</span>(<span class="string">&quot;volume&quot;</span>);
+            widget.state = State::Warning;
+            <span class="kw">if </span>!config.show_volume_when_muted {
+                values.remove(<span class="string">&quot;volume&quot;</span>);
             }
-        } <span class="kw">else</span> {
-            <span class="ident">values</span>.<span class="ident">insert</span>(
-                <span class="string">&quot;icon&quot;</span>.<span class="ident">into</span>(),
-                <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="kw-2">&amp;</span><span class="ident">icon</span>(<span class="ident">volume</span>, <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">device</span>))<span class="question-mark">?</span>),
+        } <span class="kw">else </span>{
+            values.insert(
+                <span class="string">&quot;icon&quot;</span>.into(),
+                Value::icon(api.get_icon(<span class="kw-2">&amp;</span>icon(volume, <span class="kw-2">&amp;*</span>device))<span class="question-mark">?</span>),
             );
-            <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Idle</span>;
+            widget.state = State::Idle;
         }
 
-        <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">values</span>);
-        <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        widget.set_values(values);
+        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="kw">loop</span> {
-            <span class="macro">select!</span> {
-                <span class="ident">val</span> <span class="op">=</span> <span class="ident">device</span>.<span class="ident">wait_for_update</span>() =&gt; {
-                    <span class="ident">val</span><span class="question-mark">?</span>;
+        <span class="kw">loop </span>{
+            <span class="macro">select! </span>{
+                val = device.wait_for_update() =&gt; {
+                    val<span class="question-mark">?</span>;
                     <span class="kw">break</span>;
                 }
-                <span class="ident">event</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; <span class="kw">match</span> <span class="ident">event</span> {
-                    <span class="ident">UpdateRequest</span> =&gt; <span class="kw">break</span>,
-                    <span class="ident">Click</span>(<span class="ident">click</span>) =&gt; <span class="kw">match</span> <span class="ident">click</span>.<span class="ident">button</span> {
-                        <span class="ident">MouseButton::Right</span> =&gt; {
-                            <span class="ident">device</span>.<span class="ident">toggle</span>().<span class="kw">await</span><span class="question-mark">?</span>;
+                event = api.event() =&gt; <span class="kw">match </span>event {
+                    UpdateRequest =&gt; <span class="kw">break</span>,
+                    Click(click) =&gt; <span class="kw">match </span>click.button {
+                        MouseButton::Right =&gt; {
+                            device.toggle().<span class="kw">await</span><span class="question-mark">?</span>;
                         }
-                        <span class="ident">MouseButton::WheelUp</span> =&gt; {
-                            <span class="ident">device</span>.<span class="ident">set_volume</span>(<span class="ident">step_width</span>, <span class="ident">config</span>.<span class="ident">max_vol</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+                        MouseButton::WheelUp =&gt; {
+                            device.set_volume(step_width, config.max_vol).<span class="kw">await</span><span class="question-mark">?</span>;
                         }
-                        <span class="ident">MouseButton::WheelDown</span> =&gt; {
-                            <span class="ident">device</span>.<span class="ident">set_volume</span>(<span class="op">-</span><span class="ident">step_width</span>, <span class="ident">config</span>.<span class="ident">max_vol</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+                        MouseButton::WheelDown =&gt; {
+                            device.set_volume(-step_width, config.max_vol).<span class="kw">await</span><span class="question-mark">?</span>;
                         }
-                        <span class="kw">_</span> =&gt; ()
+                        <span class="kw">_ </span>=&gt; ()
                     }
                 }
             }
@@ -506,47 +506,47 @@
     }
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;lowercase&quot;</span>)]</span>
-<span class="kw">enum</span> <span class="ident">SoundDriver</span> {
-    <span class="attribute">#[<span class="ident">default</span>]</span>
-    <span class="ident">Auto</span>,
-    <span class="ident">Alsa</span>,
-    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;pulseaudio&quot;</span>)]</span>
-    <span class="ident">PulseAudio</span>,
+<span class="attribute">#[derive(Deserialize, Debug, SmartDefault, Clone, Copy)]
+#[serde(rename_all = <span class="string">&quot;lowercase&quot;</span>)]
+</span><span class="kw">enum </span>SoundDriver {
+    <span class="attribute">#[default]
+    </span>Auto,
+    Alsa,
+    <span class="attribute">#[cfg(feature = <span class="string">&quot;pulseaudio&quot;</span>)]
+    </span>PulseAudio,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Hash</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;lowercase&quot;</span>)]</span>
-<span class="kw">enum</span> <span class="ident">DeviceKind</span> {
-    <span class="attribute">#[<span class="ident">default</span>]</span>
-    <span class="ident">Sink</span>,
-    <span class="ident">Source</span>,
+<span class="attribute">#[derive(Deserialize, Debug, SmartDefault, Clone, Copy, PartialEq, Eq, Hash)]
+#[serde(rename_all = <span class="string">&quot;lowercase&quot;</span>)]
+</span><span class="kw">enum </span>DeviceKind {
+    <span class="attribute">#[default]
+    </span>Sink,
+    Source,
 }
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;pulseaudio&quot;</span>)]</span>
-<span class="kw">impl</span> <span class="ident">DeviceKind</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">default_name</span>(<span class="self">self</span>) -&gt; <span class="ident">String</span> {
-        <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident"><span class="self">Self</span>::Sink</span> =&gt; <span class="ident">pulseaudio::DEFAULT_SINK</span>.<span class="ident">lock</span>().<span class="ident">unwrap</span>().<span class="ident">clone</span>(),
-            <span class="ident"><span class="self">Self</span>::Source</span> =&gt; <span class="ident">pulseaudio::DEFAULT_SOURCE</span>.<span class="ident">lock</span>().<span class="ident">unwrap</span>().<span class="ident">clone</span>(),
+<span class="attribute">#[cfg(feature = <span class="string">&quot;pulseaudio&quot;</span>)]
+</span><span class="kw">impl </span>DeviceKind {
+    <span class="kw">pub fn </span>default_name(<span class="self">self</span>) -&gt; String {
+        <span class="kw">match </span><span class="self">self </span>{
+            <span class="self">Self</span>::Sink =&gt; pulseaudio::DEFAULT_SINK.lock().unwrap().clone(),
+            <span class="self">Self</span>::Source =&gt; pulseaudio::DEFAULT_SOURCE.lock().unwrap().clone(),
         }
     }
 }
 
-<span class="attribute">#[<span class="ident">async_trait::async_trait</span>]</span>
-<span class="kw">trait</span> <span class="ident">SoundDevice</span> {
-    <span class="kw">fn</span> <span class="ident">volume</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">u32</span>;
-    <span class="kw">fn</span> <span class="ident">muted</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span>;
-    <span class="kw">fn</span> <span class="ident">output_name</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">String</span>;
-    <span class="kw">fn</span> <span class="ident">output_description</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>;
-    <span class="kw">fn</span> <span class="ident">active_port</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span><span class="op">&gt;</span>;
-    <span class="kw">fn</span> <span class="ident">form_factor</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span><span class="op">&gt;</span>;
+<span class="attribute">#[async_trait::async_trait]
+</span><span class="kw">trait </span>SoundDevice {
+    <span class="kw">fn </span>volume(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u32;
+    <span class="kw">fn </span>muted(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool;
+    <span class="kw">fn </span>output_name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String;
+    <span class="kw">fn </span>output_description(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt;;
+    <span class="kw">fn </span>active_port(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt;;
+    <span class="kw">fn </span>form_factor(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt;;
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_info</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">set_volume</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">step</span>: <span class="ident">i32</span>, <span class="ident">max_vol</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">toggle</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">wait_for_update</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
+    <span class="kw">async fn </span>get_info(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
+    <span class="kw">async fn </span>set_volume(<span class="kw-2">&amp;mut </span><span class="self">self</span>, step: i32, max_vol: <span class="prelude-ty">Option</span>&lt;u32&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
+    <span class="kw">async fn </span>toggle(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
+    <span class="kw">async fn </span>wait_for_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

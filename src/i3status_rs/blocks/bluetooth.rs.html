@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/bluetooth.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>bluetooth.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/bluetooth.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>bluetooth.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -368,129 +368,129 @@
 <span id="368">368</span>
 <span id="369">369</span>
 <span id="370">370</span>
-</pre><pre class="rust"><code><span class="doccomment">//! Monitor Bluetooth device</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! This block displays the connectivity of a given Bluetooth device and the battery level if this</span>
-<span class="doccomment">//! is supported. Relies on the Bluez D-Bus API.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! When the device can be identified as an audio headset, a keyboard, joystick, or mouse, use the</span>
-<span class="doccomment">//! relevant icon. Otherwise, fall back on the generic Bluetooth symbol.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Right-clicking the block will attempt to connect (or disconnect) the device.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Configuration</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Key | Values | Default</span>
-<span class="doccomment">//! ----|--------|--------</span>
-<span class="doccomment">//! `mac` | MAC address of the Bluetooth device | **Required**</span>
-<span class="doccomment">//! `adapter_mac` | MAC Address of the Bluetooth adapter (in case your device was connected to multiple currently available adapters) | `None`</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot; $icon $name{ $percentage&amp;vert;} &quot;&lt;/code&gt;</span>
-<span class="doccomment">//! `disconnected_format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot; $icon{ $name&amp;vert;} &quot;&lt;/code&gt;</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Placeholder  | Value                                                                 | Type   | Unit</span>
-<span class="doccomment">//! -------------|-----------------------------------------------------------------------|--------|------</span>
-<span class="doccomment">//! `icon`       | Icon based on what type of device is connected                        | Icon   | -</span>
-<span class="doccomment">//! `name`       | Device&#39;s name                                                         | Text   | -</span>
-<span class="doccomment">//! `percentage` | Device&#39;s battery level (may be absent if the device is not supported) | Number | %</span>
-<span class="doccomment">//! `available`  | Present if the device is available                                    | Flag   | -</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Examples</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! This example just shows the icon when device is connected.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;bluetooth&quot;</span>
-<span class="doccomment">//! mac = &quot;00:18:09:92:1B:BA&quot;</span>
-<span class="doccomment">//! disconnected_format = &quot;&quot;</span>
-<span class="doccomment">//! format = &quot; $icon &quot;</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Icons Used</span>
-<span class="doccomment">//! - `headphones` for bluetooth devices identifying as &quot;audio-card&quot; or &quot;audio-headset&quot;</span>
-<span class="doccomment">//! - `joystick` for bluetooth devices identifying as &quot;input-gaming&quot;</span>
-<span class="doccomment">//! - `keyboard` for bluetooth devices identifying as &quot;input-keyboard&quot;</span>
-<span class="doccomment">//! - `mouse` for bluetooth devices identifying as &quot;input-mouse&quot;</span>
-<span class="doccomment">//! - `bluetooth` for all other devices</span>
+</pre><pre class="rust"><code><span class="doccomment">//! Monitor Bluetooth device
+//!
+//! This block displays the connectivity of a given Bluetooth device and the battery level if this
+//! is supported. Relies on the Bluez D-Bus API.
+//!
+//! When the device can be identified as an audio headset, a keyboard, joystick, or mouse, use the
+//! relevant icon. Otherwise, fall back on the generic Bluetooth symbol.
+//!
+//! Right-clicking the block will attempt to connect (or disconnect) the device.
+//!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `mac` | MAC address of the Bluetooth device | **Required**
+//! `adapter_mac` | MAC Address of the Bluetooth adapter (in case your device was connected to multiple currently available adapters) | `None`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot; $icon $name{ $percentage&amp;vert;} &quot;&lt;/code&gt;
+//! `disconnected_format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot; $icon{ $name&amp;vert;} &quot;&lt;/code&gt;
+//!
+//! Placeholder  | Value                                                                 | Type   | Unit
+//! -------------|-----------------------------------------------------------------------|--------|------
+//! `icon`       | Icon based on what type of device is connected                        | Icon   | -
+//! `name`       | Device&#39;s name                                                         | Text   | -
+//! `percentage` | Device&#39;s battery level (may be absent if the device is not supported) | Number | %
+//! `available`  | Present if the device is available                                    | Flag   | -
+//!
+//! # Examples
+//!
+//! This example just shows the icon when device is connected.
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;bluetooth&quot;
+//! mac = &quot;00:18:09:92:1B:BA&quot;
+//! disconnected_format = &quot;&quot;
+//! format = &quot; $icon &quot;
+//! ```
+//!
+//! # Icons Used
+//! - `headphones` for bluetooth devices identifying as &quot;audio-card&quot; or &quot;audio-headset&quot;
+//! - `joystick` for bluetooth devices identifying as &quot;input-gaming&quot;
+//! - `keyboard` for bluetooth devices identifying as &quot;input-keyboard&quot;
+//! - `mouse` for bluetooth devices identifying as &quot;input-mouse&quot;
+//! - `bluetooth` for all other devices
 
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">zbus::fdo</span>::{<span class="ident">ObjectManagerProxy</span>, <span class="ident">PropertiesProxy</span>};
+</span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span>zbus::fdo::{ObjectManagerProxy, PropertiesProxy};
 
-<span class="macro">make_log_macro!</span>(<span class="ident">debug</span>, <span class="string">&quot;bluetooth&quot;</span>);
+<span class="macro">make_log_macro!</span>(debug, <span class="string">&quot;bluetooth&quot;</span>);
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>)]</span>
-<span class="kw">struct</span> <span class="ident">BluetoothConfig</span> {
-    <span class="ident">mac</span>: <span class="ident">String</span>,
-    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
-    <span class="ident">adapter_mac</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
-    <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
-    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
-    <span class="ident">disconnected_format</span>: <span class="ident">FormatConfig</span>,
+<span class="attribute">#[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
+</span><span class="kw">struct </span>BluetoothConfig {
+    mac: String,
+    <span class="attribute">#[serde(default)]
+    </span>adapter_mac: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="attribute">#[serde(default)]
+    </span>format: FormatConfig,
+    <span class="attribute">#[serde(default)]
+    </span>disconnected_format: FormatConfig,
 }
 
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">BluetoothConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">format</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon $name{ $percentage|} &quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">disconnected_format</span> <span class="op">=</span> <span class="ident">config</span>
-        .<span class="ident">disconnected_format</span>
-        .<span class="ident">with_default</span>(<span class="string">&quot; $icon{ $name|} &quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">Widget::new</span>();
+<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span>config = BluetoothConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+    <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $name{ $percentage|} &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>disconnected_format = config
+        .disconnected_format
+        .with_default(<span class="string">&quot; $icon{ $name|} &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new();
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">monitor</span> <span class="op">=</span> <span class="ident">DeviceMonitor::new</span>(<span class="ident">config</span>.<span class="ident">mac</span>, <span class="ident">config</span>.<span class="ident">adapter_mac</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>monitor = DeviceMonitor::new(config.mac, config.adapter_mac).<span class="kw">await</span><span class="question-mark">?</span>;
 
-    <span class="kw">loop</span> {
-        <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">monitor</span>.<span class="ident">device</span> {
-            <span class="comment">// Available</span>
-            <span class="prelude-val">Some</span>(<span class="ident">device</span>) =&gt; {
-                <span class="kw">let</span> <span class="ident">connected</span> <span class="op">=</span> <span class="ident">device</span>.<span class="ident">connected</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">values</span> <span class="op">=</span> <span class="macro">map!</span> {
-                    <span class="string">&quot;icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="ident">device</span>.<span class="ident">icon</span>().<span class="kw">await</span><span class="question-mark">?</span>)<span class="question-mark">?</span>),
-                    <span class="string">&quot;name&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">device</span>.<span class="ident">name</span>().<span class="kw">await</span><span class="question-mark">?</span>),
-                    <span class="string">&quot;available&quot;</span> =&gt; <span class="ident">Value::flag</span>()
+    <span class="kw">loop </span>{
+        <span class="kw">match </span><span class="kw-2">&amp;</span>monitor.device {
+            <span class="comment">// Available
+            </span><span class="prelude-val">Some</span>(device) =&gt; {
+                <span class="kw">let </span>connected = device.connected().<span class="kw">await</span><span class="question-mark">?</span>;
+                <span class="kw">let </span><span class="kw-2">mut </span>values = <span class="macro">map! </span>{
+                    <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(device.icon().<span class="kw">await</span><span class="question-mark">?</span>)<span class="question-mark">?</span>),
+                    <span class="string">&quot;name&quot; </span>=&gt; Value::text(device.name().<span class="kw">await</span><span class="question-mark">?</span>),
+                    <span class="string">&quot;available&quot; </span>=&gt; Value::flag()
                 };
-                <span class="ident">device</span>
-                    .<span class="ident">percentage</span>()
-                    .<span class="kw">await</span>
-                    .<span class="ident">map</span>(<span class="op">|</span><span class="ident">p</span><span class="op">|</span> <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;percentage&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::percents</span>(<span class="ident">p</span>)));
-                <span class="kw">if</span> <span class="ident">connected</span> {
-                    <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Good</span>;
-                    <span class="ident">widget</span>.<span class="ident">set_format</span>(<span class="ident">format</span>.<span class="ident">clone</span>());
+                device
+                    .percentage()
+                    .<span class="kw">await
+                    </span>.map(|p| values.insert(<span class="string">&quot;percentage&quot;</span>.into(), Value::percents(p)));
+                <span class="kw">if </span>connected {
+                    widget.state = State::Good;
+                    widget.set_format(format.clone());
                     <span class="macro">debug!</span>(<span class="string">&quot;Showing device as connected&quot;</span>);
-                } <span class="kw">else</span> {
+                } <span class="kw">else </span>{
                     <span class="macro">debug!</span>(<span class="string">&quot;Showing device as disconnected&quot;</span>);
-                    <span class="ident">widget</span>.<span class="ident">set_format</span>(<span class="ident">disconnected_format</span>.<span class="ident">clone</span>());
-                    <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Idle</span>;
+                    widget.set_format(disconnected_format.clone());
+                    widget.state = State::Idle;
                 }
-                <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">values</span>);
+                widget.set_values(values);
 
-                <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+                api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
             }
-            <span class="comment">// Unavailable</span>
-            <span class="prelude-val">None</span> =&gt; {
+            <span class="comment">// Unavailable
+            </span><span class="prelude-val">None </span>=&gt; {
                 <span class="macro">debug!</span>(<span class="string">&quot;Showing device as unavailable&quot;</span>);
-                <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Idle</span>;
-                <span class="ident">widget</span>.<span class="ident">set_format</span>(<span class="ident">disconnected_format</span>.<span class="ident">clone</span>());
-                <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span>(<span class="string">&quot;icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;bluetooth&quot;</span>)<span class="question-mark">?</span>)));
-                <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+                widget.state = State::Idle;
+                widget.set_format(disconnected_format.clone());
+                widget.set_values(<span class="macro">map!</span>(<span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;bluetooth&quot;</span>)<span class="question-mark">?</span>)));
+                api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
             }
         }
 
-        <span class="kw">loop</span> {
-            <span class="macro">select!</span> {
-                <span class="ident">res</span> <span class="op">=</span> <span class="ident">monitor</span>.<span class="ident">wait_for_change</span>() =&gt; {
-                    <span class="ident">res</span><span class="question-mark">?</span>;
+        <span class="kw">loop </span>{
+            <span class="macro">select! </span>{
+                res = monitor.wait_for_change() =&gt; {
+                    res<span class="question-mark">?</span>;
                     <span class="kw">break</span>;
                 },
-                <span class="ident">event</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Click</span>(<span class="ident">click</span>) <span class="op">=</span> <span class="ident">event</span> {
-                    <span class="kw">if</span> <span class="ident">click</span>.<span class="ident">button</span> <span class="op">==</span> <span class="ident">MouseButton::Right</span> {
-                        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">dev</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">monitor</span>.<span class="ident">device</span> {
-                            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">connected</span>) <span class="op">=</span> <span class="ident">dev</span>.<span class="ident">connected</span>().<span class="kw">await</span> {
-                                <span class="kw">if</span> <span class="ident">connected</span> {
-                                    <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">dev</span>.<span class="ident">device</span>.<span class="ident">disconnect</span>().<span class="kw">await</span>;
-                                } <span class="kw">else</span> {
-                                    <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">dev</span>.<span class="ident">device</span>.<span class="ident">connect</span>().<span class="kw">await</span>;
+                event = api.event() =&gt; <span class="kw">if let </span>Click(click) = event {
+                    <span class="kw">if </span>click.button == MouseButton::Right {
+                        <span class="kw">if let </span><span class="prelude-val">Some</span>(dev) = <span class="kw-2">&amp;</span>monitor.device {
+                            <span class="kw">if let </span><span class="prelude-val">Ok</span>(connected) = dev.connected().<span class="kw">await </span>{
+                                <span class="kw">if </span>connected {
+                                    <span class="kw">let _ </span>= dev.device.disconnect().<span class="kw">await</span>;
+                                } <span class="kw">else </span>{
+                                    <span class="kw">let _ </span>= dev.device.connect().<span class="kw">await</span>;
                                 }
                             }
                         }
@@ -501,92 +501,92 @@
     }
 }
 
-<span class="kw">struct</span> <span class="ident">DeviceMonitor</span> {
-    <span class="ident">mac</span>: <span class="ident">String</span>,
-    <span class="ident">adapter_mac</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="ident">manager_proxy</span>: <span class="ident">ObjectManagerProxy</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span><span class="op">&gt;</span>,
-    <span class="ident">device</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Device</span><span class="op">&gt;</span>,
+<span class="kw">struct </span>DeviceMonitor {
+    mac: String,
+    adapter_mac: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    manager_proxy: ObjectManagerProxy&lt;<span class="lifetime">&#39;static</span>&gt;,
+    device: <span class="prelude-ty">Option</span>&lt;Device&gt;,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>)]</span>
-<span class="kw">struct</span> <span class="ident">Device</span> {
-    <span class="ident">props</span>: <span class="ident">PropertiesProxy</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span><span class="op">&gt;</span>,
-    <span class="ident">device</span>: <span class="ident">Device1Proxy</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span><span class="op">&gt;</span>,
-    <span class="ident">battery</span>: <span class="ident">Battery1Proxy</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span><span class="op">&gt;</span>,
+<span class="attribute">#[derive(Clone)]
+</span><span class="kw">struct </span>Device {
+    props: PropertiesProxy&lt;<span class="lifetime">&#39;static</span>&gt;,
+    device: Device1Proxy&lt;<span class="lifetime">&#39;static</span>&gt;,
+    battery: Battery1Proxy&lt;<span class="lifetime">&#39;static</span>&gt;,
 }
 
-<span class="kw">impl</span> <span class="ident">DeviceMonitor</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">mac</span>: <span class="ident">String</span>, <span class="ident">adapter_mac</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">dbus_conn</span> <span class="op">=</span> <span class="ident">new_system_dbus_connection</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">manager_proxy</span> <span class="op">=</span> <span class="ident">ObjectManagerProxy::builder</span>(<span class="kw-2">&amp;</span><span class="ident">dbus_conn</span>)
-            .<span class="ident">destination</span>(<span class="string">&quot;org.bluez&quot;</span>)
-            .<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span>.<span class="ident">path</span>(<span class="string">&quot;/&quot;</span>))
-            .<span class="ident">unwrap</span>()
-            .<span class="ident">build</span>()
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to create ObjectManagerProxy&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">device</span> <span class="op">=</span> <span class="ident">Device::try_find</span>(<span class="kw-2">&amp;</span><span class="ident">manager_proxy</span>, <span class="kw-2">&amp;</span><span class="ident">mac</span>, <span class="ident">adapter_mac</span>.<span class="ident">as_deref</span>()).<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
-            <span class="ident">mac</span>,
-            <span class="ident">adapter_mac</span>,
-            <span class="ident">manager_proxy</span>,
-            <span class="ident">device</span>,
+<span class="kw">impl </span>DeviceMonitor {
+    <span class="kw">async fn </span>new(mac: String, adapter_mac: <span class="prelude-ty">Option</span>&lt;String&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
+        <span class="kw">let </span>dbus_conn = new_system_dbus_connection().<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let </span>manager_proxy = ObjectManagerProxy::builder(<span class="kw-2">&amp;</span>dbus_conn)
+            .destination(<span class="string">&quot;org.bluez&quot;</span>)
+            .and_then(|x| x.path(<span class="string">&quot;/&quot;</span>))
+            .unwrap()
+            .build()
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to create ObjectManagerProxy&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>device = Device::try_find(<span class="kw-2">&amp;</span>manager_proxy, <span class="kw-2">&amp;</span>mac, adapter_mac.as_deref()).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
+            mac,
+            adapter_mac,
+            manager_proxy,
+            device,
         })
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">wait_for_change</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="kw-2">&amp;mut</span> <span class="self">self</span>.<span class="ident">device</span> {
-            <span class="prelude-val">None</span> =&gt; {
-                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">interface_added</span> <span class="op">=</span> <span class="self">self</span>
-                    .<span class="ident">manager_proxy</span>
-                    .<span class="ident">receive_interfaces_added</span>()
-                    .<span class="kw">await</span>
-                    .<span class="ident">error</span>(<span class="string">&quot;Failed to monitor interfaces&quot;</span>)<span class="question-mark">?</span>;
-                <span class="kw">loop</span> {
-                    <span class="ident">interface_added</span>
-                        .<span class="ident">next</span>()
-                        .<span class="kw">await</span>
-                        .<span class="ident">error</span>(<span class="string">&quot;Stream ended unexpectedly&quot;</span>)<span class="question-mark">?</span>;
-                    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">device</span>) <span class="op">=</span> <span class="ident">Device::try_find</span>(
-                        <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">manager_proxy</span>,
-                        <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">mac</span>,
-                        <span class="self">self</span>.<span class="ident">adapter_mac</span>.<span class="ident">as_deref</span>(),
+    <span class="kw">async fn </span>wait_for_change(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        <span class="kw">match </span><span class="kw-2">&amp;mut </span><span class="self">self</span>.device {
+            <span class="prelude-val">None </span>=&gt; {
+                <span class="kw">let </span><span class="kw-2">mut </span>interface_added = <span class="self">self
+                    </span>.manager_proxy
+                    .receive_interfaces_added()
+                    .<span class="kw">await
+                    </span>.error(<span class="string">&quot;Failed to monitor interfaces&quot;</span>)<span class="question-mark">?</span>;
+                <span class="kw">loop </span>{
+                    interface_added
+                        .next()
+                        .<span class="kw">await
+                        </span>.error(<span class="string">&quot;Stream ended unexpectedly&quot;</span>)<span class="question-mark">?</span>;
+                    <span class="kw">if let </span><span class="prelude-val">Some</span>(device) = Device::try_find(
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.manager_proxy,
+                        <span class="kw-2">&amp;</span><span class="self">self</span>.mac,
+                        <span class="self">self</span>.adapter_mac.as_deref(),
                     )
-                    .<span class="kw">await</span><span class="question-mark">?</span>
-                    {
-                        <span class="self">self</span>.<span class="ident">device</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">device</span>);
+                    .<span class="kw">await</span><span class="question-mark">?
+                    </span>{
+                        <span class="self">self</span>.device = <span class="prelude-val">Some</span>(device);
                         <span class="macro">debug!</span>(<span class="string">&quot;Device has been added&quot;</span>);
-                        <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
+                        <span class="kw">return </span><span class="prelude-val">Ok</span>(());
                     }
                 }
             }
-            <span class="prelude-val">Some</span>(<span class="ident">device</span>) =&gt; {
-                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">updates</span> <span class="op">=</span> <span class="ident">device</span>
-                    .<span class="ident">props</span>
-                    .<span class="ident">receive_properties_changed</span>()
-                    .<span class="kw">await</span>
-                    .<span class="ident">error</span>(<span class="string">&quot;Failed to receive updates&quot;</span>)<span class="question-mark">?</span>;
-                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">interface_removed</span> <span class="op">=</span> <span class="self">self</span>
-                    .<span class="ident">manager_proxy</span>
-                    .<span class="ident">receive_interfaces_removed</span>()
-                    .<span class="kw">await</span>
-                    .<span class="ident">error</span>(<span class="string">&quot;Failed to monitor interfaces&quot;</span>)<span class="question-mark">?</span>;
-                <span class="kw">loop</span> {
-                    <span class="macro">select!</span> {
-                        <span class="kw">_</span> <span class="op">=</span> <span class="ident">updates</span>.<span class="ident">next</span>() =&gt; {
-                            <span class="comment">// avoid too frequent updates</span>
-                            <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">tokio::time::timeout</span>(<span class="ident">Duration::from_millis</span>(<span class="number">100</span>), <span class="kw">async</span> {
-                                <span class="kw">loop</span> { <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">updates</span>.<span class="ident">next</span>().<span class="kw">await</span>; }
+            <span class="prelude-val">Some</span>(device) =&gt; {
+                <span class="kw">let </span><span class="kw-2">mut </span>updates = device
+                    .props
+                    .receive_properties_changed()
+                    .<span class="kw">await
+                    </span>.error(<span class="string">&quot;Failed to receive updates&quot;</span>)<span class="question-mark">?</span>;
+                <span class="kw">let </span><span class="kw-2">mut </span>interface_removed = <span class="self">self
+                    </span>.manager_proxy
+                    .receive_interfaces_removed()
+                    .<span class="kw">await
+                    </span>.error(<span class="string">&quot;Failed to monitor interfaces&quot;</span>)<span class="question-mark">?</span>;
+                <span class="kw">loop </span>{
+                    <span class="macro">select! </span>{
+                        <span class="kw">_ </span>= updates.next() =&gt; {
+                            <span class="comment">// avoid too frequent updates
+                            </span><span class="kw">let _ </span>= tokio::time::timeout(Duration::from_millis(<span class="number">100</span>), <span class="kw">async </span>{
+                                <span class="kw">loop </span>{ <span class="kw">let _ </span>= updates.next().<span class="kw">await</span>; }
                             }).<span class="kw">await</span>;
                             <span class="macro">debug!</span>(<span class="string">&quot;Got update for device&quot;</span>);
-                            <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
+                            <span class="kw">return </span><span class="prelude-val">Ok</span>(());
                         }
-                        <span class="prelude-val">Some</span>(<span class="ident">event</span>) <span class="op">=</span> <span class="ident">interface_removed</span>.<span class="ident">next</span>() =&gt; {
-                            <span class="kw">let</span> <span class="ident">args</span> <span class="op">=</span> <span class="ident">event</span>.<span class="ident">args</span>().<span class="ident">error</span>(<span class="string">&quot;Failed to get the args&quot;</span>)<span class="question-mark">?</span>;
-                            <span class="kw">if</span> <span class="ident">args</span>.<span class="ident">object_path</span>() <span class="op">==</span> <span class="ident">device</span>.<span class="ident">device</span>.<span class="ident">path</span>() {
-                                <span class="self">self</span>.<span class="ident">device</span> <span class="op">=</span> <span class="prelude-val">None</span>;
+                        <span class="prelude-val">Some</span>(event) = interface_removed.next() =&gt; {
+                            <span class="kw">let </span>args = event.args().error(<span class="string">&quot;Failed to get the args&quot;</span>)<span class="question-mark">?</span>;
+                            <span class="kw">if </span>args.object_path() == device.device.path() {
+                                <span class="self">self</span>.device = <span class="prelude-val">None</span>;
                                 <span class="macro">debug!</span>(<span class="string">&quot;Device is no longer available&quot;</span>);
-                                <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
+                                <span class="kw">return </span><span class="prelude-val">Ok</span>(());
                             }
                         },
                     }
@@ -596,91 +596,91 @@
     }
 }
 
-<span class="kw">impl</span> <span class="ident">Device</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">try_find</span>(
-        <span class="ident">manager_proxy</span>: <span class="kw-2">&amp;</span><span class="ident">ObjectManagerProxy</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>,
-        <span class="ident">mac</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
-        <span class="ident">adapter_mac</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span><span class="op">&gt;</span>,
-    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">root_object</span>: <span class="ident">String</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">adapter_mac</span> {
-            <span class="prelude-val">Some</span>(<span class="ident">adapter_mac</span>) =&gt; {
-                <span class="kw">let</span> <span class="ident">adapters</span> <span class="op">=</span> <span class="ident">manager_proxy</span>
-                    .<span class="ident">get_managed_objects</span>()
-                    .<span class="kw">await</span>
-                    .<span class="ident">error</span>(<span class="string">&quot;Failed to get a list of adapters&quot;</span>)<span class="question-mark">?</span>;
-                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">adapter_path</span> <span class="op">=</span> <span class="prelude-val">None</span>;
-                <span class="kw">for</span> (<span class="ident">path</span>, <span class="ident">interfaces</span>) <span class="kw">in</span> <span class="ident">adapters</span> {
-                    <span class="kw">let</span> <span class="ident">adapter_interface</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">interfaces</span>.<span class="ident">get</span>(<span class="string">&quot;org.bluez.Adapter1&quot;</span>) {
-                        <span class="prelude-val">Some</span>(<span class="ident">i</span>) =&gt; <span class="ident">i</span>,
-                        <span class="prelude-val">None</span> =&gt; <span class="kw">continue</span>, <span class="comment">// Not an adapter</span>
-                    };
-                    <span class="kw">let</span> <span class="ident">addr</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="ident">adapter_interface</span>
-                        .<span class="ident">get</span>(<span class="string">&quot;Address&quot;</span>)
-                        .<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">a</span><span class="op">|</span> <span class="ident">a</span>.<span class="ident">downcast_ref</span>())
-                        .<span class="ident">unwrap</span>();
-                    <span class="kw">if</span> <span class="ident">addr</span> <span class="op">==</span> <span class="ident">adapter_mac</span> {
-                        <span class="ident">adapter_path</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">path</span>);
+<span class="kw">impl </span>Device {
+    <span class="kw">async fn </span>try_find(
+        manager_proxy: <span class="kw-2">&amp;</span>ObjectManagerProxy&lt;<span class="lifetime">&#39;_</span>&gt;,
+        mac: <span class="kw-2">&amp;</span>str,
+        adapter_mac: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt;,
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>&gt;&gt; {
+        <span class="kw">let </span>root_object: String = <span class="kw">match </span>adapter_mac {
+            <span class="prelude-val">Some</span>(adapter_mac) =&gt; {
+                <span class="kw">let </span>adapters = manager_proxy
+                    .get_managed_objects()
+                    .<span class="kw">await
+                    </span>.error(<span class="string">&quot;Failed to get a list of adapters&quot;</span>)<span class="question-mark">?</span>;
+                <span class="kw">let </span><span class="kw-2">mut </span>adapter_path = <span class="prelude-val">None</span>;
+                <span class="kw">for </span>(path, interfaces) <span class="kw">in </span>adapters {
+                    <span class="kw">let </span>adapter_interface = <span class="kw">match </span>interfaces.get(<span class="string">&quot;org.bluez.Adapter1&quot;</span>) {
+                        <span class="prelude-val">Some</span>(i) =&gt; i,
+                        <span class="prelude-val">None </span>=&gt; <span class="kw">continue</span>, <span class="comment">// Not an adapter
+                    </span>};
+                    <span class="kw">let </span>addr: <span class="kw-2">&amp;</span>str = adapter_interface
+                        .get(<span class="string">&quot;Address&quot;</span>)
+                        .and_then(|a| a.downcast_ref())
+                        .unwrap();
+                    <span class="kw">if </span>addr == adapter_mac {
+                        adapter_path = <span class="prelude-val">Some</span>(path);
                         <span class="kw">break</span>;
                     }
                 }
-                <span class="kw">match</span> <span class="ident">adapter_path</span> {
-                    <span class="prelude-val">Some</span>(<span class="ident">path</span>) =&gt; <span class="ident">path</span>.<span class="ident">as_str</span>().<span class="ident">into</span>(),
-                    <span class="prelude-val">None</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+                <span class="kw">match </span>adapter_path {
+                    <span class="prelude-val">Some</span>(path) =&gt; path.as_str().into(),
+                    <span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
                 }
             }
-            <span class="prelude-val">None</span> =&gt; <span class="ident">String::new</span>(),
+            <span class="prelude-val">None </span>=&gt; String::new(),
         };
 
-        <span class="macro">debug!</span>(<span class="string">&quot;root object: {:?}&quot;</span>, <span class="ident">root_object</span>);
+        <span class="macro">debug!</span>(<span class="string">&quot;root object: {:?}&quot;</span>, root_object);
 
-        <span class="comment">// Iterate over all devices</span>
-        <span class="kw">let</span> <span class="ident">devices</span> <span class="op">=</span> <span class="ident">manager_proxy</span>
-            .<span class="ident">get_managed_objects</span>()
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to get the list of devices&quot;</span>)<span class="question-mark">?</span>;
+        <span class="comment">// Iterate over all devices
+        </span><span class="kw">let </span>devices = manager_proxy
+            .get_managed_objects()
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to get the list of devices&quot;</span>)<span class="question-mark">?</span>;
 
-        <span class="macro">debug!</span>(<span class="string">&quot;all managed devices: {:?}&quot;</span>, <span class="ident">devices</span>);
+        <span class="macro">debug!</span>(<span class="string">&quot;all managed devices: {:?}&quot;</span>, devices);
 
-        <span class="kw">for</span> (<span class="ident">path</span>, <span class="ident">interfaces</span>) <span class="kw">in</span> <span class="ident">devices</span> {
-            <span class="kw">if</span> <span class="op">!</span><span class="ident">path</span>.<span class="ident">starts_with</span>(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;{root_object}/&quot;</span>)) {
+        <span class="kw">for </span>(path, interfaces) <span class="kw">in </span>devices {
+            <span class="kw">if </span>!path.starts_with(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;{root_object}/&quot;</span>)) {
                 <span class="kw">continue</span>;
             }
 
-            <span class="kw">let</span> <span class="ident">device_interface</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">interfaces</span>.<span class="ident">get</span>(<span class="string">&quot;org.bluez.Device1&quot;</span>) {
-                <span class="prelude-val">Some</span>(<span class="ident">i</span>) =&gt; <span class="ident">i</span>,
-                <span class="prelude-val">None</span> =&gt; <span class="kw">continue</span>, <span class="comment">// Not a device</span>
-            };
+            <span class="kw">let </span>device_interface = <span class="kw">match </span>interfaces.get(<span class="string">&quot;org.bluez.Device1&quot;</span>) {
+                <span class="prelude-val">Some</span>(i) =&gt; i,
+                <span class="prelude-val">None </span>=&gt; <span class="kw">continue</span>, <span class="comment">// Not a device
+            </span>};
 
-            <span class="kw">let</span> <span class="ident">addr</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="ident">device_interface</span>
-                .<span class="ident">get</span>(<span class="string">&quot;Address&quot;</span>)
-                .<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">a</span><span class="op">|</span> <span class="ident">a</span>.<span class="ident">downcast_ref</span>())
-                .<span class="ident">unwrap</span>();
-            <span class="kw">if</span> <span class="ident">addr</span> <span class="op">!</span><span class="op">=</span> <span class="ident">mac</span> {
+            <span class="kw">let </span>addr: <span class="kw-2">&amp;</span>str = device_interface
+                .get(<span class="string">&quot;Address&quot;</span>)
+                .and_then(|a| a.downcast_ref())
+                .unwrap();
+            <span class="kw">if </span>addr != mac {
                 <span class="kw">continue</span>;
             }
 
-            <span class="macro">debug!</span>(<span class="string">&quot;Found device with path {:?}&quot;</span>, <span class="ident">path</span>);
+            <span class="macro">debug!</span>(<span class="string">&quot;Found device with path {:?}&quot;</span>, path);
 
-            <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="self">Self</span> {
-                <span class="ident">props</span>: <span class="ident">PropertiesProxy::builder</span>(<span class="ident">manager_proxy</span>.<span class="ident">connection</span>())
-                    .<span class="ident">destination</span>(<span class="string">&quot;org.bluez&quot;</span>)
-                    .<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span>.<span class="ident">path</span>(<span class="ident">path</span>.<span class="ident">clone</span>()))
-                    .<span class="ident">unwrap</span>()
-                    .<span class="ident">build</span>()
-                    .<span class="kw">await</span>
-                    .<span class="ident">error</span>(<span class="string">&quot;Failed to create PropertiesProxy&quot;</span>)<span class="question-mark">?</span>,
-                <span class="ident">device</span>: <span class="ident">Device1Proxy::builder</span>(<span class="ident">manager_proxy</span>.<span class="ident">connection</span>())
-                    .<span class="ident">path</span>(<span class="ident">path</span>.<span class="ident">clone</span>())
-                    .<span class="ident">unwrap</span>()
-                    .<span class="ident">build</span>()
-                    .<span class="kw">await</span>
-                    .<span class="ident">error</span>(<span class="string">&quot;Failed to create Device1Proxy&quot;</span>)<span class="question-mark">?</span>,
-                <span class="ident">battery</span>: <span class="ident">Battery1Proxy::builder</span>(<span class="ident">manager_proxy</span>.<span class="ident">connection</span>())
-                    .<span class="ident">path</span>(<span class="ident">path</span>)
-                    .<span class="ident">unwrap</span>()
-                    .<span class="ident">build</span>()
-                    .<span class="kw">await</span>
-                    .<span class="ident">error</span>(<span class="string">&quot;Failed to create Battery1Proxy&quot;</span>)<span class="question-mark">?</span>,
+            <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="self">Self </span>{
+                props: PropertiesProxy::builder(manager_proxy.connection())
+                    .destination(<span class="string">&quot;org.bluez&quot;</span>)
+                    .and_then(|x| x.path(path.clone()))
+                    .unwrap()
+                    .build()
+                    .<span class="kw">await
+                    </span>.error(<span class="string">&quot;Failed to create PropertiesProxy&quot;</span>)<span class="question-mark">?</span>,
+                device: Device1Proxy::builder(manager_proxy.connection())
+                    .path(path.clone())
+                    .unwrap()
+                    .build()
+                    .<span class="kw">await
+                    </span>.error(<span class="string">&quot;Failed to create Device1Proxy&quot;</span>)<span class="question-mark">?</span>,
+                battery: Battery1Proxy::builder(manager_proxy.connection())
+                    .path(path)
+                    .unwrap()
+                    .build()
+                    .<span class="kw">await
+                    </span>.error(<span class="string">&quot;Failed to create Battery1Proxy&quot;</span>)<span class="question-mark">?</span>,
             }));
         }
 
@@ -688,55 +688,55 @@
         <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">icon</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">device</span>
-            .<span class="ident">icon</span>()
-            .<span class="kw">await</span>
-            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">icon</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">icon</span>.<span class="ident">as_str</span>() {
-                <span class="string">&quot;audio-card&quot;</span> <span class="op">|</span> <span class="string">&quot;audio-headset&quot;</span> =&gt; <span class="string">&quot;headphones&quot;</span>,
-                <span class="string">&quot;input-gaming&quot;</span> =&gt; <span class="string">&quot;joystick&quot;</span>,
-                <span class="string">&quot;input-keyboard&quot;</span> =&gt; <span class="string">&quot;keyboard&quot;</span>,
-                <span class="string">&quot;input-mouse&quot;</span> =&gt; <span class="string">&quot;mouse&quot;</span>,
-                <span class="kw">_</span> =&gt; <span class="string">&quot;bluetooth&quot;</span>,
+    <span class="kw">async fn </span>icon(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt; {
+        <span class="self">self</span>.device
+            .icon()
+            .<span class="kw">await
+            </span>.map(|icon| <span class="kw">match </span>icon.as_str() {
+                <span class="string">&quot;audio-card&quot; </span>| <span class="string">&quot;audio-headset&quot; </span>=&gt; <span class="string">&quot;headphones&quot;</span>,
+                <span class="string">&quot;input-gaming&quot; </span>=&gt; <span class="string">&quot;joystick&quot;</span>,
+                <span class="string">&quot;input-keyboard&quot; </span>=&gt; <span class="string">&quot;keyboard&quot;</span>,
+                <span class="string">&quot;input-mouse&quot; </span>=&gt; <span class="string">&quot;mouse&quot;</span>,
+                <span class="kw">_ </span>=&gt; <span class="string">&quot;bluetooth&quot;</span>,
             })
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to get icon&quot;</span>)
+            .error(<span class="string">&quot;Failed to get icon&quot;</span>)
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">name</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">device</span>.<span class="ident">name</span>().<span class="kw">await</span>.<span class="ident">error</span>(<span class="string">&quot;Failed to get name&quot;</span>)
+    <span class="kw">async fn </span>name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;String&gt; {
+        <span class="self">self</span>.device.name().<span class="kw">await</span>.error(<span class="string">&quot;Failed to get name&quot;</span>)
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">connected</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">device</span>
-            .<span class="ident">connected</span>()
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to get connected state&quot;</span>)
+    <span class="kw">async fn </span>connected(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;bool&gt; {
+        <span class="self">self</span>.device
+            .connected()
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to get connected state&quot;</span>)
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">percentage</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">battery</span>.<span class="ident">percentage</span>().<span class="kw">await</span>.<span class="ident">ok</span>()
+    <span class="kw">async fn </span>percentage(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;u8&gt; {
+        <span class="self">self</span>.battery.percentage().<span class="kw">await</span>.ok()
     }
 }
 
-<span class="attribute">#[<span class="ident">zbus::dbus_proxy</span>(<span class="ident">interface</span> <span class="op">=</span> <span class="string">&quot;org.bluez.Device1&quot;</span>, <span class="ident">default_service</span> <span class="op">=</span> <span class="string">&quot;org.bluez&quot;</span>)]</span>
-<span class="kw">trait</span> <span class="ident">Device1</span> {
-    <span class="kw">fn</span> <span class="ident">connect</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
-    <span class="kw">fn</span> <span class="ident">disconnect</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
+<span class="attribute">#[zbus::dbus_proxy(interface = <span class="string">&quot;org.bluez.Device1&quot;</span>, default_service = <span class="string">&quot;org.bluez&quot;</span>)]
+</span><span class="kw">trait </span>Device1 {
+    <span class="kw">fn </span>connect(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;()&gt;;
+    <span class="kw">fn </span>disconnect(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;()&gt;;
 
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">connected</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>;
+    <span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>connected(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;
 
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">name</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>;
+    <span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;String&gt;;
 
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">icon</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>;
+    <span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>icon(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;String&gt;;
 }
 
-<span class="attribute">#[<span class="ident">zbus::dbus_proxy</span>(<span class="ident">interface</span> <span class="op">=</span> <span class="string">&quot;org.bluez.Battery1&quot;</span>, <span class="ident">default_service</span> <span class="op">=</span> <span class="string">&quot;org.bluez&quot;</span>)]</span>
-<span class="kw">trait</span> <span class="ident">Battery1</span> {
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">percentage</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>;
+<span class="attribute">#[zbus::dbus_proxy(interface = <span class="string">&quot;org.bluez.Battery1&quot;</span>, default_service = <span class="string">&quot;org.bluez&quot;</span>)]
+</span><span class="kw">trait </span>Battery1 {
+    <span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>percentage(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;u8&gt;;
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

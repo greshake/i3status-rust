@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/errors.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>errors.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../i3status_rs/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/errors.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>errors.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../i3status_rs/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -222,186 +222,186 @@
 <span id="222">222</span>
 <span id="223">223</span>
 <span id="224">224</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::borrow::Cow</span>;
-<span class="kw">use</span> <span class="ident">std::fmt</span>;
-<span class="kw">use</span> <span class="ident">std::sync::Arc</span>;
+</pre><pre class="rust"><code><span class="kw">use </span>std::borrow::Cow;
+<span class="kw">use </span>std::fmt;
+<span class="kw">use </span>std::sync::Arc;
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::blocks::BlockType</span>;
+<span class="kw">use </span><span class="kw">crate</span>::blocks::BlockType;
 
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">std::error::Error</span> <span class="kw">as</span> <span class="ident">StdError</span>;
+<span class="kw">pub use </span>std::error::Error <span class="kw">as </span>StdError;
 
-<span class="doccomment">/// Result type returned from functions that can have our `Error`s.</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">E</span> <span class="op">=</span> <span class="ident">Error</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">std::result::Result</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">E</span><span class="op">&gt;</span>;
+<span class="doccomment">/// Result type returned from functions that can have our `Error`s.
+</span><span class="kw">pub type </span><span class="prelude-ty">Result</span>&lt;T, E = Error&gt; = std::result::Result&lt;T, E&gt;;
 
-<span class="kw">type</span> <span class="ident">ErrorMsg</span> <span class="op">=</span> <span class="ident">Cow</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span>, <span class="ident">str</span><span class="op">&gt;</span>;
+<span class="kw">type </span>ErrorMsg = Cow&lt;<span class="lifetime">&#39;static</span>, str&gt;;
 
-<span class="doccomment">/// Error type</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Error</span> {
-    <span class="kw">pub</span> <span class="ident">kind</span>: <span class="ident">ErrorKind</span>,
-    <span class="kw">pub</span> <span class="ident">message</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ErrorMsg</span><span class="op">&gt;</span>,
-    <span class="kw">pub</span> <span class="ident">cause</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">StdError</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    <span class="kw">pub</span> <span class="ident">block</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span>(<span class="ident">BlockType</span>, <span class="ident">usize</span>)<span class="op">&gt;</span>,
+<span class="doccomment">/// Error type
+</span><span class="attribute">#[derive(Debug, Clone)]
+</span><span class="kw">pub struct </span>Error {
+    <span class="kw">pub </span>kind: ErrorKind,
+    <span class="kw">pub </span>message: <span class="prelude-ty">Option</span>&lt;ErrorMsg&gt;,
+    <span class="kw">pub </span>cause: <span class="prelude-ty">Option</span>&lt;Arc&lt;<span class="kw">dyn </span>StdError + Send + Sync + <span class="lifetime">&#39;static</span>&gt;&gt;,
+    <span class="kw">pub </span>block: <span class="prelude-ty">Option</span>&lt;(BlockType, usize)&gt;,
 }
 
-<span class="doccomment">/// A set of errors that can occur during the runtime</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">ErrorKind</span> {
-    <span class="ident">Config</span>,
-    <span class="ident">Format</span>,
-    <span class="ident">Other</span>,
+<span class="doccomment">/// A set of errors that can occur during the runtime
+</span><span class="attribute">#[derive(Debug, Clone, PartialEq, Eq)]
+</span><span class="kw">pub enum </span>ErrorKind {
+    Config,
+    Format,
+    Other,
 }
 
-<span class="kw">impl</span> <span class="ident">Error</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">ErrorMsg</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="ident">message</span>: <span class="ident">T</span>) -&gt; <span class="self">Self</span> {
-        <span class="self">Self</span> {
-            <span class="ident">kind</span>: <span class="ident">ErrorKind::Other</span>,
-            <span class="ident">message</span>: <span class="prelude-val">Some</span>(<span class="ident">message</span>.<span class="ident">into</span>()),
-            <span class="ident">cause</span>: <span class="prelude-val">None</span>,
-            <span class="ident">block</span>: <span class="prelude-val">None</span>,
+<span class="kw">impl </span>Error {
+    <span class="kw">pub fn </span>new&lt;T: Into&lt;ErrorMsg&gt;&gt;(message: T) -&gt; <span class="self">Self </span>{
+        <span class="self">Self </span>{
+            kind: ErrorKind::Other,
+            message: <span class="prelude-val">Some</span>(message.into()),
+            cause: <span class="prelude-val">None</span>,
+            block: <span class="prelude-val">None</span>,
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_format</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">ErrorMsg</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="ident">message</span>: <span class="ident">T</span>) -&gt; <span class="self">Self</span> {
-        <span class="self">Self</span> {
-            <span class="ident">kind</span>: <span class="ident">ErrorKind::Format</span>,
-            <span class="ident">message</span>: <span class="prelude-val">Some</span>(<span class="ident">message</span>.<span class="ident">into</span>()),
-            <span class="ident">cause</span>: <span class="prelude-val">None</span>,
-            <span class="ident">block</span>: <span class="prelude-val">None</span>,
+    <span class="kw">pub fn </span>new_format&lt;T: Into&lt;ErrorMsg&gt;&gt;(message: T) -&gt; <span class="self">Self </span>{
+        <span class="self">Self </span>{
+            kind: ErrorKind::Format,
+            message: <span class="prelude-val">Some</span>(message.into()),
+            cause: <span class="prelude-val">None</span>,
+            block: <span class="prelude-val">None</span>,
         }
     }
 }
 
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">InBlock</span> {
-    <span class="kw">fn</span> <span class="ident">in_block</span>(<span class="self">self</span>, <span class="ident">block</span>: <span class="ident">BlockType</span>, <span class="ident">block_id</span>: <span class="ident">usize</span>) -&gt; <span class="self">Self</span>;
+<span class="kw">pub trait </span>InBlock {
+    <span class="kw">fn </span>in_block(<span class="self">self</span>, block: BlockType, block_id: usize) -&gt; <span class="self">Self</span>;
 }
 
-<span class="kw">impl</span> <span class="ident">InBlock</span> <span class="kw">for</span> <span class="ident">Error</span> {
-    <span class="kw">fn</span> <span class="ident">in_block</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">block</span>: <span class="ident">BlockType</span>, <span class="ident">block_id</span>: <span class="ident">usize</span>) -&gt; <span class="self">Self</span> {
-        <span class="self">self</span>.<span class="ident">block</span> <span class="op">=</span> <span class="prelude-val">Some</span>((<span class="ident">block</span>, <span class="ident">block_id</span>));
-        <span class="self">self</span>
-    }
+<span class="kw">impl </span>InBlock <span class="kw">for </span>Error {
+    <span class="kw">fn </span>in_block(<span class="kw-2">mut </span><span class="self">self</span>, block: BlockType, block_id: usize) -&gt; <span class="self">Self </span>{
+        <span class="self">self</span>.block = <span class="prelude-val">Some</span>((block, block_id));
+        <span class="self">self
+    </span>}
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="ident">InBlock</span> <span class="kw">for</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">in_block</span>(<span class="self">self</span>, <span class="ident">block</span>: <span class="ident">BlockType</span>, <span class="ident">block_id</span>: <span class="ident">usize</span>) -&gt; <span class="self">Self</span> {
-        <span class="self">self</span>.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">in_block</span>(<span class="ident">block</span>, <span class="ident">block_id</span>))
-    }
-}
-
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">ResultExt</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">error</span><span class="op">&lt;</span><span class="ident">M</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">ErrorMsg</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="ident">message</span>: <span class="ident">M</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
-    <span class="kw">fn</span> <span class="ident">or_error</span><span class="op">&lt;</span><span class="ident">M</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">ErrorMsg</span><span class="op">&gt;</span>, <span class="ident">F</span>: <span class="ident">FnOnce</span>() -&gt; <span class="ident">M</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="ident">f</span>: <span class="ident">F</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
-    <span class="kw">fn</span> <span class="ident">config_error</span>(<span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
-    <span class="kw">fn</span> <span class="ident">format_error</span><span class="op">&lt;</span><span class="ident">M</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">ErrorMsg</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="ident">message</span>: <span class="ident">M</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
-}
-
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">E</span>: <span class="ident">StdError</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span><span class="op">&gt;</span> <span class="ident">ResultExt</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">E</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">error</span><span class="op">&lt;</span><span class="ident">M</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">ErrorMsg</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="ident">message</span>: <span class="ident">M</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">Error</span> {
-            <span class="ident">kind</span>: <span class="ident">ErrorKind::Other</span>,
-            <span class="ident">message</span>: <span class="prelude-val">Some</span>(<span class="ident">message</span>.<span class="ident">into</span>()),
-            <span class="ident">cause</span>: <span class="prelude-val">Some</span>(<span class="ident">Arc::new</span>(<span class="ident">e</span>)),
-            <span class="ident">block</span>: <span class="prelude-val">None</span>,
-        })
-    }
-
-    <span class="kw">fn</span> <span class="ident">or_error</span><span class="op">&lt;</span><span class="ident">M</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">ErrorMsg</span><span class="op">&gt;</span>, <span class="ident">F</span>: <span class="ident">FnOnce</span>() -&gt; <span class="ident">M</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="ident">f</span>: <span class="ident">F</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">Error</span> {
-            <span class="ident">kind</span>: <span class="ident">ErrorKind::Other</span>,
-            <span class="ident">message</span>: <span class="prelude-val">Some</span>(<span class="ident">f</span>().<span class="ident">into</span>()),
-            <span class="ident">cause</span>: <span class="prelude-val">Some</span>(<span class="ident">Arc::new</span>(<span class="ident">e</span>)),
-            <span class="ident">block</span>: <span class="prelude-val">None</span>,
-        })
-    }
-
-    <span class="kw">fn</span> <span class="ident">config_error</span>(<span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">Error</span> {
-            <span class="ident">kind</span>: <span class="ident">ErrorKind::Config</span>,
-            <span class="ident">message</span>: <span class="prelude-val">None</span>,
-            <span class="ident">cause</span>: <span class="prelude-val">Some</span>(<span class="ident">Arc::new</span>(<span class="ident">e</span>)),
-            <span class="ident">block</span>: <span class="prelude-val">None</span>,
-        })
-    }
-
-    <span class="kw">fn</span> <span class="ident">format_error</span><span class="op">&lt;</span><span class="ident">M</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">ErrorMsg</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="ident">message</span>: <span class="ident">M</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">Error</span> {
-            <span class="ident">kind</span>: <span class="ident">ErrorKind::Format</span>,
-            <span class="ident">message</span>: <span class="prelude-val">Some</span>(<span class="ident">message</span>.<span class="ident">into</span>()),
-            <span class="ident">cause</span>: <span class="prelude-val">Some</span>(<span class="ident">Arc::new</span>(<span class="ident">e</span>)),
-            <span class="ident">block</span>: <span class="prelude-val">None</span>,
-        })
+<span class="kw">impl</span>&lt;T&gt; InBlock <span class="kw">for </span><span class="prelude-ty">Result</span>&lt;T&gt; {
+    <span class="kw">fn </span>in_block(<span class="self">self</span>, block: BlockType, block_id: usize) -&gt; <span class="self">Self </span>{
+        <span class="self">self</span>.map_err(|e| e.in_block(block, block_id))
     }
 }
 
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">OptionExt</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">error</span><span class="op">&lt;</span><span class="ident">M</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">ErrorMsg</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="ident">message</span>: <span class="ident">M</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
-    <span class="kw">fn</span> <span class="ident">or_error</span><span class="op">&lt;</span><span class="ident">M</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">ErrorMsg</span><span class="op">&gt;</span>, <span class="ident">F</span>: <span class="ident">FnOnce</span>() -&gt; <span class="ident">M</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="ident">f</span>: <span class="ident">F</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
-    <span class="kw">fn</span> <span class="ident">config_error</span>(<span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
-    <span class="kw">fn</span> <span class="ident">or_format_error</span><span class="op">&lt;</span><span class="ident">M</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">ErrorMsg</span><span class="op">&gt;</span>, <span class="ident">F</span>: <span class="ident">FnOnce</span>() -&gt; <span class="ident">M</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="ident">f</span>: <span class="ident">F</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
+<span class="kw">pub trait </span>ResultExt&lt;T&gt; {
+    <span class="kw">fn </span>error&lt;M: Into&lt;ErrorMsg&gt;&gt;(<span class="self">self</span>, message: M) -&gt; <span class="prelude-ty">Result</span>&lt;T&gt;;
+    <span class="kw">fn </span>or_error&lt;M: Into&lt;ErrorMsg&gt;, F: FnOnce() -&gt; M&gt;(<span class="self">self</span>, f: F) -&gt; <span class="prelude-ty">Result</span>&lt;T&gt;;
+    <span class="kw">fn </span>config_error(<span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;T&gt;;
+    <span class="kw">fn </span>format_error&lt;M: Into&lt;ErrorMsg&gt;&gt;(<span class="self">self</span>, message: M) -&gt; <span class="prelude-ty">Result</span>&lt;T&gt;;
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="ident">OptionExt</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">error</span><span class="op">&lt;</span><span class="ident">M</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">ErrorMsg</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="ident">message</span>: <span class="ident">M</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">Error</span> {
-            <span class="ident">kind</span>: <span class="ident">ErrorKind::Other</span>,
-            <span class="ident">message</span>: <span class="prelude-val">Some</span>(<span class="ident">message</span>.<span class="ident">into</span>()),
-            <span class="ident">cause</span>: <span class="prelude-val">None</span>,
-            <span class="ident">block</span>: <span class="prelude-val">None</span>,
+<span class="kw">impl</span>&lt;T, E: StdError + Send + Sync + <span class="lifetime">&#39;static</span>&gt; ResultExt&lt;T&gt; <span class="kw">for </span><span class="prelude-ty">Result</span>&lt;T, E&gt; {
+    <span class="kw">fn </span>error&lt;M: Into&lt;ErrorMsg&gt;&gt;(<span class="self">self</span>, message: M) -&gt; <span class="prelude-ty">Result</span>&lt;T&gt; {
+        <span class="self">self</span>.map_err(|e| Error {
+            kind: ErrorKind::Other,
+            message: <span class="prelude-val">Some</span>(message.into()),
+            cause: <span class="prelude-val">Some</span>(Arc::new(e)),
+            block: <span class="prelude-val">None</span>,
         })
     }
 
-    <span class="kw">fn</span> <span class="ident">or_error</span><span class="op">&lt;</span><span class="ident">M</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">ErrorMsg</span><span class="op">&gt;</span>, <span class="ident">F</span>: <span class="ident">FnOnce</span>() -&gt; <span class="ident">M</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="ident">f</span>: <span class="ident">F</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">Error</span> {
-            <span class="ident">kind</span>: <span class="ident">ErrorKind::Other</span>,
-            <span class="ident">message</span>: <span class="prelude-val">Some</span>(<span class="ident">f</span>().<span class="ident">into</span>()),
-            <span class="ident">cause</span>: <span class="prelude-val">None</span>,
-            <span class="ident">block</span>: <span class="prelude-val">None</span>,
+    <span class="kw">fn </span>or_error&lt;M: Into&lt;ErrorMsg&gt;, F: FnOnce() -&gt; M&gt;(<span class="self">self</span>, f: F) -&gt; <span class="prelude-ty">Result</span>&lt;T&gt; {
+        <span class="self">self</span>.map_err(|e| Error {
+            kind: ErrorKind::Other,
+            message: <span class="prelude-val">Some</span>(f().into()),
+            cause: <span class="prelude-val">Some</span>(Arc::new(e)),
+            block: <span class="prelude-val">None</span>,
         })
     }
 
-    <span class="kw">fn</span> <span class="ident">config_error</span>(<span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">ok_or</span>(<span class="ident">Error</span> {
-            <span class="ident">kind</span>: <span class="ident">ErrorKind::Config</span>,
-            <span class="ident">message</span>: <span class="prelude-val">None</span>,
-            <span class="ident">cause</span>: <span class="prelude-val">None</span>,
-            <span class="ident">block</span>: <span class="prelude-val">None</span>,
+    <span class="kw">fn </span>config_error(<span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;T&gt; {
+        <span class="self">self</span>.map_err(|e| Error {
+            kind: ErrorKind::Config,
+            message: <span class="prelude-val">None</span>,
+            cause: <span class="prelude-val">Some</span>(Arc::new(e)),
+            block: <span class="prelude-val">None</span>,
         })
     }
 
-    <span class="kw">fn</span> <span class="ident">or_format_error</span><span class="op">&lt;</span><span class="ident">M</span>: <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">ErrorMsg</span><span class="op">&gt;</span>, <span class="ident">F</span>: <span class="ident">FnOnce</span>() -&gt; <span class="ident">M</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="ident">f</span>: <span class="ident">F</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">Error</span> {
-            <span class="ident">kind</span>: <span class="ident">ErrorKind::Format</span>,
-            <span class="ident">message</span>: <span class="prelude-val">Some</span>(<span class="ident">f</span>().<span class="ident">into</span>()),
-            <span class="ident">cause</span>: <span class="prelude-val">None</span>,
-            <span class="ident">block</span>: <span class="prelude-val">None</span>,
+    <span class="kw">fn </span>format_error&lt;M: Into&lt;ErrorMsg&gt;&gt;(<span class="self">self</span>, message: M) -&gt; <span class="prelude-ty">Result</span>&lt;T&gt; {
+        <span class="self">self</span>.map_err(|e| Error {
+            kind: ErrorKind::Format,
+            message: <span class="prelude-val">Some</span>(message.into()),
+            cause: <span class="prelude-val">Some</span>(Arc::new(e)),
+            block: <span class="prelude-val">None</span>,
         })
     }
 }
 
-<span class="kw">impl</span> <span class="ident">fmt::Display</span> <span class="kw">for</span> <span class="ident">Error</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="ident">fmt::Formatter</span>) -&gt; <span class="ident">fmt::Result</span> {
-        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">block</span> {
-            <span class="prelude-val">Some</span>(<span class="ident">block</span>) =&gt; {
-                <span class="kw">match</span> <span class="self">self</span>.<span class="ident">kind</span> {
-                    <span class="ident">ErrorKind::Config</span> <span class="op">|</span> <span class="ident">ErrorKind::Format</span> =&gt; <span class="ident">f</span>.<span class="ident">write_str</span>(<span class="string">&quot;Configuration errror&quot;</span>)<span class="question-mark">?</span>,
-                    <span class="ident">ErrorKind::Other</span> =&gt; <span class="ident">f</span>.<span class="ident">write_str</span>(<span class="string">&quot;Error&quot;</span>)<span class="question-mark">?</span>,
+<span class="kw">pub trait </span>OptionExt&lt;T&gt; {
+    <span class="kw">fn </span>error&lt;M: Into&lt;ErrorMsg&gt;&gt;(<span class="self">self</span>, message: M) -&gt; <span class="prelude-ty">Result</span>&lt;T&gt;;
+    <span class="kw">fn </span>or_error&lt;M: Into&lt;ErrorMsg&gt;, F: FnOnce() -&gt; M&gt;(<span class="self">self</span>, f: F) -&gt; <span class="prelude-ty">Result</span>&lt;T&gt;;
+    <span class="kw">fn </span>config_error(<span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;T&gt;;
+    <span class="kw">fn </span>or_format_error&lt;M: Into&lt;ErrorMsg&gt;, F: FnOnce() -&gt; M&gt;(<span class="self">self</span>, f: F) -&gt; <span class="prelude-ty">Result</span>&lt;T&gt;;
+}
+
+<span class="kw">impl</span>&lt;T&gt; OptionExt&lt;T&gt; <span class="kw">for </span><span class="prelude-ty">Option</span>&lt;T&gt; {
+    <span class="kw">fn </span>error&lt;M: Into&lt;ErrorMsg&gt;&gt;(<span class="self">self</span>, message: M) -&gt; <span class="prelude-ty">Result</span>&lt;T&gt; {
+        <span class="self">self</span>.ok_or_else(|| Error {
+            kind: ErrorKind::Other,
+            message: <span class="prelude-val">Some</span>(message.into()),
+            cause: <span class="prelude-val">None</span>,
+            block: <span class="prelude-val">None</span>,
+        })
+    }
+
+    <span class="kw">fn </span>or_error&lt;M: Into&lt;ErrorMsg&gt;, F: FnOnce() -&gt; M&gt;(<span class="self">self</span>, f: F) -&gt; <span class="prelude-ty">Result</span>&lt;T&gt; {
+        <span class="self">self</span>.ok_or_else(|| Error {
+            kind: ErrorKind::Other,
+            message: <span class="prelude-val">Some</span>(f().into()),
+            cause: <span class="prelude-val">None</span>,
+            block: <span class="prelude-val">None</span>,
+        })
+    }
+
+    <span class="kw">fn </span>config_error(<span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;T&gt; {
+        <span class="self">self</span>.ok_or(Error {
+            kind: ErrorKind::Config,
+            message: <span class="prelude-val">None</span>,
+            cause: <span class="prelude-val">None</span>,
+            block: <span class="prelude-val">None</span>,
+        })
+    }
+
+    <span class="kw">fn </span>or_format_error&lt;M: Into&lt;ErrorMsg&gt;, F: FnOnce() -&gt; M&gt;(<span class="self">self</span>, f: F) -&gt; <span class="prelude-ty">Result</span>&lt;T&gt; {
+        <span class="self">self</span>.ok_or_else(|| Error {
+            kind: ErrorKind::Format,
+            message: <span class="prelude-val">Some</span>(f().into()),
+            cause: <span class="prelude-val">None</span>,
+            block: <span class="prelude-val">None</span>,
+        })
+    }
+}
+
+<span class="kw">impl </span>fmt::Display <span class="kw">for </span>Error {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter) -&gt; fmt::Result {
+        <span class="kw">match </span><span class="self">self</span>.block {
+            <span class="prelude-val">Some</span>(block) =&gt; {
+                <span class="kw">match </span><span class="self">self</span>.kind {
+                    ErrorKind::Config | ErrorKind::Format =&gt; f.write_str(<span class="string">&quot;Configuration errror&quot;</span>)<span class="question-mark">?</span>,
+                    ErrorKind::Other =&gt; f.write_str(<span class="string">&quot;Error&quot;</span>)<span class="question-mark">?</span>,
                 }
 
-                <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot; in {:?}&quot;</span>, <span class="ident">block</span>.<span class="number">0</span>)<span class="question-mark">?</span>;
+                <span class="macro">write!</span>(f, <span class="string">&quot; in {:?}&quot;</span>, block.<span class="number">0</span>)<span class="question-mark">?</span>;
 
-                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">message</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">message</span> {
-                    <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;: {}&quot;</span>, <span class="ident">message</span>)<span class="question-mark">?</span>;
+                <span class="kw">if let </span><span class="prelude-val">Some</span>(message) = <span class="kw-2">&amp;</span><span class="self">self</span>.message {
+                    <span class="macro">write!</span>(f, <span class="string">&quot;: {}&quot;</span>, message)<span class="question-mark">?</span>;
                 }
 
-                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">cause</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">cause</span> {
-                    <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;. (Cause: {})&quot;</span>, <span class="ident">cause</span>)<span class="question-mark">?</span>;
+                <span class="kw">if let </span><span class="prelude-val">Some</span>(cause) = <span class="kw-2">&amp;</span><span class="self">self</span>.cause {
+                    <span class="macro">write!</span>(f, <span class="string">&quot;. (Cause: {})&quot;</span>, cause)<span class="question-mark">?</span>;
                 }
             }
-            <span class="prelude-val">None</span> =&gt; {
-                <span class="ident">f</span>.<span class="ident">write_str</span>(<span class="self">self</span>.<span class="ident">message</span>.<span class="ident">as_deref</span>().<span class="ident">unwrap_or</span>(<span class="string">&quot;Error&quot;</span>))<span class="question-mark">?</span>;
-                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">cause</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">cause</span> {
-                    <span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;. (Cause: {})&quot;</span>, <span class="ident">cause</span>)<span class="question-mark">?</span>;
+            <span class="prelude-val">None </span>=&gt; {
+                f.write_str(<span class="self">self</span>.message.as_deref().unwrap_or(<span class="string">&quot;Error&quot;</span>))<span class="question-mark">?</span>;
+                <span class="kw">if let </span><span class="prelude-val">Some</span>(cause) = <span class="kw-2">&amp;</span><span class="self">self</span>.cause {
+                    <span class="macro">write!</span>(f, <span class="string">&quot;. (Cause: {})&quot;</span>, cause)<span class="question-mark">?</span>;
                 }
             }
         }
@@ -410,41 +410,41 @@
     }
 }
 
-<span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Error</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">zbus::fdo::Error</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">err</span>: <span class="ident">Error</span>) -&gt; <span class="self">Self</span> {
-        <span class="ident"><span class="self">Self</span>::Failed</span>(<span class="ident">err</span>.<span class="ident">to_string</span>())
+<span class="kw">impl </span>From&lt;Error&gt; <span class="kw">for </span>zbus::fdo::Error {
+    <span class="kw">fn </span>from(err: Error) -&gt; <span class="self">Self </span>{
+        <span class="self">Self</span>::Failed(err.to_string())
     }
 }
 
-<span class="kw">impl</span> <span class="ident">StdError</span> <span class="kw">for</span> <span class="ident">Error</span> {}
+<span class="kw">impl </span>StdError <span class="kw">for </span>Error {}
 
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">ToSerdeError</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">serde_error</span><span class="op">&lt;</span><span class="ident">E</span>: <span class="ident">serde::de::Error</span><span class="op">&gt;</span>(<span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">E</span><span class="op">&gt;</span>;
+<span class="kw">pub trait </span>ToSerdeError&lt;T&gt; {
+    <span class="kw">fn </span>serde_error&lt;E: serde::de::Error&gt;(<span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;T, E&gt;;
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">F</span><span class="op">&gt;</span> <span class="ident">ToSerdeError</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">F</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-    <span class="ident">F</span>: <span class="ident">fmt::Display</span>,
+<span class="kw">impl</span>&lt;T, F&gt; ToSerdeError&lt;T&gt; <span class="kw">for </span><span class="prelude-ty">Result</span>&lt;T, F&gt;
+<span class="kw">where
+    </span>F: fmt::Display,
 {
-    <span class="kw">fn</span> <span class="ident">serde_error</span><span class="op">&lt;</span><span class="ident">E</span>: <span class="ident">serde::de::Error</span><span class="op">&gt;</span>(<span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">E</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">map_err</span>(<span class="ident">E::custom</span>)
+    <span class="kw">fn </span>serde_error&lt;E: serde::de::Error&gt;(<span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;T, E&gt; {
+        <span class="self">self</span>.map_err(E::custom)
     }
 }
 
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">BoxErrorWrapper</span>(<span class="kw">pub</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">StdError</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span><span class="op">&gt;</span>);
+<span class="kw">pub struct </span>BoxErrorWrapper(<span class="kw">pub </span>Box&lt;<span class="kw">dyn </span>StdError + Send + Sync + <span class="lifetime">&#39;static</span>&gt;);
 
-<span class="kw">impl</span> <span class="ident">fmt::Debug</span> <span class="kw">for</span> <span class="ident">BoxErrorWrapper</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="ident">fmt::Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) -&gt; <span class="ident">fmt::Result</span> {
-        <span class="ident">fmt::Debug::fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>, <span class="ident">f</span>)
+<span class="kw">impl </span>fmt::Debug <span class="kw">for </span>BoxErrorWrapper {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
+        fmt::Debug::fmt(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>, f)
     }
 }
 
-<span class="kw">impl</span> <span class="ident">fmt::Display</span> <span class="kw">for</span> <span class="ident">BoxErrorWrapper</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="ident">fmt::Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) -&gt; <span class="ident">fmt::Result</span> {
-        <span class="ident">fmt::Display::fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>, <span class="ident">f</span>)
+<span class="kw">impl </span>fmt::Display <span class="kw">for </span>BoxErrorWrapper {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
+        fmt::Display::fmt(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>, f)
     }
 }
 
-<span class="kw">impl</span> <span class="ident">StdError</span> <span class="kw">for</span> <span class="ident">BoxErrorWrapper</span> {}
+<span class="kw">impl </span>StdError <span class="kw">for </span>BoxErrorWrapper {}
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/themes/color.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>color.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/themes/color.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>color.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -268,275 +268,275 @@
 <span id="268">268</span>
 <span id="269">269</span>
 <span id="270">270</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errors</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">serde::de</span>::{<span class="self">self</span>, <span class="ident">Deserializer</span>, <span class="ident">Visitor</span>};
-<span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>, <span class="ident">Serializer</span>};
-<span class="kw">use</span> <span class="ident">smart_default::SmartDefault</span>;
-<span class="kw">use</span> <span class="ident">std::fmt</span>;
-<span class="kw">use</span> <span class="ident">std::ops::Add</span>;
-<span class="kw">use</span> <span class="ident">std::str::FromStr</span>;
+</pre><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::errors::<span class="kw-2">*</span>;
+<span class="kw">use </span>serde::de::{<span class="self">self</span>, Deserializer, Visitor};
+<span class="kw">use </span>serde::{Deserialize, Serialize, Serializer};
+<span class="kw">use </span>smart_default::SmartDefault;
+<span class="kw">use </span>std::fmt;
+<span class="kw">use </span>std::ops::Add;
+<span class="kw">use </span>std::str::FromStr;
 
-<span class="doccomment">/// An RGBA color (red, green, blue, alpha).</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Default</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Rgba</span> {
-    <span class="kw">pub</span> <span class="ident">r</span>: <span class="ident">u8</span>,
-    <span class="kw">pub</span> <span class="ident">g</span>: <span class="ident">u8</span>,
-    <span class="kw">pub</span> <span class="ident">b</span>: <span class="ident">u8</span>,
-    <span class="kw">pub</span> <span class="ident">a</span>: <span class="ident">u8</span>,
+<span class="doccomment">/// An RGBA color (red, green, blue, alpha).
+</span><span class="attribute">#[derive(Copy, Clone, Debug, Default, Eq, PartialEq)]
+</span><span class="kw">pub struct </span>Rgba {
+    <span class="kw">pub </span>r: u8,
+    <span class="kw">pub </span>g: u8,
+    <span class="kw">pub </span>b: u8,
+    <span class="kw">pub </span>a: u8,
 }
 
-<span class="kw">impl</span> <span class="ident">Rgba</span> {
-    <span class="doccomment">/// Create a new RGBA color.</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// `r`: red component (0 to 255).</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// `g`: green component (0 to 255).</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// `b`: blue component (0 to 255).</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// `a`: alpha component (0 to 255).</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">r</span>: <span class="ident">u8</span>, <span class="ident">g</span>: <span class="ident">u8</span>, <span class="ident">b</span>: <span class="ident">u8</span>, <span class="ident">a</span>: <span class="ident">u8</span>) -&gt; <span class="self">Self</span> {
-        <span class="self">Self</span> { <span class="ident">r</span>, <span class="ident">g</span>, <span class="ident">b</span>, <span class="ident">a</span> }
+<span class="kw">impl </span>Rgba {
+    <span class="doccomment">/// Create a new RGBA color.
+    ///
+    /// `r`: red component (0 to 255).
+    ///
+    /// `g`: green component (0 to 255).
+    ///
+    /// `b`: blue component (0 to 255).
+    ///
+    /// `a`: alpha component (0 to 255).
+    </span><span class="kw">pub fn </span>new(r: u8, g: u8, b: u8, a: u8) -&gt; <span class="self">Self </span>{
+        <span class="self">Self </span>{ r, g, b, a }
     }
 
-    <span class="doccomment">/// Create a new RGBA color from the `hex` value.</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// ```let cyan = Rgba::from_hex(0xffffff);```</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_hex</span>(<span class="ident">hex</span>: <span class="ident">u32</span>) -&gt; <span class="self">Self</span> {
-        <span class="kw">let</span> [<span class="ident">r</span>, <span class="ident">g</span>, <span class="ident">b</span>, <span class="ident">a</span>] <span class="op">=</span> <span class="ident">hex</span>.<span class="ident">to_be_bytes</span>();
-        <span class="self">Self</span> { <span class="ident">r</span>, <span class="ident">g</span>, <span class="ident">b</span>, <span class="ident">a</span> }
+    <span class="doccomment">/// Create a new RGBA color from the `hex` value.
+    ///
+    /// ```let cyan = Rgba::from_hex(0xffffff);```
+    </span><span class="kw">pub fn </span>from_hex(hex: u32) -&gt; <span class="self">Self </span>{
+        <span class="kw">let </span>[r, g, b, a] = hex.to_be_bytes();
+        <span class="self">Self </span>{ r, g, b, a }
     }
 }
 
-<span class="kw">impl</span> <span class="ident">Add</span> <span class="kw">for</span> <span class="ident">Rgba</span> {
-    <span class="kw">type</span> <span class="ident">Output</span> <span class="op">=</span> <span class="self">Self</span>;
-    <span class="kw">fn</span> <span class="ident">add</span>(<span class="self">self</span>, <span class="ident">rhs</span>: <span class="self">Self</span>) -&gt; <span class="ident"><span class="self">Self</span>::Output</span> {
-        <span class="ident">Rgba::new</span>(
-            <span class="self">self</span>.<span class="ident">r</span>.<span class="ident">saturating_add</span>(<span class="ident">rhs</span>.<span class="ident">r</span>),
-            <span class="self">self</span>.<span class="ident">g</span>.<span class="ident">saturating_add</span>(<span class="ident">rhs</span>.<span class="ident">g</span>),
-            <span class="self">self</span>.<span class="ident">b</span>.<span class="ident">saturating_add</span>(<span class="ident">rhs</span>.<span class="ident">b</span>),
-            <span class="self">self</span>.<span class="ident">a</span>.<span class="ident">saturating_add</span>(<span class="ident">rhs</span>.<span class="ident">a</span>),
+<span class="kw">impl </span>Add <span class="kw">for </span>Rgba {
+    <span class="kw">type </span>Output = <span class="self">Self</span>;
+    <span class="kw">fn </span>add(<span class="self">self</span>, rhs: <span class="self">Self</span>) -&gt; <span class="self">Self</span>::Output {
+        Rgba::new(
+            <span class="self">self</span>.r.saturating_add(rhs.r),
+            <span class="self">self</span>.g.saturating_add(rhs.g),
+            <span class="self">self</span>.b.saturating_add(rhs.b),
+            <span class="self">self</span>.a.saturating_add(rhs.a),
         )
     }
 }
 
-<span class="doccomment">/// An HSVA color (hue, saturation, value, alpha).</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Default</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Hsva</span> {
-    <span class="kw">pub</span> <span class="ident">h</span>: <span class="ident">f64</span>,
-    <span class="kw">pub</span> <span class="ident">s</span>: <span class="ident">f64</span>,
-    <span class="kw">pub</span> <span class="ident">v</span>: <span class="ident">f64</span>,
-    <span class="kw">pub</span> <span class="ident">a</span>: <span class="ident">u8</span>,
+<span class="doccomment">/// An HSVA color (hue, saturation, value, alpha).
+</span><span class="attribute">#[derive(Copy, Clone, Debug, Default)]
+</span><span class="kw">pub struct </span>Hsva {
+    <span class="kw">pub </span>h: f64,
+    <span class="kw">pub </span>s: f64,
+    <span class="kw">pub </span>v: f64,
+    <span class="kw">pub </span>a: u8,
 }
 
-<span class="kw">impl</span> <span class="ident">Hsva</span> {
-    <span class="doccomment">/// Create a new HSVA color.</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// `h`: hue component (0 to 360)</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// `s`: saturation component (0 to 1)</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// `v`: value component (0 to 1)</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// `a`: alpha component (0 to 255).</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">h</span>: <span class="ident">f64</span>, <span class="ident">s</span>: <span class="ident">f64</span>, <span class="ident">v</span>: <span class="ident">f64</span>, <span class="ident">a</span>: <span class="ident">u8</span>) -&gt; <span class="self">Self</span> {
-        <span class="self">Self</span> { <span class="ident">h</span>, <span class="ident">s</span>, <span class="ident">v</span>, <span class="ident">a</span> }
+<span class="kw">impl </span>Hsva {
+    <span class="doccomment">/// Create a new HSVA color.
+    ///
+    /// `h`: hue component (0 to 360)
+    ///
+    /// `s`: saturation component (0 to 1)
+    ///
+    /// `v`: value component (0 to 1)
+    ///
+    /// `a`: alpha component (0 to 255).
+    </span><span class="kw">pub fn </span>new(h: f64, s: f64, v: f64, a: u8) -&gt; <span class="self">Self </span>{
+        <span class="self">Self </span>{ h, s, v, a }
     }
 }
 
-<span class="kw">impl</span> <span class="ident">PartialEq</span> <span class="kw">for</span> <span class="ident">Hsva</span> {
-    <span class="kw">fn</span> <span class="ident">eq</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; <span class="ident">bool</span> {
-        <span class="ident">approx</span>(<span class="self">self</span>.<span class="ident">h</span>, <span class="ident">other</span>.<span class="ident">h</span>)
-            <span class="op">&amp;&amp;</span> <span class="ident">approx</span>(<span class="self">self</span>.<span class="ident">s</span>, <span class="ident">other</span>.<span class="ident">s</span>)
-            <span class="op">&amp;&amp;</span> <span class="ident">approx</span>(<span class="self">self</span>.<span class="ident">v</span>, <span class="ident">other</span>.<span class="ident">v</span>)
-            <span class="op">&amp;&amp;</span> <span class="self">self</span>.<span class="ident">a</span> <span class="op">==</span> <span class="ident">other</span>.<span class="ident">a</span>
+<span class="kw">impl </span>PartialEq <span class="kw">for </span>Hsva {
+    <span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; bool {
+        approx(<span class="self">self</span>.h, other.h)
+            &amp;&amp; approx(<span class="self">self</span>.s, other.s)
+            &amp;&amp; approx(<span class="self">self</span>.v, other.v)
+            &amp;&amp; <span class="self">self</span>.a == other.a
     }
 }
 
-<span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Rgba</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Hsva</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">rgba</span>: <span class="ident">Rgba</span>) -&gt; <span class="self">Self</span> {
-        <span class="kw">let</span> <span class="ident">r</span> <span class="op">=</span> <span class="ident">rgba</span>.<span class="ident">r</span> <span class="kw">as</span> <span class="ident">f64</span> <span class="op">/</span> <span class="number">255.0</span>;
-        <span class="kw">let</span> <span class="ident">g</span> <span class="op">=</span> <span class="ident">rgba</span>.<span class="ident">g</span> <span class="kw">as</span> <span class="ident">f64</span> <span class="op">/</span> <span class="number">255.0</span>;
-        <span class="kw">let</span> <span class="ident">b</span> <span class="op">=</span> <span class="ident">rgba</span>.<span class="ident">b</span> <span class="kw">as</span> <span class="ident">f64</span> <span class="op">/</span> <span class="number">255.0</span>;
+<span class="kw">impl </span>From&lt;Rgba&gt; <span class="kw">for </span>Hsva {
+    <span class="kw">fn </span>from(rgba: Rgba) -&gt; <span class="self">Self </span>{
+        <span class="kw">let </span>r = rgba.r <span class="kw">as </span>f64 / <span class="number">255.0</span>;
+        <span class="kw">let </span>g = rgba.g <span class="kw">as </span>f64 / <span class="number">255.0</span>;
+        <span class="kw">let </span>b = rgba.b <span class="kw">as </span>f64 / <span class="number">255.0</span>;
 
-        <span class="kw">let</span> <span class="ident">min</span> <span class="op">=</span> <span class="ident">r</span>.<span class="ident">min</span>(<span class="ident">g</span>.<span class="ident">min</span>(<span class="ident">b</span>));
-        <span class="kw">let</span> <span class="ident">max</span> <span class="op">=</span> <span class="ident">r</span>.<span class="ident">max</span>(<span class="ident">g</span>.<span class="ident">max</span>(<span class="ident">b</span>));
-        <span class="kw">let</span> <span class="ident">delta</span> <span class="op">=</span> <span class="ident">max</span> <span class="op">-</span> <span class="ident">min</span>;
+        <span class="kw">let </span>min = r.min(g.min(b));
+        <span class="kw">let </span>max = r.max(g.max(b));
+        <span class="kw">let </span>delta = max - min;
 
-        <span class="kw">let</span> <span class="ident">v</span> <span class="op">=</span> <span class="ident">max</span>;
-        <span class="kw">let</span> <span class="ident">s</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">max</span> <span class="op">&gt;</span> <span class="number">1e-3</span> {
-            <span class="bool-val">true</span> =&gt; <span class="ident">delta</span> <span class="op">/</span> <span class="ident">max</span>,
-            <span class="bool-val">false</span> =&gt; <span class="number">0.0</span>,
+        <span class="kw">let </span>v = max;
+        <span class="kw">let </span>s = <span class="kw">match </span>max &gt; <span class="number">1e-3 </span>{
+            <span class="bool-val">true </span>=&gt; delta / max,
+            <span class="bool-val">false </span>=&gt; <span class="number">0.0</span>,
         };
-        <span class="kw">let</span> <span class="ident">h</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">delta</span> <span class="op">==</span> <span class="number">0.0</span> {
-            <span class="bool-val">true</span> =&gt; <span class="number">0.0</span>,
-            <span class="bool-val">false</span> =&gt; {
-                <span class="kw">if</span> <span class="ident">r</span> <span class="op">==</span> <span class="ident">max</span> {
-                    (<span class="ident">g</span> <span class="op">-</span> <span class="ident">b</span>) <span class="op">/</span> <span class="ident">delta</span>
-                } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">g</span> <span class="op">==</span> <span class="ident">max</span> {
-                    <span class="number">2.0</span> <span class="op">+</span> (<span class="ident">b</span> <span class="op">-</span> <span class="ident">r</span>) <span class="op">/</span> <span class="ident">delta</span>
-                } <span class="kw">else</span> {
-                    <span class="number">4.0</span> <span class="op">+</span> (<span class="ident">r</span> <span class="op">-</span> <span class="ident">g</span>) <span class="op">/</span> <span class="ident">delta</span>
+        <span class="kw">let </span>h = <span class="kw">match </span>delta == <span class="number">0.0 </span>{
+            <span class="bool-val">true </span>=&gt; <span class="number">0.0</span>,
+            <span class="bool-val">false </span>=&gt; {
+                <span class="kw">if </span>r == max {
+                    (g - b) / delta
+                } <span class="kw">else if </span>g == max {
+                    <span class="number">2.0 </span>+ (b - r) / delta
+                } <span class="kw">else </span>{
+                    <span class="number">4.0 </span>+ (r - g) / delta
                 }
             }
         };
-        <span class="kw">let</span> <span class="ident">h2</span> <span class="op">=</span> ((<span class="ident">h</span> <span class="op">*</span> <span class="number">60.0</span>) <span class="op">+</span> <span class="number">360.0</span>) <span class="op">%</span> <span class="number">360.0</span>;
+        <span class="kw">let </span>h2 = ((h * <span class="number">60.0</span>) + <span class="number">360.0</span>) % <span class="number">360.0</span>;
 
-        <span class="ident"><span class="self">Self</span>::new</span>(<span class="ident">h2</span>, <span class="ident">s</span>, <span class="ident">v</span>, <span class="ident">rgba</span>.<span class="ident">a</span>)
+        <span class="self">Self</span>::new(h2, s, v, rgba.a)
     }
 }
 
-<span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Hsva</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Rgba</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">hsva</span>: <span class="ident">Hsva</span>) -&gt; <span class="self">Self</span> {
-        <span class="kw">let</span> <span class="ident">range</span> <span class="op">=</span> (<span class="ident">hsva</span>.<span class="ident">h</span> <span class="op">/</span> <span class="number">60.0</span>) <span class="kw">as</span> <span class="ident">u8</span>;
-        <span class="kw">let</span> <span class="ident">c</span> <span class="op">=</span> <span class="ident">hsva</span>.<span class="ident">v</span> <span class="op">*</span> <span class="ident">hsva</span>.<span class="ident">s</span>;
-        <span class="kw">let</span> <span class="ident">x</span> <span class="op">=</span> <span class="ident">c</span> <span class="op">*</span> (<span class="number">1.0</span> <span class="op">-</span> (((<span class="ident">hsva</span>.<span class="ident">h</span> <span class="op">/</span> <span class="number">60.0</span>) <span class="op">%</span> <span class="number">2.0</span>) <span class="op">-</span> <span class="number">1.0</span>).<span class="ident">abs</span>());
-        <span class="kw">let</span> <span class="ident">m</span> <span class="op">=</span> <span class="ident">hsva</span>.<span class="ident">v</span> <span class="op">-</span> <span class="ident">c</span>;
+<span class="kw">impl </span>From&lt;Hsva&gt; <span class="kw">for </span>Rgba {
+    <span class="kw">fn </span>from(hsva: Hsva) -&gt; <span class="self">Self </span>{
+        <span class="kw">let </span>range = (hsva.h / <span class="number">60.0</span>) <span class="kw">as </span>u8;
+        <span class="kw">let </span>c = hsva.v * hsva.s;
+        <span class="kw">let </span>x = c * (<span class="number">1.0 </span>- (((hsva.h / <span class="number">60.0</span>) % <span class="number">2.0</span>) - <span class="number">1.0</span>).abs());
+        <span class="kw">let </span>m = hsva.v - c;
 
-        <span class="kw">let</span> <span class="ident">cm_scaled</span> <span class="op">=</span> ((<span class="ident">c</span> <span class="op">+</span> <span class="ident">m</span>) <span class="op">*</span> <span class="number">255.0</span>) <span class="kw">as</span> <span class="ident">u8</span>;
-        <span class="kw">let</span> <span class="ident">xm_scaled</span> <span class="op">=</span> ((<span class="ident">x</span> <span class="op">+</span> <span class="ident">m</span>) <span class="op">*</span> <span class="number">255.0</span>) <span class="kw">as</span> <span class="ident">u8</span>;
-        <span class="kw">let</span> <span class="ident">m_scaled</span> <span class="op">=</span> (<span class="ident">m</span> <span class="op">*</span> <span class="number">255.0</span>) <span class="kw">as</span> <span class="ident">u8</span>;
+        <span class="kw">let </span>cm_scaled = ((c + m) * <span class="number">255.0</span>) <span class="kw">as </span>u8;
+        <span class="kw">let </span>xm_scaled = ((x + m) * <span class="number">255.0</span>) <span class="kw">as </span>u8;
+        <span class="kw">let </span>m_scaled = (m * <span class="number">255.0</span>) <span class="kw">as </span>u8;
 
-        <span class="kw">match</span> <span class="ident">range</span> {
-            <span class="number">0</span> =&gt; <span class="ident"><span class="self">Self</span>::new</span>(<span class="ident">cm_scaled</span>, <span class="ident">xm_scaled</span>, <span class="ident">m_scaled</span>, <span class="ident">hsva</span>.<span class="ident">a</span>),
-            <span class="number">1</span> =&gt; <span class="ident"><span class="self">Self</span>::new</span>(<span class="ident">xm_scaled</span>, <span class="ident">cm_scaled</span>, <span class="ident">m_scaled</span>, <span class="ident">hsva</span>.<span class="ident">a</span>),
-            <span class="number">2</span> =&gt; <span class="ident"><span class="self">Self</span>::new</span>(<span class="ident">m_scaled</span>, <span class="ident">cm_scaled</span>, <span class="ident">xm_scaled</span>, <span class="ident">hsva</span>.<span class="ident">a</span>),
-            <span class="number">3</span> =&gt; <span class="ident"><span class="self">Self</span>::new</span>(<span class="ident">m_scaled</span>, <span class="ident">xm_scaled</span>, <span class="ident">cm_scaled</span>, <span class="ident">hsva</span>.<span class="ident">a</span>),
-            <span class="number">4</span> =&gt; <span class="ident"><span class="self">Self</span>::new</span>(<span class="ident">xm_scaled</span>, <span class="ident">m_scaled</span>, <span class="ident">cm_scaled</span>, <span class="ident">hsva</span>.<span class="ident">a</span>),
-            <span class="kw">_</span> =&gt; <span class="ident"><span class="self">Self</span>::new</span>(<span class="ident">cm_scaled</span>, <span class="ident">m_scaled</span>, <span class="ident">xm_scaled</span>, <span class="ident">hsva</span>.<span class="ident">a</span>),
+        <span class="kw">match </span>range {
+            <span class="number">0 </span>=&gt; <span class="self">Self</span>::new(cm_scaled, xm_scaled, m_scaled, hsva.a),
+            <span class="number">1 </span>=&gt; <span class="self">Self</span>::new(xm_scaled, cm_scaled, m_scaled, hsva.a),
+            <span class="number">2 </span>=&gt; <span class="self">Self</span>::new(m_scaled, cm_scaled, xm_scaled, hsva.a),
+            <span class="number">3 </span>=&gt; <span class="self">Self</span>::new(m_scaled, xm_scaled, cm_scaled, hsva.a),
+            <span class="number">4 </span>=&gt; <span class="self">Self</span>::new(xm_scaled, m_scaled, cm_scaled, hsva.a),
+            <span class="kw">_ </span>=&gt; <span class="self">Self</span>::new(cm_scaled, m_scaled, xm_scaled, hsva.a),
         }
     }
 }
 
-<span class="kw">impl</span> <span class="ident">Add</span> <span class="kw">for</span> <span class="ident">Hsva</span> {
-    <span class="kw">type</span> <span class="ident">Output</span> <span class="op">=</span> <span class="self">Self</span>;
-    <span class="kw">fn</span> <span class="ident">add</span>(<span class="self">self</span>, <span class="ident">rhs</span>: <span class="self">Self</span>) -&gt; <span class="ident"><span class="self">Self</span>::Output</span> {
-        <span class="ident">Hsva::new</span>(
-            (<span class="self">self</span>.<span class="ident">h</span> <span class="op">+</span> <span class="ident">rhs</span>.<span class="ident">h</span>) <span class="op">%</span> <span class="number">360.</span>,
-            (<span class="self">self</span>.<span class="ident">s</span> <span class="op">+</span> <span class="ident">rhs</span>.<span class="ident">s</span>).<span class="ident">clamp</span>(<span class="number">0.</span>, <span class="number">1.</span>),
-            (<span class="self">self</span>.<span class="ident">v</span> <span class="op">+</span> <span class="ident">rhs</span>.<span class="ident">v</span>).<span class="ident">clamp</span>(<span class="number">0.</span>, <span class="number">1.</span>),
-            <span class="self">self</span>.<span class="ident">a</span>.<span class="ident">saturating_add</span>(<span class="ident">rhs</span>.<span class="ident">a</span>),
+<span class="kw">impl </span>Add <span class="kw">for </span>Hsva {
+    <span class="kw">type </span>Output = <span class="self">Self</span>;
+    <span class="kw">fn </span>add(<span class="self">self</span>, rhs: <span class="self">Self</span>) -&gt; <span class="self">Self</span>::Output {
+        Hsva::new(
+            (<span class="self">self</span>.h + rhs.h) % <span class="number">360.</span>,
+            (<span class="self">self</span>.s + rhs.s).clamp(<span class="number">0.</span>, <span class="number">1.</span>),
+            (<span class="self">self</span>.v + rhs.v).clamp(<span class="number">0.</span>, <span class="number">1.</span>),
+            <span class="self">self</span>.a.saturating_add(rhs.a),
         )
     }
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">approx</span>(<span class="ident">a</span>: <span class="ident">f64</span>, <span class="ident">b</span>: <span class="ident">f64</span>) -&gt; <span class="ident">bool</span> {
-    <span class="kw">if</span> <span class="ident">a</span> <span class="op">==</span> <span class="ident">b</span> {
-        <span class="kw">return</span> <span class="bool-val">true</span>;
+<span class="kw">pub fn </span>approx(a: f64, b: f64) -&gt; bool {
+    <span class="kw">if </span>a == b {
+        <span class="kw">return </span><span class="bool-val">true</span>;
     }
-    <span class="kw">let</span> <span class="ident">eps</span> <span class="op">=</span> <span class="number">1e-2</span>;
-    <span class="kw">let</span> <span class="ident">abs_a</span> <span class="op">=</span> <span class="ident">a</span>.<span class="ident">abs</span>();
-    <span class="kw">let</span> <span class="ident">abs_b</span> <span class="op">=</span> <span class="ident">b</span>.<span class="ident">abs</span>();
-    <span class="kw">let</span> <span class="ident">diff</span> <span class="op">=</span> (<span class="ident">abs_a</span> <span class="op">-</span> <span class="ident">abs_b</span>).<span class="ident">abs</span>();
-    <span class="kw">if</span> <span class="ident">a</span> <span class="op">==</span> <span class="number">0.0</span> <span class="op">|</span><span class="op">|</span> <span class="ident">b</span> <span class="op">==</span> <span class="number">0.0</span> <span class="op">|</span><span class="op">|</span> <span class="ident">abs_a</span> <span class="op">+</span> <span class="ident">abs_b</span> <span class="op">&lt;</span> <span class="ident">std::f64::EPSILON</span> {
-        <span class="ident">diff</span> <span class="op">&lt;</span> <span class="ident">eps</span> <span class="op">*</span> <span class="ident">std::f64::EPSILON</span>
-    } <span class="kw">else</span> {
-        <span class="ident">diff</span> <span class="op">/</span> (<span class="ident">abs_a</span> <span class="op">+</span> <span class="ident">abs_b</span>).<span class="ident">min</span>(<span class="ident">std::f64::MAX</span>) <span class="op">&lt;</span> <span class="ident">eps</span>
-    }
-}
-
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">SmartDefault</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Color</span> {
-    <span class="attribute">#[<span class="ident">default</span>]</span>
-    <span class="prelude-val">None</span>,
-    <span class="ident">Auto</span>,
-    <span class="ident">Rgba</span>(<span class="ident">Rgba</span>),
-    <span class="ident">Hsva</span>(<span class="ident">Hsva</span>),
-}
-
-<span class="kw">impl</span> <span class="ident">Color</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">skip_ser</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
-        <span class="macro">matches!</span>(<span class="self">self</span>, <span class="ident"><span class="self">Self</span>::None</span> <span class="op">|</span> <span class="ident"><span class="self">Self</span>::Auto</span>)
+    <span class="kw">let </span>eps = <span class="number">1e-2</span>;
+    <span class="kw">let </span>abs_a = a.abs();
+    <span class="kw">let </span>abs_b = b.abs();
+    <span class="kw">let </span>diff = (abs_a - abs_b).abs();
+    <span class="kw">if </span>a == <span class="number">0.0 </span>|| b == <span class="number">0.0 </span>|| abs_a + abs_b &lt; std::f64::EPSILON {
+        diff &lt; eps * std::f64::EPSILON
+    } <span class="kw">else </span>{
+        diff / (abs_a + abs_b).min(std::f64::MAX) &lt; eps
     }
 }
 
-<span class="kw">impl</span> <span class="ident">Add</span> <span class="kw">for</span> <span class="ident">Color</span> {
-    <span class="kw">type</span> <span class="ident">Output</span> <span class="op">=</span> <span class="ident">Color</span>;
-    <span class="kw">fn</span> <span class="ident">add</span>(<span class="self">self</span>, <span class="ident">rhs</span>: <span class="self">Self</span>) -&gt; <span class="ident"><span class="self">Self</span>::Output</span> {
-        <span class="kw">match</span> (<span class="self">self</span>, <span class="ident">rhs</span>) {
-            <span class="comment">// Do nothing</span>
-            (<span class="ident">x</span>, <span class="ident"><span class="self">Self</span>::None</span> <span class="op">|</span> <span class="ident"><span class="self">Self</span>::Auto</span>) <span class="op">|</span> (<span class="ident"><span class="self">Self</span>::None</span> <span class="op">|</span> <span class="ident"><span class="self">Self</span>::Auto</span>, <span class="ident">x</span>) =&gt; <span class="ident">x</span>,
-            <span class="comment">// Hsva + Hsva =&gt; Hsva</span>
-            (<span class="ident">Color::Hsva</span>(<span class="ident">hsva1</span>), <span class="ident">Color::Hsva</span>(<span class="ident">hsva2</span>)) =&gt; <span class="ident">Color::Hsva</span>(<span class="ident">hsva1</span> <span class="op">+</span> <span class="ident">hsva2</span>),
-            <span class="comment">// Rgba + Rgba =&gt; Rgba</span>
-            (<span class="ident">Color::Rgba</span>(<span class="ident">rgba1</span>), <span class="ident">Color::Rgba</span>(<span class="ident">rgba2</span>)) =&gt; <span class="ident">Color::Rgba</span>(<span class="ident">rgba1</span> <span class="op">+</span> <span class="ident">rgba2</span>),
-            <span class="comment">// Hsva + Rgba =&gt; Hsva</span>
-            <span class="comment">// Rgba + Hsva =&gt; Hsva</span>
-            (<span class="ident">Color::Hsva</span>(<span class="ident">hsva</span>), <span class="ident">Color::Rgba</span>(<span class="ident">rgba</span>)) <span class="op">|</span> (<span class="ident">Color::Rgba</span>(<span class="ident">rgba</span>), <span class="ident">Color::Hsva</span>(<span class="ident">hsva</span>)) =&gt; {
-                <span class="ident">Color::Hsva</span>(<span class="ident">hsva</span> <span class="op">+</span> <span class="ident">rgba</span>.<span class="ident">into</span>())
+<span class="attribute">#[derive(Debug, Clone, Copy, PartialEq, SmartDefault)]
+</span><span class="kw">pub enum </span>Color {
+    <span class="attribute">#[default]
+    </span><span class="prelude-val">None</span>,
+    Auto,
+    Rgba(Rgba),
+    Hsva(Hsva),
+}
+
+<span class="kw">impl </span>Color {
+    <span class="kw">pub fn </span>skip_ser(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
+        <span class="macro">matches!</span>(<span class="self">self</span>, <span class="self">Self</span>::None | <span class="self">Self</span>::Auto)
+    }
+}
+
+<span class="kw">impl </span>Add <span class="kw">for </span>Color {
+    <span class="kw">type </span>Output = Color;
+    <span class="kw">fn </span>add(<span class="self">self</span>, rhs: <span class="self">Self</span>) -&gt; <span class="self">Self</span>::Output {
+        <span class="kw">match </span>(<span class="self">self</span>, rhs) {
+            <span class="comment">// Do nothing
+            </span>(x, <span class="self">Self</span>::None | <span class="self">Self</span>::Auto) | (<span class="self">Self</span>::None | <span class="self">Self</span>::Auto, x) =&gt; x,
+            <span class="comment">// Hsva + Hsva =&gt; Hsva
+            </span>(Color::Hsva(hsva1), Color::Hsva(hsva2)) =&gt; Color::Hsva(hsva1 + hsva2),
+            <span class="comment">// Rgba + Rgba =&gt; Rgba
+            </span>(Color::Rgba(rgba1), Color::Rgba(rgba2)) =&gt; Color::Rgba(rgba1 + rgba2),
+            <span class="comment">// Hsva + Rgba =&gt; Hsva
+            // Rgba + Hsva =&gt; Hsva
+            </span>(Color::Hsva(hsva), Color::Rgba(rgba)) | (Color::Rgba(rgba), Color::Hsva(hsva)) =&gt; {
+                Color::Hsva(hsva + rgba.into())
             }
         }
     }
 }
 
-<span class="kw">impl</span> <span class="ident">FromStr</span> <span class="kw">for</span> <span class="ident">Color</span> {
-    <span class="kw">type</span> <span class="prelude-val">Err</span> <span class="op">=</span> <span class="ident">Error</span>;
+<span class="kw">impl </span>FromStr <span class="kw">for </span>Color {
+    <span class="kw">type </span><span class="prelude-val">Err </span>= Error;
 
-    <span class="kw">fn</span> <span class="ident">from_str</span>(<span class="ident">color</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident"><span class="self">Self</span>::Err</span><span class="op">&gt;</span> {
-        <span class="prelude-val">Ok</span>(<span class="kw">if</span> <span class="ident">color</span> <span class="op">==</span> <span class="string">&quot;none&quot;</span> <span class="op">|</span><span class="op">|</span> <span class="ident">color</span>.<span class="ident">is_empty</span>() {
-            <span class="ident">Color::None</span>
-        } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">color</span> <span class="op">==</span> <span class="string">&quot;auto&quot;</span> {
-            <span class="ident">Color::Auto</span>
-        } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">color</span>.<span class="ident">starts_with</span>(<span class="string">&quot;hsv:&quot;</span>) {
-            <span class="kw">let</span> <span class="ident">err_msg</span> <span class="op">=</span> <span class="op">|</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;&#39;{}&#39; is not a vaild HSVA color&quot;</span>, <span class="ident">color</span>);
-            <span class="kw">let</span> <span class="ident">color</span> <span class="op">=</span> <span class="ident">color</span>.<span class="ident">split_at</span>(<span class="number">4</span>).<span class="number">1</span>;
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">components</span> <span class="op">=</span> <span class="ident">color</span>.<span class="ident">split</span>(<span class="string">&#39;:&#39;</span>).<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span>.<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>().<span class="ident">or_error</span>(<span class="ident">err_msg</span>));
-            <span class="kw">let</span> <span class="ident">h</span> <span class="op">=</span> <span class="ident">components</span>.<span class="ident">next</span>().<span class="ident">or_error</span>(<span class="ident">err_msg</span>)<span class="question-mark">?</span><span class="question-mark">?</span>;
-            <span class="kw">let</span> <span class="ident">s</span> <span class="op">=</span> <span class="ident">components</span>.<span class="ident">next</span>().<span class="ident">or_error</span>(<span class="ident">err_msg</span>)<span class="question-mark">?</span><span class="question-mark">?</span>;
-            <span class="kw">let</span> <span class="ident">v</span> <span class="op">=</span> <span class="ident">components</span>.<span class="ident">next</span>().<span class="ident">or_error</span>(<span class="ident">err_msg</span>)<span class="question-mark">?</span><span class="question-mark">?</span>;
-            <span class="kw">let</span> <span class="ident">a</span> <span class="op">=</span> <span class="ident">components</span>.<span class="ident">next</span>().<span class="ident">unwrap_or</span>(<span class="prelude-val">Ok</span>(<span class="number">100.</span>))<span class="question-mark">?</span>;
-            <span class="ident">Color::Hsva</span>(<span class="ident">Hsva::new</span>(<span class="ident">h</span>, <span class="ident">s</span> <span class="op">/</span> <span class="number">100.</span>, <span class="ident">v</span> <span class="op">/</span> <span class="number">100.</span>, (<span class="ident">a</span> <span class="op">/</span> <span class="number">100.</span> <span class="op">*</span> <span class="number">255.</span>) <span class="kw">as</span> <span class="ident">u8</span>))
-        } <span class="kw">else</span> {
-            <span class="kw">let</span> <span class="ident">err_msg</span> <span class="op">=</span> <span class="op">|</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;&#39;{}&#39; is not a vaild RGBA color&quot;</span>, <span class="ident">color</span>);
-            <span class="kw">let</span> <span class="ident">rgb</span> <span class="op">=</span> <span class="ident">color</span>.<span class="ident">get</span>(<span class="number">1</span>..<span class="number">7</span>).<span class="ident">or_error</span>(<span class="ident">err_msg</span>)<span class="question-mark">?</span>;
-            <span class="kw">let</span> <span class="ident">a</span> <span class="op">=</span> <span class="ident">color</span>.<span class="ident">get</span>(<span class="number">7</span>..<span class="number">9</span>).<span class="ident">unwrap_or</span>(<span class="string">&quot;FF&quot;</span>);
-            <span class="ident">Color::Rgba</span>(<span class="ident">Rgba::from_hex</span>(
-                (<span class="ident">u32::from_str_radix</span>(<span class="ident">rgb</span>, <span class="number">16</span>).<span class="ident">or_error</span>(<span class="ident">err_msg</span>)<span class="question-mark">?</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">8</span>)
-                    <span class="op">+</span> <span class="ident">u32::from_str_radix</span>(<span class="ident">a</span>, <span class="number">16</span>).<span class="ident">or_error</span>(<span class="ident">err_msg</span>)<span class="question-mark">?</span>,
+    <span class="kw">fn </span>from_str(color: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Err&gt; {
+        <span class="prelude-val">Ok</span>(<span class="kw">if </span>color == <span class="string">&quot;none&quot; </span>|| color.is_empty() {
+            Color::None
+        } <span class="kw">else if </span>color == <span class="string">&quot;auto&quot; </span>{
+            Color::Auto
+        } <span class="kw">else if </span>color.starts_with(<span class="string">&quot;hsv:&quot;</span>) {
+            <span class="kw">let </span>err_msg = || <span class="macro">format!</span>(<span class="string">&quot;&#39;{}&#39; is not a vaild HSVA color&quot;</span>, color);
+            <span class="kw">let </span>color = color.split_at(<span class="number">4</span>).<span class="number">1</span>;
+            <span class="kw">let </span><span class="kw-2">mut </span>components = color.split(<span class="string">&#39;:&#39;</span>).map(|x| x.parse::&lt;f64&gt;().or_error(err_msg));
+            <span class="kw">let </span>h = components.next().or_error(err_msg)<span class="question-mark">??</span>;
+            <span class="kw">let </span>s = components.next().or_error(err_msg)<span class="question-mark">??</span>;
+            <span class="kw">let </span>v = components.next().or_error(err_msg)<span class="question-mark">??</span>;
+            <span class="kw">let </span>a = components.next().unwrap_or(<span class="prelude-val">Ok</span>(<span class="number">100.</span>))<span class="question-mark">?</span>;
+            Color::Hsva(Hsva::new(h, s / <span class="number">100.</span>, v / <span class="number">100.</span>, (a / <span class="number">100. </span>* <span class="number">255.</span>) <span class="kw">as </span>u8))
+        } <span class="kw">else </span>{
+            <span class="kw">let </span>err_msg = || <span class="macro">format!</span>(<span class="string">&quot;&#39;{}&#39; is not a vaild RGBA color&quot;</span>, color);
+            <span class="kw">let </span>rgb = color.get(<span class="number">1</span>..<span class="number">7</span>).or_error(err_msg)<span class="question-mark">?</span>;
+            <span class="kw">let </span>a = color.get(<span class="number">7</span>..<span class="number">9</span>).unwrap_or(<span class="string">&quot;FF&quot;</span>);
+            Color::Rgba(Rgba::from_hex(
+                (u32::from_str_radix(rgb, <span class="number">16</span>).or_error(err_msg)<span class="question-mark">? </span>&lt;&lt; <span class="number">8</span>)
+                    + u32::from_str_radix(a, <span class="number">16</span>).or_error(err_msg)<span class="question-mark">?</span>,
             ))
         })
     }
 }
 
-<span class="kw">impl</span> <span class="ident">Serialize</span> <span class="kw">for</span> <span class="ident">Color</span> {
-    <span class="kw">fn</span> <span class="ident">serialize</span><span class="op">&lt;</span><span class="ident">S</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">serializer</span>: <span class="ident">S</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">S::Ok</span>, <span class="ident">S::Error</span><span class="op">&gt;</span>
-    <span class="kw">where</span>
-        <span class="ident">S</span>: <span class="ident">Serializer</span>,
+<span class="kw">impl </span>Serialize <span class="kw">for </span>Color {
+    <span class="kw">fn </span>serialize&lt;S&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, serializer: S) -&gt; <span class="prelude-ty">Result</span>&lt;S::Ok, S::Error&gt;
+    <span class="kw">where
+        </span>S: Serializer,
     {
-        <span class="kw">let</span> <span class="ident">format_rgba</span> <span class="op">=</span>
-            <span class="op">|</span><span class="ident">rgba</span>: <span class="ident">Rgba</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;#{:02X}{:02X}{:02X}{:02X}&quot;</span>, <span class="ident">rgba</span>.<span class="ident">r</span>, <span class="ident">rgba</span>.<span class="ident">g</span>, <span class="ident">rgba</span>.<span class="ident">b</span>, <span class="ident">rgba</span>.<span class="ident">a</span>);
-        <span class="kw">match</span> <span class="kw-2">*</span><span class="self">self</span> {
-            <span class="ident"><span class="self">Self</span>::None</span> <span class="op">|</span> <span class="ident"><span class="self">Self</span>::Auto</span> =&gt; <span class="ident">serializer</span>.<span class="ident">serialize_none</span>(),
-            <span class="ident"><span class="self">Self</span>::Rgba</span>(<span class="ident">rgba</span>) =&gt; <span class="ident">serializer</span>.<span class="ident">serialize_str</span>(<span class="kw-2">&amp;</span><span class="ident">format_rgba</span>(<span class="ident">rgba</span>)),
-            <span class="ident"><span class="self">Self</span>::Hsva</span>(<span class="ident">hsva</span>) =&gt; <span class="ident">serializer</span>.<span class="ident">serialize_str</span>(<span class="kw-2">&amp;</span><span class="ident">format_rgba</span>(<span class="ident">hsva</span>.<span class="ident">into</span>())),
+        <span class="kw">let </span>format_rgba =
+            |rgba: Rgba| <span class="macro">format!</span>(<span class="string">&quot;#{:02X}{:02X}{:02X}{:02X}&quot;</span>, rgba.r, rgba.g, rgba.b, rgba.a);
+        <span class="kw">match </span><span class="kw-2">*</span><span class="self">self </span>{
+            <span class="self">Self</span>::None | <span class="self">Self</span>::Auto =&gt; serializer.serialize_none(),
+            <span class="self">Self</span>::Rgba(rgba) =&gt; serializer.serialize_str(<span class="kw-2">&amp;</span>format_rgba(rgba)),
+            <span class="self">Self</span>::Hsva(hsva) =&gt; serializer.serialize_str(<span class="kw-2">&amp;</span>format_rgba(hsva.into())),
         }
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span> <span class="ident">Deserialize</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Color</span> {
-    <span class="kw">fn</span> <span class="ident">deserialize</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>(<span class="ident">deserializer</span>: <span class="ident">D</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">D::Error</span><span class="op">&gt;</span>
-    <span class="kw">where</span>
-        <span class="ident">D</span>: <span class="ident">Deserializer</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span>,
+<span class="kw">impl</span>&lt;<span class="lifetime">&#39;de</span>&gt; Deserialize&lt;<span class="lifetime">&#39;de</span>&gt; <span class="kw">for </span>Color {
+    <span class="kw">fn </span>deserialize&lt;D&gt;(deserializer: D) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, D::Error&gt;
+    <span class="kw">where
+        </span>D: Deserializer&lt;<span class="lifetime">&#39;de</span>&gt;,
     {
-        <span class="kw">struct</span> <span class="ident">ColorVisitor</span>;
+        <span class="kw">struct </span>ColorVisitor;
 
-        <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span> <span class="ident">Visitor</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">ColorVisitor</span> {
-            <span class="kw">type</span> <span class="ident">Value</span> <span class="op">=</span> <span class="ident">Color</span>;
+        <span class="kw">impl</span>&lt;<span class="lifetime">&#39;de</span>&gt; Visitor&lt;<span class="lifetime">&#39;de</span>&gt; <span class="kw">for </span>ColorVisitor {
+            <span class="kw">type </span>Value = Color;
 
-            <span class="kw">fn</span> <span class="ident">expecting</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">formatter</span>: <span class="kw-2">&amp;mut</span> <span class="ident">fmt::Formatter</span>) -&gt; <span class="ident">fmt::Result</span> {
-                <span class="ident">formatter</span>.<span class="ident">write_str</span>(<span class="string">&quot;color&quot;</span>)
+            <span class="kw">fn </span>expecting(<span class="kw-2">&amp;</span><span class="self">self</span>, formatter: <span class="kw-2">&amp;mut </span>fmt::Formatter) -&gt; fmt::Result {
+                formatter.write_str(<span class="string">&quot;color&quot;</span>)
             }
 
-            <span class="kw">fn</span> <span class="ident">visit_str</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="ident">s</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Color</span>, <span class="ident">E</span><span class="op">&gt;</span>
-            <span class="kw">where</span>
-                <span class="ident">E</span>: <span class="ident">de::Error</span>,
+            <span class="kw">fn </span>visit_str&lt;E&gt;(<span class="self">self</span>, s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;Color, E&gt;
+            <span class="kw">where
+                </span>E: de::Error,
             {
-                <span class="ident">s</span>.<span class="ident">parse</span>().<span class="ident">serde_error</span>()
+                s.parse().serde_error()
             }
         }
 
-        <span class="ident">deserializer</span>.<span class="ident">deserialize_any</span>(<span class="ident">ColorVisitor</span>)
+        deserializer.deserialize_any(ColorVisitor)
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

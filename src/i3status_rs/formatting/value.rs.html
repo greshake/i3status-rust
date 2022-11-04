@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/formatting/value.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>value.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/formatting/value.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>value.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -112,119 +112,119 @@
 <span id="112">112</span>
 <span id="113">113</span>
 <span id="114">114</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">super</span>::formatter</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::unit::Unit</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::Metadata</span>;
+</pre><pre class="rust"><code><span class="kw">use </span><span class="kw">super</span>::formatter;
+<span class="kw">use </span><span class="kw">super</span>::unit::Unit;
+<span class="kw">use </span><span class="kw">super</span>::Metadata;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Value</span> {
-    <span class="kw">pub</span> <span class="ident">inner</span>: <span class="ident">ValueInner</span>,
-    <span class="kw">pub</span> <span class="ident">metadata</span>: <span class="ident">Metadata</span>,
+<span class="attribute">#[derive(Debug, Clone)]
+</span><span class="kw">pub struct </span>Value {
+    <span class="kw">pub </span>inner: ValueInner,
+    <span class="kw">pub </span>metadata: Metadata,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">ValueInner</span> {
-    <span class="ident">Text</span>(<span class="ident">String</span>),
-    <span class="ident">Icon</span>(<span class="ident">String</span>),
-    <span class="ident">Number</span> { <span class="ident">val</span>: <span class="ident">f64</span>, <span class="ident">unit</span>: <span class="ident">Unit</span> },
-    <span class="ident">Flag</span>,
+<span class="attribute">#[derive(Debug, Clone)]
+</span><span class="kw">pub enum </span>ValueInner {
+    Text(String),
+    Icon(String),
+    Number { val: f64, unit: Unit },
+    Flag,
 }
 
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">IntoF64</span> {
-    <span class="kw">fn</span> <span class="ident">into_f64</span>(<span class="self">self</span>) -&gt; <span class="ident">f64</span>;
+<span class="kw">pub trait </span>IntoF64 {
+    <span class="kw">fn </span>into_f64(<span class="self">self</span>) -&gt; f64;
 }
 
-<span class="macro">macro_rules!</span> <span class="ident">impl_into_f64</span> {
-    ($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">t</span>:<span class="ident">ty</span>),<span class="op">+</span>) =&gt; {
+<span class="macro">macro_rules! </span>impl_into_f64 {
+    ($(<span class="macro-nonterminal">$t</span>:ty),+) =&gt; {
         $(
-            <span class="kw">impl</span> <span class="ident">IntoF64</span> <span class="kw">for</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">t</span> {
-                <span class="kw">fn</span> <span class="ident">into_f64</span>(<span class="self">self</span>) -&gt; <span class="ident">f64</span> {
-                    <span class="self">self</span> <span class="kw">as</span> <span class="kw">_</span>
-                }
+            <span class="kw">impl </span>IntoF64 <span class="kw">for </span><span class="macro-nonterminal">$t </span>{
+                <span class="kw">fn </span>into_f64(<span class="self">self</span>) -&gt; f64 {
+                    <span class="self">self </span><span class="kw">as _
+                </span>}
             }
-        )<span class="op">+</span>
+        )+
     }
 }
-<span class="macro">impl_into_f64!</span>(<span class="ident">f64</span>, <span class="ident">f32</span>, <span class="ident">i64</span>, <span class="ident">u64</span>, <span class="ident">i32</span>, <span class="ident">u32</span>, <span class="ident">i16</span>, <span class="ident">u16</span>, <span class="ident">i8</span>, <span class="ident">u8</span>, <span class="ident">usize</span>, <span class="ident">isize</span>);
+<span class="macro">impl_into_f64!</span>(f64, f32, i64, u64, i32, u32, i16, u16, i8, u8, usize, isize);
 
-<span class="doccomment">/// Constuctors</span>
-<span class="kw">impl</span> <span class="ident">Value</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">val</span>: <span class="ident">ValueInner</span>) -&gt; <span class="self">Self</span> {
-        <span class="self">Self</span> {
-            <span class="ident">inner</span>: <span class="ident">val</span>,
-            <span class="ident">metadata</span>: <span class="ident">Default::default</span>(),
+<span class="doccomment">/// Constuctors
+</span><span class="kw">impl </span>Value {
+    <span class="kw">pub fn </span>new(val: ValueInner) -&gt; <span class="self">Self </span>{
+        <span class="self">Self </span>{
+            inner: val,
+            metadata: Default::default(),
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">flag</span>() -&gt; <span class="self">Self</span> {
-        <span class="ident"><span class="self">Self</span>::new</span>(<span class="ident">ValueInner::Flag</span>)
+    <span class="kw">pub fn </span>flag() -&gt; <span class="self">Self </span>{
+        <span class="self">Self</span>::new(ValueInner::Flag)
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">icon</span>(<span class="ident">icon</span>: <span class="ident">String</span>) -&gt; <span class="self">Self</span> {
-        <span class="ident"><span class="self">Self</span>::new</span>(<span class="ident">ValueInner::Icon</span>(<span class="ident">icon</span>))
+    <span class="kw">pub fn </span>icon(icon: String) -&gt; <span class="self">Self </span>{
+        <span class="self">Self</span>::new(ValueInner::Icon(icon))
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">text</span>(<span class="ident">text</span>: <span class="ident">String</span>) -&gt; <span class="self">Self</span> {
-        <span class="ident"><span class="self">Self</span>::new</span>(<span class="ident">ValueInner::Text</span>(<span class="ident">text</span>))
+    <span class="kw">pub fn </span>text(text: String) -&gt; <span class="self">Self </span>{
+        <span class="self">Self</span>::new(ValueInner::Text(text))
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">number_unit</span>(<span class="ident">val</span>: <span class="kw">impl</span> <span class="ident">IntoF64</span>, <span class="ident">unit</span>: <span class="ident">Unit</span>) -&gt; <span class="self">Self</span> {
-        <span class="ident"><span class="self">Self</span>::new</span>(<span class="ident">ValueInner::Number</span> {
-            <span class="ident">val</span>: <span class="ident">val</span>.<span class="ident">into_f64</span>(),
-            <span class="ident">unit</span>,
+    <span class="kw">pub fn </span>number_unit(val: <span class="kw">impl </span>IntoF64, unit: Unit) -&gt; <span class="self">Self </span>{
+        <span class="self">Self</span>::new(ValueInner::Number {
+            val: val.into_f64(),
+            unit,
         })
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">bytes</span>(<span class="ident">val</span>: <span class="kw">impl</span> <span class="ident">IntoF64</span>) -&gt; <span class="self">Self</span> {
-        <span class="ident"><span class="self">Self</span>::number_unit</span>(<span class="ident">val</span>, <span class="ident">Unit::Bytes</span>)
+    <span class="kw">pub fn </span>bytes(val: <span class="kw">impl </span>IntoF64) -&gt; <span class="self">Self </span>{
+        <span class="self">Self</span>::number_unit(val, Unit::Bytes)
     }
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">bits</span>(<span class="ident">val</span>: <span class="kw">impl</span> <span class="ident">IntoF64</span>) -&gt; <span class="self">Self</span> {
-        <span class="ident"><span class="self">Self</span>::number_unit</span>(<span class="ident">val</span>, <span class="ident">Unit::Bits</span>)
+    <span class="kw">pub fn </span>bits(val: <span class="kw">impl </span>IntoF64) -&gt; <span class="self">Self </span>{
+        <span class="self">Self</span>::number_unit(val, Unit::Bits)
     }
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">percents</span>(<span class="ident">val</span>: <span class="kw">impl</span> <span class="ident">IntoF64</span>) -&gt; <span class="self">Self</span> {
-        <span class="ident"><span class="self">Self</span>::number_unit</span>(<span class="ident">val</span>, <span class="ident">Unit::Percents</span>)
+    <span class="kw">pub fn </span>percents(val: <span class="kw">impl </span>IntoF64) -&gt; <span class="self">Self </span>{
+        <span class="self">Self</span>::number_unit(val, Unit::Percents)
     }
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">degrees</span>(<span class="ident">val</span>: <span class="kw">impl</span> <span class="ident">IntoF64</span>) -&gt; <span class="self">Self</span> {
-        <span class="ident"><span class="self">Self</span>::number_unit</span>(<span class="ident">val</span>, <span class="ident">Unit::Degrees</span>)
+    <span class="kw">pub fn </span>degrees(val: <span class="kw">impl </span>IntoF64) -&gt; <span class="self">Self </span>{
+        <span class="self">Self</span>::number_unit(val, Unit::Degrees)
     }
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">seconds</span>(<span class="ident">val</span>: <span class="kw">impl</span> <span class="ident">IntoF64</span>) -&gt; <span class="self">Self</span> {
-        <span class="ident"><span class="self">Self</span>::number_unit</span>(<span class="ident">val</span>, <span class="ident">Unit::Seconds</span>)
+    <span class="kw">pub fn </span>seconds(val: <span class="kw">impl </span>IntoF64) -&gt; <span class="self">Self </span>{
+        <span class="self">Self</span>::number_unit(val, Unit::Seconds)
     }
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">watts</span>(<span class="ident">val</span>: <span class="kw">impl</span> <span class="ident">IntoF64</span>) -&gt; <span class="self">Self</span> {
-        <span class="ident"><span class="self">Self</span>::number_unit</span>(<span class="ident">val</span>, <span class="ident">Unit::Watts</span>)
+    <span class="kw">pub fn </span>watts(val: <span class="kw">impl </span>IntoF64) -&gt; <span class="self">Self </span>{
+        <span class="self">Self</span>::number_unit(val, Unit::Watts)
     }
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">hertz</span>(<span class="ident">val</span>: <span class="kw">impl</span> <span class="ident">IntoF64</span>) -&gt; <span class="self">Self</span> {
-        <span class="ident"><span class="self">Self</span>::number_unit</span>(<span class="ident">val</span>, <span class="ident">Unit::Hertz</span>)
+    <span class="kw">pub fn </span>hertz(val: <span class="kw">impl </span>IntoF64) -&gt; <span class="self">Self </span>{
+        <span class="self">Self</span>::number_unit(val, Unit::Hertz)
     }
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">number</span>(<span class="ident">val</span>: <span class="kw">impl</span> <span class="ident">IntoF64</span>) -&gt; <span class="self">Self</span> {
-        <span class="ident"><span class="self">Self</span>::number_unit</span>(<span class="ident">val</span>, <span class="ident">Unit::None</span>)
+    <span class="kw">pub fn </span>number(val: <span class="kw">impl </span>IntoF64) -&gt; <span class="self">Self </span>{
+        <span class="self">Self</span>::number_unit(val, Unit::None)
     }
 }
 
-<span class="doccomment">/// Set options</span>
-<span class="kw">impl</span> <span class="ident">Value</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">with_instance</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">instance</span>: <span class="ident">usize</span>) -&gt; <span class="self">Self</span> {
-        <span class="self">self</span>.<span class="ident">metadata</span>.<span class="ident">instance</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">instance</span>);
-        <span class="self">self</span>
-    }
+<span class="doccomment">/// Set options
+</span><span class="kw">impl </span>Value {
+    <span class="kw">pub fn </span>with_instance(<span class="kw-2">mut </span><span class="self">self</span>, instance: usize) -&gt; <span class="self">Self </span>{
+        <span class="self">self</span>.metadata.instance = <span class="prelude-val">Some</span>(instance);
+        <span class="self">self
+    </span>}
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">underline</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">val</span>: <span class="ident">bool</span>) -&gt; <span class="self">Self</span> {
-        <span class="self">self</span>.<span class="ident">metadata</span>.<span class="ident">underline</span> <span class="op">=</span> <span class="ident">val</span>;
-        <span class="self">self</span>
-    }
+    <span class="kw">pub fn </span>underline(<span class="kw-2">mut </span><span class="self">self</span>, val: bool) -&gt; <span class="self">Self </span>{
+        <span class="self">self</span>.metadata.underline = val;
+        <span class="self">self
+    </span>}
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">italic</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">val</span>: <span class="ident">bool</span>) -&gt; <span class="self">Self</span> {
-        <span class="self">self</span>.<span class="ident">metadata</span>.<span class="ident">italic</span> <span class="op">=</span> <span class="ident">val</span>;
-        <span class="self">self</span>
-    }
+    <span class="kw">pub fn </span>italic(<span class="kw-2">mut </span><span class="self">self</span>, val: bool) -&gt; <span class="self">Self </span>{
+        <span class="self">self</span>.metadata.italic = val;
+        <span class="self">self
+    </span>}
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">default_formatter</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="kw">dyn</span> <span class="ident">formatter::Formatter</span> {
-        <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">inner</span> {
-            <span class="ident">ValueInner::Text</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">ValueInner::Icon</span>(<span class="kw">_</span>) =&gt; <span class="kw-2">&amp;</span><span class="ident">formatter::DEFAULT_STRING_FORMATTER</span>,
-            <span class="ident">ValueInner::Number</span> { .. } =&gt; <span class="kw-2">&amp;</span><span class="ident">formatter::DEFAULT_NUMBER_FORMATTER</span>,
-            <span class="ident">ValueInner::Flag</span> =&gt; <span class="kw-2">&amp;</span><span class="ident">formatter::DEFAULT_FLAG_FORMATTER</span>,
+    <span class="kw">pub fn </span>default_formatter(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span><span class="kw">dyn </span>formatter::Formatter {
+        <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.inner {
+            ValueInner::Text(<span class="kw">_</span>) | ValueInner::Icon(<span class="kw">_</span>) =&gt; <span class="kw-2">&amp;</span>formatter::DEFAULT_STRING_FORMATTER,
+            ValueInner::Number { .. } =&gt; <span class="kw-2">&amp;</span>formatter::DEFAULT_NUMBER_FORMATTER,
+            ValueInner::Flag =&gt; <span class="kw-2">&amp;</span>formatter::DEFAULT_FLAG_FORMATTER,
         }
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

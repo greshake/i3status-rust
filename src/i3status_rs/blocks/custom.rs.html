@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/custom.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>custom.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/custom.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>custom.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -272,262 +272,262 @@
 <span id="272">272</span>
 <span id="273">273</span>
 <span id="274">274</span>
-</pre><pre class="rust"><code><span class="doccomment">//! The output of a custom shell command</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! For further customisation, use the `json` option and have the shell command output valid JSON in the schema below:</span>
-<span class="doccomment">//! ```json</span>
-<span class="doccomment">//! {&quot;icon&quot;: &quot;...&quot;, &quot;state&quot;: &quot;...&quot;, &quot;text&quot;: &quot;...&quot;, &quot;short_text&quot;: &quot;...&quot;}</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//! `icon` is optional (default &quot;&quot;)</span>
-<span class="doccomment">//! `state` is optional, it may be Idle, Info, Good, Warning, Critical (default Idle)</span>
-<span class="doccomment">//! `short_text` is optional.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Configuration</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Key | Values | Default</span>
-<span class="doccomment">//! ----|--------|--------</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot;{ $icon&amp;vert;} $text &quot;&lt;/code&gt;</span>
-<span class="doccomment">//! `command` | Shell command to execute &amp; display | `None`</span>
-<span class="doccomment">//! `persistent` | Run command in the background; update display for each output line of the command | `false`</span>
-<span class="doccomment">//! `cycle` | Commands to execute and change when the button is clicked | `None`</span>
-<span class="doccomment">//! `interval` | Update interval in seconds (or &quot;once&quot; to update only once) | `10`</span>
-<span class="doccomment">//! `json` | Use JSON from command output to format the block. If the JSON is not valid, the block will error out. | `false`</span>
-<span class="doccomment">//! `watch_files` | Watch files to trigger update on file modification | `None`</span>
-<span class="doccomment">//! `hide_when_empty` | Hides the block when the command output (or json text field) is empty | `false`</span>
-<span class="doccomment">//! `shell` | Specify the shell to use when running commands | `$SHELL` if set, otherwise fallback to `sh`</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Placeholder      | Value                                                      | Type   | Unit</span>
-<span class="doccomment">//! -----------------|------------------------------------------------------------|--------|---------------</span>
-<span class="doccomment">//! `icon`           | Value of icon field from JSON output when it&#39;s non-empty   | Icon   | -</span>
-<span class="doccomment">//! `text`           | Output of the script or text field from JSON output        | Text   |</span>
-<span class="doccomment">//! `short_text`     | short_text field from JSON output                          | Text   |</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Examples</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Display temperature, update every 10 seconds:</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;custom&quot;</span>
-<span class="doccomment">//! command = &#39;&#39;&#39; cat /sys/class/thermal/thermal_zone0/temp | awk &#39;{printf(&quot;%.1f\n&quot;,$1/1000)}&#39; &#39;&#39;&#39;</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Cycle between &quot;ON&quot; and &quot;OFF&quot;, update every 1 second, run `&lt;command&gt;` when block is clicked:</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;custom&quot;</span>
-<span class="doccomment">//! cycle = [&quot;echo ON&quot;, &quot;echo OFF&quot;]</span>
-<span class="doccomment">//! interval = 1</span>
-<span class="doccomment">//! [[block.click]]</span>
-<span class="doccomment">//! button = &quot;left&quot;</span>
-<span class="doccomment">//! cmd = &quot;&lt;command&gt;&quot;</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Use JSON output:</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;custom&quot;</span>
-<span class="doccomment">//! command = &quot;echo &#39;{\&quot;icon\&quot;:\&quot;weather_thunder\&quot;,\&quot;state\&quot;:\&quot;Critical\&quot;, \&quot;text\&quot;: \&quot;Danger!\&quot;}&#39;&quot;</span>
-<span class="doccomment">//! json = true</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Display kernel, update the block only once:</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;custom&quot;</span>
-<span class="doccomment">//! command = &quot;uname -r&quot;</span>
-<span class="doccomment">//! interval = &quot;once&quot;</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Display the screen brightness on an intel machine and update this only when `pkill -SIGRTMIN+4 i3status-rs` is called:</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;custom&quot;</span>
-<span class="doccomment">//! command = &#39;&#39;&#39; cat /sys/class/backlight/intel_backlight/brightness | awk &#39;{print $1}&#39; &#39;&#39;&#39;</span>
-<span class="doccomment">//! signal = 4</span>
-<span class="doccomment">//! interval = &quot;once&quot;</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Update block when one or more specified files are modified:</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;custom&quot;</span>
-<span class="doccomment">//! command = &quot;cat custom_status&quot;</span>
-<span class="doccomment">//! watch_files = [&quot;custom_status&quot;]</span>
-<span class="doccomment">//! interval = &quot;once&quot;</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # TODO:</span>
-<span class="doccomment">//! - Use `shellexpand`</span>
+</pre><pre class="rust"><code><span class="doccomment">//! The output of a custom shell command
+//!
+//! For further customisation, use the `json` option and have the shell command output valid JSON in the schema below:
+//! ```json
+//! {&quot;icon&quot;: &quot;...&quot;, &quot;state&quot;: &quot;...&quot;, &quot;text&quot;: &quot;...&quot;, &quot;short_text&quot;: &quot;...&quot;}
+//! ```
+//! `icon` is optional (default &quot;&quot;)
+//! `state` is optional, it may be Idle, Info, Good, Warning, Critical (default Idle)
+//! `short_text` is optional.
+//!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot;{ $icon&amp;vert;} $text &quot;&lt;/code&gt;
+//! `command` | Shell command to execute &amp; display | `None`
+//! `persistent` | Run command in the background; update display for each output line of the command | `false`
+//! `cycle` | Commands to execute and change when the button is clicked | `None`
+//! `interval` | Update interval in seconds (or &quot;once&quot; to update only once) | `10`
+//! `json` | Use JSON from command output to format the block. If the JSON is not valid, the block will error out. | `false`
+//! `watch_files` | Watch files to trigger update on file modification | `None`
+//! `hide_when_empty` | Hides the block when the command output (or json text field) is empty | `false`
+//! `shell` | Specify the shell to use when running commands | `$SHELL` if set, otherwise fallback to `sh`
+//!
+//! Placeholder      | Value                                                      | Type   | Unit
+//! -----------------|------------------------------------------------------------|--------|---------------
+//! `icon`           | Value of icon field from JSON output when it&#39;s non-empty   | Icon   | -
+//! `text`           | Output of the script or text field from JSON output        | Text   |
+//! `short_text`     | short_text field from JSON output                          | Text   |
+//!
+//! # Examples
+//!
+//! Display temperature, update every 10 seconds:
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;custom&quot;
+//! command = &#39;&#39;&#39; cat /sys/class/thermal/thermal_zone0/temp | awk &#39;{printf(&quot;%.1f\n&quot;,$1/1000)}&#39; &#39;&#39;&#39;
+//! ```
+//!
+//! Cycle between &quot;ON&quot; and &quot;OFF&quot;, update every 1 second, run `&lt;command&gt;` when block is clicked:
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;custom&quot;
+//! cycle = [&quot;echo ON&quot;, &quot;echo OFF&quot;]
+//! interval = 1
+//! [[block.click]]
+//! button = &quot;left&quot;
+//! cmd = &quot;&lt;command&gt;&quot;
+//! ```
+//!
+//! Use JSON output:
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;custom&quot;
+//! command = &quot;echo &#39;{\&quot;icon\&quot;:\&quot;weather_thunder\&quot;,\&quot;state\&quot;:\&quot;Critical\&quot;, \&quot;text\&quot;: \&quot;Danger!\&quot;}&#39;&quot;
+//! json = true
+//! ```
+//!
+//! Display kernel, update the block only once:
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;custom&quot;
+//! command = &quot;uname -r&quot;
+//! interval = &quot;once&quot;
+//! ```
+//!
+//! Display the screen brightness on an intel machine and update this only when `pkill -SIGRTMIN+4 i3status-rs` is called:
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;custom&quot;
+//! command = &#39;&#39;&#39; cat /sys/class/backlight/intel_backlight/brightness | awk &#39;{print $1}&#39; &#39;&#39;&#39;
+//! signal = 4
+//! interval = &quot;once&quot;
+//! ```
+//!
+//! Update block when one or more specified files are modified:
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;custom&quot;
+//! command = &quot;cat custom_status&quot;
+//! watch_files = [&quot;custom_status&quot;]
+//! interval = &quot;once&quot;
+//! ```
+//!
+//! # TODO:
+//! - Use `shellexpand`
 
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">inotify</span>::{<span class="ident">Inotify</span>, <span class="ident">WatchMask</span>};
-<span class="kw">use</span> <span class="ident">std::process::Stdio</span>;
-<span class="kw">use</span> <span class="ident">tokio::io</span>::{<span class="self">self</span>, <span class="ident">AsyncBufReadExt</span>, <span class="ident">BufReader</span>};
-<span class="kw">use</span> <span class="ident">tokio::process::Command</span>;
+</span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span>inotify::{Inotify, WatchMask};
+<span class="kw">use </span>std::process::Stdio;
+<span class="kw">use </span>tokio::io::{<span class="self">self</span>, AsyncBufReadExt, BufReader};
+<span class="kw">use </span>tokio::process::Command;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
-<span class="kw">struct</span> <span class="ident">CustomConfig</span> {
-    <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
-    <span class="ident">command</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="ident">persistent</span>: <span class="ident">bool</span>,
-    <span class="ident">cycle</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">10</span>.<span class="ident">into</span>())]</span>
-    <span class="ident">interval</span>: <span class="ident">Seconds</span>,
-    <span class="ident">json</span>: <span class="ident">bool</span>,
-    <span class="ident">hide_when_empty</span>: <span class="ident">bool</span>,
-    <span class="ident">shell</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="ident">watch_files</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+<span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
+#[serde(deny_unknown_fields, default)]
+</span><span class="kw">struct </span>CustomConfig {
+    format: FormatConfig,
+    command: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    persistent: bool,
+    cycle: <span class="prelude-ty">Option</span>&lt;Vec&lt;String&gt;&gt;,
+    <span class="attribute">#[default(<span class="number">10</span>.into())]
+    </span>interval: Seconds,
+    json: bool,
+    hide_when_empty: bool,
+    shell: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    watch_files: Vec&lt;String&gt;,
 }
 
-<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">update_bar</span>(
-    <span class="ident">stdout</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>,
-    <span class="ident">hide_when_empty</span>: <span class="ident">bool</span>,
-    <span class="ident">json</span>: <span class="ident">bool</span>,
-    <span class="ident">api</span>: <span class="kw-2">&amp;mut</span> <span class="ident">CommonApi</span>,
-    <span class="ident">widget</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Widget</span>,
-) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">text_empty</span>;
+<span class="kw">async fn </span>update_bar(
+    stdout: <span class="kw-2">&amp;</span>str,
+    hide_when_empty: bool,
+    json: bool,
+    api: <span class="kw-2">&amp;mut </span>CommonApi,
+    widget: <span class="kw-2">&amp;mut </span>Widget,
+) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span>text_empty;
 
-    <span class="kw">if</span> <span class="ident">json</span> {
-        <span class="kw">match</span> <span class="ident">serde_json::from_str</span>::<span class="op">&lt;</span><span class="ident">Input</span><span class="op">&gt;</span>(<span class="ident">stdout</span>).<span class="ident">error</span>(<span class="string">&quot;Invalid JSON&quot;</span>) {
-            <span class="prelude-val">Ok</span>(<span class="ident">input</span>) =&gt; {
-                <span class="ident">text_empty</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">text</span>.<span class="ident">is_empty</span>();
-                <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span> {
-                    <span class="string">&quot;text&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">input</span>.<span class="ident">text</span>),
-                    [<span class="kw">if</span> <span class="op">!</span><span class="ident">input</span>.<span class="ident">icon</span>.<span class="ident">is_empty</span>()] <span class="string">&quot;icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>.<span class="ident">icon</span>)<span class="question-mark">?</span>),
-                    [<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">t</span>) <span class="op">=</span> <span class="ident">input</span>.<span class="ident">short_text</span>] <span class="string">&quot;short_text&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">t</span>)
+    <span class="kw">if </span>json {
+        <span class="kw">match </span>serde_json::from_str::&lt;Input&gt;(stdout).error(<span class="string">&quot;Invalid JSON&quot;</span>) {
+            <span class="prelude-val">Ok</span>(input) =&gt; {
+                text_empty = input.text.is_empty();
+                widget.set_values(<span class="macro">map! </span>{
+                    <span class="string">&quot;text&quot; </span>=&gt; Value::text(input.text),
+                    [<span class="kw">if </span>!input.icon.is_empty()] <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="kw-2">&amp;</span>input.icon)<span class="question-mark">?</span>),
+                    [<span class="kw">if let </span><span class="prelude-val">Some</span>(t) = input.short_text] <span class="string">&quot;short_text&quot; </span>=&gt; Value::text(t)
                 });
-                <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">input</span>.<span class="ident">state</span>;
+                widget.state = input.state;
             }
-            <span class="prelude-val">Err</span>(<span class="ident">error</span>) =&gt; <span class="kw">return</span> <span class="ident">api</span>.<span class="ident">set_error</span>(<span class="ident">error</span>).<span class="kw">await</span>,
+            <span class="prelude-val">Err</span>(error) =&gt; <span class="kw">return </span>api.set_error(error).<span class="kw">await</span>,
         }
-    } <span class="kw">else</span> {
-        <span class="ident">text_empty</span> <span class="op">=</span> <span class="ident">stdout</span>.<span class="ident">is_empty</span>();
-        <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span>(<span class="string">&quot;text&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">stdout</span>.<span class="ident">into</span>())));
+    } <span class="kw">else </span>{
+        text_empty = stdout.is_empty();
+        widget.set_values(<span class="macro">map!</span>(<span class="string">&quot;text&quot; </span>=&gt; Value::text(stdout.into())));
     }
 
-    <span class="kw">if</span> <span class="ident">text_empty</span> <span class="op">&amp;&amp;</span> <span class="ident">hide_when_empty</span> {
-        <span class="ident">api</span>.<span class="ident">hide</span>().<span class="kw">await</span>
-    } <span class="kw">else</span> {
-        <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="ident">widget</span>).<span class="kw">await</span>
-    }
+    <span class="kw">if </span>text_empty &amp;&amp; hide_when_empty {
+        api.hide().<span class="kw">await
+    </span>} <span class="kw">else </span>{
+        api.set_widget(widget).<span class="kw">await
+    </span>}
 }
 
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">CustomConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">Widget::new</span>().<span class="ident">with_format</span>(
-        <span class="ident">config</span>
-            .<span class="ident">format</span>
-            .<span class="ident">with_defaults</span>(<span class="string">&quot;{ $icon|} $text &quot;</span>, <span class="string">&quot;{ $icon|} $short_text |&quot;</span>)<span class="question-mark">?</span>,
+<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span>config = CustomConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(
+        config
+            .format
+            .with_defaults(<span class="string">&quot;{ $icon|} $text &quot;</span>, <span class="string">&quot;{ $icon|} $short_text |&quot;</span>)<span class="question-mark">?</span>,
     );
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">timer</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">interval</span>.<span class="ident">timer</span>();
+    <span class="kw">let </span><span class="kw-2">mut </span>timer = config.interval.timer();
 
-    <span class="kw">type</span> <span class="ident">FileStream</span> <span class="op">=</span> <span class="ident">Pin</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Stream</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">io::Result</span><span class="op">&lt;</span><span class="ident">inotify::EventOwned</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span><span class="op">&gt;</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">file_updates</span>: <span class="ident">FileStream</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">watch_files</span>.<span class="ident">as_slice</span>() {
-        [] =&gt; <span class="ident">Box::pin</span>(<span class="ident">futures::stream::pending</span>()),
-        <span class="ident">files</span> =&gt; {
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">notify</span> <span class="op">=</span> <span class="ident">Inotify::init</span>().<span class="ident">error</span>(<span class="string">&quot;Failed to start inotify&quot;</span>)<span class="question-mark">?</span>;
-            <span class="kw">for</span> <span class="ident">file</span> <span class="kw">in</span> <span class="ident">files</span> {
-                <span class="ident">notify</span>
-                    .<span class="ident">add_watch</span>(<span class="ident">file</span>, <span class="ident">WatchMask::MODIFY</span> <span class="op">|</span> <span class="ident">WatchMask::CLOSE_WRITE</span>)
-                    .<span class="ident">error</span>(<span class="string">&quot;Failed to file&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">type </span>FileStream = Pin&lt;Box&lt;<span class="kw">dyn </span>Stream&lt;Item = io::Result&lt;inotify::EventOwned&gt;&gt; + Send + Sync&gt;&gt;;
+    <span class="kw">let </span><span class="kw-2">mut </span>file_updates: FileStream = <span class="kw">match </span>config.watch_files.as_slice() {
+        [] =&gt; Box::pin(futures::stream::pending()),
+        files =&gt; {
+            <span class="kw">let </span><span class="kw-2">mut </span>notify = Inotify::init().error(<span class="string">&quot;Failed to start inotify&quot;</span>)<span class="question-mark">?</span>;
+            <span class="kw">for </span>file <span class="kw">in </span>files {
+                notify
+                    .add_watch(file, WatchMask::MODIFY | WatchMask::CLOSE_WRITE)
+                    .error(<span class="string">&quot;Failed to file&quot;</span>)<span class="question-mark">?</span>;
             }
-            <span class="ident">Box::pin</span>(
-                <span class="ident">notify</span>
-                    .<span class="ident">event_stream</span>([<span class="number">0</span>; <span class="number">1024</span>])
-                    .<span class="ident">error</span>(<span class="string">&quot;Failed to create event stream&quot;</span>)<span class="question-mark">?</span>,
+            Box::pin(
+                notify
+                    .event_stream([<span class="number">0</span>; <span class="number">1024</span>])
+                    .error(<span class="string">&quot;Failed to create event stream&quot;</span>)<span class="question-mark">?</span>,
             )
         }
     };
 
-    <span class="comment">// Choose the shell in this priority:</span>
-    <span class="comment">// 1) `shell` config option</span>
-    <span class="comment">// 2) `SHELL` environment varialble</span>
-    <span class="comment">// 3) `&quot;sh&quot;`</span>
-    <span class="kw">let</span> <span class="ident">shell</span> <span class="op">=</span> <span class="ident">config</span>
-        .<span class="ident">shell</span>
-        .<span class="ident">or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">std::env::var</span>(<span class="string">&quot;SHELL&quot;</span>).<span class="ident">ok</span>())
-        .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;sh&quot;</span>.<span class="ident">to_string</span>());
+    <span class="comment">// Choose the shell in this priority:
+    // 1) `shell` config option
+    // 2) `SHELL` environment varialble
+    // 3) `&quot;sh&quot;`
+    </span><span class="kw">let </span>shell = config
+        .shell
+        .or_else(|| std::env::var(<span class="string">&quot;SHELL&quot;</span>).ok())
+        .unwrap_or_else(|| <span class="string">&quot;sh&quot;</span>.to_string());
 
-    <span class="kw">if</span> <span class="ident">config</span>.<span class="ident">persistent</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">process</span> <span class="op">=</span> <span class="ident">Command::new</span>(<span class="kw-2">&amp;</span><span class="ident">shell</span>)
-            .<span class="ident">args</span>([
+    <span class="kw">if </span>config.persistent {
+        <span class="kw">let </span><span class="kw-2">mut </span>process = Command::new(<span class="kw-2">&amp;</span>shell)
+            .args([
                 <span class="string">&quot;-c&quot;</span>,
-                <span class="ident">config</span>
-                    .<span class="ident">command</span>
-                    .<span class="ident">as_deref</span>()
-                    .<span class="ident">error</span>(<span class="string">&quot;&#39;command&#39; must be specified when &#39;persistent&#39; is set&quot;</span>)<span class="question-mark">?</span>,
+                config
+                    .command
+                    .as_deref()
+                    .error(<span class="string">&quot;&#39;command&#39; must be specified when &#39;persistent&#39; is set&quot;</span>)<span class="question-mark">?</span>,
             ])
-            .<span class="ident">stdout</span>(<span class="ident">Stdio::piped</span>())
-            .<span class="ident">spawn</span>()
-            .<span class="ident">error</span>(<span class="string">&quot;failed to run command&quot;</span>)<span class="question-mark">?</span>;
+            .stdout(Stdio::piped())
+            .spawn()
+            .error(<span class="string">&quot;failed to run command&quot;</span>)<span class="question-mark">?</span>;
 
-        <span class="kw">let</span> <span class="ident">stdout</span> <span class="op">=</span> <span class="ident">process</span>
-            .<span class="ident">stdout</span>
-            .<span class="ident">take</span>()
-            .<span class="ident">expect</span>(<span class="string">&quot;child did not have a handle to stdout&quot;</span>);
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">reader</span> <span class="op">=</span> <span class="ident">BufReader::new</span>(<span class="ident">stdout</span>).<span class="ident">lines</span>();
+        <span class="kw">let </span>stdout = process
+            .stdout
+            .take()
+            .expect(<span class="string">&quot;child did not have a handle to stdout&quot;</span>);
+        <span class="kw">let </span><span class="kw-2">mut </span>reader = BufReader::new(stdout).lines();
 
-        <span class="ident">tokio::spawn</span>(<span class="kw">async</span> <span class="kw">move</span> {
-            <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">process</span>.<span class="ident">wait</span>().<span class="kw">await</span>;
+        tokio::spawn(<span class="kw">async move </span>{
+            <span class="kw">let _ </span>= process.wait().<span class="kw">await</span>;
         });
 
-        <span class="kw">loop</span> {
-            <span class="macro">select!</span> {
-                <span class="ident">line</span> <span class="op">=</span> <span class="ident">reader</span>.<span class="ident">next_line</span>() =&gt; {
-                    <span class="kw">let</span> <span class="ident">line</span> <span class="op">=</span> <span class="ident">line</span>.<span class="ident">error</span>(<span class="string">&quot;error reading line from child process&quot;</span>)<span class="question-mark">?</span>.<span class="ident">error</span>(<span class="string">&quot;child process exited unexpectedly&quot;</span>)<span class="question-mark">?</span>;
-                    <span class="ident">update_bar</span>(<span class="kw-2">&amp;</span><span class="ident">line</span>, <span class="ident">config</span>.<span class="ident">hide_when_empty</span>, <span class="ident">config</span>.<span class="ident">json</span>, <span class="kw-2">&amp;mut</span> <span class="ident">api</span>, <span class="kw-2">&amp;mut</span> <span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">loop </span>{
+            <span class="macro">select! </span>{
+                line = reader.next_line() =&gt; {
+                    <span class="kw">let </span>line = line.error(<span class="string">&quot;error reading line from child process&quot;</span>)<span class="question-mark">?</span>.error(<span class="string">&quot;child process exited unexpectedly&quot;</span>)<span class="question-mark">?</span>;
+                    update_bar(<span class="kw-2">&amp;</span>line, config.hide_when_empty, config.json, <span class="kw-2">&amp;mut </span>api, <span class="kw-2">&amp;mut </span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
                 }
-                <span class="comment">// events must be polled</span>
-                <span class="kw">_</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; (),
+                <span class="comment">// events must be polled
+                </span><span class="kw">_ </span>= api.event() =&gt; (),
             }
         }
-    } <span class="kw">else</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cycle</span> <span class="op">=</span> <span class="ident">config</span>
-            .<span class="ident">cycle</span>
-            .<span class="ident">or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">config</span>.<span class="ident">command</span>.<span class="ident">clone</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">cmd</span><span class="op">|</span> <span class="macro">vec!</span>[<span class="ident">cmd</span>]))
-            .<span class="ident">error</span>(<span class="string">&quot;either &#39;command&#39; or &#39;cycle&#39; must be specified&quot;</span>)<span class="question-mark">?</span>
-            .<span class="ident">into_iter</span>()
-            .<span class="ident">cycle</span>();
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cmd</span> <span class="op">=</span> <span class="ident">cycle</span>.<span class="ident">next</span>().<span class="ident">unwrap</span>();
+    } <span class="kw">else </span>{
+        <span class="kw">let </span><span class="kw-2">mut </span>cycle = config
+            .cycle
+            .or_else(|| config.command.clone().map(|cmd| <span class="macro">vec!</span>[cmd]))
+            .error(<span class="string">&quot;either &#39;command&#39; or &#39;cycle&#39; must be specified&quot;</span>)<span class="question-mark">?
+            </span>.into_iter()
+            .cycle();
+        <span class="kw">let </span><span class="kw-2">mut </span>cmd = cycle.next().unwrap();
 
-        <span class="kw">loop</span> {
-            <span class="comment">// Run command</span>
-            <span class="kw">let</span> <span class="ident">output</span> <span class="op">=</span> <span class="ident">Command::new</span>(<span class="kw-2">&amp;</span><span class="ident">shell</span>)
-                .<span class="ident">args</span>([<span class="string">&quot;-c&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">cmd</span>])
-                .<span class="ident">output</span>()
-                .<span class="kw">await</span>
-                .<span class="ident">error</span>(<span class="string">&quot;failed to run command&quot;</span>)<span class="question-mark">?</span>;
-            <span class="kw">let</span> <span class="ident">stdout</span> <span class="op">=</span> <span class="ident">std::str::from_utf8</span>(<span class="kw-2">&amp;</span><span class="ident">output</span>.<span class="ident">stdout</span>)
-                .<span class="ident">error</span>(<span class="string">&quot;the output of command is invalid UTF-8&quot;</span>)<span class="question-mark">?</span>
-                .<span class="ident">trim</span>();
+        <span class="kw">loop </span>{
+            <span class="comment">// Run command
+            </span><span class="kw">let </span>output = Command::new(<span class="kw-2">&amp;</span>shell)
+                .args([<span class="string">&quot;-c&quot;</span>, <span class="kw-2">&amp;</span>cmd])
+                .output()
+                .<span class="kw">await
+                </span>.error(<span class="string">&quot;failed to run command&quot;</span>)<span class="question-mark">?</span>;
+            <span class="kw">let </span>stdout = std::str::from_utf8(<span class="kw-2">&amp;</span>output.stdout)
+                .error(<span class="string">&quot;the output of command is invalid UTF-8&quot;</span>)<span class="question-mark">?
+                </span>.trim();
 
-            <span class="ident">update_bar</span>(
-                <span class="ident">stdout</span>,
-                <span class="ident">config</span>.<span class="ident">hide_when_empty</span>,
-                <span class="ident">config</span>.<span class="ident">json</span>,
-                <span class="kw-2">&amp;mut</span> <span class="ident">api</span>,
-                <span class="kw-2">&amp;mut</span> <span class="ident">widget</span>,
+            update_bar(
+                stdout,
+                config.hide_when_empty,
+                config.json,
+                <span class="kw-2">&amp;mut </span>api,
+                <span class="kw-2">&amp;mut </span>widget,
             )
             .<span class="kw">await</span><span class="question-mark">?</span>;
 
-            <span class="kw">loop</span> {
-                <span class="macro">select!</span> {
-                    <span class="kw">_</span> <span class="op">=</span> <span class="ident">timer</span>.<span class="ident">tick</span>() =&gt; <span class="kw">break</span>,
-                    <span class="kw">_</span> <span class="op">=</span> <span class="ident">file_updates</span>.<span class="ident">next</span>() =&gt; <span class="kw">break</span>,
-                    <span class="ident">event</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; <span class="kw">match</span> <span class="ident">event</span> {
-                        <span class="ident">UpdateRequest</span> =&gt; <span class="kw">break</span>,
-                        <span class="ident">Click</span>(<span class="ident">click</span>) =&gt; {
-                            <span class="kw">if</span> <span class="ident">click</span>.<span class="ident">button</span> <span class="op">==</span> <span class="ident">MouseButton::Left</span> {
-                                <span class="ident">cmd</span> <span class="op">=</span> <span class="ident">cycle</span>.<span class="ident">next</span>().<span class="ident">unwrap</span>();
+            <span class="kw">loop </span>{
+                <span class="macro">select! </span>{
+                    <span class="kw">_ </span>= timer.tick() =&gt; <span class="kw">break</span>,
+                    <span class="kw">_ </span>= file_updates.next() =&gt; <span class="kw">break</span>,
+                    event = api.event() =&gt; <span class="kw">match </span>event {
+                        UpdateRequest =&gt; <span class="kw">break</span>,
+                        Click(click) =&gt; {
+                            <span class="kw">if </span>click.button == MouseButton::Left {
+                                cmd = cycle.next().unwrap();
                                 <span class="kw">break</span>;
                             }
                         }
@@ -538,13 +538,13 @@
     }
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">Default</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
-<span class="kw">struct</span> <span class="ident">Input</span> {
-    <span class="ident">icon</span>: <span class="ident">String</span>,
-    <span class="ident">state</span>: <span class="ident">State</span>,
-    <span class="ident">text</span>: <span class="ident">String</span>,
-    <span class="ident">short_text</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+<span class="attribute">#[derive(Deserialize, Debug, Default)]
+#[serde(default)]
+</span><span class="kw">struct </span>Input {
+    icon: String,
+    state: State,
+    text: String,
+    short_text: <span class="prelude-ty">Option</span>&lt;String&gt;,
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

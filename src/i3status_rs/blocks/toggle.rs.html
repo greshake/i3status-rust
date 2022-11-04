@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/toggle.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>toggle.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/toggle.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>toggle.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -153,153 +153,153 @@
 <span id="153">153</span>
 <span id="154">154</span>
 <span id="155">155</span>
-</pre><pre class="rust"><code><span class="doccomment">//! A Toggle block</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! You can add commands to be executed to disable the toggle (`command_off`), and to enable it</span>
-<span class="doccomment">//! (`command_on`). If these command exit with a non-zero status, the block will not be toggled and</span>
-<span class="doccomment">//! the block state will be changed to give a visual warning of the failure. You also need to</span>
-<span class="doccomment">//! specify a command to determine the state of the toggle (`command_state`). When the command outputs</span>
-<span class="doccomment">//! nothing, the toggle is disabled, otherwise enabled. By specifying the interval property you can</span>
-<span class="doccomment">//! let the command_state be executed continuously.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! To run those commands, the shell form `$SHELL` environment variable is used. If such variable</span>
-<span class="doccomment">//! is not presented, `sh` is used.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Configuration</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Key | Values | Default</span>
-<span class="doccomment">//! ----|--------|--------</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders | `&quot; $icon &quot;`</span>
-<span class="doccomment">//! `command_on` | Shell command to enable the toggle | Yes | N/A</span>
-<span class="doccomment">//! `command_off` | Shell command to disable the toggle | Yes | N/A</span>
-<span class="doccomment">//! `command_state` | Shell command to determine the state. Empty output =&gt; No, otherwise =&gt; Yes. | **Required**</span>
-<span class="doccomment">//! `icon_on` | Icon override for the toggle button while on | `&quot;toggle_on&quot;`</span>
-<span class="doccomment">//! `icon_off` | Icon override for the toggle button while off | `&quot;toggle_off&quot;`</span>
-<span class="doccomment">//! `interval` | Update interval in seconds. If not set, `command_state` will run only on click. | None</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Placeholder   | Value                                       | Type   | Unit</span>
-<span class="doccomment">//! --------------|---------------------------------------------|--------|-----</span>
-<span class="doccomment">//! `icon`        | Icon based on toggle&#39;s state                | Icon   | -</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Examples</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! This is what can be used to toggle an external monitor configuration:</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;toggle&quot;</span>
-<span class="doccomment">//! format = &quot; $icon 4k &quot;</span>
-<span class="doccomment">//! command_state = &quot;xrandr | grep &#39;DP1 connected 38&#39; | grep -v eDP1&quot;</span>
-<span class="doccomment">//! command_on = &quot;~/.screenlayout/4kmon_default.sh&quot;</span>
-<span class="doccomment">//! command_off = &quot;~/.screenlayout/builtin.sh&quot;</span>
-<span class="doccomment">//! interval = 5</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Icons Used</span>
-<span class="doccomment">//! - `toggle_off`</span>
-<span class="doccomment">//! - `toggle_on`</span>
+</pre><pre class="rust"><code><span class="doccomment">//! A Toggle block
+//!
+//! You can add commands to be executed to disable the toggle (`command_off`), and to enable it
+//! (`command_on`). If these command exit with a non-zero status, the block will not be toggled and
+//! the block state will be changed to give a visual warning of the failure. You also need to
+//! specify a command to determine the state of the toggle (`command_state`). When the command outputs
+//! nothing, the toggle is disabled, otherwise enabled. By specifying the interval property you can
+//! let the command_state be executed continuously.
+//!
+//! To run those commands, the shell form `$SHELL` environment variable is used. If such variable
+//! is not presented, `sh` is used.
+//!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `format` | A string to customise the output of this block. See below for available placeholders | `&quot; $icon &quot;`
+//! `command_on` | Shell command to enable the toggle | Yes | N/A
+//! `command_off` | Shell command to disable the toggle | Yes | N/A
+//! `command_state` | Shell command to determine the state. Empty output =&gt; No, otherwise =&gt; Yes. | **Required**
+//! `icon_on` | Icon override for the toggle button while on | `&quot;toggle_on&quot;`
+//! `icon_off` | Icon override for the toggle button while off | `&quot;toggle_off&quot;`
+//! `interval` | Update interval in seconds. If not set, `command_state` will run only on click. | None
+//!
+//! Placeholder   | Value                                       | Type   | Unit
+//! --------------|---------------------------------------------|--------|-----
+//! `icon`        | Icon based on toggle&#39;s state                | Icon   | -
+//!
+//! # Examples
+//!
+//! This is what can be used to toggle an external monitor configuration:
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;toggle&quot;
+//! format = &quot; $icon 4k &quot;
+//! command_state = &quot;xrandr | grep &#39;DP1 connected 38&#39; | grep -v eDP1&quot;
+//! command_on = &quot;~/.screenlayout/4kmon_default.sh&quot;
+//! command_off = &quot;~/.screenlayout/builtin.sh&quot;
+//! interval = 5
+//! ```
+//!
+//! # Icons Used
+//! - `toggle_off`
+//! - `toggle_on`
 
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">std::env</span>;
-<span class="kw">use</span> <span class="ident">tokio::process::Command</span>;
+</span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span>std::env;
+<span class="kw">use </span>tokio::process::Command;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ToggleConfig</span> {
-    <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
-    <span class="ident">command_on</span>: <span class="ident">String</span>,
-    <span class="ident">command_off</span>: <span class="ident">String</span>,
-    <span class="ident">command_state</span>: <span class="ident">String</span>,
-    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
-    <span class="ident">icon_on</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
-    <span class="ident">icon_off</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
-    <span class="ident">interval</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
+<span class="attribute">#[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
+</span><span class="kw">pub struct </span>ToggleConfig {
+    format: FormatConfig,
+    command_on: String,
+    command_off: String,
+    command_state: String,
+    <span class="attribute">#[serde(default)]
+    </span>icon_on: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="attribute">#[serde(default)]
+    </span>icon_off: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="attribute">#[serde(default)]
+    </span>interval: <span class="prelude-ty">Option</span>&lt;u64&gt;,
 }
 
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">ToggleConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">interval</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">interval</span>.<span class="ident">map</span>(<span class="ident">Duration::from_secs</span>);
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">Widget::new</span>().<span class="ident">with_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>);
+<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span>config = ToggleConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+    <span class="kw">let </span>interval = config.interval.map(Duration::from_secs);
+    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>);
 
-    <span class="kw">let</span> <span class="ident">icon_on</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">icon_on</span>.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;toggle_on&quot;</span>.<span class="ident">into</span>());
-    <span class="kw">let</span> <span class="ident">icon_off</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">icon_off</span>.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;toggle_off&quot;</span>.<span class="ident">into</span>());
+    <span class="kw">let </span>icon_on = config.icon_on.unwrap_or_else(|| <span class="string">&quot;toggle_on&quot;</span>.into());
+    <span class="kw">let </span>icon_off = config.icon_off.unwrap_or_else(|| <span class="string">&quot;toggle_off&quot;</span>.into());
 
-    <span class="comment">// Choose the shell in this priority:</span>
-    <span class="comment">// 1) `SHELL` environment varialble</span>
-    <span class="comment">// 2) `&quot;sh&quot;`</span>
-    <span class="kw">let</span> <span class="ident">shell</span> <span class="op">=</span> <span class="ident">env::var</span>(<span class="string">&quot;SHELL&quot;</span>).<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="string">&quot;sh&quot;</span>.<span class="ident">to_string</span>());
+    <span class="comment">// Choose the shell in this priority:
+    // 1) `SHELL` environment varialble
+    // 2) `&quot;sh&quot;`
+    </span><span class="kw">let </span>shell = env::var(<span class="string">&quot;SHELL&quot;</span>).unwrap_or_else(|<span class="kw">_</span>| <span class="string">&quot;sh&quot;</span>.to_string());
 
-    <span class="kw">loop</span> {
-        <span class="comment">// Check state</span>
-        <span class="kw">let</span> <span class="ident">output</span> <span class="op">=</span> <span class="ident">Command::new</span>(<span class="kw-2">&amp;</span><span class="ident">shell</span>)
-            .<span class="ident">args</span>([<span class="string">&quot;-c&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">command_state</span>])
-            .<span class="ident">output</span>()
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to run command_state&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">is_toggled</span> <span class="op">=</span> <span class="op">!</span><span class="ident">std::str::from_utf8</span>(<span class="kw-2">&amp;</span><span class="ident">output</span>.<span class="ident">stdout</span>)
-            .<span class="ident">error</span>(<span class="string">&quot;The output of command_state is invalid UTF-8&quot;</span>)<span class="question-mark">?</span>
-            .<span class="ident">trim</span>()
-            .<span class="ident">is_empty</span>();
+    <span class="kw">loop </span>{
+        <span class="comment">// Check state
+        </span><span class="kw">let </span>output = Command::new(<span class="kw-2">&amp;</span>shell)
+            .args([<span class="string">&quot;-c&quot;</span>, <span class="kw-2">&amp;</span>config.command_state])
+            .output()
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to run command_state&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>is_toggled = !std::str::from_utf8(<span class="kw-2">&amp;</span>output.stdout)
+            .error(<span class="string">&quot;The output of command_state is invalid UTF-8&quot;</span>)<span class="question-mark">?
+            </span>.trim()
+            .is_empty();
 
-        <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span>(
-            <span class="string">&quot;icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(
-                <span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="kw">if</span> <span class="ident">is_toggled</span> { <span class="kw-2">&amp;</span><span class="ident">icon_on</span> } <span class="kw">else</span> { <span class="kw-2">&amp;</span><span class="ident">icon_off</span> })<span class="question-mark">?</span>
-            )
+        widget.set_values(<span class="macro">map!</span>(
+            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(
+                api.get_icon(<span class="kw">if </span>is_toggled { <span class="kw-2">&amp;</span>icon_on } <span class="kw">else </span>{ <span class="kw-2">&amp;</span>icon_off })<span class="question-mark">?
+            </span>)
         ));
-        <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="comment">// TODO: try not to duplicate code</span>
-        <span class="kw">loop</span> {
-            <span class="kw">match</span> <span class="ident">interval</span> {
-                <span class="prelude-val">Some</span>(<span class="ident">interval</span>) =&gt; {
-                    <span class="macro">select!</span> {
-                        <span class="kw">_</span> <span class="op">=</span> <span class="ident">sleep</span>(<span class="ident">interval</span>) =&gt; <span class="kw">break</span>,
-                        <span class="ident">event</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; <span class="kw">match</span> <span class="ident">event</span> {
-                            <span class="ident">UpdateRequest</span> =&gt; <span class="kw">break</span>,
-                            <span class="ident">Click</span>(<span class="ident">click</span>) =&gt; {
-                                <span class="kw">if</span> <span class="ident">click</span>.<span class="ident">button</span> <span class="op">==</span> <span class="ident">MouseButton::Left</span> {
-                                    <span class="kw">let</span> <span class="ident">cmd</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">is_toggled</span> {
-                                        <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">command_off</span>
-                                    } <span class="kw">else</span> {
-                                        <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">command_on</span>
+        <span class="comment">// TODO: try not to duplicate code
+        </span><span class="kw">loop </span>{
+            <span class="kw">match </span>interval {
+                <span class="prelude-val">Some</span>(interval) =&gt; {
+                    <span class="macro">select! </span>{
+                        <span class="kw">_ </span>= sleep(interval) =&gt; <span class="kw">break</span>,
+                        event = api.event() =&gt; <span class="kw">match </span>event {
+                            UpdateRequest =&gt; <span class="kw">break</span>,
+                            Click(click) =&gt; {
+                                <span class="kw">if </span>click.button == MouseButton::Left {
+                                    <span class="kw">let </span>cmd = <span class="kw">if </span>is_toggled {
+                                        <span class="kw-2">&amp;</span>config.command_off
+                                    } <span class="kw">else </span>{
+                                        <span class="kw-2">&amp;</span>config.command_on
                                     };
-                                    <span class="kw">let</span> <span class="ident">output</span> <span class="op">=</span> <span class="ident">Command::new</span>(<span class="kw-2">&amp;</span><span class="ident">shell</span>)
-                                        .<span class="ident">args</span>([<span class="string">&quot;-c&quot;</span>, <span class="ident">cmd</span>])
-                                        .<span class="ident">output</span>()
-                                        .<span class="kw">await</span>
-                                        .<span class="ident">error</span>(<span class="string">&quot;Failed to run command&quot;</span>)<span class="question-mark">?</span>;
-                                    <span class="kw">if</span> <span class="ident">output</span>.<span class="ident">status</span>.<span class="ident">success</span>() {
-                                        <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Idle</span>;
+                                    <span class="kw">let </span>output = Command::new(<span class="kw-2">&amp;</span>shell)
+                                        .args([<span class="string">&quot;-c&quot;</span>, cmd])
+                                        .output()
+                                        .<span class="kw">await
+                                        </span>.error(<span class="string">&quot;Failed to run command&quot;</span>)<span class="question-mark">?</span>;
+                                    <span class="kw">if </span>output.status.success() {
+                                        widget.state = State::Idle;
                                         <span class="kw">break</span>;
-                                    } <span class="kw">else</span> {
-                                        <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Critical</span>;
+                                    } <span class="kw">else </span>{
+                                        widget.state = State::Critical;
                                     }
                                 }
                             }
                         }
                     }
                 }
-                <span class="prelude-val">None</span> =&gt; <span class="kw">match</span> <span class="ident">api</span>.<span class="ident">event</span>().<span class="kw">await</span> {
-                    <span class="ident">UpdateRequest</span> =&gt; <span class="kw">break</span>,
-                    <span class="ident">Click</span>(<span class="ident">click</span>) =&gt; {
-                        <span class="kw">if</span> <span class="ident">click</span>.<span class="ident">button</span> <span class="op">==</span> <span class="ident">MouseButton::Left</span> {
-                            <span class="kw">let</span> <span class="ident">cmd</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">is_toggled</span> {
-                                <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">command_off</span>
-                            } <span class="kw">else</span> {
-                                <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">command_on</span>
+                <span class="prelude-val">None </span>=&gt; <span class="kw">match </span>api.event().<span class="kw">await </span>{
+                    UpdateRequest =&gt; <span class="kw">break</span>,
+                    Click(click) =&gt; {
+                        <span class="kw">if </span>click.button == MouseButton::Left {
+                            <span class="kw">let </span>cmd = <span class="kw">if </span>is_toggled {
+                                <span class="kw-2">&amp;</span>config.command_off
+                            } <span class="kw">else </span>{
+                                <span class="kw-2">&amp;</span>config.command_on
                             };
-                            <span class="kw">let</span> <span class="ident">output</span> <span class="op">=</span> <span class="ident">Command::new</span>(<span class="kw-2">&amp;</span><span class="ident">shell</span>)
-                                .<span class="ident">args</span>([<span class="string">&quot;-c&quot;</span>, <span class="ident">cmd</span>])
-                                .<span class="ident">output</span>()
-                                .<span class="kw">await</span>
-                                .<span class="ident">error</span>(<span class="string">&quot;Failed to run command&quot;</span>)<span class="question-mark">?</span>;
-                            <span class="kw">if</span> <span class="ident">output</span>.<span class="ident">status</span>.<span class="ident">success</span>() {
-                                <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Idle</span>;
+                            <span class="kw">let </span>output = Command::new(<span class="kw-2">&amp;</span>shell)
+                                .args([<span class="string">&quot;-c&quot;</span>, cmd])
+                                .output()
+                                .<span class="kw">await
+                                </span>.error(<span class="string">&quot;Failed to run command&quot;</span>)<span class="question-mark">?</span>;
+                            <span class="kw">if </span>output.status.success() {
+                                widget.state = State::Idle;
                                 <span class="kw">break</span>;
-                            } <span class="kw">else</span> {
-                                <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Critical</span>;
+                            } <span class="kw">else </span>{
+                                widget.state = State::Critical;
                             }
                         }
                     }
@@ -309,4 +309,4 @@
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

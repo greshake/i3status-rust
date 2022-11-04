@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/backlight.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>backlight.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/backlight.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>backlight.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -288,100 +288,100 @@
 <span id="288">288</span>
 <span id="289">289</span>
 <span id="290">290</span>
-</pre><pre class="rust"><code><span class="doccomment">//! The brightness of a backlight device</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! This block reads brightness information directly from the filesystem, so it works under both</span>
-<span class="doccomment">//! X11 and Wayland. The block uses `inotify` to listen for changes in the device&#39;s brightness</span>
-<span class="doccomment">//! directly, so there is no need to set an update interval. This block uses DBus to set brightness</span>
-<span class="doccomment">//! level using the mouse wheel.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Root scaling</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Some devices expose raw values that are best handled with nonlinear scaling. The human perception of lightness is close to the cube root of relative luminance, so settings for `root_scaling` between 2.4 and 3.0 are worth trying. For devices with few discrete steps this should be 1.0 (linear). More information: &lt;https://en.wikipedia.org/wiki/Lightness&gt;</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Configuration</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Key | Values | Default</span>
-<span class="doccomment">//! ----|--------|--------</span>
-<span class="doccomment">//! `device` | The `/sys/class/backlight` device to read brightness information from.  When there is no `device` specified, this block will display information from the first device found in the `/sys/class/backlight` directory. If you only have one display, this approach should find it correctly.| Default device</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $brightness &quot;`</span>
-<span class="doccomment">//! `step_width` | The brightness increment to use when scrolling, in percent | `5`</span>
-<span class="doccomment">//! `minimum` | The minimum brightness that can be scrolled down to | `5`</span>
-<span class="doccomment">//! `maximum` | The maximum brightness that can be scrolled up to | `100`</span>
-<span class="doccomment">//! `cycle` | The brightnesses to cycle through on each click | `[minimum, maximum]`</span>
-<span class="doccomment">//! `root_scaling` | Scaling exponent reciprocal (ie. root) | `1.0`</span>
-<span class="doccomment">//! `invert_icons` | Invert icons&#39; ordering, useful if you have colorful emoji | `false`</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Placeholder  | Value                                     | Type   | Unit</span>
-<span class="doccomment">//! -------------|-------------------------------------------|--------|---------------</span>
-<span class="doccomment">//! `icon`       | Icon based on backlight&#39;s state           | Icon   | -</span>
-<span class="doccomment">//! `brightness` | Current brightness                        | Number | %</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Example</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;backlight&quot;</span>
-<span class="doccomment">//! device = &quot;intel_backlight&quot;</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Icons Used</span>
-<span class="doccomment">//! - `backlight_empty` (when brightness between 0 and 6%)</span>
-<span class="doccomment">//! - `backlight_1` (when brightness between 7 and 13%)</span>
-<span class="doccomment">//! - `backlight_2` (when brightness between 14 and 20%)</span>
-<span class="doccomment">//! - `backlight_3` (when brightness between 21 and 26%)</span>
-<span class="doccomment">//! - `backlight_4` (when brightness between 27 and 33%)</span>
-<span class="doccomment">//! - `backlight_5` (when brightness between 34 and 40%)</span>
-<span class="doccomment">//! - `backlight_6` (when brightness between 41 and 46%)</span>
-<span class="doccomment">//! - `backlight_7` (when brightness between 47 and 53%)</span>
-<span class="doccomment">//! - `backlight_8` (when brightness between 54 and 60%)</span>
-<span class="doccomment">//! - `backlight_9` (when brightness between 61 and 67%)</span>
-<span class="doccomment">//! - `backlight_10` (when brightness between 68 and 73%)</span>
-<span class="doccomment">//! - `backlight_11` (when brightness between 74 and 80%)</span>
-<span class="doccomment">//! - `backlight_12` (when brightness between 81 and 87%)</span>
-<span class="doccomment">//! - `backlight_13` (when brightness between 88 and 93%)</span>
-<span class="doccomment">//! - `backlight_full` (when brightness above 94%)</span>
+</pre><pre class="rust"><code><span class="doccomment">//! The brightness of a backlight device
+//!
+//! This block reads brightness information directly from the filesystem, so it works under both
+//! X11 and Wayland. The block uses `inotify` to listen for changes in the device&#39;s brightness
+//! directly, so there is no need to set an update interval. This block uses DBus to set brightness
+//! level using the mouse wheel.
+//!
+//! # Root scaling
+//!
+//! Some devices expose raw values that are best handled with nonlinear scaling. The human perception of lightness is close to the cube root of relative luminance, so settings for `root_scaling` between 2.4 and 3.0 are worth trying. For devices with few discrete steps this should be 1.0 (linear). More information: &lt;https://en.wikipedia.org/wiki/Lightness&gt;
+//!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `device` | The `/sys/class/backlight` device to read brightness information from.  When there is no `device` specified, this block will display information from the first device found in the `/sys/class/backlight` directory. If you only have one display, this approach should find it correctly.| Default device
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $brightness &quot;`
+//! `step_width` | The brightness increment to use when scrolling, in percent | `5`
+//! `minimum` | The minimum brightness that can be scrolled down to | `5`
+//! `maximum` | The maximum brightness that can be scrolled up to | `100`
+//! `cycle` | The brightnesses to cycle through on each click | `[minimum, maximum]`
+//! `root_scaling` | Scaling exponent reciprocal (ie. root) | `1.0`
+//! `invert_icons` | Invert icons&#39; ordering, useful if you have colorful emoji | `false`
+//!
+//! Placeholder  | Value                                     | Type   | Unit
+//! -------------|-------------------------------------------|--------|---------------
+//! `icon`       | Icon based on backlight&#39;s state           | Icon   | -
+//! `brightness` | Current brightness                        | Number | %
+//!
+//! # Example
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;backlight&quot;
+//! device = &quot;intel_backlight&quot;
+//! ```
+//!
+//! # Icons Used
+//! - `backlight_empty` (when brightness between 0 and 6%)
+//! - `backlight_1` (when brightness between 7 and 13%)
+//! - `backlight_2` (when brightness between 14 and 20%)
+//! - `backlight_3` (when brightness between 21 and 26%)
+//! - `backlight_4` (when brightness between 27 and 33%)
+//! - `backlight_5` (when brightness between 34 and 40%)
+//! - `backlight_6` (when brightness between 41 and 46%)
+//! - `backlight_7` (when brightness between 47 and 53%)
+//! - `backlight_8` (when brightness between 54 and 60%)
+//! - `backlight_9` (when brightness between 61 and 67%)
+//! - `backlight_10` (when brightness between 68 and 73%)
+//! - `backlight_11` (when brightness between 74 and 80%)
+//! - `backlight_12` (when brightness between 81 and 87%)
+//! - `backlight_13` (when brightness between 88 and 93%)
+//! - `backlight_full` (when brightness above 94%)
 
-<span class="kw">use</span> <span class="ident">std::cmp::max</span>;
-<span class="kw">use</span> <span class="ident">std::ops::Range</span>;
-<span class="kw">use</span> <span class="ident">std::path</span>::{<span class="ident">Path</span>, <span class="ident">PathBuf</span>};
+</span><span class="kw">use </span>std::cmp::max;
+<span class="kw">use </span>std::ops::Range;
+<span class="kw">use </span>std::path::{Path, PathBuf};
 
-<span class="kw">use</span> <span class="ident">inotify</span>::{<span class="ident">Inotify</span>, <span class="ident">WatchMask</span>};
-<span class="kw">use</span> <span class="ident">tokio::fs::read_dir</span>;
+<span class="kw">use </span>inotify::{Inotify, WatchMask};
+<span class="kw">use </span>tokio::fs::read_dir;
 
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::util::read_file</span>;
+<span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span><span class="kw">crate</span>::util::read_file;
 
-<span class="macro">make_log_macro!</span>(<span class="ident">debug</span>, <span class="string">&quot;backlight&quot;</span>);
+<span class="macro">make_log_macro!</span>(debug, <span class="string">&quot;backlight&quot;</span>);
 
-<span class="attribute">#[<span class="ident">zbus::dbus_proxy</span>(
-    <span class="ident">interface</span> <span class="op">=</span> <span class="string">&quot;org.freedesktop.login1.Session&quot;</span>,
-    <span class="ident">default_service</span> <span class="op">=</span> <span class="string">&quot;org.freedesktop.login1&quot;</span>,
-    <span class="ident">default_path</span> <span class="op">=</span> <span class="string">&quot;/org/freedesktop/login1/session/auto&quot;</span>
-)]</span>
-<span class="kw">trait</span> <span class="ident">Session</span> {
-    <span class="kw">fn</span> <span class="ident">set_brightness</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">subsystem</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">brightness</span>: <span class="ident">u32</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
+<span class="attribute">#[zbus::dbus_proxy(
+    interface = <span class="string">&quot;org.freedesktop.login1.Session&quot;</span>,
+    default_service = <span class="string">&quot;org.freedesktop.login1&quot;</span>,
+    default_path = <span class="string">&quot;/org/freedesktop/login1/session/auto&quot;
+</span>)]
+</span><span class="kw">trait </span>Session {
+    <span class="kw">fn </span>set_brightness(<span class="kw-2">&amp;</span><span class="self">self</span>, subsystem: <span class="kw-2">&amp;</span>str, name: <span class="kw-2">&amp;</span>str, brightness: u32) -&gt; zbus::Result&lt;()&gt;;
 }
 
-<span class="doccomment">/// Location of backlight devices</span>
-<span class="kw">const</span> <span class="ident">DEVICES_PATH</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;/sys/class/backlight&quot;</span>;
+<span class="doccomment">/// Location of backlight devices
+</span><span class="kw">const </span>DEVICES_PATH: <span class="kw-2">&amp;</span>str = <span class="string">&quot;/sys/class/backlight&quot;</span>;
 
-<span class="doccomment">/// Filename for device&#39;s max brightness</span>
-<span class="kw">const</span> <span class="ident">FILE_MAX_BRIGHTNESS</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;max_brightness&quot;</span>;
+<span class="doccomment">/// Filename for device&#39;s max brightness
+</span><span class="kw">const </span>FILE_MAX_BRIGHTNESS: <span class="kw-2">&amp;</span>str = <span class="string">&quot;max_brightness&quot;</span>;
 
-<span class="doccomment">/// Filename for current brightness.</span>
-<span class="kw">const</span> <span class="ident">FILE_BRIGHTNESS</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;actual_brightness&quot;</span>;
+<span class="doccomment">/// Filename for current brightness.
+</span><span class="kw">const </span>FILE_BRIGHTNESS: <span class="kw-2">&amp;</span>str = <span class="string">&quot;actual_brightness&quot;</span>;
 
-<span class="doccomment">/// amdgpu drivers set the actual_brightness in a different scale than</span>
-<span class="doccomment">/// [0, max_brightness], so we have to use the &#39;brightness&#39; file instead.</span>
-<span class="doccomment">/// This may be fixed in the new 5.7 kernel?</span>
-<span class="kw">const</span> <span class="ident">FILE_BRIGHTNESS_AMD</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;brightness&quot;</span>;
+<span class="doccomment">/// amdgpu drivers set the actual_brightness in a different scale than
+/// [0, max_brightness], so we have to use the &#39;brightness&#39; file instead.
+/// This may be fixed in the new 5.7 kernel?
+</span><span class="kw">const </span>FILE_BRIGHTNESS_AMD: <span class="kw-2">&amp;</span>str = <span class="string">&quot;brightness&quot;</span>;
 
-<span class="doccomment">/// Range of valid values for `root_scaling`</span>
-<span class="kw">const</span> <span class="ident">ROOT_SCALDING_RANGE</span>: <span class="ident">Range</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span> <span class="op">=</span> <span class="number">0.1</span>..<span class="number">10.</span>;
+<span class="doccomment">/// Range of valid values for `root_scaling`
+</span><span class="kw">const </span>ROOT_SCALDING_RANGE: Range&lt;f64&gt; = <span class="number">0.1</span>..<span class="number">10.</span>;
 
-<span class="doccomment">/// Ordered list of icons used to display lighting progress</span>
-<span class="kw">const</span> <span class="ident">BACKLIGHT_ICONS</span>: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">str</span>] <span class="op">=</span> <span class="kw-2">&amp;</span>[
+<span class="doccomment">/// Ordered list of icons used to display lighting progress
+</span><span class="kw">const </span>BACKLIGHT_ICONS: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str] = <span class="kw-2">&amp;</span>[
     <span class="string">&quot;backlight_empty&quot;</span>,
     <span class="string">&quot;backlight_1&quot;</span>,
     <span class="string">&quot;backlight_2&quot;</span>,
@@ -399,85 +399,85 @@
     <span class="string">&quot;backlight_full&quot;</span>,
 ];
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
-<span class="kw">struct</span> <span class="ident">BacklightConfig</span> {
-    <span class="ident">device</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">5</span>)]</span>
-    <span class="ident">step_width</span>: <span class="ident">u8</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">5</span>)]</span>
-    <span class="ident">minimum</span>: <span class="ident">u8</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">100</span>)]</span>
-    <span class="ident">maximum</span>: <span class="ident">u8</span>,
-    <span class="ident">cycle</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">1.0</span>)]</span>
-    <span class="ident">root_scaling</span>: <span class="ident">f64</span>,
-    <span class="ident">invert_icons</span>: <span class="ident">bool</span>,
+<span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
+#[serde(deny_unknown_fields, default)]
+</span><span class="kw">struct </span>BacklightConfig {
+    device: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    format: FormatConfig,
+    <span class="attribute">#[default(<span class="number">5</span>)]
+    </span>step_width: u8,
+    <span class="attribute">#[default(<span class="number">5</span>)]
+    </span>minimum: u8,
+    <span class="attribute">#[default(<span class="number">100</span>)]
+    </span>maximum: u8,
+    cycle: <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt;,
+    <span class="attribute">#[default(<span class="number">1.0</span>)]
+    </span>root_scaling: f64,
+    invert_icons: bool,
 }
 
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">BacklightConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">Widget::new</span>().<span class="ident">with_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon $brightness &quot;</span>)<span class="question-mark">?</span>);
+<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span>config = BacklightConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon $brightness &quot;</span>)<span class="question-mark">?</span>);
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cycle</span> <span class="op">=</span> <span class="ident">config</span>
-        .<span class="ident">cycle</span>
-        .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">vec!</span>[<span class="ident">config</span>.<span class="ident">minimum</span>, <span class="ident">config</span>.<span class="ident">maximum</span>])
-        .<span class="ident">into_iter</span>()
-        .<span class="ident">cycle</span>();
+    <span class="kw">let </span><span class="kw-2">mut </span>cycle = config
+        .cycle
+        .unwrap_or_else(|| <span class="macro">vec!</span>[config.minimum, config.maximum])
+        .into_iter()
+        .cycle();
 
-    <span class="kw">let</span> <span class="ident">device</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">device</span> {
-        <span class="prelude-val">None</span> =&gt; <span class="ident">BacklightDevice::default</span>(<span class="ident">config</span>.<span class="ident">root_scaling</span>).<span class="kw">await</span><span class="question-mark">?</span>,
-        <span class="prelude-val">Some</span>(<span class="ident">path</span>) =&gt; <span class="ident">BacklightDevice::from_device</span>(<span class="ident">path</span>, <span class="ident">config</span>.<span class="ident">root_scaling</span>).<span class="kw">await</span><span class="question-mark">?</span>,
+    <span class="kw">let </span>device = <span class="kw">match </span><span class="kw-2">&amp;</span>config.device {
+        <span class="prelude-val">None </span>=&gt; BacklightDevice::default(config.root_scaling).<span class="kw">await</span><span class="question-mark">?</span>,
+        <span class="prelude-val">Some</span>(path) =&gt; BacklightDevice::from_device(path, config.root_scaling).<span class="kw">await</span><span class="question-mark">?</span>,
     };
 
-    <span class="comment">// Watch for brightness changes</span>
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">notify</span> <span class="op">=</span> <span class="ident">Inotify::init</span>().<span class="ident">error</span>(<span class="string">&quot;Failed to start inotify&quot;</span>)<span class="question-mark">?</span>;
-    <span class="ident">notify</span>
-        .<span class="ident">add_watch</span>(<span class="kw-2">&amp;</span><span class="ident">device</span>.<span class="ident">brightness_file</span>, <span class="ident">WatchMask::MODIFY</span>)
-        .<span class="ident">error</span>(<span class="string">&quot;Failed to watch brightness file&quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">file_changes</span> <span class="op">=</span> <span class="ident">notify</span>
-        .<span class="ident">event_stream</span>([<span class="number">0</span>; <span class="number">1024</span>])
-        .<span class="ident">error</span>(<span class="string">&quot;Failed to create event stream&quot;</span>)<span class="question-mark">?</span>;
+    <span class="comment">// Watch for brightness changes
+    </span><span class="kw">let </span><span class="kw-2">mut </span>notify = Inotify::init().error(<span class="string">&quot;Failed to start inotify&quot;</span>)<span class="question-mark">?</span>;
+    notify
+        .add_watch(<span class="kw-2">&amp;</span>device.brightness_file, WatchMask::MODIFY)
+        .error(<span class="string">&quot;Failed to watch brightness file&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>file_changes = notify
+        .event_stream([<span class="number">0</span>; <span class="number">1024</span>])
+        .error(<span class="string">&quot;Failed to create event stream&quot;</span>)<span class="question-mark">?</span>;
 
-    <span class="kw">loop</span> {
-        <span class="kw">let</span> <span class="ident">brightness</span> <span class="op">=</span> <span class="ident">device</span>.<span class="ident">brightness</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">icon_index</span> <span class="op">=</span> (<span class="ident">usize::from</span>(<span class="ident">brightness</span>) <span class="op">*</span> <span class="ident">BACKLIGHT_ICONS</span>.<span class="ident">len</span>()) <span class="op">/</span> <span class="number">101</span>;
-        <span class="kw">if</span> <span class="ident">config</span>.<span class="ident">invert_icons</span> {
-            <span class="ident">icon_index</span> <span class="op">=</span> <span class="ident">BACKLIGHT_ICONS</span>.<span class="ident">len</span>() <span class="op">-</span> <span class="ident">icon_index</span> <span class="op">-</span> <span class="number">1</span>;
+    <span class="kw">loop </span>{
+        <span class="kw">let </span>brightness = device.brightness().<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let </span><span class="kw-2">mut </span>icon_index = (usize::from(brightness) * BACKLIGHT_ICONS.len()) / <span class="number">101</span>;
+        <span class="kw">if </span>config.invert_icons {
+            icon_index = BACKLIGHT_ICONS.len() - icon_index - <span class="number">1</span>;
         }
 
-        <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span> {
-            <span class="string">&quot;icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="ident">BACKLIGHT_ICONS</span>[<span class="ident">icon_index</span>])<span class="question-mark">?</span>),
-            <span class="string">&quot;brightness&quot;</span> =&gt; <span class="ident">Value::percents</span>(<span class="ident">brightness</span>)
+        widget.set_values(<span class="macro">map! </span>{
+            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(BACKLIGHT_ICONS[icon_index])<span class="question-mark">?</span>),
+            <span class="string">&quot;brightness&quot; </span>=&gt; Value::percents(brightness)
         });
-        <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="kw">loop</span> {
-            <span class="macro">select!</span> {
-                <span class="kw">_</span> <span class="op">=</span> <span class="ident">file_changes</span>.<span class="ident">next</span>() =&gt; <span class="kw">break</span>,
-                <span class="ident">event</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; <span class="kw">match</span> <span class="ident">event</span> {
-                    <span class="ident">UpdateRequest</span> =&gt; (),
-                    <span class="ident">Click</span>(<span class="ident">click</span>) =&gt; {
-                        <span class="kw">match</span> <span class="ident">click</span>.<span class="ident">button</span> {
-                            <span class="ident">MouseButton::Left</span> =&gt; {
-                                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">brightness</span>) <span class="op">=</span> <span class="ident">cycle</span>.<span class="ident">next</span>() {
-                                    <span class="ident">device</span>.<span class="ident">set_brightness</span>(<span class="ident">brightness</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">loop </span>{
+            <span class="macro">select! </span>{
+                <span class="kw">_ </span>= file_changes.next() =&gt; <span class="kw">break</span>,
+                event = api.event() =&gt; <span class="kw">match </span>event {
+                    UpdateRequest =&gt; (),
+                    Click(click) =&gt; {
+                        <span class="kw">match </span>click.button {
+                            MouseButton::Left =&gt; {
+                                <span class="kw">if let </span><span class="prelude-val">Some</span>(brightness) = cycle.next() {
+                                    device.set_brightness(brightness).<span class="kw">await</span><span class="question-mark">?</span>;
                                 }
                             }
-                            <span class="ident">MouseButton::WheelUp</span> =&gt; {
-                                <span class="ident">device</span>.<span class="ident">set_brightness</span>(
-                                    (<span class="ident">brightness</span> <span class="op">+</span> <span class="ident">config</span>.<span class="ident">step_width</span>) .<span class="ident">clamp</span>(<span class="ident">config</span>.<span class="ident">minimum</span>, <span class="ident">config</span>.<span class="ident">maximum</span>)
+                            MouseButton::WheelUp =&gt; {
+                                device.set_brightness(
+                                    (brightness + config.step_width) .clamp(config.minimum, config.maximum)
                                 ).<span class="kw">await</span><span class="question-mark">?</span>;
                             }
-                            <span class="ident">MouseButton::WheelDown</span> =&gt; {
-                                <span class="ident">device</span>.<span class="ident">set_brightness</span>(
-                                    <span class="ident">brightness</span>
-                                        .<span class="ident">saturating_sub</span>(<span class="ident">config</span>.<span class="ident">step_width</span>)
-                                        .<span class="ident">clamp</span>(<span class="ident">config</span>.<span class="ident">minimum</span>, <span class="ident">config</span>.<span class="ident">maximum</span>)
+                            MouseButton::WheelDown =&gt; {
+                                device.set_brightness(
+                                    brightness
+                                        .saturating_sub(config.step_width)
+                                        .clamp(config.minimum, config.maximum)
                                 ).<span class="kw">await</span><span class="question-mark">?</span>;
                             }
-                            <span class="kw">_</span> =&gt; (),
+                            <span class="kw">_ </span>=&gt; (),
                         }
                     }
                 }
@@ -486,97 +486,97 @@
     }
 }
 
-<span class="doccomment">/// Read a brightness value from the given path.</span>
-<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">read_brightness_raw</span>(<span class="ident">device_file</span>: <span class="kw-2">&amp;</span><span class="ident">Path</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">val</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">read_file</span>(<span class="ident">device_file</span>).<span class="kw">await</span> {
-        <span class="prelude-val">Ok</span>(<span class="ident">v</span>) =&gt; <span class="prelude-val">Ok</span>(<span class="ident">v</span>),
+<span class="doccomment">/// Read a brightness value from the given path.
+</span><span class="kw">async fn </span>read_brightness_raw(device_file: <span class="kw-2">&amp;</span>Path) -&gt; <span class="prelude-ty">Result</span>&lt;u64&gt; {
+    <span class="kw">let </span>val = <span class="kw">match </span>read_file(device_file).<span class="kw">await </span>{
+        <span class="prelude-val">Ok</span>(v) =&gt; <span class="prelude-val">Ok</span>(v),
         <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; {
-            <span class="comment">// HACK: Try to read file a scond time if the first fails. For some reason, when using `ddcci`</span>
-            <span class="comment">// the first read fails with &quot;Error 74: Bad Message&quot;.</span>
-            <span class="macro">debug!</span>(<span class="string">&quot;First read of brightness file failed, retrying&quot;</span>);
-            <span class="ident">read_file</span>(<span class="ident">device_file</span>).<span class="kw">await</span>
-        }
+            <span class="comment">// HACK: Try to read file a scond time if the first fails. For some reason, when using `ddcci`
+            // the first read fails with &quot;Error 74: Bad Message&quot;.
+            </span><span class="macro">debug!</span>(<span class="string">&quot;First read of brightness file failed, retrying&quot;</span>);
+            read_file(device_file).<span class="kw">await
+        </span>}
     };
-    <span class="ident">val</span>.<span class="ident">error</span>(<span class="string">&quot;Failed to read brightness file&quot;</span>)<span class="question-mark">?</span>
-        .<span class="ident">parse</span>()
-        .<span class="ident">error</span>(<span class="string">&quot;Failed to read value from brightness file&quot;</span>)
+    val.error(<span class="string">&quot;Failed to read brightness file&quot;</span>)<span class="question-mark">?
+        </span>.parse()
+        .error(<span class="string">&quot;Failed to read value from brightness file&quot;</span>)
 }
 
-<span class="doccomment">/// Represents a physical backlight device whose brightness level can be queried.</span>
-<span class="kw">struct</span> <span class="ident">BacklightDevice</span> {
-    <span class="ident">device_name</span>: <span class="ident">String</span>,
-    <span class="ident">brightness_file</span>: <span class="ident">PathBuf</span>,
-    <span class="ident">max_brightness</span>: <span class="ident">u64</span>,
-    <span class="ident">root_scaling</span>: <span class="ident">f64</span>,
-    <span class="ident">dbus_proxy</span>: <span class="ident">SessionProxy</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span><span class="op">&gt;</span>,
+<span class="doccomment">/// Represents a physical backlight device whose brightness level can be queried.
+</span><span class="kw">struct </span>BacklightDevice {
+    device_name: String,
+    brightness_file: PathBuf,
+    max_brightness: u64,
+    root_scaling: f64,
+    dbus_proxy: SessionProxy&lt;<span class="lifetime">&#39;static</span>&gt;,
 }
 
-<span class="kw">impl</span> <span class="ident">BacklightDevice</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">device_path</span>: <span class="ident">PathBuf</span>, <span class="ident">root_scaling</span>: <span class="ident">f64</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">dbus_conn</span> <span class="op">=</span> <span class="ident">new_system_dbus_connection</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
-            <span class="ident">brightness_file</span>: <span class="ident">device_path</span>.<span class="ident">join</span>({
-                <span class="kw">if</span> <span class="ident">device_path</span>.<span class="ident">ends_with</span>(<span class="string">&quot;amdgpu_bl0&quot;</span>) {
-                    <span class="ident">FILE_BRIGHTNESS_AMD</span>
-                } <span class="kw">else</span> {
-                    <span class="ident">FILE_BRIGHTNESS</span>
+<span class="kw">impl </span>BacklightDevice {
+    <span class="kw">async fn </span>new(device_path: PathBuf, root_scaling: f64) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
+        <span class="kw">let </span>dbus_conn = new_system_dbus_connection().<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
+            brightness_file: device_path.join({
+                <span class="kw">if </span>device_path.ends_with(<span class="string">&quot;amdgpu_bl0&quot;</span>) {
+                    FILE_BRIGHTNESS_AMD
+                } <span class="kw">else </span>{
+                    FILE_BRIGHTNESS
                 }
             }),
-            <span class="ident">device_name</span>: <span class="ident">device_path</span>
-                .<span class="ident">file_name</span>()
-                .<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span>.<span class="ident">to_str</span>().<span class="ident">unwrap</span>().<span class="ident">into</span>())
-                .<span class="ident">error</span>(<span class="string">&quot;Malformed device path&quot;</span>)<span class="question-mark">?</span>,
-            <span class="ident">max_brightness</span>: <span class="ident">read_brightness_raw</span>(<span class="kw-2">&amp;</span><span class="ident">device_path</span>.<span class="ident">join</span>(<span class="ident">FILE_MAX_BRIGHTNESS</span>)).<span class="kw">await</span><span class="question-mark">?</span>,
-            <span class="ident">root_scaling</span>: <span class="ident">root_scaling</span>.<span class="ident">clamp</span>(<span class="ident">ROOT_SCALDING_RANGE</span>.<span class="ident">start</span>, <span class="ident">ROOT_SCALDING_RANGE</span>.<span class="ident">end</span>),
-            <span class="ident">dbus_proxy</span>: <span class="ident">SessionProxy::new</span>(<span class="kw-2">&amp;</span><span class="ident">dbus_conn</span>)
-                .<span class="kw">await</span>
-                .<span class="ident">error</span>(<span class="string">&quot;failed to create SessionProxy&quot;</span>)<span class="question-mark">?</span>,
+            device_name: device_path
+                .file_name()
+                .map(|x| x.to_str().unwrap().into())
+                .error(<span class="string">&quot;Malformed device path&quot;</span>)<span class="question-mark">?</span>,
+            max_brightness: read_brightness_raw(<span class="kw-2">&amp;</span>device_path.join(FILE_MAX_BRIGHTNESS)).<span class="kw">await</span><span class="question-mark">?</span>,
+            root_scaling: root_scaling.clamp(ROOT_SCALDING_RANGE.start, ROOT_SCALDING_RANGE.end),
+            dbus_proxy: SessionProxy::new(<span class="kw-2">&amp;</span>dbus_conn)
+                .<span class="kw">await
+                </span>.error(<span class="string">&quot;failed to create SessionProxy&quot;</span>)<span class="question-mark">?</span>,
         })
     }
 
-    <span class="doccomment">/// Use the default backlight device, i.e. the first one found in the</span>
-    <span class="doccomment">/// `/sys/class/backlight` directory.</span>
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">default</span>(<span class="ident">root_scaling</span>: <span class="ident">f64</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">device</span> <span class="op">=</span> <span class="ident">read_dir</span>(<span class="ident">DEVICES_PATH</span>)
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to read backlight device directory&quot;</span>)<span class="question-mark">?</span>
-            .<span class="ident">next_entry</span>()
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;No backlight devices found&quot;</span>)<span class="question-mark">?</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to read default device file&quot;</span>)<span class="question-mark">?</span>;
-        <span class="ident"><span class="self">Self</span>::new</span>(<span class="ident">device</span>.<span class="ident">path</span>(), <span class="ident">root_scaling</span>).<span class="kw">await</span>
+    <span class="doccomment">/// Use the default backlight device, i.e. the first one found in the
+    /// `/sys/class/backlight` directory.
+    </span><span class="kw">async fn </span>default(root_scaling: f64) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
+        <span class="kw">let </span>device = read_dir(DEVICES_PATH)
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to read backlight device directory&quot;</span>)<span class="question-mark">?
+            </span>.next_entry()
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;No backlight devices found&quot;</span>)<span class="question-mark">?
+            </span>.error(<span class="string">&quot;Failed to read default device file&quot;</span>)<span class="question-mark">?</span>;
+        <span class="self">Self</span>::new(device.path(), root_scaling).<span class="kw">await
+    </span>}
+
+    <span class="doccomment">/// Use the backlight device `device`. Returns an error if a directory for
+    /// that device is not found.
+    </span><span class="kw">async fn </span>from_device(device: <span class="kw-2">&amp;</span>str, root_scaling: f64) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
+        <span class="self">Self</span>::new(Path::new(DEVICES_PATH).join(device), root_scaling).<span class="kw">await
+    </span>}
+
+    <span class="doccomment">/// Query the brightness value for this backlight device, as a percent.
+    </span><span class="kw">async fn </span>brightness(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;u8&gt; {
+        <span class="kw">let </span>raw = read_brightness_raw(<span class="kw-2">&amp;</span><span class="self">self</span>.brightness_file).<span class="kw">await</span><span class="question-mark">?</span>;
+
+        <span class="kw">let </span>brightness_ratio =
+            (raw <span class="kw">as </span>f64 / <span class="self">self</span>.max_brightness <span class="kw">as </span>f64).powf(<span class="self">self</span>.root_scaling.recip());
+
+        ((brightness_ratio * <span class="number">100.0</span>).round() <span class="kw">as </span>i64)
+            .try_into()
+            .ok()
+            .filter(|brightness| (<span class="number">0</span>..=<span class="number">100</span>).contains(brightness))
+            .error(<span class="string">&quot;Brightness is not in [0, 100]&quot;</span>)
     }
 
-    <span class="doccomment">/// Use the backlight device `device`. Returns an error if a directory for</span>
-    <span class="doccomment">/// that device is not found.</span>
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">from_device</span>(<span class="ident">device</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">root_scaling</span>: <span class="ident">f64</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="ident"><span class="self">Self</span>::new</span>(<span class="ident">Path::new</span>(<span class="ident">DEVICES_PATH</span>).<span class="ident">join</span>(<span class="ident">device</span>), <span class="ident">root_scaling</span>).<span class="kw">await</span>
-    }
-
-    <span class="doccomment">/// Query the brightness value for this backlight device, as a percent.</span>
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">brightness</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">raw</span> <span class="op">=</span> <span class="ident">read_brightness_raw</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">brightness_file</span>).<span class="kw">await</span><span class="question-mark">?</span>;
-
-        <span class="kw">let</span> <span class="ident">brightness_ratio</span> <span class="op">=</span>
-            (<span class="ident">raw</span> <span class="kw">as</span> <span class="ident">f64</span> <span class="op">/</span> <span class="self">self</span>.<span class="ident">max_brightness</span> <span class="kw">as</span> <span class="ident">f64</span>).<span class="ident">powf</span>(<span class="self">self</span>.<span class="ident">root_scaling</span>.<span class="ident">recip</span>());
-
-        ((<span class="ident">brightness_ratio</span> <span class="op">*</span> <span class="number">100.0</span>).<span class="ident">round</span>() <span class="kw">as</span> <span class="ident">i64</span>)
-            .<span class="ident">try_into</span>()
-            .<span class="ident">ok</span>()
-            .<span class="ident">filter</span>(<span class="op">|</span><span class="ident">brightness</span><span class="op">|</span> (<span class="number">0</span>..<span class="op">=</span><span class="number">100</span>).<span class="ident">contains</span>(<span class="ident">brightness</span>))
-            .<span class="ident">error</span>(<span class="string">&quot;Brightness is not in [0, 100]&quot;</span>)
-    }
-
-    <span class="doccomment">/// Set the brightness value for this backlight device, as a percent.</span>
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">set_brightness</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">value</span>: <span class="ident">u8</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">value</span> <span class="op">=</span> <span class="ident">value</span>.<span class="ident">clamp</span>(<span class="number">0</span>, <span class="number">100</span>);
-        <span class="kw">let</span> <span class="ident">ratio</span> <span class="op">=</span> (<span class="ident">value</span> <span class="kw">as</span> <span class="ident">f64</span> <span class="op">/</span> <span class="number">100.0</span>).<span class="ident">powf</span>(<span class="self">self</span>.<span class="ident">root_scaling</span>);
-        <span class="kw">let</span> <span class="ident">raw</span> <span class="op">=</span> <span class="ident">max</span>(<span class="number">1</span>, (<span class="ident">ratio</span> <span class="op">*</span> (<span class="self">self</span>.<span class="ident">max_brightness</span> <span class="kw">as</span> <span class="ident">f64</span>)).<span class="ident">round</span>() <span class="kw">as</span> <span class="ident">u32</span>);
-        <span class="self">self</span>.<span class="ident">dbus_proxy</span>
-            .<span class="ident">set_brightness</span>(<span class="string">&quot;backlight&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">device_name</span>, <span class="ident">raw</span>)
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to send D-Bus message&quot;</span>)
+    <span class="doccomment">/// Set the brightness value for this backlight device, as a percent.
+    </span><span class="kw">async fn </span>set_brightness(<span class="kw-2">&amp;</span><span class="self">self</span>, value: u8) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        <span class="kw">let </span>value = value.clamp(<span class="number">0</span>, <span class="number">100</span>);
+        <span class="kw">let </span>ratio = (value <span class="kw">as </span>f64 / <span class="number">100.0</span>).powf(<span class="self">self</span>.root_scaling);
+        <span class="kw">let </span>raw = max(<span class="number">1</span>, (ratio * (<span class="self">self</span>.max_brightness <span class="kw">as </span>f64)).round() <span class="kw">as </span>u32);
+        <span class="self">self</span>.dbus_proxy
+            .set_brightness(<span class="string">&quot;backlight&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.device_name, raw)
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to send D-Bus message&quot;</span>)
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

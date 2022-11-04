@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/speedtest.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>speedtest.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/speedtest.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>speedtest.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -95,102 +95,102 @@
 <span id="95">95</span>
 <span id="96">96</span>
 <span id="97">97</span>
-</pre><pre class="rust"><code><span class="doccomment">//! Ping, download, and upload speeds</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! This block which requires [`speedtest-cli`](https://github.com/sivel/speedtest-cli).</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Configuration</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Key | Values | Default</span>
-<span class="doccomment">//! ----|--------|--------</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; ^icon_ping $ping ^icon_net_down $speed_down ^icon_net_up $speed_up &quot;`</span>
-<span class="doccomment">//! `interval` | Update interval in seconds | `1800`</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Placeholder  | Value          | Type   | Unit</span>
-<span class="doccomment">//! -------------|----------------|--------|---------------</span>
-<span class="doccomment">//! `ping`       | Ping delay     | Number | Seconds</span>
-<span class="doccomment">//! `speed_down` | Download speed | Number | Bits per second</span>
-<span class="doccomment">//! `speed_up`   | Upload speed   | Number | Bits per second</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Example</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Show only ping (with an icon)</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;speedtest&quot;</span>
-<span class="doccomment">//! interval = 1800</span>
-<span class="doccomment">//! format = &quot; ^icon_ping $ping &quot;</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Hide ping and display speed in bytes per second each using 4 characters (without icons)</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;speedtest&quot;</span>
-<span class="doccomment">//! interval = 1800</span>
-<span class="doccomment">//! format = &quot; $speed_down.eng(4,B) $speed_up(4,B) &quot;</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Icons Used</span>
-<span class="doccomment">//! - `ping`</span>
-<span class="doccomment">//! - `net_down`</span>
-<span class="doccomment">//! - `net_up`</span>
+</pre><pre class="rust"><code><span class="doccomment">//! Ping, download, and upload speeds
+//!
+//! This block which requires [`speedtest-cli`](https://github.com/sivel/speedtest-cli).
+//!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; ^icon_ping $ping ^icon_net_down $speed_down ^icon_net_up $speed_up &quot;`
+//! `interval` | Update interval in seconds | `1800`
+//!
+//! Placeholder  | Value          | Type   | Unit
+//! -------------|----------------|--------|---------------
+//! `ping`       | Ping delay     | Number | Seconds
+//! `speed_down` | Download speed | Number | Bits per second
+//! `speed_up`   | Upload speed   | Number | Bits per second
+//!
+//! # Example
+//!
+//! Show only ping (with an icon)
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;speedtest&quot;
+//! interval = 1800
+//! format = &quot; ^icon_ping $ping &quot;
+//! ```
+//!
+//! Hide ping and display speed in bytes per second each using 4 characters (without icons)
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;speedtest&quot;
+//! interval = 1800
+//! format = &quot; $speed_down.eng(4,B) $speed_up(4,B) &quot;
+//! ```
+//!
+//! # Icons Used
+//! - `ping`
+//! - `net_down`
+//! - `net_up`
 
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">tokio::process::Command</span>;
+</span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span>tokio::process::Command;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
-<span class="kw">struct</span> <span class="ident">SpeedtestConfig</span> {
-    <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">1800</span>.<span class="ident">into</span>())]</span>
-    <span class="ident">interval</span>: <span class="ident">Seconds</span>,
+<span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
+#[serde(deny_unknown_fields, default)]
+</span><span class="kw">struct </span>SpeedtestConfig {
+    format: FormatConfig,
+    <span class="attribute">#[default(<span class="number">1800</span>.into())]
+    </span>interval: Seconds,
 }
 
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">SpeedtestConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span>
-        <span class="ident">Widget::new</span>().<span class="ident">with_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(
+<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span>config = SpeedtestConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>widget =
+        Widget::new().with_format(config.format.with_default(
             <span class="string">&quot; ^icon_ping $ping ^icon_net_down $speed_down ^icon_net_up $speed_up &quot;</span>,
         )<span class="question-mark">?</span>);
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">command</span> <span class="op">=</span> <span class="ident">Command::new</span>(<span class="string">&quot;speedtest-cli&quot;</span>);
-    <span class="ident">command</span>.<span class="ident">arg</span>(<span class="string">&quot;--json&quot;</span>);
+    <span class="kw">let </span><span class="kw-2">mut </span>command = Command::new(<span class="string">&quot;speedtest-cli&quot;</span>);
+    command.arg(<span class="string">&quot;--json&quot;</span>);
 
-    <span class="kw">loop</span> {
-        <span class="kw">let</span> <span class="ident">output</span> <span class="op">=</span> <span class="ident">command</span>
-            .<span class="ident">output</span>()
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;failed to run &#39;speedtest-cli&#39;&quot;</span>)<span class="question-mark">?</span>
-            .<span class="ident">stdout</span>;
-        <span class="kw">let</span> <span class="ident">output</span> <span class="op">=</span>
-            <span class="ident">std::str::from_utf8</span>(<span class="kw-2">&amp;</span><span class="ident">output</span>).<span class="ident">error</span>(<span class="string">&quot;&#39;speedtest-cli&#39; produced non-UTF8 outupt&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">output</span>: <span class="ident">SpeedtestCliOutput</span> <span class="op">=</span>
-            <span class="ident">serde_json::from_str</span>(<span class="ident">output</span>).<span class="ident">error</span>(<span class="string">&quot;&#39;speedtest-cli&#39; produced wrong JSON&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">loop </span>{
+        <span class="kw">let </span>output = command
+            .output()
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;failed to run &#39;speedtest-cli&#39;&quot;</span>)<span class="question-mark">?
+            </span>.stdout;
+        <span class="kw">let </span>output =
+            std::str::from_utf8(<span class="kw-2">&amp;</span>output).error(<span class="string">&quot;&#39;speedtest-cli&#39; produced non-UTF8 outupt&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>output: SpeedtestCliOutput =
+            serde_json::from_str(output).error(<span class="string">&quot;&#39;speedtest-cli&#39; produced wrong JSON&quot;</span>)<span class="question-mark">?</span>;
 
-        <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span> {
-            <span class="string">&quot;ping&quot;</span> =&gt; <span class="ident">Value::seconds</span>(<span class="ident">output</span>.<span class="ident">ping</span> <span class="op">*</span> <span class="number">1e-3</span>),
-            <span class="string">&quot;speed_down&quot;</span> =&gt; <span class="ident">Value::bits</span>(<span class="ident">output</span>.<span class="ident">download</span>),
-            <span class="string">&quot;speed_up&quot;</span> =&gt; <span class="ident">Value::bits</span>(<span class="ident">output</span>.<span class="ident">upload</span>),
+        widget.set_values(<span class="macro">map! </span>{
+            <span class="string">&quot;ping&quot; </span>=&gt; Value::seconds(output.ping * <span class="number">1e-3</span>),
+            <span class="string">&quot;speed_down&quot; </span>=&gt; Value::bits(output.download),
+            <span class="string">&quot;speed_up&quot; </span>=&gt; Value::bits(output.upload),
         });
-        <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="macro">select!</span> {
-            <span class="kw">_</span> <span class="op">=</span> <span class="ident">sleep</span>(<span class="ident">config</span>.<span class="ident">interval</span>.<span class="number">0</span>) =&gt; (),
-            <span class="kw">_</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">wait_for_update_request</span>() =&gt; (),
+        <span class="macro">select! </span>{
+            <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt; (),
+            <span class="kw">_ </span>= api.wait_for_update_request() =&gt; (),
         }
     }
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
-<span class="kw">struct</span> <span class="ident">SpeedtestCliOutput</span> {
-    <span class="doccomment">/// Download speed in bits per second</span>
-    <span class="ident">download</span>: <span class="ident">f64</span>,
-    <span class="doccomment">/// Upload speed in bits per second</span>
-    <span class="ident">upload</span>: <span class="ident">f64</span>,
-    <span class="doccomment">/// Ping time in ms</span>
-    <span class="ident">ping</span>: <span class="ident">f64</span>,
+<span class="attribute">#[derive(Deserialize, Debug, Clone, Copy)]
+</span><span class="kw">struct </span>SpeedtestCliOutput {
+    <span class="doccomment">/// Download speed in bits per second
+    </span>download: f64,
+    <span class="doccomment">/// Upload speed in bits per second
+    </span>upload: f64,
+    <span class="doccomment">/// Ping time in ms
+    </span>ping: f64,
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

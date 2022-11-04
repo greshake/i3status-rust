@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/pomodoro.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>pomodoro.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/pomodoro.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>pomodoro.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -254,229 +254,229 @@
 <span id="254">254</span>
 <span id="255">255</span>
 <span id="256">256</span>
-</pre><pre class="rust"><code><span class="doccomment">//! A [pomodoro timer](https://en.wikipedia.org/wiki/Pomodoro_Technique)</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Technique</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! There are six steps in the original technique:</span>
-<span class="doccomment">//! 1) Decide on the task to be done.</span>
-<span class="doccomment">//! 2) Set the pomodoro timer (traditionally to 25 minutes).</span>
-<span class="doccomment">//! 3) Work on the task.</span>
-<span class="doccomment">//! 4) End work when the timer rings and put a checkmark on a piece of paper.</span>
-<span class="doccomment">//! 5) If you have fewer than four checkmarks, take a short break (3–5 minutes) and then return to step 2.</span>
-<span class="doccomment">//! 6) After four pomodoros, take a longer break (15–30 minutes), reset your checkmark count to zero, then go to step 1.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Configuration</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Key | Values | Default</span>
-<span class="doccomment">//! ----|--------|--------</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. | &lt;code&gt;&quot; $icon{ $message&amp;vert;} &quot;&lt;/code&gt;</span>
-<span class="doccomment">//! `message` | Message when timer expires | `&quot;Pomodoro over! Take a break!&quot;`</span>
-<span class="doccomment">//! `break_message` | Message when break is over | `&quot;Break over! Time to work!&quot;`</span>
-<span class="doccomment">//! `notify_cmd` | A shell command to run as a notifier. `{msg}` will be substituted with either `message` or `break_message`. | `None`</span>
-<span class="doccomment">//! `blocking_cmd` | Is `notify_cmd` blocking? If it is, then pomodoro block will wait until the command finishes before proceeding. Otherwise, you will have to click on the block in order to proceed. | `false`</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Placeholder | Value                               | Type</span>
-<span class="doccomment">//! ------------|-------------------------------------|------</span>
-<span class="doccomment">//! `icon`      | A static icon                       | Icon</span>
-<span class="doccomment">//! `message`   | Current message                     | Text</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Example</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Use `swaynag` as a notifier:</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;pomodoro&quot;</span>
-<span class="doccomment">//! notify_cmd = &quot;swaynag -m &#39;{msg}&#39;&quot;</span>
-<span class="doccomment">//! blocking_cmd = true</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Use `notify-send` as a notifier:</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;pomodoro&quot;</span>
-<span class="doccomment">//! notify_cmd = &quot;notify-send &#39;{msg}&#39;&quot;</span>
-<span class="doccomment">//! blocking_cmd = false</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Icons Used</span>
-<span class="doccomment">//! - `pomodoro`</span>
-<span class="doccomment">//! - `pomodoro_started`</span>
-<span class="doccomment">//! - `pomodoro_stopped`</span>
-<span class="doccomment">//! - `pomodoro_paused`</span>
-<span class="doccomment">//! - `pomodoro_break`</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # TODO</span>
-<span class="doccomment">//! - Use different icons.</span>
-<span class="doccomment">//! - Use format strings.</span>
+</pre><pre class="rust"><code><span class="doccomment">//! A [pomodoro timer](https://en.wikipedia.org/wiki/Pomodoro_Technique)
+//!
+//! # Technique
+//!
+//! There are six steps in the original technique:
+//! 1) Decide on the task to be done.
+//! 2) Set the pomodoro timer (traditionally to 25 minutes).
+//! 3) Work on the task.
+//! 4) End work when the timer rings and put a checkmark on a piece of paper.
+//! 5) If you have fewer than four checkmarks, take a short break (3–5 minutes) and then return to step 2.
+//! 6) After four pomodoros, take a longer break (15–30 minutes), reset your checkmark count to zero, then go to step 1.
+//!
+//!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `format` | A string to customise the output of this block. | &lt;code&gt;&quot; $icon{ $message&amp;vert;} &quot;&lt;/code&gt;
+//! `message` | Message when timer expires | `&quot;Pomodoro over! Take a break!&quot;`
+//! `break_message` | Message when break is over | `&quot;Break over! Time to work!&quot;`
+//! `notify_cmd` | A shell command to run as a notifier. `{msg}` will be substituted with either `message` or `break_message`. | `None`
+//! `blocking_cmd` | Is `notify_cmd` blocking? If it is, then pomodoro block will wait until the command finishes before proceeding. Otherwise, you will have to click on the block in order to proceed. | `false`
+//!
+//! Placeholder | Value                               | Type
+//! ------------|-------------------------------------|------
+//! `icon`      | A static icon                       | Icon
+//! `message`   | Current message                     | Text
+//!
+//! # Example
+//!
+//! Use `swaynag` as a notifier:
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;pomodoro&quot;
+//! notify_cmd = &quot;swaynag -m &#39;{msg}&#39;&quot;
+//! blocking_cmd = true
+//! ```
+//!
+//! Use `notify-send` as a notifier:
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;pomodoro&quot;
+//! notify_cmd = &quot;notify-send &#39;{msg}&#39;&quot;
+//! blocking_cmd = false
+//! ```
+//!
+//! # Icons Used
+//! - `pomodoro`
+//! - `pomodoro_started`
+//! - `pomodoro_stopped`
+//! - `pomodoro_paused`
+//! - `pomodoro_break`
+//!
+//! # TODO
+//! - Use different icons.
+//! - Use format strings.
 
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::subprocess</span>::{<span class="ident">spawn_shell</span>, <span class="ident">spawn_shell_sync</span>};
-<span class="kw">use</span> <span class="ident">std::time::Instant</span>;
+</span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span><span class="kw">crate</span>::subprocess::{spawn_shell, spawn_shell_sync};
+<span class="kw">use </span>std::time::Instant;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
-<span class="kw">struct</span> <span class="ident">PomodoroConfig</span> {
-    <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="string">&quot;Pomodoro over! Take a break!&quot;</span>.<span class="ident">into</span>())]</span>
-    <span class="ident">message</span>: <span class="ident">String</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="string">&quot;Break over! Time to work!&quot;</span>.<span class="ident">into</span>())]</span>
-    <span class="ident">break_message</span>: <span class="ident">String</span>,
-    <span class="ident">notify_cmd</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="ident">blocking_cmd</span>: <span class="ident">bool</span>,
+<span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
+#[serde(deny_unknown_fields, default)]
+</span><span class="kw">struct </span>PomodoroConfig {
+    format: FormatConfig,
+    <span class="attribute">#[default(<span class="string">&quot;Pomodoro over! Take a break!&quot;</span>.into())]
+    </span>message: String,
+    <span class="attribute">#[default(<span class="string">&quot;Break over! Time to work!&quot;</span>.into())]
+    </span>break_message: String,
+    notify_cmd: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    blocking_cmd: bool,
 }
 
-<span class="kw">struct</span> <span class="ident">Block</span> {
-    <span class="ident">widget</span>: <span class="ident">Widget</span>,
-    <span class="ident">api</span>: <span class="ident">CommonApi</span>,
-    <span class="ident">block_config</span>: <span class="ident">PomodoroConfig</span>,
+<span class="kw">struct </span>Block {
+    widget: Widget,
+    api: CommonApi,
+    block_config: PomodoroConfig,
 }
 
-<span class="kw">impl</span> <span class="ident">Block</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">set_text</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">text</span>: <span class="ident">String</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">values</span> <span class="op">=</span> <span class="macro">map!</span>(
-            <span class="string">&quot;icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="self">self</span>.<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;pomodoro&quot;</span>)<span class="question-mark">?</span>),
+<span class="kw">impl </span>Block {
+    <span class="kw">async fn </span>set_text(<span class="kw-2">&amp;mut </span><span class="self">self</span>, text: String) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        <span class="kw">let </span><span class="kw-2">mut </span>values = <span class="macro">map!</span>(
+            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(<span class="self">self</span>.api.get_icon(<span class="string">&quot;pomodoro&quot;</span>)<span class="question-mark">?</span>),
         );
-        <span class="kw">if</span> <span class="op">!</span><span class="ident">text</span>.<span class="ident">is_empty</span>() {
-            <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;message&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::text</span>(<span class="ident">text</span>));
+        <span class="kw">if </span>!text.is_empty() {
+            values.insert(<span class="string">&quot;message&quot;</span>.into(), Value::text(text));
         }
-        <span class="self">self</span>.<span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">values</span>);
-        <span class="self">self</span>.<span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">widget</span>).<span class="kw">await</span>
-    }
+        <span class="self">self</span>.widget.set_values(values);
+        <span class="self">self</span>.api.set_widget(<span class="kw-2">&amp;</span><span class="self">self</span>.widget).<span class="kw">await
+    </span>}
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">wait_for_click</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">button</span>: <span class="ident">MouseButton</span>) {
-        <span class="kw">loop</span> {
-            <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Click</span>(<span class="ident">click</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">api</span>.<span class="ident">event</span>().<span class="kw">await</span> {
-                <span class="kw">if</span> <span class="ident">click</span>.<span class="ident">button</span> <span class="op">==</span> <span class="ident">button</span> {
+    <span class="kw">async fn </span>wait_for_click(<span class="kw-2">&amp;mut </span><span class="self">self</span>, button: MouseButton) {
+        <span class="kw">loop </span>{
+            <span class="kw">if let </span>Click(click) = <span class="self">self</span>.api.event().<span class="kw">await </span>{
+                <span class="kw">if </span>click.button == button {
                     <span class="kw">break</span>;
                 }
             }
         }
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">read_params</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">Duration</span>, <span class="ident">Duration</span>, <span class="ident">u64</span>)<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">task_len</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">read_u64</span>(<span class="number">25</span>, <span class="string">&quot;Task length:&quot;</span>).<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">break_len</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">read_u64</span>(<span class="number">5</span>, <span class="string">&quot;Break length:&quot;</span>).<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">pomodoros</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">read_u64</span>(<span class="number">4</span>, <span class="string">&quot;Pomodoros:&quot;</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">async fn </span>read_params(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;(Duration, Duration, u64)&gt; {
+        <span class="kw">let </span>task_len = <span class="self">self</span>.read_u64(<span class="number">25</span>, <span class="string">&quot;Task length:&quot;</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let </span>break_len = <span class="self">self</span>.read_u64(<span class="number">5</span>, <span class="string">&quot;Break length:&quot;</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let </span>pomodoros = <span class="self">self</span>.read_u64(<span class="number">4</span>, <span class="string">&quot;Pomodoros:&quot;</span>).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>((
-            <span class="ident">Duration::from_secs</span>(<span class="ident">task_len</span> <span class="op">*</span> <span class="number">60</span>),
-            <span class="ident">Duration::from_secs</span>(<span class="ident">break_len</span> <span class="op">*</span> <span class="number">60</span>),
-            <span class="ident">pomodoros</span>,
+            Duration::from_secs(task_len * <span class="number">60</span>),
+            Duration::from_secs(break_len * <span class="number">60</span>),
+            pomodoros,
         ))
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">read_u64</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="kw-2">mut</span> <span class="ident">number</span>: <span class="ident">u64</span>, <span class="ident">msg</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> {
-        <span class="kw">loop</span> {
-            <span class="self">self</span>.<span class="ident">set_text</span>(<span class="macro">format!</span>(<span class="string">&quot;{msg} {number}&quot;</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
-            <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Click</span>(<span class="ident">click</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">api</span>.<span class="ident">event</span>().<span class="kw">await</span> {
-                <span class="kw">match</span> <span class="ident">click</span>.<span class="ident">button</span> {
-                    <span class="ident">MouseButton::Left</span> =&gt; <span class="kw">break</span>,
-                    <span class="ident">MouseButton::WheelUp</span> =&gt; <span class="ident">number</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>,
-                    <span class="ident">MouseButton::WheelDown</span> =&gt; <span class="ident">number</span> <span class="op">=</span> <span class="ident">number</span>.<span class="ident">saturating_sub</span>(<span class="number">1</span>),
-                    <span class="kw">_</span> =&gt; (),
+    <span class="kw">async fn </span>read_u64(<span class="kw-2">&amp;mut </span><span class="self">self</span>, <span class="kw-2">mut </span>number: u64, msg: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;u64&gt; {
+        <span class="kw">loop </span>{
+            <span class="self">self</span>.set_text(<span class="macro">format!</span>(<span class="string">&quot;{msg} {number}&quot;</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
+            <span class="kw">if let </span>Click(click) = <span class="self">self</span>.api.event().<span class="kw">await </span>{
+                <span class="kw">match </span>click.button {
+                    MouseButton::Left =&gt; <span class="kw">break</span>,
+                    MouseButton::WheelUp =&gt; number += <span class="number">1</span>,
+                    MouseButton::WheelDown =&gt; number = number.saturating_sub(<span class="number">1</span>),
+                    <span class="kw">_ </span>=&gt; (),
                 }
             }
         }
-        <span class="prelude-val">Ok</span>(<span class="ident">number</span>)
+        <span class="prelude-val">Ok</span>(number)
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run_pomodoro</span>(
-        <span class="kw-2">&amp;mut</span> <span class="self">self</span>,
-        <span class="ident">task_len</span>: <span class="ident">Duration</span>,
-        <span class="ident">break_len</span>: <span class="ident">Duration</span>,
-        <span class="ident">pomodoros</span>: <span class="ident">u64</span>,
-    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">for</span> <span class="ident">pomodoro</span> <span class="kw">in</span> <span class="number">0</span>..<span class="ident">pomodoros</span> {
-            <span class="comment">// Task timer</span>
-            <span class="self">self</span>.<span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Idle</span>;
-            <span class="kw">let</span> <span class="ident">timer</span> <span class="op">=</span> <span class="ident">Instant::now</span>();
-            <span class="kw">loop</span> {
-                <span class="kw">let</span> <span class="ident">elapsed</span> <span class="op">=</span> <span class="ident">timer</span>.<span class="ident">elapsed</span>();
-                <span class="kw">if</span> <span class="ident">elapsed</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">task_len</span> {
+    <span class="kw">async fn </span>run_pomodoro(
+        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+        task_len: Duration,
+        break_len: Duration,
+        pomodoros: u64,
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        <span class="kw">for </span>pomodoro <span class="kw">in </span><span class="number">0</span>..pomodoros {
+            <span class="comment">// Task timer
+            </span><span class="self">self</span>.widget.state = State::Idle;
+            <span class="kw">let </span>timer = Instant::now();
+            <span class="kw">loop </span>{
+                <span class="kw">let </span>elapsed = timer.elapsed();
+                <span class="kw">if </span>elapsed &gt;= task_len {
                     <span class="kw">break</span>;
                 }
-                <span class="kw">let</span> <span class="ident">left</span> <span class="op">=</span> <span class="ident">task_len</span> <span class="op">-</span> <span class="ident">elapsed</span>;
-                <span class="kw">let</span> <span class="ident">text</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">pomodoro</span> <span class="op">==</span> <span class="number">0</span> {
-                    <span class="macro">format!</span>(<span class="string">&quot;{} min&quot;</span>, (<span class="ident">left</span>.<span class="ident">as_secs</span>() <span class="op">+</span> <span class="number">59</span>) <span class="op">/</span> <span class="number">60</span>,)
-                } <span class="kw">else</span> {
+                <span class="kw">let </span>left = task_len - elapsed;
+                <span class="kw">let </span>text = <span class="kw">if </span>pomodoro == <span class="number">0 </span>{
+                    <span class="macro">format!</span>(<span class="string">&quot;{} min&quot;</span>, (left.as_secs() + <span class="number">59</span>) / <span class="number">60</span>,)
+                } <span class="kw">else </span>{
                     <span class="macro">format!</span>(
                         <span class="string">&quot;{} {} min&quot;</span>,
-                        <span class="string">&quot;|&quot;</span>.<span class="ident">repeat</span>(<span class="ident">pomodoro</span> <span class="kw">as</span> <span class="ident">usize</span>),
-                        (<span class="ident">left</span>.<span class="ident">as_secs</span>() <span class="op">+</span> <span class="number">59</span>) <span class="op">/</span> <span class="number">60</span>,
+                        <span class="string">&quot;|&quot;</span>.repeat(pomodoro <span class="kw">as </span>usize),
+                        (left.as_secs() + <span class="number">59</span>) / <span class="number">60</span>,
                     )
                 };
-                <span class="self">self</span>.<span class="ident">set_text</span>(<span class="ident">text</span>).<span class="kw">await</span><span class="question-mark">?</span>;
-                <span class="macro">select!</span> {
-                    <span class="kw">_</span> <span class="op">=</span> <span class="ident">sleep</span>(<span class="ident">Duration::from_secs</span>(<span class="number">10</span>)) =&gt; (),
-                    <span class="ident">Click</span>(<span class="ident">click</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">api</span>.<span class="ident">event</span>() =&gt; {
-                        <span class="kw">if</span> <span class="ident">click</span>.<span class="ident">button</span> <span class="op">==</span> <span class="ident">MouseButton::Middle</span> {
-                            <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
+                <span class="self">self</span>.set_text(text).<span class="kw">await</span><span class="question-mark">?</span>;
+                <span class="macro">select! </span>{
+                    <span class="kw">_ </span>= sleep(Duration::from_secs(<span class="number">10</span>)) =&gt; (),
+                    Click(click) = <span class="self">self</span>.api.event() =&gt; {
+                        <span class="kw">if </span>click.button == MouseButton::Middle {
+                            <span class="kw">return </span><span class="prelude-val">Ok</span>(());
                         }
                     }
                 }
             }
 
-            <span class="comment">// Show break message</span>
-            <span class="self">self</span>.<span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Good</span>;
-            <span class="self">self</span>.<span class="ident">set_text</span>(<span class="self">self</span>.<span class="ident">block_config</span>.<span class="ident">message</span>.<span class="ident">clone</span>()).<span class="kw">await</span><span class="question-mark">?</span>;
-            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">cmd</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">block_config</span>.<span class="ident">notify_cmd</span> {
-                <span class="kw">let</span> <span class="ident">cmd</span> <span class="op">=</span> <span class="ident">cmd</span>.<span class="ident">replace</span>(<span class="string">&quot;{msg}&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">block_config</span>.<span class="ident">message</span>);
-                <span class="kw">if</span> <span class="self">self</span>.<span class="ident">block_config</span>.<span class="ident">blocking_cmd</span> {
-                    <span class="ident">spawn_shell_sync</span>(<span class="kw-2">&amp;</span><span class="ident">cmd</span>)
-                        .<span class="kw">await</span>
-                        .<span class="ident">error</span>(<span class="string">&quot;failed to run notify_cmd&quot;</span>)<span class="question-mark">?</span>;
-                } <span class="kw">else</span> {
-                    <span class="ident">spawn_shell</span>(<span class="kw-2">&amp;</span><span class="ident">cmd</span>).<span class="ident">error</span>(<span class="string">&quot;failed to run notify_cmd&quot;</span>)<span class="question-mark">?</span>;
-                    <span class="self">self</span>.<span class="ident">wait_for_click</span>(<span class="ident">MouseButton::Left</span>).<span class="kw">await</span>;
+            <span class="comment">// Show break message
+            </span><span class="self">self</span>.widget.state = State::Good;
+            <span class="self">self</span>.set_text(<span class="self">self</span>.block_config.message.clone()).<span class="kw">await</span><span class="question-mark">?</span>;
+            <span class="kw">if let </span><span class="prelude-val">Some</span>(cmd) = <span class="kw-2">&amp;</span><span class="self">self</span>.block_config.notify_cmd {
+                <span class="kw">let </span>cmd = cmd.replace(<span class="string">&quot;{msg}&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.block_config.message);
+                <span class="kw">if </span><span class="self">self</span>.block_config.blocking_cmd {
+                    spawn_shell_sync(<span class="kw-2">&amp;</span>cmd)
+                        .<span class="kw">await
+                        </span>.error(<span class="string">&quot;failed to run notify_cmd&quot;</span>)<span class="question-mark">?</span>;
+                } <span class="kw">else </span>{
+                    spawn_shell(<span class="kw-2">&amp;</span>cmd).error(<span class="string">&quot;failed to run notify_cmd&quot;</span>)<span class="question-mark">?</span>;
+                    <span class="self">self</span>.wait_for_click(MouseButton::Left).<span class="kw">await</span>;
                 }
-            } <span class="kw">else</span> {
-                <span class="self">self</span>.<span class="ident">wait_for_click</span>(<span class="ident">MouseButton::Left</span>).<span class="kw">await</span>;
+            } <span class="kw">else </span>{
+                <span class="self">self</span>.wait_for_click(MouseButton::Left).<span class="kw">await</span>;
             }
 
-            <span class="comment">// No break after the last pomodoro</span>
-            <span class="kw">if</span> <span class="ident">pomodoro</span> <span class="op">==</span> <span class="ident">pomodoros</span> <span class="op">-</span> <span class="number">1</span> {
+            <span class="comment">// No break after the last pomodoro
+            </span><span class="kw">if </span>pomodoro == pomodoros - <span class="number">1 </span>{
                 <span class="kw">break</span>;
             }
 
-            <span class="comment">// Break timer</span>
-            <span class="kw">let</span> <span class="ident">timer</span> <span class="op">=</span> <span class="ident">Instant::now</span>();
-            <span class="kw">loop</span> {
-                <span class="kw">let</span> <span class="ident">elapsed</span> <span class="op">=</span> <span class="ident">timer</span>.<span class="ident">elapsed</span>();
-                <span class="kw">if</span> <span class="ident">elapsed</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">break_len</span> {
+            <span class="comment">// Break timer
+            </span><span class="kw">let </span>timer = Instant::now();
+            <span class="kw">loop </span>{
+                <span class="kw">let </span>elapsed = timer.elapsed();
+                <span class="kw">if </span>elapsed &gt;= break_len {
                     <span class="kw">break</span>;
                 }
-                <span class="kw">let</span> <span class="ident">left</span> <span class="op">=</span> <span class="ident">break_len</span> <span class="op">-</span> <span class="ident">elapsed</span>;
-                <span class="self">self</span>.<span class="ident">set_text</span>(<span class="macro">format!</span>(<span class="string">&quot;Break: {} min&quot;</span>, (<span class="ident">left</span>.<span class="ident">as_secs</span>() <span class="op">+</span> <span class="number">59</span>) <span class="op">/</span> <span class="number">60</span>,))
+                <span class="kw">let </span>left = break_len - elapsed;
+                <span class="self">self</span>.set_text(<span class="macro">format!</span>(<span class="string">&quot;Break: {} min&quot;</span>, (left.as_secs() + <span class="number">59</span>) / <span class="number">60</span>,))
                     .<span class="kw">await</span><span class="question-mark">?</span>;
-                <span class="macro">select!</span> {
-                    <span class="kw">_</span> <span class="op">=</span> <span class="ident">sleep</span>(<span class="ident">Duration::from_secs</span>(<span class="number">10</span>)) =&gt; (),
-                    <span class="ident">Click</span>(<span class="ident">click</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">api</span>.<span class="ident">event</span>() =&gt; {
-                        <span class="kw">if</span> <span class="ident">click</span>.<span class="ident">button</span> <span class="op">==</span> <span class="ident">MouseButton::Middle</span> {
-                            <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
+                <span class="macro">select! </span>{
+                    <span class="kw">_ </span>= sleep(Duration::from_secs(<span class="number">10</span>)) =&gt; (),
+                    Click(click) = <span class="self">self</span>.api.event() =&gt; {
+                        <span class="kw">if </span>click.button == MouseButton::Middle {
+                            <span class="kw">return </span><span class="prelude-val">Ok</span>(());
                         }
                     }
                 }
             }
 
-            <span class="comment">// Show task message</span>
-            <span class="self">self</span>.<span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Good</span>;
-            <span class="self">self</span>.<span class="ident">set_text</span>(<span class="self">self</span>.<span class="ident">block_config</span>.<span class="ident">break_message</span>.<span class="ident">clone</span>())
+            <span class="comment">// Show task message
+            </span><span class="self">self</span>.widget.state = State::Good;
+            <span class="self">self</span>.set_text(<span class="self">self</span>.block_config.break_message.clone())
                 .<span class="kw">await</span><span class="question-mark">?</span>;
-            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">cmd</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">block_config</span>.<span class="ident">notify_cmd</span> {
-                <span class="kw">let</span> <span class="ident">cmd</span> <span class="op">=</span> <span class="ident">cmd</span>.<span class="ident">replace</span>(<span class="string">&quot;{msg}&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">block_config</span>.<span class="ident">break_message</span>);
-                <span class="kw">if</span> <span class="self">self</span>.<span class="ident">block_config</span>.<span class="ident">blocking_cmd</span> {
-                    <span class="ident">spawn_shell_sync</span>(<span class="kw-2">&amp;</span><span class="ident">cmd</span>)
-                        .<span class="kw">await</span>
-                        .<span class="ident">error</span>(<span class="string">&quot;failed to run notify_cmd&quot;</span>)<span class="question-mark">?</span>;
-                } <span class="kw">else</span> {
-                    <span class="ident">spawn_shell</span>(<span class="kw-2">&amp;</span><span class="ident">cmd</span>).<span class="ident">error</span>(<span class="string">&quot;failed to run notify_cmd&quot;</span>)<span class="question-mark">?</span>;
-                    <span class="self">self</span>.<span class="ident">wait_for_click</span>(<span class="ident">MouseButton::Left</span>).<span class="kw">await</span>;
+            <span class="kw">if let </span><span class="prelude-val">Some</span>(cmd) = <span class="kw-2">&amp;</span><span class="self">self</span>.block_config.notify_cmd {
+                <span class="kw">let </span>cmd = cmd.replace(<span class="string">&quot;{msg}&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.block_config.break_message);
+                <span class="kw">if </span><span class="self">self</span>.block_config.blocking_cmd {
+                    spawn_shell_sync(<span class="kw-2">&amp;</span>cmd)
+                        .<span class="kw">await
+                        </span>.error(<span class="string">&quot;failed to run notify_cmd&quot;</span>)<span class="question-mark">?</span>;
+                } <span class="kw">else </span>{
+                    spawn_shell(<span class="kw-2">&amp;</span>cmd).error(<span class="string">&quot;failed to run notify_cmd&quot;</span>)<span class="question-mark">?</span>;
+                    <span class="self">self</span>.wait_for_click(MouseButton::Left).<span class="kw">await</span>;
                 }
-            } <span class="kw">else</span> {
-                <span class="self">self</span>.<span class="ident">wait_for_click</span>(<span class="ident">MouseButton::Left</span>).<span class="kw">await</span>;
+            } <span class="kw">else </span>{
+                <span class="self">self</span>.wait_for_click(MouseButton::Left).<span class="kw">await</span>;
             }
         }
 
@@ -484,31 +484,31 @@
     }
 }
 
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">block_config</span>: <span class="ident">toml::Value</span>, <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">block_config</span> <span class="op">=</span> <span class="ident">PomodoroConfig::deserialize</span>(<span class="ident">block_config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">format</span> <span class="op">=</span> <span class="ident">FormatConfig::default</span>().<span class="ident">with_default</span>(<span class="string">&quot; $icon{ $message|} &quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">Widget::new</span>().<span class="ident">with_format</span>(<span class="ident">format</span>);
+<span class="kw">pub async fn </span>run(block_config: toml::Value, api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span>block_config = PomodoroConfig::deserialize(block_config).config_error()<span class="question-mark">?</span>;
+    <span class="kw">let </span>format = FormatConfig::default().with_default(<span class="string">&quot; $icon{ $message|} &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>widget = Widget::new().with_format(format);
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">block</span> <span class="op">=</span> <span class="ident">Block</span> {
-        <span class="ident">widget</span>,
-        <span class="ident">api</span>,
-        <span class="ident">block_config</span>,
+    <span class="kw">let </span><span class="kw-2">mut </span>block = Block {
+        widget,
+        api,
+        block_config,
     };
 
-    <span class="kw">loop</span> {
-        <span class="comment">// Send collaped block</span>
-        <span class="ident">block</span>.<span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Idle</span>;
-        <span class="ident">block</span>.<span class="ident">set_text</span>(<span class="ident">String::new</span>()).<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">loop </span>{
+        <span class="comment">// Send collaped block
+        </span>block.widget.state = State::Idle;
+        block.set_text(String::new()).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="comment">// Wait for left click</span>
-        <span class="ident">block</span>.<span class="ident">wait_for_click</span>(<span class="ident">MouseButton::Left</span>).<span class="kw">await</span>;
+        <span class="comment">// Wait for left click
+        </span>block.wait_for_click(MouseButton::Left).<span class="kw">await</span>;
 
-        <span class="comment">// Read params</span>
-        <span class="kw">let</span> (<span class="ident">task_len</span>, <span class="ident">break_len</span>, <span class="ident">pomodoros</span>) <span class="op">=</span> <span class="ident">block</span>.<span class="ident">read_params</span>().<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="comment">// Read params
+        </span><span class="kw">let </span>(task_len, break_len, pomodoros) = block.read_params().<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="comment">// Run!</span>
-        <span class="ident">block</span>.<span class="ident">run_pomodoro</span>(<span class="ident">task_len</span>, <span class="ident">break_len</span>, <span class="ident">pomodoros</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="comment">// Run!
+        </span>block.run_pomodoro(task_len, break_len, pomodoros).<span class="kw">await</span><span class="question-mark">?</span>;
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/dnf.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>dnf.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/dnf.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>dnf.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -149,130 +149,130 @@
 <span id="149">149</span>
 <span id="150">150</span>
 <span id="151">151</span>
-</pre><pre class="rust"><code><span class="doccomment">//! Pending updates available for your Fedora system</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Configuration</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Key | Values | Default</span>
-<span class="doccomment">//! ----|--------|--------</span>
-<span class="doccomment">//! `interval` | Update interval in seconds. | `600`</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $count.eng(1) &quot;`</span>
-<span class="doccomment">//! `format_singular` | Same as `format`, but for when exactly one update is available. | `&quot; $icon $count.eng(1) &quot;`</span>
-<span class="doccomment">//! `format_up_to_date` | Same as `format`, but for when no updates are available. | `&quot; $icon $count.eng(1) &quot;`</span>
-<span class="doccomment">//! `warning_updates_regex` | Display block as warning if updates matching regex are available. | `None`</span>
-<span class="doccomment">//! `critical_updates_regex` | Display block as critical if updates matching regex are available. | `None`</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Placeholder | Value                       | Type | Unit</span>
-<span class="doccomment">//! ------------|-----------------------------|--------|-----</span>
-<span class="doccomment">//! `icon`      | A static icon               | Icon   | -</span>
-<span class="doccomment">//! `count`     | Number of updates available | Number | -</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Example</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Update the list of pending updates every thirty minutes (1800 seconds):</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;dnf&quot;</span>
-<span class="doccomment">//! interval = 1800</span>
-<span class="doccomment">//! format = &quot; $icon $count.eng(1) updates available &quot;</span>
-<span class="doccomment">//! format_singular = &quot; $icon One update available &quot;</span>
-<span class="doccomment">//! format_up_to_date = &quot; $icon system up to date &quot;</span>
-<span class="doccomment">//! critical_updates_regex = &quot;(linux|linux-lts|linux-zen)&quot;</span>
-<span class="doccomment">//! [[block.click]]</span>
-<span class="doccomment">//! # shows dmenu with cached available updates. Any dmenu alternative should also work.</span>
-<span class="doccomment">//! button = &quot;left&quot;</span>
-<span class="doccomment">//! cmd = &quot;dnf list -q --upgrades | tail -n +2 | rofi -dmenu&quot;</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Icons Used</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! - `update`</span>
+</pre><pre class="rust"><code><span class="doccomment">//! Pending updates available for your Fedora system
+//!
+//!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `interval` | Update interval in seconds. | `600`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $count.eng(1) &quot;`
+//! `format_singular` | Same as `format`, but for when exactly one update is available. | `&quot; $icon $count.eng(1) &quot;`
+//! `format_up_to_date` | Same as `format`, but for when no updates are available. | `&quot; $icon $count.eng(1) &quot;`
+//! `warning_updates_regex` | Display block as warning if updates matching regex are available. | `None`
+//! `critical_updates_regex` | Display block as critical if updates matching regex are available. | `None`
+//!
+//! Placeholder | Value                       | Type | Unit
+//! ------------|-----------------------------|--------|-----
+//! `icon`      | A static icon               | Icon   | -
+//! `count`     | Number of updates available | Number | -
+//!
+//! # Example
+//!
+//! Update the list of pending updates every thirty minutes (1800 seconds):
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;dnf&quot;
+//! interval = 1800
+//! format = &quot; $icon $count.eng(1) updates available &quot;
+//! format_singular = &quot; $icon One update available &quot;
+//! format_up_to_date = &quot; $icon system up to date &quot;
+//! critical_updates_regex = &quot;(linux|linux-lts|linux-zen)&quot;
+//! [[block.click]]
+//! # shows dmenu with cached available updates. Any dmenu alternative should also work.
+//! button = &quot;left&quot;
+//! cmd = &quot;dnf list -q --upgrades | tail -n +2 | rofi -dmenu&quot;
+//! ```
+//!
+//! # Icons Used
+//!
+//! - `update`
 
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">regex::Regex</span>;
-<span class="kw">use</span> <span class="ident">tokio::process::Command</span>;
+</span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span>regex::Regex;
+<span class="kw">use </span>tokio::process::Command;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
-<span class="kw">struct</span> <span class="ident">DnfConfig</span> {
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">600</span>.<span class="ident">into</span>())]</span>
-    <span class="ident">interval</span>: <span class="ident">Seconds</span>,
-    <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
-    <span class="ident">format_singular</span>: <span class="ident">FormatConfig</span>,
-    <span class="ident">format_up_to_date</span>: <span class="ident">FormatConfig</span>,
-    <span class="ident">warning_updates_regex</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="ident">critical_updates_regex</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+<span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
+#[serde(deny_unknown_fields, default)]
+</span><span class="kw">struct </span>DnfConfig {
+    <span class="attribute">#[default(<span class="number">600</span>.into())]
+    </span>interval: Seconds,
+    format: FormatConfig,
+    format_singular: FormatConfig,
+    format_up_to_date: FormatConfig,
+    warning_updates_regex: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    critical_updates_regex: <span class="prelude-ty">Option</span>&lt;String&gt;,
 }
 
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">DnfConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">Widget::new</span>();
+<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span>config = DnfConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new();
 
-    <span class="kw">let</span> <span class="ident">format</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon $count.eng(1) &quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">format_singular</span> <span class="op">=</span> <span class="ident">config</span>
-        .<span class="ident">format_singular</span>
-        .<span class="ident">with_default</span>(<span class="string">&quot; $icon $count.eng(1) &quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">format_up_to_date</span> <span class="op">=</span> <span class="ident">config</span>
-        .<span class="ident">format_up_to_date</span>
-        .<span class="ident">with_default</span>(<span class="string">&quot; $icon $count.eng(1) &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $count.eng(1) &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>format_singular = config
+        .format_singular
+        .with_default(<span class="string">&quot; $icon $count.eng(1) &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>format_up_to_date = config
+        .format_up_to_date
+        .with_default(<span class="string">&quot; $icon $count.eng(1) &quot;</span>)<span class="question-mark">?</span>;
 
-    <span class="kw">let</span> <span class="ident">warning_updates_regex</span> <span class="op">=</span> <span class="ident">config</span>
-        .<span class="ident">warning_updates_regex</span>
-        .<span class="ident">as_deref</span>()
-        .<span class="ident">map</span>(<span class="ident">Regex::new</span>)
-        .<span class="ident">transpose</span>()
-        .<span class="ident">error</span>(<span class="string">&quot;invalid warning updates regex&quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">critical_updates_regex</span> <span class="op">=</span> <span class="ident">config</span>
-        .<span class="ident">critical_updates_regex</span>
-        .<span class="ident">as_deref</span>()
-        .<span class="ident">map</span>(<span class="ident">Regex::new</span>)
-        .<span class="ident">transpose</span>()
-        .<span class="ident">error</span>(<span class="string">&quot;invalid critical updates regex&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>warning_updates_regex = config
+        .warning_updates_regex
+        .as_deref()
+        .map(Regex::new)
+        .transpose()
+        .error(<span class="string">&quot;invalid warning updates regex&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>critical_updates_regex = config
+        .critical_updates_regex
+        .as_deref()
+        .map(Regex::new)
+        .transpose()
+        .error(<span class="string">&quot;invalid critical updates regex&quot;</span>)<span class="question-mark">?</span>;
 
-    <span class="kw">loop</span> {
-        <span class="kw">let</span> <span class="ident">updates</span> <span class="op">=</span> <span class="ident">get_updates_list</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">count</span> <span class="op">=</span> <span class="ident">get_update_count</span>(<span class="kw-2">&amp;</span><span class="ident">updates</span>);
+    <span class="kw">loop </span>{
+        <span class="kw">let </span>updates = get_updates_list().<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let </span>count = get_update_count(<span class="kw-2">&amp;</span>updates);
 
-        <span class="ident">widget</span>.<span class="ident">set_format</span>(<span class="kw">match</span> <span class="ident">count</span> {
-            <span class="number">0</span> =&gt; <span class="ident">format_up_to_date</span>.<span class="ident">clone</span>(),
-            <span class="number">1</span> =&gt; <span class="ident">format_singular</span>.<span class="ident">clone</span>(),
-            <span class="kw">_</span> =&gt; <span class="ident">format</span>.<span class="ident">clone</span>(),
+        widget.set_format(<span class="kw">match </span>count {
+            <span class="number">0 </span>=&gt; format_up_to_date.clone(),
+            <span class="number">1 </span>=&gt; format_singular.clone(),
+            <span class="kw">_ </span>=&gt; format.clone(),
         });
-        <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span>(
-            <span class="string">&quot;icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;update&quot;</span>)<span class="question-mark">?</span>),
-            <span class="string">&quot;count&quot;</span> =&gt; <span class="ident">Value::number</span>(<span class="ident">count</span>)
+        widget.set_values(<span class="macro">map!</span>(
+            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;update&quot;</span>)<span class="question-mark">?</span>),
+            <span class="string">&quot;count&quot; </span>=&gt; Value::number(count)
         ));
 
-        <span class="kw">let</span> <span class="ident">warning</span> <span class="op">=</span> <span class="ident">warning_updates_regex</span>
-            .<span class="ident">as_ref</span>()
-            .<span class="ident">map_or</span>(<span class="bool-val">false</span>, <span class="op">|</span><span class="ident">regex</span><span class="op">|</span> <span class="ident">has_matching_update</span>(<span class="kw-2">&amp;</span><span class="ident">updates</span>, <span class="ident">regex</span>));
-        <span class="kw">let</span> <span class="ident">critical</span> <span class="op">=</span> <span class="ident">critical_updates_regex</span>
-            .<span class="ident">as_ref</span>()
-            .<span class="ident">map_or</span>(<span class="bool-val">false</span>, <span class="op">|</span><span class="ident">regex</span><span class="op">|</span> <span class="ident">has_matching_update</span>(<span class="kw-2">&amp;</span><span class="ident">updates</span>, <span class="ident">regex</span>));
-        <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">count</span> {
-            <span class="number">0</span> =&gt; <span class="ident">State::Idle</span>,
-            <span class="kw">_</span> =&gt; {
-                <span class="kw">if</span> <span class="ident">critical</span> {
-                    <span class="ident">State::Critical</span>
-                } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">warning</span> {
-                    <span class="ident">State::Warning</span>
-                } <span class="kw">else</span> {
-                    <span class="ident">State::Info</span>
+        <span class="kw">let </span>warning = warning_updates_regex
+            .as_ref()
+            .map_or(<span class="bool-val">false</span>, |regex| has_matching_update(<span class="kw-2">&amp;</span>updates, regex));
+        <span class="kw">let </span>critical = critical_updates_regex
+            .as_ref()
+            .map_or(<span class="bool-val">false</span>, |regex| has_matching_update(<span class="kw-2">&amp;</span>updates, regex));
+        widget.state = <span class="kw">match </span>count {
+            <span class="number">0 </span>=&gt; State::Idle,
+            <span class="kw">_ </span>=&gt; {
+                <span class="kw">if </span>critical {
+                    State::Critical
+                } <span class="kw">else if </span>warning {
+                    State::Warning
+                } <span class="kw">else </span>{
+                    State::Info
                 }
             }
         };
 
-        <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="kw">loop</span> {
-            <span class="macro">select!</span> {
-                <span class="kw">_</span> <span class="op">=</span> <span class="ident">sleep</span>(<span class="ident">config</span>.<span class="ident">interval</span>.<span class="number">0</span>) =&gt; <span class="kw">break</span>,
-                <span class="ident">event</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; <span class="kw">match</span> <span class="ident">event</span> {
-                    <span class="ident">UpdateRequest</span> =&gt; <span class="kw">break</span>,
-                    <span class="ident">Click</span>(<span class="ident">click</span>) =&gt; {
-                        <span class="kw">if</span> <span class="ident">click</span>.<span class="ident">button</span> <span class="op">==</span> <span class="ident">MouseButton::Left</span> {
+        <span class="kw">loop </span>{
+            <span class="macro">select! </span>{
+                <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt; <span class="kw">break</span>,
+                event = api.event() =&gt; <span class="kw">match </span>event {
+                    UpdateRequest =&gt; <span class="kw">break</span>,
+                    Click(click) =&gt; {
+                        <span class="kw">if </span>click.button == MouseButton::Left {
                             <span class="kw">break</span>;
                         }
                     }
@@ -282,23 +282,23 @@
     }
 }
 
-<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_updates_list</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">stdout</span> <span class="op">=</span> <span class="ident">Command::new</span>(<span class="string">&quot;sh&quot;</span>)
-        .<span class="ident">env</span>(<span class="string">&quot;LC_LANG&quot;</span>, <span class="string">&quot;C&quot;</span>)
-        .<span class="ident">args</span>([<span class="string">&quot;-c&quot;</span>, <span class="string">&quot;dnf check-update -q --skip-broken&quot;</span>])
-        .<span class="ident">output</span>()
-        .<span class="kw">await</span>
-        .<span class="ident">error</span>(<span class="string">&quot;Failed to run dnf check-update&quot;</span>)<span class="question-mark">?</span>
-        .<span class="ident">stdout</span>;
-    <span class="ident">String::from_utf8</span>(<span class="ident">stdout</span>).<span class="ident">error</span>(<span class="string">&quot;dnf produced non-UTF8 output&quot;</span>)
+<span class="kw">async fn </span>get_updates_list() -&gt; <span class="prelude-ty">Result</span>&lt;String&gt; {
+    <span class="kw">let </span>stdout = Command::new(<span class="string">&quot;sh&quot;</span>)
+        .env(<span class="string">&quot;LC_LANG&quot;</span>, <span class="string">&quot;C&quot;</span>)
+        .args([<span class="string">&quot;-c&quot;</span>, <span class="string">&quot;dnf check-update -q --skip-broken&quot;</span>])
+        .output()
+        .<span class="kw">await
+        </span>.error(<span class="string">&quot;Failed to run dnf check-update&quot;</span>)<span class="question-mark">?
+        </span>.stdout;
+    String::from_utf8(stdout).error(<span class="string">&quot;dnf produced non-UTF8 output&quot;</span>)
 }
 
-<span class="kw">fn</span> <span class="ident">get_update_count</span>(<span class="ident">updates</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="ident">usize</span> {
-    <span class="ident">updates</span>.<span class="ident">lines</span>().<span class="ident">filter</span>(<span class="op">|</span><span class="ident">line</span><span class="op">|</span> <span class="ident">line</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="number">1</span>).<span class="ident">count</span>()
+<span class="kw">fn </span>get_update_count(updates: <span class="kw-2">&amp;</span>str) -&gt; usize {
+    updates.lines().filter(|line| line.len() &gt; <span class="number">1</span>).count()
 }
 
-<span class="kw">fn</span> <span class="ident">has_matching_update</span>(<span class="ident">updates</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">regex</span>: <span class="kw-2">&amp;</span><span class="ident">Regex</span>) -&gt; <span class="ident">bool</span> {
-    <span class="ident">updates</span>.<span class="ident">lines</span>().<span class="ident">any</span>(<span class="op">|</span><span class="ident">line</span><span class="op">|</span> <span class="ident">regex</span>.<span class="ident">is_match</span>(<span class="ident">line</span>))
+<span class="kw">fn </span>has_matching_update(updates: <span class="kw-2">&amp;</span>str, regex: <span class="kw-2">&amp;</span>Regex) -&gt; bool {
+    updates.lines().any(|line| regex.is_match(line))
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/formatting.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>formatting.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../i3status_rs/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/formatting.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>formatting.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../i3status_rs/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -169,176 +169,176 @@
 <span id="169">169</span>
 <span id="170">170</span>
 <span id="171">171</span>
-</pre><pre class="rust"><code><span class="doccomment">//! # Formatting system</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Many blocks have a `format` configuration option, which allows to heavily customize the block&#39;s</span>
-<span class="doccomment">//! appearance. In short, each block with `format` option provides a set of values, which are</span>
-<span class="doccomment">//! displayed according to `format`. `format`&#39;s value is just a text with embeded variables.</span>
-<span class="doccomment">//! Simialrly to PHP and shell, variable name must start with a `$`:</span>
-<span class="doccomment">//! `this is a variable: -&gt; $var &lt;-`.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Also, format strings can embed icons. For example, `^icon_ping` in `&quot; ^icon_ping $ping &quot;` gets</span>
-<span class="doccomment">//! substituted with a &quot;ping&quot; icon from your icon set. For a complete list of icons, see</span>
-<span class="doccomment">//! [this](https://github.com/greshake/i3status-rust/blob/master/doc/themes.md#available-icon-overrides).</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Types</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! The allowed types of variables are:</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Type                      | Default formatter</span>
-<span class="doccomment">//! --------------------------|------------------</span>
-<span class="doccomment">//! Text                      | `str`</span>
-<span class="doccomment">//! Number                    | `eng`</span>
-<span class="doccomment">//! [Flag](#how-to-use-flags) | N/A</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Formatters</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! A formatter is something that converts a value into a text. Because there are many ways to do</span>
-<span class="doccomment">//! this, a number of formatters is available. Formatter can be specified using the syntax similar</span>
-<span class="doccomment">//! to method calls in many programming languages: `&lt;variable&gt;.&lt;formatter&gt;(&lt;args&gt;)`.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ## `str` - Format text</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Argument | Default value</span>
-<span class="doccomment">//! ---------|--------------</span>
-<span class="doccomment">//! Min width - if text is shorter it will be padded using spaces | `0`</span>
-<span class="doccomment">//! Max width - if text is longer it will be truncated | `inf`</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ## `rot-str` - Rotating text</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Argument | Default value</span>
-<span class="doccomment">//! ---------|--------------</span>
-<span class="doccomment">//! Width - if text is shorter it will be padded using spaces | `15`</span>
-<span class="doccomment">//! Interval - If text is longer than `width` it will be rotated every `interval` seconds | `1.0`</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ## `eng` - Format numbers using engineering notation</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Argument | Default value</span>
-<span class="doccomment">//! ---------|--------------</span>
-<span class="doccomment">//! Width - the resulting text will be at least `width` characters long | `2`</span>
-<span class="doccomment">//! Unit - some values have a [unit](unit::Unit), and it is possible to convert them by setting this option. Prepend this with a space to split unit from number/prefix. Prepend this with a `_` to hide. | `auto`</span>
-<span class="doccomment">//! Prefix - specifiy this argument if you want to set the minimal [SI prefix](prefix::Prefix). Prepend this with a space to split prefix from number. Prepend this with a `_` to hide. Prepend this with a `!` to force the prefix. | `auto`</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ## `bar` - Display numbers as progress bars</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Argument | Default value</span>
-<span class="doccomment">//! ---------|--------------</span>
-<span class="doccomment">//! Width - the width of the bar (in characters) | `5`</span>
-<span class="doccomment">//! Max value - which value is treated as &quot;full&quot;. For example, for battery level `100` is full. | `100`</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Handling missing placeholders and incorrect types</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Some blocks allow missing placeholders, for example [bluetooth](crate::blocks::bluetooth)&#39;s</span>
-<span class="doccomment">//! &quot;percentage&quot; may be absent if the device is not supported. To handle such cases it is possible</span>
-<span class="doccomment">//! to queue multiple formats together by using `|` symbol: `&lt;something that can fail&gt;|&lt;otherwise</span>
-<span class="doccomment">//! try this&gt;|&lt;or this&gt;`.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! In addition, formats can be recursive. To set a format inside of another format, place it</span>
-<span class="doccomment">//! inside of `{}`. For example, in `Percentage: {$percentage|N/A}` the text &quot;Percentage: &quot; will be</span>
-<span class="doccomment">//! always displayed, followed by the actual percentage or &quot;N/A&quot; in case percentage is not</span>
-<span class="doccomment">//! available. This example does exactly the same thing as `Percentage: $percentage|Percentage: N/A`</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # How to use flags</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Some blocks provide flags, which can be used to change the format based on some critera. For</span>
-<span class="doccomment">//! example, [taskwarrior](crate::blocks::taskwarrior) defines `done` if the count is zero. In</span>
-<span class="doccomment">//! general, flags are used in this way:</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```text</span>
-<span class="doccomment">//! $a{a is set}|$b$c{b and c are set}|${b|c}{b or c is set}|neither flag is set</span>
-<span class="doccomment">//! ```</span>
+</pre><pre class="rust"><code><span class="doccomment">//! # Formatting system
+//!
+//! Many blocks have a `format` configuration option, which allows to heavily customize the block&#39;s
+//! appearance. In short, each block with `format` option provides a set of values, which are
+//! displayed according to `format`. `format`&#39;s value is just a text with embeded variables.
+//! Simialrly to PHP and shell, variable name must start with a `$`:
+//! `this is a variable: -&gt; $var &lt;-`.
+//!
+//! Also, format strings can embed icons. For example, `^icon_ping` in `&quot; ^icon_ping $ping &quot;` gets
+//! substituted with a &quot;ping&quot; icon from your icon set. For a complete list of icons, see
+//! [this](https://github.com/greshake/i3status-rust/blob/master/doc/themes.md#available-icon-overrides).
+//!
+//! # Types
+//!
+//! The allowed types of variables are:
+//!
+//! Type                      | Default formatter
+//! --------------------------|------------------
+//! Text                      | `str`
+//! Number                    | `eng`
+//! [Flag](#how-to-use-flags) | N/A
+//!
+//! # Formatters
+//!
+//! A formatter is something that converts a value into a text. Because there are many ways to do
+//! this, a number of formatters is available. Formatter can be specified using the syntax similar
+//! to method calls in many programming languages: `&lt;variable&gt;.&lt;formatter&gt;(&lt;args&gt;)`.
+//!
+//! ## `str` - Format text
+//!
+//! Argument | Default value
+//! ---------|--------------
+//! Min width - if text is shorter it will be padded using spaces | `0`
+//! Max width - if text is longer it will be truncated | `inf`
+//!
+//! ## `rot-str` - Rotating text
+//!
+//! Argument | Default value
+//! ---------|--------------
+//! Width - if text is shorter it will be padded using spaces | `15`
+//! Interval - If text is longer than `width` it will be rotated every `interval` seconds | `1.0`
+//!
+//! ## `eng` - Format numbers using engineering notation
+//!
+//! Argument | Default value
+//! ---------|--------------
+//! Width - the resulting text will be at least `width` characters long | `2`
+//! Unit - some values have a [unit](unit::Unit), and it is possible to convert them by setting this option. Prepend this with a space to split unit from number/prefix. Prepend this with a `_` to hide. | `auto`
+//! Prefix - specifiy this argument if you want to set the minimal [SI prefix](prefix::Prefix). Prepend this with a space to split prefix from number. Prepend this with a `_` to hide. Prepend this with a `!` to force the prefix. | `auto`
+//!
+//! ## `bar` - Display numbers as progress bars
+//!
+//! Argument | Default value
+//! ---------|--------------
+//! Width - the width of the bar (in characters) | `5`
+//! Max value - which value is treated as &quot;full&quot;. For example, for battery level `100` is full. | `100`
+//!
+//! # Handling missing placeholders and incorrect types
+//!
+//! Some blocks allow missing placeholders, for example [bluetooth](crate::blocks::bluetooth)&#39;s
+//! &quot;percentage&quot; may be absent if the device is not supported. To handle such cases it is possible
+//! to queue multiple formats together by using `|` symbol: `&lt;something that can fail&gt;|&lt;otherwise
+//! try this&gt;|&lt;or this&gt;`.
+//!
+//! In addition, formats can be recursive. To set a format inside of another format, place it
+//! inside of `{}`. For example, in `Percentage: {$percentage|N/A}` the text &quot;Percentage: &quot; will be
+//! always displayed, followed by the actual percentage or &quot;N/A&quot; in case percentage is not
+//! available. This example does exactly the same thing as `Percentage: $percentage|Percentage: N/A`
+//!
+//! # How to use flags
+//!
+//! Some blocks provide flags, which can be used to change the format based on some critera. For
+//! example, [taskwarrior](crate::blocks::taskwarrior) defines `done` if the count is zero. In
+//! general, flags are used in this way:
+//!
+//! ```text
+//! $a{a is set}|$b$c{b and c are set}|${b|c}{b or c is set}|neither flag is set
+//! ```
 
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">config</span>;
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">formatter</span>;
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">prefix</span>;
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">scheduling</span>;
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">template</span>;
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">unit</span>;
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">value</span>;
+</span><span class="kw">pub mod </span>config;
+<span class="kw">pub mod </span>formatter;
+<span class="kw">pub mod </span>prefix;
+<span class="kw">pub mod </span>scheduling;
+<span class="kw">pub mod </span>template;
+<span class="kw">pub mod </span>unit;
+<span class="kw">pub mod </span>value;
 
-<span class="kw">use</span> <span class="ident">std::borrow::Cow</span>;
-<span class="kw">use</span> <span class="ident">std::collections::HashMap</span>;
-<span class="kw">use</span> <span class="ident">std::sync::Arc</span>;
+<span class="kw">use </span>std::borrow::Cow;
+<span class="kw">use </span>std::collections::HashMap;
+<span class="kw">use </span>std::sync::Arc;
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::config::SharedConfig</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errors</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">template::FormatTemplate</span>;
-<span class="kw">use</span> <span class="ident">value::Value</span>;
+<span class="kw">use </span><span class="kw">crate</span>::config::SharedConfig;
+<span class="kw">use </span><span class="kw">crate</span>::errors::<span class="kw-2">*</span>;
+<span class="kw">use </span>template::FormatTemplate;
+<span class="kw">use </span>value::Value;
 
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Values</span> <span class="op">=</span> <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">Cow</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span>, <span class="ident">str</span><span class="op">&gt;</span>, <span class="ident">Value</span><span class="op">&gt;</span>;
+<span class="kw">pub type </span>Values = HashMap&lt;Cow&lt;<span class="lifetime">&#39;static</span>, str&gt;, Value&gt;;
 
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Format</span> <span class="op">=</span> <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">FormatInner</span><span class="op">&gt;</span>;
+<span class="kw">pub type </span>Format = Arc&lt;FormatInner&gt;;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FormatInner</span> {
-    <span class="ident">full</span>: <span class="ident">FormatTemplate</span>,
-    <span class="ident">short</span>: <span class="ident">FormatTemplate</span>,
-    <span class="ident">intervals</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>,
+<span class="attribute">#[derive(Debug)]
+</span><span class="kw">pub struct </span>FormatInner {
+    full: FormatTemplate,
+    short: FormatTemplate,
+    intervals: Vec&lt;u64&gt;,
 }
 
-<span class="kw">impl</span> <span class="ident">FormatInner</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">contains_key</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="ident">bool</span> {
-        <span class="self">self</span>.<span class="ident">full</span>.<span class="ident">contains_key</span>(<span class="ident">key</span>) <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">short</span>.<span class="ident">contains_key</span>(<span class="ident">key</span>)
+<span class="kw">impl </span>FormatInner {
+    <span class="kw">pub fn </span>contains_key(<span class="kw-2">&amp;</span><span class="self">self</span>, key: <span class="kw-2">&amp;</span>str) -&gt; bool {
+        <span class="self">self</span>.full.contains_key(key) || <span class="self">self</span>.short.contains_key(key)
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">intervals</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">intervals</span>.<span class="ident">clone</span>()
+    <span class="kw">pub fn </span>intervals(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Vec&lt;u64&gt; {
+        <span class="self">self</span>.intervals.clone()
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">render</span>(
+    <span class="kw">pub fn </span>render(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">values</span>: <span class="kw-2">&amp;</span><span class="ident">Values</span>,
-        <span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">SharedConfig</span>,
-    ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Fragment</span><span class="op">&gt;</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Fragment</span><span class="op">&gt;</span>)<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">full</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">full</span>
-            .<span class="ident">render</span>(<span class="ident">values</span>, <span class="ident">config</span>)
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to render full text&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">short</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">short</span>
-            .<span class="ident">render</span>(<span class="ident">values</span>, <span class="ident">config</span>)
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to render short text&quot;</span>)<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>((<span class="ident">full</span>, <span class="ident">short</span>))
+        values: <span class="kw-2">&amp;</span>Values,
+        config: <span class="kw-2">&amp;</span>SharedConfig,
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;(Vec&lt;Fragment&gt;, Vec&lt;Fragment&gt;)&gt; {
+        <span class="kw">let </span>full = <span class="self">self
+            </span>.full
+            .render(values, config)
+            .error(<span class="string">&quot;Failed to render full text&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>short = <span class="self">self
+            </span>.short
+            .render(values, config)
+            .error(<span class="string">&quot;Failed to render short text&quot;</span>)<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>((full, short))
     }
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Default</span>, <span class="ident">Clone</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Fragment</span> {
-    <span class="kw">pub</span> <span class="ident">text</span>: <span class="ident">String</span>,
-    <span class="kw">pub</span> <span class="ident">metadata</span>: <span class="ident">Metadata</span>,
+<span class="attribute">#[derive(Debug, Default, Clone)]
+</span><span class="kw">pub struct </span>Fragment {
+    <span class="kw">pub </span>text: String,
+    <span class="kw">pub </span>metadata: Metadata,
 }
 
-<span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Fragment</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">text</span>: <span class="ident">String</span>) -&gt; <span class="self">Self</span> {
-        <span class="self">Self</span> {
-            <span class="ident">text</span>,
-            <span class="ident">metadata</span>: <span class="ident">Default::default</span>(),
+<span class="kw">impl </span>From&lt;String&gt; <span class="kw">for </span>Fragment {
+    <span class="kw">fn </span>from(text: String) -&gt; <span class="self">Self </span>{
+        <span class="self">Self </span>{
+            text,
+            metadata: Default::default(),
         }
     }
 }
 
-<span class="kw">impl</span> <span class="ident">Fragment</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">formated_text</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">String</span> {
-        <span class="kw">match</span> (<span class="self">self</span>.<span class="ident">metadata</span>.<span class="ident">italic</span>, <span class="self">self</span>.<span class="ident">metadata</span>.<span class="ident">underline</span>) {
-            (<span class="bool-val">true</span>, <span class="bool-val">true</span>) =&gt; <span class="macro">format!</span>(<span class="string">&quot;&lt;i&gt;&lt;u&gt;{}&lt;/u&gt;&lt;/i&gt;&quot;</span>, <span class="self">self</span>.<span class="ident">text</span>),
-            (<span class="bool-val">false</span>, <span class="bool-val">true</span>) =&gt; <span class="macro">format!</span>(<span class="string">&quot;&lt;u&gt;{}&lt;/u&gt;&quot;</span>, <span class="self">self</span>.<span class="ident">text</span>),
-            (<span class="bool-val">true</span>, <span class="bool-val">false</span>) =&gt; <span class="macro">format!</span>(<span class="string">&quot;&lt;i&gt;{}&lt;/i&gt;&quot;</span>, <span class="self">self</span>.<span class="ident">text</span>),
-            (<span class="bool-val">false</span>, <span class="bool-val">false</span>) =&gt; <span class="self">self</span>.<span class="ident">text</span>.<span class="ident">clone</span>(),
+<span class="kw">impl </span>Fragment {
+    <span class="kw">pub fn </span>formated_text(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String {
+        <span class="kw">match </span>(<span class="self">self</span>.metadata.italic, <span class="self">self</span>.metadata.underline) {
+            (<span class="bool-val">true</span>, <span class="bool-val">true</span>) =&gt; <span class="macro">format!</span>(<span class="string">&quot;&lt;i&gt;&lt;u&gt;{}&lt;/u&gt;&lt;/i&gt;&quot;</span>, <span class="self">self</span>.text),
+            (<span class="bool-val">false</span>, <span class="bool-val">true</span>) =&gt; <span class="macro">format!</span>(<span class="string">&quot;&lt;u&gt;{}&lt;/u&gt;&quot;</span>, <span class="self">self</span>.text),
+            (<span class="bool-val">true</span>, <span class="bool-val">false</span>) =&gt; <span class="macro">format!</span>(<span class="string">&quot;&lt;i&gt;{}&lt;/i&gt;&quot;</span>, <span class="self">self</span>.text),
+            (<span class="bool-val">false</span>, <span class="bool-val">false</span>) =&gt; <span class="self">self</span>.text.clone(),
         }
     }
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Default</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Metadata</span> {
-    <span class="kw">pub</span> <span class="ident">instance</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>,
-    <span class="kw">pub</span> <span class="ident">underline</span>: <span class="ident">bool</span>,
-    <span class="kw">pub</span> <span class="ident">italic</span>: <span class="ident">bool</span>,
+<span class="attribute">#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+</span><span class="kw">pub struct </span>Metadata {
+    <span class="kw">pub </span>instance: <span class="prelude-ty">Option</span>&lt;usize&gt;,
+    <span class="kw">pub </span>underline: bool,
+    <span class="kw">pub </span>italic: bool,
 }
 
-<span class="kw">impl</span> <span class="ident">Metadata</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_default</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
-        <span class="kw-2">*</span><span class="self">self</span> <span class="op">==</span> <span class="ident">Default::default</span>()
+<span class="kw">impl </span>Metadata {
+    <span class="kw">pub fn </span>is_default(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
+        <span class="kw-2">*</span><span class="self">self </span>== Default::default()
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

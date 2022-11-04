@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/load.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>load.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/load.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>load.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -96,103 +96,103 @@
 <span id="96">96</span>
 <span id="97">97</span>
 <span id="98">98</span>
-</pre><pre class="rust"><code><span class="doccomment">//! System load average</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Configuration</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Key        | Values                                                                                | Default</span>
-<span class="doccomment">//! -----------|---------------------------------------------------------------------------------------|--------</span>
-<span class="doccomment">//! `format`   | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $1m.eng(3) &quot;`</span>
-<span class="doccomment">//! `interval` | Update interval in seconds                                                            | `3`</span>
-<span class="doccomment">//! `info`     | Minimum load, where state is set to info                                              | `0.3`</span>
-<span class="doccomment">//! `warning`  | Minimum load, where state is set to warning                                           | `0.6`</span>
-<span class="doccomment">//! `critical` | Minimum load, where state is set to critical                                          | `0.9`</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Placeholder  | Value                  | Type   | Unit</span>
-<span class="doccomment">//! -------------|------------------------|--------|-----</span>
-<span class="doccomment">//! `icon`       | A static icon          | Icon   | -</span>
-<span class="doccomment">//! `1m`         | 1 minute load average  | Number | -</span>
-<span class="doccomment">//! `5m`         | 5 minute load average  | Number | -</span>
-<span class="doccomment">//! `15m`        | 15 minute load average | Number | -</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Example</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;load&quot;</span>
-<span class="doccomment">//! format = &quot; $icon 1min avg: $1m &quot;</span>
-<span class="doccomment">//! interval = 1</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Icons Used</span>
-<span class="doccomment">//! - `cogs`</span>
+</pre><pre class="rust"><code><span class="doccomment">//! System load average
+//!
+//! # Configuration
+//!
+//! Key        | Values                                                                                | Default
+//! -----------|---------------------------------------------------------------------------------------|--------
+//! `format`   | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $1m.eng(3) &quot;`
+//! `interval` | Update interval in seconds                                                            | `3`
+//! `info`     | Minimum load, where state is set to info                                              | `0.3`
+//! `warning`  | Minimum load, where state is set to warning                                           | `0.6`
+//! `critical` | Minimum load, where state is set to critical                                          | `0.9`
+//!
+//! Placeholder  | Value                  | Type   | Unit
+//! -------------|------------------------|--------|-----
+//! `icon`       | A static icon          | Icon   | -
+//! `1m`         | 1 minute load average  | Number | -
+//! `5m`         | 5 minute load average  | Number | -
+//! `15m`        | 15 minute load average | Number | -
+//!
+//! # Example
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;load&quot;
+//! format = &quot; $icon 1min avg: $1m &quot;
+//! interval = 1
+//! ```
+//!
+//! # Icons Used
+//! - `cogs`
 
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::util</span>;
+</span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span><span class="kw">crate</span>::util;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
-<span class="kw">struct</span> <span class="ident">LoadConfig</span> {
-    <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">3</span>.<span class="ident">into</span>())]</span>
-    <span class="ident">interval</span>: <span class="ident">Seconds</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">0.3</span>)]</span>
-    <span class="ident">info</span>: <span class="ident">f64</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">0.6</span>)]</span>
-    <span class="ident">warning</span>: <span class="ident">f64</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">0.9</span>)]</span>
-    <span class="ident">critical</span>: <span class="ident">f64</span>,
+<span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
+#[serde(deny_unknown_fields, default)]
+</span><span class="kw">struct </span>LoadConfig {
+    format: FormatConfig,
+    <span class="attribute">#[default(<span class="number">3</span>.into())]
+    </span>interval: Seconds,
+    <span class="attribute">#[default(<span class="number">0.3</span>)]
+    </span>info: f64,
+    <span class="attribute">#[default(<span class="number">0.6</span>)]
+    </span>warning: f64,
+    <span class="attribute">#[default(<span class="number">0.9</span>)]
+    </span>critical: f64,
 }
 
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">LoadConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">Widget::new</span>().<span class="ident">with_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon $1m.eng(3) &quot;</span>)<span class="question-mark">?</span>);
+<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span>config = LoadConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon $1m.eng(3) &quot;</span>)<span class="question-mark">?</span>);
 
-    <span class="comment">// borrowed from https://docs.rs/cpuinfo/0.1.1/src/cpuinfo/count/logical.rs.html#4-6</span>
-    <span class="kw">let</span> <span class="ident">logical_cores</span> <span class="op">=</span> <span class="ident">util::read_file</span>(<span class="string">&quot;/proc/cpuinfo&quot;</span>)
-        .<span class="kw">await</span>
-        .<span class="ident">error</span>(<span class="string">&quot;Your system doesn&#39;t support /proc/cpuinfo&quot;</span>)<span class="question-mark">?</span>
-        .<span class="ident">lines</span>()
-        .<span class="ident">filter</span>(<span class="op">|</span><span class="ident">l</span><span class="op">|</span> <span class="ident">l</span>.<span class="ident">starts_with</span>(<span class="string">&quot;processor&quot;</span>))
-        .<span class="ident">count</span>();
+    <span class="comment">// borrowed from https://docs.rs/cpuinfo/0.1.1/src/cpuinfo/count/logical.rs.html#4-6
+    </span><span class="kw">let </span>logical_cores = util::read_file(<span class="string">&quot;/proc/cpuinfo&quot;</span>)
+        .<span class="kw">await
+        </span>.error(<span class="string">&quot;Your system doesn&#39;t support /proc/cpuinfo&quot;</span>)<span class="question-mark">?
+        </span>.lines()
+        .filter(|l| l.starts_with(<span class="string">&quot;processor&quot;</span>))
+        .count();
 
-    <span class="kw">loop</span> {
-        <span class="kw">let</span> <span class="ident">loadavg</span> <span class="op">=</span> <span class="ident">util::read_file</span>(<span class="string">&quot;/proc/loadavg&quot;</span>)
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Your system does not support reading the load average from /proc/loadavg&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">values</span> <span class="op">=</span> <span class="ident">loadavg</span>.<span class="ident">split</span>(<span class="string">&#39; &#39;</span>);
-        <span class="kw">let</span> <span class="ident">m1</span>: <span class="ident">f64</span> <span class="op">=</span> <span class="ident">values</span>
-            .<span class="ident">next</span>()
-            .<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span>.<span class="ident">parse</span>().<span class="ident">ok</span>())
-            .<span class="ident">error</span>(<span class="string">&quot;bad /proc/loadavg file&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">m5</span>: <span class="ident">f64</span> <span class="op">=</span> <span class="ident">values</span>
-            .<span class="ident">next</span>()
-            .<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span>.<span class="ident">parse</span>().<span class="ident">ok</span>())
-            .<span class="ident">error</span>(<span class="string">&quot;bad /proc/loadavg file&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">m15</span>: <span class="ident">f64</span> <span class="op">=</span> <span class="ident">values</span>
-            .<span class="ident">next</span>()
-            .<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span>.<span class="ident">parse</span>().<span class="ident">ok</span>())
-            .<span class="ident">error</span>(<span class="string">&quot;bad /proc/loadavg file&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">loop </span>{
+        <span class="kw">let </span>loadavg = util::read_file(<span class="string">&quot;/proc/loadavg&quot;</span>)
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Your system does not support reading the load average from /proc/loadavg&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span><span class="kw-2">mut </span>values = loadavg.split(<span class="string">&#39; &#39;</span>);
+        <span class="kw">let </span>m1: f64 = values
+            .next()
+            .and_then(|x| x.parse().ok())
+            .error(<span class="string">&quot;bad /proc/loadavg file&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>m5: f64 = values
+            .next()
+            .and_then(|x| x.parse().ok())
+            .error(<span class="string">&quot;bad /proc/loadavg file&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>m15: f64 = values
+            .next()
+            .and_then(|x| x.parse().ok())
+            .error(<span class="string">&quot;bad /proc/loadavg file&quot;</span>)<span class="question-mark">?</span>;
 
-        <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">m1</span> <span class="op">/</span> <span class="ident">logical_cores</span> <span class="kw">as</span> <span class="ident">f64</span> {
-            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">&gt;</span> <span class="ident">config</span>.<span class="ident">critical</span> =&gt; <span class="ident">State::Critical</span>,
-            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">&gt;</span> <span class="ident">config</span>.<span class="ident">warning</span> =&gt; <span class="ident">State::Warning</span>,
-            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">&gt;</span> <span class="ident">config</span>.<span class="ident">info</span> =&gt; <span class="ident">State::Info</span>,
-            <span class="kw">_</span> =&gt; <span class="ident">State::Idle</span>,
+        widget.state = <span class="kw">match </span>m1 / logical_cores <span class="kw">as </span>f64 {
+            x <span class="kw">if </span>x &gt; config.critical =&gt; State::Critical,
+            x <span class="kw">if </span>x &gt; config.warning =&gt; State::Warning,
+            x <span class="kw">if </span>x &gt; config.info =&gt; State::Info,
+            <span class="kw">_ </span>=&gt; State::Idle,
         };
-        <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span> {
-            <span class="string">&quot;icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;cogs&quot;</span>)<span class="question-mark">?</span>),
-            <span class="string">&quot;1m&quot;</span> =&gt; <span class="ident">Value::number</span>(<span class="ident">m1</span>),
-            <span class="string">&quot;5m&quot;</span> =&gt; <span class="ident">Value::number</span>(<span class="ident">m5</span>),
-            <span class="string">&quot;15m&quot;</span> =&gt; <span class="ident">Value::number</span>(<span class="ident">m15</span>),
+        widget.set_values(<span class="macro">map! </span>{
+            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;cogs&quot;</span>)<span class="question-mark">?</span>),
+            <span class="string">&quot;1m&quot; </span>=&gt; Value::number(m1),
+            <span class="string">&quot;5m&quot; </span>=&gt; Value::number(m5),
+            <span class="string">&quot;15m&quot; </span>=&gt; Value::number(m15),
         });
-        <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="macro">select!</span> {
-            <span class="kw">_</span> <span class="op">=</span> <span class="ident">sleep</span>(<span class="ident">config</span>.<span class="ident">interval</span>.<span class="number">0</span>) =&gt; (),
-            <span class="kw">_</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">wait_for_update_request</span>() =&gt; (),
+        <span class="macro">select! </span>{
+            <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt; (),
+            <span class="kw">_ </span>= api.wait_for_update_request() =&gt; (),
         }
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

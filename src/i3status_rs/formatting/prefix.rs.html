@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/formatting/prefix.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>prefix.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/formatting/prefix.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>prefix.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -150,42 +150,42 @@
 <span id="150">150</span>
 <span id="151">151</span>
 <span id="152">152</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errors</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">std::fmt</span>;
-<span class="kw">use</span> <span class="ident">std::str::FromStr</span>;
+</pre><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::errors::<span class="kw-2">*</span>;
+<span class="kw">use </span>std::fmt;
+<span class="kw">use </span>std::str::FromStr;
 
-<span class="doccomment">/// SI prefix</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">PartialOrd</span>, <span class="ident">Ord</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Prefix</span> {
-    <span class="doccomment">/// `n`</span>
-    <span class="ident">Nano</span>,
-    <span class="doccomment">/// `u`</span>
-    <span class="ident">Micro</span>,
-    <span class="doccomment">/// `m`</span>
-    <span class="ident">Milli</span>,
-    <span class="doccomment">/// `1`</span>
-    <span class="ident">One</span>,
-    <span class="doccomment">/// `1i`</span>
-    <span class="ident">OneButBinary</span>,
-    <span class="doccomment">/// `K`</span>
-    <span class="ident">Kilo</span>,
-    <span class="doccomment">/// `Ki`</span>
-    <span class="ident">Kibi</span>,
-    <span class="doccomment">/// `M`</span>
-    <span class="ident">Mega</span>,
-    <span class="doccomment">/// `Mi`</span>
-    <span class="ident">Mebi</span>,
-    <span class="doccomment">/// `G`</span>
-    <span class="ident">Giga</span>,
-    <span class="doccomment">/// `Gi`</span>
-    <span class="ident">Gibi</span>,
-    <span class="doccomment">/// `T`</span>
-    <span class="ident">Tera</span>,
-    <span class="doccomment">/// `Ti`</span>
-    <span class="ident">Tebi</span>,
+<span class="doccomment">/// SI prefix
+</span><span class="attribute">#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+</span><span class="kw">pub enum </span>Prefix {
+    <span class="doccomment">/// `n`
+    </span>Nano,
+    <span class="doccomment">/// `u`
+    </span>Micro,
+    <span class="doccomment">/// `m`
+    </span>Milli,
+    <span class="doccomment">/// `1`
+    </span>One,
+    <span class="doccomment">/// `1i`
+    </span>OneButBinary,
+    <span class="doccomment">/// `K`
+    </span>Kilo,
+    <span class="doccomment">/// `Ki`
+    </span>Kibi,
+    <span class="doccomment">/// `M`
+    </span>Mega,
+    <span class="doccomment">/// `Mi`
+    </span>Mebi,
+    <span class="doccomment">/// `G`
+    </span>Giga,
+    <span class="doccomment">/// `Gi`
+    </span>Gibi,
+    <span class="doccomment">/// `T`
+    </span>Tera,
+    <span class="doccomment">/// `Ti`
+    </span>Tebi,
 }
 
-<span class="kw">const</span> <span class="ident">MUL</span>: [<span class="ident">f64</span>; <span class="number">13</span>] <span class="op">=</span> [
+<span class="kw">const </span>MUL: [f64; <span class="number">13</span>] = [
     <span class="number">1e-9</span>,
     <span class="number">1e-6</span>,
     <span class="number">1e-3</span>,
@@ -194,113 +194,113 @@
     <span class="number">1e3</span>,
     <span class="number">1024.0</span>,
     <span class="number">1e6</span>,
-    <span class="number">1024.0</span> <span class="op">*</span> <span class="number">1024.0</span>,
+    <span class="number">1024.0 </span>* <span class="number">1024.0</span>,
     <span class="number">1e9</span>,
-    <span class="number">1024.0</span> <span class="op">*</span> <span class="number">1024.0</span> <span class="op">*</span> <span class="number">1024.0</span>,
+    <span class="number">1024.0 </span>* <span class="number">1024.0 </span>* <span class="number">1024.0</span>,
     <span class="number">1e12</span>,
-    <span class="number">1024.0</span> <span class="op">*</span> <span class="number">1024.0</span> <span class="op">*</span> <span class="number">1024.0</span> <span class="op">*</span> <span class="number">1024.0</span>,
+    <span class="number">1024.0 </span>* <span class="number">1024.0 </span>* <span class="number">1024.0 </span>* <span class="number">1024.0</span>,
 ];
 
-<span class="kw">impl</span> <span class="ident">Prefix</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">min_available</span>() -&gt; <span class="self">Self</span> {
-        <span class="ident"><span class="self">Self</span>::Nano</span>
+<span class="kw">impl </span>Prefix {
+    <span class="kw">pub fn </span>min_available() -&gt; <span class="self">Self </span>{
+        <span class="self">Self</span>::Nano
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">max_available</span>() -&gt; <span class="self">Self</span> {
-        <span class="ident"><span class="self">Self</span>::Tera</span>
+    <span class="kw">pub fn </span>max_available() -&gt; <span class="self">Self </span>{
+        <span class="self">Self</span>::Tera
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">max</span>(<span class="self">self</span>, <span class="ident">other</span>: <span class="self">Self</span>) -&gt; <span class="self">Self</span> {
-        <span class="kw">if</span> <span class="ident">other</span> <span class="op">&gt;</span> <span class="self">self</span> {
-            <span class="ident">other</span>
-        } <span class="kw">else</span> {
-            <span class="self">self</span>
-        }
+    <span class="kw">pub fn </span>max(<span class="self">self</span>, other: <span class="self">Self</span>) -&gt; <span class="self">Self </span>{
+        <span class="kw">if </span>other &gt; <span class="self">self </span>{
+            other
+        } <span class="kw">else </span>{
+            <span class="self">self
+        </span>}
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">apply</span>(<span class="self">self</span>, <span class="ident">value</span>: <span class="ident">f64</span>) -&gt; <span class="ident">f64</span> {
-        <span class="ident">value</span> <span class="op">/</span> <span class="ident">MUL</span>[<span class="self">self</span> <span class="kw">as</span> <span class="ident">usize</span>]
+    <span class="kw">pub fn </span>apply(<span class="self">self</span>, value: f64) -&gt; f64 {
+        value / MUL[<span class="self">self </span><span class="kw">as </span>usize]
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">eng</span>(<span class="ident">number</span>: <span class="ident">f64</span>) -&gt; <span class="self">Self</span> {
-        <span class="kw">if</span> <span class="ident">number</span> <span class="op">==</span> <span class="number">0.0</span> {
-            <span class="ident"><span class="self">Self</span>::One</span>
-        } <span class="kw">else</span> {
-            <span class="kw">match</span> <span class="ident">number</span>.<span class="ident">abs</span>().<span class="ident">log10</span>().<span class="ident">div_euclid</span>(<span class="number">3.</span>) <span class="kw">as</span> <span class="ident">i32</span> {
-                <span class="ident">i32::MIN</span>..<span class="op">=</span><span class="op">-</span><span class="number">3</span> =&gt; <span class="ident">Prefix::Nano</span>,
-                <span class="op">-</span><span class="number">2</span> =&gt; <span class="ident">Prefix::Micro</span>,
-                <span class="op">-</span><span class="number">1</span> =&gt; <span class="ident">Prefix::Milli</span>,
-                <span class="number">0</span> =&gt; <span class="ident">Prefix::One</span>,
-                <span class="number">1</span> =&gt; <span class="ident">Prefix::Kilo</span>,
-                <span class="number">2</span> =&gt; <span class="ident">Prefix::Mega</span>,
-                <span class="number">3</span> =&gt; <span class="ident">Prefix::Giga</span>,
-                <span class="number">4</span>..<span class="op">=</span><span class="ident">i32::MAX</span> =&gt; <span class="ident">Prefix::Tera</span>,
+    <span class="kw">pub fn </span>eng(number: f64) -&gt; <span class="self">Self </span>{
+        <span class="kw">if </span>number == <span class="number">0.0 </span>{
+            <span class="self">Self</span>::One
+        } <span class="kw">else </span>{
+            <span class="kw">match </span>number.abs().log10().div_euclid(<span class="number">3.</span>) <span class="kw">as </span>i32 {
+                i32::MIN..=-<span class="number">3 </span>=&gt; Prefix::Nano,
+                -<span class="number">2 </span>=&gt; Prefix::Micro,
+                -<span class="number">1 </span>=&gt; Prefix::Milli,
+                <span class="number">0 </span>=&gt; Prefix::One,
+                <span class="number">1 </span>=&gt; Prefix::Kilo,
+                <span class="number">2 </span>=&gt; Prefix::Mega,
+                <span class="number">3 </span>=&gt; Prefix::Giga,
+                <span class="number">4</span>..=i32::MAX =&gt; Prefix::Tera,
             }
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">eng_binary</span>(<span class="ident">number</span>: <span class="ident">f64</span>) -&gt; <span class="self">Self</span> {
-        <span class="kw">if</span> <span class="ident">number</span> <span class="op">==</span> <span class="number">0.0</span> {
-            <span class="ident"><span class="self">Self</span>::One</span>
-        } <span class="kw">else</span> {
-            <span class="kw">match</span> <span class="ident">number</span>.<span class="ident">abs</span>().<span class="ident">log2</span>().<span class="ident">div_euclid</span>(<span class="number">10.</span>) <span class="kw">as</span> <span class="ident">i32</span> {
-                <span class="ident">i32::MIN</span>..<span class="op">=</span><span class="number">0</span> =&gt; <span class="ident">Prefix::OneButBinary</span>,
-                <span class="number">1</span> =&gt; <span class="ident">Prefix::Kibi</span>,
-                <span class="number">2</span> =&gt; <span class="ident">Prefix::Mebi</span>,
-                <span class="number">3</span> =&gt; <span class="ident">Prefix::Gibi</span>,
-                <span class="number">4</span>..<span class="op">=</span><span class="ident">i32::MAX</span> =&gt; <span class="ident">Prefix::Tebi</span>,
+    <span class="kw">pub fn </span>eng_binary(number: f64) -&gt; <span class="self">Self </span>{
+        <span class="kw">if </span>number == <span class="number">0.0 </span>{
+            <span class="self">Self</span>::One
+        } <span class="kw">else </span>{
+            <span class="kw">match </span>number.abs().log2().div_euclid(<span class="number">10.</span>) <span class="kw">as </span>i32 {
+                i32::MIN..=<span class="number">0 </span>=&gt; Prefix::OneButBinary,
+                <span class="number">1 </span>=&gt; Prefix::Kibi,
+                <span class="number">2 </span>=&gt; Prefix::Mebi,
+                <span class="number">3 </span>=&gt; Prefix::Gibi,
+                <span class="number">4</span>..=i32::MAX =&gt; Prefix::Tebi,
             }
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">is_binary</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
+    <span class="kw">pub fn </span>is_binary(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
         <span class="macro">matches!</span>(
             <span class="self">self</span>,
-            <span class="ident"><span class="self">Self</span>::OneButBinary</span> <span class="op">|</span> <span class="ident"><span class="self">Self</span>::Kibi</span> <span class="op">|</span> <span class="ident"><span class="self">Self</span>::Mebi</span> <span class="op">|</span> <span class="ident"><span class="self">Self</span>::Gibi</span> <span class="op">|</span> <span class="ident"><span class="self">Self</span>::Tebi</span>
+            <span class="self">Self</span>::OneButBinary | <span class="self">Self</span>::Kibi | <span class="self">Self</span>::Mebi | <span class="self">Self</span>::Gibi | <span class="self">Self</span>::Tebi
         )
     }
 }
 
-<span class="kw">impl</span> <span class="ident">fmt::Display</span> <span class="kw">for</span> <span class="ident">Prefix</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="ident">fmt::Formatter</span>) -&gt; <span class="ident">fmt::Result</span> {
-        <span class="ident">f</span>.<span class="ident">write_str</span>(<span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident"><span class="self">Self</span>::Nano</span> =&gt; <span class="string">&quot;n&quot;</span>,
-            <span class="ident"><span class="self">Self</span>::Micro</span> =&gt; <span class="string">&quot;u&quot;</span>,
-            <span class="ident"><span class="self">Self</span>::Milli</span> =&gt; <span class="string">&quot;m&quot;</span>,
-            <span class="ident"><span class="self">Self</span>::One</span> <span class="op">|</span> <span class="ident"><span class="self">Self</span>::OneButBinary</span> =&gt; <span class="string">&quot;&quot;</span>,
-            <span class="ident"><span class="self">Self</span>::Kilo</span> =&gt; <span class="string">&quot;K&quot;</span>,
-            <span class="ident"><span class="self">Self</span>::Kibi</span> =&gt; <span class="string">&quot;Ki&quot;</span>,
-            <span class="ident"><span class="self">Self</span>::Mega</span> =&gt; <span class="string">&quot;M&quot;</span>,
-            <span class="ident"><span class="self">Self</span>::Mebi</span> =&gt; <span class="string">&quot;Mi&quot;</span>,
-            <span class="ident"><span class="self">Self</span>::Giga</span> =&gt; <span class="string">&quot;G&quot;</span>,
-            <span class="ident"><span class="self">Self</span>::Gibi</span> =&gt; <span class="string">&quot;Gi&quot;</span>,
-            <span class="ident"><span class="self">Self</span>::Tera</span> =&gt; <span class="string">&quot;T&quot;</span>,
-            <span class="ident"><span class="self">Self</span>::Tebi</span> =&gt; <span class="string">&quot;Ti&quot;</span>,
+<span class="kw">impl </span>fmt::Display <span class="kw">for </span>Prefix {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter) -&gt; fmt::Result {
+        f.write_str(<span class="kw">match </span><span class="self">self </span>{
+            <span class="self">Self</span>::Nano =&gt; <span class="string">&quot;n&quot;</span>,
+            <span class="self">Self</span>::Micro =&gt; <span class="string">&quot;u&quot;</span>,
+            <span class="self">Self</span>::Milli =&gt; <span class="string">&quot;m&quot;</span>,
+            <span class="self">Self</span>::One | <span class="self">Self</span>::OneButBinary =&gt; <span class="string">&quot;&quot;</span>,
+            <span class="self">Self</span>::Kilo =&gt; <span class="string">&quot;K&quot;</span>,
+            <span class="self">Self</span>::Kibi =&gt; <span class="string">&quot;Ki&quot;</span>,
+            <span class="self">Self</span>::Mega =&gt; <span class="string">&quot;M&quot;</span>,
+            <span class="self">Self</span>::Mebi =&gt; <span class="string">&quot;Mi&quot;</span>,
+            <span class="self">Self</span>::Giga =&gt; <span class="string">&quot;G&quot;</span>,
+            <span class="self">Self</span>::Gibi =&gt; <span class="string">&quot;Gi&quot;</span>,
+            <span class="self">Self</span>::Tera =&gt; <span class="string">&quot;T&quot;</span>,
+            <span class="self">Self</span>::Tebi =&gt; <span class="string">&quot;Ti&quot;</span>,
         })
     }
 }
 
-<span class="kw">impl</span> <span class="ident">FromStr</span> <span class="kw">for</span> <span class="ident">Prefix</span> {
-    <span class="kw">type</span> <span class="prelude-val">Err</span> <span class="op">=</span> <span class="ident">Error</span>;
+<span class="kw">impl </span>FromStr <span class="kw">for </span>Prefix {
+    <span class="kw">type </span><span class="prelude-val">Err </span>= Error;
 
-    <span class="kw">fn</span> <span class="ident">from_str</span>(<span class="ident">s</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="ident">s</span> {
-            <span class="string">&quot;n&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">Prefix::Nano</span>),
-            <span class="string">&quot;u&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">Prefix::Micro</span>),
-            <span class="string">&quot;m&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">Prefix::Milli</span>),
-            <span class="string">&quot;1&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">Prefix::One</span>),
-            <span class="string">&quot;1i&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">Prefix::OneButBinary</span>),
-            <span class="string">&quot;K&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">Prefix::Kilo</span>),
-            <span class="string">&quot;Ki&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">Prefix::Kibi</span>),
-            <span class="string">&quot;M&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">Prefix::Mega</span>),
-            <span class="string">&quot;Mi&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">Prefix::Mebi</span>),
-            <span class="string">&quot;G&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">Prefix::Giga</span>),
-            <span class="string">&quot;Gi&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">Prefix::Gibi</span>),
-            <span class="string">&quot;T&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">Prefix::Tera</span>),
-            <span class="string">&quot;Ti&quot;</span> =&gt; <span class="prelude-val">Ok</span>(<span class="ident">Prefix::Tebi</span>),
-            <span class="ident">x</span> =&gt; <span class="prelude-val">Err</span>(<span class="ident">Error::new</span>(<span class="macro">format!</span>(<span class="string">&quot;Unknown prefix: &#39;{}&#39;&quot;</span>, <span class="ident">x</span>))),
+    <span class="kw">fn </span>from_str(s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
+        <span class="kw">match </span>s {
+            <span class="string">&quot;n&quot; </span>=&gt; <span class="prelude-val">Ok</span>(Prefix::Nano),
+            <span class="string">&quot;u&quot; </span>=&gt; <span class="prelude-val">Ok</span>(Prefix::Micro),
+            <span class="string">&quot;m&quot; </span>=&gt; <span class="prelude-val">Ok</span>(Prefix::Milli),
+            <span class="string">&quot;1&quot; </span>=&gt; <span class="prelude-val">Ok</span>(Prefix::One),
+            <span class="string">&quot;1i&quot; </span>=&gt; <span class="prelude-val">Ok</span>(Prefix::OneButBinary),
+            <span class="string">&quot;K&quot; </span>=&gt; <span class="prelude-val">Ok</span>(Prefix::Kilo),
+            <span class="string">&quot;Ki&quot; </span>=&gt; <span class="prelude-val">Ok</span>(Prefix::Kibi),
+            <span class="string">&quot;M&quot; </span>=&gt; <span class="prelude-val">Ok</span>(Prefix::Mega),
+            <span class="string">&quot;Mi&quot; </span>=&gt; <span class="prelude-val">Ok</span>(Prefix::Mebi),
+            <span class="string">&quot;G&quot; </span>=&gt; <span class="prelude-val">Ok</span>(Prefix::Giga),
+            <span class="string">&quot;Gi&quot; </span>=&gt; <span class="prelude-val">Ok</span>(Prefix::Gibi),
+            <span class="string">&quot;T&quot; </span>=&gt; <span class="prelude-val">Ok</span>(Prefix::Tera),
+            <span class="string">&quot;Ti&quot; </span>=&gt; <span class="prelude-val">Ok</span>(Prefix::Tebi),
+            x =&gt; <span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">&quot;Unknown prefix: &#39;{}&#39;&quot;</span>, x))),
         }
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

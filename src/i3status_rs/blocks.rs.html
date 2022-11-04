@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>blocks.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../i3status_rs/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>blocks.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../i3status_rs/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -338,95 +338,95 @@
 <span id="338">338</span>
 <span id="339">339</span>
 <span id="340">340</span>
-</pre><pre class="rust"><code><span class="doccomment">//! The collection of blocks</span>
+</pre><pre class="rust"><code><span class="doccomment">//! The collection of blocks
 
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">prelude</span>;
+</span><span class="kw">pub mod </span>prelude;
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::formatting::config::Config</span> <span class="kw">as</span> <span class="ident">FormatConfig</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::themes::ThemeOverrides</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::BoxedFuture</span>;
-<span class="kw">use</span> <span class="ident">futures::future::FutureExt</span>;
-<span class="kw">use</span> <span class="ident">serde::de</span>::{<span class="self">self</span>, <span class="ident">Deserializer</span>};
-<span class="kw">use</span> <span class="ident">serde::Deserialize</span>;
-<span class="kw">use</span> <span class="ident">tokio::sync::mpsc</span>;
-<span class="kw">use</span> <span class="ident">toml::value::Table</span>;
+<span class="kw">use </span><span class="kw">crate</span>::formatting::config::Config <span class="kw">as </span>FormatConfig;
+<span class="kw">use </span><span class="kw">crate</span>::themes::ThemeOverrides;
+<span class="kw">use </span><span class="kw">crate</span>::BoxedFuture;
+<span class="kw">use </span>futures::future::FutureExt;
+<span class="kw">use </span>serde::de::{<span class="self">self</span>, Deserializer};
+<span class="kw">use </span>serde::Deserialize;
+<span class="kw">use </span>tokio::sync::mpsc;
+<span class="kw">use </span>toml::value::Table;
 
-<span class="kw">use</span> <span class="ident">std::collections::HashMap</span>;
-<span class="kw">use</span> <span class="ident">std::future::Future</span>;
-<span class="kw">use</span> <span class="ident">std::time::Duration</span>;
+<span class="kw">use </span>std::collections::HashMap;
+<span class="kw">use </span>std::future::Future;
+<span class="kw">use </span>std::time::Duration;
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::click::ClickHandler</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::config::SharedConfig</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errors</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::protocol::i3bar_event::I3BarEvent</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::widget::Widget</span>;
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">Request</span>, <span class="ident">RequestCmd</span>};
+<span class="kw">use </span><span class="kw">crate</span>::click::ClickHandler;
+<span class="kw">use </span><span class="kw">crate</span>::config::SharedConfig;
+<span class="kw">use </span><span class="kw">crate</span>::errors::<span class="kw-2">*</span>;
+<span class="kw">use </span><span class="kw">crate</span>::protocol::i3bar_event::I3BarEvent;
+<span class="kw">use </span><span class="kw">crate</span>::widget::Widget;
+<span class="kw">use crate</span>::{Request, RequestCmd};
 
-<span class="macro">macro_rules!</span> <span class="ident">define_blocks</span> {
+<span class="macro">macro_rules! </span>define_blocks {
     {
-        $( $(<span class="attribute">#[<span class="ident">cfg</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">attr</span>: <span class="ident">meta</span>)]</span>)<span class="question-mark">?</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">block</span>: <span class="ident">ident</span> $(,)<span class="question-mark">?</span> )<span class="op">*</span>
+        $( $(<span class="attribute">#[cfg(<span class="macro-nonterminal">$attr</span>: meta)]</span>)<span class="question-mark">? </span><span class="macro-nonterminal">$block</span>: ident $(,)<span class="question-mark">? </span>)*
     } =&gt; {
         $(
-            $(<span class="attribute">#[<span class="ident">cfg</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">attr</span>)]</span>)<span class="question-mark">?</span>
-            <span class="kw">pub</span> <span class="kw">mod</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">block</span>;
-        )<span class="op">*</span>
+            $(<span class="attribute">#[cfg(<span class="macro-nonterminal">$attr</span>)]</span>)<span class="question-mark">?
+            </span><span class="kw">pub mod </span><span class="macro-nonterminal">$block</span>;
+        )*
 
-        <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
-        <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">BlockType</span> {
+        <span class="attribute">#[derive(Debug, Clone, Copy)]
+        </span><span class="kw">pub enum </span>BlockType {
             $(
-                $(<span class="attribute">#[<span class="ident">cfg</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">attr</span>)]</span>)<span class="question-mark">?</span>
-                <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">non_camel_case_types</span>)]</span>
-                <span class="macro-nonterminal">$</span><span class="macro-nonterminal">block</span>,
-            )<span class="op">*</span>
+                $(<span class="attribute">#[cfg(<span class="macro-nonterminal">$attr</span>)]</span>)<span class="question-mark">?
+                </span><span class="attribute">#[allow(non_camel_case_types)]
+                </span><span class="macro-nonterminal">$block</span>,
+            )*
         }
 
-        <span class="kw">impl</span> <span class="ident">BlockType</span> {
-            <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="self">self</span>, <span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="ident">BlockFuture</span> {
-                <span class="kw">let</span> <span class="ident">id</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">id</span>;
-                <span class="kw">match</span> <span class="self">self</span> {
+        <span class="kw">impl </span>BlockType {
+            <span class="kw">pub fn </span>run(<span class="self">self</span>, config: toml::Value, api: CommonApi) -&gt; BlockFuture {
+                <span class="kw">let </span>id = api.id;
+                <span class="kw">match </span><span class="self">self </span>{
                     $(
-                        $(<span class="attribute">#[<span class="ident">cfg</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">attr</span>)]</span>)<span class="question-mark">?</span>
-                        <span class="self">Self</span>::<span class="macro-nonterminal">$</span><span class="macro-nonterminal">block</span> =&gt; {
-                            <span class="macro-nonterminal">$</span><span class="macro-nonterminal">block::run</span>(<span class="ident">config</span>, <span class="ident">api</span>).<span class="ident">map</span>(<span class="kw">move</span> <span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">in_block</span>(<span class="self">self</span>, <span class="ident">id</span>)).<span class="ident">boxed_local</span>()
+                        $(<span class="attribute">#[cfg(<span class="macro-nonterminal">$attr</span>)]</span>)<span class="question-mark">?
+                        </span><span class="self">Self</span>::<span class="macro-nonterminal">$block </span>=&gt; {
+                            <span class="macro-nonterminal">$block::run</span>(config, api).map(<span class="kw">move </span>|e| e.in_block(<span class="self">self</span>, id)).boxed_local()
                         }
-                    )<span class="op">*</span>
+                    )*
                 }
             }
         }
 
-        <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span> <span class="ident">Deserialize</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">BlockType</span> {
-            <span class="kw">fn</span> <span class="ident">deserialize</span><span class="op">&lt;</span><span class="ident">D</span><span class="op">&gt;</span>(<span class="ident">deserializer</span>: <span class="ident">D</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">D::Error</span><span class="op">&gt;</span>
-            <span class="kw">where</span>
-                <span class="ident">D</span>: <span class="ident">Deserializer</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span>,
+        <span class="kw">impl</span>&lt;<span class="lifetime">&#39;de</span>&gt; Deserialize&lt;<span class="lifetime">&#39;de</span>&gt; <span class="kw">for </span>BlockType {
+            <span class="kw">fn </span>deserialize&lt;D&gt;(deserializer: D) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, D::Error&gt;
+            <span class="kw">where
+                </span>D: Deserializer&lt;<span class="lifetime">&#39;de</span>&gt;,
             {
-                <span class="kw">struct</span> <span class="ident">Visitor</span>;
+                <span class="kw">struct </span>Visitor;
 
-                <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span> <span class="ident">de::Visitor</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Visitor</span> {
-                    <span class="kw">type</span> <span class="ident">Value</span> <span class="op">=</span> <span class="ident">BlockType</span>;
+                <span class="kw">impl</span>&lt;<span class="lifetime">&#39;de</span>&gt; de::Visitor&lt;<span class="lifetime">&#39;de</span>&gt; <span class="kw">for </span>Visitor {
+                    <span class="kw">type </span>Value = BlockType;
 
-                    <span class="kw">fn</span> <span class="ident">expecting</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">formatter</span>: <span class="kw-2">&amp;mut</span> <span class="ident">std::fmt::Formatter</span>) -&gt; <span class="ident">std::fmt::Result</span> {
-                        <span class="ident">formatter</span>.<span class="ident">write_str</span>(<span class="string">&quot;a block name&quot;</span>)
+                    <span class="kw">fn </span>expecting(<span class="kw-2">&amp;</span><span class="self">self</span>, formatter: <span class="kw-2">&amp;mut </span>std::fmt::Formatter) -&gt; std::fmt::Result {
+                        formatter.write_str(<span class="string">&quot;a block name&quot;</span>)
                     }
 
-                    <span class="kw">fn</span> <span class="ident">visit_str</span><span class="op">&lt;</span><span class="ident">E</span><span class="op">&gt;</span>(<span class="self">self</span>, <span class="ident">v</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident"><span class="self">Self</span>::Value</span>, <span class="ident">E</span><span class="op">&gt;</span>
-                    <span class="kw">where</span>
-                        <span class="ident">E</span>: <span class="ident">de::Error</span>,
+                    <span class="kw">fn </span>visit_str&lt;E&gt;(<span class="self">self</span>, v: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>::Value, E&gt;
+                    <span class="kw">where
+                        </span>E: de::Error,
                     {
-                        <span class="kw">match</span> <span class="ident">v</span> {
+                        <span class="kw">match </span>v {
                             $(
-                            $(<span class="attribute">#[<span class="ident">cfg</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">attr</span>)]</span>)<span class="question-mark">?</span>
-                            <span class="macro">stringify!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">block</span>) =&gt; <span class="prelude-val">Ok</span>(<span class="ident">BlockType</span>::<span class="macro-nonterminal">$</span><span class="macro-nonterminal">block</span>),
+                            $(<span class="attribute">#[cfg(<span class="macro-nonterminal">$attr</span>)]</span>)<span class="question-mark">?
+                            </span><span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>) =&gt; <span class="prelude-val">Ok</span>(BlockType::<span class="macro-nonterminal">$block</span>),
                             $(
-                            <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">attr</span>))]</span>
-                            <span class="macro">stringify!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">block</span>) =&gt; <span class="prelude-val">Err</span>(<span class="ident">E::custom</span>(<span class="macro">format!</span>(<span class="string">&quot;Block &#39;{}&#39; has to be enabled at the compile time&quot;</span>, <span class="macro">stringify!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">block</span>)))),
-                            )<span class="question-mark">?</span>
-                            )<span class="op">*</span>
-                            <span class="ident">unknown</span> =&gt; <span class="prelude-val">Err</span>(<span class="ident">E::custom</span>(<span class="macro">format!</span>(<span class="string">&quot;Unknown block &#39;{unknown}&#39;&quot;</span>)))
+                            <span class="attribute">#[cfg(not(<span class="macro-nonterminal">$attr</span>))]
+                            </span><span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>) =&gt; <span class="prelude-val">Err</span>(E::custom(<span class="macro">format!</span>(<span class="string">&quot;Block &#39;{}&#39; has to be enabled at the compile time&quot;</span>, <span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>)))),
+                            )<span class="question-mark">?
+                            </span>)*
+                            unknown =&gt; <span class="prelude-val">Err</span>(E::custom(<span class="macro">format!</span>(<span class="string">&quot;Unknown block &#39;{unknown}&#39;&quot;</span>)))
                         }
                     }
                 }
 
-                <span class="ident">deserializer</span>.<span class="ident">deserialize_str</span>(<span class="ident">Visitor</span>)
+                deserializer.deserialize_str(Visitor)
             }
         }
 
@@ -434,187 +434,187 @@
 }
 
 <span class="macro">define_blocks!</span>(
-    <span class="ident">apt</span>,
-    <span class="ident">backlight</span>,
-    <span class="ident">battery</span>,
-    <span class="ident">bluetooth</span>,
-    <span class="ident">cpu</span>,
-    <span class="ident">custom</span>,
-    <span class="ident">custom_dbus</span>,
-    <span class="ident">disk_space</span>,
-    <span class="ident">dnf</span>,
-    <span class="ident">docker</span>,
-    <span class="ident">external_ip</span>,
-    <span class="ident">focused_window</span>,
-    <span class="ident">github</span>,
-    <span class="ident">hueshift</span>,
-    <span class="ident">kdeconnect</span>,
-    <span class="ident">load</span>,
-    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;maildir&quot;</span>)]</span>
-    <span class="ident">maildir</span>,
-    <span class="ident">menu</span>,
-    <span class="ident">memory</span>,
-    <span class="ident">music</span>,
-    <span class="ident">net</span>,
-    <span class="ident">notify</span>,
-    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;notmuch&quot;</span>)]</span>
-    <span class="ident">notmuch</span>,
-    <span class="ident">nvidia_gpu</span>,
-    <span class="ident">pacman</span>,
-    <span class="ident">pomodoro</span>,
-    <span class="ident">rofication</span>,
-    <span class="ident">sound</span>,
-    <span class="ident">speedtest</span>,
-    <span class="ident">keyboard_layout</span>,
-    <span class="ident">taskwarrior</span>,
-    <span class="ident">temperature</span>,
-    <span class="ident">time</span>,
-    <span class="ident">toggle</span>,
-    <span class="ident">uptime</span>,
-    <span class="ident">watson</span>,
-    <span class="ident">weather</span>,
-    <span class="ident">xrandr</span>,
+    apt,
+    backlight,
+    battery,
+    bluetooth,
+    cpu,
+    custom,
+    custom_dbus,
+    disk_space,
+    dnf,
+    docker,
+    external_ip,
+    focused_window,
+    github,
+    hueshift,
+    kdeconnect,
+    load,
+    <span class="attribute">#[cfg(feature = <span class="string">&quot;maildir&quot;</span>)]
+    </span>maildir,
+    menu,
+    memory,
+    music,
+    net,
+    notify,
+    <span class="attribute">#[cfg(feature = <span class="string">&quot;notmuch&quot;</span>)]
+    </span>notmuch,
+    nvidia_gpu,
+    pacman,
+    pomodoro,
+    rofication,
+    sound,
+    speedtest,
+    keyboard_layout,
+    taskwarrior,
+    temperature,
+    time,
+    toggle,
+    uptime,
+    watson,
+    weather,
+    xrandr,
 );
 
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">BlockFuture</span> <span class="op">=</span> <span class="ident">BoxedFuture</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span><span class="op">&gt;</span>;
+<span class="kw">pub type </span>BlockFuture = BoxedFuture&lt;<span class="prelude-ty">Result</span>&lt;()&gt;&gt;;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">BlockEvent</span> {
-    <span class="ident">Click</span>(<span class="ident">I3BarEvent</span>),
-    <span class="ident">UpdateRequest</span>,
+<span class="attribute">#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+</span><span class="kw">pub enum </span>BlockEvent {
+    Click(I3BarEvent),
+    UpdateRequest,
 }
 
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">CommonApi</span> {
-    <span class="kw">pub</span> <span class="ident">id</span>: <span class="ident">usize</span>,
-    <span class="kw">pub</span> <span class="ident">shared_config</span>: <span class="ident">SharedConfig</span>,
-    <span class="kw">pub</span> <span class="ident">event_receiver</span>: <span class="ident">mpsc::Receiver</span><span class="op">&lt;</span><span class="ident">BlockEvent</span><span class="op">&gt;</span>,
+<span class="kw">pub struct </span>CommonApi {
+    <span class="kw">pub </span>id: usize,
+    <span class="kw">pub </span>shared_config: SharedConfig,
+    <span class="kw">pub </span>event_receiver: mpsc::Receiver&lt;BlockEvent&gt;,
 
-    <span class="kw">pub</span> <span class="ident">request_sender</span>: <span class="ident">mpsc::Sender</span><span class="op">&lt;</span><span class="ident">Request</span><span class="op">&gt;</span>,
+    <span class="kw">pub </span>request_sender: mpsc::Sender&lt;Request&gt;,
 
-    <span class="kw">pub</span> <span class="ident">error_interval</span>: <span class="ident">Duration</span>,
+    <span class="kw">pub </span>error_interval: Duration,
 }
 
-<span class="kw">impl</span> <span class="ident">CommonApi</span> {
-    <span class="doccomment">/// Sends the widget to be displayed.</span>
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">widget</span>: <span class="kw-2">&amp;</span><span class="ident">Widget</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">request_sender</span>
-            .<span class="ident">send</span>(<span class="ident">Request</span> {
-                <span class="ident">block_id</span>: <span class="self">self</span>.<span class="ident">id</span>,
-                <span class="ident">cmd</span>: <span class="ident">RequestCmd::SetWidget</span>(<span class="ident">widget</span>.<span class="ident">clone</span>()),
+<span class="kw">impl </span>CommonApi {
+    <span class="doccomment">/// Sends the widget to be displayed.
+    </span><span class="kw">pub async fn </span>set_widget(<span class="kw-2">&amp;</span><span class="self">self</span>, widget: <span class="kw-2">&amp;</span>Widget) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        <span class="self">self</span>.request_sender
+            .send(Request {
+                block_id: <span class="self">self</span>.id,
+                cmd: RequestCmd::SetWidget(widget.clone()),
             })
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to send Request&quot;</span>)
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to send Request&quot;</span>)
     }
 
-    <span class="doccomment">/// Hides the block. Send new widget to make it visible again.</span>
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">hide</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">request_sender</span>
-            .<span class="ident">send</span>(<span class="ident">Request</span> {
-                <span class="ident">block_id</span>: <span class="self">self</span>.<span class="ident">id</span>,
-                <span class="ident">cmd</span>: <span class="ident">RequestCmd::UnsetWidget</span>,
+    <span class="doccomment">/// Hides the block. Send new widget to make it visible again.
+    </span><span class="kw">pub async fn </span>hide(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        <span class="self">self</span>.request_sender
+            .send(Request {
+                block_id: <span class="self">self</span>.id,
+                cmd: RequestCmd::UnsetWidget,
             })
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to send Request&quot;</span>)
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to send Request&quot;</span>)
     }
 
-    <span class="doccomment">/// Sends the error to be displayed.</span>
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">set_error</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">error</span>: <span class="ident">Error</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">request_sender</span>
-            .<span class="ident">send</span>(<span class="ident">Request</span> {
-                <span class="ident">block_id</span>: <span class="self">self</span>.<span class="ident">id</span>,
-                <span class="ident">cmd</span>: <span class="ident">RequestCmd::SetError</span>(<span class="ident">error</span>),
+    <span class="doccomment">/// Sends the error to be displayed.
+    </span><span class="kw">pub async fn </span>set_error(<span class="kw-2">&amp;</span><span class="self">self</span>, error: Error) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        <span class="self">self</span>.request_sender
+            .send(Request {
+                block_id: <span class="self">self</span>.id,
+                cmd: RequestCmd::SetError(error),
             })
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to send Request&quot;</span>)
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to send Request&quot;</span>)
     }
 
-    <span class="doccomment">/// Receive the next event, such as click notification or update request.</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// This method should be called regularly to avoid sender blocking. Currently, the runtime is</span>
-    <span class="doccomment">/// single threaded, so full channel buffer will cause a deadlock. If receiving events is</span>
-    <span class="doccomment">/// impossible / meaningless, call `event_receiver.close()`.</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// # Cancel safety</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// This method is cancel safe.</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// # Panics</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// Panics if event sender is closed</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// # Examples</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// ```</span>
-    <span class="doccomment">/// tokio::select! {</span>
-    <span class="doccomment">///     _ = timer.tick() =&gt; (),</span>
-    <span class="doccomment">///     event = api.event() =&gt; match event {</span>
-    <span class="doccomment">///         // ...</span>
-    <span class="doccomment">///         _ =&gt; (),</span>
-    <span class="doccomment">///     }</span>
-    <span class="doccomment">/// }</span>
-    <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">event</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="ident">BlockEvent</span> {
-        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">event_receiver</span>.<span class="ident">recv</span>().<span class="kw">await</span> {
-            <span class="prelude-val">Some</span>(<span class="ident">event</span>) =&gt; <span class="ident">event</span>,
-            <span class="prelude-val">None</span> =&gt; <span class="macro">panic!</span>(<span class="string">&quot;events stream ended&quot;</span>),
+    <span class="doccomment">/// Receive the next event, such as click notification or update request.
+    ///
+    /// This method should be called regularly to avoid sender blocking. Currently, the runtime is
+    /// single threaded, so full channel buffer will cause a deadlock. If receiving events is
+    /// impossible / meaningless, call `event_receiver.close()`.
+    ///
+    /// # Cancel safety
+    ///
+    /// This method is cancel safe.
+    ///
+    /// # Panics
+    ///
+    /// Panics if event sender is closed
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// tokio::select! {
+    ///     _ = timer.tick() =&gt; (),
+    ///     event = api.event() =&gt; match event {
+    ///         // ...
+    ///         _ =&gt; (),
+    ///     }
+    /// }
+    /// ```
+    </span><span class="kw">pub async fn </span>event(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; BlockEvent {
+        <span class="kw">match </span><span class="self">self</span>.event_receiver.recv().<span class="kw">await </span>{
+            <span class="prelude-val">Some</span>(event) =&gt; event,
+            <span class="prelude-val">None </span>=&gt; <span class="macro">panic!</span>(<span class="string">&quot;events stream ended&quot;</span>),
         }
     }
 
-    <span class="doccomment">/// Wait for the next update request.</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// The update request can be send by clicking on the block (with `update=true`) or sending a</span>
-    <span class="doccomment">/// signal.</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// # Cancel safety</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// This method is cancel safe.</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// # Panics</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// Panics if event sender is closed</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// # Examples</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// ```</span>
-    <span class="doccomment">/// tokio::select! {</span>
-    <span class="doccomment">///     _ = timer.tick() =&gt; (),</span>
-    <span class="doccomment">///     _ = api.wait_for_update_request() =&gt; (),</span>
-    <span class="doccomment">/// }</span>
-    <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">wait_for_update_request</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
-        <span class="kw">while</span> <span class="self">self</span>.<span class="ident">event</span>().<span class="kw">await</span> <span class="op">!</span><span class="op">=</span> <span class="ident">BlockEvent::UpdateRequest</span> {}
+    <span class="doccomment">/// Wait for the next update request.
+    ///
+    /// The update request can be send by clicking on the block (with `update=true`) or sending a
+    /// signal.
+    ///
+    /// # Cancel safety
+    ///
+    /// This method is cancel safe.
+    ///
+    /// # Panics
+    ///
+    /// Panics if event sender is closed
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// tokio::select! {
+    ///     _ = timer.tick() =&gt; (),
+    ///     _ = api.wait_for_update_request() =&gt; (),
+    /// }
+    /// ```
+    </span><span class="kw">pub async fn </span>wait_for_update_request(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
+        <span class="kw">while </span><span class="self">self</span>.event().<span class="kw">await </span>!= BlockEvent::UpdateRequest {}
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_icon</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">icon</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">shared_config</span>
-            .<span class="ident">get_icon</span>(<span class="ident">icon</span>)
-            .<span class="ident">or_error</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;Icon &#39;{}&#39; not found&quot;</span>, <span class="ident">icon</span>))
+    <span class="kw">pub fn </span>get_icon(<span class="kw-2">&amp;</span><span class="self">self</span>, icon: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;String&gt; {
+        <span class="self">self</span>.shared_config
+            .get_icon(icon)
+            .or_error(|| <span class="macro">format!</span>(<span class="string">&quot;Icon &#39;{}&#39; not found&quot;</span>, icon))
     }
 
-    <span class="doccomment">/// Repeatedly call provided async function until it succeeds.</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// This function will call `f` in a loop. If it succeeds, the result will be returned.</span>
-    <span class="doccomment">/// Otherwise, the block will enter error mode: &quot;X&quot; will be shown and on left click the error</span>
-    <span class="doccomment">/// message will be shown.</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// # Examples</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// ```</span>
-    <span class="doccomment">/// let status = api.recoverable(|| Status::new(&amp;*socket_path)).await?;</span>
-    <span class="doccomment">/// ```</span>
-    <span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">recoverable</span><span class="op">&lt;</span><span class="ident">Fn</span>, <span class="ident">Fut</span>, <span class="ident">T</span><span class="op">&gt;</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="kw-2">mut</span> <span class="ident">f</span>: <span class="ident">Fn</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>
-    <span class="kw">where</span>
-        <span class="ident">Fn</span>: <span class="ident">FnMut</span>() -&gt; <span class="ident">Fut</span>,
-        <span class="ident">Fut</span>: <span class="ident">Future</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// Repeatedly call provided async function until it succeeds.
+    ///
+    /// This function will call `f` in a loop. If it succeeds, the result will be returned.
+    /// Otherwise, the block will enter error mode: &quot;X&quot; will be shown and on left click the error
+    /// message will be shown.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let status = api.recoverable(|| Status::new(&amp;*socket_path)).await?;
+    /// ```
+    </span><span class="kw">pub async fn </span>recoverable&lt;Fn, Fut, T&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, <span class="kw-2">mut </span>f: Fn) -&gt; <span class="prelude-ty">Result</span>&lt;T&gt;
+    <span class="kw">where
+        </span>Fn: FnMut() -&gt; Fut,
+        Fut: Future&lt;Output = <span class="prelude-ty">Result</span>&lt;T&gt;&gt;,
     {
-        <span class="kw">loop</span> {
-            <span class="kw">match</span> <span class="ident">f</span>().<span class="kw">await</span> {
-                <span class="prelude-val">Ok</span>(<span class="ident">res</span>) =&gt; <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">res</span>),
-                <span class="prelude-val">Err</span>(<span class="ident">err</span>) =&gt; {
-                    <span class="self">self</span>.<span class="ident">set_error</span>(<span class="ident">err</span>).<span class="kw">await</span><span class="question-mark">?</span>;
-                    <span class="macro">tokio::select!</span> {
-                        <span class="kw">_</span> <span class="op">=</span> <span class="ident">tokio::time::sleep</span>(<span class="self">self</span>.<span class="ident">error_interval</span>) =&gt; (),
-                        <span class="kw">_</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">wait_for_update_request</span>() =&gt; (),
+        <span class="kw">loop </span>{
+            <span class="kw">match </span>f().<span class="kw">await </span>{
+                <span class="prelude-val">Ok</span>(res) =&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(res),
+                <span class="prelude-val">Err</span>(err) =&gt; {
+                    <span class="self">self</span>.set_error(err).<span class="kw">await</span><span class="question-mark">?</span>;
+                    <span class="macro">tokio::select! </span>{
+                        <span class="kw">_ </span>= tokio::time::sleep(<span class="self">self</span>.error_interval) =&gt; (),
+                        <span class="kw">_ </span>= <span class="self">self</span>.wait_for_update_request() =&gt; (),
                     }
                 }
             }
@@ -622,39 +622,39 @@
     }
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">CommonConfig</span> {
-    <span class="kw">pub</span> <span class="ident">block</span>: <span class="ident">BlockType</span>,
+<span class="attribute">#[derive(Deserialize, Debug)]
+</span><span class="kw">pub struct </span>CommonConfig {
+    <span class="kw">pub </span>block: BlockType,
 
-    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
-    <span class="kw">pub</span> <span class="ident">click</span>: <span class="ident">ClickHandler</span>,
-    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
-    <span class="kw">pub</span> <span class="ident">signal</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">i32</span><span class="op">&gt;</span>,
-    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
-    <span class="kw">pub</span> <span class="ident">icons_format</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
-    <span class="kw">pub</span> <span class="ident">theme_overrides</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ThemeOverrides</span><span class="op">&gt;</span>,
-    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
-    <span class="kw">pub</span> <span class="ident">icons_overrides</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="attribute">#[serde(default)]
+    </span><span class="kw">pub </span>click: ClickHandler,
+    <span class="attribute">#[serde(default)]
+    </span><span class="kw">pub </span>signal: <span class="prelude-ty">Option</span>&lt;i32&gt;,
+    <span class="attribute">#[serde(default)]
+    </span><span class="kw">pub </span>icons_format: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="attribute">#[serde(default)]
+    </span><span class="kw">pub </span>theme_overrides: <span class="prelude-ty">Option</span>&lt;ThemeOverrides&gt;,
+    <span class="attribute">#[serde(default)]
+    </span><span class="kw">pub </span>icons_overrides: <span class="prelude-ty">Option</span>&lt;HashMap&lt;String, String&gt;&gt;,
 
-    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span> <span class="op">=</span> <span class="string">&quot;CommonConfig::default_error_interval&quot;</span>)]</span>
-    <span class="kw">pub</span> <span class="ident">error_interval</span>: <span class="ident">u64</span>,
-    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
-    <span class="kw">pub</span> <span class="ident">error_format</span>: <span class="ident">FormatConfig</span>,
-    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
-    <span class="kw">pub</span> <span class="ident">error_fullscreen_format</span>: <span class="ident">FormatConfig</span>,
+    <span class="attribute">#[serde(default = <span class="string">&quot;CommonConfig::default_error_interval&quot;</span>)]
+    </span><span class="kw">pub </span>error_interval: u64,
+    <span class="attribute">#[serde(default)]
+    </span><span class="kw">pub </span>error_format: FormatConfig,
+    <span class="attribute">#[serde(default)]
+    </span><span class="kw">pub </span>error_fullscreen_format: FormatConfig,
 
-    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
-    <span class="kw">pub</span> <span class="ident">if_command</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+    <span class="attribute">#[serde(default)]
+    </span><span class="kw">pub </span>if_command: <span class="prelude-ty">Option</span>&lt;String&gt;,
 }
 
-<span class="kw">impl</span> <span class="ident">CommonConfig</span> {
-    <span class="kw">fn</span> <span class="ident">default_error_interval</span>() -&gt; <span class="ident">u64</span> {
-        <span class="number">5</span>
-    }
+<span class="kw">impl </span>CommonConfig {
+    <span class="kw">fn </span>default_error_interval() -&gt; u64 {
+        <span class="number">5
+    </span>}
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">from</span>: <span class="kw-2">&amp;mut</span> <span class="ident">toml::Value</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="kw">const</span> <span class="ident">FIELDS</span>: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="ident">str</span>] <span class="op">=</span> <span class="kw-2">&amp;</span>[
+    <span class="kw">pub fn </span>new(from: <span class="kw-2">&amp;mut </span>toml::Value) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
+        <span class="kw">const </span>FIELDS: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str] = <span class="kw-2">&amp;</span>[
             <span class="string">&quot;block&quot;</span>,
             <span class="string">&quot;click&quot;</span>,
             <span class="string">&quot;signal&quot;</span>,
@@ -666,17 +666,17 @@
             <span class="string">&quot;error_fullscreen_format&quot;</span>,
             <span class="string">&quot;if_command&quot;</span>,
         ];
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">common_table</span> <span class="op">=</span> <span class="ident">Table::new</span>();
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">table</span>) <span class="op">=</span> <span class="ident">from</span>.<span class="ident">as_table_mut</span>() {
-            <span class="kw">for</span> <span class="kw-2">&amp;</span><span class="ident">field</span> <span class="kw">in</span> <span class="ident">FIELDS</span> {
-                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">it</span>) <span class="op">=</span> <span class="ident">table</span>.<span class="ident">remove</span>(<span class="ident">field</span>) {
-                    <span class="ident">common_table</span>.<span class="ident">insert</span>(<span class="ident">field</span>.<span class="ident">to_string</span>(), <span class="ident">it</span>);
+        <span class="kw">let </span><span class="kw-2">mut </span>common_table = Table::new();
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(table) = from.as_table_mut() {
+            <span class="kw">for </span><span class="kw-2">&amp;</span>field <span class="kw">in </span>FIELDS {
+                <span class="kw">if let </span><span class="prelude-val">Some</span>(it) = table.remove(field) {
+                    common_table.insert(field.to_string(), it);
                 }
             }
         }
-        <span class="kw">let</span> <span class="ident">common_value</span>: <span class="ident">toml::Value</span> <span class="op">=</span> <span class="ident">common_table</span>.<span class="ident">into</span>();
-        <span class="ident">CommonConfig::deserialize</span>(<span class="ident">common_value</span>).<span class="ident">config_error</span>()
+        <span class="kw">let </span>common_value: toml::Value = common_table.into();
+        CommonConfig::deserialize(common_value).config_error()
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

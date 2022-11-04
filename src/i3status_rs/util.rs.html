@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/util.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>util.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../i3status_rs/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/util.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>util.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../i3status_rs/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -253,260 +253,260 @@
 <span id="253">253</span>
 <span id="254">254</span>
 <span id="255">255</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::fs::File</span>;
-<span class="kw">use</span> <span class="ident">std::io</span>::{<span class="self">self</span>, <span class="ident">BufReader</span>, <span class="ident">Read</span>};
-<span class="kw">use</span> <span class="ident">std::path</span>::{<span class="ident">Path</span>, <span class="ident">PathBuf</span>};
+</pre><pre class="rust"><code><span class="kw">use </span>std::fs::File;
+<span class="kw">use </span>std::io::{<span class="self">self</span>, BufReader, Read};
+<span class="kw">use </span>std::path::{Path, PathBuf};
 
-<span class="kw">use</span> <span class="ident">dirs_next</span>::{<span class="ident">config_dir</span>, <span class="ident">data_dir</span>};
-<span class="kw">use</span> <span class="ident">serde::de::DeserializeOwned</span>;
-<span class="kw">use</span> <span class="ident">tokio::io::AsyncReadExt</span>;
-<span class="kw">use</span> <span class="ident">tokio::process::Command</span>;
+<span class="kw">use </span>dirs_next::{config_dir, data_dir};
+<span class="kw">use </span>serde::de::DeserializeOwned;
+<span class="kw">use </span>tokio::io::AsyncReadExt;
+<span class="kw">use </span>tokio::process::Command;
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errors</span>::<span class="kw-2">*</span>;
+<span class="kw">use </span><span class="kw">crate</span>::errors::<span class="kw-2">*</span>;
 
-<span class="doccomment">/// Tries to find a file in standard locations:</span>
-<span class="doccomment">/// - Fist try to find a file by full path</span>
-<span class="doccomment">/// - Then try XDG_CONFIG_HOME (e.g. `~/.config`)</span>
-<span class="doccomment">/// - Then try XDG_DATA_HOME (e.g. `~/.local/share/`)</span>
-<span class="doccomment">/// - Then try `/usr/share/`</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// Automaticaly append an extension if not presented.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">find_file</span>(<span class="ident">file</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">subdir</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span><span class="op">&gt;</span>, <span class="ident">extension</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PathBuf</span><span class="op">&gt;</span> {
-    <span class="comment">// Set (or update) the extension</span>
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">file</span> <span class="op">=</span> <span class="ident">PathBuf::from</span>(<span class="ident">file</span>);
-    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">extension</span>) <span class="op">=</span> <span class="ident">extension</span> {
-        <span class="ident">file</span>.<span class="ident">set_extension</span>(<span class="ident">extension</span>);
+<span class="doccomment">/// Tries to find a file in standard locations:
+/// - Fist try to find a file by full path
+/// - Then try XDG_CONFIG_HOME (e.g. `~/.config`)
+/// - Then try XDG_DATA_HOME (e.g. `~/.local/share/`)
+/// - Then try `/usr/share/`
+///
+/// Automaticaly append an extension if not presented.
+</span><span class="kw">pub fn </span>find_file(file: <span class="kw-2">&amp;</span>str, subdir: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt;, extension: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;PathBuf&gt; {
+    <span class="comment">// Set (or update) the extension
+    </span><span class="kw">let </span><span class="kw-2">mut </span>file = PathBuf::from(file);
+    <span class="kw">if let </span><span class="prelude-val">Some</span>(extension) = extension {
+        file.set_extension(extension);
     }
 
-    <span class="comment">// Try full path</span>
-    <span class="kw">if</span> <span class="ident">file</span>.<span class="ident">exists</span>() {
-        <span class="kw">return</span> <span class="prelude-val">Some</span>(<span class="ident">file</span>);
+    <span class="comment">// Try full path
+    </span><span class="kw">if </span>file.exists() {
+        <span class="kw">return </span><span class="prelude-val">Some</span>(file);
     }
 
-    <span class="comment">// Try XDG_CONFIG_HOME (e.g. `~/.config`)</span>
-    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw-2">mut</span> <span class="ident">xdg_config</span>) <span class="op">=</span> <span class="ident">config_dir</span>() {
-        <span class="ident">xdg_config</span>.<span class="ident">push</span>(<span class="string">&quot;i3status-rust&quot;</span>);
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">subdir</span>) <span class="op">=</span> <span class="ident">subdir</span> {
-            <span class="ident">xdg_config</span>.<span class="ident">push</span>(<span class="ident">subdir</span>);
+    <span class="comment">// Try XDG_CONFIG_HOME (e.g. `~/.config`)
+    </span><span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">mut </span>xdg_config) = config_dir() {
+        xdg_config.push(<span class="string">&quot;i3status-rust&quot;</span>);
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(subdir) = subdir {
+            xdg_config.push(subdir);
         }
-        <span class="ident">xdg_config</span>.<span class="ident">push</span>(<span class="kw-2">&amp;</span><span class="ident">file</span>);
-        <span class="kw">if</span> <span class="ident">xdg_config</span>.<span class="ident">exists</span>() {
-            <span class="kw">return</span> <span class="prelude-val">Some</span>(<span class="ident">xdg_config</span>);
-        }
-    }
-
-    <span class="comment">// Try XDG_DATA_HOME (e.g. `~/.local/share/`)</span>
-    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw-2">mut</span> <span class="ident">xdg_data</span>) <span class="op">=</span> <span class="ident">data_dir</span>() {
-        <span class="ident">xdg_data</span>.<span class="ident">push</span>(<span class="string">&quot;i3status-rust&quot;</span>);
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">subdir</span>) <span class="op">=</span> <span class="ident">subdir</span> {
-            <span class="ident">xdg_data</span>.<span class="ident">push</span>(<span class="ident">subdir</span>);
-        }
-        <span class="ident">xdg_data</span>.<span class="ident">push</span>(<span class="kw-2">&amp;</span><span class="ident">file</span>);
-        <span class="kw">if</span> <span class="ident">xdg_data</span>.<span class="ident">exists</span>() {
-            <span class="kw">return</span> <span class="prelude-val">Some</span>(<span class="ident">xdg_data</span>);
+        xdg_config.push(<span class="kw-2">&amp;</span>file);
+        <span class="kw">if </span>xdg_config.exists() {
+            <span class="kw">return </span><span class="prelude-val">Some</span>(xdg_config);
         }
     }
 
-    <span class="comment">// Try `/usr/share/`</span>
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">usr_share_path</span> <span class="op">=</span> <span class="ident">PathBuf::from</span>(<span class="string">&quot;/usr/share/i3status-rust&quot;</span>);
-    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">subdir</span>) <span class="op">=</span> <span class="ident">subdir</span> {
-        <span class="ident">usr_share_path</span>.<span class="ident">push</span>(<span class="ident">subdir</span>);
+    <span class="comment">// Try XDG_DATA_HOME (e.g. `~/.local/share/`)
+    </span><span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">mut </span>xdg_data) = data_dir() {
+        xdg_data.push(<span class="string">&quot;i3status-rust&quot;</span>);
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(subdir) = subdir {
+            xdg_data.push(subdir);
+        }
+        xdg_data.push(<span class="kw-2">&amp;</span>file);
+        <span class="kw">if </span>xdg_data.exists() {
+            <span class="kw">return </span><span class="prelude-val">Some</span>(xdg_data);
+        }
     }
-    <span class="ident">usr_share_path</span>.<span class="ident">push</span>(<span class="kw-2">&amp;</span><span class="ident">file</span>);
-    <span class="kw">if</span> <span class="ident">usr_share_path</span>.<span class="ident">exists</span>() {
-        <span class="kw">return</span> <span class="prelude-val">Some</span>(<span class="ident">usr_share_path</span>);
+
+    <span class="comment">// Try `/usr/share/`
+    </span><span class="kw">let </span><span class="kw-2">mut </span>usr_share_path = PathBuf::from(<span class="string">&quot;/usr/share/i3status-rust&quot;</span>);
+    <span class="kw">if let </span><span class="prelude-val">Some</span>(subdir) = subdir {
+        usr_share_path.push(subdir);
+    }
+    usr_share_path.push(<span class="kw-2">&amp;</span>file);
+    <span class="kw">if </span>usr_share_path.exists() {
+        <span class="kw">return </span><span class="prelude-val">Some</span>(usr_share_path);
     }
 
-    <span class="prelude-val">None</span>
+    <span class="prelude-val">None
+</span>}
+
+<span class="kw">pub async fn </span>new_dbus_connection() -&gt; <span class="prelude-ty">Result</span>&lt;zbus::Connection&gt; {
+    zbus::Connection::session()
+        .<span class="kw">await
+        </span>.error(<span class="string">&quot;Failed to open DBus session connection&quot;</span>)
 }
 
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">new_dbus_connection</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">zbus::Connection</span><span class="op">&gt;</span> {
-    <span class="ident">zbus::Connection::session</span>()
-        .<span class="kw">await</span>
-        .<span class="ident">error</span>(<span class="string">&quot;Failed to open DBus session connection&quot;</span>)
+<span class="kw">pub async fn </span>new_system_dbus_connection() -&gt; <span class="prelude-ty">Result</span>&lt;zbus::Connection&gt; {
+    zbus::Connection::system()
+        .<span class="kw">await
+        </span>.error(<span class="string">&quot;Failed to open DBus system connection&quot;</span>)
 }
 
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">new_system_dbus_connection</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">zbus::Connection</span><span class="op">&gt;</span> {
-    <span class="ident">zbus::Connection::system</span>()
-        .<span class="kw">await</span>
-        .<span class="ident">error</span>(<span class="string">&quot;Failed to open DBus system connection&quot;</span>)
-}
-
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">battery_level_icon</span>(<span class="ident">level</span>: <span class="ident">u8</span>, <span class="ident">charging</span>: <span class="ident">bool</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span> {
-    <span class="kw">match</span> (<span class="ident">level</span>, <span class="ident">charging</span>) {
-        <span class="comment">// TODO: use different charging icons</span>
-        (<span class="kw">_</span>, <span class="bool-val">true</span>) =&gt; <span class="string">&quot;bat_charging&quot;</span>,
-        (<span class="number">0</span>..<span class="op">=</span><span class="number">10</span>, <span class="kw">_</span>) =&gt; <span class="string">&quot;bat_10&quot;</span>,
-        (<span class="number">11</span>..<span class="op">=</span><span class="number">20</span>, <span class="kw">_</span>) =&gt; <span class="string">&quot;bat_20&quot;</span>,
-        (<span class="number">21</span>..<span class="op">=</span><span class="number">30</span>, <span class="kw">_</span>) =&gt; <span class="string">&quot;bat_30&quot;</span>,
-        (<span class="number">31</span>..<span class="op">=</span><span class="number">40</span>, <span class="kw">_</span>) =&gt; <span class="string">&quot;bat_40&quot;</span>,
-        (<span class="number">41</span>..<span class="op">=</span><span class="number">50</span>, <span class="kw">_</span>) =&gt; <span class="string">&quot;bat_50&quot;</span>,
-        (<span class="number">51</span>..<span class="op">=</span><span class="number">60</span>, <span class="kw">_</span>) =&gt; <span class="string">&quot;bat_60&quot;</span>,
-        (<span class="number">61</span>..<span class="op">=</span><span class="number">70</span>, <span class="kw">_</span>) =&gt; <span class="string">&quot;bat_70&quot;</span>,
-        (<span class="number">71</span>..<span class="op">=</span><span class="number">80</span>, <span class="kw">_</span>) =&gt; <span class="string">&quot;bat_80&quot;</span>,
-        (<span class="number">81</span>..<span class="op">=</span><span class="number">90</span>, <span class="kw">_</span>) =&gt; <span class="string">&quot;bat_90&quot;</span>,
-        <span class="kw">_</span> =&gt; <span class="string">&quot;bat_full&quot;</span>,
+<span class="kw">pub fn </span>battery_level_icon(level: u8, charging: bool) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str {
+    <span class="kw">match </span>(level, charging) {
+        <span class="comment">// TODO: use different charging icons
+        </span>(<span class="kw">_</span>, <span class="bool-val">true</span>) =&gt; <span class="string">&quot;bat_charging&quot;</span>,
+        (<span class="number">0</span>..=<span class="number">10</span>, <span class="kw">_</span>) =&gt; <span class="string">&quot;bat_10&quot;</span>,
+        (<span class="number">11</span>..=<span class="number">20</span>, <span class="kw">_</span>) =&gt; <span class="string">&quot;bat_20&quot;</span>,
+        (<span class="number">21</span>..=<span class="number">30</span>, <span class="kw">_</span>) =&gt; <span class="string">&quot;bat_30&quot;</span>,
+        (<span class="number">31</span>..=<span class="number">40</span>, <span class="kw">_</span>) =&gt; <span class="string">&quot;bat_40&quot;</span>,
+        (<span class="number">41</span>..=<span class="number">50</span>, <span class="kw">_</span>) =&gt; <span class="string">&quot;bat_50&quot;</span>,
+        (<span class="number">51</span>..=<span class="number">60</span>, <span class="kw">_</span>) =&gt; <span class="string">&quot;bat_60&quot;</span>,
+        (<span class="number">61</span>..=<span class="number">70</span>, <span class="kw">_</span>) =&gt; <span class="string">&quot;bat_70&quot;</span>,
+        (<span class="number">71</span>..=<span class="number">80</span>, <span class="kw">_</span>) =&gt; <span class="string">&quot;bat_80&quot;</span>,
+        (<span class="number">81</span>..=<span class="number">90</span>, <span class="kw">_</span>) =&gt; <span class="string">&quot;bat_90&quot;</span>,
+        <span class="kw">_ </span>=&gt; <span class="string">&quot;bat_full&quot;</span>,
     }
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">deserialize_toml_file</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">P</span><span class="op">&gt;</span>(<span class="ident">path</span>: <span class="ident">P</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-    <span class="ident">T</span>: <span class="ident">DeserializeOwned</span>,
-    <span class="ident">P</span>: <span class="ident">AsRef</span><span class="op">&lt;</span><span class="ident">Path</span><span class="op">&gt;</span>,
+<span class="kw">pub fn </span>deserialize_toml_file&lt;T, P&gt;(path: P) -&gt; <span class="prelude-ty">Result</span>&lt;T&gt;
+<span class="kw">where
+    </span>T: DeserializeOwned,
+    P: AsRef&lt;Path&gt;,
 {
-    <span class="kw">let</span> <span class="ident">path</span> <span class="op">=</span> <span class="ident">path</span>.<span class="ident">as_ref</span>();
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">contents</span> <span class="op">=</span> <span class="ident">String::new</span>();
-    <span class="kw">let</span> <span class="ident">file</span> <span class="op">=</span> <span class="ident">File::open</span>(<span class="ident">path</span>).<span class="ident">or_error</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;Failed to open file: {}&quot;</span>, <span class="ident">path</span>.<span class="ident">display</span>()))<span class="question-mark">?</span>;
-    <span class="ident">BufReader::new</span>(<span class="ident">file</span>)
-        .<span class="ident">read_to_string</span>(<span class="kw-2">&amp;mut</span> <span class="ident">contents</span>)
-        .<span class="ident">or_error</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;Failed to read file: {}&quot;</span>, <span class="ident">path</span>.<span class="ident">display</span>()))<span class="question-mark">?</span>;
-    <span class="ident">toml::from_str</span>(<span class="kw-2">&amp;</span><span class="ident">contents</span>).<span class="ident">or_error</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;Failed to deserialize file: {}&quot;</span>, <span class="ident">path</span>.<span class="ident">display</span>()))
+    <span class="kw">let </span>path = path.as_ref();
+    <span class="kw">let </span><span class="kw-2">mut </span>contents = String::new();
+    <span class="kw">let </span>file = File::open(path).or_error(|| <span class="macro">format!</span>(<span class="string">&quot;Failed to open file: {}&quot;</span>, path.display()))<span class="question-mark">?</span>;
+    BufReader::new(file)
+        .read_to_string(<span class="kw-2">&amp;mut </span>contents)
+        .or_error(|| <span class="macro">format!</span>(<span class="string">&quot;Failed to read file: {}&quot;</span>, path.display()))<span class="question-mark">?</span>;
+    toml::from_str(<span class="kw-2">&amp;</span>contents).or_error(|| <span class="macro">format!</span>(<span class="string">&quot;Failed to deserialize file: {}&quot;</span>, path.display()))
 }
 
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">read_file</span>(<span class="ident">path</span>: <span class="kw">impl</span> <span class="ident">AsRef</span><span class="op">&lt;</span><span class="ident">Path</span><span class="op">&gt;</span>) -&gt; <span class="ident">io::Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">file</span> <span class="op">=</span> <span class="ident">tokio::fs::File::open</span>(<span class="ident">path</span>).<span class="kw">await</span><span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">content</span> <span class="op">=</span> <span class="ident">String::new</span>();
-    <span class="ident">file</span>.<span class="ident">read_to_string</span>(<span class="kw-2">&amp;mut</span> <span class="ident">content</span>).<span class="kw">await</span><span class="question-mark">?</span>;
-    <span class="prelude-val">Ok</span>(<span class="ident">content</span>.<span class="ident">trim_end</span>().<span class="ident">to_string</span>())
+<span class="kw">pub async fn </span>read_file(path: <span class="kw">impl </span>AsRef&lt;Path&gt;) -&gt; io::Result&lt;String&gt; {
+    <span class="kw">let </span><span class="kw-2">mut </span>file = tokio::fs::File::open(path).<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>content = String::new();
+    file.read_to_string(<span class="kw-2">&amp;mut </span>content).<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="prelude-val">Ok</span>(content.trim_end().to_string())
 }
 
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">has_command</span>(<span class="ident">command</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> {
-    <span class="ident">Command::new</span>(<span class="string">&quot;sh&quot;</span>)
-        .<span class="ident">args</span>([
+<span class="kw">pub async fn </span>has_command(command: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;bool&gt; {
+    Command::new(<span class="string">&quot;sh&quot;</span>)
+        .args([
             <span class="string">&quot;-c&quot;</span>,
-            <span class="macro">format!</span>(<span class="string">&quot;command -v {command} &gt;/dev/null 2&gt;&amp;1&quot;</span>).<span class="ident">as_ref</span>(),
+            <span class="macro">format!</span>(<span class="string">&quot;command -v {command} &gt;/dev/null 2&gt;&amp;1&quot;</span>).as_ref(),
         ])
-        .<span class="ident">status</span>()
-        .<span class="kw">await</span>
-        .<span class="ident">or_error</span>(<span class="op">|</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;Failed to check {command} presence&quot;</span>))
-        .<span class="ident">map</span>(<span class="op">|</span><span class="ident">status</span><span class="op">|</span> <span class="ident">status</span>.<span class="ident">success</span>())
+        .status()
+        .<span class="kw">await
+        </span>.or_error(|| <span class="macro">format!</span>(<span class="string">&quot;Failed to check {command} presence&quot;</span>))
+        .map(|status| status.success())
 }
 
-<span class="doccomment">/// # Example</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// ```</span>
-<span class="doccomment">/// let opt = Some(1);</span>
-<span class="doccomment">/// let map: HashMap&lt;&amp;&#39;static str, String&gt; = map! {</span>
-<span class="doccomment">///     &quot;key&quot; =&gt; &quot;value&quot;,</span>
-<span class="doccomment">///     [if true] &quot;hello&quot; =&gt; &quot;world&quot;,</span>
-<span class="doccomment">///     [if let Some(x) = opt] &quot;opt&quot; =&gt; x.to_string(),</span>
-<span class="doccomment">/// };</span>
-<span class="doccomment">/// ```</span>
-<span class="macro">macro_rules!</span> <span class="ident">map</span> {
-    ($( $([$(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">cond_tokens</span>:<span class="ident">tt</span>)<span class="kw-2">*</span>])<span class="question-mark">?</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">key</span>:<span class="ident">literal</span> =&gt; <span class="macro-nonterminal">$</span><span class="macro-nonterminal">value</span>:<span class="ident">expr</span> ),<span class="op">*</span> $(,)<span class="question-mark">?</span>) =&gt; {{
-        <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">unused_mut</span>)]</span>
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">m</span> <span class="op">=</span> <span class="ident">::std::collections::HashMap::new</span>();
+<span class="doccomment">/// # Example
+///
+/// ```
+/// let opt = Some(1);
+/// let map: HashMap&lt;&amp;&#39;static str, String&gt; = map! {
+///     &quot;key&quot; =&gt; &quot;value&quot;,
+///     [if true] &quot;hello&quot; =&gt; &quot;world&quot;,
+///     [if let Some(x) = opt] &quot;opt&quot; =&gt; x.to_string(),
+/// };
+/// ```
+</span><span class="macro">macro_rules! </span>map {
+    ($( $([$(<span class="macro-nonterminal">$cond_tokens</span>:tt)<span class="kw-2">*</span>])<span class="question-mark">? </span><span class="macro-nonterminal">$key</span>:literal =&gt; <span class="macro-nonterminal">$value</span>:expr ),* $(,)<span class="question-mark">?</span>) =&gt; {{
+        <span class="attribute">#[allow(unused_mut)]
+        </span><span class="kw">let </span><span class="kw-2">mut </span>m = ::std::collections::HashMap::new();
         $(
-        <span class="macro">map!</span>(@<span class="ident">insert</span> <span class="ident">m</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">key</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">value</span> $(,$(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">cond_tokens</span>)<span class="kw-2">*</span>)<span class="question-mark">?</span>);
-        )<span class="op">*</span>
-        <span class="ident">m</span>
+        <span class="macro">map!</span>(@insert m, <span class="macro-nonterminal">$key</span>, <span class="macro-nonterminal">$value </span>$(,$(<span class="macro-nonterminal">$cond_tokens</span>)<span class="kw-2">*</span>)<span class="question-mark">?</span>);
+        )*
+        m
     }};
-    (@<span class="ident">insert</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">map</span>:<span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">key</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">value</span>:<span class="ident">expr</span>) =&gt; {{
-        <span class="macro-nonterminal">$</span><span class="macro-nonterminal">map</span>.<span class="ident">insert</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">key</span>.<span class="ident">into</span>(), <span class="macro-nonterminal">$</span><span class="macro-nonterminal">value</span>.<span class="ident">into</span>());
+    (@insert <span class="macro-nonterminal">$map</span>:ident, <span class="macro-nonterminal">$key</span>:expr, <span class="macro-nonterminal">$value</span>:expr) =&gt; {{
+        <span class="macro-nonterminal">$map</span>.insert(<span class="macro-nonterminal">$key</span>.into(), <span class="macro-nonterminal">$value</span>.into());
     }};
-    (@<span class="ident">insert</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">map</span>:<span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">key</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">value</span>:<span class="ident">expr</span>, <span class="kw">if</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">cond</span>:<span class="ident">expr</span>) =&gt; {{
-        <span class="kw">if</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">cond</span> {
-        <span class="macro-nonterminal">$</span><span class="macro-nonterminal">map</span>.<span class="ident">insert</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">key</span>.<span class="ident">into</span>(), <span class="macro-nonterminal">$</span><span class="macro-nonterminal">value</span>.<span class="ident">into</span>());
+    (@insert <span class="macro-nonterminal">$map</span>:ident, <span class="macro-nonterminal">$key</span>:expr, <span class="macro-nonterminal">$value</span>:expr, <span class="kw">if </span><span class="macro-nonterminal">$cond</span>:expr) =&gt; {{
+        <span class="kw">if </span><span class="macro-nonterminal">$cond </span>{
+        <span class="macro-nonterminal">$map</span>.insert(<span class="macro-nonterminal">$key</span>.into(), <span class="macro-nonterminal">$value</span>.into());
         }
     }};
-    (@<span class="ident">insert</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">map</span>:<span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">key</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">value</span>:<span class="ident">expr</span>, <span class="kw">if</span> <span class="kw">let</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">pat</span>:<span class="ident">pat</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">match_on</span>:<span class="ident">expr</span>) =&gt; {{
-        <span class="kw">if</span> <span class="kw">let</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">pat</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">match_on</span> {
-        <span class="macro-nonterminal">$</span><span class="macro-nonterminal">map</span>.<span class="ident">insert</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">key</span>.<span class="ident">into</span>(), <span class="macro-nonterminal">$</span><span class="macro-nonterminal">value</span>.<span class="ident">into</span>());
+    (@insert <span class="macro-nonterminal">$map</span>:ident, <span class="macro-nonterminal">$key</span>:expr, <span class="macro-nonterminal">$value</span>:expr, <span class="kw">if let </span><span class="macro-nonterminal">$pat</span>:pat = <span class="macro-nonterminal">$match_on</span>:expr) =&gt; {{
+        <span class="kw">if let </span><span class="macro-nonterminal">$pat </span>= <span class="macro-nonterminal">$match_on </span>{
+        <span class="macro-nonterminal">$map</span>.insert(<span class="macro-nonterminal">$key</span>.into(), <span class="macro-nonterminal">$value</span>.into());
         }
     }};
 }
 
-<span class="macro">macro_rules!</span> <span class="ident">regex</span> {
-    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">re</span>:<span class="ident">literal</span> $(,)<span class="question-mark">?</span>) =&gt; {{
-        <span class="kw">static</span> <span class="ident">RE</span>: <span class="ident">once_cell::sync::OnceCell</span><span class="op">&lt;</span><span class="ident">regex::Regex</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">once_cell::sync::OnceCell::new</span>();
-        <span class="ident">RE</span>.<span class="ident">get_or_init</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">regex::Regex::new</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">re</span>).<span class="ident">unwrap</span>())
+<span class="macro">macro_rules! </span>regex {
+    (<span class="macro-nonterminal">$re</span>:literal $(,)<span class="question-mark">?</span>) =&gt; {{
+        <span class="kw">static </span>RE: once_cell::sync::OnceCell&lt;regex::Regex&gt; = once_cell::sync::OnceCell::new();
+        RE.get_or_init(|| regex::Regex::new(<span class="macro-nonterminal">$re</span>).unwrap())
     }};
 }
 
-<span class="macro">macro_rules!</span> <span class="ident">make_log_macro</span> {
-    (@<span class="ident">wdoll</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">macro_name</span>:<span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">block_name</span>:<span class="ident">literal</span>, (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">dol</span>:<span class="ident">tt</span>)) =&gt; {
-        <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
-        <span class="macro">macro_rules!</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">macro_name</span> {
-            (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">dol</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">args</span>:<span class="ident">tt</span>)<span class="op">+</span>) =&gt; {
-                <span class="ident">::log</span>::<span class="macro-nonterminal">$</span><span class="macro">macro_name!</span>(<span class="macro-nonterminal">target</span>: <span class="macro-nonterminal">$</span><span class="macro-nonterminal">block_name</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">dol</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">args</span>)<span class="op">+</span>);
+<span class="macro">macro_rules! </span>make_log_macro {
+    (@wdoll <span class="macro-nonterminal">$macro_name</span>:ident, <span class="macro-nonterminal">$block_name</span>:literal, (<span class="macro-nonterminal">$dol</span>:tt)) =&gt; {
+        <span class="attribute">#[allow(dead_code)]
+        </span><span class="macro">macro_rules! </span><span class="macro-nonterminal">$macro_name </span>{
+            (<span class="macro-nonterminal">$dol</span>(<span class="macro-nonterminal">$args</span>:tt)+) =&gt; {
+                ::log::<span class="macro-nonterminal">$</span><span class="macro">macro_name!</span>(<span class="macro-nonterminal">target</span>: <span class="macro-nonterminal">$block_name</span>, <span class="macro-nonterminal">$dol</span>(<span class="macro-nonterminal">$args</span>)+);
             };
         }
     };
-    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">macro_name</span>:<span class="ident">ident</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">block_name</span>:<span class="ident">literal</span>) =&gt; {
-        <span class="macro">make_log_macro!</span>(@<span class="ident">wdoll</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">macro_name</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">block_name</span>, ($));
+    (<span class="macro-nonterminal">$macro_name</span>:ident, <span class="macro-nonterminal">$block_name</span>:literal) =&gt; {
+        <span class="macro">make_log_macro!</span>(@wdoll <span class="macro-nonterminal">$macro_name</span>, <span class="macro-nonterminal">$block_name</span>, ($));
     };
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">format_bar_graph</span>(<span class="ident">content</span>: <span class="kw-2">&amp;</span>[<span class="ident">f64</span>]) -&gt; <span class="ident">String</span> {
-    <span class="comment">// (x * one eighth block) https://en.wikipedia.org/wiki/Block_Elements</span>
-    <span class="kw">static</span> <span class="ident">BARS</span>: [<span class="ident">char</span>; <span class="number">8</span>] <span class="op">=</span> [
+<span class="kw">pub fn </span>format_bar_graph(content: <span class="kw-2">&amp;</span>[f64]) -&gt; String {
+    <span class="comment">// (x * one eighth block) https://en.wikipedia.org/wiki/Block_Elements
+    </span><span class="kw">static </span>BARS: [char; <span class="number">8</span>] = [
         <span class="string">&#39;\u{2581}&#39;</span>, <span class="string">&#39;\u{2582}&#39;</span>, <span class="string">&#39;\u{2583}&#39;</span>, <span class="string">&#39;\u{2584}&#39;</span>, <span class="string">&#39;\u{2585}&#39;</span>, <span class="string">&#39;\u{2586}&#39;</span>, <span class="string">&#39;\u{2587}&#39;</span>,
         <span class="string">&#39;\u{2588}&#39;</span>,
     ];
 
-    <span class="comment">// Find min and max</span>
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">min</span> <span class="op">=</span> <span class="ident">std::f64::INFINITY</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">max</span> <span class="op">=</span> <span class="op">-</span><span class="ident">std::f64::INFINITY</span>;
-    <span class="kw">for</span> <span class="kw-2">&amp;</span><span class="ident">v</span> <span class="kw">in</span> <span class="ident">content</span> {
-        <span class="ident">min</span> <span class="op">=</span> <span class="ident">min</span>.<span class="ident">min</span>(<span class="ident">v</span>);
-        <span class="ident">max</span> <span class="op">=</span> <span class="ident">max</span>.<span class="ident">max</span>(<span class="ident">v</span>);
+    <span class="comment">// Find min and max
+    </span><span class="kw">let </span><span class="kw-2">mut </span>min = std::f64::INFINITY;
+    <span class="kw">let </span><span class="kw-2">mut </span>max = -std::f64::INFINITY;
+    <span class="kw">for </span><span class="kw-2">&amp;</span>v <span class="kw">in </span>content {
+        min = min.min(v);
+        max = max.max(v);
     }
 
-    <span class="kw">let</span> <span class="ident">range</span> <span class="op">=</span> <span class="ident">max</span> <span class="op">-</span> <span class="ident">min</span>;
-    <span class="ident">content</span>
-        .<span class="ident">iter</span>()
-        .<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">BARS</span>[((<span class="ident">x</span> <span class="op">-</span> <span class="ident">min</span>) <span class="op">/</span> <span class="ident">range</span> <span class="op">*</span> <span class="number">7.</span>).<span class="ident">clamp</span>(<span class="number">0.</span>, <span class="number">7.</span>) <span class="kw">as</span> <span class="ident">usize</span>])
-        .<span class="ident">collect</span>()
+    <span class="kw">let </span>range = max - min;
+    content
+        .iter()
+        .map(|x| BARS[((x - min) / range * <span class="number">7.</span>).clamp(<span class="number">0.</span>, <span class="number">7.</span>) <span class="kw">as </span>usize])
+        .collect()
 }
 
-<span class="doccomment">/// Convert 2 letter country code to Unicode</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">country_flag_from_iso_code</span>(<span class="ident">country_code</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="ident">String</span> {
-    <span class="kw">let</span> [<span class="kw-2">mut</span> <span class="ident">b1</span>, <span class="kw-2">mut</span> <span class="ident">b2</span>]: [<span class="ident">u8</span>; <span class="number">2</span>] <span class="op">=</span> <span class="ident">country_code</span>.<span class="ident">as_bytes</span>().<span class="ident">try_into</span>().<span class="ident">unwrap_or</span>([<span class="number">0</span>, <span class="number">0</span>]);
+<span class="doccomment">/// Convert 2 letter country code to Unicode
+</span><span class="kw">pub fn </span>country_flag_from_iso_code(country_code: <span class="kw-2">&amp;</span>str) -&gt; String {
+    <span class="kw">let </span>[<span class="kw-2">mut </span>b1, <span class="kw-2">mut </span>b2]: [u8; <span class="number">2</span>] = country_code.as_bytes().try_into().unwrap_or([<span class="number">0</span>, <span class="number">0</span>]);
 
-    <span class="kw">if</span> <span class="op">!</span><span class="ident">b1</span>.<span class="ident">is_ascii_uppercase</span>() <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="ident">b2</span>.<span class="ident">is_ascii_uppercase</span>() {
-        <span class="kw">return</span> <span class="ident">country_code</span>.<span class="ident">into</span>();
+    <span class="kw">if </span>!b1.is_ascii_uppercase() || !b2.is_ascii_uppercase() {
+        <span class="kw">return </span>country_code.into();
     }
 
-    <span class="comment">// Each char is encoded as 1F1E6 to 1F1FF for A-Z</span>
-    <span class="ident">b1</span> <span class="op">+</span><span class="op">=</span> <span class="number">0xa5</span>;
-    <span class="ident">b2</span> <span class="op">+</span><span class="op">=</span> <span class="number">0xa5</span>;
-    <span class="comment">// The last byte will always start with 101 (0xa0) and then the 5 least</span>
-    <span class="comment">// significant bits from the previous result</span>
-    <span class="ident">b1</span> <span class="op">=</span> <span class="number">0xa0</span> <span class="op">|</span> (<span class="ident">b1</span> <span class="op">&amp;</span> <span class="number">0x1f</span>);
-    <span class="ident">b2</span> <span class="op">=</span> <span class="number">0xa0</span> <span class="op">|</span> (<span class="ident">b2</span> <span class="op">&amp;</span> <span class="number">0x1f</span>);
-    <span class="comment">// Get the flag string from the UTF-8 representation of our Unicode characters.</span>
-    <span class="ident">String::from_utf8</span>(<span class="macro">vec!</span>[<span class="number">0xf0</span>, <span class="number">0x9f</span>, <span class="number">0x87</span>, <span class="ident">b1</span>, <span class="number">0xf0</span>, <span class="number">0x9f</span>, <span class="number">0x87</span>, <span class="ident">b2</span>]).<span class="ident">unwrap</span>()
+    <span class="comment">// Each char is encoded as 1F1E6 to 1F1FF for A-Z
+    </span>b1 += <span class="number">0xa5</span>;
+    b2 += <span class="number">0xa5</span>;
+    <span class="comment">// The last byte will always start with 101 (0xa0) and then the 5 least
+    // significant bits from the previous result
+    </span>b1 = <span class="number">0xa0 </span>| (b1 &amp; <span class="number">0x1f</span>);
+    b2 = <span class="number">0xa0 </span>| (b2 &amp; <span class="number">0x1f</span>);
+    <span class="comment">// Get the flag string from the UTF-8 representation of our Unicode characters.
+    </span>String::from_utf8(<span class="macro">vec!</span>[<span class="number">0xf0</span>, <span class="number">0x9f</span>, <span class="number">0x87</span>, b1, <span class="number">0xf0</span>, <span class="number">0x9f</span>, <span class="number">0x87</span>, b2]).unwrap()
 }
 
-<span class="doccomment">/// A shorcut for `Default::default()`</span>
-<span class="doccomment">/// See &lt;https://github.com/rust-lang/rust/issues/73014&gt;</span>
-<span class="attribute">#[<span class="ident">inline</span>]</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">default</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Default</span><span class="op">&gt;</span>() -&gt; <span class="ident">T</span> {
-    <span class="ident">Default::default</span>()
+<span class="doccomment">/// A shorcut for `Default::default()`
+/// See &lt;https://github.com/rust-lang/rust/issues/73014&gt;
+</span><span class="attribute">#[inline]
+</span><span class="kw">pub fn </span>default&lt;T: Default&gt;() -&gt; T {
+    Default::default()
 }
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-<span class="kw">mod</span> <span class="ident">tests</span> {
-    <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>tests {
+    <span class="kw">use super</span>::<span class="kw-2">*</span>;
 
-    <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">test_has_command_ok</span>() {
-        <span class="comment">// we assume sh is always available</span>
-        <span class="macro">assert!</span>(<span class="ident">tokio_test::block_on</span>(<span class="ident">has_command</span>(<span class="string">&quot;sh&quot;</span>)).<span class="ident">unwrap</span>());
+    <span class="attribute">#[test]
+    </span><span class="kw">fn </span>test_has_command_ok() {
+        <span class="comment">// we assume sh is always available
+        </span><span class="macro">assert!</span>(tokio_test::block_on(has_command(<span class="string">&quot;sh&quot;</span>)).unwrap());
     }
 
-    <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">test_has_command_err</span>() {
-        <span class="comment">// we assume thequickbrownfoxjumpsoverthelazydog command does not exist</span>
-        <span class="macro">assert!</span>(<span class="op">!</span><span class="ident">tokio_test::block_on</span>(<span class="ident">has_command</span>(<span class="string">&quot;thequickbrownfoxjumpsoverthelazydog&quot;</span>)).<span class="ident">unwrap</span>());
+    <span class="attribute">#[test]
+    </span><span class="kw">fn </span>test_has_command_err() {
+        <span class="comment">// we assume thequickbrownfoxjumpsoverthelazydog command does not exist
+        </span><span class="macro">assert!</span>(!tokio_test::block_on(has_command(<span class="string">&quot;thequickbrownfoxjumpsoverthelazydog&quot;</span>)).unwrap());
     }
 
-    <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">test_flags</span>() {
-        <span class="macro">assert!</span>(<span class="ident">country_flag_from_iso_code</span>(<span class="string">&quot;ES&quot;</span>) <span class="op">==</span> <span class="string">&quot;🇪🇸&quot;</span>);
-        <span class="macro">assert!</span>(<span class="ident">country_flag_from_iso_code</span>(<span class="string">&quot;US&quot;</span>) <span class="op">==</span> <span class="string">&quot;🇺🇸&quot;</span>);
-        <span class="macro">assert!</span>(<span class="ident">country_flag_from_iso_code</span>(<span class="string">&quot;USA&quot;</span>) <span class="op">==</span> <span class="string">&quot;USA&quot;</span>);
+    <span class="attribute">#[test]
+    </span><span class="kw">fn </span>test_flags() {
+        <span class="macro">assert!</span>(country_flag_from_iso_code(<span class="string">&quot;ES&quot;</span>) == <span class="string">&quot;🇪🇸&quot;</span>);
+        <span class="macro">assert!</span>(country_flag_from_iso_code(<span class="string">&quot;US&quot;</span>) == <span class="string">&quot;🇺🇸&quot;</span>);
+        <span class="macro">assert!</span>(country_flag_from_iso_code(<span class="string">&quot;USA&quot;</span>) == <span class="string">&quot;USA&quot;</span>);
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

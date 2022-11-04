@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/custom_dbus.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>custom_dbus.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/custom_dbus.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>custom_dbus.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -168,175 +168,175 @@
 <span id="168">168</span>
 <span id="169">169</span>
 <span id="170">170</span>
-</pre><pre class="rust"><code><span class="doccomment">//! A block controled by the DBus</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! This block creates a new DBus object in `rs.i3status` service. This object implements</span>
-<span class="doccomment">//! `rs.i3status.custom` interface which allows you to set block&#39;s icon, text and state.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Output of `busctl --user introspect rs.i3status /&lt;path&gt; rs.i3status.custom`:</span>
-<span class="doccomment">//! ```text</span>
-<span class="doccomment">//! NAME                                TYPE      SIGNATURE RESULT/VALUE FLAGS</span>
-<span class="doccomment">//! rs.i3status.custom                  interface -         -            -</span>
-<span class="doccomment">//! .SetIcon                            method    s         s            -</span>
-<span class="doccomment">//! .SetState                           method    s         s            -</span>
-<span class="doccomment">//! .SetText                            method    ss        s            -</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Configuration</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Key | Values | Default</span>
-<span class="doccomment">//! ----|--------|--------</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. | &lt;code&gt;&quot;{ $icon&amp;vert;}{ $text&amp;vert;} &quot;&lt;/code&gt;</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Placeholder  | Value                                  | Type   | Unit</span>
-<span class="doccomment">//! -------------|-------------------------------------------------------------------|--------|---------------</span>
-<span class="doccomment">//! `icon`       | Value of icon set via `SetIcon` if the value is non-empty string. | Icon   | -</span>
-<span class="doccomment">//! `text`       | Value of the first string from SetText                            | Text   | -</span>
-<span class="doccomment">//! `short_text` | Value of the second string from SetText                           | Text   | -</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Example</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Config:</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;custom_dbus&quot;</span>
-<span class="doccomment">//! path = &quot;/my_path&quot;</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Usage:</span>
-<span class="doccomment">//! ```sh</span>
-<span class="doccomment">//! # set full text to &#39;hello&#39; and short text to &#39;hi&#39;</span>
-<span class="doccomment">//! busctl --user call rs.i3status /my_path rs.i3status.custom SetText ss hello hi</span>
-<span class="doccomment">//! # set icon to &#39;music&#39;</span>
-<span class="doccomment">//! busctl --user call rs.i3status /my_path rs.i3status.custom SetIcon s music</span>
-<span class="doccomment">//! # set state to &#39;good&#39;</span>
-<span class="doccomment">//! busctl --user call rs.i3status /my_path rs.i3status.custom SetState s good</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Because it&#39;s impossible to publish objects to the same name from different</span>
-<span class="doccomment">//! processes, having multiple dbus blocks in different bars won&#39;t work. As a workaround,</span>
-<span class="doccomment">//! you can set the env var `I3RS_DBUS_NAME` to set the interface a bar works on to</span>
-<span class="doccomment">//! differentiate between different processes. For example, setting this to &#39;top&#39;, will allow you</span>
-<span class="doccomment">//! to use `rs.i3status.top`.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # TODO</span>
-<span class="doccomment">//! - Send a signal on click?</span>
+</pre><pre class="rust"><code><span class="doccomment">//! A block controled by the DBus
+//!
+//! This block creates a new DBus object in `rs.i3status` service. This object implements
+//! `rs.i3status.custom` interface which allows you to set block&#39;s icon, text and state.
+//!
+//! Output of `busctl --user introspect rs.i3status /&lt;path&gt; rs.i3status.custom`:
+//! ```text
+//! NAME                                TYPE      SIGNATURE RESULT/VALUE FLAGS
+//! rs.i3status.custom                  interface -         -            -
+//! .SetIcon                            method    s         s            -
+//! .SetState                           method    s         s            -
+//! .SetText                            method    ss        s            -
+//! ```
+//!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `format` | A string to customise the output of this block. | &lt;code&gt;&quot;{ $icon&amp;vert;}{ $text&amp;vert;} &quot;&lt;/code&gt;
+//!
+//! Placeholder  | Value                                  | Type   | Unit
+//! -------------|-------------------------------------------------------------------|--------|---------------
+//! `icon`       | Value of icon set via `SetIcon` if the value is non-empty string. | Icon   | -
+//! `text`       | Value of the first string from SetText                            | Text   | -
+//! `short_text` | Value of the second string from SetText                           | Text   | -
+//!
+//! # Example
+//!
+//! Config:
+//! ```toml
+//! [[block]]
+//! block = &quot;custom_dbus&quot;
+//! path = &quot;/my_path&quot;
+//! ```
+//!
+//! Usage:
+//! ```sh
+//! # set full text to &#39;hello&#39; and short text to &#39;hi&#39;
+//! busctl --user call rs.i3status /my_path rs.i3status.custom SetText ss hello hi
+//! # set icon to &#39;music&#39;
+//! busctl --user call rs.i3status /my_path rs.i3status.custom SetIcon s music
+//! # set state to &#39;good&#39;
+//! busctl --user call rs.i3status /my_path rs.i3status.custom SetState s good
+//! ```
+//!
+//! Because it&#39;s impossible to publish objects to the same name from different
+//! processes, having multiple dbus blocks in different bars won&#39;t work. As a workaround,
+//! you can set the env var `I3RS_DBUS_NAME` to set the interface a bar works on to
+//! differentiate between different processes. For example, setting this to &#39;top&#39;, will allow you
+//! to use `rs.i3status.top`.
+//!
+//! # TODO
+//! - Send a signal on click?
 
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">std::env</span>;
-<span class="kw">use</span> <span class="ident">zbus</span>::{<span class="ident">dbus_interface</span>, <span class="ident">fdo</span>};
+</span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span>std::env;
+<span class="kw">use </span>zbus::{dbus_interface, fdo};
 
-<span class="comment">// Share DBus connection between multiple block instances</span>
-<span class="kw">static</span> <span class="ident">DBUS_CONNECTION</span>: <span class="ident">async_once_cell::OnceCell</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">zbus::Connection</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span>
-    <span class="ident">async_once_cell::OnceCell::new</span>();
+<span class="comment">// Share DBus connection between multiple block instances
+</span><span class="kw">static </span>DBUS_CONNECTION: async_once_cell::OnceCell&lt;<span class="prelude-ty">Result</span>&lt;zbus::Connection&gt;&gt; =
+    async_once_cell::OnceCell::new();
 
-<span class="kw">const</span> <span class="ident">DBUS_NAME</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;rs.i3status&quot;</span>;
+<span class="kw">const </span>DBUS_NAME: <span class="kw-2">&amp;</span>str = <span class="string">&quot;rs.i3status&quot;</span>;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>)]</span>
-<span class="kw">struct</span> <span class="ident">CustomDBusConfig</span> {
-    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>)]</span>
-    <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
-    <span class="ident">path</span>: <span class="ident">String</span>,
+<span class="attribute">#[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
+</span><span class="kw">struct </span>CustomDBusConfig {
+    <span class="attribute">#[serde(default)]
+    </span>format: FormatConfig,
+    path: String,
 }
 
-<span class="kw">struct</span> <span class="ident">Block</span> {
-    <span class="ident">widget</span>: <span class="ident">Widget</span>,
-    <span class="ident">api</span>: <span class="ident">CommonApi</span>,
-    <span class="ident">icon</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="ident">text</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="ident">short_text</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+<span class="kw">struct </span>Block {
+    widget: Widget,
+    api: CommonApi,
+    icon: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    text: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    short_text: <span class="prelude-ty">Option</span>&lt;String&gt;,
 }
 
-<span class="kw">fn</span> <span class="ident">block_values</span>(<span class="ident">block</span>: <span class="kw-2">&amp;</span><span class="ident">Block</span>, <span class="ident">api</span>: <span class="kw-2">&amp;</span><span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">Cow</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span>, <span class="ident">str</span><span class="op">&gt;</span>, <span class="ident">Value</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-    <span class="prelude-val">Ok</span>(<span class="macro">map!</span> {
-        [<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">icon</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">block</span>.<span class="ident">icon</span>] <span class="string">&quot;icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="ident">icon</span>)<span class="question-mark">?</span>),
-        [<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">text</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">block</span>.<span class="ident">text</span>] <span class="string">&quot;text&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">text</span>.<span class="ident">to_string</span>()),
-        [<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">short_text</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">block</span>.<span class="ident">short_text</span>] <span class="string">&quot;short_text&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">short_text</span>.<span class="ident">to_string</span>()),
+<span class="kw">fn </span>block_values(block: <span class="kw-2">&amp;</span>Block, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;HashMap&lt;Cow&lt;<span class="lifetime">&#39;static</span>, str&gt;, Value&gt;&gt; {
+    <span class="prelude-val">Ok</span>(<span class="macro">map! </span>{
+        [<span class="kw">if let </span><span class="prelude-val">Some</span>(icon) = <span class="kw-2">&amp;</span>block.icon] <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(icon)<span class="question-mark">?</span>),
+        [<span class="kw">if let </span><span class="prelude-val">Some</span>(text) = <span class="kw-2">&amp;</span>block.text] <span class="string">&quot;text&quot; </span>=&gt; Value::text(text.to_string()),
+        [<span class="kw">if let </span><span class="prelude-val">Some</span>(short_text) = <span class="kw-2">&amp;</span>block.short_text] <span class="string">&quot;short_text&quot; </span>=&gt; Value::text(short_text.to_string()),
     })
 }
 
-<span class="attribute">#[<span class="ident">dbus_interface</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;rs.i3status.custom&quot;</span>)]</span>
-<span class="kw">impl</span> <span class="ident">Block</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">set_icon</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">icon</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="ident">fdo::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">icon</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">icon</span>.<span class="ident">is_empty</span>() {
-            <span class="prelude-val">None</span>
-        } <span class="kw">else</span> {
-            <span class="prelude-val">Some</span>(<span class="ident">icon</span>.<span class="ident">to_string</span>())
+<span class="attribute">#[dbus_interface(name = <span class="string">&quot;rs.i3status.custom&quot;</span>)]
+</span><span class="kw">impl </span>Block {
+    <span class="kw">async fn </span>set_icon(<span class="kw-2">&amp;mut </span><span class="self">self</span>, icon: <span class="kw-2">&amp;</span>str) -&gt; fdo::Result&lt;()&gt; {
+        <span class="self">self</span>.icon = <span class="kw">if </span>icon.is_empty() {
+            <span class="prelude-val">None
+        </span>} <span class="kw">else </span>{
+            <span class="prelude-val">Some</span>(icon.to_string())
         };
-        <span class="self">self</span>.<span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">block_values</span>(<span class="self">self</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">api</span>)<span class="question-mark">?</span>);
-        <span class="self">self</span>.<span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="self">self</span>.widget.set_values(block_values(<span class="self">self</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.api)<span class="question-mark">?</span>);
+        <span class="self">self</span>.api.set_widget(<span class="kw-2">&amp;</span><span class="self">self</span>.widget).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">set_text</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">full</span>: <span class="ident">String</span>, <span class="ident">short</span>: <span class="ident">String</span>) -&gt; <span class="ident">fdo::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">text</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">full</span>);
-        <span class="self">self</span>.<span class="ident">short_text</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">short</span>);
-        <span class="self">self</span>.<span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">block_values</span>(<span class="self">self</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">api</span>)<span class="question-mark">?</span>);
-        <span class="self">self</span>.<span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">async fn </span>set_text(<span class="kw-2">&amp;mut </span><span class="self">self</span>, full: String, short: String) -&gt; fdo::Result&lt;()&gt; {
+        <span class="self">self</span>.text = <span class="prelude-val">Some</span>(full);
+        <span class="self">self</span>.short_text = <span class="prelude-val">Some</span>(short);
+        <span class="self">self</span>.widget.set_values(block_values(<span class="self">self</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.api)<span class="question-mark">?</span>);
+        <span class="self">self</span>.api.set_widget(<span class="kw-2">&amp;</span><span class="self">self</span>.widget).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">set_state</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">state</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="ident">fdo::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">state</span> {
-            <span class="string">&quot;idle&quot;</span> =&gt; <span class="ident">State::Idle</span>,
-            <span class="string">&quot;info&quot;</span> =&gt; <span class="ident">State::Info</span>,
-            <span class="string">&quot;good&quot;</span> =&gt; <span class="ident">State::Good</span>,
-            <span class="string">&quot;warning&quot;</span> =&gt; <span class="ident">State::Warning</span>,
-            <span class="string">&quot;critical&quot;</span> =&gt; <span class="ident">State::Critical</span>,
-            <span class="kw">_</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::new</span>(<span class="macro">format!</span>(<span class="string">&quot;&#39;{state}&#39; is not a valid state&quot;</span>)).<span class="ident">into</span>()),
+    <span class="kw">async fn </span>set_state(<span class="kw-2">&amp;mut </span><span class="self">self</span>, state: <span class="kw-2">&amp;</span>str) -&gt; fdo::Result&lt;()&gt; {
+        <span class="self">self</span>.widget.state = <span class="kw">match </span>state {
+            <span class="string">&quot;idle&quot; </span>=&gt; State::Idle,
+            <span class="string">&quot;info&quot; </span>=&gt; State::Info,
+            <span class="string">&quot;good&quot; </span>=&gt; State::Good,
+            <span class="string">&quot;warning&quot; </span>=&gt; State::Warning,
+            <span class="string">&quot;critical&quot; </span>=&gt; State::Critical,
+            <span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">&quot;&#39;{state}&#39; is not a valid state&quot;</span>)).into()),
         };
-        <span class="self">self</span>.<span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="self">self</span>.api.set_widget(<span class="kw-2">&amp;</span><span class="self">self</span>.widget).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
     }
 }
 
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="comment">// This block doesn&#39;t listen for any events. Closing the channel is necessary, because channels</span>
-    <span class="comment">// are bounded by the number of pending messages, and if we don&#39;t close it now, main thread</span>
-    <span class="comment">// will get blocked while trying to send a new message.</span>
-    <span class="ident">api</span>.<span class="ident">event_receiver</span>.<span class="ident">close</span>();
+<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="comment">// This block doesn&#39;t listen for any events. Closing the channel is necessary, because channels
+    // are bounded by the number of pending messages, and if we don&#39;t close it now, main thread
+    // will get blocked while trying to send a new message.
+    </span>api.event_receiver.close();
 
-    <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">CustomDBusConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">Widget::new</span>().<span class="ident">with_format</span>(
-        <span class="ident">config</span>
-            .<span class="ident">format</span>
-            .<span class="ident">with_defaults</span>(<span class="string">&quot;{ $icon|}{ $text|} &quot;</span>, <span class="string">&quot;{ $icon|} $short_text |&quot;</span>)<span class="question-mark">?</span>,
+    <span class="kw">let </span>config = CustomDBusConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+    <span class="kw">let </span>widget = Widget::new().with_format(
+        config
+            .format
+            .with_defaults(<span class="string">&quot;{ $icon|}{ $text|} &quot;</span>, <span class="string">&quot;{ $icon|} $short_text |&quot;</span>)<span class="question-mark">?</span>,
     );
 
-    <span class="kw">let</span> <span class="ident">dbus_conn</span> <span class="op">=</span> <span class="ident">DBUS_CONNECTION</span>
-        .<span class="ident">get_or_init</span>(<span class="ident">dbus_conn</span>())
-        .<span class="kw">await</span>
-        .<span class="ident">as_ref</span>()
-        .<span class="ident">map_err</span>(<span class="ident">Clone::clone</span>)<span class="question-mark">?</span>;
-    <span class="ident">dbus_conn</span>
-        .<span class="ident">object_server</span>()
-        .<span class="ident">at</span>(
-            <span class="ident">config</span>.<span class="ident">path</span>,
-            <span class="ident">Block</span> {
-                <span class="ident">widget</span>,
-                <span class="ident">api</span>,
-                <span class="ident">icon</span>: <span class="prelude-val">None</span>,
-                <span class="ident">text</span>: <span class="prelude-val">None</span>,
-                <span class="ident">short_text</span>: <span class="prelude-val">None</span>,
+    <span class="kw">let </span>dbus_conn = DBUS_CONNECTION
+        .get_or_init(dbus_conn())
+        .<span class="kw">await
+        </span>.as_ref()
+        .map_err(Clone::clone)<span class="question-mark">?</span>;
+    dbus_conn
+        .object_server()
+        .at(
+            config.path,
+            Block {
+                widget,
+                api,
+                icon: <span class="prelude-val">None</span>,
+                text: <span class="prelude-val">None</span>,
+                short_text: <span class="prelude-val">None</span>,
             },
         )
-        .<span class="kw">await</span>
-        .<span class="ident">error</span>(<span class="string">&quot;Failed to setup DBus server&quot;</span>)<span class="question-mark">?</span>;
+        .<span class="kw">await
+        </span>.error(<span class="string">&quot;Failed to setup DBus server&quot;</span>)<span class="question-mark">?</span>;
     <span class="prelude-val">Ok</span>(())
 }
 
-<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">dbus_conn</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">zbus::Connection</span><span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">dbus_interface_name</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">env::var</span>(<span class="string">&quot;I3RS_DBUS_NAME&quot;</span>) {
-        <span class="prelude-val">Ok</span>(<span class="ident">v</span>) =&gt; <span class="macro">format!</span>(<span class="string">&quot;{}.{}&quot;</span>, <span class="ident">DBUS_NAME</span>, <span class="ident">v</span>),
-        <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="ident">DBUS_NAME</span>.<span class="ident">to_string</span>(),
+<span class="kw">async fn </span>dbus_conn() -&gt; <span class="prelude-ty">Result</span>&lt;zbus::Connection&gt; {
+    <span class="kw">let </span>dbus_interface_name = <span class="kw">match </span>env::var(<span class="string">&quot;I3RS_DBUS_NAME&quot;</span>) {
+        <span class="prelude-val">Ok</span>(v) =&gt; <span class="macro">format!</span>(<span class="string">&quot;{}.{}&quot;</span>, DBUS_NAME, v),
+        <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; DBUS_NAME.to_string(),
     };
 
-    <span class="kw">let</span> <span class="ident">conn</span> <span class="op">=</span> <span class="ident">new_dbus_connection</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-    <span class="ident">conn</span>.<span class="ident">request_name</span>(<span class="ident">dbus_interface_name</span>)
-        .<span class="kw">await</span>
-        .<span class="ident">error</span>(<span class="string">&quot;Failed to request DBus name&quot;</span>)<span class="question-mark">?</span>;
-    <span class="prelude-val">Ok</span>(<span class="ident">conn</span>)
+    <span class="kw">let </span>conn = new_dbus_connection().<span class="kw">await</span><span class="question-mark">?</span>;
+    conn.request_name(dbus_interface_name)
+        .<span class="kw">await
+        </span>.error(<span class="string">&quot;Failed to request DBus name&quot;</span>)<span class="question-mark">?</span>;
+    <span class="prelude-val">Ok</span>(conn)
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

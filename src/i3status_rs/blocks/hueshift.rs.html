@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/hueshift.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>hueshift.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/hueshift.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>hueshift.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -317,324 +317,324 @@
 <span id="317">317</span>
 <span id="318">318</span>
 <span id="319">319</span>
-</pre><pre class="rust"><code><span class="doccomment">//! Manage display temperature</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! This block displays the current color temperature in Kelvin. When scrolling upon the block the color temperature is changed.</span>
-<span class="doccomment">//! A left click on the block sets the color temperature to `click_temp` that is by default to `6500K`.</span>
-<span class="doccomment">//! A right click completely resets the color temperature to its default value (`6500K`).</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Configuration</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Key | Values | Default</span>
-<span class="doccomment">//! ----|--------|--------</span>
-<span class="doccomment">//! `format`      | A string to customise the output of this block. See below for available placeholders. | `&quot; $temperature &quot;`</span>
-<span class="doccomment">//! `step`        | The step color temperature is in/decreased in Kelvin. | `100`</span>
-<span class="doccomment">//! `hue_shifter` | Program used to control screen color. | Detect automatically</span>
-<span class="doccomment">//! `max_temp`    | Max color temperature in Kelvin. | `10000`</span>
-<span class="doccomment">//! `min_temp`    | Min color temperature in Kelvin. | `1000`</span>
-<span class="doccomment">//! `click_temp`  | Left click color temperature in Kelvin. | `6500`</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Placeholder           | Value                        | Type   | Unit</span>
-<span class="doccomment">//! ----------------------|------------------------------|--------|---------------</span>
-<span class="doccomment">//! `temperature`         | Current temperature          | Number | -</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Available Hue Shifters</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Name                 | Supports</span>
-<span class="doccomment">//! ---------------------|---------</span>
-<span class="doccomment">//! `&quot;redshift&quot;`         | X11</span>
-<span class="doccomment">//! `&quot;sct&quot;`              | X11</span>
-<span class="doccomment">//! `&quot;gammastep&quot;`        | X11 and Wayland</span>
-<span class="doccomment">//! `&quot;wl_gammarelay&quot;`    | Wayland</span>
-<span class="doccomment">//! `&quot;wl_gammarelay_rs&quot;` | Wayland</span>
-<span class="doccomment">//! `&quot;wlsunset&quot;`         | Wayland</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Note that at the moment, only [`wl_gammarelay`](https://github.com/jeremija/wl-gammarelay) and</span>
-<span class="doccomment">//! [`wl_gammarelay_rs`](https://github.com/MaxVerevkin/wl-gammarelay-rs)</span>
-<span class="doccomment">//! subscribe to the events and update the bar when the temperature is modified extenrally. Also,</span>
-<span class="doccomment">//! these are the only drivers at the moment that work under Wayland without flickering.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Example</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;hueshift&quot;</span>
-<span class="doccomment">//! hue_shifter = &quot;redshift&quot;</span>
-<span class="doccomment">//! step = 50</span>
-<span class="doccomment">//! click_temp = 3500</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! A hard limit is set for the `max_temp` to `10000K` and the same for the `min_temp` which is `1000K`.</span>
-<span class="doccomment">//! The `step` has a hard limit as well, defined to `500K` to avoid too brutal changes.</span>
+</pre><pre class="rust"><code><span class="doccomment">//! Manage display temperature
+//!
+//! This block displays the current color temperature in Kelvin. When scrolling upon the block the color temperature is changed.
+//! A left click on the block sets the color temperature to `click_temp` that is by default to `6500K`.
+//! A right click completely resets the color temperature to its default value (`6500K`).
+//!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `format`      | A string to customise the output of this block. See below for available placeholders. | `&quot; $temperature &quot;`
+//! `step`        | The step color temperature is in/decreased in Kelvin. | `100`
+//! `hue_shifter` | Program used to control screen color. | Detect automatically
+//! `max_temp`    | Max color temperature in Kelvin. | `10000`
+//! `min_temp`    | Min color temperature in Kelvin. | `1000`
+//! `click_temp`  | Left click color temperature in Kelvin. | `6500`
+//!
+//! Placeholder           | Value                        | Type   | Unit
+//! ----------------------|------------------------------|--------|---------------
+//! `temperature`         | Current temperature          | Number | -
+//!
+//! # Available Hue Shifters
+//!
+//! Name                 | Supports
+//! ---------------------|---------
+//! `&quot;redshift&quot;`         | X11
+//! `&quot;sct&quot;`              | X11
+//! `&quot;gammastep&quot;`        | X11 and Wayland
+//! `&quot;wl_gammarelay&quot;`    | Wayland
+//! `&quot;wl_gammarelay_rs&quot;` | Wayland
+//! `&quot;wlsunset&quot;`         | Wayland
+//!
+//! Note that at the moment, only [`wl_gammarelay`](https://github.com/jeremija/wl-gammarelay) and
+//! [`wl_gammarelay_rs`](https://github.com/MaxVerevkin/wl-gammarelay-rs)
+//! subscribe to the events and update the bar when the temperature is modified extenrally. Also,
+//! these are the only drivers at the moment that work under Wayland without flickering.
+//!
+//! # Example
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;hueshift&quot;
+//! hue_shifter = &quot;redshift&quot;
+//! step = 50
+//! click_temp = 3500
+//! ```
+//!
+//! A hard limit is set for the `max_temp` to `10000K` and the same for the `min_temp` which is `1000K`.
+//! The `step` has a hard limit as well, defined to `500K` to avoid too brutal changes.
 
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::subprocess</span>::{<span class="ident">spawn_process</span>, <span class="ident">spawn_shell</span>};
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::util::has_command</span>;
-<span class="kw">use</span> <span class="ident">futures::future::pending</span>;
+</span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span><span class="kw">crate</span>::subprocess::{spawn_process, spawn_shell};
+<span class="kw">use </span><span class="kw">crate</span>::util::has_command;
+<span class="kw">use </span>futures::future::pending;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
-<span class="kw">struct</span> <span class="ident">HueshiftConfig</span> {
-    <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">5</span>.<span class="ident">into</span>())]</span>
-    <span class="ident">interval</span>: <span class="ident">Seconds</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">10_000</span>)]</span>
-    <span class="ident">max_temp</span>: <span class="ident">u16</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">1_000</span>)]</span>
-    <span class="ident">min_temp</span>: <span class="ident">u16</span>,
-    <span class="comment">// TODO: Detect currently defined temperature</span>
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">6_500</span>)]</span>
-    <span class="ident">current_temp</span>: <span class="ident">u16</span>,
-    <span class="ident">hue_shifter</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">HueShifter</span><span class="op">&gt;</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">100</span>)]</span>
-    <span class="ident">step</span>: <span class="ident">u16</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">6_500</span>)]</span>
-    <span class="ident">click_temp</span>: <span class="ident">u16</span>,
+<span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
+#[serde(deny_unknown_fields, default)]
+</span><span class="kw">struct </span>HueshiftConfig {
+    format: FormatConfig,
+    <span class="attribute">#[default(<span class="number">5</span>.into())]
+    </span>interval: Seconds,
+    <span class="attribute">#[default(<span class="number">10_000</span>)]
+    </span>max_temp: u16,
+    <span class="attribute">#[default(<span class="number">1_000</span>)]
+    </span>min_temp: u16,
+    <span class="comment">// TODO: Detect currently defined temperature
+    </span><span class="attribute">#[default(<span class="number">6_500</span>)]
+    </span>current_temp: u16,
+    hue_shifter: <span class="prelude-ty">Option</span>&lt;HueShifter&gt;,
+    <span class="attribute">#[default(<span class="number">100</span>)]
+    </span>step: u16,
+    <span class="attribute">#[default(<span class="number">6_500</span>)]
+    </span>click_temp: u16,
 }
 
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">HueshiftConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">Widget::new</span>().<span class="ident">with_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $temperature &quot;</span>)<span class="question-mark">?</span>);
+<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span>config = HueshiftConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(config.format.with_default(<span class="string">&quot; $temperature &quot;</span>)<span class="question-mark">?</span>);
 
-    <span class="comment">// limit too big steps at 500K to avoid too brutal changes</span>
-    <span class="kw">let</span> <span class="ident">step</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">step</span>.<span class="ident">max</span>(<span class="number">500</span>);
-    <span class="kw">let</span> <span class="ident">max_temp</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">max_temp</span>.<span class="ident">min</span>(<span class="number">10_000</span>);
-    <span class="kw">let</span> <span class="ident">min_temp</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">min_temp</span>.<span class="ident">clamp</span>(<span class="number">1_000</span>, <span class="ident">max_temp</span>);
+    <span class="comment">// limit too big steps at 500K to avoid too brutal changes
+    </span><span class="kw">let </span>step = config.step.max(<span class="number">500</span>);
+    <span class="kw">let </span>max_temp = config.max_temp.min(<span class="number">10_000</span>);
+    <span class="kw">let </span>min_temp = config.min_temp.clamp(<span class="number">1_000</span>, max_temp);
 
-    <span class="kw">let</span> <span class="ident">hue_shifter</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">hue_shifter</span> {
-        <span class="prelude-val">Some</span>(<span class="ident">driver</span>) =&gt; <span class="ident">driver</span>,
-        <span class="prelude-val">None</span> =&gt; {
-            <span class="kw">if</span> <span class="ident">has_command</span>(<span class="string">&quot;wl-gammarelay-rs&quot;</span>).<span class="kw">await</span><span class="question-mark">?</span> {
-                <span class="ident">HueShifter::WlGammarelayRs</span>
-            } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">has_command</span>(<span class="string">&quot;wl-gammarelay&quot;</span>).<span class="kw">await</span><span class="question-mark">?</span> {
-                <span class="ident">HueShifter::WlGammarelay</span>
-            } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">has_command</span>(<span class="string">&quot;redshift&quot;</span>).<span class="kw">await</span><span class="question-mark">?</span> {
-                <span class="ident">HueShifter::Redshift</span>
-            } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">has_command</span>(<span class="string">&quot;sct&quot;</span>).<span class="kw">await</span><span class="question-mark">?</span> {
-                <span class="ident">HueShifter::Sct</span>
-            } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">has_command</span>(<span class="string">&quot;gammastep&quot;</span>).<span class="kw">await</span><span class="question-mark">?</span> {
-                <span class="ident">HueShifter::Gammastep</span>
-            } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">has_command</span>(<span class="string">&quot;wlsunset&quot;</span>).<span class="kw">await</span><span class="question-mark">?</span> {
-                <span class="ident">HueShifter::Wlsunset</span>
-            } <span class="kw">else</span> {
-                <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::new</span>(<span class="string">&quot;Cound not detect driver program&quot;</span>));
+    <span class="kw">let </span>hue_shifter = <span class="kw">match </span>config.hue_shifter {
+        <span class="prelude-val">Some</span>(driver) =&gt; driver,
+        <span class="prelude-val">None </span>=&gt; {
+            <span class="kw">if </span>has_command(<span class="string">&quot;wl-gammarelay-rs&quot;</span>).<span class="kw">await</span><span class="question-mark">? </span>{
+                HueShifter::WlGammarelayRs
+            } <span class="kw">else if </span>has_command(<span class="string">&quot;wl-gammarelay&quot;</span>).<span class="kw">await</span><span class="question-mark">? </span>{
+                HueShifter::WlGammarelay
+            } <span class="kw">else if </span>has_command(<span class="string">&quot;redshift&quot;</span>).<span class="kw">await</span><span class="question-mark">? </span>{
+                HueShifter::Redshift
+            } <span class="kw">else if </span>has_command(<span class="string">&quot;sct&quot;</span>).<span class="kw">await</span><span class="question-mark">? </span>{
+                HueShifter::Sct
+            } <span class="kw">else if </span>has_command(<span class="string">&quot;gammastep&quot;</span>).<span class="kw">await</span><span class="question-mark">? </span>{
+                HueShifter::Gammastep
+            } <span class="kw">else if </span>has_command(<span class="string">&quot;wlsunset&quot;</span>).<span class="kw">await</span><span class="question-mark">? </span>{
+                HueShifter::Wlsunset
+            } <span class="kw">else </span>{
+                <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="string">&quot;Cound not detect driver program&quot;</span>));
             }
         }
     };
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">driver</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">HueShiftDriver</span><span class="op">&gt;</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">hue_shifter</span> {
-        <span class="ident">HueShifter::Redshift</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">Redshift</span>),
-        <span class="ident">HueShifter::Sct</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">Sct</span>),
-        <span class="ident">HueShifter::Gammastep</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">Gammastep</span>),
-        <span class="ident">HueShifter::Wlsunset</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">Wlsunset</span>),
-        <span class="ident">HueShifter::WlGammarelay</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">WlGammarelayRs::new</span>(<span class="string">&quot;wl-gammarelay&quot;</span>).<span class="kw">await</span><span class="question-mark">?</span>),
-        <span class="ident">HueShifter::WlGammarelayRs</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">WlGammarelayRs::new</span>(<span class="string">&quot;wl-gammarelay-rs&quot;</span>).<span class="kw">await</span><span class="question-mark">?</span>),
+    <span class="kw">let </span><span class="kw-2">mut </span>driver: Box&lt;<span class="kw">dyn </span>HueShiftDriver&gt; = <span class="kw">match </span>hue_shifter {
+        HueShifter::Redshift =&gt; Box::new(Redshift),
+        HueShifter::Sct =&gt; Box::new(Sct),
+        HueShifter::Gammastep =&gt; Box::new(Gammastep),
+        HueShifter::Wlsunset =&gt; Box::new(Wlsunset),
+        HueShifter::WlGammarelay =&gt; Box::new(WlGammarelayRs::new(<span class="string">&quot;wl-gammarelay&quot;</span>).<span class="kw">await</span><span class="question-mark">?</span>),
+        HueShifter::WlGammarelayRs =&gt; Box::new(WlGammarelayRs::new(<span class="string">&quot;wl-gammarelay-rs&quot;</span>).<span class="kw">await</span><span class="question-mark">?</span>),
     };
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">current_temp</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">current_temp</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>current_temp = config.current_temp;
 
-    <span class="kw">loop</span> {
-        <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span>(<span class="string">&quot;temperature&quot;</span> =&gt; <span class="ident">Value::number</span>(<span class="ident">current_temp</span>)));
-        <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">loop </span>{
+        widget.set_values(<span class="macro">map!</span>(<span class="string">&quot;temperature&quot; </span>=&gt; Value::number(current_temp)));
+        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="macro">select!</span> {
-            <span class="kw">_</span> <span class="op">=</span> <span class="ident">sleep</span>(<span class="ident">config</span>.<span class="ident">interval</span>.<span class="number">0</span>) =&gt; (),
-            <span class="ident">update</span> <span class="op">=</span> <span class="ident">driver</span>.<span class="ident">receive_update</span>() =&gt; {
-                <span class="ident">current_temp</span> <span class="op">=</span> <span class="ident">update</span><span class="question-mark">?</span>;
+        <span class="macro">select! </span>{
+            <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt; (),
+            update = driver.receive_update() =&gt; {
+                current_temp = update<span class="question-mark">?</span>;
             }
-            <span class="ident">event</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; {
-                <span class="kw">match</span> <span class="ident">event</span> {
-                    <span class="ident">Click</span>(<span class="ident">click</span>) =&gt; <span class="kw">match</span> <span class="ident">click</span>.<span class="ident">button</span> {
-                        <span class="ident">MouseButton::Left</span> =&gt; {
-                            <span class="ident">current_temp</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">click_temp</span>;
-                            <span class="ident">driver</span>.<span class="ident">update</span>(<span class="ident">current_temp</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+            event = api.event() =&gt; {
+                <span class="kw">match </span>event {
+                    Click(click) =&gt; <span class="kw">match </span>click.button {
+                        MouseButton::Left =&gt; {
+                            current_temp = config.click_temp;
+                            driver.update(current_temp).<span class="kw">await</span><span class="question-mark">?</span>;
                         }
-                        <span class="ident">MouseButton::Right</span> =&gt; {
-                            <span class="kw">if</span> <span class="ident">max_temp</span> <span class="op">&gt;</span> <span class="number">6500</span> {
-                                <span class="ident">current_temp</span> <span class="op">=</span> <span class="number">6500</span>;
-                                <span class="ident">driver</span>.<span class="ident">reset</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-                            } <span class="kw">else</span> {
-                                <span class="ident">current_temp</span> <span class="op">=</span> <span class="ident">max_temp</span>;
-                                <span class="ident">driver</span>.<span class="ident">update</span>(<span class="ident">current_temp</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+                        MouseButton::Right =&gt; {
+                            <span class="kw">if </span>max_temp &gt; <span class="number">6500 </span>{
+                                current_temp = <span class="number">6500</span>;
+                                driver.reset().<span class="kw">await</span><span class="question-mark">?</span>;
+                            } <span class="kw">else </span>{
+                                current_temp = max_temp;
+                                driver.update(current_temp).<span class="kw">await</span><span class="question-mark">?</span>;
                             }
                         }
-                        <span class="ident">MouseButton::WheelUp</span> =&gt; {
-                            <span class="ident">current_temp</span> <span class="op">=</span> (<span class="ident">current_temp</span> <span class="op">+</span> <span class="ident">step</span>).<span class="ident">min</span>(<span class="ident">max_temp</span>);
-                            <span class="ident">driver</span>.<span class="ident">update</span>(<span class="ident">current_temp</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+                        MouseButton::WheelUp =&gt; {
+                            current_temp = (current_temp + step).min(max_temp);
+                            driver.update(current_temp).<span class="kw">await</span><span class="question-mark">?</span>;
                         }
-                        <span class="ident">MouseButton::WheelDown</span> =&gt; {
-                            <span class="ident">current_temp</span> <span class="op">=</span> <span class="ident">current_temp</span>.<span class="ident">saturating_sub</span>(<span class="ident">step</span>).<span class="ident">max</span>(<span class="ident">min_temp</span>);
-                            <span class="ident">driver</span>.<span class="ident">update</span>(<span class="ident">current_temp</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+                        MouseButton::WheelDown =&gt; {
+                            current_temp = current_temp.saturating_sub(step).max(min_temp);
+                            driver.update(current_temp).<span class="kw">await</span><span class="question-mark">?</span>;
                         }
-                        <span class="kw">_</span> =&gt; (),
+                        <span class="kw">_ </span>=&gt; (),
                     }
-                    <span class="ident">UpdateRequest</span> =&gt; (),
+                    UpdateRequest =&gt; (),
                 }
             }
         }
     }
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;snake_case&quot;</span>)]</span>
-<span class="kw">enum</span> <span class="ident">HueShifter</span> {
-    <span class="ident">Redshift</span>,
-    <span class="ident">Sct</span>,
-    <span class="ident">Gammastep</span>,
-    <span class="ident">Wlsunset</span>,
-    <span class="ident">WlGammarelay</span>,
-    <span class="ident">WlGammarelayRs</span>,
+<span class="attribute">#[derive(Deserialize, Debug, Clone)]
+#[serde(rename_all = <span class="string">&quot;snake_case&quot;</span>)]
+</span><span class="kw">enum </span>HueShifter {
+    Redshift,
+    Sct,
+    Gammastep,
+    Wlsunset,
+    WlGammarelay,
+    WlGammarelayRs,
 }
 
-<span class="attribute">#[<span class="ident">async_trait</span>]</span>
-<span class="kw">trait</span> <span class="ident">HueShiftDriver</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">update</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">temp</span>: <span class="ident">u16</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
+<span class="attribute">#[async_trait]
+</span><span class="kw">trait </span>HueShiftDriver {
+    <span class="kw">async fn </span>update(<span class="kw-2">&amp;mut </span><span class="self">self</span>, temp: u16) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">reset</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
+    <span class="kw">async fn </span>reset(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">receive_update</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u16</span><span class="op">&gt;</span>;
+    <span class="kw">async fn </span>receive_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;u16&gt;;
 }
 
-<span class="kw">struct</span> <span class="ident">Redshift</span>;
+<span class="kw">struct </span>Redshift;
 
-<span class="attribute">#[<span class="ident">async_trait</span>]</span>
-<span class="kw">impl</span> <span class="ident">HueShiftDriver</span> <span class="kw">for</span> <span class="ident">Redshift</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">update</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">temp</span>: <span class="ident">u16</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="ident">spawn_process</span>(<span class="string">&quot;redshift&quot;</span>, <span class="kw-2">&amp;</span>[<span class="string">&quot;-O&quot;</span>, <span class="kw-2">&amp;</span><span class="ident">temp</span>.<span class="ident">to_string</span>(), <span class="string">&quot;-P&quot;</span>])
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to set new color temperature using redshift.&quot;</span>)
+<span class="attribute">#[async_trait]
+</span><span class="kw">impl </span>HueShiftDriver <span class="kw">for </span>Redshift {
+    <span class="kw">async fn </span>update(<span class="kw-2">&amp;mut </span><span class="self">self</span>, temp: u16) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        spawn_process(<span class="string">&quot;redshift&quot;</span>, <span class="kw-2">&amp;</span>[<span class="string">&quot;-O&quot;</span>, <span class="kw-2">&amp;</span>temp.to_string(), <span class="string">&quot;-P&quot;</span>])
+            .error(<span class="string">&quot;Failed to set new color temperature using redshift.&quot;</span>)
     }
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">reset</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="ident">spawn_process</span>(<span class="string">&quot;redshift&quot;</span>, <span class="kw-2">&amp;</span>[<span class="string">&quot;-x&quot;</span>])
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to set new color temperature using redshift.&quot;</span>)
+    <span class="kw">async fn </span>reset(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        spawn_process(<span class="string">&quot;redshift&quot;</span>, <span class="kw-2">&amp;</span>[<span class="string">&quot;-x&quot;</span>])
+            .error(<span class="string">&quot;Failed to set new color temperature using redshift.&quot;</span>)
     }
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">receive_update</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u16</span><span class="op">&gt;</span> {
-        <span class="ident">pending</span>().<span class="kw">await</span>
-    }
+    <span class="kw">async fn </span>receive_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;u16&gt; {
+        pending().<span class="kw">await
+    </span>}
 }
 
-<span class="kw">struct</span> <span class="ident">Sct</span>;
+<span class="kw">struct </span>Sct;
 
-<span class="attribute">#[<span class="ident">async_trait</span>]</span>
-<span class="kw">impl</span> <span class="ident">HueShiftDriver</span> <span class="kw">for</span> <span class="ident">Sct</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">update</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">temp</span>: <span class="ident">u16</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="ident">spawn_process</span>(<span class="string">&quot;sct&quot;</span>, <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;sct {temp} &gt;/dev/null 2&gt;&amp;1&quot;</span>)])
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to set new color temperature using sct.&quot;</span>)
+<span class="attribute">#[async_trait]
+</span><span class="kw">impl </span>HueShiftDriver <span class="kw">for </span>Sct {
+    <span class="kw">async fn </span>update(<span class="kw-2">&amp;mut </span><span class="self">self</span>, temp: u16) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        spawn_process(<span class="string">&quot;sct&quot;</span>, <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;sct {temp} &gt;/dev/null 2&gt;&amp;1&quot;</span>)])
+            .error(<span class="string">&quot;Failed to set new color temperature using sct.&quot;</span>)
     }
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">reset</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="ident">spawn_process</span>(<span class="string">&quot;sct&quot;</span>, <span class="kw-2">&amp;</span>[]).<span class="ident">error</span>(<span class="string">&quot;Failed to set new color temperature using sct.&quot;</span>)
+    <span class="kw">async fn </span>reset(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        spawn_process(<span class="string">&quot;sct&quot;</span>, <span class="kw-2">&amp;</span>[]).error(<span class="string">&quot;Failed to set new color temperature using sct.&quot;</span>)
     }
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">receive_update</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u16</span><span class="op">&gt;</span> {
-        <span class="ident">pending</span>().<span class="kw">await</span>
-    }
+    <span class="kw">async fn </span>receive_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;u16&gt; {
+        pending().<span class="kw">await
+    </span>}
 }
 
-<span class="kw">struct</span> <span class="ident">Gammastep</span>;
+<span class="kw">struct </span>Gammastep;
 
-<span class="attribute">#[<span class="ident">async_trait</span>]</span>
-<span class="kw">impl</span> <span class="ident">HueShiftDriver</span> <span class="kw">for</span> <span class="ident">Gammastep</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">update</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">temp</span>: <span class="ident">u16</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="ident">spawn_shell</span>(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;killall gammastep; gammastep -O {temp} -P &amp;&quot;</span>,))
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to set new color temperature using gammastep.&quot;</span>)
+<span class="attribute">#[async_trait]
+</span><span class="kw">impl </span>HueShiftDriver <span class="kw">for </span>Gammastep {
+    <span class="kw">async fn </span>update(<span class="kw-2">&amp;mut </span><span class="self">self</span>, temp: u16) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        spawn_shell(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;killall gammastep; gammastep -O {temp} -P &amp;&quot;</span>,))
+            .error(<span class="string">&quot;Failed to set new color temperature using gammastep.&quot;</span>)
     }
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">reset</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="ident">spawn_process</span>(<span class="string">&quot;gammastep&quot;</span>, <span class="kw-2">&amp;</span>[<span class="string">&quot;-x&quot;</span>])
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to set new color temperature using gammastep.&quot;</span>)
+    <span class="kw">async fn </span>reset(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        spawn_process(<span class="string">&quot;gammastep&quot;</span>, <span class="kw-2">&amp;</span>[<span class="string">&quot;-x&quot;</span>])
+            .error(<span class="string">&quot;Failed to set new color temperature using gammastep.&quot;</span>)
     }
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">receive_update</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u16</span><span class="op">&gt;</span> {
-        <span class="ident">pending</span>().<span class="kw">await</span>
-    }
+    <span class="kw">async fn </span>receive_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;u16&gt; {
+        pending().<span class="kw">await
+    </span>}
 }
 
-<span class="kw">struct</span> <span class="ident">Wlsunset</span>;
+<span class="kw">struct </span>Wlsunset;
 
-<span class="attribute">#[<span class="ident">async_trait</span>]</span>
-<span class="kw">impl</span> <span class="ident">HueShiftDriver</span> <span class="kw">for</span> <span class="ident">Wlsunset</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">update</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">temp</span>: <span class="ident">u16</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="comment">// wlsunset does not have a oneshot option, so set both day and</span>
-        <span class="comment">// night temperature. wlsunset dose not allow for day and night</span>
-        <span class="comment">// temperatures to be the same, so increment the day temperature.</span>
-        <span class="ident">spawn_shell</span>(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
+<span class="attribute">#[async_trait]
+</span><span class="kw">impl </span>HueShiftDriver <span class="kw">for </span>Wlsunset {
+    <span class="kw">async fn </span>update(<span class="kw-2">&amp;mut </span><span class="self">self</span>, temp: u16) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        <span class="comment">// wlsunset does not have a oneshot option, so set both day and
+        // night temperature. wlsunset dose not allow for day and night
+        // temperatures to be the same, so increment the day temperature.
+        </span>spawn_shell(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
             <span class="string">&quot;killall wlsunset; wlsunset -T {} -t {} &amp;&quot;</span>,
-            <span class="ident">temp</span> <span class="op">+</span> <span class="number">1</span>,
-            <span class="ident">temp</span>
+            temp + <span class="number">1</span>,
+            temp
         ))
-        .<span class="ident">error</span>(<span class="string">&quot;Failed to set new color temperature using wlsunset.&quot;</span>)
+        .error(<span class="string">&quot;Failed to set new color temperature using wlsunset.&quot;</span>)
     }
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">reset</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="comment">// wlsunset does not have a reset option, so just kill the process.</span>
-        <span class="comment">// Trying to call wlsunset without any arguments uses the defaults:</span>
-        <span class="comment">// day temp: 6500K</span>
-        <span class="comment">// night temp: 4000K</span>
-        <span class="comment">// latitude/longitude: NaN</span>
-        <span class="comment">//     ^ results in sun_condition == POLAR_NIGHT at time of testing</span>
-        <span class="comment">// With these defaults, this results in the the color temperature</span>
-        <span class="comment">// getting set to 4000K.</span>
-        <span class="ident">spawn_process</span>(<span class="string">&quot;killall&quot;</span>, <span class="kw-2">&amp;</span>[<span class="string">&quot;wlsunset&quot;</span>])
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to set new color temperature using wlsunset.&quot;</span>)
+    <span class="kw">async fn </span>reset(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        <span class="comment">// wlsunset does not have a reset option, so just kill the process.
+        // Trying to call wlsunset without any arguments uses the defaults:
+        // day temp: 6500K
+        // night temp: 4000K
+        // latitude/longitude: NaN
+        //     ^ results in sun_condition == POLAR_NIGHT at time of testing
+        // With these defaults, this results in the the color temperature
+        // getting set to 4000K.
+        </span>spawn_process(<span class="string">&quot;killall&quot;</span>, <span class="kw-2">&amp;</span>[<span class="string">&quot;wlsunset&quot;</span>])
+            .error(<span class="string">&quot;Failed to set new color temperature using wlsunset.&quot;</span>)
     }
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">receive_update</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u16</span><span class="op">&gt;</span> {
-        <span class="ident">pending</span>().<span class="kw">await</span>
+    <span class="kw">async fn </span>receive_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;u16&gt; {
+        pending().<span class="kw">await
+    </span>}
+}
+
+<span class="kw">struct </span>WlGammarelayRs {
+    proxy: WlGammarelayRsBusProxy&lt;<span class="lifetime">&#39;static</span>&gt;,
+    updates: zbus::PropertyStream&lt;<span class="lifetime">&#39;static</span>, u16&gt;,
+}
+
+<span class="kw">impl </span>WlGammarelayRs {
+    <span class="kw">async fn </span>new(cmd: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
+        <span class="comment">// Make sure the daemon is running
+        </span>spawn_process(cmd, <span class="kw-2">&amp;</span>[]).error(<span class="string">&quot;Failed to start wl-gammarelay daemon&quot;</span>)<span class="question-mark">?</span>;
+        sleep(Duration::from_millis(<span class="number">100</span>)).<span class="kw">await</span>;
+
+        <span class="kw">let </span>conn = <span class="kw">crate</span>::util::new_dbus_connection().<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let </span>proxy = WlGammarelayRsBusProxy::new(<span class="kw-2">&amp;</span>conn)
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to create wl-gammarelay-rs DBus proxy&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>updates = proxy.receive_temperature_changed().<span class="kw">await</span>;
+        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{ proxy, updates })
     }
 }
 
-<span class="kw">struct</span> <span class="ident">WlGammarelayRs</span> {
-    <span class="ident">proxy</span>: <span class="ident">WlGammarelayRsBusProxy</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span><span class="op">&gt;</span>,
-    <span class="ident">updates</span>: <span class="ident">zbus::PropertyStream</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span>, <span class="ident">u16</span><span class="op">&gt;</span>,
-}
+<span class="attribute">#[async_trait]
+</span><span class="kw">impl </span>HueShiftDriver <span class="kw">for </span>WlGammarelayRs {
+    <span class="kw">async fn </span>update(<span class="kw-2">&amp;mut </span><span class="self">self</span>, temp: u16) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        <span class="self">self</span>.proxy
+            .set_temperature(temp)
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to set temperature&quot;</span>)
+    }
 
-<span class="kw">impl</span> <span class="ident">WlGammarelayRs</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">cmd</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="comment">// Make sure the daemon is running</span>
-        <span class="ident">spawn_process</span>(<span class="ident">cmd</span>, <span class="kw-2">&amp;</span>[]).<span class="ident">error</span>(<span class="string">&quot;Failed to start wl-gammarelay daemon&quot;</span>)<span class="question-mark">?</span>;
-        <span class="ident">sleep</span>(<span class="ident">Duration::from_millis</span>(<span class="number">100</span>)).<span class="kw">await</span>;
+    <span class="kw">async fn </span>reset(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        <span class="self">self</span>.update(<span class="number">6500</span>).<span class="kw">await
+    </span>}
 
-        <span class="kw">let</span> <span class="ident">conn</span> <span class="op">=</span> <span class="ident"><span class="kw">crate</span>::util::new_dbus_connection</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">proxy</span> <span class="op">=</span> <span class="ident">WlGammarelayRsBusProxy::new</span>(<span class="kw-2">&amp;</span><span class="ident">conn</span>)
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to create wl-gammarelay-rs DBus proxy&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">updates</span> <span class="op">=</span> <span class="ident">proxy</span>.<span class="ident">receive_temperature_changed</span>().<span class="kw">await</span>;
-        <span class="prelude-val">Ok</span>(<span class="self">Self</span> { <span class="ident">proxy</span>, <span class="ident">updates</span> })
+    <span class="kw">async fn </span>receive_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;u16&gt; {
+        <span class="kw">let </span>update = <span class="self">self</span>.updates.next().<span class="kw">await</span>.error(<span class="string">&quot;No next update&quot;</span>)<span class="question-mark">?</span>;
+        update.get().<span class="kw">await</span>.error(<span class="string">&quot;Failed to get temperature&quot;</span>)
     }
 }
 
-<span class="attribute">#[<span class="ident">async_trait</span>]</span>
-<span class="kw">impl</span> <span class="ident">HueShiftDriver</span> <span class="kw">for</span> <span class="ident">WlGammarelayRs</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">update</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">temp</span>: <span class="ident">u16</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">proxy</span>
-            .<span class="ident">set_temperature</span>(<span class="ident">temp</span>)
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to set temperature&quot;</span>)
-    }
+<span class="kw">use </span>zbus::dbus_proxy;
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">reset</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">update</span>(<span class="number">6500</span>).<span class="kw">await</span>
-    }
+<span class="attribute">#[dbus_proxy(
+    interface = <span class="string">&quot;rs.wl.gammarelay&quot;</span>,
+    default_service = <span class="string">&quot;rs.wl-gammarelay&quot;</span>,
+    default_path = <span class="string">&quot;/&quot;
+</span>)]
+</span><span class="kw">trait </span>WlGammarelayRsBus {
+    <span class="doccomment">/// Brightness property
+    </span><span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>brightness(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;f64&gt;;
+    <span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>set_brightness(<span class="kw-2">&amp;</span><span class="self">self</span>, value: f64) -&gt; zbus::Result&lt;()&gt;;
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">receive_update</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u16</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">update</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">updates</span>.<span class="ident">next</span>().<span class="kw">await</span>.<span class="ident">error</span>(<span class="string">&quot;No next update&quot;</span>)<span class="question-mark">?</span>;
-        <span class="ident">update</span>.<span class="ident">get</span>().<span class="kw">await</span>.<span class="ident">error</span>(<span class="string">&quot;Failed to get temperature&quot;</span>)
-    }
-}
-
-<span class="kw">use</span> <span class="ident">zbus::dbus_proxy</span>;
-
-<span class="attribute">#[<span class="ident">dbus_proxy</span>(
-    <span class="ident">interface</span> <span class="op">=</span> <span class="string">&quot;rs.wl.gammarelay&quot;</span>,
-    <span class="ident">default_service</span> <span class="op">=</span> <span class="string">&quot;rs.wl-gammarelay&quot;</span>,
-    <span class="ident">default_path</span> <span class="op">=</span> <span class="string">&quot;/&quot;</span>
-)]</span>
-<span class="kw">trait</span> <span class="ident">WlGammarelayRsBus</span> {
-    <span class="doccomment">/// Brightness property</span>
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">brightness</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>;
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">set_brightness</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">value</span>: <span class="ident">f64</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
-
-    <span class="doccomment">/// Temperature property</span>
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">temperature</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">u16</span><span class="op">&gt;</span>;
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">set_temperature</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">value</span>: <span class="ident">u16</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
+    <span class="doccomment">/// Temperature property
+    </span><span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>temperature(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;u16&gt;;
+    <span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>set_temperature(<span class="kw-2">&amp;</span><span class="self">self</span>, value: u16) -&gt; zbus::Result&lt;()&gt;;
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

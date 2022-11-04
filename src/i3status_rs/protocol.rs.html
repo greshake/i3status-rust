@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/protocol.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>protocol.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../i3status_rs/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/protocol.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>protocol.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../i3status_rs/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -89,96 +89,96 @@
 <span id="89">89</span>
 <span id="90">90</span>
 <span id="91">91</span>
-</pre><pre class="rust"><code><span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">i3bar_block</span>;
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">i3bar_event</span>;
+</pre><pre class="rust"><code><span class="kw">pub mod </span>i3bar_block;
+<span class="kw">pub mod </span>i3bar_event;
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::config::SharedConfig</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::themes::color::Color</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::themes::separator::Separator</span>;
+<span class="kw">use </span><span class="kw">crate</span>::config::SharedConfig;
+<span class="kw">use </span><span class="kw">crate</span>::themes::color::Color;
+<span class="kw">use </span><span class="kw">crate</span>::themes::separator::Separator;
 
-<span class="kw">use</span> <span class="ident">i3bar_block::I3BarBlock</span>;
+<span class="kw">use </span>i3bar_block::I3BarBlock;
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">init</span>(<span class="ident">never_pause</span>: <span class="ident">bool</span>) {
-    <span class="kw">if</span> <span class="ident">never_pause</span> {
+<span class="kw">pub fn </span>init(never_pause: bool) {
+    <span class="kw">if </span>never_pause {
         <span class="macro">println!</span>(<span class="string">&quot;{{\&quot;version\&quot;: 1, \&quot;click_events\&quot;: true, \&quot;stop_signal\&quot;: 0}}\n[&quot;</span>);
-    } <span class="kw">else</span> {
+    } <span class="kw">else </span>{
         <span class="macro">println!</span>(<span class="string">&quot;{{\&quot;version\&quot;: 1, \&quot;click_events\&quot;: true}}\n[&quot;</span>);
     }
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">print_blocks</span>(<span class="ident">blocks</span>: <span class="kw-2">&amp;</span>[<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">I3BarBlock</span><span class="op">&gt;</span>], <span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">SharedConfig</span>) {
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">last_bg</span> <span class="op">=</span> <span class="ident">Color::None</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rendered_blocks</span> <span class="op">=</span> <span class="macro">vec!</span>[];
+<span class="kw">pub fn </span>print_blocks(blocks: <span class="kw-2">&amp;</span>[Vec&lt;I3BarBlock&gt;], config: <span class="kw-2">&amp;</span>SharedConfig) {
+    <span class="kw">let </span><span class="kw-2">mut </span>last_bg = Color::None;
+    <span class="kw">let </span><span class="kw-2">mut </span>rendered_blocks = <span class="macro">vec!</span>[];
 
-    <span class="comment">// The right most block should never be alternated</span>
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">alt</span> <span class="op">=</span> <span class="ident">blocks</span>.<span class="ident">iter</span>().<span class="ident">filter</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="op">!</span><span class="ident">x</span>.<span class="ident">is_empty</span>()).<span class="ident">count</span>() <span class="op">%</span> <span class="number">2</span> <span class="op">==</span> <span class="number">0</span>;
+    <span class="comment">// The right most block should never be alternated
+    </span><span class="kw">let </span><span class="kw-2">mut </span>alt = blocks.iter().filter(|x| !x.is_empty()).count() % <span class="number">2 </span>== <span class="number">0</span>;
 
-    <span class="kw">for</span> (<span class="ident">id</span>, <span class="kw-2">mut</span> <span class="ident">widgets</span>) <span class="kw">in</span> <span class="ident">blocks</span>
-        .<span class="ident">iter</span>()
-        .<span class="ident">cloned</span>()
-        .<span class="ident">enumerate</span>()
-        .<span class="ident">filter</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="op">!</span><span class="ident">x</span>.<span class="number">1</span>.<span class="ident">is_empty</span>())
+    <span class="kw">for </span>(id, <span class="kw-2">mut </span>widgets) <span class="kw">in </span>blocks
+        .iter()
+        .cloned()
+        .enumerate()
+        .filter(|x| !x.<span class="number">1</span>.is_empty())
     {
-        <span class="comment">// Apply tint for all widgets of every second block</span>
-        <span class="comment">// TODO: Allow for other non-additive tints</span>
-        <span class="kw">if</span> <span class="ident">alt</span> {
-            <span class="kw">for</span> <span class="ident">data</span> <span class="kw">in</span> <span class="kw-2">&amp;mut</span> <span class="ident">widgets</span> {
-                <span class="ident">data</span>.<span class="ident">background</span> <span class="op">=</span> <span class="ident">data</span>.<span class="ident">background</span> <span class="op">+</span> <span class="ident">config</span>.<span class="ident">theme</span>.<span class="ident">alternating_tint_bg</span>;
-                <span class="ident">data</span>.<span class="ident">color</span> <span class="op">=</span> <span class="ident">data</span>.<span class="ident">color</span> <span class="op">+</span> <span class="ident">config</span>.<span class="ident">theme</span>.<span class="ident">alternating_tint_fg</span>;
+        <span class="comment">// Apply tint for all widgets of every second block
+        // TODO: Allow for other non-additive tints
+        </span><span class="kw">if </span>alt {
+            <span class="kw">for </span>data <span class="kw">in </span><span class="kw-2">&amp;mut </span>widgets {
+                data.background = data.background + config.theme.alternating_tint_bg;
+                data.color = data.color + config.theme.alternating_tint_fg;
             }
         }
-        <span class="ident">alt</span> <span class="op">=</span> <span class="op">!</span><span class="ident">alt</span>;
+        alt = !alt;
 
-        <span class="kw">for</span> <span class="ident">data</span> <span class="kw">in</span> <span class="kw-2">&amp;mut</span> <span class="ident">widgets</span> {
-            <span class="ident">data</span>.<span class="ident">name</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">id</span>.<span class="ident">to_string</span>());
+        <span class="kw">for </span>data <span class="kw">in </span><span class="kw-2">&amp;mut </span>widgets {
+            data.name = <span class="prelude-val">Some</span>(id.to_string());
         }
 
-        <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Separator::Custom</span>(<span class="ident">separator</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">theme</span>.<span class="ident">separator</span> {
-            <span class="comment">// The first widget&#39;s BG is used to get the FG color for the current separator</span>
-            <span class="kw">let</span> <span class="ident">sep_fg</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">config</span>.<span class="ident">theme</span>.<span class="ident">separator_fg</span> <span class="op">==</span> <span class="ident">Color::Auto</span> {
-                <span class="ident">widgets</span>.<span class="ident">first</span>().<span class="ident">unwrap</span>().<span class="ident">background</span>
-            } <span class="kw">else</span> {
-                <span class="ident">config</span>.<span class="ident">theme</span>.<span class="ident">separator_fg</span>
+        <span class="kw">if let </span>Separator::Custom(separator) = <span class="kw-2">&amp;</span>config.theme.separator {
+            <span class="comment">// The first widget&#39;s BG is used to get the FG color for the current separator
+            </span><span class="kw">let </span>sep_fg = <span class="kw">if </span>config.theme.separator_fg == Color::Auto {
+                widgets.first().unwrap().background
+            } <span class="kw">else </span>{
+                config.theme.separator_fg
             };
 
-            <span class="comment">// The separator&#39;s BG is the last block&#39;s last widget&#39;s BG</span>
-            <span class="kw">let</span> <span class="ident">sep_bg</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">config</span>.<span class="ident">theme</span>.<span class="ident">separator_bg</span> <span class="op">==</span> <span class="ident">Color::Auto</span> {
-                <span class="ident">last_bg</span>
-            } <span class="kw">else</span> {
-                <span class="ident">config</span>.<span class="ident">theme</span>.<span class="ident">separator_bg</span>
+            <span class="comment">// The separator&#39;s BG is the last block&#39;s last widget&#39;s BG
+            </span><span class="kw">let </span>sep_bg = <span class="kw">if </span>config.theme.separator_bg == Color::Auto {
+                last_bg
+            } <span class="kw">else </span>{
+                config.theme.separator_bg
             };
 
-            <span class="comment">// The last widget&#39;s BG is used to get the BG color for the next separator</span>
-            <span class="ident">last_bg</span> <span class="op">=</span> <span class="ident">widgets</span>.<span class="ident">last</span>().<span class="ident">unwrap</span>().<span class="ident">background</span>;
+            <span class="comment">// The last widget&#39;s BG is used to get the BG color for the next separator
+            </span>last_bg = widgets.last().unwrap().background;
 
-            <span class="kw">let</span> <span class="ident">separator</span> <span class="op">=</span> <span class="ident">I3BarBlock</span> {
-                <span class="ident">full_text</span>: <span class="ident">separator</span>.<span class="ident">clone</span>(),
-                <span class="ident">background</span>: <span class="ident">sep_bg</span>,
-                <span class="ident">color</span>: <span class="ident">sep_fg</span>,
-                ..<span class="ident">Default::default</span>()
+            <span class="kw">let </span>separator = I3BarBlock {
+                full_text: separator.clone(),
+                background: sep_bg,
+                color: sep_fg,
+                ..Default::default()
             };
 
-            <span class="ident">rendered_blocks</span>.<span class="ident">push</span>(<span class="ident">separator</span>);
-            <span class="ident">rendered_blocks</span>.<span class="ident">extend</span>(<span class="ident">widgets</span>);
-        } <span class="kw">else</span> {
-            <span class="comment">// Re-add native separator on last widget for native theme</span>
-            <span class="ident">widgets</span>.<span class="ident">last_mut</span>().<span class="ident">unwrap</span>().<span class="ident">separator</span> <span class="op">=</span> <span class="prelude-val">None</span>;
-            <span class="ident">widgets</span>.<span class="ident">last_mut</span>().<span class="ident">unwrap</span>().<span class="ident">separator_block_width</span> <span class="op">=</span> <span class="prelude-val">None</span>;
+            rendered_blocks.push(separator);
+            rendered_blocks.extend(widgets);
+        } <span class="kw">else </span>{
+            <span class="comment">// Re-add native separator on last widget for native theme
+            </span>widgets.last_mut().unwrap().separator = <span class="prelude-val">None</span>;
+            widgets.last_mut().unwrap().separator_block_width = <span class="prelude-val">None</span>;
 
-            <span class="ident">rendered_blocks</span>.<span class="ident">extend</span>(<span class="ident">widgets</span>);
+            rendered_blocks.extend(widgets);
         }
     }
 
-    <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Separator::Custom</span>(<span class="ident">end_separator</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">theme</span>.<span class="ident">end_separator</span> {
-        <span class="ident">rendered_blocks</span>.<span class="ident">push</span>(<span class="ident">I3BarBlock</span> {
-            <span class="ident">full_text</span>: <span class="ident">end_separator</span>.<span class="ident">clone</span>(),
-            <span class="ident">background</span>: <span class="ident">Color::None</span>,
-            <span class="ident">color</span>: <span class="ident">last_bg</span>,
-            ..<span class="ident">Default::default</span>()
+    <span class="kw">if let </span>Separator::Custom(end_separator) = <span class="kw-2">&amp;</span>config.theme.end_separator {
+        rendered_blocks.push(I3BarBlock {
+            full_text: end_separator.clone(),
+            background: Color::None,
+            color: last_bg,
+            ..Default::default()
         });
     }
 
-    <span class="macro">println!</span>(<span class="string">&quot;{},&quot;</span>, <span class="ident">serde_json::to_string</span>(<span class="kw-2">&amp;</span><span class="ident">rendered_blocks</span>).<span class="ident">unwrap</span>());
+    <span class="macro">println!</span>(<span class="string">&quot;{},&quot;</span>, serde_json::to_string(<span class="kw-2">&amp;</span>rendered_blocks).unwrap());
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

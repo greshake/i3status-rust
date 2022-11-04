@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/music/zbus_mpris.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>zbus_mpris.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../../storage.js"></script><script defer src="../../../../source-script.js"></script><script defer src="../../../../source-files.js"></script><script defer src="../../../../main.js"></script><noscript><link rel="stylesheet" href="../../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../../i3status_rs/index.html"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/music/zbus_mpris.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>zbus_mpris.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../../normalize.css"><link rel="stylesheet" href="../../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../../ayu.css" disabled><link rel="stylesheet" href="../../../../dark.css" disabled><link rel="stylesheet" href="../../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../../storage.js"></script><script defer src="../../../../source-script.js"></script><script defer src="../../../../source-files.js"></script><script defer src="../../../../main.js"></script><noscript><link rel="stylesheet" href="../../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../../i3status_rs/index.html"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -188,195 +188,195 @@
 <span id="188">188</span>
 <span id="189">189</span>
 <span id="190">190</span>
-</pre><pre class="rust"><code><span class="doccomment">//! # DBus interface proxies for: `org.mpris.MediaPlayer2`, `org.mpris.MediaPlayer2.Player`</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! This code was generated by `zbus-xmlgen` `1.0.0` from DBus introspection data.</span>
-<span class="doccomment">//! Source: `11`.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! You may prefer to adapt it, instead of using it verbatim.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! More information can be found in the</span>
-<span class="doccomment">//! [Writing a client proxy](https://zeenix.pages.freedesktop.org/zbus/client.html)</span>
-<span class="doccomment">//! section of the zbus documentation.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! This DBus object implements</span>
-<span class="doccomment">//! [standard DBus interfaces](https://dbus.freedesktop.org/doc/dbus-specification.html),</span>
-<span class="doccomment">//! (`org.freedesktop.DBus.*`) for which the following zbus proxies can be used:</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! * [`zbus::fdo::PropertiesProxy`]</span>
-<span class="doccomment">//! * [`zbus::fdo::IntrospectableProxy`]</span>
-<span class="doccomment">//! * [`zbus::fdo::PeerProxy`]</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! …consequently `zbus-xmlgen` did not generate code for the above interfaces.</span>
+</pre><pre class="rust"><code><span class="doccomment">//! # DBus interface proxies for: `org.mpris.MediaPlayer2`, `org.mpris.MediaPlayer2.Player`
+//!
+//! This code was generated by `zbus-xmlgen` `1.0.0` from DBus introspection data.
+//! Source: `11`.
+//!
+//! You may prefer to adapt it, instead of using it verbatim.
+//!
+//! More information can be found in the
+//! [Writing a client proxy](https://zeenix.pages.freedesktop.org/zbus/client.html)
+//! section of the zbus documentation.
+//!
+//! This DBus object implements
+//! [standard DBus interfaces](https://dbus.freedesktop.org/doc/dbus-specification.html),
+//! (`org.freedesktop.DBus.*`) for which the following zbus proxies can be used:
+//!
+//! * [`zbus::fdo::PropertiesProxy`]
+//! * [`zbus::fdo::IntrospectableProxy`]
+//! * [`zbus::fdo::PeerProxy`]
+//!
+//! …consequently `zbus-xmlgen` did not generate code for the above interfaces.
 
-<span class="kw">use</span> <span class="ident">std::collections::HashMap</span>;
-<span class="kw">use</span> <span class="ident">zbus::dbus_proxy</span>;
-<span class="kw">use</span> <span class="ident">zbus::zvariant</span>::{<span class="ident">ObjectPath</span>, <span class="ident">OwnedValue</span>, <span class="ident">Type</span>};
+</span><span class="kw">use </span>std::collections::HashMap;
+<span class="kw">use </span>zbus::dbus_proxy;
+<span class="kw">use </span>zbus::zvariant::{ObjectPath, OwnedValue, Type};
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Type</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">PlayerMetadata</span>(<span class="kw">pub</span> <span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">OwnedValue</span><span class="op">&gt;</span>);
+<span class="attribute">#[derive(Debug, Clone, Type)]
+</span><span class="kw">pub struct </span>PlayerMetadata(<span class="kw">pub </span>HashMap&lt;String, OwnedValue&gt;);
 
-<span class="kw">impl</span> <span class="ident">TryFrom</span><span class="op">&lt;</span><span class="ident">OwnedValue</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">PlayerMetadata</span> {
-    <span class="kw">type</span> <span class="ident">Error</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">OwnedValue</span><span class="op">&gt;</span> <span class="kw">as</span> <span class="ident">TryFrom</span><span class="op">&lt;</span><span class="ident">OwnedValue</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="ident">::Error</span>;
+<span class="kw">impl </span>TryFrom&lt;OwnedValue&gt; <span class="kw">for </span>PlayerMetadata {
+    <span class="kw">type </span>Error = &lt;HashMap&lt;String, OwnedValue&gt; <span class="kw">as </span>TryFrom&lt;OwnedValue&gt;&gt;::Error;
 
-    <span class="kw">fn</span> <span class="ident">try_from</span>(<span class="ident">value</span>: <span class="ident">OwnedValue</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident"><span class="self">Self</span>::Error</span><span class="op">&gt;</span> {
-        <span class="ident">HashMap::try_from</span>(<span class="ident">value</span>).<span class="ident">map</span>(<span class="self">Self</span>)
+    <span class="kw">fn </span>try_from(value: OwnedValue) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Error&gt; {
+        HashMap::try_from(value).map(<span class="self">Self</span>)
     }
 }
 
-<span class="kw">impl</span> <span class="ident">PlayerMetadata</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">title</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">title</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">get</span>(<span class="string">&quot;xesam:title&quot;</span>)<span class="question-mark">?</span>.<span class="ident">downcast_ref</span>::<span class="op">&lt;</span><span class="ident">str</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
-        (<span class="op">!</span><span class="ident">title</span>.<span class="ident">is_empty</span>()).<span class="ident">then</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">title</span>.<span class="ident">into</span>())
+<span class="kw">impl </span>PlayerMetadata {
+    <span class="kw">pub fn </span>title(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt; {
+        <span class="kw">let </span>title = <span class="self">self</span>.<span class="number">0</span>.get(<span class="string">&quot;xesam:title&quot;</span>)<span class="question-mark">?</span>.downcast_ref::&lt;str&gt;()<span class="question-mark">?</span>;
+        (!title.is_empty()).then(|| title.into())
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">artist</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">artists</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="number">0</span>
-            .<span class="ident">get</span>(<span class="string">&quot;xesam:artist&quot;</span>)<span class="question-mark">?</span>
-            .<span class="ident">downcast_ref</span>::<span class="op">&lt;</span><span class="ident">zvariant::Array</span><span class="op">&gt;</span>()<span class="question-mark">?</span>
-            .<span class="ident">get</span>();
-        <span class="kw">let</span> <span class="ident">artist</span> <span class="op">=</span> <span class="ident">artists</span>.<span class="ident">get</span>(<span class="number">0</span>)<span class="question-mark">?</span>.<span class="ident">downcast_ref</span>::<span class="op">&lt;</span><span class="ident">str</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
-        (<span class="op">!</span><span class="ident">artist</span>.<span class="ident">is_empty</span>()).<span class="ident">then</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">artist</span>.<span class="ident">into</span>())
+    <span class="kw">pub fn </span>artist(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt; {
+        <span class="kw">let </span>artists = <span class="self">self
+            </span>.<span class="number">0
+            </span>.get(<span class="string">&quot;xesam:artist&quot;</span>)<span class="question-mark">?
+            </span>.downcast_ref::&lt;zvariant::Array&gt;()<span class="question-mark">?
+            </span>.get();
+        <span class="kw">let </span>artist = artists.get(<span class="number">0</span>)<span class="question-mark">?</span>.downcast_ref::&lt;str&gt;()<span class="question-mark">?</span>;
+        (!artist.is_empty()).then(|| artist.into())
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">url</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">url</span> <span class="op">=</span> <span class="self">self</span>.<span class="number">0</span>.<span class="ident">get</span>(<span class="string">&quot;xesam:url&quot;</span>)<span class="question-mark">?</span>.<span class="ident">downcast_ref</span>::<span class="op">&lt;</span><span class="ident">str</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
-        (<span class="op">!</span><span class="ident">url</span>.<span class="ident">is_empty</span>()).<span class="ident">then</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">url</span>.<span class="ident">into</span>())
+    <span class="kw">pub fn </span>url(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt; {
+        <span class="kw">let </span>url = <span class="self">self</span>.<span class="number">0</span>.get(<span class="string">&quot;xesam:url&quot;</span>)<span class="question-mark">?</span>.downcast_ref::&lt;str&gt;()<span class="question-mark">?</span>;
+        (!url.is_empty()).then(|| url.into())
     }
 }
 
-<span class="attribute">#[<span class="ident">dbus_proxy</span>(
-    <span class="ident">interface</span> <span class="op">=</span> <span class="string">&quot;org.mpris.MediaPlayer2&quot;</span>,
-    <span class="ident">default_path</span> <span class="op">=</span> <span class="string">&quot;/org/mpris/MediaPlayer2&quot;</span>
-)]</span>
-<span class="kw">trait</span> <span class="ident">MediaPlayer2</span> {
-    <span class="doccomment">/// Quit method</span>
-    <span class="kw">fn</span> <span class="ident">quit</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
+<span class="attribute">#[dbus_proxy(
+    interface = <span class="string">&quot;org.mpris.MediaPlayer2&quot;</span>,
+    default_path = <span class="string">&quot;/org/mpris/MediaPlayer2&quot;
+</span>)]
+</span><span class="kw">trait </span>MediaPlayer2 {
+    <span class="doccomment">/// Quit method
+    </span><span class="kw">fn </span>quit(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;()&gt;;
 
-    <span class="doccomment">/// Raise method</span>
-    <span class="kw">fn</span> <span class="ident">raise</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
+    <span class="doccomment">/// Raise method
+    </span><span class="kw">fn </span>raise(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;()&gt;;
 
-    <span class="doccomment">/// CanQuit property</span>
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">can_quit</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>;
+    <span class="doccomment">/// CanQuit property
+    </span><span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>can_quit(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;
 
-    <span class="doccomment">/// CanRaise property</span>
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">can_raise</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>;
+    <span class="doccomment">/// CanRaise property
+    </span><span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>can_raise(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;
 
-    <span class="doccomment">/// DesktopEntry property</span>
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">desktop_entry</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>;
+    <span class="doccomment">/// DesktopEntry property
+    </span><span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>desktop_entry(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;String&gt;;
 
-    <span class="doccomment">/// HasTrackList property</span>
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">has_track_list</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>;
+    <span class="doccomment">/// HasTrackList property
+    </span><span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>has_track_list(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;
 
-    <span class="doccomment">/// Identity property</span>
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">identity</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>;
+    <span class="doccomment">/// Identity property
+    </span><span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>identity(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;String&gt;;
 
-    <span class="doccomment">/// SupportedMimeTypes property</span>
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">supported_mime_types</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+    <span class="doccomment">/// SupportedMimeTypes property
+    </span><span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>supported_mime_types(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;Vec&lt;String&gt;&gt;;
 
-    <span class="doccomment">/// SupportedUriSchemes property</span>
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">supported_uri_schemes</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+    <span class="doccomment">/// SupportedUriSchemes property
+    </span><span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>supported_uri_schemes(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;Vec&lt;String&gt;&gt;;
 }
 
-<span class="attribute">#[<span class="ident">dbus_proxy</span>(
-    <span class="ident">interface</span> <span class="op">=</span> <span class="string">&quot;org.mpris.MediaPlayer2.Player&quot;</span>,
-    <span class="ident">default_path</span> <span class="op">=</span> <span class="string">&quot;/org/mpris/MediaPlayer2&quot;</span>
-)]</span>
-<span class="kw">trait</span> <span class="ident">Player</span> {
-    <span class="doccomment">/// Next method</span>
-    <span class="kw">fn</span> <span class="ident">next</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
+<span class="attribute">#[dbus_proxy(
+    interface = <span class="string">&quot;org.mpris.MediaPlayer2.Player&quot;</span>,
+    default_path = <span class="string">&quot;/org/mpris/MediaPlayer2&quot;
+</span>)]
+</span><span class="kw">trait </span>Player {
+    <span class="doccomment">/// Next method
+    </span><span class="kw">fn </span>next(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;()&gt;;
 
-    <span class="doccomment">/// OpenUri method</span>
-    <span class="kw">fn</span> <span class="ident">open_uri</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">uri</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
+    <span class="doccomment">/// OpenUri method
+    </span><span class="kw">fn </span>open_uri(<span class="kw-2">&amp;</span><span class="self">self</span>, uri: <span class="kw-2">&amp;</span>str) -&gt; zbus::Result&lt;()&gt;;
 
-    <span class="doccomment">/// Pause method</span>
-    <span class="kw">fn</span> <span class="ident">pause</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
+    <span class="doccomment">/// Pause method
+    </span><span class="kw">fn </span>pause(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;()&gt;;
 
-    <span class="doccomment">/// Play method</span>
-    <span class="kw">fn</span> <span class="ident">play</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
+    <span class="doccomment">/// Play method
+    </span><span class="kw">fn </span>play(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;()&gt;;
 
-    <span class="doccomment">/// PlayPause method</span>
-    <span class="kw">fn</span> <span class="ident">play_pause</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
+    <span class="doccomment">/// PlayPause method
+    </span><span class="kw">fn </span>play_pause(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;()&gt;;
 
-    <span class="doccomment">/// Previous method</span>
-    <span class="kw">fn</span> <span class="ident">previous</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
+    <span class="doccomment">/// Previous method
+    </span><span class="kw">fn </span>previous(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;()&gt;;
 
-    <span class="doccomment">/// Seek method</span>
-    <span class="kw">fn</span> <span class="ident">seek</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">offset</span>: <span class="ident">i64</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
+    <span class="doccomment">/// Seek method
+    </span><span class="kw">fn </span>seek(<span class="kw-2">&amp;</span><span class="self">self</span>, offset: i64) -&gt; zbus::Result&lt;()&gt;;
 
-    <span class="doccomment">/// SetPosition method</span>
-    <span class="kw">fn</span> <span class="ident">set_position</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">track_id</span>: <span class="kw-2">&amp;</span><span class="ident">ObjectPath</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>, <span class="ident">position</span>: <span class="ident">i64</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
+    <span class="doccomment">/// SetPosition method
+    </span><span class="kw">fn </span>set_position(<span class="kw-2">&amp;</span><span class="self">self</span>, track_id: <span class="kw-2">&amp;</span>ObjectPath&lt;<span class="lifetime">&#39;_</span>&gt;, position: i64) -&gt; zbus::Result&lt;()&gt;;
 
-    <span class="doccomment">/// Stop method</span>
-    <span class="kw">fn</span> <span class="ident">stop</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
+    <span class="doccomment">/// Stop method
+    </span><span class="kw">fn </span>stop(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;()&gt;;
 
-    <span class="doccomment">/// Seeked signal</span>
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">signal</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">seeked</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">position</span>: <span class="ident">i64</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
+    <span class="doccomment">/// Seeked signal
+    </span><span class="attribute">#[dbus_proxy(signal)]
+    </span><span class="kw">fn </span>seeked(<span class="kw-2">&amp;</span><span class="self">self</span>, position: i64) -&gt; zbus::Result&lt;()&gt;;
 
-    <span class="doccomment">/// CanControl property</span>
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">can_control</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>;
+    <span class="doccomment">/// CanControl property
+    </span><span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>can_control(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;
 
-    <span class="doccomment">/// CanGoNext property</span>
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">can_go_next</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>;
+    <span class="doccomment">/// CanGoNext property
+    </span><span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>can_go_next(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;
 
-    <span class="doccomment">/// CanGoPrevious property</span>
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">can_go_previous</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>;
+    <span class="doccomment">/// CanGoPrevious property
+    </span><span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>can_go_previous(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;
 
-    <span class="doccomment">/// CanPause property</span>
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">can_pause</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>;
+    <span class="doccomment">/// CanPause property
+    </span><span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>can_pause(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;
 
-    <span class="doccomment">/// CanPlay property</span>
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">can_play</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>;
+    <span class="doccomment">/// CanPlay property
+    </span><span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>can_play(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;
 
-    <span class="doccomment">/// CanSeek property</span>
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">can_seek</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>;
+    <span class="doccomment">/// CanSeek property
+    </span><span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>can_seek(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;
 
-    <span class="doccomment">/// MaximumRate property</span>
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">maximum_rate</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>;
+    <span class="doccomment">/// MaximumRate property
+    </span><span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>maximum_rate(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;f64&gt;;
 
-    <span class="doccomment">/// Metadata property</span>
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">metadata</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">PlayerMetadata</span><span class="op">&gt;</span>;
+    <span class="doccomment">/// Metadata property
+    </span><span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>metadata(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;PlayerMetadata&gt;;
 
-    <span class="doccomment">/// MinimumRate property</span>
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">minimum_rate</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>;
+    <span class="doccomment">/// MinimumRate property
+    </span><span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>minimum_rate(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;f64&gt;;
 
-    <span class="doccomment">/// PlaybackStatus property</span>
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">playback_status</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>;
+    <span class="doccomment">/// PlaybackStatus property
+    </span><span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>playback_status(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;String&gt;;
 
-    <span class="doccomment">/// Position property</span>
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">position</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">i64</span><span class="op">&gt;</span>;
+    <span class="doccomment">/// Position property
+    </span><span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>position(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;i64&gt;;
 
-    <span class="doccomment">/// Rate property</span>
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">rate</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>;
-    <span class="attribute">#[<span class="ident">DBusProxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">set_rate</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">value</span>: <span class="ident">f64</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
+    <span class="doccomment">/// Rate property
+    </span><span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>rate(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;f64&gt;;
+    <span class="attribute">#[DBusProxy(property)]
+    </span><span class="kw">fn </span>set_rate(<span class="kw-2">&amp;</span><span class="self">self</span>, value: f64) -&gt; zbus::Result&lt;()&gt;;
 
-    <span class="doccomment">/// Volume property</span>
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">volume</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>;
-    <span class="attribute">#[<span class="ident">DBusProxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">set_volume</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">value</span>: <span class="ident">f64</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
+    <span class="doccomment">/// Volume property
+    </span><span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>volume(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;f64&gt;;
+    <span class="attribute">#[DBusProxy(property)]
+    </span><span class="kw">fn </span>set_volume(<span class="kw-2">&amp;</span><span class="self">self</span>, value: f64) -&gt; zbus::Result&lt;()&gt;;
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/sound/alsa.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>alsa.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../../storage.js"></script><script defer src="../../../../source-script.js"></script><script defer src="../../../../source-files.js"></script><script defer src="../../../../main.js"></script><noscript><link rel="stylesheet" href="../../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../../i3status_rs/index.html"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/sound/alsa.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>alsa.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../../normalize.css"><link rel="stylesheet" href="../../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../../ayu.css" disabled><link rel="stylesheet" href="../../../../dark.css" disabled><link rel="stylesheet" href="../../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../../storage.js"></script><script defer src="../../../../source-script.js"></script><script defer src="../../../../source-files.js"></script><script defer src="../../../../main.js"></script><noscript><link rel="stylesheet" href="../../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../../i3status_rs/index.html"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -145,152 +145,152 @@
 <span id="145">145</span>
 <span id="146">146</span>
 <span id="147">147</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">std::cmp</span>::{<span class="ident">max</span>, <span class="ident">min</span>};
-<span class="kw">use</span> <span class="ident">std::process::Stdio</span>;
-<span class="kw">use</span> <span class="ident">tokio::process</span>::{<span class="ident">ChildStdout</span>, <span class="ident">Command</span>};
+</pre><pre class="rust"><code><span class="kw">use </span>std::cmp::{max, min};
+<span class="kw">use </span>std::process::Stdio;
+<span class="kw">use </span>tokio::process::{ChildStdout, Command};
 
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::<span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::SoundDevice</span>;
+<span class="kw">use </span><span class="kw">super</span>::<span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span><span class="kw">super</span>::SoundDevice;
 
-<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct</span> <span class="ident">Device</span> {
-    <span class="ident">name</span>: <span class="ident">String</span>,
-    <span class="ident">device</span>: <span class="ident">String</span>,
-    <span class="ident">natural_mapping</span>: <span class="ident">bool</span>,
-    <span class="ident">volume</span>: <span class="ident">u32</span>,
-    <span class="ident">muted</span>: <span class="ident">bool</span>,
-    <span class="ident">monitor</span>: <span class="ident">ChildStdout</span>,
+<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct </span>Device {
+    name: String,
+    device: String,
+    natural_mapping: bool,
+    volume: u32,
+    muted: bool,
+    monitor: ChildStdout,
 }
 
-<span class="kw">impl</span> <span class="ident">Device</span> {
-    <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">name</span>: <span class="ident">String</span>, <span class="ident">device</span>: <span class="ident">String</span>, <span class="ident">natural_mapping</span>: <span class="ident">bool</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="prelude-val">Ok</span>(<span class="ident">Device</span> {
-            <span class="ident">name</span>,
-            <span class="ident">device</span>,
-            <span class="ident">natural_mapping</span>,
-            <span class="ident">volume</span>: <span class="number">0</span>,
-            <span class="ident">muted</span>: <span class="bool-val">false</span>,
-            <span class="ident">monitor</span>: <span class="ident">Command::new</span>(<span class="string">&quot;alsactl&quot;</span>)
-                .<span class="ident">arg</span>(<span class="string">&quot;monitor&quot;</span>)
-                .<span class="ident">stdout</span>(<span class="ident">Stdio::piped</span>())
-                .<span class="ident">spawn</span>()
-                .<span class="ident">error</span>(<span class="string">&quot;Failed to start alsactl monitor&quot;</span>)<span class="question-mark">?</span>
-                .<span class="ident">stdout</span>
-                .<span class="ident">error</span>(<span class="string">&quot;Failed to pipe alsactl monitor output&quot;</span>)<span class="question-mark">?</span>,
+<span class="kw">impl </span>Device {
+    <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>new(name: String, device: String, natural_mapping: bool) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
+        <span class="prelude-val">Ok</span>(Device {
+            name,
+            device,
+            natural_mapping,
+            volume: <span class="number">0</span>,
+            muted: <span class="bool-val">false</span>,
+            monitor: Command::new(<span class="string">&quot;alsactl&quot;</span>)
+                .arg(<span class="string">&quot;monitor&quot;</span>)
+                .stdout(Stdio::piped())
+                .spawn()
+                .error(<span class="string">&quot;Failed to start alsactl monitor&quot;</span>)<span class="question-mark">?
+                </span>.stdout
+                .error(<span class="string">&quot;Failed to pipe alsactl monitor output&quot;</span>)<span class="question-mark">?</span>,
         })
     }
 }
 
-<span class="attribute">#[<span class="ident">async_trait::async_trait</span>]</span>
-<span class="kw">impl</span> <span class="ident">SoundDevice</span> <span class="kw">for</span> <span class="ident">Device</span> {
-    <span class="kw">fn</span> <span class="ident">volume</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">u32</span> {
-        <span class="self">self</span>.<span class="ident">volume</span>
+<span class="attribute">#[async_trait::async_trait]
+</span><span class="kw">impl </span>SoundDevice <span class="kw">for </span>Device {
+    <span class="kw">fn </span>volume(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u32 {
+        <span class="self">self</span>.volume
     }
 
-    <span class="kw">fn</span> <span class="ident">muted</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
-        <span class="self">self</span>.<span class="ident">muted</span>
+    <span class="kw">fn </span>muted(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
+        <span class="self">self</span>.muted
     }
 
-    <span class="kw">fn</span> <span class="ident">output_name</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">String</span> {
-        <span class="self">self</span>.<span class="ident">name</span>.<span class="ident">clone</span>()
+    <span class="kw">fn </span>output_name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String {
+        <span class="self">self</span>.name.clone()
     }
 
-    <span class="kw">fn</span> <span class="ident">output_description</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
-        <span class="comment">// TODO Does Alsa has something similar like descripitons in Pulse?</span>
-        <span class="prelude-val">None</span>
-    }
+    <span class="kw">fn </span>output_description(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt; {
+        <span class="comment">// TODO Does Alsa has something similar like descripitons in Pulse?
+        </span><span class="prelude-val">None
+    </span>}
 
-    <span class="kw">fn</span> <span class="ident">active_port</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span><span class="op">&gt;</span> {
-        <span class="prelude-val">None</span>
-    }
+    <span class="kw">fn </span>active_port(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt; {
+        <span class="prelude-val">None
+    </span>}
 
-    <span class="kw">fn</span> <span class="ident">form_factor</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span><span class="op">&gt;</span> {
-        <span class="prelude-val">None</span>
-    }
+    <span class="kw">fn </span>form_factor(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt; {
+        <span class="prelude-val">None
+    </span>}
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_info</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">args</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">natural_mapping</span> {
-            <span class="ident">args</span>.<span class="ident">push</span>(<span class="string">&quot;-M&quot;</span>);
+    <span class="kw">async fn </span>get_info(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        <span class="kw">let </span><span class="kw-2">mut </span>args = Vec::new();
+        <span class="kw">if </span><span class="self">self</span>.natural_mapping {
+            args.push(<span class="string">&quot;-M&quot;</span>);
         };
-        <span class="ident">args</span>.<span class="ident">extend</span>([<span class="string">&quot;-D&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">device</span>, <span class="string">&quot;get&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">name</span>]);
+        args.extend([<span class="string">&quot;-D&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.device, <span class="string">&quot;get&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.name]);
 
-        <span class="kw">let</span> <span class="ident">output</span>: <span class="ident">String</span> <span class="op">=</span> <span class="ident">Command::new</span>(<span class="string">&quot;amixer&quot;</span>)
-            .<span class="ident">args</span>(<span class="kw-2">&amp;</span><span class="ident">args</span>)
-            .<span class="ident">output</span>()
-            .<span class="kw">await</span>
-            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">o</span><span class="op">|</span> <span class="ident">std::str::from_utf8</span>(<span class="kw-2">&amp;</span><span class="ident">o</span>.<span class="ident">stdout</span>).<span class="ident">unwrap</span>().<span class="ident">trim</span>().<span class="ident">into</span>())
-            .<span class="ident">error</span>(<span class="string">&quot;could not run amixer to get sound info&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>output: String = Command::new(<span class="string">&quot;amixer&quot;</span>)
+            .args(<span class="kw-2">&amp;</span>args)
+            .output()
+            .<span class="kw">await
+            </span>.map(|o| std::str::from_utf8(<span class="kw-2">&amp;</span>o.stdout).unwrap().trim().into())
+            .error(<span class="string">&quot;could not run amixer to get sound info&quot;</span>)<span class="question-mark">?</span>;
 
-        <span class="kw">let</span> <span class="ident">last_line</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">output</span>.<span class="ident">lines</span>().<span class="ident">last</span>().<span class="ident">error</span>(<span class="string">&quot;could not get sound info&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>last_line = <span class="kw-2">&amp;</span>output.lines().last().error(<span class="string">&quot;could not get sound info&quot;</span>)<span class="question-mark">?</span>;
 
-        <span class="kw">const</span> <span class="ident">FILTER</span>: <span class="kw-2">&amp;</span>[<span class="ident">char</span>] <span class="op">=</span> <span class="kw-2">&amp;</span>[<span class="string">&#39;[&#39;</span>, <span class="string">&#39;]&#39;</span>, <span class="string">&#39;%&#39;</span>];
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">last</span> <span class="op">=</span> <span class="ident">last_line</span>
-            .<span class="ident">split_whitespace</span>()
-            .<span class="ident">filter</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span>.<span class="ident">starts_with</span>(<span class="string">&#39;[&#39;</span>) <span class="op">&amp;&amp;</span> <span class="op">!</span><span class="ident">x</span>.<span class="ident">contains</span>(<span class="string">&quot;dB&quot;</span>))
-            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> <span class="ident">s</span>.<span class="ident">trim_matches</span>(<span class="ident">FILTER</span>));
+        <span class="kw">const </span>FILTER: <span class="kw-2">&amp;</span>[char] = <span class="kw-2">&amp;</span>[<span class="string">&#39;[&#39;</span>, <span class="string">&#39;]&#39;</span>, <span class="string">&#39;%&#39;</span>];
+        <span class="kw">let </span><span class="kw-2">mut </span>last = last_line
+            .split_whitespace()
+            .filter(|x| x.starts_with(<span class="string">&#39;[&#39;</span>) &amp;&amp; !x.contains(<span class="string">&quot;dB&quot;</span>))
+            .map(|s| s.trim_matches(FILTER));
 
-        <span class="self">self</span>.<span class="ident">volume</span> <span class="op">=</span> <span class="ident">last</span>
-            .<span class="ident">next</span>()
-            .<span class="ident">error</span>(<span class="string">&quot;could not get volume&quot;</span>)<span class="question-mark">?</span>
-            .<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>()
-            .<span class="ident">error</span>(<span class="string">&quot;could not parse volume to u32&quot;</span>)<span class="question-mark">?</span>;
+        <span class="self">self</span>.volume = last
+            .next()
+            .error(<span class="string">&quot;could not get volume&quot;</span>)<span class="question-mark">?
+            </span>.parse::&lt;u32&gt;()
+            .error(<span class="string">&quot;could not parse volume to u32&quot;</span>)<span class="question-mark">?</span>;
 
-        <span class="self">self</span>.<span class="ident">muted</span> <span class="op">=</span> <span class="ident">last</span>.<span class="ident">next</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">muted</span><span class="op">|</span> <span class="ident">muted</span> <span class="op">==</span> <span class="string">&quot;off&quot;</span>).<span class="ident">unwrap_or</span>(<span class="bool-val">false</span>);
+        <span class="self">self</span>.muted = last.next().map(|muted| muted == <span class="string">&quot;off&quot;</span>).unwrap_or(<span class="bool-val">false</span>);
 
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">set_volume</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">step</span>: <span class="ident">i32</span>, <span class="ident">max_vol</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">new_vol</span> <span class="op">=</span> <span class="ident">max</span>(<span class="number">0</span>, <span class="self">self</span>.<span class="ident">volume</span> <span class="kw">as</span> <span class="ident">i32</span> <span class="op">+</span> <span class="ident">step</span>) <span class="kw">as</span> <span class="ident">u32</span>;
-        <span class="kw">let</span> <span class="ident">capped_volume</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">vol_cap</span>) <span class="op">=</span> <span class="ident">max_vol</span> {
-            <span class="ident">min</span>(<span class="ident">new_vol</span>, <span class="ident">vol_cap</span>)
-        } <span class="kw">else</span> {
-            <span class="ident">new_vol</span>
+    <span class="kw">async fn </span>set_volume(<span class="kw-2">&amp;mut </span><span class="self">self</span>, step: i32, max_vol: <span class="prelude-ty">Option</span>&lt;u32&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        <span class="kw">let </span>new_vol = max(<span class="number">0</span>, <span class="self">self</span>.volume <span class="kw">as </span>i32 + step) <span class="kw">as </span>u32;
+        <span class="kw">let </span>capped_volume = <span class="kw">if let </span><span class="prelude-val">Some</span>(vol_cap) = max_vol {
+            min(new_vol, vol_cap)
+        } <span class="kw">else </span>{
+            new_vol
         };
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">args</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">natural_mapping</span> {
-            <span class="ident">args</span>.<span class="ident">push</span>(<span class="string">&quot;-M&quot;</span>);
+        <span class="kw">let </span><span class="kw-2">mut </span>args = Vec::new();
+        <span class="kw">if </span><span class="self">self</span>.natural_mapping {
+            args.push(<span class="string">&quot;-M&quot;</span>);
         };
-        <span class="kw">let</span> <span class="ident">vol_str</span> <span class="op">=</span> <span class="macro">format!</span>(<span class="string">&quot;{capped_volume}%&quot;</span>);
-        <span class="ident">args</span>.<span class="ident">extend</span>([<span class="string">&quot;-D&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">device</span>, <span class="string">&quot;set&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">name</span>, <span class="kw-2">&amp;</span><span class="ident">vol_str</span>]);
+        <span class="kw">let </span>vol_str = <span class="macro">format!</span>(<span class="string">&quot;{capped_volume}%&quot;</span>);
+        args.extend([<span class="string">&quot;-D&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.device, <span class="string">&quot;set&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.name, <span class="kw-2">&amp;</span>vol_str]);
 
-        <span class="ident">Command::new</span>(<span class="string">&quot;amixer&quot;</span>)
-            .<span class="ident">args</span>(<span class="kw-2">&amp;</span><span class="ident">args</span>)
-            .<span class="ident">output</span>()
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;failed to set volume&quot;</span>)<span class="question-mark">?</span>;
+        Command::new(<span class="string">&quot;amixer&quot;</span>)
+            .args(<span class="kw-2">&amp;</span>args)
+            .output()
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;failed to set volume&quot;</span>)<span class="question-mark">?</span>;
 
-        <span class="self">self</span>.<span class="ident">volume</span> <span class="op">=</span> <span class="ident">capped_volume</span>;
+        <span class="self">self</span>.volume = capped_volume;
 
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">toggle</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">args</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">natural_mapping</span> {
-            <span class="ident">args</span>.<span class="ident">push</span>(<span class="string">&quot;-M&quot;</span>);
+    <span class="kw">async fn </span>toggle(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        <span class="kw">let </span><span class="kw-2">mut </span>args = Vec::new();
+        <span class="kw">if </span><span class="self">self</span>.natural_mapping {
+            args.push(<span class="string">&quot;-M&quot;</span>);
         };
-        <span class="ident">args</span>.<span class="ident">extend</span>([<span class="string">&quot;-D&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">device</span>, <span class="string">&quot;set&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">name</span>, <span class="string">&quot;toggle&quot;</span>]);
+        args.extend([<span class="string">&quot;-D&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.device, <span class="string">&quot;set&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.name, <span class="string">&quot;toggle&quot;</span>]);
 
-        <span class="ident">Command::new</span>(<span class="string">&quot;amixer&quot;</span>)
-            .<span class="ident">args</span>(<span class="kw-2">&amp;</span><span class="ident">args</span>)
-            .<span class="ident">output</span>()
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;failed to toggle mute&quot;</span>)<span class="question-mark">?</span>;
+        Command::new(<span class="string">&quot;amixer&quot;</span>)
+            .args(<span class="kw-2">&amp;</span>args)
+            .output()
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;failed to toggle mute&quot;</span>)<span class="question-mark">?</span>;
 
-        <span class="self">self</span>.<span class="ident">muted</span> <span class="op">=</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">muted</span>;
+        <span class="self">self</span>.muted = !<span class="self">self</span>.muted;
 
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">wait_for_update</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buf</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">1024</span>];
-        <span class="self">self</span>.<span class="ident">monitor</span>
-            .<span class="ident">read</span>(<span class="kw-2">&amp;mut</span> <span class="ident">buf</span>)
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to read stdbuf output&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">async fn </span>wait_for_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        <span class="kw">let </span><span class="kw-2">mut </span>buf = [<span class="number">0u8</span>; <span class="number">1024</span>];
+        <span class="self">self</span>.monitor
+            .read(<span class="kw-2">&amp;mut </span>buf)
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to read stdbuf output&quot;</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

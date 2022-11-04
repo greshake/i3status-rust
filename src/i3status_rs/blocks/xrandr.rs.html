@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/xrandr.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>xrandr.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/xrandr.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>xrandr.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -202,115 +202,115 @@
 <span id="202">202</span>
 <span id="203">203</span>
 <span id="204">204</span>
-</pre><pre class="rust"><code><span class="doccomment">//! X11 screen information</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! X11 screen information (name, brightness, resolution). With a click you can toggle through your active screens and with wheel up and down you can adjust the selected screens brightness. Regarding brightness control, xrandr changes the brightness of the display using gamma rather than changing the brightness in hardware, so if that is not desirable then consider using the `backlight` block instead.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! NOTE: Some users report issues (e.g. [here](https://github.com/greshake/i3status-rust/issues/274) and [here](https://github.com/greshake/i3status-rust/issues/668) when using this block. The cause is currently unknown, however setting a higher update interval may help.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Configuration</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Key | Values | Default</span>
-<span class="doccomment">//! ----|--------|--------</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $display $brightness_icon $brightness &quot;`</span>
-<span class="doccomment">//! `step_width` | The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50). | `5`</span>
-<span class="doccomment">//! `interval` | Update interval in seconds. | `5`</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Placeholder       | Value                        | Type   | Unit</span>
-<span class="doccomment">//! ------------------|------------------------------|--------|---------------</span>
-<span class="doccomment">//! `icon`            | A static icon                | Icon   | -</span>
-<span class="doccomment">//! `display`         | The name of a monitor        | Text   | -</span>
-<span class="doccomment">//! `brightness`      | The brightness of a monitor  | Number | %</span>
-<span class="doccomment">//! `brightness_icon` | A static icon                | Icon   | -</span>
-<span class="doccomment">//! `resolution`      | The resolution of a monitor  | Text   | -</span>
-<span class="doccomment">//! `res_icon`        | A static icon                | Icon   | -</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Example</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;xrandr&quot;</span>
-<span class="doccomment">//! format = &quot; $icon $brightness $resolution &quot;</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Used Icons</span>
-<span class="doccomment">//! - `xrandr`</span>
-<span class="doccomment">//! - `backlight_full`</span>
-<span class="doccomment">//! - `resolution`</span>
+</pre><pre class="rust"><code><span class="doccomment">//! X11 screen information
+//!
+//! X11 screen information (name, brightness, resolution). With a click you can toggle through your active screens and with wheel up and down you can adjust the selected screens brightness. Regarding brightness control, xrandr changes the brightness of the display using gamma rather than changing the brightness in hardware, so if that is not desirable then consider using the `backlight` block instead.
+//!
+//! NOTE: Some users report issues (e.g. [here](https://github.com/greshake/i3status-rust/issues/274) and [here](https://github.com/greshake/i3status-rust/issues/668) when using this block. The cause is currently unknown, however setting a higher update interval may help.
+//!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $display $brightness_icon $brightness &quot;`
+//! `step_width` | The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50). | `5`
+//! `interval` | Update interval in seconds. | `5`
+//!
+//! Placeholder       | Value                        | Type   | Unit
+//! ------------------|------------------------------|--------|---------------
+//! `icon`            | A static icon                | Icon   | -
+//! `display`         | The name of a monitor        | Text   | -
+//! `brightness`      | The brightness of a monitor  | Number | %
+//! `brightness_icon` | A static icon                | Icon   | -
+//! `resolution`      | The resolution of a monitor  | Text   | -
+//! `res_icon`        | A static icon                | Icon   | -
+//!
+//! # Example
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;xrandr&quot;
+//! format = &quot; $icon $brightness $resolution &quot;
+//! ```
+//!
+//! # Used Icons
+//! - `xrandr`
+//! - `backlight_full`
+//! - `resolution`
 
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::subprocess::spawn_shell</span>;
-<span class="kw">use</span> <span class="ident">regex::RegexSet</span>;
-<span class="kw">use</span> <span class="ident">tokio::process::Command</span>;
+</span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span><span class="kw">crate</span>::subprocess::spawn_shell;
+<span class="kw">use </span>regex::RegexSet;
+<span class="kw">use </span>tokio::process::Command;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
-<span class="kw">struct</span> <span class="ident">XrandrConfig</span> {
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">5</span>.<span class="ident">into</span>())]</span>
-    <span class="ident">interval</span>: <span class="ident">Seconds</span>,
-    <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">5</span>)]</span>
-    <span class="ident">step_width</span>: <span class="ident">u32</span>,
+<span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
+#[serde(deny_unknown_fields, default)]
+</span><span class="kw">struct </span>XrandrConfig {
+    <span class="attribute">#[default(<span class="number">5</span>.into())]
+    </span>interval: Seconds,
+    format: FormatConfig,
+    <span class="attribute">#[default(<span class="number">5</span>)]
+    </span>step_width: u32,
 }
 
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">XrandrConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">Widget::new</span>().<span class="ident">with_format</span>(
-        <span class="ident">config</span>
-            .<span class="ident">format</span>
-            .<span class="ident">with_default</span>(<span class="string">&quot; $icon $display $brightness_icon $brightness &quot;</span>)<span class="question-mark">?</span>,
+<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span>config = XrandrConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(
+        config
+            .format
+            .with_default(<span class="string">&quot; $icon $display $brightness_icon $brightness &quot;</span>)<span class="question-mark">?</span>,
     );
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cur_indx</span> <span class="op">=</span> <span class="number">0</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">timer</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">interval</span>.<span class="ident">timer</span>();
+    <span class="kw">let </span><span class="kw-2">mut </span>cur_indx = <span class="number">0</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>timer = config.interval.timer();
 
-    <span class="kw">loop</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">monitors</span> <span class="op">=</span> <span class="ident">get_monitors</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">if</span> <span class="ident">cur_indx</span> <span class="op">&gt;</span> <span class="ident">monitors</span>.<span class="ident">len</span>() {
-            <span class="ident">cur_indx</span> <span class="op">=</span> <span class="number">0</span>;
+    <span class="kw">loop </span>{
+        <span class="kw">let </span><span class="kw-2">mut </span>monitors = get_monitors().<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">if </span>cur_indx &gt; monitors.len() {
+            cur_indx = <span class="number">0</span>;
         }
 
-        <span class="kw">loop</span> {
-            <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">mon</span>) <span class="op">=</span> <span class="ident">monitors</span>.<span class="ident">get</span>(<span class="ident">cur_indx</span>) {
-                <span class="macro">map!</span> {
-                    <span class="string">&quot;display&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">mon</span>.<span class="ident">name</span>.<span class="ident">clone</span>()),
-                    <span class="string">&quot;brightness&quot;</span> =&gt; <span class="ident">Value::percents</span>(<span class="ident">mon</span>.<span class="ident">brightness</span>),
-                    <span class="comment">//TODO: change `brightness_icon` based on `brightness`</span>
-                    <span class="string">&quot;brightness_icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;backlight_full&quot;</span>)<span class="question-mark">?</span>),
-                    <span class="string">&quot;resolution&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">mon</span>.<span class="ident">resolution</span>.<span class="ident">clone</span>()),
-                    <span class="string">&quot;icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;xrandr&quot;</span>)<span class="question-mark">?</span>),
-                    <span class="string">&quot;res_icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;resolution&quot;</span>)<span class="question-mark">?</span>),
+        <span class="kw">loop </span>{
+            widget.set_values(<span class="kw">if let </span><span class="prelude-val">Some</span>(mon) = monitors.get(cur_indx) {
+                <span class="macro">map! </span>{
+                    <span class="string">&quot;display&quot; </span>=&gt; Value::text(mon.name.clone()),
+                    <span class="string">&quot;brightness&quot; </span>=&gt; Value::percents(mon.brightness),
+                    <span class="comment">//TODO: change `brightness_icon` based on `brightness`
+                    </span><span class="string">&quot;brightness_icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;backlight_full&quot;</span>)<span class="question-mark">?</span>),
+                    <span class="string">&quot;resolution&quot; </span>=&gt; Value::text(mon.resolution.clone()),
+                    <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;xrandr&quot;</span>)<span class="question-mark">?</span>),
+                    <span class="string">&quot;res_icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;resolution&quot;</span>)<span class="question-mark">?</span>),
                 }
-            } <span class="kw">else</span> {
-                <span class="ident">default</span>()
+            } <span class="kw">else </span>{
+                default()
             });
-            <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+            api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
-            <span class="macro">select!</span> {
-                <span class="kw">_</span> <span class="op">=</span> <span class="ident">timer</span>.<span class="ident">tick</span>() =&gt; <span class="kw">break</span>,
-                <span class="ident">event</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; <span class="kw">match</span> <span class="ident">event</span> {
-                    <span class="ident">UpdateRequest</span> =&gt; <span class="kw">break</span>,
-                    <span class="ident">Click</span>(<span class="ident">click</span>) =&gt; {
-                        <span class="kw">match</span> <span class="ident">click</span>.<span class="ident">button</span> {
-                            <span class="ident">MouseButton::Left</span> =&gt; {
-                                <span class="ident">cur_indx</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
-                                <span class="kw">if</span> <span class="ident">cur_indx</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">monitors</span>.<span class="ident">len</span>() {
-                                    <span class="ident">cur_indx</span> <span class="op">=</span> <span class="number">0</span>;
+            <span class="macro">select! </span>{
+                <span class="kw">_ </span>= timer.tick() =&gt; <span class="kw">break</span>,
+                event = api.event() =&gt; <span class="kw">match </span>event {
+                    UpdateRequest =&gt; <span class="kw">break</span>,
+                    Click(click) =&gt; {
+                        <span class="kw">match </span>click.button {
+                            MouseButton::Left =&gt; {
+                                cur_indx += <span class="number">1</span>;
+                                <span class="kw">if </span>cur_indx &gt;= monitors.len() {
+                                    cur_indx = <span class="number">0</span>;
                                 }
                             }
-                            <span class="ident">MouseButton::WheelUp</span> =&gt; {
-                                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">monitor</span>) <span class="op">=</span> <span class="ident">monitors</span>.<span class="ident">get_mut</span>(<span class="ident">cur_indx</span>) {
-                                    <span class="kw">let</span> <span class="ident">bright</span> <span class="op">=</span> (<span class="ident">monitor</span>.<span class="ident">brightness</span> <span class="op">+</span> <span class="ident">config</span>.<span class="ident">step_width</span>).<span class="ident">min</span>(<span class="number">100</span>);
-                                    <span class="ident">monitor</span>.<span class="ident">set_brightness</span>(<span class="ident">bright</span>);
+                            MouseButton::WheelUp =&gt; {
+                                <span class="kw">if let </span><span class="prelude-val">Some</span>(monitor) = monitors.get_mut(cur_indx) {
+                                    <span class="kw">let </span>bright = (monitor.brightness + config.step_width).min(<span class="number">100</span>);
+                                    monitor.set_brightness(bright);
                                 }
                             }
-                            <span class="ident">MouseButton::WheelDown</span> =&gt; {
-                                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">monitor</span>) <span class="op">=</span> <span class="ident">monitors</span>.<span class="ident">get_mut</span>(<span class="ident">cur_indx</span>) {
-                                    <span class="kw">let</span> <span class="ident">bright</span> <span class="op">=</span> <span class="ident">monitor</span>.<span class="ident">brightness</span>.<span class="ident">saturating_sub</span>(<span class="ident">config</span>.<span class="ident">step_width</span>);
-                                    <span class="ident">monitor</span>.<span class="ident">set_brightness</span>(<span class="ident">bright</span>);
+                            MouseButton::WheelDown =&gt; {
+                                <span class="kw">if let </span><span class="prelude-val">Some</span>(monitor) = monitors.get_mut(cur_indx) {
+                                    <span class="kw">let </span>bright = monitor.brightness.saturating_sub(config.step_width);
+                                    monitor.set_brightness(bright);
                                 }
                             }
-                            <span class="kw">_</span> =&gt; (),
+                            <span class="kw">_ </span>=&gt; (),
                         }
                     }
                 }
@@ -319,92 +319,92 @@
     }
 }
 
-<span class="kw">struct</span> <span class="ident">Monitor</span> {
-    <span class="ident">name</span>: <span class="ident">String</span>,
-    <span class="ident">brightness</span>: <span class="ident">u32</span>,
-    <span class="ident">resolution</span>: <span class="ident">String</span>,
+<span class="kw">struct </span>Monitor {
+    name: String,
+    brightness: u32,
+    resolution: String,
 }
 
-<span class="kw">impl</span> <span class="ident">Monitor</span> {
-    <span class="kw">fn</span> <span class="ident">set_brightness</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">brightness</span>: <span class="ident">u32</span>) {
-        <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">spawn_shell</span>(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
+<span class="kw">impl </span>Monitor {
+    <span class="kw">fn </span>set_brightness(<span class="kw-2">&amp;mut </span><span class="self">self</span>, brightness: u32) {
+        <span class="kw">let _ </span>= spawn_shell(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
             <span class="string">&quot;xrandr --output {} --brightness  {}&quot;</span>,
-            <span class="self">self</span>.<span class="ident">name</span>,
-            <span class="ident">brightness</span> <span class="kw">as</span> <span class="ident">f64</span> <span class="op">/</span> <span class="number">100.0</span>
-        ));
-        <span class="self">self</span>.<span class="ident">brightness</span> <span class="op">=</span> <span class="ident">brightness</span>;
+            <span class="self">self</span>.name,
+            brightness <span class="kw">as </span>f64 / <span class="number">100.0
+        </span>));
+        <span class="self">self</span>.brightness = brightness;
     }
 }
 
-<span class="macro">macro_rules!</span> <span class="ident">unwrap_or_break</span> {
-    (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">e</span>: <span class="ident">expr</span>) =&gt; {
-        <span class="kw">match</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">e</span> {
-            <span class="prelude-val">Some</span>(<span class="ident">e</span>) =&gt; <span class="ident">e</span>,
-            <span class="prelude-val">None</span> =&gt; <span class="kw">break</span>,
+<span class="macro">macro_rules! </span>unwrap_or_break {
+    (<span class="macro-nonterminal">$e</span>: expr) =&gt; {
+        <span class="kw">match </span><span class="macro-nonterminal">$e </span>{
+            <span class="prelude-val">Some</span>(e) =&gt; e,
+            <span class="prelude-val">None </span>=&gt; <span class="kw">break</span>,
         }
     };
 }
 
-<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_monitors</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Monitor</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">monitors</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
+<span class="kw">async fn </span>get_monitors() -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;Monitor&gt;&gt; {
+    <span class="kw">let </span><span class="kw-2">mut </span>monitors = Vec::new();
 
-    <span class="kw">let</span> <span class="ident">active_monitors</span> <span class="op">=</span> <span class="ident">Command::new</span>(<span class="string">&quot;xrandr&quot;</span>)
-        .<span class="ident">arg</span>(<span class="string">&quot;--listactivemonitors&quot;</span>)
-        .<span class="ident">output</span>()
-        .<span class="kw">await</span>
-        .<span class="ident">error</span>(<span class="string">&quot;Failed to collect active xrandr monitors&quot;</span>)<span class="question-mark">?</span>
-        .<span class="ident">stdout</span>;
-    <span class="kw">let</span> <span class="ident">active_monitors</span> <span class="op">=</span>
-        <span class="ident">String::from_utf8</span>(<span class="ident">active_monitors</span>).<span class="ident">error</span>(<span class="string">&quot;xrandr produced non-UTF8 output&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>active_monitors = Command::new(<span class="string">&quot;xrandr&quot;</span>)
+        .arg(<span class="string">&quot;--listactivemonitors&quot;</span>)
+        .output()
+        .<span class="kw">await
+        </span>.error(<span class="string">&quot;Failed to collect active xrandr monitors&quot;</span>)<span class="question-mark">?
+        </span>.stdout;
+    <span class="kw">let </span>active_monitors =
+        String::from_utf8(active_monitors).error(<span class="string">&quot;xrandr produced non-UTF8 output&quot;</span>)<span class="question-mark">?</span>;
 
-    <span class="kw">let</span> <span class="ident">regex</span> <span class="op">=</span> <span class="ident">active_monitors</span>
-        .<span class="ident">lines</span>()
-        .<span class="ident">filter_map</span>(<span class="op">|</span><span class="ident">line</span><span class="op">|</span> <span class="ident">line</span>.<span class="ident">split_ascii_whitespace</span>().<span class="ident">last</span>())
-        .<span class="ident">map</span>(<span class="op">|</span><span class="ident">name</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;{name} connected&quot;</span>))
-        .<span class="ident">chain</span>(<span class="prelude-val">Some</span>(<span class="string">&quot;Brightness:&quot;</span>.<span class="ident">into</span>()));
-    <span class="kw">let</span> <span class="ident">regex</span> <span class="op">=</span> <span class="ident">RegexSet::new</span>(<span class="ident">regex</span>).<span class="ident">error</span>(<span class="string">&quot;Failed to create RegexSet&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>regex = active_monitors
+        .lines()
+        .filter_map(|line| line.split_ascii_whitespace().last())
+        .map(|name| <span class="macro">format!</span>(<span class="string">&quot;{name} connected&quot;</span>))
+        .chain(<span class="prelude-val">Some</span>(<span class="string">&quot;Brightness:&quot;</span>.into()));
+    <span class="kw">let </span>regex = RegexSet::new(regex).error(<span class="string">&quot;Failed to create RegexSet&quot;</span>)<span class="question-mark">?</span>;
 
-    <span class="kw">let</span> <span class="ident">monitors_info</span> <span class="op">=</span> <span class="ident">Command::new</span>(<span class="string">&quot;xrandr&quot;</span>)
-        .<span class="ident">arg</span>(<span class="string">&quot;--verbose&quot;</span>)
-        .<span class="ident">output</span>()
-        .<span class="kw">await</span>
-        .<span class="ident">error</span>(<span class="string">&quot;Failed to collect xrandr monitors info&quot;</span>)<span class="question-mark">?</span>
-        .<span class="ident">stdout</span>;
-    <span class="kw">let</span> <span class="ident">monitors_info</span> <span class="op">=</span>
-        <span class="ident">String::from_utf8</span>(<span class="ident">monitors_info</span>).<span class="ident">error</span>(<span class="string">&quot;xrandr produced non-UTF8 output&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>monitors_info = Command::new(<span class="string">&quot;xrandr&quot;</span>)
+        .arg(<span class="string">&quot;--verbose&quot;</span>)
+        .output()
+        .<span class="kw">await
+        </span>.error(<span class="string">&quot;Failed to collect xrandr monitors info&quot;</span>)<span class="question-mark">?
+        </span>.stdout;
+    <span class="kw">let </span>monitors_info =
+        String::from_utf8(monitors_info).error(<span class="string">&quot;xrandr produced non-UTF8 output&quot;</span>)<span class="question-mark">?</span>;
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">it</span> <span class="op">=</span> <span class="ident">monitors_info</span>.<span class="ident">lines</span>().<span class="ident">filter</span>(<span class="op">|</span><span class="ident">line</span><span class="op">|</span> <span class="ident">regex</span>.<span class="ident">is_match</span>(<span class="ident">line</span>));
+    <span class="kw">let </span><span class="kw-2">mut </span>it = monitors_info.lines().filter(|line| regex.is_match(line));
 
-    <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy::while_let_loop</span>)]</span>
-    <span class="kw">loop</span> {
-        <span class="kw">let</span> <span class="ident">line1</span> <span class="op">=</span> <span class="macro">unwrap_or_break!</span>(<span class="ident">it</span>.<span class="ident">next</span>());
-        <span class="kw">let</span> <span class="ident">line2</span> <span class="op">=</span> <span class="macro">unwrap_or_break!</span>(<span class="ident">it</span>.<span class="ident">next</span>());
+    <span class="attribute">#[allow(clippy::while_let_loop)]
+    </span><span class="kw">loop </span>{
+        <span class="kw">let </span>line1 = <span class="macro">unwrap_or_break!</span>(it.next());
+        <span class="kw">let </span>line2 = <span class="macro">unwrap_or_break!</span>(it.next());
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">tokens</span> <span class="op">=</span> <span class="ident">line1</span>.<span class="ident">split_ascii_whitespace</span>();
-        <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="ident">tokens</span>.<span class="ident">next</span>().<span class="ident">error</span>(<span class="string">&quot;Failed to parse xrandr output&quot;</span>)<span class="question-mark">?</span>.<span class="ident">into</span>();
-        <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">tokens</span>.<span class="ident">next</span>();
-        <span class="kw">let</span> <span class="ident">resolution</span> <span class="op">=</span> <span class="ident">tokens</span>
-            .<span class="ident">next</span>()
-            .<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span>.<span class="ident">split</span>(<span class="string">&#39;+&#39;</span>).<span class="ident">next</span>())
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to parse xrandr output&quot;</span>)<span class="question-mark">?</span>
-            .<span class="ident">into</span>();
-        <span class="kw">let</span> <span class="ident">brightness</span> <span class="op">=</span> (<span class="ident">line2</span>
-            .<span class="ident">split</span>(<span class="string">&#39;:&#39;</span>)
-            .<span class="ident">nth</span>(<span class="number">1</span>)
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to parse xrandr output&quot;</span>)<span class="question-mark">?</span>
-            .<span class="ident">trim</span>()
-            .<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>()
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to parse xrandr output&quot;</span>)<span class="question-mark">?</span>
-            <span class="op">*</span> <span class="number">100.0</span>) <span class="kw">as</span> <span class="ident">u32</span>;
+        <span class="kw">let </span><span class="kw-2">mut </span>tokens = line1.split_ascii_whitespace();
+        <span class="kw">let </span>name = tokens.next().error(<span class="string">&quot;Failed to parse xrandr output&quot;</span>)<span class="question-mark">?</span>.into();
+        <span class="kw">let _ </span>= tokens.next();
+        <span class="kw">let </span>resolution = tokens
+            .next()
+            .and_then(|x| x.split(<span class="string">&#39;+&#39;</span>).next())
+            .error(<span class="string">&quot;Failed to parse xrandr output&quot;</span>)<span class="question-mark">?
+            </span>.into();
+        <span class="kw">let </span>brightness = (line2
+            .split(<span class="string">&#39;:&#39;</span>)
+            .nth(<span class="number">1</span>)
+            .error(<span class="string">&quot;Failed to parse xrandr output&quot;</span>)<span class="question-mark">?
+            </span>.trim()
+            .parse::&lt;f64&gt;()
+            .error(<span class="string">&quot;Failed to parse xrandr output&quot;</span>)<span class="question-mark">?
+            </span>* <span class="number">100.0</span>) <span class="kw">as </span>u32;
 
-        <span class="ident">monitors</span>.<span class="ident">push</span>(<span class="ident">Monitor</span> {
-            <span class="ident">name</span>,
-            <span class="ident">brightness</span>,
-            <span class="ident">resolution</span>,
+        monitors.push(Monitor {
+            name,
+            brightness,
+            resolution,
         });
     }
 
-    <span class="prelude-val">Ok</span>(<span class="ident">monitors</span>)
+    <span class="prelude-val">Ok</span>(monitors)
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

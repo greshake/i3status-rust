@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/sound/pulseaudio.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>pulseaudio.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../../storage.js"></script><script defer src="../../../../source-script.js"></script><script defer src="../../../../source-files.js"></script><script defer src="../../../../main.js"></script><noscript><link rel="stylesheet" href="../../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../../i3status_rs/index.html"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/sound/pulseaudio.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>pulseaudio.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../../normalize.css"><link rel="stylesheet" href="../../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../../ayu.css" disabled><link rel="stylesheet" href="../../../../dark.css" disabled><link rel="stylesheet" href="../../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../../storage.js"></script><script defer src="../../../../source-script.js"></script><script defer src="../../../../source-files.js"></script><script defer src="../../../../main.js"></script><noscript><link rel="stylesheet" href="../../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../../i3status_rs/index.html"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -480,487 +480,487 @@
 <span id="480">480</span>
 <span id="481">481</span>
 <span id="482">482</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">libpulse_binding::callbacks::ListResult</span>;
-<span class="kw">use</span> <span class="ident">libpulse_binding::context</span>::{
-    <span class="ident">introspect::ServerInfo</span>, <span class="ident">introspect::SinkInfo</span>, <span class="ident">introspect::SourceInfo</span>, <span class="ident">subscribe::Facility</span>,
-    <span class="ident">subscribe::InterestMaskSet</span>, <span class="ident">subscribe::Operation</span> <span class="kw">as</span> <span class="ident">SubscribeOperation</span>, <span class="ident">Context</span>, <span class="ident">FlagSet</span>,
-    <span class="ident">State</span> <span class="kw">as</span> <span class="ident">PulseState</span>,
+</pre><pre class="rust"><code><span class="kw">use </span>libpulse_binding::callbacks::ListResult;
+<span class="kw">use </span>libpulse_binding::context::{
+    introspect::ServerInfo, introspect::SinkInfo, introspect::SourceInfo, subscribe::Facility,
+    subscribe::InterestMaskSet, subscribe::Operation <span class="kw">as </span>SubscribeOperation, Context, FlagSet,
+    State <span class="kw">as </span>PulseState,
 };
-<span class="kw">use</span> <span class="ident">libpulse_binding::mainloop::standard</span>::{<span class="ident">IterateResult</span>, <span class="ident">Mainloop</span>};
-<span class="kw">use</span> <span class="ident">libpulse_binding::proplist</span>::{<span class="ident">properties</span>, <span class="ident">Proplist</span>};
-<span class="kw">use</span> <span class="ident">libpulse_binding::volume</span>::{<span class="ident">ChannelVolumes</span>, <span class="ident">Volume</span>};
+<span class="kw">use </span>libpulse_binding::mainloop::standard::{IterateResult, Mainloop};
+<span class="kw">use </span>libpulse_binding::proplist::{properties, Proplist};
+<span class="kw">use </span>libpulse_binding::volume::{ChannelVolumes, Volume};
 
-<span class="kw">use</span> <span class="ident">crossbeam_channel</span>::{<span class="ident">unbounded</span>, <span class="ident">Sender</span>};
+<span class="kw">use </span>crossbeam_channel::{unbounded, Sender};
 
-<span class="kw">use</span> <span class="ident">std::cmp</span>::{<span class="ident">max</span>, <span class="ident">min</span>};
-<span class="kw">use</span> <span class="ident">std::convert</span>::{<span class="ident">TryFrom</span>, <span class="ident">TryInto</span>};
-<span class="kw">use</span> <span class="ident">std::sync::Mutex</span>;
-<span class="kw">use</span> <span class="ident">std::thread</span>;
+<span class="kw">use </span>std::cmp::{max, min};
+<span class="kw">use </span>std::convert::{TryFrom, TryInto};
+<span class="kw">use </span>std::sync::Mutex;
+<span class="kw">use </span>std::thread;
 
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::<span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">DeviceKind</span>, <span class="ident">SoundDevice</span>};
+<span class="kw">use </span><span class="kw">super</span>::<span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+<span class="kw">use super</span>::{DeviceKind, SoundDevice};
 
-<span class="kw">static</span> <span class="ident">CLIENT</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Client</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy::new</span>(<span class="ident">Client::new</span>);
-<span class="kw">static</span> <span class="ident">EVENT_LISTENER</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">tokio::sync::mpsc::Sender</span><span class="op">&lt;</span>()<span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy::new</span>(<span class="ident">default</span>);
-<span class="kw">static</span> <span class="ident">DEVICES</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span>(<span class="ident">DeviceKind</span>, <span class="ident">String</span>), <span class="ident">VolInfo</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Lazy::new</span>(<span class="ident">default</span>);
+<span class="kw">static </span>CLIENT: Lazy&lt;<span class="prelude-ty">Result</span>&lt;Client&gt;&gt; = Lazy::new(Client::new);
+<span class="kw">static </span>EVENT_LISTENER: Lazy&lt;Mutex&lt;Vec&lt;tokio::sync::mpsc::Sender&lt;()&gt;&gt;&gt;&gt; = Lazy::new(default);
+<span class="kw">static </span>DEVICES: Lazy&lt;Mutex&lt;HashMap&lt;(DeviceKind, String), VolInfo&gt;&gt;&gt; = Lazy::new(default);
 
-<span class="comment">// Default device names</span>
-<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">static</span> <span class="ident">DEFAULT_SOURCE</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span>
-    <span class="ident">Lazy::new</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">Mutex::new</span>(<span class="string">&quot;@DEFAULT_SOURCE@&quot;</span>.<span class="ident">into</span>()));
-<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">static</span> <span class="ident">DEFAULT_SINK</span>: <span class="ident">Lazy</span><span class="op">&lt;</span><span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span>
-    <span class="ident">Lazy::new</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">Mutex::new</span>(<span class="string">&quot;@DEFAULT_SINK@&quot;</span>.<span class="ident">into</span>()));
+<span class="comment">// Default device names
+</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">static </span>DEFAULT_SOURCE: Lazy&lt;Mutex&lt;String&gt;&gt; =
+    Lazy::new(|| Mutex::new(<span class="string">&quot;@DEFAULT_SOURCE@&quot;</span>.into()));
+<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">static </span>DEFAULT_SINK: Lazy&lt;Mutex&lt;String&gt;&gt; =
+    Lazy::new(|| Mutex::new(<span class="string">&quot;@DEFAULT_SINK@&quot;</span>.into()));
 
-<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct</span> <span class="ident">Device</span> {
-    <span class="ident">name</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="ident">description</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="ident">active_port</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="ident">form_factor</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="ident">device_kind</span>: <span class="ident">DeviceKind</span>,
-    <span class="ident">volume</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ChannelVolumes</span><span class="op">&gt;</span>,
-    <span class="ident">volume_avg</span>: <span class="ident">u32</span>,
-    <span class="ident">muted</span>: <span class="ident">bool</span>,
-    <span class="ident">updates</span>: <span class="ident">tokio::sync::mpsc::Receiver</span><span class="op">&lt;</span>()<span class="op">&gt;</span>,
+<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct </span>Device {
+    name: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    description: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    active_port: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    form_factor: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    device_kind: DeviceKind,
+    volume: <span class="prelude-ty">Option</span>&lt;ChannelVolumes&gt;,
+    volume_avg: u32,
+    muted: bool,
+    updates: tokio::sync::mpsc::Receiver&lt;()&gt;,
 }
 
-<span class="kw">struct</span> <span class="ident">Connection</span> {
-    <span class="ident">mainloop</span>: <span class="ident">Mainloop</span>,
-    <span class="ident">context</span>: <span class="ident">Context</span>,
+<span class="kw">struct </span>Connection {
+    mainloop: Mainloop,
+    context: Context,
 }
 
-<span class="kw">struct</span> <span class="ident">Client</span> {
-    <span class="ident">sender</span>: <span class="ident">Sender</span><span class="op">&lt;</span><span class="ident">ClientRequest</span><span class="op">&gt;</span>,
+<span class="kw">struct </span>Client {
+    sender: Sender&lt;ClientRequest&gt;,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
-<span class="kw">struct</span> <span class="ident">VolInfo</span> {
-    <span class="ident">volume</span>: <span class="ident">ChannelVolumes</span>,
-    <span class="ident">mute</span>: <span class="ident">bool</span>,
-    <span class="ident">name</span>: <span class="ident">String</span>,
-    <span class="ident">description</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="ident">active_port</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="ident">form_factor</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+<span class="attribute">#[derive(Debug)]
+</span><span class="kw">struct </span>VolInfo {
+    volume: ChannelVolumes,
+    mute: bool,
+    name: String,
+    description: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    active_port: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    form_factor: <span class="prelude-ty">Option</span>&lt;String&gt;,
 }
 
-<span class="kw">impl</span> <span class="ident">TryFrom</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">SourceInfo</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">VolInfo</span> {
-    <span class="kw">type</span> <span class="ident">Error</span> <span class="op">=</span> ();
+<span class="kw">impl </span>TryFrom&lt;<span class="kw-2">&amp;</span>SourceInfo&lt;<span class="lifetime">&#39;_</span>&gt;&gt; <span class="kw">for </span>VolInfo {
+    <span class="kw">type </span>Error = ();
 
-    <span class="kw">fn</span> <span class="ident">try_from</span>(<span class="ident">source_info</span>: <span class="kw-2">&amp;</span><span class="ident">SourceInfo</span>) -&gt; <span class="ident">std::result::Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident"><span class="self">Self</span>::Error</span><span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="ident">source_info</span>.<span class="ident">name</span>.<span class="ident">as_ref</span>() {
-            <span class="prelude-val">None</span> =&gt; <span class="prelude-val">Err</span>(()),
-            <span class="prelude-val">Some</span>(<span class="ident">name</span>) =&gt; <span class="prelude-val">Ok</span>(<span class="ident">VolInfo</span> {
-                <span class="ident">volume</span>: <span class="ident">source_info</span>.<span class="ident">volume</span>,
-                <span class="ident">mute</span>: <span class="ident">source_info</span>.<span class="ident">mute</span>,
-                <span class="ident">name</span>: <span class="ident">name</span>.<span class="ident">to_string</span>(),
-                <span class="ident">description</span>: <span class="ident">source_info</span>.<span class="ident">description</span>.<span class="ident">as_ref</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">d</span><span class="op">|</span> <span class="ident">d</span>.<span class="ident">to_string</span>()),
-                <span class="ident">active_port</span>: <span class="ident">source_info</span>
-                    .<span class="ident">active_port</span>
-                    .<span class="ident">as_ref</span>()
-                    .<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">a</span><span class="op">|</span> <span class="ident">a</span>.<span class="ident">name</span>.<span class="ident">as_ref</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">n</span><span class="op">|</span> <span class="ident">n</span>.<span class="ident">to_string</span>())),
-                <span class="ident">form_factor</span>: <span class="ident">source_info</span>.<span class="ident">proplist</span>.<span class="ident">get_str</span>(<span class="ident">properties::DEVICE_FORM_FACTOR</span>),
+    <span class="kw">fn </span>try_from(source_info: <span class="kw-2">&amp;</span>SourceInfo) -&gt; std::result::Result&lt;<span class="self">Self</span>, <span class="self">Self</span>::Error&gt; {
+        <span class="kw">match </span>source_info.name.as_ref() {
+            <span class="prelude-val">None </span>=&gt; <span class="prelude-val">Err</span>(()),
+            <span class="prelude-val">Some</span>(name) =&gt; <span class="prelude-val">Ok</span>(VolInfo {
+                volume: source_info.volume,
+                mute: source_info.mute,
+                name: name.to_string(),
+                description: source_info.description.as_ref().map(|d| d.to_string()),
+                active_port: source_info
+                    .active_port
+                    .as_ref()
+                    .and_then(|a| a.name.as_ref().map(|n| n.to_string())),
+                form_factor: source_info.proplist.get_str(properties::DEVICE_FORM_FACTOR),
             }),
         }
     }
 }
 
-<span class="kw">impl</span> <span class="ident">TryFrom</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">SinkInfo</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">VolInfo</span> {
-    <span class="kw">type</span> <span class="ident">Error</span> <span class="op">=</span> ();
+<span class="kw">impl </span>TryFrom&lt;<span class="kw-2">&amp;</span>SinkInfo&lt;<span class="lifetime">&#39;_</span>&gt;&gt; <span class="kw">for </span>VolInfo {
+    <span class="kw">type </span>Error = ();
 
-    <span class="kw">fn</span> <span class="ident">try_from</span>(<span class="ident">sink_info</span>: <span class="kw-2">&amp;</span><span class="ident">SinkInfo</span>) -&gt; <span class="ident">std::result::Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident"><span class="self">Self</span>::Error</span><span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="ident">sink_info</span>.<span class="ident">name</span>.<span class="ident">as_ref</span>() {
-            <span class="prelude-val">None</span> =&gt; <span class="prelude-val">Err</span>(()),
-            <span class="prelude-val">Some</span>(<span class="ident">name</span>) =&gt; <span class="prelude-val">Ok</span>(<span class="ident">VolInfo</span> {
-                <span class="ident">volume</span>: <span class="ident">sink_info</span>.<span class="ident">volume</span>,
-                <span class="ident">mute</span>: <span class="ident">sink_info</span>.<span class="ident">mute</span>,
-                <span class="ident">name</span>: <span class="ident">name</span>.<span class="ident">to_string</span>(),
-                <span class="ident">description</span>: <span class="ident">sink_info</span>.<span class="ident">description</span>.<span class="ident">as_ref</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">d</span><span class="op">|</span> <span class="ident">d</span>.<span class="ident">to_string</span>()),
-                <span class="ident">active_port</span>: <span class="ident">sink_info</span>
-                    .<span class="ident">active_port</span>
-                    .<span class="ident">as_ref</span>()
-                    .<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">a</span><span class="op">|</span> <span class="ident">a</span>.<span class="ident">name</span>.<span class="ident">as_ref</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">n</span><span class="op">|</span> <span class="ident">n</span>.<span class="ident">to_string</span>())),
-                <span class="ident">form_factor</span>: <span class="ident">sink_info</span>.<span class="ident">proplist</span>.<span class="ident">get_str</span>(<span class="ident">properties::DEVICE_FORM_FACTOR</span>),
+    <span class="kw">fn </span>try_from(sink_info: <span class="kw-2">&amp;</span>SinkInfo) -&gt; std::result::Result&lt;<span class="self">Self</span>, <span class="self">Self</span>::Error&gt; {
+        <span class="kw">match </span>sink_info.name.as_ref() {
+            <span class="prelude-val">None </span>=&gt; <span class="prelude-val">Err</span>(()),
+            <span class="prelude-val">Some</span>(name) =&gt; <span class="prelude-val">Ok</span>(VolInfo {
+                volume: sink_info.volume,
+                mute: sink_info.mute,
+                name: name.to_string(),
+                description: sink_info.description.as_ref().map(|d| d.to_string()),
+                active_port: sink_info
+                    .active_port
+                    .as_ref()
+                    .and_then(|a| a.name.as_ref().map(|n| n.to_string())),
+                form_factor: sink_info.proplist.get_str(properties::DEVICE_FORM_FACTOR),
             }),
         }
     }
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
-<span class="kw">enum</span> <span class="ident">ClientRequest</span> {
-    <span class="ident">GetDefaultDevice</span>,
-    <span class="ident">GetInfoByIndex</span>(<span class="ident">DeviceKind</span>, <span class="ident">u32</span>),
-    <span class="ident">GetInfoByName</span>(<span class="ident">DeviceKind</span>, <span class="ident">String</span>),
-    <span class="ident">SetVolumeByName</span>(<span class="ident">DeviceKind</span>, <span class="ident">String</span>, <span class="ident">ChannelVolumes</span>),
-    <span class="ident">SetMuteByName</span>(<span class="ident">DeviceKind</span>, <span class="ident">String</span>, <span class="ident">bool</span>),
+<span class="attribute">#[derive(Debug)]
+</span><span class="kw">enum </span>ClientRequest {
+    GetDefaultDevice,
+    GetInfoByIndex(DeviceKind, u32),
+    GetInfoByName(DeviceKind, String),
+    SetVolumeByName(DeviceKind, String, ChannelVolumes),
+    SetMuteByName(DeviceKind, String, bool),
 }
 
-<span class="kw">impl</span> <span class="ident">Connection</span> {
-    <span class="kw">fn</span> <span class="ident">new</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">proplist</span> <span class="op">=</span> <span class="ident">Proplist::new</span>().<span class="ident">unwrap</span>();
-        <span class="ident">proplist</span>
-            .<span class="ident">set_str</span>(<span class="ident">properties::APPLICATION_NAME</span>, <span class="macro">env!</span>(<span class="string">&quot;CARGO_PKG_NAME&quot;</span>))
-            .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error::new</span>(<span class="string">&quot;Could not set pulseaudio APPLICATION_NAME property&quot;</span>))<span class="question-mark">?</span>;
+<span class="kw">impl </span>Connection {
+    <span class="kw">fn </span>new() -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
+        <span class="kw">let </span><span class="kw-2">mut </span>proplist = Proplist::new().unwrap();
+        proplist
+            .set_str(properties::APPLICATION_NAME, <span class="macro">env!</span>(<span class="string">&quot;CARGO_PKG_NAME&quot;</span>))
+            .map_err(|<span class="kw">_</span>| Error::new(<span class="string">&quot;Could not set pulseaudio APPLICATION_NAME property&quot;</span>))<span class="question-mark">?</span>;
 
-        <span class="kw">let</span> <span class="ident">mainloop</span> <span class="op">=</span> <span class="ident">Mainloop::new</span>().<span class="ident">error</span>(<span class="string">&quot;Failed to create pulseaudio mainloop&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>mainloop = Mainloop::new().error(<span class="string">&quot;Failed to create pulseaudio mainloop&quot;</span>)<span class="question-mark">?</span>;
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">context</span> <span class="op">=</span> <span class="ident">Context::new_with_proplist</span>(
-            <span class="kw-2">&amp;</span><span class="ident">mainloop</span>,
+        <span class="kw">let </span><span class="kw-2">mut </span>context = Context::new_with_proplist(
+            <span class="kw-2">&amp;</span>mainloop,
             <span class="macro">concat!</span>(<span class="macro">env!</span>(<span class="string">&quot;CARGO_PKG_NAME&quot;</span>), <span class="string">&quot;_context&quot;</span>),
-            <span class="kw-2">&amp;</span><span class="ident">proplist</span>,
+            <span class="kw-2">&amp;</span>proplist,
         )
-        .<span class="ident">error</span>(<span class="string">&quot;Failed to create new pulseaudio context&quot;</span>)<span class="question-mark">?</span>;
+        .error(<span class="string">&quot;Failed to create new pulseaudio context&quot;</span>)<span class="question-mark">?</span>;
 
-        <span class="ident">context</span>
-            .<span class="ident">connect</span>(<span class="prelude-val">None</span>, <span class="ident">FlagSet::NOFLAGS</span>, <span class="prelude-val">None</span>)
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to connect to pulseaudio context&quot;</span>)<span class="question-mark">?</span>;
+        context
+            .connect(<span class="prelude-val">None</span>, FlagSet::NOFLAGS, <span class="prelude-val">None</span>)
+            .error(<span class="string">&quot;Failed to connect to pulseaudio context&quot;</span>)<span class="question-mark">?</span>;
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">connection</span> <span class="op">=</span> <span class="ident">Connection</span> { <span class="ident">mainloop</span>, <span class="ident">context</span> };
+        <span class="kw">let </span><span class="kw-2">mut </span>connection = Connection { mainloop, context };
 
-        <span class="comment">// Wait for context to be ready</span>
-        <span class="kw">loop</span> {
-            <span class="ident">connection</span>.<span class="ident">iterate</span>(<span class="bool-val">false</span>)<span class="question-mark">?</span>;
-            <span class="kw">match</span> <span class="ident">connection</span>.<span class="ident">context</span>.<span class="ident">get_state</span>() {
-                <span class="ident">PulseState::Ready</span> =&gt; {
+        <span class="comment">// Wait for context to be ready
+        </span><span class="kw">loop </span>{
+            connection.iterate(<span class="bool-val">false</span>)<span class="question-mark">?</span>;
+            <span class="kw">match </span>connection.context.get_state() {
+                PulseState::Ready =&gt; {
                     <span class="kw">break</span>;
                 }
-                <span class="ident">PulseState::Failed</span> <span class="op">|</span> <span class="ident">PulseState::Terminated</span> =&gt; {
-                    <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::new</span>(<span class="string">&quot;pulseaudio context state failed/terminated&quot;</span>));
+                PulseState::Failed | PulseState::Terminated =&gt; {
+                    <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="string">&quot;pulseaudio context state failed/terminated&quot;</span>));
                 }
-                <span class="kw">_</span> =&gt; {}
+                <span class="kw">_ </span>=&gt; {}
             }
         }
 
-        <span class="prelude-val">Ok</span>(<span class="ident">connection</span>)
+        <span class="prelude-val">Ok</span>(connection)
     }
 
-    <span class="kw">fn</span> <span class="ident">iterate</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">blocking</span>: <span class="ident">bool</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="self">self</span>.<span class="ident">mainloop</span>.<span class="ident">iterate</span>(<span class="ident">blocking</span>) {
-            <span class="ident">IterateResult::Quit</span>(<span class="kw">_</span>) <span class="op">|</span> <span class="ident">IterateResult::Err</span>(<span class="kw">_</span>) =&gt; {
-                <span class="prelude-val">Err</span>(<span class="ident">Error::new</span>(<span class="string">&quot;failed to iterate pulseaudio state&quot;</span>))
+    <span class="kw">fn </span>iterate(<span class="kw-2">&amp;mut </span><span class="self">self</span>, blocking: bool) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        <span class="kw">match </span><span class="self">self</span>.mainloop.iterate(blocking) {
+            IterateResult::Quit(<span class="kw">_</span>) | IterateResult::Err(<span class="kw">_</span>) =&gt; {
+                <span class="prelude-val">Err</span>(Error::new(<span class="string">&quot;failed to iterate pulseaudio state&quot;</span>))
             }
-            <span class="ident">IterateResult::Success</span>(<span class="kw">_</span>) =&gt; <span class="prelude-val">Ok</span>(()),
+            IterateResult::Success(<span class="kw">_</span>) =&gt; <span class="prelude-val">Ok</span>(()),
         }
     }
 }
 
-<span class="kw">impl</span> <span class="ident">Client</span> {
-    <span class="kw">fn</span> <span class="ident">new</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Client</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> (<span class="ident">send_req</span>, <span class="ident">recv_req</span>) <span class="op">=</span> <span class="ident">unbounded</span>();
-        <span class="kw">let</span> (<span class="ident">send_result</span>, <span class="ident">recv_result</span>) <span class="op">=</span> <span class="ident">unbounded</span>();
-        <span class="kw">let</span> <span class="ident">send_result2</span> <span class="op">=</span> <span class="ident">send_result</span>.<span class="ident">clone</span>();
-        <span class="kw">let</span> <span class="ident">new_connection</span> <span class="op">=</span> <span class="op">|</span><span class="ident">sender</span>: <span class="ident">Sender</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span><span class="op">&gt;</span><span class="op">|</span> -&gt; <span class="ident">Connection</span> {
-            <span class="kw">let</span> <span class="ident">conn</span> <span class="op">=</span> <span class="ident">Connection::new</span>();
-            <span class="kw">match</span> <span class="ident">conn</span> {
-                <span class="prelude-val">Ok</span>(<span class="ident">conn</span>) =&gt; {
-                    <span class="ident">sender</span>.<span class="ident">send</span>(<span class="prelude-val">Ok</span>(())).<span class="ident">unwrap</span>();
-                    <span class="ident">conn</span>
+<span class="kw">impl </span>Client {
+    <span class="kw">fn </span>new() -&gt; <span class="prelude-ty">Result</span>&lt;Client&gt; {
+        <span class="kw">let </span>(send_req, recv_req) = unbounded();
+        <span class="kw">let </span>(send_result, recv_result) = unbounded();
+        <span class="kw">let </span>send_result2 = send_result.clone();
+        <span class="kw">let </span>new_connection = |sender: Sender&lt;<span class="prelude-ty">Result</span>&lt;()&gt;&gt;| -&gt; Connection {
+            <span class="kw">let </span>conn = Connection::new();
+            <span class="kw">match </span>conn {
+                <span class="prelude-val">Ok</span>(conn) =&gt; {
+                    sender.send(<span class="prelude-val">Ok</span>(())).unwrap();
+                    conn
                 }
-                <span class="prelude-val">Err</span>(<span class="ident">err</span>) =&gt; {
-                    <span class="ident">sender</span>.<span class="ident">send</span>(<span class="prelude-val">Err</span>(<span class="ident">err</span>)).<span class="ident">unwrap</span>();
+                <span class="prelude-val">Err</span>(err) =&gt; {
+                    sender.send(<span class="prelude-val">Err</span>(err)).unwrap();
                     <span class="macro">panic!</span>(<span class="string">&quot;failed to create pulseaudio connection&quot;</span>);
                 }
             }
         };
 
-        <span class="comment">// requests</span>
-        <span class="ident">thread::Builder::new</span>()
-            .<span class="ident">name</span>(<span class="string">&quot;sound_pulseaudio_req&quot;</span>.<span class="ident">into</span>())
-            .<span class="ident">spawn</span>(<span class="kw">move</span> <span class="op">|</span><span class="op">|</span> {
-                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">connection</span> <span class="op">=</span> <span class="ident">new_connection</span>(<span class="ident">send_result</span>);
+        <span class="comment">// requests
+        </span>thread::Builder::new()
+            .name(<span class="string">&quot;sound_pulseaudio_req&quot;</span>.into())
+            .spawn(<span class="kw">move </span>|| {
+                <span class="kw">let </span><span class="kw-2">mut </span>connection = new_connection(send_result);
 
-                <span class="kw">loop</span> {
-                    <span class="comment">// make sure mainloop dispatched everything</span>
-                    <span class="kw">loop</span> {
-                        <span class="ident">connection</span>.<span class="ident">iterate</span>(<span class="bool-val">false</span>).<span class="ident">unwrap</span>();
-                        <span class="kw">if</span> <span class="ident">connection</span>.<span class="ident">context</span>.<span class="ident">get_state</span>() <span class="op">==</span> <span class="ident">PulseState::Ready</span> {
+                <span class="kw">loop </span>{
+                    <span class="comment">// make sure mainloop dispatched everything
+                    </span><span class="kw">loop </span>{
+                        connection.iterate(<span class="bool-val">false</span>).unwrap();
+                        <span class="kw">if </span>connection.context.get_state() == PulseState::Ready {
                             <span class="kw">break</span>;
                         }
                     }
 
-                    <span class="kw">match</span> <span class="ident">recv_req</span>.<span class="ident">recv</span>() {
+                    <span class="kw">match </span>recv_req.recv() {
                         <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; {}
-                        <span class="prelude-val">Ok</span>(<span class="ident">req</span>) =&gt; {
-                            <span class="kw">use</span> <span class="ident">ClientRequest</span>::<span class="kw-2">*</span>;
-                            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">introspector</span> <span class="op">=</span> <span class="ident">connection</span>.<span class="ident">context</span>.<span class="ident">introspect</span>();
+                        <span class="prelude-val">Ok</span>(req) =&gt; {
+                            <span class="kw">use </span>ClientRequest::<span class="kw-2">*</span>;
+                            <span class="kw">let </span><span class="kw-2">mut </span>introspector = connection.context.introspect();
 
-                            <span class="kw">match</span> <span class="ident">req</span> {
-                                <span class="ident">GetDefaultDevice</span> =&gt; {
-                                    <span class="ident">introspector</span>.<span class="ident">get_server_info</span>(<span class="ident">Client::server_info_callback</span>);
+                            <span class="kw">match </span>req {
+                                GetDefaultDevice =&gt; {
+                                    introspector.get_server_info(Client::server_info_callback);
                                 }
-                                <span class="ident">GetInfoByIndex</span>(<span class="ident">DeviceKind::Sink</span>, <span class="ident">index</span>) =&gt; {
-                                    <span class="ident">introspector</span>
-                                        .<span class="ident">get_sink_info_by_index</span>(<span class="ident">index</span>, <span class="ident">Client::sink_info_callback</span>);
+                                GetInfoByIndex(DeviceKind::Sink, index) =&gt; {
+                                    introspector
+                                        .get_sink_info_by_index(index, Client::sink_info_callback);
                                 }
-                                <span class="ident">GetInfoByIndex</span>(<span class="ident">DeviceKind::Source</span>, <span class="ident">index</span>) =&gt; {
-                                    <span class="ident">introspector</span>.<span class="ident">get_source_info_by_index</span>(
-                                        <span class="ident">index</span>,
-                                        <span class="ident">Client::source_info_callback</span>,
+                                GetInfoByIndex(DeviceKind::Source, index) =&gt; {
+                                    introspector.get_source_info_by_index(
+                                        index,
+                                        Client::source_info_callback,
                                     );
                                 }
-                                <span class="ident">GetInfoByName</span>(<span class="ident">DeviceKind::Sink</span>, <span class="ident">name</span>) =&gt; {
-                                    <span class="ident">introspector</span>
-                                        .<span class="ident">get_sink_info_by_name</span>(<span class="kw-2">&amp;</span><span class="ident">name</span>, <span class="ident">Client::sink_info_callback</span>);
+                                GetInfoByName(DeviceKind::Sink, name) =&gt; {
+                                    introspector
+                                        .get_sink_info_by_name(<span class="kw-2">&amp;</span>name, Client::sink_info_callback);
                                 }
-                                <span class="ident">GetInfoByName</span>(<span class="ident">DeviceKind::Source</span>, <span class="ident">name</span>) =&gt; {
-                                    <span class="ident">introspector</span>.<span class="ident">get_source_info_by_name</span>(
-                                        <span class="kw-2">&amp;</span><span class="ident">name</span>,
-                                        <span class="ident">Client::source_info_callback</span>,
+                                GetInfoByName(DeviceKind::Source, name) =&gt; {
+                                    introspector.get_source_info_by_name(
+                                        <span class="kw-2">&amp;</span>name,
+                                        Client::source_info_callback,
                                     );
                                 }
-                                <span class="ident">SetVolumeByName</span>(<span class="ident">DeviceKind::Sink</span>, <span class="ident">name</span>, <span class="ident">volumes</span>) =&gt; {
-                                    <span class="ident">introspector</span>.<span class="ident">set_sink_volume_by_name</span>(<span class="kw-2">&amp;</span><span class="ident">name</span>, <span class="kw-2">&amp;</span><span class="ident">volumes</span>, <span class="prelude-val">None</span>);
+                                SetVolumeByName(DeviceKind::Sink, name, volumes) =&gt; {
+                                    introspector.set_sink_volume_by_name(<span class="kw-2">&amp;</span>name, <span class="kw-2">&amp;</span>volumes, <span class="prelude-val">None</span>);
                                 }
-                                <span class="ident">SetVolumeByName</span>(<span class="ident">DeviceKind::Source</span>, <span class="ident">name</span>, <span class="ident">volumes</span>) =&gt; {
-                                    <span class="ident">introspector</span>.<span class="ident">set_source_volume_by_name</span>(<span class="kw-2">&amp;</span><span class="ident">name</span>, <span class="kw-2">&amp;</span><span class="ident">volumes</span>, <span class="prelude-val">None</span>);
+                                SetVolumeByName(DeviceKind::Source, name, volumes) =&gt; {
+                                    introspector.set_source_volume_by_name(<span class="kw-2">&amp;</span>name, <span class="kw-2">&amp;</span>volumes, <span class="prelude-val">None</span>);
                                 }
-                                <span class="ident">SetMuteByName</span>(<span class="ident">DeviceKind::Sink</span>, <span class="ident">name</span>, <span class="ident">mute</span>) =&gt; {
-                                    <span class="ident">introspector</span>.<span class="ident">set_sink_mute_by_name</span>(<span class="kw-2">&amp;</span><span class="ident">name</span>, <span class="ident">mute</span>, <span class="prelude-val">None</span>);
+                                SetMuteByName(DeviceKind::Sink, name, mute) =&gt; {
+                                    introspector.set_sink_mute_by_name(<span class="kw-2">&amp;</span>name, mute, <span class="prelude-val">None</span>);
                                 }
-                                <span class="ident">SetMuteByName</span>(<span class="ident">DeviceKind::Source</span>, <span class="ident">name</span>, <span class="ident">mute</span>) =&gt; {
-                                    <span class="ident">introspector</span>.<span class="ident">set_source_mute_by_name</span>(<span class="kw-2">&amp;</span><span class="ident">name</span>, <span class="ident">mute</span>, <span class="prelude-val">None</span>);
+                                SetMuteByName(DeviceKind::Source, name, mute) =&gt; {
+                                    introspector.set_source_mute_by_name(<span class="kw-2">&amp;</span>name, mute, <span class="prelude-val">None</span>);
                                 }
                             };
 
-                            <span class="comment">// send request and receive response</span>
-                            <span class="ident">connection</span>.<span class="ident">iterate</span>(<span class="bool-val">true</span>).<span class="ident">unwrap</span>();
-                            <span class="ident">connection</span>.<span class="ident">iterate</span>(<span class="bool-val">true</span>).<span class="ident">unwrap</span>();
+                            <span class="comment">// send request and receive response
+                            </span>connection.iterate(<span class="bool-val">true</span>).unwrap();
+                            connection.iterate(<span class="bool-val">true</span>).unwrap();
                         }
                     }
                 }
             })
-            .<span class="ident">unwrap</span>();
-        <span class="ident">recv_result</span>
-            .<span class="ident">recv</span>()
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to receive from pulseaudio thread channel&quot;</span>)<span class="question-mark">?</span><span class="question-mark">?</span>;
+            .unwrap();
+        recv_result
+            .recv()
+            .error(<span class="string">&quot;Failed to receive from pulseaudio thread channel&quot;</span>)<span class="question-mark">??</span>;
 
-        <span class="comment">// subscribe</span>
-        <span class="ident">thread::Builder::new</span>()
-            .<span class="ident">name</span>(<span class="string">&quot;sound_pulseaudio_sub&quot;</span>.<span class="ident">into</span>())
-            .<span class="ident">spawn</span>(<span class="kw">move</span> <span class="op">|</span><span class="op">|</span> {
-                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">connection</span> <span class="op">=</span> <span class="ident">new_connection</span>(<span class="ident">send_result2</span>);
+        <span class="comment">// subscribe
+        </span>thread::Builder::new()
+            .name(<span class="string">&quot;sound_pulseaudio_sub&quot;</span>.into())
+            .spawn(<span class="kw">move </span>|| {
+                <span class="kw">let </span><span class="kw-2">mut </span>connection = new_connection(send_result2);
 
-                <span class="comment">// subcribe for events</span>
-                <span class="ident">connection</span>
-                    .<span class="ident">context</span>
-                    .<span class="ident">set_subscribe_callback</span>(<span class="prelude-val">Some</span>(<span class="ident">Box::new</span>(<span class="ident">Client::subscribe_callback</span>)));
-                <span class="ident">connection</span>.<span class="ident">context</span>.<span class="ident">subscribe</span>(
-                    <span class="ident">InterestMaskSet::SERVER</span> <span class="op">|</span> <span class="ident">InterestMaskSet::SINK</span> <span class="op">|</span> <span class="ident">InterestMaskSet::SOURCE</span>,
-                    <span class="op">|</span><span class="kw">_</span><span class="op">|</span> {},
+                <span class="comment">// subcribe for events
+                </span>connection
+                    .context
+                    .set_subscribe_callback(<span class="prelude-val">Some</span>(Box::new(Client::subscribe_callback)));
+                connection.context.subscribe(
+                    InterestMaskSet::SERVER | InterestMaskSet::SINK | InterestMaskSet::SOURCE,
+                    |<span class="kw">_</span>| {},
                 );
 
-                <span class="ident">connection</span>.<span class="ident">mainloop</span>.<span class="ident">run</span>().<span class="ident">unwrap</span>();
+                connection.mainloop.run().unwrap();
             })
-            .<span class="ident">unwrap</span>();
-        <span class="ident">recv_result</span>
-            .<span class="ident">recv</span>()
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to receive from pulseaudio thread channel&quot;</span>)<span class="question-mark">?</span><span class="question-mark">?</span>;
+            .unwrap();
+        recv_result
+            .recv()
+            .error(<span class="string">&quot;Failed to receive from pulseaudio thread channel&quot;</span>)<span class="question-mark">??</span>;
 
-        <span class="prelude-val">Ok</span>(<span class="ident">Client</span> { <span class="ident">sender</span>: <span class="ident">send_req</span> })
+        <span class="prelude-val">Ok</span>(Client { sender: send_req })
     }
 
-    <span class="kw">fn</span> <span class="ident">send</span>(<span class="ident">request</span>: <span class="ident">ClientRequest</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="ident">CLIENT</span>.<span class="ident">as_ref</span>() {
-            <span class="prelude-val">Ok</span>(<span class="ident">client</span>) =&gt; {
-                <span class="ident">client</span>.<span class="ident">sender</span>.<span class="ident">send</span>(<span class="ident">request</span>).<span class="ident">unwrap</span>();
+    <span class="kw">fn </span>send(request: ClientRequest) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        <span class="kw">match </span>CLIENT.as_ref() {
+            <span class="prelude-val">Ok</span>(client) =&gt; {
+                client.sender.send(request).unwrap();
                 <span class="prelude-val">Ok</span>(())
             }
-            <span class="prelude-val">Err</span>(<span class="ident">err</span>) =&gt; <span class="prelude-val">Err</span>(<span class="ident">Error::new</span>(<span class="macro">format!</span>(
+            <span class="prelude-val">Err</span>(err) =&gt; <span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(
                 <span class="string">&quot;pulseaudio connection failed with error: {err}&quot;</span>,
             ))),
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">server_info_callback</span>(<span class="ident">server_info</span>: <span class="kw-2">&amp;</span><span class="ident">ServerInfo</span>) {
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">default_sink</span>) <span class="op">=</span> <span class="ident">server_info</span>.<span class="ident">default_sink_name</span>.<span class="ident">as_ref</span>() {
-            <span class="kw-2">*</span><span class="ident">DEFAULT_SINK</span>.<span class="ident">lock</span>().<span class="ident">unwrap</span>() <span class="op">=</span> <span class="ident">default_sink</span>.<span class="ident">to_string</span>();
+    <span class="kw">fn </span>server_info_callback(server_info: <span class="kw-2">&amp;</span>ServerInfo) {
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(default_sink) = server_info.default_sink_name.as_ref() {
+            <span class="kw-2">*</span>DEFAULT_SINK.lock().unwrap() = default_sink.to_string();
         }
 
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">default_source</span>) <span class="op">=</span> <span class="ident">server_info</span>.<span class="ident">default_source_name</span>.<span class="ident">as_ref</span>() {
-            <span class="kw-2">*</span><span class="ident">DEFAULT_SOURCE</span>.<span class="ident">lock</span>().<span class="ident">unwrap</span>() <span class="op">=</span> <span class="ident">default_source</span>.<span class="ident">to_string</span>();
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(default_source) = server_info.default_source_name.as_ref() {
+            <span class="kw-2">*</span>DEFAULT_SOURCE.lock().unwrap() = default_source.to_string();
         }
 
-        <span class="ident">Client::send_update_event</span>();
+        Client::send_update_event();
     }
 
-    <span class="kw">fn</span> <span class="ident">get_info_callback</span><span class="op">&lt;</span><span class="ident">I</span>: <span class="ident">TryInto</span><span class="op">&lt;</span><span class="ident">VolInfo</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="ident">result</span>: <span class="ident">ListResult</span><span class="op">&lt;</span><span class="ident">I</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">VolInfo</span><span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="ident">result</span> {
-            <span class="ident">ListResult::End</span> <span class="op">|</span> <span class="ident">ListResult::Error</span> =&gt; <span class="prelude-val">None</span>,
-            <span class="ident">ListResult::Item</span>(<span class="ident">info</span>) =&gt; <span class="ident">info</span>.<span class="ident">try_into</span>().<span class="ident">ok</span>(),
-        }
-    }
-
-    <span class="kw">fn</span> <span class="ident">sink_info_callback</span>(<span class="ident">result</span>: <span class="ident">ListResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">SinkInfo</span><span class="op">&gt;</span>) {
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">vol_info</span>) <span class="op">=</span> <span class="ident"><span class="self">Self</span>::get_info_callback</span>(<span class="ident">result</span>) {
-            <span class="ident">DEVICES</span>
-                .<span class="ident">lock</span>()
-                .<span class="ident">unwrap</span>()
-                .<span class="ident">insert</span>((<span class="ident">DeviceKind::Sink</span>, <span class="ident">vol_info</span>.<span class="ident">name</span>.<span class="ident">to_string</span>()), <span class="ident">vol_info</span>);
-
-            <span class="ident">Client::send_update_event</span>();
+    <span class="kw">fn </span>get_info_callback&lt;I: TryInto&lt;VolInfo&gt;&gt;(result: ListResult&lt;I&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;VolInfo&gt; {
+        <span class="kw">match </span>result {
+            ListResult::End | ListResult::Error =&gt; <span class="prelude-val">None</span>,
+            ListResult::Item(info) =&gt; info.try_into().ok(),
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">source_info_callback</span>(<span class="ident">result</span>: <span class="ident">ListResult</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">SourceInfo</span><span class="op">&gt;</span>) {
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">vol_info</span>) <span class="op">=</span> <span class="ident"><span class="self">Self</span>::get_info_callback</span>(<span class="ident">result</span>) {
-            <span class="ident">DEVICES</span>
-                .<span class="ident">lock</span>()
-                .<span class="ident">unwrap</span>()
-                .<span class="ident">insert</span>((<span class="ident">DeviceKind::Source</span>, <span class="ident">vol_info</span>.<span class="ident">name</span>.<span class="ident">to_string</span>()), <span class="ident">vol_info</span>);
+    <span class="kw">fn </span>sink_info_callback(result: ListResult&lt;<span class="kw-2">&amp;</span>SinkInfo&gt;) {
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(vol_info) = <span class="self">Self</span>::get_info_callback(result) {
+            DEVICES
+                .lock()
+                .unwrap()
+                .insert((DeviceKind::Sink, vol_info.name.to_string()), vol_info);
 
-            <span class="ident">Client::send_update_event</span>();
+            Client::send_update_event();
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">subscribe_callback</span>(
-        <span class="ident">facility</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Facility</span><span class="op">&gt;</span>,
-        <span class="ident">_operation</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">SubscribeOperation</span><span class="op">&gt;</span>,
-        <span class="ident">index</span>: <span class="ident">u32</span>,
+    <span class="kw">fn </span>source_info_callback(result: ListResult&lt;<span class="kw-2">&amp;</span>SourceInfo&gt;) {
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(vol_info) = <span class="self">Self</span>::get_info_callback(result) {
+            DEVICES
+                .lock()
+                .unwrap()
+                .insert((DeviceKind::Source, vol_info.name.to_string()), vol_info);
+
+            Client::send_update_event();
+        }
+    }
+
+    <span class="kw">fn </span>subscribe_callback(
+        facility: <span class="prelude-ty">Option</span>&lt;Facility&gt;,
+        _operation: <span class="prelude-ty">Option</span>&lt;SubscribeOperation&gt;,
+        index: u32,
     ) {
-        <span class="kw">match</span> <span class="ident">facility</span> {
-            <span class="prelude-val">None</span> =&gt; {}
-            <span class="prelude-val">Some</span>(<span class="ident">facility</span>) =&gt; <span class="kw">match</span> <span class="ident">facility</span> {
-                <span class="ident">Facility::Server</span> =&gt; {
-                    <span class="ident">Client::send</span>(<span class="ident">ClientRequest::GetDefaultDevice</span>).<span class="ident">ok</span>();
+        <span class="kw">match </span>facility {
+            <span class="prelude-val">None </span>=&gt; {}
+            <span class="prelude-val">Some</span>(facility) =&gt; <span class="kw">match </span>facility {
+                Facility::Server =&gt; {
+                    Client::send(ClientRequest::GetDefaultDevice).ok();
                 }
-                <span class="ident">Facility::Sink</span> =&gt; {
-                    <span class="ident">Client::send</span>(<span class="ident">ClientRequest::GetInfoByIndex</span>(<span class="ident">DeviceKind::Sink</span>, <span class="ident">index</span>)).<span class="ident">ok</span>();
+                Facility::Sink =&gt; {
+                    Client::send(ClientRequest::GetInfoByIndex(DeviceKind::Sink, index)).ok();
                 }
-                <span class="ident">Facility::Source</span> =&gt; {
-                    <span class="ident">Client::send</span>(<span class="ident">ClientRequest::GetInfoByIndex</span>(<span class="ident">DeviceKind::Source</span>, <span class="ident">index</span>)).<span class="ident">ok</span>();
+                Facility::Source =&gt; {
+                    Client::send(ClientRequest::GetInfoByIndex(DeviceKind::Source, index)).ok();
                 }
-                <span class="kw">_</span> =&gt; {}
+                <span class="kw">_ </span>=&gt; {}
             },
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">send_update_event</span>() {
-        <span class="kw">for</span> <span class="ident">tx</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">EVENT_LISTENER</span>.<span class="ident">lock</span>().<span class="ident">unwrap</span>() {
-            <span class="ident">tx</span>.<span class="ident">blocking_send</span>(()).<span class="ident">unwrap</span>();
+    <span class="kw">fn </span>send_update_event() {
+        <span class="kw">for </span>tx <span class="kw">in </span><span class="kw-2">&amp;*</span>EVENT_LISTENER.lock().unwrap() {
+            tx.blocking_send(()).unwrap();
         }
     }
 }
 
-<span class="kw">impl</span> <span class="ident">Device</span> {
-    <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">device_kind</span>: <span class="ident">DeviceKind</span>, <span class="ident">name</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> (<span class="ident">tx</span>, <span class="ident">rx</span>) <span class="op">=</span> <span class="ident">tokio::sync::mpsc::channel</span>(<span class="number">32</span>);
-        <span class="ident">EVENT_LISTENER</span>.<span class="ident">lock</span>().<span class="ident">unwrap</span>().<span class="ident">push</span>(<span class="ident">tx</span>);
+<span class="kw">impl </span>Device {
+    <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>new(device_kind: DeviceKind, name: <span class="prelude-ty">Option</span>&lt;String&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
+        <span class="kw">let </span>(tx, rx) = tokio::sync::mpsc::channel(<span class="number">32</span>);
+        EVENT_LISTENER.lock().unwrap().push(tx);
 
-        <span class="ident">Client::send</span>(<span class="ident">ClientRequest::GetDefaultDevice</span>)<span class="question-mark">?</span>;
+        Client::send(ClientRequest::GetDefaultDevice)<span class="question-mark">?</span>;
 
-        <span class="kw">let</span> <span class="ident">device</span> <span class="op">=</span> <span class="ident">Device</span> {
-            <span class="ident">name</span>,
-            <span class="ident">description</span>: <span class="prelude-val">None</span>,
-            <span class="ident">active_port</span>: <span class="prelude-val">None</span>,
-            <span class="ident">form_factor</span>: <span class="prelude-val">None</span>,
-            <span class="ident">device_kind</span>,
-            <span class="ident">volume</span>: <span class="prelude-val">None</span>,
-            <span class="ident">volume_avg</span>: <span class="number">0</span>,
-            <span class="ident">muted</span>: <span class="bool-val">false</span>,
-            <span class="ident">updates</span>: <span class="ident">rx</span>,
+        <span class="kw">let </span>device = Device {
+            name,
+            description: <span class="prelude-val">None</span>,
+            active_port: <span class="prelude-val">None</span>,
+            form_factor: <span class="prelude-val">None</span>,
+            device_kind,
+            volume: <span class="prelude-val">None</span>,
+            volume_avg: <span class="number">0</span>,
+            muted: <span class="bool-val">false</span>,
+            updates: rx,
         };
 
-        <span class="ident">Client::send</span>(<span class="ident">ClientRequest::GetInfoByName</span>(<span class="ident">device_kind</span>, <span class="ident">device</span>.<span class="ident">name</span>()))<span class="question-mark">?</span>;
+        Client::send(ClientRequest::GetInfoByName(device_kind, device.name()))<span class="question-mark">?</span>;
 
-        <span class="prelude-val">Ok</span>(<span class="ident">device</span>)
+        <span class="prelude-val">Ok</span>(device)
     }
 
-    <span class="kw">fn</span> <span class="ident">name</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">String</span> {
-        <span class="self">self</span>.<span class="ident">name</span>
-            .<span class="ident">clone</span>()
-            .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">device_kind</span>.<span class="ident">default_name</span>())
+    <span class="kw">fn </span>name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String {
+        <span class="self">self</span>.name
+            .clone()
+            .unwrap_or_else(|| <span class="self">self</span>.device_kind.default_name())
     }
 
-    <span class="kw">fn</span> <span class="ident">volume</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">volume</span>: <span class="ident">ChannelVolumes</span>) {
-        <span class="self">self</span>.<span class="ident">volume</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">volume</span>);
-        <span class="self">self</span>.<span class="ident">volume_avg</span> <span class="op">=</span> (<span class="ident">volume</span>.<span class="ident">avg</span>().<span class="number">0</span> <span class="kw">as</span> <span class="ident">f32</span> <span class="op">/</span> <span class="ident">Volume::NORMAL</span>.<span class="number">0</span> <span class="kw">as</span> <span class="ident">f32</span> <span class="op">*</span> <span class="number">100.0</span>).<span class="ident">round</span>() <span class="kw">as</span> <span class="ident">u32</span>;
+    <span class="kw">fn </span>volume(<span class="kw-2">&amp;mut </span><span class="self">self</span>, volume: ChannelVolumes) {
+        <span class="self">self</span>.volume = <span class="prelude-val">Some</span>(volume);
+        <span class="self">self</span>.volume_avg = (volume.avg().<span class="number">0 </span><span class="kw">as </span>f32 / Volume::NORMAL.<span class="number">0 </span><span class="kw">as </span>f32 * <span class="number">100.0</span>).round() <span class="kw">as </span>u32;
     }
 }
 
-<span class="attribute">#[<span class="ident">async_trait::async_trait</span>]</span>
-<span class="kw">impl</span> <span class="ident">SoundDevice</span> <span class="kw">for</span> <span class="ident">Device</span> {
-    <span class="kw">fn</span> <span class="ident">volume</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">u32</span> {
-        <span class="self">self</span>.<span class="ident">volume_avg</span>
+<span class="attribute">#[async_trait::async_trait]
+</span><span class="kw">impl </span>SoundDevice <span class="kw">for </span>Device {
+    <span class="kw">fn </span>volume(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u32 {
+        <span class="self">self</span>.volume_avg
     }
 
-    <span class="kw">fn</span> <span class="ident">muted</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">bool</span> {
-        <span class="self">self</span>.<span class="ident">muted</span>
+    <span class="kw">fn </span>muted(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
+        <span class="self">self</span>.muted
     }
 
-    <span class="kw">fn</span> <span class="ident">output_name</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">String</span> {
-        <span class="self">self</span>.<span class="ident">name</span>()
+    <span class="kw">fn </span>output_name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String {
+        <span class="self">self</span>.name()
     }
 
-    <span class="kw">fn</span> <span class="ident">output_description</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">description</span>.<span class="ident">clone</span>()
+    <span class="kw">fn </span>output_description(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt; {
+        <span class="self">self</span>.description.clone()
     }
 
-    <span class="kw">fn</span> <span class="ident">active_port</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">active_port</span>.<span class="ident">as_deref</span>()
+    <span class="kw">fn </span>active_port(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt; {
+        <span class="self">self</span>.active_port.as_deref()
     }
 
-    <span class="kw">fn</span> <span class="ident">form_factor</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span><span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">active_port</span>.<span class="ident">as_deref</span>()
+    <span class="kw">fn </span>form_factor(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt; {
+        <span class="self">self</span>.active_port.as_deref()
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_info</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">devices</span> <span class="op">=</span> <span class="ident">DEVICES</span>.<span class="ident">lock</span>().<span class="ident">unwrap</span>();
+    <span class="kw">async fn </span>get_info(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        <span class="kw">let </span>devices = DEVICES.lock().unwrap();
 
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">info</span>) <span class="op">=</span> <span class="ident">devices</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span>(<span class="self">self</span>.<span class="ident">device_kind</span>, <span class="self">self</span>.<span class="ident">name</span>())) {
-            <span class="self">self</span>.<span class="ident">volume</span>(<span class="ident">info</span>.<span class="ident">volume</span>);
-            <span class="self">self</span>.<span class="ident">muted</span> <span class="op">=</span> <span class="ident">info</span>.<span class="ident">mute</span>;
-            <span class="self">self</span>.<span class="ident">description</span> <span class="op">=</span> <span class="ident">info</span>.<span class="ident">description</span>.<span class="ident">clone</span>();
-            <span class="self">self</span>.<span class="ident">active_port</span> <span class="op">=</span> <span class="ident">info</span>.<span class="ident">active_port</span>.<span class="ident">clone</span>();
-            <span class="self">self</span>.<span class="ident">form_factor</span> <span class="op">=</span> <span class="ident">info</span>.<span class="ident">form_factor</span>.<span class="ident">clone</span>();
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(info) = devices.get(<span class="kw-2">&amp;</span>(<span class="self">self</span>.device_kind, <span class="self">self</span>.name())) {
+            <span class="self">self</span>.volume(info.volume);
+            <span class="self">self</span>.muted = info.mute;
+            <span class="self">self</span>.description = info.description.clone();
+            <span class="self">self</span>.active_port = info.active_port.clone();
+            <span class="self">self</span>.form_factor = info.form_factor.clone();
         }
 
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">set_volume</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">step</span>: <span class="ident">i32</span>, <span class="ident">max_vol</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">volume</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">volume</span>.<span class="ident">error</span>(<span class="string">&quot;Volume unknown&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">async fn </span>set_volume(<span class="kw-2">&amp;mut </span><span class="self">self</span>, step: i32, max_vol: <span class="prelude-ty">Option</span>&lt;u32&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        <span class="kw">let </span><span class="kw-2">mut </span>volume = <span class="self">self</span>.volume.error(<span class="string">&quot;Volume unknown&quot;</span>)<span class="question-mark">?</span>;
 
-        <span class="comment">// apply step to volumes</span>
-        <span class="kw">let</span> <span class="ident">step</span> <span class="op">=</span> (<span class="ident">step</span> <span class="kw">as</span> <span class="ident">f32</span> <span class="op">*</span> <span class="ident">Volume::NORMAL</span>.<span class="number">0</span> <span class="kw">as</span> <span class="ident">f32</span> <span class="op">/</span> <span class="number">100.0</span>).<span class="ident">round</span>() <span class="kw">as</span> <span class="ident">i32</span>;
-        <span class="kw">for</span> <span class="ident">vol</span> <span class="kw">in</span> <span class="ident">volume</span>.<span class="ident">get_mut</span>().<span class="ident">iter_mut</span>() {
-            <span class="kw">let</span> <span class="ident">uncapped_vol</span> <span class="op">=</span> <span class="ident">max</span>(<span class="number">0</span>, <span class="ident">vol</span>.<span class="number">0</span> <span class="kw">as</span> <span class="ident">i32</span> <span class="op">+</span> <span class="ident">step</span>) <span class="kw">as</span> <span class="ident">u32</span>;
-            <span class="kw">let</span> <span class="ident">capped_vol</span> <span class="op">=</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">vol_cap</span>) <span class="op">=</span> <span class="ident">max_vol</span> {
-                <span class="ident">min</span>(
-                    <span class="ident">uncapped_vol</span>,
-                    (<span class="ident">vol_cap</span> <span class="kw">as</span> <span class="ident">f32</span> <span class="op">*</span> <span class="ident">Volume::NORMAL</span>.<span class="number">0</span> <span class="kw">as</span> <span class="ident">f32</span> <span class="op">/</span> <span class="number">100.0</span>).<span class="ident">round</span>() <span class="kw">as</span> <span class="ident">u32</span>,
+        <span class="comment">// apply step to volumes
+        </span><span class="kw">let </span>step = (step <span class="kw">as </span>f32 * Volume::NORMAL.<span class="number">0 </span><span class="kw">as </span>f32 / <span class="number">100.0</span>).round() <span class="kw">as </span>i32;
+        <span class="kw">for </span>vol <span class="kw">in </span>volume.get_mut().iter_mut() {
+            <span class="kw">let </span>uncapped_vol = max(<span class="number">0</span>, vol.<span class="number">0 </span><span class="kw">as </span>i32 + step) <span class="kw">as </span>u32;
+            <span class="kw">let </span>capped_vol = <span class="kw">if let </span><span class="prelude-val">Some</span>(vol_cap) = max_vol {
+                min(
+                    uncapped_vol,
+                    (vol_cap <span class="kw">as </span>f32 * Volume::NORMAL.<span class="number">0 </span><span class="kw">as </span>f32 / <span class="number">100.0</span>).round() <span class="kw">as </span>u32,
                 )
-            } <span class="kw">else</span> {
-                <span class="ident">uncapped_vol</span>
+            } <span class="kw">else </span>{
+                uncapped_vol
             };
-            <span class="ident">vol</span>.<span class="number">0</span> <span class="op">=</span> <span class="ident">min</span>(<span class="ident">capped_vol</span>, <span class="ident">Volume::MAX</span>.<span class="number">0</span>);
+            vol.<span class="number">0 </span>= min(capped_vol, Volume::MAX.<span class="number">0</span>);
         }
 
-        <span class="comment">// update volumes</span>
-        <span class="self">self</span>.<span class="ident">volume</span>(<span class="ident">volume</span>);
-        <span class="ident">Client::send</span>(<span class="ident">ClientRequest::SetVolumeByName</span>(
-            <span class="self">self</span>.<span class="ident">device_kind</span>,
-            <span class="self">self</span>.<span class="ident">name</span>(),
-            <span class="ident">volume</span>,
+        <span class="comment">// update volumes
+        </span><span class="self">self</span>.volume(volume);
+        Client::send(ClientRequest::SetVolumeByName(
+            <span class="self">self</span>.device_kind,
+            <span class="self">self</span>.name(),
+            volume,
         ))<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">toggle</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">muted</span> <span class="op">=</span> <span class="op">!</span><span class="self">self</span>.<span class="ident">muted</span>;
+    <span class="kw">async fn </span>toggle(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        <span class="self">self</span>.muted = !<span class="self">self</span>.muted;
 
-        <span class="ident">Client::send</span>(<span class="ident">ClientRequest::SetMuteByName</span>(
-            <span class="self">self</span>.<span class="ident">device_kind</span>,
-            <span class="self">self</span>.<span class="ident">name</span>(),
-            <span class="self">self</span>.<span class="ident">muted</span>,
+        Client::send(ClientRequest::SetMuteByName(
+            <span class="self">self</span>.device_kind,
+            <span class="self">self</span>.name(),
+            <span class="self">self</span>.muted,
         ))<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">wait_for_update</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">updates</span>
-            .<span class="ident">recv</span>()
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to receive new update&quot;</span>)
+    <span class="kw">async fn </span>wait_for_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        <span class="self">self</span>.updates
+            .recv()
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to receive new update&quot;</span>)
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/battery/upower.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>upower.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../../storage.js"></script><script defer src="../../../../source-script.js"></script><script defer src="../../../../source-files.js"></script><script defer src="../../../../main.js"></script><noscript><link rel="stylesheet" href="../../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../../i3status_rs/index.html"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/battery/upower.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>upower.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../../normalize.css"><link rel="stylesheet" href="../../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../../ayu.css" disabled><link rel="stylesheet" href="../../../../dark.css" disabled><link rel="stylesheet" href="../../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../../storage.js"></script><script defer src="../../../../source-script.js"></script><script defer src="../../../../source-files.js"></script><script defer src="../../../../main.js"></script><noscript><link rel="stylesheet" href="../../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../../i3status_rs/index.html"><img class="rust-logo" src="../../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -193,200 +193,200 @@
 <span id="193">193</span>
 <span id="194">194</span>
 <span id="195">195</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">zbus::dbus_proxy</span>;
-<span class="kw">use</span> <span class="ident">zbus::fdo::DBusProxy</span>;
-<span class="kw">use</span> <span class="ident">zbus::MessageStream</span>;
-<span class="kw">use</span> <span class="ident">zvariant::ObjectPath</span>;
+</pre><pre class="rust"><code><span class="kw">use </span>zbus::dbus_proxy;
+<span class="kw">use </span>zbus::fdo::DBusProxy;
+<span class="kw">use </span>zbus::MessageStream;
+<span class="kw">use </span>zvariant::ObjectPath;
 
-<span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">BatteryDevice</span>, <span class="ident">BatteryInfo</span>, <span class="ident">BatteryStatus</span>, <span class="ident">DeviceName</span>};
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::blocks::prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::util::new_system_dbus_connection</span>;
+<span class="kw">use super</span>::{BatteryDevice, BatteryInfo, BatteryStatus, DeviceName};
+<span class="kw">use </span><span class="kw">crate</span>::blocks::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span><span class="kw">crate</span>::util::new_system_dbus_connection;
 
-<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct</span> <span class="ident">Device</span> {
-    <span class="ident">device_proxy</span>: <span class="ident">DeviceProxy</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span><span class="op">&gt;</span>,
-    <span class="ident">changes</span>: <span class="ident">MessageStream</span>,
+<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct </span>Device {
+    device_proxy: DeviceProxy&lt;<span class="lifetime">&#39;static</span>&gt;,
+    changes: MessageStream,
 }
 
-<span class="kw">impl</span> <span class="ident">Device</span> {
-    <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">device</span>: <span class="ident">DeviceName</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">dbus_conn</span> <span class="op">=</span> <span class="ident">new_system_dbus_connection</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">let</span> (<span class="ident">device_path</span>, <span class="ident">device_proxy</span>) <span class="op">=</span> {
-            <span class="kw">if</span> <span class="ident">device</span>.<span class="ident">exact</span>() <span class="op">==</span> <span class="prelude-val">Some</span>(<span class="string">&quot;DisplayDevice&quot;</span>) {
-                <span class="kw">let</span> <span class="ident">path</span>: <span class="ident">ObjectPath</span> <span class="op">=</span> <span class="string">&quot;/org/freedesktop/UPower/devices/DisplayDevice&quot;</span>
-                    .<span class="ident">try_into</span>()
-                    .<span class="ident">unwrap</span>();
-                <span class="kw">let</span> <span class="ident">proxy</span> <span class="op">=</span> <span class="ident">DeviceProxy::builder</span>(<span class="kw-2">&amp;</span><span class="ident">dbus_conn</span>)
-                    .<span class="ident">path</span>(<span class="ident">path</span>.<span class="ident">clone</span>())
-                    .<span class="ident">unwrap</span>()
-                    .<span class="ident">build</span>()
-                    .<span class="kw">await</span>
-                    .<span class="ident">error</span>(<span class="string">&quot;Failed to create DeviceProxy&quot;</span>)<span class="question-mark">?</span>;
-                (<span class="ident">path</span>, <span class="ident">proxy</span>)
-            } <span class="kw">else</span> {
-                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">res</span> <span class="op">=</span> <span class="prelude-val">None</span>;
-                <span class="kw">for</span> <span class="ident">path</span> <span class="kw">in</span> <span class="ident">UPowerProxy::new</span>(<span class="kw-2">&amp;</span><span class="ident">dbus_conn</span>)
-                    .<span class="kw">await</span>
-                    .<span class="ident">error</span>(<span class="string">&quot;Failed to create UPwerProxy&quot;</span>)<span class="question-mark">?</span>
-                    .<span class="ident">enumerate_devices</span>()
-                    .<span class="kw">await</span>
-                    .<span class="ident">error</span>(<span class="string">&quot;Failed to retrieve UPower devices&quot;</span>)<span class="question-mark">?</span>
-                {
-                    <span class="kw">let</span> <span class="ident">proxy</span> <span class="op">=</span> <span class="ident">DeviceProxy::builder</span>(<span class="kw-2">&amp;</span><span class="ident">dbus_conn</span>)
-                        .<span class="ident">path</span>(<span class="ident">path</span>.<span class="ident">clone</span>())
-                        .<span class="ident">unwrap</span>()
-                        .<span class="ident">build</span>()
-                        .<span class="kw">await</span>
-                        .<span class="ident">error</span>(<span class="string">&quot;Failed to create DeviceProxy&quot;</span>)<span class="question-mark">?</span>;
-                    <span class="comment">// Verify device type</span>
-                    <span class="comment">// https://upower.freedesktop.org/docs/Device.html#Device:Type</span>
-                    <span class="comment">// consider any peripheral, UPS and internal battery</span>
-                    <span class="kw">let</span> <span class="ident">device_type</span> <span class="op">=</span> <span class="ident">proxy</span>.<span class="ident">type_</span>().<span class="kw">await</span>.<span class="ident">error</span>(<span class="string">&quot;Failed to get device&#39;s type&quot;</span>)<span class="question-mark">?</span>;
-                    <span class="kw">if</span> <span class="ident">device_type</span> <span class="op">==</span> <span class="number">1</span> {
+<span class="kw">impl </span>Device {
+    <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">async fn </span>new(device: DeviceName) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
+        <span class="kw">let </span>dbus_conn = new_system_dbus_connection().<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let </span>(device_path, device_proxy) = {
+            <span class="kw">if </span>device.exact() == <span class="prelude-val">Some</span>(<span class="string">&quot;DisplayDevice&quot;</span>) {
+                <span class="kw">let </span>path: ObjectPath = <span class="string">&quot;/org/freedesktop/UPower/devices/DisplayDevice&quot;
+                    </span>.try_into()
+                    .unwrap();
+                <span class="kw">let </span>proxy = DeviceProxy::builder(<span class="kw-2">&amp;</span>dbus_conn)
+                    .path(path.clone())
+                    .unwrap()
+                    .build()
+                    .<span class="kw">await
+                    </span>.error(<span class="string">&quot;Failed to create DeviceProxy&quot;</span>)<span class="question-mark">?</span>;
+                (path, proxy)
+            } <span class="kw">else </span>{
+                <span class="kw">let </span><span class="kw-2">mut </span>res = <span class="prelude-val">None</span>;
+                <span class="kw">for </span>path <span class="kw">in </span>UPowerProxy::new(<span class="kw-2">&amp;</span>dbus_conn)
+                    .<span class="kw">await
+                    </span>.error(<span class="string">&quot;Failed to create UPwerProxy&quot;</span>)<span class="question-mark">?
+                    </span>.enumerate_devices()
+                    .<span class="kw">await
+                    </span>.error(<span class="string">&quot;Failed to retrieve UPower devices&quot;</span>)<span class="question-mark">?
+                </span>{
+                    <span class="kw">let </span>proxy = DeviceProxy::builder(<span class="kw-2">&amp;</span>dbus_conn)
+                        .path(path.clone())
+                        .unwrap()
+                        .build()
+                        .<span class="kw">await
+                        </span>.error(<span class="string">&quot;Failed to create DeviceProxy&quot;</span>)<span class="question-mark">?</span>;
+                    <span class="comment">// Verify device type
+                    // https://upower.freedesktop.org/docs/Device.html#Device:Type
+                    // consider any peripheral, UPS and internal battery
+                    </span><span class="kw">let </span>device_type = proxy.type_().<span class="kw">await</span>.error(<span class="string">&quot;Failed to get device&#39;s type&quot;</span>)<span class="question-mark">?</span>;
+                    <span class="kw">if </span>device_type == <span class="number">1 </span>{
                         <span class="kw">continue</span>;
                     }
-                    <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="ident">proxy</span>
-                        .<span class="ident">native_path</span>()
-                        .<span class="kw">await</span>
-                        .<span class="ident">error</span>(<span class="string">&quot;Failed to get device&#39;s native path&quot;</span>)<span class="question-mark">?</span>;
-                    <span class="kw">if</span> <span class="ident">device</span>.<span class="ident">matches</span>(<span class="kw-2">&amp;</span><span class="ident">name</span>) {
-                        <span class="ident">res</span> <span class="op">=</span> <span class="prelude-val">Some</span>((<span class="ident">path</span>.<span class="ident">into_inner</span>(), <span class="ident">proxy</span>));
+                    <span class="kw">let </span>name = proxy
+                        .native_path()
+                        .<span class="kw">await
+                        </span>.error(<span class="string">&quot;Failed to get device&#39;s native path&quot;</span>)<span class="question-mark">?</span>;
+                    <span class="kw">if </span>device.matches(<span class="kw-2">&amp;</span>name) {
+                        res = <span class="prelude-val">Some</span>((path.into_inner(), proxy));
                         <span class="kw">break</span>;
                     }
                 }
-                <span class="kw">match</span> <span class="ident">res</span> {
-                    <span class="prelude-val">Some</span>(<span class="ident">res</span>) =&gt; <span class="ident">res</span>,
-                    <span class="comment">// FIXME</span>
-                    <span class="prelude-val">None</span> =&gt; <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::new</span>(<span class="string">&quot;UPower device could not be found&quot;</span>)),
+                <span class="kw">match </span>res {
+                    <span class="prelude-val">Some</span>(res) =&gt; res,
+                    <span class="comment">// FIXME
+                    </span><span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="string">&quot;UPower device could not be found&quot;</span>)),
                 }
             }
         };
 
-        <span class="kw">let</span> <span class="ident">dbus_conn</span> <span class="op">=</span> <span class="ident">new_system_dbus_connection</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="ident">DBusProxy::new</span>(<span class="kw-2">&amp;</span><span class="ident">dbus_conn</span>)
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;failed to cerate DBusProxy&quot;</span>)<span class="question-mark">?</span>
-            .<span class="ident">add_match</span>(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;type=&#39;signal&#39;,interface=&#39;org.freedesktop.DBus.Properties&#39;,member=&#39;PropertiesChanged&#39;,path=&#39;{}&#39;&quot;</span>, <span class="ident">device_path</span>.<span class="ident">as_str</span>()))
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to add match&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">changes</span> <span class="op">=</span> <span class="ident">MessageStream::from</span>(<span class="ident">dbus_conn</span>);
+        <span class="kw">let </span>dbus_conn = new_system_dbus_connection().<span class="kw">await</span><span class="question-mark">?</span>;
+        DBusProxy::new(<span class="kw-2">&amp;</span>dbus_conn)
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;failed to cerate DBusProxy&quot;</span>)<span class="question-mark">?
+            </span>.add_match(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;type=&#39;signal&#39;,interface=&#39;org.freedesktop.DBus.Properties&#39;,member=&#39;PropertiesChanged&#39;,path=&#39;{}&#39;&quot;</span>, device_path.as_str()))
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to add match&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>changes = MessageStream::from(dbus_conn);
 
-        <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
-            <span class="ident">device_proxy</span>,
-            <span class="ident">changes</span>,
+        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
+            device_proxy,
+            changes,
         })
     }
 }
 
-<span class="attribute">#[<span class="ident">async_trait</span>]</span>
-<span class="kw">impl</span> <span class="ident">BatteryDevice</span> <span class="kw">for</span> <span class="ident">Device</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_info</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BatteryInfo</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">capacity</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">device_proxy</span>
-            .<span class="ident">percentage</span>()
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to get capacity&quot;</span>)<span class="question-mark">?</span>;
+<span class="attribute">#[async_trait]
+</span><span class="kw">impl </span>BatteryDevice <span class="kw">for </span>Device {
+    <span class="kw">async fn </span>get_info(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;BatteryInfo&gt;&gt; {
+        <span class="kw">let </span>capacity = <span class="self">self
+            </span>.device_proxy
+            .percentage()
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to get capacity&quot;</span>)<span class="question-mark">?</span>;
 
-        <span class="kw">let</span> <span class="ident">power</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">device_proxy</span>
-            .<span class="ident">energy_rate</span>()
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to get power&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>power = <span class="self">self
+            </span>.device_proxy
+            .energy_rate()
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to get power&quot;</span>)<span class="question-mark">?</span>;
 
-        <span class="kw">let</span> <span class="ident">status</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">self</span>
-            .<span class="ident">device_proxy</span>
-            .<span class="ident">state</span>()
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to get status&quot;</span>)<span class="question-mark">?</span>
-        {
-            <span class="number">1</span> =&gt; <span class="ident">BatteryStatus::Charging</span>,
-            <span class="number">2</span> <span class="op">|</span> <span class="number">6</span> =&gt; <span class="ident">BatteryStatus::Discharging</span>,
-            <span class="number">3</span> =&gt; <span class="ident">BatteryStatus::Empty</span>,
-            <span class="number">4</span> =&gt; <span class="ident">BatteryStatus::Full</span>,
-            <span class="number">5</span> =&gt; <span class="ident">BatteryStatus::NotCharging</span>,
-            <span class="kw">_</span> =&gt; <span class="ident">BatteryStatus::Unknown</span>,
+        <span class="kw">let </span>status = <span class="kw">match </span><span class="self">self
+            </span>.device_proxy
+            .state()
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to get status&quot;</span>)<span class="question-mark">?
+        </span>{
+            <span class="number">1 </span>=&gt; BatteryStatus::Charging,
+            <span class="number">2 </span>| <span class="number">6 </span>=&gt; BatteryStatus::Discharging,
+            <span class="number">3 </span>=&gt; BatteryStatus::Empty,
+            <span class="number">4 </span>=&gt; BatteryStatus::Full,
+            <span class="number">5 </span>=&gt; BatteryStatus::NotCharging,
+            <span class="kw">_ </span>=&gt; BatteryStatus::Unknown,
         };
 
-        <span class="kw">let</span> <span class="ident">time_remaining</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">status</span> {
-            <span class="ident">BatteryStatus::Charging</span> =&gt; <span class="prelude-val">Some</span>(
-                <span class="self">self</span>.<span class="ident">device_proxy</span>
-                    .<span class="ident">time_to_full</span>()
-                    .<span class="kw">await</span>
-                    .<span class="ident">error</span>(<span class="string">&quot;Failed to get time to full&quot;</span>)<span class="question-mark">?</span> <span class="kw">as</span> <span class="ident">f64</span>,
+        <span class="kw">let </span>time_remaining = <span class="kw">match </span>status {
+            BatteryStatus::Charging =&gt; <span class="prelude-val">Some</span>(
+                <span class="self">self</span>.device_proxy
+                    .time_to_full()
+                    .<span class="kw">await
+                    </span>.error(<span class="string">&quot;Failed to get time to full&quot;</span>)<span class="question-mark">? </span><span class="kw">as </span>f64,
             ),
-            <span class="ident">BatteryStatus::Discharging</span> =&gt; <span class="prelude-val">Some</span>(
-                <span class="self">self</span>.<span class="ident">device_proxy</span>
-                    .<span class="ident">time_to_empty</span>()
-                    .<span class="kw">await</span>
-                    .<span class="ident">error</span>(<span class="string">&quot;Failed to get time to empty&quot;</span>)<span class="question-mark">?</span> <span class="kw">as</span> <span class="ident">f64</span>,
+            BatteryStatus::Discharging =&gt; <span class="prelude-val">Some</span>(
+                <span class="self">self</span>.device_proxy
+                    .time_to_empty()
+                    .<span class="kw">await
+                    </span>.error(<span class="string">&quot;Failed to get time to empty&quot;</span>)<span class="question-mark">? </span><span class="kw">as </span>f64,
             ),
-            <span class="kw">_</span> =&gt; <span class="prelude-val">None</span>,
+            <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
         };
 
-        <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="ident">BatteryInfo</span> {
-            <span class="ident">status</span>,
-            <span class="ident">capacity</span>,
-            <span class="ident">power</span>: <span class="prelude-val">Some</span>(<span class="ident">power</span>),
-            <span class="ident">time_remaining</span>,
+        <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(BatteryInfo {
+            status,
+            capacity,
+            power: <span class="prelude-val">Some</span>(power),
+            time_remaining,
         }))
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">wait_for_change</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="self">self</span>.<span class="ident">changes</span>.<span class="ident">next</span>().<span class="kw">await</span>;
+    <span class="kw">async fn </span>wait_for_change(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        <span class="self">self</span>.changes.next().<span class="kw">await</span>;
         <span class="prelude-val">Ok</span>(())
     }
 }
 
-<span class="attribute">#[<span class="ident">dbus_proxy</span>(
-    <span class="ident">interface</span> <span class="op">=</span> <span class="string">&quot;org.freedesktop.UPower.Device&quot;</span>,
-    <span class="ident">default_service</span> <span class="op">=</span> <span class="string">&quot;org.freedesktop.UPower&quot;</span>
-)]</span>
-<span class="kw">trait</span> <span class="ident">Device</span> {
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">energy_rate</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>;
+<span class="attribute">#[dbus_proxy(
+    interface = <span class="string">&quot;org.freedesktop.UPower.Device&quot;</span>,
+    default_service = <span class="string">&quot;org.freedesktop.UPower&quot;
+</span>)]
+</span><span class="kw">trait </span>Device {
+    <span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>energy_rate(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;f64&gt;;
 
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">is_present</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>;
+    <span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>is_present(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;
 
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">native_path</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>;
+    <span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>native_path(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;String&gt;;
 
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">online</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>;
+    <span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>online(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;
 
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">percentage</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>;
+    <span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>percentage(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;f64&gt;;
 
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">state</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>;
+    <span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>state(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;u32&gt;;
 
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">time_to_empty</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">i64</span><span class="op">&gt;</span>;
+    <span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>time_to_empty(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;i64&gt;;
 
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">time_to_full</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">i64</span><span class="op">&gt;</span>;
+    <span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>time_to_full(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;i64&gt;;
 
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>, <span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;Type&quot;</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">type_</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>;
+    <span class="attribute">#[dbus_proxy(property, name = <span class="string">&quot;Type&quot;</span>)]
+    </span><span class="kw">fn </span>type_(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;u32&gt;;
 }
 
-<span class="attribute">#[<span class="ident">dbus_proxy</span>(
-    <span class="ident">interface</span> <span class="op">=</span> <span class="string">&quot;org.freedesktop.UPower&quot;</span>,
-    <span class="ident">default_service</span> <span class="op">=</span> <span class="string">&quot;org.freedesktop.UPower&quot;</span>,
-    <span class="ident">default_path</span> <span class="op">=</span> <span class="string">&quot;/org/freedesktop/UPower&quot;</span>
-)]</span>
-<span class="kw">trait</span> <span class="ident">UPower</span> {
-    <span class="kw">fn</span> <span class="ident">enumerate_devices</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">zvariant::OwnedObjectPath</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+<span class="attribute">#[dbus_proxy(
+    interface = <span class="string">&quot;org.freedesktop.UPower&quot;</span>,
+    default_service = <span class="string">&quot;org.freedesktop.UPower&quot;</span>,
+    default_path = <span class="string">&quot;/org/freedesktop/UPower&quot;
+</span>)]
+</span><span class="kw">trait </span>UPower {
+    <span class="kw">fn </span>enumerate_devices(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;Vec&lt;zvariant::OwnedObjectPath&gt;&gt;;
 
-    <span class="kw">fn</span> <span class="ident">get_display_device</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">zvariant::OwnedObjectPath</span><span class="op">&gt;</span>;
+    <span class="kw">fn </span>get_display_device(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;zvariant::OwnedObjectPath&gt;;
 
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">signal</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">device_added</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">device</span>: <span class="ident">zvariant::OwnedObjectPath</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
+    <span class="attribute">#[dbus_proxy(signal)]
+    </span><span class="kw">fn </span>device_added(<span class="kw-2">&amp;</span><span class="self">self</span>, device: zvariant::OwnedObjectPath) -&gt; zbus::Result&lt;()&gt;;
 
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">signal</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">device_removed</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">device</span>: <span class="ident">zvariant::OwnedObjectPath</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
+    <span class="attribute">#[dbus_proxy(signal)]
+    </span><span class="kw">fn </span>device_removed(<span class="kw-2">&amp;</span><span class="self">self</span>, device: zvariant::OwnedObjectPath) -&gt; zbus::Result&lt;()&gt;;
 
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">on_battery</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span>;
+    <span class="attribute">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>on_battery(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

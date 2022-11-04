@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/maildir.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>maildir.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/maildir.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>maildir.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -103,110 +103,110 @@
 <span id="103">103</span>
 <span id="104">104</span>
 <span id="105">105</span>
-</pre><pre class="rust"><code><span class="doccomment">//! Unread mail. Only supports maildir format.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Note that you need to enable `maildir` feature to use this block:</span>
-<span class="doccomment">//! ```sh</span>
-<span class="doccomment">//! cargo build --release --features maildir</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Configuration</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Key | Values | Default</span>
-<span class="doccomment">//! ----|--------|--------</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $status &quot;`</span>
-<span class="doccomment">//! `inboxes` | List of maildir inboxes to look for mails in. Supports path expansions e.g. `~`. | **Required**</span>
-<span class="doccomment">//! `threshold_warning` | Number of unread mails where state is set to warning. | `1`</span>
-<span class="doccomment">//! `threshold_critical` | Number of unread mails where state is set to critical. | `10`</span>
-<span class="doccomment">//! `interval` | Update interval, in seconds. | `5`</span>
-<span class="doccomment">//! `display_type` | Which part of the maildir to count: `&quot;new&quot;`, `&quot;cur&quot;`, or `&quot;all&quot;`. | `&quot;new&quot;`</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Placeholder  | Value                  | Type   | Unit</span>
-<span class="doccomment">//! -------------|------------------------|--------|-----</span>
-<span class="doccomment">//! `icon`       | A static icon          | Icon   | -</span>
-<span class="doccomment">//! `status`     | Number of emails       | Number | -</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Examples</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;maildir&quot;</span>
-<span class="doccomment">//! interval = 60</span>
-<span class="doccomment">//! inboxes = [&quot;/home/user/mail/local&quot;, &quot;/home/user/mail/gmail/Inbox&quot;]</span>
-<span class="doccomment">//! threshold_warning = 1</span>
-<span class="doccomment">//! threshold_critical = 10</span>
-<span class="doccomment">//! display_type = &quot;new&quot;</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Icons Used</span>
-<span class="doccomment">//! - `mail`</span>
+</pre><pre class="rust"><code><span class="doccomment">//! Unread mail. Only supports maildir format.
+//!
+//! Note that you need to enable `maildir` feature to use this block:
+//! ```sh
+//! cargo build --release --features maildir
+//! ```
+//!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $status &quot;`
+//! `inboxes` | List of maildir inboxes to look for mails in. Supports path expansions e.g. `~`. | **Required**
+//! `threshold_warning` | Number of unread mails where state is set to warning. | `1`
+//! `threshold_critical` | Number of unread mails where state is set to critical. | `10`
+//! `interval` | Update interval, in seconds. | `5`
+//! `display_type` | Which part of the maildir to count: `&quot;new&quot;`, `&quot;cur&quot;`, or `&quot;all&quot;`. | `&quot;new&quot;`
+//!
+//! Placeholder  | Value                  | Type   | Unit
+//! -------------|------------------------|--------|-----
+//! `icon`       | A static icon          | Icon   | -
+//! `status`     | Number of emails       | Number | -
+//!
+//! # Examples
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;maildir&quot;
+//! interval = 60
+//! inboxes = [&quot;/home/user/mail/local&quot;, &quot;/home/user/mail/gmail/Inbox&quot;]
+//! threshold_warning = 1
+//! threshold_critical = 10
+//! display_type = &quot;new&quot;
+//! ```
+//!
+//! # Icons Used
+//! - `mail`
 
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">maildir::Maildir</span>;
+</span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span>maildir::Maildir;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
-<span class="kw">struct</span> <span class="ident">MaildirConfig</span> {
-    <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">5</span>.<span class="ident">into</span>())]</span>
-    <span class="ident">interval</span>: <span class="ident">Seconds</span>,
-    <span class="ident">inboxes</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">1</span>)]</span>
-    <span class="ident">threshold_warning</span>: <span class="ident">usize</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">10</span>)]</span>
-    <span class="ident">threshold_critical</span>: <span class="ident">usize</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="ident">MailType::New</span>)]</span>
-    <span class="ident">display_type</span>: <span class="ident">MailType</span>,
+<span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
+#[serde(deny_unknown_fields, default)]
+</span><span class="kw">struct </span>MaildirConfig {
+    format: FormatConfig,
+    <span class="attribute">#[default(<span class="number">5</span>.into())]
+    </span>interval: Seconds,
+    inboxes: Vec&lt;String&gt;,
+    <span class="attribute">#[default(<span class="number">1</span>)]
+    </span>threshold_warning: usize,
+    <span class="attribute">#[default(<span class="number">10</span>)]
+    </span>threshold_critical: usize,
+    <span class="attribute">#[default(MailType::New)]
+    </span>display_type: MailType,
 }
 
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">MaildirConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">Widget::new</span>().<span class="ident">with_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon $status &quot;</span>)<span class="question-mark">?</span>);
+<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span><span class="kw-2">mut </span>config = MaildirConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon $status &quot;</span>)<span class="question-mark">?</span>);
 
-    <span class="kw">for</span> <span class="ident">inbox</span> <span class="kw">in</span> <span class="kw-2">&amp;mut</span> <span class="ident">config</span>.<span class="ident">inboxes</span> {
-        <span class="kw-2">*</span><span class="ident">inbox</span> <span class="op">=</span> <span class="ident">shellexpand::full</span>(<span class="ident">inbox</span>)
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to expand string&quot;</span>)<span class="question-mark">?</span>
-            .<span class="ident">to_string</span>();
+    <span class="kw">for </span>inbox <span class="kw">in </span><span class="kw-2">&amp;mut </span>config.inboxes {
+        <span class="kw-2">*</span>inbox = shellexpand::full(inbox)
+            .error(<span class="string">&quot;Failed to expand string&quot;</span>)<span class="question-mark">?
+            </span>.to_string();
     }
 
-    <span class="kw">loop</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">newmails</span> <span class="op">=</span> <span class="number">0</span>;
-        <span class="kw">for</span> <span class="ident">inbox</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">inboxes</span> {
-            <span class="kw">let</span> <span class="ident">isl</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">inbox</span>[..];
-            <span class="comment">// TODO: spawn_blocking?</span>
-            <span class="kw">let</span> <span class="ident">maildir</span> <span class="op">=</span> <span class="ident">Maildir::from</span>(<span class="ident">isl</span>);
-            <span class="ident">newmails</span> <span class="op">+</span><span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">display_type</span> {
-                <span class="ident">MailType::New</span> =&gt; <span class="ident">maildir</span>.<span class="ident">count_new</span>(),
-                <span class="ident">MailType::Cur</span> =&gt; <span class="ident">maildir</span>.<span class="ident">count_cur</span>(),
-                <span class="ident">MailType::All</span> =&gt; <span class="ident">maildir</span>.<span class="ident">count_new</span>() <span class="op">+</span> <span class="ident">maildir</span>.<span class="ident">count_cur</span>(),
+    <span class="kw">loop </span>{
+        <span class="kw">let </span><span class="kw-2">mut </span>newmails = <span class="number">0</span>;
+        <span class="kw">for </span>inbox <span class="kw">in </span><span class="kw-2">&amp;</span>config.inboxes {
+            <span class="kw">let </span>isl: <span class="kw-2">&amp;</span>str = <span class="kw-2">&amp;</span>inbox[..];
+            <span class="comment">// TODO: spawn_blocking?
+            </span><span class="kw">let </span>maildir = Maildir::from(isl);
+            newmails += <span class="kw">match </span>config.display_type {
+                MailType::New =&gt; maildir.count_new(),
+                MailType::Cur =&gt; maildir.count_cur(),
+                MailType::All =&gt; maildir.count_new() + maildir.count_cur(),
             };
         }
-        <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">newmails</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">threshold_critical</span> {
-            <span class="ident">State::Critical</span>
-        } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">newmails</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">threshold_warning</span> {
-            <span class="ident">State::Warning</span>
-        } <span class="kw">else</span> {
-            <span class="ident">State::Idle</span>
+        widget.state = <span class="kw">if </span>newmails &gt;= config.threshold_critical {
+            State::Critical
+        } <span class="kw">else if </span>newmails &gt;= config.threshold_warning {
+            State::Warning
+        } <span class="kw">else </span>{
+            State::Idle
         };
-        <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span>(
-            <span class="string">&quot;icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;mail&quot;</span>)<span class="question-mark">?</span>),
-            <span class="string">&quot;status&quot;</span> =&gt; <span class="ident">Value::number</span>(<span class="ident">newmails</span>)
+        widget.set_values(<span class="macro">map!</span>(
+            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;mail&quot;</span>)<span class="question-mark">?</span>),
+            <span class="string">&quot;status&quot; </span>=&gt; Value::number(newmails)
         ));
-        <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="macro">select!</span> {
-            <span class="kw">_</span> <span class="op">=</span> <span class="ident">sleep</span>(<span class="ident">config</span>.<span class="ident">interval</span>.<span class="number">0</span>) =&gt; (),
-            <span class="kw">_</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">wait_for_update_request</span>() =&gt; (),
+        <span class="macro">select! </span>{
+            <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt; (),
+            <span class="kw">_ </span>= api.wait_for_update_request() =&gt; (),
         }
     }
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Deserialize</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;lowercase&quot;</span>)]</span>
-<span class="kw">enum</span> <span class="ident">MailType</span> {
-    <span class="ident">New</span>,
-    <span class="ident">Cur</span>,
-    <span class="ident">All</span>,
+<span class="attribute">#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = <span class="string">&quot;lowercase&quot;</span>)]
+</span><span class="kw">enum </span>MailType {
+    New,
+    Cur,
+    All,
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/nvidia_gpu.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>nvidia_gpu.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/nvidia_gpu.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>nvidia_gpu.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -257,264 +257,264 @@
 <span id="257">257</span>
 <span id="258">258</span>
 <span id="259">259</span>
-</pre><pre class="rust"><code><span class="doccomment">//! Display the stats of your NVidia GPU</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! By default `show_temperature` shows the used memory. Clicking the left mouse on the</span>
-<span class="doccomment">//! &quot;temperature&quot; part of the block will alternate it between showing used or total available</span>
-<span class="doccomment">//! memory.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Clicking the left mouse button on the &quot;fan speed&quot; part of the block will cause it to enter into</span>
-<span class="doccomment">//! a fan speed setting mode. In this mode you can scroll the mouse wheel over the block to change</span>
-<span class="doccomment">//! the fan speeds, and left click to exit the mode.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Requires `nvidia-smi` for displaying info and `nvidia_settings` for setting fan speed.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Configuration</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Key | Values | Default</span>
-<span class="doccomment">//! ----|--------|--------</span>
-<span class="doccomment">//! `gpu_id` | GPU id in system. | `0`</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $utilization $memory $temperature &quot;`</span>
-<span class="doccomment">//! `interval` | Update interval in seconds. | `1`</span>
-<span class="doccomment">//! `idle` | Maximum temperature, below which state is set to idle | `50`</span>
-<span class="doccomment">//! `good` | Maximum temperature, below which state is set to good | `70`</span>
-<span class="doccomment">//! `info` | Maximum temperature, below which state is set to info | `75`</span>
-<span class="doccomment">//! `warning` | Maximum temperature, below which state is set to warning | `80`</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Placeholder   | Type   | Unit</span>
-<span class="doccomment">//! --------------|--------|---------------</span>
-<span class="doccomment">//! `icon`        | Icon   | -</span>
-<span class="doccomment">//! `name`        | Text   | -</span>
-<span class="doccomment">//! `utilization` | Number | Percents</span>
-<span class="doccomment">//! `memory`      | Number | Bytes</span>
-<span class="doccomment">//! `temperature` | Number | Degrees</span>
-<span class="doccomment">//! `fan_speed`   | Number | Percents</span>
-<span class="doccomment">//! `clocks`      | Number | Hertz</span>
-<span class="doccomment">//! `power`       | Number | Watts</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Example</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;nvidia_gpu&quot;</span>
-<span class="doccomment">//! interval = 1</span>
-<span class="doccomment">//! format = &quot; $icon GT 1030 $utilization $temperature $clocks &quot;</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Icons Used</span>
-<span class="doccomment">//! - `gpu`</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # TODO</span>
-<span class="doccomment">//! - Provide a `mappings` option similar to `keyboard_layout`&#39;s  to map GPU names to labels?</span>
+</pre><pre class="rust"><code><span class="doccomment">//! Display the stats of your NVidia GPU
+//!
+//! By default `show_temperature` shows the used memory. Clicking the left mouse on the
+//! &quot;temperature&quot; part of the block will alternate it between showing used or total available
+//! memory.
+//!
+//! Clicking the left mouse button on the &quot;fan speed&quot; part of the block will cause it to enter into
+//! a fan speed setting mode. In this mode you can scroll the mouse wheel over the block to change
+//! the fan speeds, and left click to exit the mode.
+//!
+//! Requires `nvidia-smi` for displaying info and `nvidia_settings` for setting fan speed.
+//!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `gpu_id` | GPU id in system. | `0`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $utilization $memory $temperature &quot;`
+//! `interval` | Update interval in seconds. | `1`
+//! `idle` | Maximum temperature, below which state is set to idle | `50`
+//! `good` | Maximum temperature, below which state is set to good | `70`
+//! `info` | Maximum temperature, below which state is set to info | `75`
+//! `warning` | Maximum temperature, below which state is set to warning | `80`
+//!
+//! Placeholder   | Type   | Unit
+//! --------------|--------|---------------
+//! `icon`        | Icon   | -
+//! `name`        | Text   | -
+//! `utilization` | Number | Percents
+//! `memory`      | Number | Bytes
+//! `temperature` | Number | Degrees
+//! `fan_speed`   | Number | Percents
+//! `clocks`      | Number | Hertz
+//! `power`       | Number | Watts
+//!
+//! # Example
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;nvidia_gpu&quot;
+//! interval = 1
+//! format = &quot; $icon GT 1030 $utilization $temperature $clocks &quot;
+//! ```
+//!
+//! # Icons Used
+//! - `gpu`
+//!
+//! # TODO
+//! - Provide a `mappings` option similar to `keyboard_layout`&#39;s  to map GPU names to labels?
 
-<span class="kw">use</span> <span class="ident">std::process::Stdio</span>;
-<span class="kw">use</span> <span class="ident">std::str::FromStr</span>;
+</span><span class="kw">use </span>std::process::Stdio;
+<span class="kw">use </span>std::str::FromStr;
 
-<span class="kw">use</span> <span class="ident">tokio::io</span>::{<span class="ident">BufReader</span>, <span class="ident">Lines</span>};
-<span class="kw">use</span> <span class="ident">tokio::process::Command</span>;
+<span class="kw">use </span>tokio::io::{BufReader, Lines};
+<span class="kw">use </span>tokio::process::Command;
 
-<span class="kw">const</span> <span class="ident">MEM_BTN</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">1</span>;
-<span class="kw">const</span> <span class="ident">FAN_BTN</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">2</span>;
-<span class="kw">const</span> <span class="ident">QUERY</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;--query-gpu=name,memory.total,utilization.gpu,memory.used,temperature.gpu,fan.speed,clocks.current.graphics,power.draw,&quot;</span>;
-<span class="kw">const</span> <span class="ident">FORMAT</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;--format=csv,noheader,nounits&quot;</span>;
+<span class="kw">const </span>MEM_BTN: usize = <span class="number">1</span>;
+<span class="kw">const </span>FAN_BTN: usize = <span class="number">2</span>;
+<span class="kw">const </span>QUERY: <span class="kw-2">&amp;</span>str = <span class="string">&quot;--query-gpu=name,memory.total,utilization.gpu,memory.used,temperature.gpu,fan.speed,clocks.current.graphics,power.draw,&quot;</span>;
+<span class="kw">const </span>FORMAT: <span class="kw-2">&amp;</span>str = <span class="string">&quot;--format=csv,noheader,nounits&quot;</span>;
 
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
+<span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
-<span class="kw">struct</span> <span class="ident">NvidiaGpuConfig</span> {
-    <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">1</span>.<span class="ident">into</span>())]</span>
-    <span class="ident">interval</span>: <span class="ident">Seconds</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">0</span>)]</span>
-    <span class="ident">gpu_id</span>: <span class="ident">u64</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">50</span>)]</span>
-    <span class="ident">idle</span>: <span class="ident">u32</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">70</span>)]</span>
-    <span class="ident">good</span>: <span class="ident">u32</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">75</span>)]</span>
-    <span class="ident">info</span>: <span class="ident">u32</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">80</span>)]</span>
-    <span class="ident">warning</span>: <span class="ident">u32</span>,
+<span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
+#[serde(deny_unknown_fields, default)]
+</span><span class="kw">struct </span>NvidiaGpuConfig {
+    format: FormatConfig,
+    <span class="attribute">#[default(<span class="number">1</span>.into())]
+    </span>interval: Seconds,
+    <span class="attribute">#[default(<span class="number">0</span>)]
+    </span>gpu_id: u64,
+    <span class="attribute">#[default(<span class="number">50</span>)]
+    </span>idle: u32,
+    <span class="attribute">#[default(<span class="number">70</span>)]
+    </span>good: u32,
+    <span class="attribute">#[default(<span class="number">75</span>)]
+    </span>info: u32,
+    <span class="attribute">#[default(<span class="number">80</span>)]
+    </span>warning: u32,
 }
 
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">NvidiaGpuConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">Widget::new</span>().<span class="ident">with_format</span>(
-        <span class="ident">config</span>
-            .<span class="ident">format</span>
-            .<span class="ident">with_default</span>(<span class="string">&quot; $icon $utilization $memory $temperature &quot;</span>)<span class="question-mark">?</span>,
+<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span>config = NvidiaGpuConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(
+        config
+            .format
+            .with_default(<span class="string">&quot; $icon $utilization $memory $temperature &quot;</span>)<span class="question-mark">?</span>,
     );
 
-    <span class="comment">// Run `nvidia-smi` command</span>
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">child</span> <span class="op">=</span> <span class="ident">Command::new</span>(<span class="string">&quot;nvidia-smi&quot;</span>)
-        .<span class="ident">args</span>([
+    <span class="comment">// Run `nvidia-smi` command
+    </span><span class="kw">let </span><span class="kw-2">mut </span>child = Command::new(<span class="string">&quot;nvidia-smi&quot;</span>)
+        .args([
             <span class="string">&quot;-l&quot;</span>,
-            <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">interval</span>.<span class="ident">seconds</span>().<span class="ident">to_string</span>(),
+            <span class="kw-2">&amp;</span>config.interval.seconds().to_string(),
             <span class="string">&quot;-i&quot;</span>,
-            <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">gpu_id</span>.<span class="ident">to_string</span>(),
-            <span class="ident">QUERY</span>,
-            <span class="ident">FORMAT</span>,
+            <span class="kw-2">&amp;</span>config.gpu_id.to_string(),
+            QUERY,
+            FORMAT,
         ])
-        .<span class="ident">stdout</span>(<span class="ident">Stdio::piped</span>())
-        .<span class="ident">kill_on_drop</span>(<span class="bool-val">true</span>)
-        .<span class="ident">spawn</span>()
-        .<span class="ident">error</span>(<span class="string">&quot;Failed to execute nvidia-smi&quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">reader</span> <span class="op">=</span> <span class="ident">BufReader::new</span>(<span class="ident">child</span>.<span class="ident">stdout</span>.<span class="ident">take</span>().<span class="ident">unwrap</span>()).<span class="ident">lines</span>();
+        .stdout(Stdio::piped())
+        .kill_on_drop(<span class="bool-val">true</span>)
+        .spawn()
+        .error(<span class="string">&quot;Failed to execute nvidia-smi&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>reader = BufReader::new(child.stdout.take().unwrap()).lines();
 
-    <span class="comment">// Read the initial info</span>
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">GpuInfo::from_reader</span>(<span class="kw-2">&amp;mut</span> <span class="ident">reader</span>).<span class="kw">await</span><span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">show_mem_total</span> <span class="op">=</span> <span class="bool-val">false</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">fan_controlled</span> <span class="op">=</span> <span class="bool-val">false</span>;
+    <span class="comment">// Read the initial info
+    </span><span class="kw">let </span><span class="kw-2">mut </span>info = GpuInfo::from_reader(<span class="kw-2">&amp;mut </span>reader).<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>show_mem_total = <span class="bool-val">false</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>fan_controlled = <span class="bool-val">false</span>;
 
-    <span class="kw">loop</span> {
-        <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">info</span>.<span class="ident">temperature</span> {
-            <span class="ident">t</span> <span class="kw">if</span> <span class="ident">t</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">idle</span> =&gt; <span class="ident">State::Idle</span>,
-            <span class="ident">t</span> <span class="kw">if</span> <span class="ident">t</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">good</span> =&gt; <span class="ident">State::Good</span>,
-            <span class="ident">t</span> <span class="kw">if</span> <span class="ident">t</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">info</span> =&gt; <span class="ident">State::Info</span>,
-            <span class="ident">t</span> <span class="kw">if</span> <span class="ident">t</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">warning</span> =&gt; <span class="ident">State::Warning</span>,
-            <span class="kw">_</span> =&gt; <span class="ident">State::Critical</span>,
+    <span class="kw">loop </span>{
+        widget.state = <span class="kw">match </span>info.temperature {
+            t <span class="kw">if </span>t &lt;= config.idle =&gt; State::Idle,
+            t <span class="kw">if </span>t &lt;= config.good =&gt; State::Good,
+            t <span class="kw">if </span>t &lt;= config.info =&gt; State::Info,
+            t <span class="kw">if </span>t &lt;= config.warning =&gt; State::Warning,
+            <span class="kw">_ </span>=&gt; State::Critical,
         };
 
-        <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span> {
-            <span class="string">&quot;icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;gpu&quot;</span>)<span class="question-mark">?</span>),
-            <span class="string">&quot;name&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">info</span>.<span class="ident">name</span>.<span class="ident">clone</span>()),
-            <span class="string">&quot;utilization&quot;</span> =&gt; <span class="ident">Value::percents</span>(<span class="ident">info</span>.<span class="ident">utilization</span>),
-            <span class="string">&quot;memory&quot;</span> =&gt; <span class="ident">Value::bytes</span>(<span class="kw">if</span> <span class="ident">show_mem_total</span> {<span class="ident">info</span>.<span class="ident">mem_total</span>} <span class="kw">else</span> {<span class="ident">info</span>.<span class="ident">mem_used</span>}).<span class="ident">with_instance</span>(<span class="ident">MEM_BTN</span>),
-            <span class="string">&quot;temperature&quot;</span> =&gt; <span class="ident">Value::degrees</span>(<span class="ident">info</span>.<span class="ident">temperature</span>),
-            <span class="string">&quot;fan_speed&quot;</span> =&gt; <span class="ident">Value::percents</span>(<span class="ident">info</span>.<span class="ident">fan_speed</span>).<span class="ident">with_instance</span>(<span class="ident">FAN_BTN</span>).<span class="ident">underline</span>(<span class="ident">fan_controlled</span>).<span class="ident">italic</span>(<span class="ident">fan_controlled</span>),
-            <span class="string">&quot;clocks&quot;</span> =&gt; <span class="ident">Value::hertz</span>(<span class="ident">info</span>.<span class="ident">clocks</span>),
-            <span class="string">&quot;power&quot;</span> =&gt; <span class="ident">Value::watts</span>(<span class="ident">info</span>.<span class="ident">power_draw</span>),
+        widget.set_values(<span class="macro">map! </span>{
+            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;gpu&quot;</span>)<span class="question-mark">?</span>),
+            <span class="string">&quot;name&quot; </span>=&gt; Value::text(info.name.clone()),
+            <span class="string">&quot;utilization&quot; </span>=&gt; Value::percents(info.utilization),
+            <span class="string">&quot;memory&quot; </span>=&gt; Value::bytes(<span class="kw">if </span>show_mem_total {info.mem_total} <span class="kw">else </span>{info.mem_used}).with_instance(MEM_BTN),
+            <span class="string">&quot;temperature&quot; </span>=&gt; Value::degrees(info.temperature),
+            <span class="string">&quot;fan_speed&quot; </span>=&gt; Value::percents(info.fan_speed).with_instance(FAN_BTN).underline(fan_controlled).italic(fan_controlled),
+            <span class="string">&quot;clocks&quot; </span>=&gt; Value::hertz(info.clocks),
+            <span class="string">&quot;power&quot; </span>=&gt; Value::watts(info.power_draw),
         });
 
-        <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="kw">loop</span> {
-            <span class="macro">select!</span> {
-                <span class="ident">event</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; <span class="kw">match</span> <span class="ident">event</span> {
-                    <span class="ident">UpdateRequest</span> =&gt; <span class="kw">break</span>,
-                    <span class="ident">Click</span>(<span class="ident">click</span>) =&gt; <span class="kw">match</span> <span class="ident">click</span>.<span class="ident">instance</span> {
-                        <span class="prelude-val">Some</span>(<span class="ident">MEM_BTN</span>) <span class="kw">if</span> <span class="ident">click</span>.<span class="ident">button</span> <span class="op">==</span> <span class="ident">MouseButton::Left</span> =&gt; {
-                            <span class="ident">show_mem_total</span> <span class="op">=</span> <span class="op">!</span><span class="ident">show_mem_total</span>;
+        <span class="kw">loop </span>{
+            <span class="macro">select! </span>{
+                event = api.event() =&gt; <span class="kw">match </span>event {
+                    UpdateRequest =&gt; <span class="kw">break</span>,
+                    Click(click) =&gt; <span class="kw">match </span>click.instance {
+                        <span class="prelude-val">Some</span>(MEM_BTN) <span class="kw">if </span>click.button == MouseButton::Left =&gt; {
+                            show_mem_total = !show_mem_total;
                             <span class="kw">break</span>;
                         }
-                        <span class="prelude-val">Some</span>(<span class="ident">FAN_BTN</span> ) =&gt; <span class="kw">match</span> <span class="ident">click</span>.<span class="ident">button</span> {
-                            <span class="ident">MouseButton::Left</span> =&gt; {
-                                <span class="ident">fan_controlled</span> <span class="op">=</span> <span class="op">!</span><span class="ident">fan_controlled</span>;
-                                <span class="ident">set_fan_speed</span>(<span class="ident">config</span>.<span class="ident">gpu_id</span>, <span class="ident">fan_controlled</span>.<span class="ident">then_some</span>(<span class="ident">info</span>.<span class="ident">fan_speed</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
+                        <span class="prelude-val">Some</span>(FAN_BTN ) =&gt; <span class="kw">match </span>click.button {
+                            MouseButton::Left =&gt; {
+                                fan_controlled = !fan_controlled;
+                                set_fan_speed(config.gpu_id, fan_controlled.then_some(info.fan_speed)).<span class="kw">await</span><span class="question-mark">?</span>;
                                 <span class="kw">break</span>;
                             }
-                            <span class="ident">MouseButton::WheelUp</span> <span class="kw">if</span> <span class="ident">fan_controlled</span> <span class="op">&amp;&amp;</span> <span class="ident">info</span>.<span class="ident">fan_speed</span> <span class="op">&lt;</span> <span class="number">100</span> =&gt; {
-                                <span class="ident">info</span>.<span class="ident">fan_speed</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
-                                <span class="ident">set_fan_speed</span>(<span class="ident">config</span>.<span class="ident">gpu_id</span>, <span class="prelude-val">Some</span>(<span class="ident">info</span>.<span class="ident">fan_speed</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
+                            MouseButton::WheelUp <span class="kw">if </span>fan_controlled &amp;&amp; info.fan_speed &lt; <span class="number">100 </span>=&gt; {
+                                info.fan_speed += <span class="number">1</span>;
+                                set_fan_speed(config.gpu_id, <span class="prelude-val">Some</span>(info.fan_speed)).<span class="kw">await</span><span class="question-mark">?</span>;
                                 <span class="kw">break</span>;
                             }
-                            <span class="ident">MouseButton::WheelDown</span> <span class="kw">if</span> <span class="ident">fan_controlled</span> <span class="op">&amp;&amp;</span> <span class="ident">info</span>.<span class="ident">fan_speed</span> <span class="op">&gt;</span> <span class="number">0</span> =&gt; {
-                                <span class="ident">info</span>.<span class="ident">fan_speed</span> <span class="op">-</span><span class="op">=</span> <span class="number">1</span>;
-                                <span class="ident">set_fan_speed</span>(<span class="ident">config</span>.<span class="ident">gpu_id</span>, <span class="prelude-val">Some</span>(<span class="ident">info</span>.<span class="ident">fan_speed</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
+                            MouseButton::WheelDown <span class="kw">if </span>fan_controlled &amp;&amp; info.fan_speed &gt; <span class="number">0 </span>=&gt; {
+                                info.fan_speed -= <span class="number">1</span>;
+                                set_fan_speed(config.gpu_id, <span class="prelude-val">Some</span>(info.fan_speed)).<span class="kw">await</span><span class="question-mark">?</span>;
                                 <span class="kw">break</span>;
                             }
-                            <span class="kw">_</span> =&gt; (),
+                            <span class="kw">_ </span>=&gt; (),
                         }
-                        <span class="kw">_</span> =&gt; (),
+                        <span class="kw">_ </span>=&gt; (),
                     }
                 },
-                <span class="ident">new_info</span> <span class="op">=</span> <span class="ident">GpuInfo::from_reader</span>(<span class="kw-2">&amp;mut</span> <span class="ident">reader</span>) =&gt; {
-                    <span class="ident">info</span> <span class="op">=</span> <span class="ident">new_info</span><span class="question-mark">?</span>;
+                new_info = GpuInfo::from_reader(<span class="kw-2">&amp;mut </span>reader) =&gt; {
+                    info = new_info<span class="question-mark">?</span>;
                     <span class="kw">break</span>;
                 }
-                <span class="ident">code</span> <span class="op">=</span> <span class="ident">child</span>.<span class="ident">wait</span>() =&gt; {
-                    <span class="kw">let</span> <span class="ident">code</span> <span class="op">=</span> <span class="ident">code</span>.<span class="ident">error</span>(<span class="string">&quot;failed to check nvidia-smi exit code&quot;</span>)<span class="question-mark">?</span>;
-                    <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::new</span>(<span class="macro">format!</span>(<span class="string">&quot;nvidia-smi exited with code {code}&quot;</span>)));
+                code = child.wait() =&gt; {
+                    <span class="kw">let </span>code = code.error(<span class="string">&quot;failed to check nvidia-smi exit code&quot;</span>)<span class="question-mark">?</span>;
+                    <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">&quot;nvidia-smi exited with code {code}&quot;</span>)));
                 }
             }
         }
     }
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
-<span class="kw">struct</span> <span class="ident">GpuInfo</span> {
-    <span class="ident">name</span>: <span class="ident">String</span>,
-    <span class="ident">mem_total</span>: <span class="ident">f64</span>,   <span class="comment">// bytes</span>
-    <span class="ident">mem_used</span>: <span class="ident">f64</span>,    <span class="comment">// bytes</span>
-    <span class="ident">utilization</span>: <span class="ident">f64</span>, <span class="comment">// percents</span>
-    <span class="ident">temperature</span>: <span class="ident">u32</span>, <span class="comment">// degrees</span>
-    <span class="ident">fan_speed</span>: <span class="ident">u32</span>,   <span class="comment">// percents</span>
-    <span class="ident">clocks</span>: <span class="ident">f64</span>,      <span class="comment">// hertz</span>
-    <span class="ident">power_draw</span>: <span class="ident">f64</span>,  <span class="comment">// watts</span>
-}
+<span class="attribute">#[derive(Debug)]
+</span><span class="kw">struct </span>GpuInfo {
+    name: String,
+    mem_total: f64,   <span class="comment">// bytes
+    </span>mem_used: f64,    <span class="comment">// bytes
+    </span>utilization: f64, <span class="comment">// percents
+    </span>temperature: u32, <span class="comment">// degrees
+    </span>fan_speed: u32,   <span class="comment">// percents
+    </span>clocks: f64,      <span class="comment">// hertz
+    </span>power_draw: f64,  <span class="comment">// watts
+</span>}
 
-<span class="kw">impl</span> <span class="ident">GpuInfo</span> {
-    <span class="doccomment">/// Read a line from provided reader and parse it</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// # Cancel safety</span>
-    <span class="doccomment">///</span>
-    <span class="doccomment">/// This method should be cancellation safe, because it has only one `.await` and it is on `next_line`, which is cancellation safe.</span>
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">from_reader</span><span class="op">&lt;</span><span class="ident">B</span>: <span class="ident">AsyncBufRead</span> <span class="op">+</span> <span class="ident">Unpin</span><span class="op">&gt;</span>(<span class="ident">reader</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Lines</span><span class="op">&lt;</span><span class="ident">B</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="kw">const</span> <span class="ident">ERR_MSG</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;failed to read from nvidia-smi&quot;</span>;
-        <span class="ident">reader</span>
-            .<span class="ident">next_line</span>()
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="ident">ERR_MSG</span>)<span class="question-mark">?</span>
-            .<span class="ident">error</span>(<span class="ident">ERR_MSG</span>)<span class="question-mark">?</span>
-            .<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">GpuInfo</span><span class="op">&gt;</span>()
-            .<span class="ident">error</span>(<span class="string">&quot;failed to parse nvidia-smi output&quot;</span>)
+<span class="kw">impl </span>GpuInfo {
+    <span class="doccomment">/// Read a line from provided reader and parse it
+    ///
+    /// # Cancel safety
+    ///
+    /// This method should be cancellation safe, because it has only one `.await` and it is on `next_line`, which is cancellation safe.
+    </span><span class="kw">async fn </span>from_reader&lt;B: AsyncBufRead + Unpin&gt;(reader: <span class="kw-2">&amp;mut </span>Lines&lt;B&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
+        <span class="kw">const </span>ERR_MSG: <span class="kw-2">&amp;</span>str = <span class="string">&quot;failed to read from nvidia-smi&quot;</span>;
+        reader
+            .next_line()
+            .<span class="kw">await
+            </span>.error(ERR_MSG)<span class="question-mark">?
+            </span>.error(ERR_MSG)<span class="question-mark">?
+            </span>.parse::&lt;GpuInfo&gt;()
+            .error(<span class="string">&quot;failed to parse nvidia-smi output&quot;</span>)
     }
 }
 
-<span class="kw">impl</span> <span class="ident">FromStr</span> <span class="kw">for</span> <span class="ident">GpuInfo</span> {
-    <span class="kw">type</span> <span class="prelude-val">Err</span> <span class="op">=</span> <span class="ident">Error</span>;
+<span class="kw">impl </span>FromStr <span class="kw">for </span>GpuInfo {
+    <span class="kw">type </span><span class="prelude-val">Err </span>= Error;
 
-    <span class="kw">fn</span> <span class="ident">from_str</span>(<span class="ident">s</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident"><span class="self">Self</span>::Err</span><span class="op">&gt;</span> {
-        <span class="macro">macro_rules!</span> <span class="ident">parse</span> {
-            (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">s</span>:<span class="ident">ident</span> -&gt; $(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">part</span>:<span class="ident">ident</span> : <span class="macro-nonterminal">$</span><span class="macro-nonterminal">t</span>:<span class="ident">ident</span> $(<span class="op">*</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">mul</span>:<span class="ident">expr</span>)<span class="question-mark">?</span>),<span class="kw-2">*</span>) =&gt; {{
-                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">parts</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">s</span>.<span class="ident">trim</span>().<span class="ident">split</span>(<span class="string">&quot;, &quot;</span>);
-                <span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">GpuInfo</span> {
+    <span class="kw">fn </span>from_str(s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Err&gt; {
+        <span class="macro">macro_rules! </span>parse {
+            (<span class="macro-nonterminal">$s</span>:ident -&gt; $(<span class="macro-nonterminal">$part</span>:ident : <span class="macro-nonterminal">$t</span>:ident $(* <span class="macro-nonterminal">$mul</span>:expr)<span class="question-mark">?</span>),<span class="kw-2">*</span>) =&gt; {{
+                <span class="kw">let </span><span class="kw-2">mut </span>parts = <span class="macro-nonterminal">$s</span>.trim().split(<span class="string">&quot;, &quot;</span>);
+                <span class="kw">let </span>info = GpuInfo {
                     $(
-                    <span class="macro-nonterminal">$</span><span class="macro-nonterminal">part</span>: {
-                        <span class="kw">let</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">part</span> <span class="op">=</span> <span class="ident">parts</span>
-                            .<span class="ident">next</span>()
-                            .<span class="ident">error</span>(<span class="macro">concat!</span>(<span class="string">&quot;missing property: &quot;</span>, <span class="macro">stringify!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">part</span>)))<span class="question-mark">?</span>
-                            .<span class="ident">parse</span>::<span class="op">&lt;</span><span class="macro-nonterminal">$</span><span class="macro-nonterminal">t</span><span class="op">&gt;</span>()
-                            .<span class="ident">error</span>(<span class="macro">concat!</span>(<span class="string">&quot;bad property: &quot;</span>, <span class="macro">stringify!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">part</span>)))<span class="question-mark">?</span>;
-                        $(<span class="kw">let</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">part</span> <span class="op">=</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">part</span> <span class="op">*</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">mul</span>;)<span class="question-mark">?</span>
-                        <span class="macro-nonterminal">$</span><span class="macro-nonterminal">part</span>
-                    },
-                    )<span class="op">*</span>
+                    <span class="macro-nonterminal">$part</span>: {
+                        <span class="kw">let </span><span class="macro-nonterminal">$part </span>= parts
+                            .next()
+                            .error(<span class="macro">concat!</span>(<span class="string">&quot;missing property: &quot;</span>, <span class="macro">stringify!</span>(<span class="macro-nonterminal">$part</span>)))<span class="question-mark">?
+                            </span>.parse::&lt;<span class="macro-nonterminal">$t</span>&gt;()
+                            .error(<span class="macro">concat!</span>(<span class="string">&quot;bad property: &quot;</span>, <span class="macro">stringify!</span>(<span class="macro-nonterminal">$part</span>)))<span class="question-mark">?</span>;
+                        $(<span class="kw">let </span><span class="macro-nonterminal">$part </span>= <span class="macro-nonterminal">$part </span>* <span class="macro-nonterminal">$mul</span>;)<span class="question-mark">?
+                        </span><span class="macro-nonterminal">$part
+                    </span>},
+                    )*
                 };
-                <span class="prelude-val">Ok</span>(<span class="ident">info</span>)
+                <span class="prelude-val">Ok</span>(info)
             }}
         }
-        <span class="comment">// `memory` and `clocks` are initially in MB and MHz, so we have to multiply them by 1_000_000</span>
-        <span class="macro">parse!</span>(<span class="ident">s</span> -&gt; <span class="ident">name</span>: <span class="ident">String</span>, <span class="ident">mem_total</span>: <span class="ident">f64</span> <span class="op">*</span> <span class="number">1e6</span>, <span class="ident">utilization</span>: <span class="ident">f64</span>, <span class="ident">mem_used</span>: <span class="ident">f64</span> <span class="op">*</span> <span class="number">1e6</span>, <span class="ident">temperature</span>: <span class="ident">u32</span>, <span class="ident">fan_speed</span>: <span class="ident">u32</span>, <span class="ident">clocks</span>: <span class="ident">f64</span> <span class="op">*</span> <span class="number">1e6</span>, <span class="ident">power_draw</span>: <span class="ident">f64</span>)
+        <span class="comment">// `memory` and `clocks` are initially in MB and MHz, so we have to multiply them by 1_000_000
+        </span><span class="macro">parse!</span>(s -&gt; name: String, mem_total: f64 * <span class="number">1e6</span>, utilization: f64, mem_used: f64 * <span class="number">1e6</span>, temperature: u32, fan_speed: u32, clocks: f64 * <span class="number">1e6</span>, power_draw: f64)
     }
 }
 
-<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">set_fan_speed</span>(<span class="ident">id</span>: <span class="ident">u64</span>, <span class="ident">speed</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">const</span> <span class="ident">ERR_MSG</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;Failed to execute nvidia-settings&quot;</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cmd</span> <span class="op">=</span> <span class="ident">Command::new</span>(<span class="string">&quot;nvidia-settings&quot;</span>);
-    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">speed</span>) <span class="op">=</span> <span class="ident">speed</span> {
-        <span class="ident">cmd</span>.<span class="ident">args</span>([
+<span class="kw">async fn </span>set_fan_speed(id: u64, speed: <span class="prelude-ty">Option</span>&lt;u32&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">const </span>ERR_MSG: <span class="kw-2">&amp;</span>str = <span class="string">&quot;Failed to execute nvidia-settings&quot;</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>cmd = Command::new(<span class="string">&quot;nvidia-settings&quot;</span>);
+    <span class="kw">if let </span><span class="prelude-val">Some</span>(speed) = speed {
+        cmd.args([
             <span class="string">&quot;-a&quot;</span>,
             <span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;[gpu:{id}]/GPUFanControlState=1&quot;</span>),
             <span class="string">&quot;-a&quot;</span>,
             <span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;[fan:{id}]/GPUTargetFanSpeed={speed}&quot;</span>),
         ]);
-    } <span class="kw">else</span> {
-        <span class="ident">cmd</span>.<span class="ident">args</span>([<span class="string">&quot;-a&quot;</span>, <span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;[gpu:{id}]/GPUFanControlState=0&quot;</span>)]);
+    } <span class="kw">else </span>{
+        cmd.args([<span class="string">&quot;-a&quot;</span>, <span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;[gpu:{id}]/GPUFanControlState=0&quot;</span>)]);
     }
-    <span class="kw">if</span> <span class="ident">cmd</span>
-        .<span class="ident">spawn</span>()
-        .<span class="ident">error</span>(<span class="ident">ERR_MSG</span>)<span class="question-mark">?</span>
-        .<span class="ident">wait</span>()
-        .<span class="kw">await</span>
-        .<span class="ident">error</span>(<span class="ident">ERR_MSG</span>)<span class="question-mark">?</span>
-        .<span class="ident">success</span>()
+    <span class="kw">if </span>cmd
+        .spawn()
+        .error(ERR_MSG)<span class="question-mark">?
+        </span>.wait()
+        .<span class="kw">await
+        </span>.error(ERR_MSG)<span class="question-mark">?
+        </span>.success()
     {
         <span class="prelude-val">Ok</span>(())
-    } <span class="kw">else</span> {
-        <span class="prelude-val">Err</span>(<span class="ident">Error::new</span>(<span class="ident">ERR_MSG</span>))
+    } <span class="kw">else </span>{
+        <span class="prelude-val">Err</span>(Error::new(ERR_MSG))
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

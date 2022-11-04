@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/temperature.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>temperature.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/temperature.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>temperature.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -215,161 +215,161 @@
 <span id="215">215</span>
 <span id="216">216</span>
 <span id="217">217</span>
-</pre><pre class="rust"><code><span class="doccomment">//! The system temperature</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! This block displays the system temperature, based on `libsensors` library.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! This block has two modes: &quot;collapsed&quot;, which uses only color as an indicator, and &quot;expanded&quot;,</span>
-<span class="doccomment">//! which shows the content of a `format` string. The average, minimum, and maximum temperatures</span>
-<span class="doccomment">//! are computed using all sensors displayed by `sensors`, or optionally filtered by `chip` and</span>
-<span class="doccomment">//! `inputs`.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Requires `libsensors` and appropriate kernel modules for your hardware.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Run `sensors` command to list available chips and inputs.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Note that the colour of the block is always determined by the maximum temperature across all</span>
-<span class="doccomment">//! sensors, not the average. You may need to keep this in mind if you have a misbehaving sensor.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Configuration</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Key | Values | Default</span>
-<span class="doccomment">//! ----|--------|--------</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders | `&quot; $icon $average avg, $max max &quot;`</span>
-<span class="doccomment">//! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`</span>
-<span class="doccomment">//! `interval` | Update interval in seconds | `5`</span>
-<span class="doccomment">//! `scale` | Either `&quot;celsius&quot;` or `&quot;fahrenheit&quot;` | `&quot;celsius&quot;`</span>
-<span class="doccomment">//! `good` | Maximum temperature to set state to good | `20` °C (`68` °F)</span>
-<span class="doccomment">//! `idle` | Maximum temperature to set state to idle | `45` °C (`113` °F)</span>
-<span class="doccomment">//! `info` | Maximum temperature to set state to info | `60` °C (`140` °F)</span>
-<span class="doccomment">//! `warning` | Maximum temperature to set state to warning. Beyond this temperature, state is set to critical | `80` °C (`176` °F)</span>
-<span class="doccomment">//! `chip` | Narrows the results to a given chip name. `*` may be used as a wildcard. | None</span>
-<span class="doccomment">//! `inputs` | Narrows the results to individual inputs reported by each chip. | None</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Placeholder | Value                                | Type   | Unit</span>
-<span class="doccomment">//! ------------|--------------------------------------|--------|--------</span>
-<span class="doccomment">//! `min`       | Minimum temperature among all inputs | Number | Degrees</span>
-<span class="doccomment">//! `average`   | Average temperature among all inputs | Number | Degrees</span>
-<span class="doccomment">//! `max`       | Maximum temperature among all inputs | Number | Degrees</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Note that when block is collapsed, no placeholders are provided.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Example</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;temperature&quot;</span>
-<span class="doccomment">//! format = &quot; $icon $max max &quot;</span>
-<span class="doccomment">//! format_alt = &quot; $icon $min min, $max max, $average avg &quot;</span>
-<span class="doccomment">//! interval = 10</span>
-<span class="doccomment">//! chip = &quot;*-isa-*&quot;</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Icons Used</span>
-<span class="doccomment">//! - `thermometer`</span>
+</pre><pre class="rust"><code><span class="doccomment">//! The system temperature
+//!
+//! This block displays the system temperature, based on `libsensors` library.
+//!
+//! This block has two modes: &quot;collapsed&quot;, which uses only color as an indicator, and &quot;expanded&quot;,
+//! which shows the content of a `format` string. The average, minimum, and maximum temperatures
+//! are computed using all sensors displayed by `sensors`, or optionally filtered by `chip` and
+//! `inputs`.
+//!
+//! Requires `libsensors` and appropriate kernel modules for your hardware.
+//!
+//! Run `sensors` command to list available chips and inputs.
+//!
+//! Note that the colour of the block is always determined by the maximum temperature across all
+//! sensors, not the average. You may need to keep this in mind if you have a misbehaving sensor.
+//!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `format` | A string to customise the output of this block. See below for available placeholders | `&quot; $icon $average avg, $max max &quot;`
+//! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
+//! `interval` | Update interval in seconds | `5`
+//! `scale` | Either `&quot;celsius&quot;` or `&quot;fahrenheit&quot;` | `&quot;celsius&quot;`
+//! `good` | Maximum temperature to set state to good | `20` °C (`68` °F)
+//! `idle` | Maximum temperature to set state to idle | `45` °C (`113` °F)
+//! `info` | Maximum temperature to set state to info | `60` °C (`140` °F)
+//! `warning` | Maximum temperature to set state to warning. Beyond this temperature, state is set to critical | `80` °C (`176` °F)
+//! `chip` | Narrows the results to a given chip name. `*` may be used as a wildcard. | None
+//! `inputs` | Narrows the results to individual inputs reported by each chip. | None
+//!
+//! Placeholder | Value                                | Type   | Unit
+//! ------------|--------------------------------------|--------|--------
+//! `min`       | Minimum temperature among all inputs | Number | Degrees
+//! `average`   | Average temperature among all inputs | Number | Degrees
+//! `max`       | Maximum temperature among all inputs | Number | Degrees
+//!
+//! Note that when block is collapsed, no placeholders are provided.
+//!
+//! # Example
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;temperature&quot;
+//! format = &quot; $icon $max max &quot;
+//! format_alt = &quot; $icon $min min, $max max, $average avg &quot;
+//! interval = 10
+//! chip = &quot;*-isa-*&quot;
+//! ```
+//!
+//! # Icons Used
+//! - `thermometer`
 
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">sensors::FeatureType::SENSORS_FEATURE_TEMP</span>;
-<span class="kw">use</span> <span class="ident">sensors::Sensors</span>;
-<span class="kw">use</span> <span class="ident">sensors::SubfeatureType::SENSORS_SUBFEATURE_TEMP_INPUT</span>;
+</span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span>sensors::FeatureType::SENSORS_FEATURE_TEMP;
+<span class="kw">use </span>sensors::Sensors;
+<span class="kw">use </span>sensors::SubfeatureType::SENSORS_SUBFEATURE_TEMP_INPUT;
 
-<span class="kw">const</span> <span class="ident">DEFAULT_GOOD</span>: <span class="ident">f64</span> <span class="op">=</span> <span class="number">20.0</span>;
-<span class="kw">const</span> <span class="ident">DEFAULT_IDLE</span>: <span class="ident">f64</span> <span class="op">=</span> <span class="number">45.0</span>;
-<span class="kw">const</span> <span class="ident">DEFAULT_INFO</span>: <span class="ident">f64</span> <span class="op">=</span> <span class="number">60.0</span>;
-<span class="kw">const</span> <span class="ident">DEFAULT_WARN</span>: <span class="ident">f64</span> <span class="op">=</span> <span class="number">80.0</span>;
+<span class="kw">const </span>DEFAULT_GOOD: f64 = <span class="number">20.0</span>;
+<span class="kw">const </span>DEFAULT_IDLE: f64 = <span class="number">45.0</span>;
+<span class="kw">const </span>DEFAULT_INFO: f64 = <span class="number">60.0</span>;
+<span class="kw">const </span>DEFAULT_WARN: f64 = <span class="number">80.0</span>;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
-<span class="kw">struct</span> <span class="ident">TemperatureConfig</span> {
-    <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
-    <span class="ident">format_alt</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">FormatConfig</span><span class="op">&gt;</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">5</span>.<span class="ident">into</span>())]</span>
-    <span class="ident">interval</span>: <span class="ident">Seconds</span>,
-    <span class="ident">scale</span>: <span class="ident">TemperatureScale</span>,
-    <span class="ident">good</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>,
-    <span class="ident">idle</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>,
-    <span class="ident">info</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>,
-    <span class="ident">warning</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>,
-    <span class="ident">chip</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="ident">inputs</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+<span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
+#[serde(deny_unknown_fields, default)]
+</span><span class="kw">struct </span>TemperatureConfig {
+    format: FormatConfig,
+    format_alt: <span class="prelude-ty">Option</span>&lt;FormatConfig&gt;,
+    <span class="attribute">#[default(<span class="number">5</span>.into())]
+    </span>interval: Seconds,
+    scale: TemperatureScale,
+    good: <span class="prelude-ty">Option</span>&lt;f64&gt;,
+    idle: <span class="prelude-ty">Option</span>&lt;f64&gt;,
+    info: <span class="prelude-ty">Option</span>&lt;f64&gt;,
+    warning: <span class="prelude-ty">Option</span>&lt;f64&gt;,
+    chip: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    inputs: <span class="prelude-ty">Option</span>&lt;Vec&lt;String&gt;&gt;,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;lowercase&quot;</span>)]</span>
-<span class="kw">enum</span> <span class="ident">TemperatureScale</span> {
-    <span class="attribute">#[<span class="ident">default</span>]</span>
-    <span class="ident">Celsius</span>,
-    <span class="ident">Fahrenheit</span>,
+<span class="attribute">#[derive(Deserialize, Debug, SmartDefault, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = <span class="string">&quot;lowercase&quot;</span>)]
+</span><span class="kw">enum </span>TemperatureScale {
+    <span class="attribute">#[default]
+    </span>Celsius,
+    Fahrenheit,
 }
 
-<span class="kw">impl</span> <span class="ident">TemperatureScale</span> {
-    <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy::wrong_self_convention</span>)]</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">from_celsius</span>(<span class="self">self</span>, <span class="ident">val</span>: <span class="ident">f64</span>) -&gt; <span class="ident">f64</span> {
-        <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident"><span class="self">Self</span>::Celsius</span> =&gt; <span class="ident">val</span>,
-            <span class="ident"><span class="self">Self</span>::Fahrenheit</span> =&gt; <span class="ident">val</span> <span class="op">*</span> <span class="number">1.8</span> <span class="op">+</span> <span class="number">32.0</span>,
+<span class="kw">impl </span>TemperatureScale {
+    <span class="attribute">#[allow(clippy::wrong_self_convention)]
+    </span><span class="kw">pub fn </span>from_celsius(<span class="self">self</span>, val: f64) -&gt; f64 {
+        <span class="kw">match </span><span class="self">self </span>{
+            <span class="self">Self</span>::Celsius =&gt; val,
+            <span class="self">Self</span>::Fahrenheit =&gt; val * <span class="number">1.8 </span>+ <span class="number">32.0</span>,
         }
     }
 }
 
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">TemperatureConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
+<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span>config = TemperatureConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">format</span> <span class="op">=</span> <span class="ident">config</span>
-        .<span class="ident">format</span>
-        .<span class="ident">with_default</span>(<span class="string">&quot; $icon $average avg, $max max &quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">format_alt</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">format_alt</span> {
-        <span class="prelude-val">Some</span>(<span class="ident">f</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">f</span>.<span class="ident">with_default</span>(<span class="string">&quot;&quot;</span>)<span class="question-mark">?</span>),
-        <span class="prelude-val">None</span> =&gt; <span class="prelude-val">None</span>,
+    <span class="kw">let </span><span class="kw-2">mut </span>format = config
+        .format
+        .with_default(<span class="string">&quot; $icon $average avg, $max max &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>format_alt = <span class="kw">match </span>config.format_alt {
+        <span class="prelude-val">Some</span>(f) =&gt; <span class="prelude-val">Some</span>(f.with_default(<span class="string">&quot;&quot;</span>)<span class="question-mark">?</span>),
+        <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
     };
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">Widget::new</span>().<span class="ident">with_format</span>(<span class="ident">format</span>.<span class="ident">clone</span>());
+    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
 
-    <span class="kw">let</span> <span class="ident">good</span> <span class="op">=</span> <span class="ident">config</span>
-        .<span class="ident">good</span>
-        .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">config</span>.<span class="ident">scale</span>.<span class="ident">from_celsius</span>(<span class="ident">DEFAULT_GOOD</span>));
-    <span class="kw">let</span> <span class="ident">idle</span> <span class="op">=</span> <span class="ident">config</span>
-        .<span class="ident">idle</span>
-        .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">config</span>.<span class="ident">scale</span>.<span class="ident">from_celsius</span>(<span class="ident">DEFAULT_IDLE</span>));
-    <span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">config</span>
-        .<span class="ident">info</span>
-        .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">config</span>.<span class="ident">scale</span>.<span class="ident">from_celsius</span>(<span class="ident">DEFAULT_INFO</span>));
-    <span class="kw">let</span> <span class="ident">warn</span> <span class="op">=</span> <span class="ident">config</span>
-        .<span class="ident">warning</span>
-        .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">config</span>.<span class="ident">scale</span>.<span class="ident">from_celsius</span>(<span class="ident">DEFAULT_WARN</span>));
+    <span class="kw">let </span>good = config
+        .good
+        .unwrap_or_else(|| config.scale.from_celsius(DEFAULT_GOOD));
+    <span class="kw">let </span>idle = config
+        .idle
+        .unwrap_or_else(|| config.scale.from_celsius(DEFAULT_IDLE));
+    <span class="kw">let </span>info = config
+        .info
+        .unwrap_or_else(|| config.scale.from_celsius(DEFAULT_INFO));
+    <span class="kw">let </span>warn = config
+        .warning
+        .unwrap_or_else(|| config.scale.from_celsius(DEFAULT_WARN));
 
-    <span class="kw">loop</span> {
-        <span class="comment">// Perhaps it&#39;s better to just Box::leak() once and don&#39;t clone() every time?</span>
-        <span class="kw">let</span> <span class="ident">chip</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">chip</span>.<span class="ident">clone</span>();
-        <span class="kw">let</span> <span class="ident">inputs</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">inputs</span>.<span class="ident">clone</span>();
-        <span class="kw">let</span> <span class="ident">temp</span> <span class="op">=</span> <span class="ident">tokio::task::spawn_blocking</span>(<span class="kw">move</span> <span class="op">|</span><span class="op">|</span> {
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">vals</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
-            <span class="kw">let</span> <span class="ident">sensors</span> <span class="op">=</span> <span class="ident">Sensors::new</span>();
-            <span class="kw">let</span> <span class="ident">chips</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">chip</span> {
-                <span class="prelude-val">Some</span>(<span class="ident">chip</span>) =&gt; <span class="ident">sensors</span>
-                    .<span class="ident">detected_chips</span>(<span class="ident">chip</span>)
-                    .<span class="ident">error</span>(<span class="string">&quot;Failed to create chip iterator&quot;</span>)<span class="question-mark">?</span>,
-                <span class="prelude-val">None</span> =&gt; <span class="ident">sensors</span>.<span class="ident">into_iter</span>(),
+    <span class="kw">loop </span>{
+        <span class="comment">// Perhaps it&#39;s better to just Box::leak() once and don&#39;t clone() every time?
+        </span><span class="kw">let </span>chip = config.chip.clone();
+        <span class="kw">let </span>inputs = config.inputs.clone();
+        <span class="kw">let </span>temp = tokio::task::spawn_blocking(<span class="kw">move </span>|| {
+            <span class="kw">let </span><span class="kw-2">mut </span>vals = Vec::new();
+            <span class="kw">let </span>sensors = Sensors::new();
+            <span class="kw">let </span>chips = <span class="kw">match </span><span class="kw-2">&amp;</span>chip {
+                <span class="prelude-val">Some</span>(chip) =&gt; sensors
+                    .detected_chips(chip)
+                    .error(<span class="string">&quot;Failed to create chip iterator&quot;</span>)<span class="question-mark">?</span>,
+                <span class="prelude-val">None </span>=&gt; sensors.into_iter(),
             };
-            <span class="kw">for</span> <span class="ident">chip</span> <span class="kw">in</span> <span class="ident">chips</span> {
-                <span class="kw">for</span> <span class="ident">feat</span> <span class="kw">in</span> <span class="ident">chip</span> {
-                    <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">feat</span>.<span class="ident">feature_type</span>() <span class="op">!</span><span class="op">=</span> <span class="ident">SENSORS_FEATURE_TEMP</span> {
+            <span class="kw">for </span>chip <span class="kw">in </span>chips {
+                <span class="kw">for </span>feat <span class="kw">in </span>chip {
+                    <span class="kw">if </span><span class="kw-2">*</span>feat.feature_type() != SENSORS_FEATURE_TEMP {
                         <span class="kw">continue</span>;
                     }
-                    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">inputs</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">inputs</span> {
-                        <span class="kw">let</span> <span class="ident">label</span> <span class="op">=</span> <span class="ident">feat</span>.<span class="ident">get_label</span>().<span class="ident">error</span>(<span class="string">&quot;Failed to get input label&quot;</span>)<span class="question-mark">?</span>;
-                        <span class="kw">if</span> <span class="op">!</span><span class="ident">inputs</span>.<span class="ident">contains</span>(<span class="kw-2">&amp;</span><span class="ident">label</span>) {
+                    <span class="kw">if let </span><span class="prelude-val">Some</span>(inputs) = <span class="kw-2">&amp;</span>inputs {
+                        <span class="kw">let </span>label = feat.get_label().error(<span class="string">&quot;Failed to get input label&quot;</span>)<span class="question-mark">?</span>;
+                        <span class="kw">if </span>!inputs.contains(<span class="kw-2">&amp;</span>label) {
                             <span class="kw">continue</span>;
                         }
                     }
-                    <span class="kw">for</span> <span class="ident">subfeat</span> <span class="kw">in</span> <span class="ident">feat</span> {
-                        <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">subfeat</span>.<span class="ident">subfeature_type</span>() <span class="op">==</span> <span class="ident">SENSORS_SUBFEATURE_TEMP_INPUT</span> {
-                            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">value</span>) <span class="op">=</span> <span class="ident">subfeat</span>.<span class="ident">get_value</span>() {
-                                <span class="kw">if</span> (<span class="op">-</span><span class="number">100.0</span>..<span class="op">=</span><span class="number">150.0</span>).<span class="ident">contains</span>(<span class="kw-2">&amp;</span><span class="ident">value</span>) {
-                                    <span class="ident">vals</span>.<span class="ident">push</span>(<span class="ident">config</span>.<span class="ident">scale</span>.<span class="ident">from_celsius</span>(<span class="ident">value</span>));
-                                } <span class="kw">else</span> {
+                    <span class="kw">for </span>subfeat <span class="kw">in </span>feat {
+                        <span class="kw">if </span><span class="kw-2">*</span>subfeat.subfeature_type() == SENSORS_SUBFEATURE_TEMP_INPUT {
+                            <span class="kw">if let </span><span class="prelude-val">Ok</span>(value) = subfeat.get_value() {
+                                <span class="kw">if </span>(-<span class="number">100.0</span>..=<span class="number">150.0</span>).contains(<span class="kw-2">&amp;</span>value) {
+                                    vals.push(config.scale.from_celsius(value));
+                                } <span class="kw">else </span>{
                                     <span class="macro">eprintln!</span>(
                                         <span class="string">&quot;Temperature ({}) outside of range ([-100, 150])&quot;</span>,
-                                        <span class="ident">value</span>
+                                        value
                                     );
                                 }
                             }
@@ -377,51 +377,51 @@
                     }
                 }
             }
-            <span class="prelude-val">Ok</span>(<span class="ident">vals</span>)
+            <span class="prelude-val">Ok</span>(vals)
         })
-        .<span class="kw">await</span>
-        .<span class="ident">error</span>(<span class="string">&quot;Failed to join tokio task&quot;</span>)<span class="question-mark">?</span><span class="question-mark">?</span>;
+        .<span class="kw">await
+        </span>.error(<span class="string">&quot;Failed to join tokio task&quot;</span>)<span class="question-mark">??</span>;
 
-        <span class="kw">let</span> <span class="ident">min_temp</span> <span class="op">=</span> <span class="ident">temp</span>
-            .<span class="ident">iter</span>()
-            .<span class="ident">min_by</span>(<span class="op">|</span><span class="ident">a</span>, <span class="ident">b</span><span class="op">|</span> <span class="ident">a</span>.<span class="ident">partial_cmp</span>(<span class="ident">b</span>).<span class="ident">unwrap</span>())
-            .<span class="ident">cloned</span>()
-            .<span class="ident">unwrap_or</span>(<span class="number">0.0</span>);
-        <span class="kw">let</span> <span class="ident">max_temp</span> <span class="op">=</span> <span class="ident">temp</span>
-            .<span class="ident">iter</span>()
-            .<span class="ident">max_by</span>(<span class="op">|</span><span class="ident">a</span>, <span class="ident">b</span><span class="op">|</span> <span class="ident">a</span>.<span class="ident">partial_cmp</span>(<span class="ident">b</span>).<span class="ident">unwrap</span>())
-            .<span class="ident">cloned</span>()
-            .<span class="ident">unwrap_or</span>(<span class="number">0.0</span>);
-        <span class="kw">let</span> <span class="ident">avg_temp</span> <span class="op">=</span> <span class="ident">temp</span>.<span class="ident">iter</span>().<span class="ident">sum</span>::<span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>() <span class="op">/</span> <span class="ident">temp</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">f64</span>;
+        <span class="kw">let </span>min_temp = temp
+            .iter()
+            .min_by(|a, b| a.partial_cmp(b).unwrap())
+            .cloned()
+            .unwrap_or(<span class="number">0.0</span>);
+        <span class="kw">let </span>max_temp = temp
+            .iter()
+            .max_by(|a, b| a.partial_cmp(b).unwrap())
+            .cloned()
+            .unwrap_or(<span class="number">0.0</span>);
+        <span class="kw">let </span>avg_temp = temp.iter().sum::&lt;f64&gt;() / temp.len() <span class="kw">as </span>f64;
 
-        <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">max_temp</span> {
-            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">good</span> =&gt; <span class="ident">State::Good</span>,
-            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">idle</span> =&gt; <span class="ident">State::Idle</span>,
-            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">info</span> =&gt; <span class="ident">State::Info</span>,
-            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">warn</span> =&gt; <span class="ident">State::Warning</span>,
-            <span class="kw">_</span> =&gt; <span class="ident">State::Critical</span>,
+        widget.state = <span class="kw">match </span>max_temp {
+            x <span class="kw">if </span>x &lt;= good =&gt; State::Good,
+            x <span class="kw">if </span>x &lt;= idle =&gt; State::Idle,
+            x <span class="kw">if </span>x &lt;= info =&gt; State::Info,
+            x <span class="kw">if </span>x &lt;= warn =&gt; State::Warning,
+            <span class="kw">_ </span>=&gt; State::Critical,
         };
 
-        <span class="lifetime">&#39;outer</span>: <span class="kw">loop</span> {
-            <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span> {
-                <span class="string">&quot;icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;thermometer&quot;</span>)<span class="question-mark">?</span>),
-                <span class="string">&quot;average&quot;</span> =&gt; <span class="ident">Value::degrees</span>(<span class="ident">avg_temp</span>),
-                <span class="string">&quot;min&quot;</span> =&gt; <span class="ident">Value::degrees</span>(<span class="ident">min_temp</span>),
-                <span class="string">&quot;max&quot;</span> =&gt; <span class="ident">Value::degrees</span>(<span class="ident">max_temp</span>),
+        <span class="lifetime">&#39;outer</span>: <span class="kw">loop </span>{
+            widget.set_values(<span class="macro">map! </span>{
+                <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;thermometer&quot;</span>)<span class="question-mark">?</span>),
+                <span class="string">&quot;average&quot; </span>=&gt; Value::degrees(avg_temp),
+                <span class="string">&quot;min&quot; </span>=&gt; Value::degrees(min_temp),
+                <span class="string">&quot;max&quot; </span>=&gt; Value::degrees(max_temp),
             });
 
-            <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+            api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
-            <span class="kw">loop</span> {
-                <span class="macro">select!</span> {
-                    <span class="kw">_</span> <span class="op">=</span> <span class="ident">sleep</span>(<span class="ident">config</span>.<span class="ident">interval</span>.<span class="number">0</span>) =&gt; <span class="kw">break</span> <span class="lifetime">&#39;outer</span>,
-                    <span class="ident">event</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; <span class="kw">match</span> <span class="ident">event</span> {
-                        <span class="ident">UpdateRequest</span> =&gt; <span class="kw">break</span> <span class="lifetime">&#39;outer</span>,
-                        <span class="ident">Click</span>(<span class="ident">click</span>) =&gt; {
-                            <span class="kw">if</span> <span class="ident">click</span>.<span class="ident">button</span> <span class="op">==</span> <span class="ident">MouseButton::Left</span>  {
-                                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw-2">ref</span> <span class="kw-2">mut</span> <span class="ident">format_alt</span>) <span class="op">=</span> <span class="ident">format_alt</span> {
-                                    <span class="ident">std::mem::swap</span>(<span class="ident">format_alt</span>, <span class="kw-2">&amp;mut</span> <span class="ident">format</span>);
-                                    <span class="ident">widget</span>.<span class="ident">set_format</span>(<span class="ident">format</span>.<span class="ident">clone</span>());
+            <span class="kw">loop </span>{
+                <span class="macro">select! </span>{
+                    <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt; <span class="kw">break </span><span class="lifetime">&#39;outer</span>,
+                    event = api.event() =&gt; <span class="kw">match </span>event {
+                        UpdateRequest =&gt; <span class="kw">break </span><span class="lifetime">&#39;outer</span>,
+                        Click(click) =&gt; {
+                            <span class="kw">if </span>click.button == MouseButton::Left  {
+                                <span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">ref mut </span>format_alt) = format_alt {
+                                    std::mem::swap(format_alt, <span class="kw-2">&amp;mut </span>format);
+                                    widget.set_format(format.clone());
                                     <span class="kw">break</span>;
                                 }
                             }
@@ -433,4 +433,4 @@
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

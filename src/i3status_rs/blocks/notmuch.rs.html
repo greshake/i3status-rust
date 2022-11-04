@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/notmuch.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>notmuch.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/notmuch.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>notmuch.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -112,106 +112,106 @@
 <span id="112">112</span>
 <span id="113">113</span>
 <span id="114">114</span>
-</pre><pre class="rust"><code><span class="doccomment">//! Count of notmuch messages</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! This block queries a notmuch database and displays the count of messages.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! The simplest configuration will return the total count of messages in the notmuch database stored at $HOME/.mail</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Note that you need to enable `notmuch` feature to use this block:</span>
-<span class="doccomment">//! ```sh</span>
-<span class="doccomment">//! cargo build --release --features notmuch</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Configuration</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Key | Values | Default</span>
-<span class="doccomment">//! ----|--------|--------</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $count &quot;`</span>
-<span class="doccomment">//! `maildir` | Path to the directory containing the notmuch database. Supports path expansions e.g. `~`. | `~/.mail`</span>
-<span class="doccomment">//! `query` | Query to run on the database. | `&quot;&quot;`</span>
-<span class="doccomment">//! `threshold_critical` | Mail count that triggers `critical` state. | `99999`</span>
-<span class="doccomment">//! `threshold_warning` | Mail count that triggers `warning` state. | `99999`</span>
-<span class="doccomment">//! `threshold_good` | Mail count that triggers `good` state. | `99999`</span>
-<span class="doccomment">//! `threshold_info` | Mail count that triggers `info` state. | `99999`</span>
-<span class="doccomment">//! `interval` | Update interval in seconds. | `10`</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Placeholder | Value                                      | Type   | Unit</span>
-<span class="doccomment">//! ------------|--------------------------------------------|--------|-----</span>
-<span class="doccomment">//! `icon`      | A static icon                              | Icon   | -</span>
-<span class="doccomment">//! `count`     | Number of messages for the query           | Number | -</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Example</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;notmuch&quot;</span>
-<span class="doccomment">//! query = &quot;tag:alert and not tag:trash&quot;</span>
-<span class="doccomment">//! threshold_warning = 1</span>
-<span class="doccomment">//! threshold_critical = 10</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Icons Used</span>
-<span class="doccomment">//! - `mail`</span>
+</pre><pre class="rust"><code><span class="doccomment">//! Count of notmuch messages
+//!
+//! This block queries a notmuch database and displays the count of messages.
+//!
+//! The simplest configuration will return the total count of messages in the notmuch database stored at $HOME/.mail
+//!
+//! Note that you need to enable `notmuch` feature to use this block:
+//! ```sh
+//! cargo build --release --features notmuch
+//! ```
+//!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $count &quot;`
+//! `maildir` | Path to the directory containing the notmuch database. Supports path expansions e.g. `~`. | `~/.mail`
+//! `query` | Query to run on the database. | `&quot;&quot;`
+//! `threshold_critical` | Mail count that triggers `critical` state. | `99999`
+//! `threshold_warning` | Mail count that triggers `warning` state. | `99999`
+//! `threshold_good` | Mail count that triggers `good` state. | `99999`
+//! `threshold_info` | Mail count that triggers `info` state. | `99999`
+//! `interval` | Update interval in seconds. | `10`
+//!
+//! Placeholder | Value                                      | Type   | Unit
+//! ------------|--------------------------------------------|--------|-----
+//! `icon`      | A static icon                              | Icon   | -
+//! `count`     | Number of messages for the query           | Number | -
+//!
+//! # Example
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;notmuch&quot;
+//! query = &quot;tag:alert and not tag:trash&quot;
+//! threshold_warning = 1
+//! threshold_critical = 10
+//! ```
+//!
+//! # Icons Used
+//! - `mail`
 
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
+</span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
-<span class="kw">struct</span> <span class="ident">NotmuchConfig</span> {
-    <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">10</span>.<span class="ident">into</span>())]</span>
-    <span class="ident">interval</span>: <span class="ident">Seconds</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="string">&quot;~/.mail&quot;</span>.<span class="ident">into</span>())]</span>
-    <span class="ident">maildir</span>: <span class="ident">ShellString</span>,
-    <span class="ident">query</span>: <span class="ident">String</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="ident">u32::MAX</span>)]</span>
-    <span class="ident">threshold_warning</span>: <span class="ident">u32</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="ident">u32::MAX</span>)]</span>
-    <span class="ident">threshold_critical</span>: <span class="ident">u32</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="ident">u32::MAX</span>)]</span>
-    <span class="ident">threshold_info</span>: <span class="ident">u32</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="ident">u32::MAX</span>)]</span>
-    <span class="ident">threshold_good</span>: <span class="ident">u32</span>,
+<span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
+#[serde(deny_unknown_fields, default)]
+</span><span class="kw">struct </span>NotmuchConfig {
+    format: FormatConfig,
+    <span class="attribute">#[default(<span class="number">10</span>.into())]
+    </span>interval: Seconds,
+    <span class="attribute">#[default(<span class="string">&quot;~/.mail&quot;</span>.into())]
+    </span>maildir: ShellString,
+    query: String,
+    <span class="attribute">#[default(u32::MAX)]
+    </span>threshold_warning: u32,
+    <span class="attribute">#[default(u32::MAX)]
+    </span>threshold_critical: u32,
+    <span class="attribute">#[default(u32::MAX)]
+    </span>threshold_info: u32,
+    <span class="attribute">#[default(u32::MAX)]
+    </span>threshold_good: u32,
 }
 
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">NotmuchConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">Widget::new</span>().<span class="ident">with_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon $count &quot;</span>)<span class="question-mark">?</span>);
+<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span>config = NotmuchConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon $count &quot;</span>)<span class="question-mark">?</span>);
 
-    <span class="kw">let</span> <span class="ident">db</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">maildir</span>.<span class="ident">expand</span>()<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">timer</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">interval</span>.<span class="ident">timer</span>();
+    <span class="kw">let </span>db = config.maildir.expand()<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>timer = config.interval.timer();
 
-    <span class="kw">loop</span> {
-        <span class="comment">// TODO: spawn_blocking?</span>
-        <span class="kw">let</span> <span class="ident">count</span> <span class="op">=</span> <span class="ident">run_query</span>(<span class="kw-2">&amp;</span><span class="ident">db</span>, <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">query</span>).<span class="ident">error</span>(<span class="string">&quot;Failed to get count&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">loop </span>{
+        <span class="comment">// TODO: spawn_blocking?
+        </span><span class="kw">let </span>count = run_query(<span class="kw-2">&amp;</span>db, <span class="kw-2">&amp;</span>config.query).error(<span class="string">&quot;Failed to get count&quot;</span>)<span class="question-mark">?</span>;
 
-        <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span> {
-            <span class="string">&quot;icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;mail&quot;</span>)<span class="question-mark">?</span>),
-            <span class="string">&quot;count&quot;</span> =&gt; <span class="ident">Value::number</span>(<span class="ident">count</span>)
+        widget.set_values(<span class="macro">map! </span>{
+            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;mail&quot;</span>)<span class="question-mark">?</span>),
+            <span class="string">&quot;count&quot; </span>=&gt; Value::number(count)
         });
 
-        <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">count</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">threshold_critical</span> {
-            <span class="ident">State::Critical</span>
-        } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">count</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">threshold_warning</span> {
-            <span class="ident">State::Warning</span>
-        } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">count</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">threshold_good</span> {
-            <span class="ident">State::Good</span>
-        } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">count</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">threshold_info</span> {
-            <span class="ident">State::Info</span>
-        } <span class="kw">else</span> {
-            <span class="ident">State::Idle</span>
+        widget.state = <span class="kw">if </span>count &gt;= config.threshold_critical {
+            State::Critical
+        } <span class="kw">else if </span>count &gt;= config.threshold_warning {
+            State::Warning
+        } <span class="kw">else if </span>count &gt;= config.threshold_good {
+            State::Good
+        } <span class="kw">else if </span>count &gt;= config.threshold_info {
+            State::Info
+        } <span class="kw">else </span>{
+            State::Idle
         };
 
-        <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="kw">loop</span> {
-            <span class="macro">tokio::select!</span> {
-                <span class="kw">_</span> <span class="op">=</span> <span class="ident">timer</span>.<span class="ident">tick</span>() =&gt; <span class="kw">break</span>,
-                <span class="ident">event</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; <span class="kw">match</span> <span class="ident">event</span> {
-                    <span class="ident">UpdateRequest</span> =&gt; <span class="kw">break</span>,
-                    <span class="ident">Click</span>(<span class="ident">click</span>) =&gt; {
-                        <span class="kw">if</span> <span class="ident">click</span>.<span class="ident">button</span> <span class="op">==</span> <span class="ident">MouseButton::Left</span> {
+        <span class="kw">loop </span>{
+            <span class="macro">tokio::select! </span>{
+                <span class="kw">_ </span>= timer.tick() =&gt; <span class="kw">break</span>,
+                event = api.event() =&gt; <span class="kw">match </span>event {
+                    UpdateRequest =&gt; <span class="kw">break</span>,
+                    Click(click) =&gt; {
+                        <span class="kw">if </span>click.button == MouseButton::Left {
                             <span class="kw">break</span>;
                         }
                     }
@@ -221,10 +221,10 @@
     }
 }
 
-<span class="kw">fn</span> <span class="ident">run_query</span>(<span class="ident">db_path</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">query_string</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="ident">std::result::Result</span><span class="op">&lt;</span><span class="ident">u32</span>, <span class="ident">notmuch::Error</span><span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">db</span> <span class="op">=</span> <span class="ident">notmuch::Database::open</span>(<span class="kw-2">&amp;</span><span class="ident">db_path</span>, <span class="ident">notmuch::DatabaseMode::ReadOnly</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">query</span> <span class="op">=</span> <span class="ident">db</span>.<span class="ident">create_query</span>(<span class="ident">query_string</span>)<span class="question-mark">?</span>;
-    <span class="ident">query</span>.<span class="ident">count_messages</span>()
+<span class="kw">fn </span>run_query(db_path: <span class="kw-2">&amp;</span>str, query_string: <span class="kw-2">&amp;</span>str) -&gt; std::result::Result&lt;u32, notmuch::Error&gt; {
+    <span class="kw">let </span>db = notmuch::Database::open(<span class="kw-2">&amp;</span>db_path, notmuch::DatabaseMode::ReadOnly)<span class="question-mark">?</span>;
+    <span class="kw">let </span>query = db.create_query(query_string)<span class="question-mark">?</span>;
+    query.count_messages()
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

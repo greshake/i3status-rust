@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/keyboard_layout.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>keyboard_layout.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/keyboard_layout.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>keyboard_layout.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -391,299 +391,299 @@
 <span id="391">391</span>
 <span id="392">392</span>
 <span id="393">393</span>
-</pre><pre class="rust"><code><span class="doccomment">//! Keyboard layout indicator</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Four drivers are available:</span>
-<span class="doccomment">//! - `setxkbmap` which polls setxkbmap to get the current layout</span>
-<span class="doccomment">//! - `localebus` which can read asynchronous updates from the systemd `org.freedesktop.locale1` D-Bus path</span>
-<span class="doccomment">//! - `kbddbus` which uses [kbdd](https://github.com/qnikst/kbdd) to monitor per-window layout changes via DBus</span>
-<span class="doccomment">//! - `sway` which can read asynchronous updates from the sway IPC</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Which of these methods is appropriate will depend on your system setup.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Configuration</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Key | Values | Default</span>
-<span class="doccomment">//! ----|--------|--------</span>
-<span class="doccomment">//! `driver` | One of `&quot;setxkbmap&quot;`, `&quot;localebus&quot;`, `&quot;kbddbus&quot;` or `&quot;sway&quot;`, depending on your system. | `&quot;setxkbmap&quot;`</span>
-<span class="doccomment">//! `interval` | Update interval, in seconds. Only used by the `&quot;setxkbmap&quot;` driver. | `60`</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $layout &quot;`</span>
-<span class="doccomment">//! `sway_kb_identifier` | Identifier of the device you want to monitor, as found in the output of `swaymsg -t get_inputs`. | Defaults to first input found</span>
-<span class="doccomment">//! `mappings` | Map `layout (variant)` to custom short name. | `None`</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//!  Key     | Value | Type</span>
-<span class="doccomment">//! ---------|-------|-----</span>
-<span class="doccomment">//! `layout` | Keyboard layout name | String</span>
-<span class="doccomment">//! `variant`| Keyboard variant. Only `localebus`, `sway` and `kbddbus` are supported so far. | String</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Examples</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Check `setxkbmap` every 15 seconds:</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;keyboard_layout&quot;</span>
-<span class="doccomment">//! driver = &quot;setxkbmap&quot;</span>
-<span class="doccomment">//! interval = 15</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Listen to D-Bus for changes:</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;keyboard_layout&quot;</span>
-<span class="doccomment">//! driver = &quot;localebus&quot;</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Listen to kbdd for changes, the text is in the following format:</span>
-<span class="doccomment">//! &quot;English (US)&quot; - {$layout ($variant)}</span>
-<span class="doccomment">//! use block.mappings to override with shorter names as shown below.</span>
-<span class="doccomment">//! Also use format = &quot; $layout ($variant) &quot; to see the full text to map,</span>
-<span class="doccomment">//! or you can use:</span>
-<span class="doccomment">//! dbus-monitor interface=ru.gentoo.kbdd</span>
-<span class="doccomment">//! to see the exact variant spelling</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;keyboard_layout&quot;</span>
-<span class="doccomment">//! driver = &quot;kbddbus&quot;</span>
-<span class="doccomment">//! [block.mappings]</span>
-<span class="doccomment">//! &quot;English (US)&quot; = &quot;us&quot;</span>
-<span class="doccomment">//! &quot;Bulgarian (new phonetic)&quot; = &quot;bg&quot;</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Listen to sway for changes:</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;keyboard_layout&quot;</span>
-<span class="doccomment">//! driver = &quot;sway&quot;</span>
-<span class="doccomment">//! sway_kb_identifier = &quot;1133:49706:Gaming_Keyboard_G110&quot;</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Listen to sway for changes and override mappings:</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;keyboard_layout&quot;</span>
-<span class="doccomment">//! driver = &quot;sway&quot;</span>
-<span class="doccomment">//! format = &quot; $layout &quot;</span>
-<span class="doccomment">//! [block.mappings]</span>
-<span class="doccomment">//! &quot;English (Workman)&quot; = &quot;EN&quot;</span>
-<span class="doccomment">//! &quot;Russian (N/A)&quot; = &quot;RU&quot;</span>
-<span class="doccomment">//! ```</span>
+</pre><pre class="rust"><code><span class="doccomment">//! Keyboard layout indicator
+//!
+//! Four drivers are available:
+//! - `setxkbmap` which polls setxkbmap to get the current layout
+//! - `localebus` which can read asynchronous updates from the systemd `org.freedesktop.locale1` D-Bus path
+//! - `kbddbus` which uses [kbdd](https://github.com/qnikst/kbdd) to monitor per-window layout changes via DBus
+//! - `sway` which can read asynchronous updates from the sway IPC
+//!
+//! Which of these methods is appropriate will depend on your system setup.
+//!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `driver` | One of `&quot;setxkbmap&quot;`, `&quot;localebus&quot;`, `&quot;kbddbus&quot;` or `&quot;sway&quot;`, depending on your system. | `&quot;setxkbmap&quot;`
+//! `interval` | Update interval, in seconds. Only used by the `&quot;setxkbmap&quot;` driver. | `60`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $layout &quot;`
+//! `sway_kb_identifier` | Identifier of the device you want to monitor, as found in the output of `swaymsg -t get_inputs`. | Defaults to first input found
+//! `mappings` | Map `layout (variant)` to custom short name. | `None`
+//!
+//!  Key     | Value | Type
+//! ---------|-------|-----
+//! `layout` | Keyboard layout name | String
+//! `variant`| Keyboard variant. Only `localebus`, `sway` and `kbddbus` are supported so far. | String
+//!
+//! # Examples
+//!
+//! Check `setxkbmap` every 15 seconds:
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;keyboard_layout&quot;
+//! driver = &quot;setxkbmap&quot;
+//! interval = 15
+//! ```
+//!
+//! Listen to D-Bus for changes:
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;keyboard_layout&quot;
+//! driver = &quot;localebus&quot;
+//! ```
+//!
+//! Listen to kbdd for changes, the text is in the following format:
+//! &quot;English (US)&quot; - {$layout ($variant)}
+//! use block.mappings to override with shorter names as shown below.
+//! Also use format = &quot; $layout ($variant) &quot; to see the full text to map,
+//! or you can use:
+//! dbus-monitor interface=ru.gentoo.kbdd
+//! to see the exact variant spelling
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;keyboard_layout&quot;
+//! driver = &quot;kbddbus&quot;
+//! [block.mappings]
+//! &quot;English (US)&quot; = &quot;us&quot;
+//! &quot;Bulgarian (new phonetic)&quot; = &quot;bg&quot;
+//! ```
+//!
+//! Listen to sway for changes:
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;keyboard_layout&quot;
+//! driver = &quot;sway&quot;
+//! sway_kb_identifier = &quot;1133:49706:Gaming_Keyboard_G110&quot;
+//! ```
+//!
+//! Listen to sway for changes and override mappings:
+//! ```toml
+//! [[block]]
+//! block = &quot;keyboard_layout&quot;
+//! driver = &quot;sway&quot;
+//! format = &quot; $layout &quot;
+//! [block.mappings]
+//! &quot;English (Workman)&quot; = &quot;EN&quot;
+//! &quot;Russian (N/A)&quot; = &quot;RU&quot;
+//! ```
 
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">swayipc_async</span>::{<span class="ident">Connection</span>, <span class="ident">Event</span>, <span class="ident">EventType</span>};
-<span class="kw">use</span> <span class="ident">tokio::process::Command</span>;
-<span class="kw">use</span> <span class="ident">zbus::dbus_proxy</span>;
+</span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span>swayipc_async::{Connection, Event, EventType};
+<span class="kw">use </span>tokio::process::Command;
+<span class="kw">use </span>zbus::dbus_proxy;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">default</span>, <span class="ident">deny_unknown_fields</span>)]</span>
-<span class="kw">struct</span> <span class="ident">KeyboardLayoutConfig</span> {
-    <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
-    <span class="ident">driver</span>: <span class="ident">KeyboardLayoutDriver</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">60</span>.<span class="ident">into</span>())]</span>
-    <span class="ident">interval</span>: <span class="ident">Seconds</span>,
-    <span class="ident">sway_kb_identifier</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="ident">mappings</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">HashMap</span><span class="op">&lt;</span><span class="ident">String</span>, <span class="ident">String</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+<span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
+#[serde(default, deny_unknown_fields)]
+</span><span class="kw">struct </span>KeyboardLayoutConfig {
+    format: FormatConfig,
+    driver: KeyboardLayoutDriver,
+    <span class="attribute">#[default(<span class="number">60</span>.into())]
+    </span>interval: Seconds,
+    sway_kb_identifier: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    mappings: <span class="prelude-ty">Option</span>&lt;HashMap&lt;String, String&gt;&gt;,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;lowercase&quot;</span>)]</span>
-<span class="kw">enum</span> <span class="ident">KeyboardLayoutDriver</span> {
-    <span class="attribute">#[<span class="ident">default</span>]</span>
-    <span class="ident">SetXkbMap</span>,
-    <span class="ident">LocaleBus</span>,
-    <span class="ident">KbddBus</span>,
-    <span class="ident">Sway</span>,
+<span class="attribute">#[derive(Deserialize, Debug, SmartDefault, Clone, Copy)]
+#[serde(rename_all = <span class="string">&quot;lowercase&quot;</span>)]
+</span><span class="kw">enum </span>KeyboardLayoutDriver {
+    <span class="attribute">#[default]
+    </span>SetXkbMap,
+    LocaleBus,
+    KbddBus,
+    Sway,
 }
 
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">KeyboardLayoutConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">Widget::new</span>().<span class="ident">with_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $layout &quot;</span>)<span class="question-mark">?</span>);
+<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span>config = KeyboardLayoutConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(config.format.with_default(<span class="string">&quot; $layout &quot;</span>)<span class="question-mark">?</span>);
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">backend</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Backend</span><span class="op">&gt;</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">driver</span> {
-        <span class="ident">KeyboardLayoutDriver::SetXkbMap</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">SetXkbMap</span>(<span class="ident">config</span>.<span class="ident">interval</span>)),
-        <span class="ident">KeyboardLayoutDriver::LocaleBus</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">LocaleBus::new</span>().<span class="kw">await</span><span class="question-mark">?</span>),
-        <span class="ident">KeyboardLayoutDriver::KbddBus</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">KbddBus::new</span>().<span class="kw">await</span><span class="question-mark">?</span>),
-        <span class="ident">KeyboardLayoutDriver::Sway</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">Sway::new</span>(<span class="ident">config</span>.<span class="ident">sway_kb_identifier</span>).<span class="kw">await</span><span class="question-mark">?</span>),
+    <span class="kw">let </span><span class="kw-2">mut </span>backend: Box&lt;<span class="kw">dyn </span>Backend&gt; = <span class="kw">match </span>config.driver {
+        KeyboardLayoutDriver::SetXkbMap =&gt; Box::new(SetXkbMap(config.interval)),
+        KeyboardLayoutDriver::LocaleBus =&gt; Box::new(LocaleBus::new().<span class="kw">await</span><span class="question-mark">?</span>),
+        KeyboardLayoutDriver::KbddBus =&gt; Box::new(KbddBus::new().<span class="kw">await</span><span class="question-mark">?</span>),
+        KeyboardLayoutDriver::Sway =&gt; Box::new(Sway::new(config.sway_kb_identifier).<span class="kw">await</span><span class="question-mark">?</span>),
     };
 
-    <span class="kw">loop</span> {
-        <span class="kw">let</span> <span class="ident">Info</span> {
-            <span class="kw-2">mut</span> <span class="ident">layout</span>,
-            <span class="ident">variant</span>,
-        } <span class="op">=</span> <span class="ident">backend</span>.<span class="ident">get_info</span>().<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">loop </span>{
+        <span class="kw">let </span>Info {
+            <span class="kw-2">mut </span>layout,
+            variant,
+        } = backend.get_info().<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="kw">let</span> <span class="ident">variant</span> <span class="op">=</span> <span class="ident">variant</span>.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;N/A&quot;</span>.<span class="ident">into</span>());
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">mappings</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">mappings</span> {
-            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">mapped</span>) <span class="op">=</span> <span class="ident">mappings</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;{layout} ({variant})&quot;</span>)) {
-                <span class="ident">layout</span> <span class="op">=</span> <span class="ident">mapped</span>.<span class="ident">clone</span>();
+        <span class="kw">let </span>variant = variant.unwrap_or_else(|| <span class="string">&quot;N/A&quot;</span>.into());
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(mappings) = <span class="kw-2">&amp;</span>config.mappings {
+            <span class="kw">if let </span><span class="prelude-val">Some</span>(mapped) = mappings.get(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;{layout} ({variant})&quot;</span>)) {
+                layout = mapped.clone();
             }
         }
 
-        <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span> {
-            <span class="string">&quot;layout&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">layout</span>),
-            <span class="string">&quot;variant&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">variant</span>),
+        widget.set_values(<span class="macro">map! </span>{
+            <span class="string">&quot;layout&quot; </span>=&gt; Value::text(layout),
+            <span class="string">&quot;variant&quot; </span>=&gt; Value::text(variant),
         });
-        <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="macro">select!</span> {
-            <span class="ident">update</span> <span class="op">=</span> <span class="ident">backend</span>.<span class="ident">wait_for_change</span>() =&gt; <span class="ident">update</span><span class="question-mark">?</span>,
-            <span class="kw">_</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">wait_for_update_request</span>() =&gt; (),
+        <span class="macro">select! </span>{
+            update = backend.wait_for_change() =&gt; update<span class="question-mark">?</span>,
+            <span class="kw">_ </span>= api.wait_for_update_request() =&gt; (),
         }
     }
 }
 
-<span class="attribute">#[<span class="ident">async_trait</span>]</span>
-<span class="kw">trait</span> <span class="ident">Backend</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_info</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Info</span><span class="op">&gt;</span>;
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">wait_for_change</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
+<span class="attribute">#[async_trait]
+</span><span class="kw">trait </span>Backend {
+    <span class="kw">async fn </span>get_info(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;Info&gt;;
+    <span class="kw">async fn </span>wait_for_change(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>)]</span>
-<span class="kw">struct</span> <span class="ident">Info</span> {
-    <span class="ident">layout</span>: <span class="ident">String</span>,
-    <span class="ident">variant</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+<span class="attribute">#[derive(Clone)]
+</span><span class="kw">struct </span>Info {
+    layout: String,
+    variant: <span class="prelude-ty">Option</span>&lt;String&gt;,
 }
 
-<span class="kw">struct</span> <span class="ident">SetXkbMap</span>(<span class="ident">Seconds</span>);
+<span class="kw">struct </span>SetXkbMap(Seconds);
 
-<span class="attribute">#[<span class="ident">async_trait</span>]</span>
-<span class="kw">impl</span> <span class="ident">Backend</span> <span class="kw">for</span> <span class="ident">SetXkbMap</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_info</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Info</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">output</span> <span class="op">=</span> <span class="ident">Command::new</span>(<span class="string">&quot;setxkbmap&quot;</span>)
-            .<span class="ident">arg</span>(<span class="string">&quot;-query&quot;</span>)
-            .<span class="ident">output</span>()
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to execute setxkbmap&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">output</span> <span class="op">=</span>
-            <span class="ident">String::from_utf8</span>(<span class="ident">output</span>.<span class="ident">stdout</span>).<span class="ident">error</span>(<span class="string">&quot;setxkbmap produced a non-UTF8 output&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">layout</span> <span class="op">=</span> <span class="ident">output</span>
-            .<span class="ident">lines</span>()
-            <span class="comment">// Find the &quot;layout:    xxxx&quot; entry.</span>
-            .<span class="ident">find</span>(<span class="op">|</span><span class="ident">line</span><span class="op">|</span> <span class="ident">line</span>.<span class="ident">starts_with</span>(<span class="string">&quot;layout&quot;</span>))
-            .<span class="ident">error</span>(<span class="string">&quot;Could not find the layout entry from setxkbmap&quot;</span>)<span class="question-mark">?</span>
-            .<span class="ident">split_ascii_whitespace</span>()
-            .<span class="ident">last</span>()
-            .<span class="ident">error</span>(<span class="string">&quot;Could not read the layout entry from setxkbmap.&quot;</span>)<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(<span class="ident">Info</span> {
-            <span class="ident">layout</span>: <span class="ident">layout</span>.<span class="ident">into</span>(),
-            <span class="ident">variant</span>: <span class="prelude-val">None</span>,
+<span class="attribute">#[async_trait]
+</span><span class="kw">impl </span>Backend <span class="kw">for </span>SetXkbMap {
+    <span class="kw">async fn </span>get_info(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;Info&gt; {
+        <span class="kw">let </span>output = Command::new(<span class="string">&quot;setxkbmap&quot;</span>)
+            .arg(<span class="string">&quot;-query&quot;</span>)
+            .output()
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to execute setxkbmap&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>output =
+            String::from_utf8(output.stdout).error(<span class="string">&quot;setxkbmap produced a non-UTF8 output&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>layout = output
+            .lines()
+            <span class="comment">// Find the &quot;layout:    xxxx&quot; entry.
+            </span>.find(|line| line.starts_with(<span class="string">&quot;layout&quot;</span>))
+            .error(<span class="string">&quot;Could not find the layout entry from setxkbmap&quot;</span>)<span class="question-mark">?
+            </span>.split_ascii_whitespace()
+            .last()
+            .error(<span class="string">&quot;Could not read the layout entry from setxkbmap.&quot;</span>)<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(Info {
+            layout: layout.into(),
+            variant: <span class="prelude-val">None</span>,
         })
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">wait_for_change</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="ident">sleep</span>(<span class="self">self</span>.<span class="number">0</span> .<span class="number">0</span>).<span class="kw">await</span>;
+    <span class="kw">async fn </span>wait_for_change(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        sleep(<span class="self">self</span>.<span class="number">0 </span>.<span class="number">0</span>).<span class="kw">await</span>;
         <span class="prelude-val">Ok</span>(())
     }
 }
 
-<span class="kw">struct</span> <span class="ident">LocaleBus</span> {
-    <span class="ident">proxy</span>: <span class="ident">LocaleBusInterfaceProxy</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span><span class="op">&gt;</span>,
-    <span class="ident">stream1</span>: <span class="ident">zbus::PropertyStream</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span>, <span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="ident">stream2</span>: <span class="ident">zbus::PropertyStream</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span>, <span class="ident">String</span><span class="op">&gt;</span>,
+<span class="kw">struct </span>LocaleBus {
+    proxy: LocaleBusInterfaceProxy&lt;<span class="lifetime">&#39;static</span>&gt;,
+    stream1: zbus::PropertyStream&lt;<span class="lifetime">&#39;static</span>, String&gt;,
+    stream2: zbus::PropertyStream&lt;<span class="lifetime">&#39;static</span>, String&gt;,
 }
 
-<span class="kw">impl</span> <span class="ident">LocaleBus</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">new</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">conn</span> <span class="op">=</span> <span class="ident">new_system_dbus_connection</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">proxy</span> <span class="op">=</span> <span class="ident">LocaleBusInterfaceProxy::new</span>(<span class="kw-2">&amp;</span><span class="ident">conn</span>)
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to create LocaleBusProxy&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">layout_updates</span> <span class="op">=</span> <span class="ident">proxy</span>.<span class="ident">receive_layout_changed</span>().<span class="kw">await</span>;
-        <span class="kw">let</span> <span class="ident">variant_updates</span> <span class="op">=</span> <span class="ident">proxy</span>.<span class="ident">receive_layout_changed</span>().<span class="kw">await</span>;
-        <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
-            <span class="ident">proxy</span>,
-            <span class="ident">stream1</span>: <span class="ident">layout_updates</span>,
-            <span class="ident">stream2</span>: <span class="ident">variant_updates</span>,
+<span class="kw">impl </span>LocaleBus {
+    <span class="kw">async fn </span>new() -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
+        <span class="kw">let </span>conn = new_system_dbus_connection().<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let </span>proxy = LocaleBusInterfaceProxy::new(<span class="kw-2">&amp;</span>conn)
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to create LocaleBusProxy&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>layout_updates = proxy.receive_layout_changed().<span class="kw">await</span>;
+        <span class="kw">let </span>variant_updates = proxy.receive_layout_changed().<span class="kw">await</span>;
+        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
+            proxy,
+            stream1: layout_updates,
+            stream2: variant_updates,
         })
     }
 }
 
-<span class="attribute">#[<span class="ident">async_trait</span>]</span>
-<span class="kw">impl</span> <span class="ident">Backend</span> <span class="kw">for</span> <span class="ident">LocaleBus</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_info</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Info</span><span class="op">&gt;</span> {
-        <span class="comment">// zbus does internal caching</span>
-        <span class="kw">let</span> <span class="ident">layout</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">proxy</span>.<span class="ident">layout</span>().<span class="kw">await</span>.<span class="ident">error</span>(<span class="string">&quot;Failed to get layout&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">variant</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">proxy</span>.<span class="ident">variant</span>().<span class="kw">await</span>.<span class="ident">error</span>(<span class="string">&quot;Failed to get variant&quot;</span>)<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(<span class="ident">Info</span> {
-            <span class="ident">layout</span>,
-            <span class="ident">variant</span>: <span class="prelude-val">Some</span>(<span class="ident">variant</span>),
+<span class="attribute">#[async_trait]
+</span><span class="kw">impl </span>Backend <span class="kw">for </span>LocaleBus {
+    <span class="kw">async fn </span>get_info(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;Info&gt; {
+        <span class="comment">// zbus does internal caching
+        </span><span class="kw">let </span>layout = <span class="self">self</span>.proxy.layout().<span class="kw">await</span>.error(<span class="string">&quot;Failed to get layout&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>variant = <span class="self">self</span>.proxy.variant().<span class="kw">await</span>.error(<span class="string">&quot;Failed to get variant&quot;</span>)<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(Info {
+            layout,
+            variant: <span class="prelude-val">Some</span>(variant),
         })
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">wait_for_change</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="macro">select!</span> {
-            <span class="kw">_</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">stream1</span>.<span class="ident">next</span>() =&gt; (),
-            <span class="kw">_</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">stream2</span>.<span class="ident">next</span>() =&gt; (),
+    <span class="kw">async fn </span>wait_for_change(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        <span class="macro">select! </span>{
+            <span class="kw">_ </span>= <span class="self">self</span>.stream1.next() =&gt; (),
+            <span class="kw">_ </span>= <span class="self">self</span>.stream2.next() =&gt; (),
         }
         <span class="prelude-val">Ok</span>(())
     }
 }
 
-<span class="kw">struct</span> <span class="ident">Sway</span> {
-    <span class="ident">events</span>: <span class="ident">swayipc_async::EventStream</span>,
-    <span class="ident">cur_layout</span>: <span class="ident">String</span>,
-    <span class="ident">kbd</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+<span class="kw">struct </span>Sway {
+    events: swayipc_async::EventStream,
+    cur_layout: String,
+    kbd: <span class="prelude-ty">Option</span>&lt;String&gt;,
 }
 
-<span class="kw">impl</span> <span class="ident">Sway</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">kbd</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">connection</span> <span class="op">=</span> <span class="ident">Connection::new</span>()
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to open swayipc connection&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">cur_layout</span> <span class="op">=</span> <span class="ident">connection</span>
-            .<span class="ident">get_inputs</span>()
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;failed to get current input&quot;</span>)<span class="question-mark">?</span>
-            .<span class="ident">iter</span>()
-            .<span class="ident">find_map</span>(<span class="op">|</span><span class="ident">i</span><span class="op">|</span> {
-                <span class="kw">if</span> <span class="ident">i</span>.<span class="ident">input_type</span> <span class="op">==</span> <span class="string">&quot;keyboard&quot;</span>
-                    <span class="op">&amp;&amp;</span> <span class="ident">kbd</span>.<span class="ident">as_deref</span>().<span class="ident">map_or</span>(<span class="bool-val">true</span>, <span class="op">|</span><span class="ident">id</span><span class="op">|</span> <span class="ident">id</span> <span class="op">==</span> <span class="ident">i</span>.<span class="ident">identifier</span>)
+<span class="kw">impl </span>Sway {
+    <span class="kw">async fn </span>new(kbd: <span class="prelude-ty">Option</span>&lt;String&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
+        <span class="kw">let </span><span class="kw-2">mut </span>connection = Connection::new()
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to open swayipc connection&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>cur_layout = connection
+            .get_inputs()
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;failed to get current input&quot;</span>)<span class="question-mark">?
+            </span>.iter()
+            .find_map(|i| {
+                <span class="kw">if </span>i.input_type == <span class="string">&quot;keyboard&quot;
+                    </span>&amp;&amp; kbd.as_deref().map_or(<span class="bool-val">true</span>, |id| id == i.identifier)
                 {
-                    <span class="ident">i</span>.<span class="ident">xkb_active_layout_name</span>.<span class="ident">clone</span>()
-                } <span class="kw">else</span> {
-                    <span class="prelude-val">None</span>
-                }
+                    i.xkb_active_layout_name.clone()
+                } <span class="kw">else </span>{
+                    <span class="prelude-val">None
+                </span>}
             })
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to get current input&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">events</span> <span class="op">=</span> <span class="ident">connection</span>
-            .<span class="ident">subscribe</span>(<span class="kw-2">&amp;</span>[<span class="ident">EventType::Input</span>])
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to subscribe to events&quot;</span>)<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
-            <span class="ident">events</span>,
-            <span class="ident">cur_layout</span>,
-            <span class="ident">kbd</span>,
+            .error(<span class="string">&quot;Failed to get current input&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>events = connection
+            .subscribe(<span class="kw-2">&amp;</span>[EventType::Input])
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to subscribe to events&quot;</span>)<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
+            events,
+            cur_layout,
+            kbd,
         })
     }
 }
 
-<span class="attribute">#[<span class="ident">async_trait</span>]</span>
-<span class="kw">impl</span> <span class="ident">Backend</span> <span class="kw">for</span> <span class="ident">Sway</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_info</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Info</span><span class="op">&gt;</span> {
-        <span class="prelude-val">Ok</span>(<span class="ident">parse_layout</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">cur_layout</span>))
+<span class="attribute">#[async_trait]
+</span><span class="kw">impl </span>Backend <span class="kw">for </span>Sway {
+    <span class="kw">async fn </span>get_info(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;Info&gt; {
+        <span class="prelude-val">Ok</span>(parse_layout(<span class="kw-2">&amp;</span><span class="self">self</span>.cur_layout))
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">wait_for_change</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">loop</span> {
-            <span class="kw">let</span> <span class="ident">event</span> <span class="op">=</span> <span class="self">self</span>
-                .<span class="ident">events</span>
-                .<span class="ident">next</span>()
-                .<span class="kw">await</span>
-                .<span class="ident">error</span>(<span class="string">&quot;swayipc channel closed&quot;</span>)<span class="question-mark">?</span>
-                .<span class="ident">error</span>(<span class="string">&quot;bad event&quot;</span>)<span class="question-mark">?</span>;
-            <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Event::Input</span>(<span class="ident">event</span>) <span class="op">=</span> <span class="ident">event</span> {
-                <span class="kw">if</span> <span class="self">self</span>
-                    .<span class="ident">kbd</span>
-                    .<span class="ident">as_deref</span>()
-                    .<span class="ident">map_or</span>(<span class="bool-val">true</span>, <span class="op">|</span><span class="ident">id</span><span class="op">|</span> <span class="ident">id</span> <span class="op">==</span> <span class="ident">event</span>.<span class="ident">input</span>.<span class="ident">identifier</span>)
+    <span class="kw">async fn </span>wait_for_change(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        <span class="kw">loop </span>{
+            <span class="kw">let </span>event = <span class="self">self
+                </span>.events
+                .next()
+                .<span class="kw">await
+                </span>.error(<span class="string">&quot;swayipc channel closed&quot;</span>)<span class="question-mark">?
+                </span>.error(<span class="string">&quot;bad event&quot;</span>)<span class="question-mark">?</span>;
+            <span class="kw">if let </span>Event::Input(event) = event {
+                <span class="kw">if </span><span class="self">self
+                    </span>.kbd
+                    .as_deref()
+                    .map_or(<span class="bool-val">true</span>, |id| id == event.input.identifier)
                 {
-                    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">new_layout</span>) <span class="op">=</span> <span class="ident">event</span>.<span class="ident">input</span>.<span class="ident">xkb_active_layout_name</span> {
-                        <span class="kw">if</span> <span class="ident">new_layout</span> <span class="op">!</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">cur_layout</span> {
-                            <span class="self">self</span>.<span class="ident">cur_layout</span> <span class="op">=</span> <span class="ident">new_layout</span>;
-                            <span class="kw">return</span> <span class="prelude-val">Ok</span>(());
+                    <span class="kw">if let </span><span class="prelude-val">Some</span>(new_layout) = event.input.xkb_active_layout_name {
+                        <span class="kw">if </span>new_layout != <span class="self">self</span>.cur_layout {
+                            <span class="self">self</span>.cur_layout = new_layout;
+                            <span class="kw">return </span><span class="prelude-val">Ok</span>(());
                         }
                     }
                 }
@@ -692,97 +692,97 @@
     }
 }
 
-<span class="kw">fn</span> <span class="ident">parse_layout</span>(<span class="ident">layout</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="ident">Info</span> {
-    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">i</span>) <span class="op">=</span> <span class="ident">layout</span>.<span class="ident">find</span>(<span class="string">&#39;(&#39;</span>) {
-        <span class="ident">Info</span> {
-            <span class="ident">layout</span>: <span class="ident">layout</span>[..<span class="ident">i</span>].<span class="ident">trim_end</span>().<span class="ident">into</span>(),
-            <span class="ident">variant</span>: <span class="prelude-val">Some</span>(<span class="ident">layout</span>[(<span class="ident">i</span> <span class="op">+</span> <span class="number">1</span>)..].<span class="ident">trim_end_matches</span>(<span class="string">&#39;)&#39;</span>).<span class="ident">into</span>()),
+<span class="kw">fn </span>parse_layout(layout: <span class="kw-2">&amp;</span>str) -&gt; Info {
+    <span class="kw">if let </span><span class="prelude-val">Some</span>(i) = layout.find(<span class="string">&#39;(&#39;</span>) {
+        Info {
+            layout: layout[..i].trim_end().into(),
+            variant: <span class="prelude-val">Some</span>(layout[(i + <span class="number">1</span>)..].trim_end_matches(<span class="string">&#39;)&#39;</span>).into()),
         }
-    } <span class="kw">else</span> {
-        <span class="ident">Info</span> {
-            <span class="ident">layout</span>: <span class="ident">layout</span>.<span class="ident">into</span>(),
-            <span class="ident">variant</span>: <span class="prelude-val">None</span>,
+    } <span class="kw">else </span>{
+        Info {
+            layout: layout.into(),
+            variant: <span class="prelude-val">None</span>,
         }
     }
 }
 
-<span class="attribute">#[<span class="ident">dbus_proxy</span>(
-    <span class="ident">interface</span> <span class="op">=</span> <span class="string">&quot;org.freedesktop.locale1&quot;</span>,
-    <span class="ident">default_service</span> <span class="op">=</span> <span class="string">&quot;org.freedesktop.locale1&quot;</span>,
-    <span class="ident">default_path</span> <span class="op">=</span> <span class="string">&quot;/org/freedesktop/locale1&quot;</span>
-)]</span>
-<span class="kw">trait</span> <span class="ident">LocaleBusInterface</span> {
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>, <span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;X11Layout&quot;</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">layout</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>;
+<span class="attribute">#[dbus_proxy(
+    interface = <span class="string">&quot;org.freedesktop.locale1&quot;</span>,
+    default_service = <span class="string">&quot;org.freedesktop.locale1&quot;</span>,
+    default_path = <span class="string">&quot;/org/freedesktop/locale1&quot;
+</span>)]
+</span><span class="kw">trait </span>LocaleBusInterface {
+    <span class="attribute">#[dbus_proxy(property, name = <span class="string">&quot;X11Layout&quot;</span>)]
+    </span><span class="kw">fn </span>layout(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;String&gt;;
 
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">property</span>, <span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;X11Variant&quot;</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">variant</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>;
+    <span class="attribute">#[dbus_proxy(property, name = <span class="string">&quot;X11Variant&quot;</span>)]
+    </span><span class="kw">fn </span>variant(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;String&gt;;
 }
 
-<span class="attribute">#[<span class="ident">dbus_proxy</span>(
-    <span class="ident">interface</span> <span class="op">=</span> <span class="string">&quot;ru.gentoo.kbdd&quot;</span>,
-    <span class="ident">default_service</span> <span class="op">=</span> <span class="string">&quot;ru.gentoo.KbddService&quot;</span>,
-    <span class="ident">default_path</span> <span class="op">=</span> <span class="string">&quot;/ru/gentoo/KbddService&quot;</span>
-)]</span>
-<span class="kw">trait</span> <span class="ident">KbddBusInterface</span> {
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">signal</span>, <span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;layoutNameChanged&quot;</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">layout_updated</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">layout</span>: <span class="ident">String</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
+<span class="attribute">#[dbus_proxy(
+    interface = <span class="string">&quot;ru.gentoo.kbdd&quot;</span>,
+    default_service = <span class="string">&quot;ru.gentoo.KbddService&quot;</span>,
+    default_path = <span class="string">&quot;/ru/gentoo/KbddService&quot;
+</span>)]
+</span><span class="kw">trait </span>KbddBusInterface {
+    <span class="attribute">#[dbus_proxy(signal, name = <span class="string">&quot;layoutNameChanged&quot;</span>)]
+    </span><span class="kw">fn </span>layout_updated(<span class="kw-2">&amp;</span><span class="self">self</span>, layout: String) -&gt; zbus::Result&lt;()&gt;;
 
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;getCurrentLayout&quot;</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">current_layout_index</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>;
+    <span class="attribute">#[dbus_proxy(name = <span class="string">&quot;getCurrentLayout&quot;</span>)]
+    </span><span class="kw">fn </span>current_layout_index(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;u32&gt;;
 
-    <span class="attribute">#[<span class="ident">dbus_proxy</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;getLayoutName&quot;</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">current_layout</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">layout_id</span>: <span class="ident">u32</span>) -&gt; <span class="ident">zbus::Result</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>;
+    <span class="attribute">#[dbus_proxy(name = <span class="string">&quot;getLayoutName&quot;</span>)]
+    </span><span class="kw">fn </span>current_layout(<span class="kw-2">&amp;</span><span class="self">self</span>, layout_id: u32) -&gt; zbus::Result&lt;String&gt;;
 }
 
-<span class="kw">struct</span> <span class="ident">KbddBus</span> {
-    <span class="ident">stream</span>: <span class="ident">layoutNameChangedStream</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span><span class="op">&gt;</span>,
-    <span class="ident">info</span>: <span class="ident">Info</span>,
+<span class="kw">struct </span>KbddBus {
+    stream: layoutNameChangedStream&lt;<span class="lifetime">&#39;static</span>&gt;,
+    info: Info,
 }
 
-<span class="kw">impl</span> <span class="ident">KbddBus</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">new</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">conn</span> <span class="op">=</span> <span class="ident">new_dbus_connection</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">proxy</span> <span class="op">=</span> <span class="ident">KbddBusInterfaceProxy::builder</span>(<span class="kw-2">&amp;</span><span class="ident">conn</span>)
-            .<span class="ident">cache_properties</span>(<span class="ident">zbus::CacheProperties::No</span>)
-            .<span class="ident">build</span>()
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to create KbddBusInterfaceProxy&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">stream</span> <span class="op">=</span> <span class="ident">proxy</span>
-            .<span class="ident">receive_layout_updated</span>()
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to monitor kbdd interface&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">layout_index</span> <span class="op">=</span> <span class="ident">proxy</span>
-            .<span class="ident">current_layout_index</span>()
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to get current layout index from kbdd&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">current_layout</span> <span class="op">=</span> <span class="ident">proxy</span>
-            .<span class="ident">current_layout</span>(<span class="ident">layout_index</span>)
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to get current layout from kbdd&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">parse_layout</span>(<span class="kw-2">&amp;</span><span class="ident">current_layout</span>);
-        <span class="prelude-val">Ok</span>(<span class="self">Self</span> { <span class="ident">stream</span>, <span class="ident">info</span> })
+<span class="kw">impl </span>KbddBus {
+    <span class="kw">async fn </span>new() -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
+        <span class="kw">let </span>conn = new_dbus_connection().<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let </span>proxy = KbddBusInterfaceProxy::builder(<span class="kw-2">&amp;</span>conn)
+            .cache_properties(zbus::CacheProperties::No)
+            .build()
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to create KbddBusInterfaceProxy&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>stream = proxy
+            .receive_layout_updated()
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to monitor kbdd interface&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>layout_index = proxy
+            .current_layout_index()
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to get current layout index from kbdd&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>current_layout = proxy
+            .current_layout(layout_index)
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to get current layout from kbdd&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>info = parse_layout(<span class="kw-2">&amp;</span>current_layout);
+        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{ stream, info })
     }
 }
 
-<span class="attribute">#[<span class="ident">async_trait</span>]</span>
-<span class="kw">impl</span> <span class="ident">Backend</span> <span class="kw">for</span> <span class="ident">KbddBus</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_info</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Info</span><span class="op">&gt;</span> {
-        <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">info</span>.<span class="ident">clone</span>())
+<span class="attribute">#[async_trait]
+</span><span class="kw">impl </span>Backend <span class="kw">for </span>KbddBus {
+    <span class="kw">async fn </span>get_info(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;Info&gt; {
+        <span class="prelude-val">Ok</span>(<span class="self">self</span>.info.clone())
     }
 
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">wait_for_change</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">event</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">stream</span>
-            .<span class="ident">next</span>()
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to receive kbdd event from dbus&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">args</span> <span class="op">=</span> <span class="ident">event</span>
-            .<span class="ident">args</span>()
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to get the args from kbdd message&quot;</span>)<span class="question-mark">?</span>;
-        <span class="self">self</span>.<span class="ident">info</span> <span class="op">=</span> <span class="ident">parse_layout</span>(<span class="ident">args</span>.<span class="ident">layout</span>());
+    <span class="kw">async fn </span>wait_for_change(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        <span class="kw">let </span>event = <span class="self">self
+            </span>.stream
+            .next()
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to receive kbdd event from dbus&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>args = event
+            .args()
+            .error(<span class="string">&quot;Failed to get the args from kbdd message&quot;</span>)<span class="question-mark">?</span>;
+        <span class="self">self</span>.info = parse_layout(args.layout());
         <span class="prelude-val">Ok</span>(())
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

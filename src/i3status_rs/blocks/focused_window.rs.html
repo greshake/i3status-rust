@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/focused_window.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>focused_window.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/focused_window.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>focused_window.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -217,224 +217,224 @@
 <span id="217">217</span>
 <span id="218">218</span>
 <span id="219">219</span>
-</pre><pre class="rust"><code><span class="doccomment">//! Currently focused window</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! This block displays the title and/or the active marks (when used with `sway`/`i3`) of the currently</span>
-<span class="doccomment">//! focused window. Supported WMs are: `sway`, `i3` and `river`. See `driver` option for more info.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Configuration</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Key | Values | Default</span>
-<span class="doccomment">//! ----|--------|--------</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot; $title.str(0,21) &amp;vert;&quot;&lt;/code&gt;</span>
-<span class="doccomment">//! `driver` | Which driver to use. Available values: `sway_ipc` - for `i3` and `sway`, `ristate` - for `river` (note that [`ristate`](https://gitlab.com/snakedye/ristate) binary must be in the `PATH`), `auto` - try to automatically guess which driver to use. | `&quot;auto&quot;`</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Placeholder     | Value                                                                 | Type | Unit</span>
-<span class="doccomment">//! ----------------|-----------------------------------------------------------------------|------|-----</span>
-<span class="doccomment">//! `title`         | Window&#39;s title (may be absent)                                        | Text | -</span>
-<span class="doccomment">//! `marks`         | Window&#39;s marks (present only with sway/i3)                            | Text | -</span>
-<span class="doccomment">//! `visible_marks` | Window&#39;s marks that do not start with `_` (present only with sway/i3) | Text | -</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Example</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;focused_window&quot;</span>
-<span class="doccomment">//! [block.format]</span>
-<span class="doccomment">//! full = &quot; $title.str(0,15) |&quot;</span>
-<span class="doccomment">//! short = &quot; $title.str(0,10) |&quot;</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! This example instead of hiding block when the window&#39;s title is empty displays &quot;Missing&quot;</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;focused_window&quot;</span>
-<span class="doccomment">//! format = &quot; $title.str(0,21) | Missing &quot;</span>
+</pre><pre class="rust"><code><span class="doccomment">//! Currently focused window
+//!
+//! This block displays the title and/or the active marks (when used with `sway`/`i3`) of the currently
+//! focused window. Supported WMs are: `sway`, `i3` and `river`. See `driver` option for more info.
+//!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot; $title.str(0,21) &amp;vert;&quot;&lt;/code&gt;
+//! `driver` | Which driver to use. Available values: `sway_ipc` - for `i3` and `sway`, `ristate` - for `river` (note that [`ristate`](https://gitlab.com/snakedye/ristate) binary must be in the `PATH`), `auto` - try to automatically guess which driver to use. | `&quot;auto&quot;`
+//!
+//! Placeholder     | Value                                                                 | Type | Unit
+//! ----------------|-----------------------------------------------------------------------|------|-----
+//! `title`         | Window&#39;s title (may be absent)                                        | Text | -
+//! `marks`         | Window&#39;s marks (present only with sway/i3)                            | Text | -
+//! `visible_marks` | Window&#39;s marks that do not start with `_` (present only with sway/i3) | Text | -
+//!
+//! # Example
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;focused_window&quot;
+//! [block.format]
+//! full = &quot; $title.str(0,15) |&quot;
+//! short = &quot; $title.str(0,10) |&quot;
+//! ```
+//!
+//! This example instead of hiding block when the window&#39;s title is empty displays &quot;Missing&quot;
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;focused_window&quot;
+//! format = &quot; $title.str(0,21) | Missing &quot;
 
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">swayipc_async</span>::{<span class="ident">Connection</span>, <span class="ident">Event</span>, <span class="ident">EventStream</span>, <span class="ident">EventType</span>, <span class="ident">WindowChange</span>, <span class="ident">WorkspaceChange</span>};
+</span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span>swayipc_async::{Connection, Event, EventStream, EventType, WindowChange, WorkspaceChange};
 
-<span class="kw">use</span> <span class="ident">std::process::Stdio</span>;
-<span class="kw">use</span> <span class="ident">tokio</span>::{
-    <span class="ident">io</span>::{<span class="ident">BufReader</span>, <span class="ident">Lines</span>},
-    <span class="ident">process</span>::{<span class="ident">ChildStdout</span>, <span class="ident">Command</span>},
+<span class="kw">use </span>std::process::Stdio;
+<span class="kw">use </span>tokio::{
+    io::{BufReader, Lines},
+    process::{ChildStdout, Command},
 };
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
-<span class="kw">struct</span> <span class="ident">FocusedWindowConfig</span> {
-    <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
-    <span class="ident">driver</span>: <span class="ident">Driver</span>,
+<span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
+#[serde(deny_unknown_fields, default)]
+</span><span class="kw">struct </span>FocusedWindowConfig {
+    format: FormatConfig,
+    driver: Driver,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;snake_case&quot;</span>)]</span>
-<span class="kw">enum</span> <span class="ident">Driver</span> {
-    <span class="attribute">#[<span class="ident">default</span>]</span>
-    <span class="ident">Auto</span>,
-    <span class="ident">SwayIpc</span>,
-    <span class="ident">Ristate</span>,
+<span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
+#[serde(rename_all = <span class="string">&quot;snake_case&quot;</span>)]
+</span><span class="kw">enum </span>Driver {
+    <span class="attribute">#[default]
+    </span>Auto,
+    SwayIpc,
+    Ristate,
 }
 
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">FocusedWindowConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">Widget::new</span>().<span class="ident">with_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $title.str(0,21) |&quot;</span>)<span class="question-mark">?</span>);
+<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span>config = FocusedWindowConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(config.format.with_default(<span class="string">&quot; $title.str(0,21) |&quot;</span>)<span class="question-mark">?</span>);
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">backend</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">Backend</span><span class="op">&gt;</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">driver</span> {
-        <span class="ident">Driver::Auto</span> =&gt; <span class="kw">match</span> <span class="ident">SwayIpc::new</span>().<span class="kw">await</span> {
-            <span class="prelude-val">Ok</span>(<span class="ident">swayipc</span>) =&gt; <span class="ident">Box::new</span>(<span class="ident">swayipc</span>),
-            <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="ident">Box::new</span>(<span class="ident">Ristate::new</span>()<span class="question-mark">?</span>),
+    <span class="kw">let </span><span class="kw-2">mut </span>backend: Box&lt;<span class="kw">dyn </span>Backend&gt; = <span class="kw">match </span>config.driver {
+        Driver::Auto =&gt; <span class="kw">match </span>SwayIpc::new().<span class="kw">await </span>{
+            <span class="prelude-val">Ok</span>(swayipc) =&gt; Box::new(swayipc),
+            <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; Box::new(Ristate::new()<span class="question-mark">?</span>),
         },
-        <span class="ident">Driver::SwayIpc</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">SwayIpc::new</span>().<span class="kw">await</span><span class="question-mark">?</span>),
-        <span class="ident">Driver::Ristate</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">Ristate::new</span>()<span class="question-mark">?</span>),
+        Driver::SwayIpc =&gt; Box::new(SwayIpc::new().<span class="kw">await</span><span class="question-mark">?</span>),
+        Driver::Ristate =&gt; Box::new(Ristate::new()<span class="question-mark">?</span>),
     };
 
-    <span class="kw">loop</span> {
-        <span class="macro">select!</span> {
-            <span class="kw">_</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; (),
-            <span class="ident">info</span> <span class="op">=</span> <span class="ident">backend</span>.<span class="ident">get_info</span>() =&gt; {
-                <span class="kw">let</span> <span class="ident">Info</span> { <span class="ident">title</span>, <span class="ident">marks</span> } <span class="op">=</span> <span class="ident">info</span><span class="question-mark">?</span>;
-                <span class="kw">if</span> <span class="ident">title</span>.<span class="ident">is_empty</span>() {
-                    <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">default</span>());
-                } <span class="kw">else</span> {
-                    <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span> {
-                        <span class="string">&quot;title&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">title</span>.<span class="ident">clone</span>()),
-                        <span class="string">&quot;marks&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">marks</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">m</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;[{m}]&quot;</span>)).<span class="ident">collect</span>()),
-                        <span class="string">&quot;visible_marks&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">marks</span>.<span class="ident">iter</span>().<span class="ident">filter</span>(<span class="op">|</span><span class="ident">m</span><span class="op">|</span> <span class="op">!</span><span class="ident">m</span>.<span class="ident">starts_with</span>(<span class="string">&#39;_&#39;</span>)).<span class="ident">map</span>(<span class="op">|</span><span class="ident">m</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;[{m}]&quot;</span>)).<span class="ident">collect</span>()),
+    <span class="kw">loop </span>{
+        <span class="macro">select! </span>{
+            <span class="kw">_ </span>= api.event() =&gt; (),
+            info = backend.get_info() =&gt; {
+                <span class="kw">let </span>Info { title, marks } = info<span class="question-mark">?</span>;
+                <span class="kw">if </span>title.is_empty() {
+                    widget.set_values(default());
+                } <span class="kw">else </span>{
+                    widget.set_values(<span class="macro">map! </span>{
+                        <span class="string">&quot;title&quot; </span>=&gt; Value::text(title.clone()),
+                        <span class="string">&quot;marks&quot; </span>=&gt; Value::text(marks.iter().map(|m| <span class="macro">format!</span>(<span class="string">&quot;[{m}]&quot;</span>)).collect()),
+                        <span class="string">&quot;visible_marks&quot; </span>=&gt; Value::text(marks.iter().filter(|m| !m.starts_with(<span class="string">&#39;_&#39;</span>)).map(|m| <span class="macro">format!</span>(<span class="string">&quot;[{m}]&quot;</span>)).collect()),
                     });
                 }
-                <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+                api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
             }
         }
     }
 }
 
-<span class="attribute">#[<span class="ident">async_trait</span>]</span>
-<span class="kw">trait</span> <span class="ident">Backend</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_info</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Info</span><span class="op">&gt;</span>;
+<span class="attribute">#[async_trait]
+</span><span class="kw">trait </span>Backend {
+    <span class="kw">async fn </span>get_info(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;Info&gt;;
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Default</span>)]</span>
-<span class="kw">struct</span> <span class="ident">Info</span> {
-    <span class="ident">title</span>: <span class="ident">String</span>,
-    <span class="ident">marks</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+<span class="attribute">#[derive(Clone, Default)]
+</span><span class="kw">struct </span>Info {
+    title: String,
+    marks: Vec&lt;String&gt;,
 }
 
-<span class="kw">struct</span> <span class="ident">SwayIpc</span> {
-    <span class="ident">events</span>: <span class="ident">EventStream</span>,
-    <span class="ident">info</span>: <span class="ident">Info</span>,
+<span class="kw">struct </span>SwayIpc {
+    events: EventStream,
+    info: Info,
 }
 
-<span class="kw">impl</span> <span class="ident">SwayIpc</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">new</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
-            <span class="ident">events</span>: <span class="ident">Connection::new</span>()
-                .<span class="kw">await</span>
-                .<span class="ident">error</span>(<span class="string">&quot;failed to open connection with swayipc&quot;</span>)<span class="question-mark">?</span>
-                .<span class="ident">subscribe</span>(<span class="kw-2">&amp;</span>[<span class="ident">EventType::Window</span>, <span class="ident">EventType::Workspace</span>])
-                .<span class="kw">await</span>
-                .<span class="ident">error</span>(<span class="string">&quot;could not subscribe to window events&quot;</span>)<span class="question-mark">?</span>,
-            <span class="ident">info</span>: <span class="ident">default</span>(),
+<span class="kw">impl </span>SwayIpc {
+    <span class="kw">async fn </span>new() -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
+        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
+            events: Connection::new()
+                .<span class="kw">await
+                </span>.error(<span class="string">&quot;failed to open connection with swayipc&quot;</span>)<span class="question-mark">?
+                </span>.subscribe(<span class="kw-2">&amp;</span>[EventType::Window, EventType::Workspace])
+                .<span class="kw">await
+                </span>.error(<span class="string">&quot;could not subscribe to window events&quot;</span>)<span class="question-mark">?</span>,
+            info: default(),
         })
     }
 }
 
-<span class="attribute">#[<span class="ident">async_trait</span>]</span>
-<span class="kw">impl</span> <span class="ident">Backend</span> <span class="kw">for</span> <span class="ident">SwayIpc</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_info</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Info</span><span class="op">&gt;</span> {
-        <span class="kw">loop</span> {
-            <span class="kw">let</span> <span class="ident">event</span> <span class="op">=</span> <span class="self">self</span>
-                .<span class="ident">events</span>
-                .<span class="ident">next</span>()
-                .<span class="kw">await</span>
-                .<span class="ident">error</span>(<span class="string">&quot;swayipc channel closed&quot;</span>)<span class="question-mark">?</span>
-                .<span class="ident">error</span>(<span class="string">&quot;bad event&quot;</span>)<span class="question-mark">?</span>;
-            <span class="kw">match</span> <span class="ident">event</span> {
-                <span class="ident">Event::Window</span>(<span class="ident">e</span>) =&gt; <span class="kw">match</span> <span class="ident">e</span>.<span class="ident">change</span> {
-                    <span class="ident">WindowChange::Mark</span> =&gt; {
-                        <span class="self">self</span>.<span class="ident">info</span>.<span class="ident">marks</span> <span class="op">=</span> <span class="ident">e</span>.<span class="ident">container</span>.<span class="ident">marks</span>;
+<span class="attribute">#[async_trait]
+</span><span class="kw">impl </span>Backend <span class="kw">for </span>SwayIpc {
+    <span class="kw">async fn </span>get_info(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;Info&gt; {
+        <span class="kw">loop </span>{
+            <span class="kw">let </span>event = <span class="self">self
+                </span>.events
+                .next()
+                .<span class="kw">await
+                </span>.error(<span class="string">&quot;swayipc channel closed&quot;</span>)<span class="question-mark">?
+                </span>.error(<span class="string">&quot;bad event&quot;</span>)<span class="question-mark">?</span>;
+            <span class="kw">match </span>event {
+                Event::Window(e) =&gt; <span class="kw">match </span>e.change {
+                    WindowChange::Mark =&gt; {
+                        <span class="self">self</span>.info.marks = e.container.marks;
                     }
-                    <span class="ident">WindowChange::Focus</span> =&gt; {
-                        <span class="self">self</span>.<span class="ident">info</span>.<span class="ident">title</span>.<span class="ident">clear</span>();
-                        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">new_title</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">e</span>.<span class="ident">container</span>.<span class="ident">name</span> {
-                            <span class="self">self</span>.<span class="ident">info</span>.<span class="ident">title</span>.<span class="ident">push_str</span>(<span class="ident">new_title</span>);
+                    WindowChange::Focus =&gt; {
+                        <span class="self">self</span>.info.title.clear();
+                        <span class="kw">if let </span><span class="prelude-val">Some</span>(new_title) = <span class="kw-2">&amp;</span>e.container.name {
+                            <span class="self">self</span>.info.title.push_str(new_title);
                         }
-                        <span class="self">self</span>.<span class="ident">info</span>.<span class="ident">marks</span> <span class="op">=</span> <span class="ident">e</span>.<span class="ident">container</span>.<span class="ident">marks</span>;
+                        <span class="self">self</span>.info.marks = e.container.marks;
                     }
-                    <span class="ident">WindowChange::Title</span> =&gt; {
-                        <span class="kw">if</span> <span class="ident">e</span>.<span class="ident">container</span>.<span class="ident">focused</span> {
-                            <span class="self">self</span>.<span class="ident">info</span>.<span class="ident">title</span>.<span class="ident">clear</span>();
-                            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">new_title</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">e</span>.<span class="ident">container</span>.<span class="ident">name</span> {
-                                <span class="self">self</span>.<span class="ident">info</span>.<span class="ident">title</span>.<span class="ident">push_str</span>(<span class="ident">new_title</span>);
+                    WindowChange::Title =&gt; {
+                        <span class="kw">if </span>e.container.focused {
+                            <span class="self">self</span>.info.title.clear();
+                            <span class="kw">if let </span><span class="prelude-val">Some</span>(new_title) = <span class="kw-2">&amp;</span>e.container.name {
+                                <span class="self">self</span>.info.title.push_str(new_title);
                             }
-                        } <span class="kw">else</span> {
+                        } <span class="kw">else </span>{
                             <span class="kw">continue</span>;
                         }
                     }
-                    <span class="ident">WindowChange::Close</span> =&gt; {
-                        <span class="self">self</span>.<span class="ident">info</span>.<span class="ident">title</span>.<span class="ident">clear</span>();
-                        <span class="self">self</span>.<span class="ident">info</span>.<span class="ident">marks</span>.<span class="ident">clear</span>();
+                    WindowChange::Close =&gt; {
+                        <span class="self">self</span>.info.title.clear();
+                        <span class="self">self</span>.info.marks.clear();
                     }
-                    <span class="kw">_</span> =&gt; <span class="kw">continue</span>,
+                    <span class="kw">_ </span>=&gt; <span class="kw">continue</span>,
                 },
-                <span class="ident">Event::Workspace</span>(<span class="ident">e</span>) <span class="kw">if</span> <span class="ident">e</span>.<span class="ident">change</span> <span class="op">==</span> <span class="ident">WorkspaceChange::Init</span> =&gt; {
-                    <span class="self">self</span>.<span class="ident">info</span>.<span class="ident">title</span>.<span class="ident">clear</span>();
-                    <span class="self">self</span>.<span class="ident">info</span>.<span class="ident">marks</span>.<span class="ident">clear</span>();
+                Event::Workspace(e) <span class="kw">if </span>e.change == WorkspaceChange::Init =&gt; {
+                    <span class="self">self</span>.info.title.clear();
+                    <span class="self">self</span>.info.marks.clear();
                 }
-                <span class="kw">_</span> =&gt; <span class="kw">continue</span>,
+                <span class="kw">_ </span>=&gt; <span class="kw">continue</span>,
             }
 
-            <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">info</span>.<span class="ident">clone</span>());
+            <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="self">self</span>.info.clone());
         }
     }
 }
 
-<span class="kw">struct</span> <span class="ident">Ristate</span> {
-    <span class="ident">stream</span>: <span class="ident">Lines</span><span class="op">&lt;</span><span class="ident">BufReader</span><span class="op">&lt;</span><span class="ident">ChildStdout</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+<span class="kw">struct </span>Ristate {
+    stream: Lines&lt;BufReader&lt;ChildStdout&gt;&gt;,
 }
 
-<span class="kw">impl</span> <span class="ident">Ristate</span> {
-    <span class="kw">fn</span> <span class="ident">new</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ristate</span> <span class="op">=</span> <span class="ident">Command::new</span>(<span class="string">&quot;ristate&quot;</span>)
-            .<span class="ident">arg</span>(<span class="string">&quot;-w&quot;</span>)
-            .<span class="ident">stdout</span>(<span class="ident">Stdio::piped</span>())
-            .<span class="ident">spawn</span>()
-            .<span class="ident">error</span>(<span class="string">&quot;failed to run ristate&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">stream</span> <span class="op">=</span> <span class="ident">BufReader::new</span>(<span class="ident">ristate</span>.<span class="ident">stdout</span>.<span class="ident">take</span>().<span class="ident">unwrap</span>()).<span class="ident">lines</span>();
+<span class="kw">impl </span>Ristate {
+    <span class="kw">fn </span>new() -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
+        <span class="kw">let </span><span class="kw-2">mut </span>ristate = Command::new(<span class="string">&quot;ristate&quot;</span>)
+            .arg(<span class="string">&quot;-w&quot;</span>)
+            .stdout(Stdio::piped())
+            .spawn()
+            .error(<span class="string">&quot;failed to run ristate&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>stream = BufReader::new(ristate.stdout.take().unwrap()).lines();
 
-        <span class="ident">tokio::spawn</span>(<span class="kw">async</span> <span class="kw">move</span> {
-            <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">ristate</span>.<span class="ident">wait</span>().<span class="kw">await</span>;
+        tokio::spawn(<span class="kw">async move </span>{
+            <span class="kw">let _ </span>= ristate.wait().<span class="kw">await</span>;
         });
 
-        <span class="prelude-val">Ok</span>(<span class="self">Self</span> { <span class="ident">stream</span> })
+        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{ stream })
     }
 }
 
-<span class="attribute">#[<span class="ident">async_trait</span>]</span>
-<span class="kw">impl</span> <span class="ident">Backend</span> <span class="kw">for</span> <span class="ident">Ristate</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_info</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Info</span><span class="op">&gt;</span> {
-        <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>)]</span>
-        <span class="kw">struct</span> <span class="ident">RistateOuput</span> {
-            <span class="ident">title</span>: <span class="ident">String</span>,
+<span class="attribute">#[async_trait]
+</span><span class="kw">impl </span>Backend <span class="kw">for </span>Ristate {
+    <span class="kw">async fn </span>get_info(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;Info&gt; {
+        <span class="attribute">#[derive(Deserialize, Debug)]
+        </span><span class="kw">struct </span>RistateOuput {
+            title: String,
         }
 
-        <span class="kw">let</span> <span class="ident">line</span> <span class="op">=</span> <span class="self">self</span>
-            .<span class="ident">stream</span>
-            .<span class="ident">next_line</span>()
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;ristate exited unexpectedly&quot;</span>)<span class="question-mark">?</span>
-            .<span class="ident">error</span>(<span class="string">&quot;error reading line from ristate&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>line = <span class="self">self
+            </span>.stream
+            .next_line()
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;ristate exited unexpectedly&quot;</span>)<span class="question-mark">?
+            </span>.error(<span class="string">&quot;error reading line from ristate&quot;</span>)<span class="question-mark">?</span>;
 
-        <span class="kw">let</span> <span class="ident">title</span> <span class="op">=</span> <span class="ident">serde_json::from_str</span>::<span class="op">&lt;</span><span class="ident">RistateOuput</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">line</span>)
-            .<span class="ident">error</span>(<span class="string">&quot;ristate produced invalid json&quot;</span>)<span class="question-mark">?</span>
-            .<span class="ident">title</span>;
+        <span class="kw">let </span>title = serde_json::from_str::&lt;RistateOuput&gt;(<span class="kw-2">&amp;</span>line)
+            .error(<span class="string">&quot;ristate produced invalid json&quot;</span>)<span class="question-mark">?
+            </span>.title;
 
-        <span class="prelude-val">Ok</span>(<span class="ident">Info</span> {
-            <span class="ident">title</span>,
-            <span class="ident">marks</span>: <span class="ident">default</span>(),
+        <span class="prelude-val">Ok</span>(Info {
+            title,
+            marks: default(),
         })
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

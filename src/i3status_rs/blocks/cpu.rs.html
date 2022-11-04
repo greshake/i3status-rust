@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/cpu.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>cpu.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/cpu.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>cpu.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -242,144 +242,144 @@
 <span id="242">242</span>
 <span id="243">243</span>
 <span id="244">244</span>
-</pre><pre class="rust"><code><span class="doccomment">//! CPU statistics</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Configuration</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Key | Values | Default</span>
-<span class="doccomment">//! ----|--------|--------</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $utilization &quot;`</span>
-<span class="doccomment">//! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`</span>
-<span class="doccomment">//! `interval` | Update interval in seconds | `5`</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Placeholder      | Value                                                          | Type   | Unit</span>
-<span class="doccomment">//! -----------------|----------------------------------------------------------------|--------|---------------</span>
-<span class="doccomment">//! `icon`           | A static icon                                                  | Icon   | -</span>
-<span class="doccomment">//! `utilization`    | Average CPU utilization                                        | Number | %</span>
-<span class="doccomment">//! `utilization&lt;N&gt;` | Utilization of Nth logical CPU                                 | Number | %</span>
-<span class="doccomment">//! `barchart`       | Utilization of all logical CPUs presented as a barchart        | Text   | -</span>
-<span class="doccomment">//! `frequency`      | Average CPU frequency                                          | Number | Hz</span>
-<span class="doccomment">//! `frequency&lt;N&gt;`   | Frequency of Nth logical CPU                                   | Number | Hz</span>
-<span class="doccomment">//! `boost`          | CPU turbo boost status (may be absent if CPU is not supported) | Text   | -</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Example</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;cpu&quot;</span>
-<span class="doccomment">//! interval = 1</span>
-<span class="doccomment">//! format = &quot; $icon $barchart $utilization &quot;</span>
-<span class="doccomment">//! format_alt = &quot; $icon $frequency{ $boost|} &quot;</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Icons Used</span>
-<span class="doccomment">//! - `cpu`</span>
-<span class="doccomment">//! - `cpu_boost_on`</span>
-<span class="doccomment">//! - `cpu_boost_off`</span>
+</pre><pre class="rust"><code><span class="doccomment">//! CPU statistics
+//!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $utilization &quot;`
+//! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
+//! `interval` | Update interval in seconds | `5`
+//!
+//! Placeholder      | Value                                                          | Type   | Unit
+//! -----------------|----------------------------------------------------------------|--------|---------------
+//! `icon`           | A static icon                                                  | Icon   | -
+//! `utilization`    | Average CPU utilization                                        | Number | %
+//! `utilization&lt;N&gt;` | Utilization of Nth logical CPU                                 | Number | %
+//! `barchart`       | Utilization of all logical CPUs presented as a barchart        | Text   | -
+//! `frequency`      | Average CPU frequency                                          | Number | Hz
+//! `frequency&lt;N&gt;`   | Frequency of Nth logical CPU                                   | Number | Hz
+//! `boost`          | CPU turbo boost status (may be absent if CPU is not supported) | Text   | -
+//!
+//! # Example
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;cpu&quot;
+//! interval = 1
+//! format = &quot; $icon $barchart $utilization &quot;
+//! format_alt = &quot; $icon $frequency{ $boost|} &quot;
+//! ```
+//!
+//! # Icons Used
+//! - `cpu`
+//! - `cpu_boost_on`
+//! - `cpu_boost_off`
 
-<span class="kw">use</span> <span class="ident">std::str::FromStr</span>;
+</span><span class="kw">use </span>std::str::FromStr;
 
-<span class="kw">use</span> <span class="ident">tokio::fs::File</span>;
-<span class="kw">use</span> <span class="ident">tokio::io</span>::{<span class="ident">AsyncBufReadExt</span>, <span class="ident">BufReader</span>};
+<span class="kw">use </span>tokio::fs::File;
+<span class="kw">use </span>tokio::io::{AsyncBufReadExt, BufReader};
 
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::util::read_file</span>;
+<span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span><span class="kw">crate</span>::util::read_file;
 
-<span class="kw">const</span> <span class="ident">CPU_BOOST_PATH</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;/sys/devices/system/cpu/cpufreq/boost&quot;</span>;
-<span class="kw">const</span> <span class="ident">CPU_NO_TURBO_PATH</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;/sys/devices/system/cpu/intel_pstate/no_turbo&quot;</span>;
+<span class="kw">const </span>CPU_BOOST_PATH: <span class="kw-2">&amp;</span>str = <span class="string">&quot;/sys/devices/system/cpu/cpufreq/boost&quot;</span>;
+<span class="kw">const </span>CPU_NO_TURBO_PATH: <span class="kw-2">&amp;</span>str = <span class="string">&quot;/sys/devices/system/cpu/intel_pstate/no_turbo&quot;</span>;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
-<span class="kw">struct</span> <span class="ident">CpuConfig</span> {
-    <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
-    <span class="ident">format_alt</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">FormatConfig</span><span class="op">&gt;</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">5</span>.<span class="ident">into</span>())]</span>
-    <span class="ident">interval</span>: <span class="ident">Seconds</span>,
+<span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
+#[serde(deny_unknown_fields, default)]
+</span><span class="kw">struct </span>CpuConfig {
+    format: FormatConfig,
+    format_alt: <span class="prelude-ty">Option</span>&lt;FormatConfig&gt;,
+    <span class="attribute">#[default(<span class="number">5</span>.into())]
+    </span>interval: Seconds,
 }
 
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">CpuConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
+<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span>config = CpuConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">format</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon $utilization &quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">format_alt</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">format_alt</span> {
-        <span class="prelude-val">Some</span>(<span class="ident">f</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">f</span>.<span class="ident">with_default</span>(<span class="string">&quot;&quot;</span>)<span class="question-mark">?</span>),
-        <span class="prelude-val">None</span> =&gt; <span class="prelude-val">None</span>,
+    <span class="kw">let </span><span class="kw-2">mut </span>format = config.format.with_default(<span class="string">&quot; $icon $utilization &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>format_alt = <span class="kw">match </span>config.format_alt {
+        <span class="prelude-val">Some</span>(f) =&gt; <span class="prelude-val">Some</span>(f.with_default(<span class="string">&quot;&quot;</span>)<span class="question-mark">?</span>),
+        <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
     };
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">Widget::new</span>().<span class="ident">with_format</span>(<span class="ident">format</span>.<span class="ident">clone</span>());
+    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
 
-    <span class="kw">let</span> <span class="ident">boost_icon_on</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;cpu_boost_on&quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">boost_icon_off</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;cpu_boost_off&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>boost_icon_on = api.get_icon(<span class="string">&quot;cpu_boost_on&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>boost_icon_off = api.get_icon(<span class="string">&quot;cpu_boost_off&quot;</span>)<span class="question-mark">?</span>;
 
-    <span class="comment">// Store previous /proc/stat state</span>
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cputime</span> <span class="op">=</span> <span class="ident">read_proc_stat</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">cores</span> <span class="op">=</span> <span class="ident">cputime</span>.<span class="number">1</span>.<span class="ident">len</span>();
+    <span class="comment">// Store previous /proc/stat state
+    </span><span class="kw">let </span><span class="kw-2">mut </span>cputime = read_proc_stat().<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">let </span>cores = cputime.<span class="number">1</span>.len();
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">timer</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">interval</span>.<span class="ident">timer</span>();
+    <span class="kw">let </span><span class="kw-2">mut </span>timer = config.interval.timer();
 
-    <span class="kw">loop</span> {
-        <span class="kw">let</span> <span class="ident">freqs</span> <span class="op">=</span> <span class="ident">read_frequencies</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">freq_avg</span> <span class="op">=</span> <span class="ident">freqs</span>.<span class="ident">iter</span>().<span class="ident">sum</span>::<span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>() <span class="op">/</span> (<span class="ident">freqs</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">f64</span>);
+    <span class="kw">loop </span>{
+        <span class="kw">let </span>freqs = read_frequencies().<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let </span>freq_avg = freqs.iter().sum::&lt;f64&gt;() / (freqs.len() <span class="kw">as </span>f64);
 
-        <span class="comment">// Compute utilizations</span>
-        <span class="kw">let</span> <span class="ident">new_cputime</span> <span class="op">=</span> <span class="ident">read_proc_stat</span>().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">utilization_avg</span> <span class="op">=</span> <span class="ident">new_cputime</span>.<span class="number">0</span>.<span class="ident">utilization</span>(<span class="ident">cputime</span>.<span class="number">0</span>);
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">utilizations</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
-        <span class="kw">if</span> <span class="ident">new_cputime</span>.<span class="number">1</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="ident">cores</span> {
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error::new</span>(<span class="string">&quot;new cputime length is incorrect&quot;</span>));
+        <span class="comment">// Compute utilizations
+        </span><span class="kw">let </span>new_cputime = read_proc_stat().<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let </span>utilization_avg = new_cputime.<span class="number">0</span>.utilization(cputime.<span class="number">0</span>);
+        <span class="kw">let </span><span class="kw-2">mut </span>utilizations = Vec::new();
+        <span class="kw">if </span>new_cputime.<span class="number">1</span>.len() != cores {
+            <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="string">&quot;new cputime length is incorrect&quot;</span>));
         }
-        <span class="kw">for</span> <span class="ident">i</span> <span class="kw">in</span> <span class="number">0</span>..<span class="ident">cores</span> {
-            <span class="ident">utilizations</span>.<span class="ident">push</span>(<span class="ident">new_cputime</span>.<span class="number">1</span>[<span class="ident">i</span>].<span class="ident">utilization</span>(<span class="ident">cputime</span>.<span class="number">1</span>[<span class="ident">i</span>]));
+        <span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..cores {
+            utilizations.push(new_cputime.<span class="number">1</span>[i].utilization(cputime.<span class="number">1</span>[i]));
         }
-        <span class="ident">cputime</span> <span class="op">=</span> <span class="ident">new_cputime</span>;
+        cputime = new_cputime;
 
-        <span class="comment">// Create barchart indicating per-core utilization</span>
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">barchart</span> <span class="op">=</span> <span class="ident">String::new</span>();
-        <span class="kw">const</span> <span class="ident">BOXCHARS</span>: <span class="kw-2">&amp;</span>[<span class="ident">char</span>] <span class="op">=</span> <span class="kw-2">&amp;</span>[<span class="string">&#39;▁&#39;</span>, <span class="string">&#39;▂&#39;</span>, <span class="string">&#39;▃&#39;</span>, <span class="string">&#39;▄&#39;</span>, <span class="string">&#39;▅&#39;</span>, <span class="string">&#39;▆&#39;</span>, <span class="string">&#39;▇&#39;</span>, <span class="string">&#39;█&#39;</span>];
-        <span class="kw">for</span> <span class="ident">utilization</span> <span class="kw">in</span> <span class="kw-2">&amp;</span><span class="ident">utilizations</span> {
-            <span class="ident">barchart</span>.<span class="ident">push</span>(<span class="ident">BOXCHARS</span>[(<span class="number">7.5</span> <span class="op">*</span> <span class="ident">utilization</span>) <span class="kw">as</span> <span class="ident">usize</span>]);
+        <span class="comment">// Create barchart indicating per-core utilization
+        </span><span class="kw">let </span><span class="kw-2">mut </span>barchart = String::new();
+        <span class="kw">const </span>BOXCHARS: <span class="kw-2">&amp;</span>[char] = <span class="kw-2">&amp;</span>[<span class="string">&#39;▁&#39;</span>, <span class="string">&#39;▂&#39;</span>, <span class="string">&#39;▃&#39;</span>, <span class="string">&#39;▄&#39;</span>, <span class="string">&#39;▅&#39;</span>, <span class="string">&#39;▆&#39;</span>, <span class="string">&#39;▇&#39;</span>, <span class="string">&#39;█&#39;</span>];
+        <span class="kw">for </span>utilization <span class="kw">in </span><span class="kw-2">&amp;</span>utilizations {
+            barchart.push(BOXCHARS[(<span class="number">7.5 </span>* utilization) <span class="kw">as </span>usize]);
         }
 
-        <span class="comment">// Read boot state on intel CPUs</span>
-        <span class="kw">let</span> <span class="ident">boost</span> <span class="op">=</span> <span class="ident">boost_status</span>().<span class="kw">await</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">status</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">status</span> {
-            <span class="bool-val">true</span> =&gt; <span class="ident">boost_icon_on</span>.<span class="ident">clone</span>(),
-            <span class="bool-val">false</span> =&gt; <span class="ident">boost_icon_off</span>.<span class="ident">clone</span>(),
+        <span class="comment">// Read boot state on intel CPUs
+        </span><span class="kw">let </span>boost = boost_status().<span class="kw">await</span>.map(|status| <span class="kw">match </span>status {
+            <span class="bool-val">true </span>=&gt; boost_icon_on.clone(),
+            <span class="bool-val">false </span>=&gt; boost_icon_off.clone(),
         });
 
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">values</span> <span class="op">=</span> <span class="macro">map!</span>(
-            <span class="string">&quot;icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;cpu&quot;</span>)<span class="question-mark">?</span>),
-            <span class="string">&quot;barchart&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">barchart</span>),
-            <span class="string">&quot;frequency&quot;</span> =&gt; <span class="ident">Value::hertz</span>(<span class="ident">freq_avg</span>),
-            <span class="string">&quot;utilization&quot;</span> =&gt; <span class="ident">Value::percents</span>(<span class="ident">utilization_avg</span> <span class="op">*</span> <span class="number">100.</span>),
+        <span class="kw">let </span><span class="kw-2">mut </span>values = <span class="macro">map!</span>(
+            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;cpu&quot;</span>)<span class="question-mark">?</span>),
+            <span class="string">&quot;barchart&quot; </span>=&gt; Value::text(barchart),
+            <span class="string">&quot;frequency&quot; </span>=&gt; Value::hertz(freq_avg),
+            <span class="string">&quot;utilization&quot; </span>=&gt; Value::percents(utilization_avg * <span class="number">100.</span>),
         );
-        <span class="ident">boost</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">b</span><span class="op">|</span> <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;boost&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::icon</span>(<span class="ident">b</span>)));
-        <span class="kw">for</span> (<span class="ident">i</span>, <span class="ident">freq</span>) <span class="kw">in</span> <span class="ident">freqs</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
-            <span class="ident">values</span>.<span class="ident">insert</span>(<span class="macro">format!</span>(<span class="string">&quot;frequency{}&quot;</span>, <span class="ident">i</span> <span class="op">+</span> <span class="number">1</span>).<span class="ident">into</span>(), <span class="ident">Value::hertz</span>(<span class="kw-2">*</span><span class="ident">freq</span>));
+        boost.map(|b| values.insert(<span class="string">&quot;boost&quot;</span>.into(), Value::icon(b)));
+        <span class="kw">for </span>(i, freq) <span class="kw">in </span>freqs.iter().enumerate() {
+            values.insert(<span class="macro">format!</span>(<span class="string">&quot;frequency{}&quot;</span>, i + <span class="number">1</span>).into(), Value::hertz(<span class="kw-2">*</span>freq));
         }
-        <span class="kw">for</span> (<span class="ident">i</span>, <span class="ident">utilization</span>) <span class="kw">in</span> <span class="ident">utilizations</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
-            <span class="ident">values</span>.<span class="ident">insert</span>(
-                <span class="macro">format!</span>(<span class="string">&quot;utilization{}&quot;</span>, <span class="ident">i</span> <span class="op">+</span> <span class="number">1</span>).<span class="ident">into</span>(),
-                <span class="ident">Value::percents</span>(<span class="ident">utilization</span> <span class="op">*</span> <span class="number">100.</span>),
+        <span class="kw">for </span>(i, utilization) <span class="kw">in </span>utilizations.iter().enumerate() {
+            values.insert(
+                <span class="macro">format!</span>(<span class="string">&quot;utilization{}&quot;</span>, i + <span class="number">1</span>).into(),
+                Value::percents(utilization * <span class="number">100.</span>),
             );
         }
 
-        <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">values</span>);
-        <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">utilization_avg</span> {
-            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">&gt;</span> <span class="number">0.9</span> =&gt; <span class="ident">State::Critical</span>,
-            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">&gt;</span> <span class="number">0.6</span> =&gt; <span class="ident">State::Warning</span>,
-            <span class="ident">x</span> <span class="kw">if</span> <span class="ident">x</span> <span class="op">&gt;</span> <span class="number">0.3</span> =&gt; <span class="ident">State::Info</span>,
-            <span class="kw">_</span> =&gt; <span class="ident">State::Idle</span>,
+        widget.set_values(values);
+        widget.state = <span class="kw">match </span>utilization_avg {
+            x <span class="kw">if </span>x &gt; <span class="number">0.9 </span>=&gt; State::Critical,
+            x <span class="kw">if </span>x &gt; <span class="number">0.6 </span>=&gt; State::Warning,
+            x <span class="kw">if </span>x &gt; <span class="number">0.3 </span>=&gt; State::Info,
+            <span class="kw">_ </span>=&gt; State::Idle,
         };
-        <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="kw">loop</span> {
-            <span class="macro">select!</span> {
-                <span class="kw">_</span> <span class="op">=</span> <span class="ident">timer</span>.<span class="ident">tick</span>() =&gt; <span class="kw">break</span>,
-                <span class="ident">Click</span>(<span class="ident">click</span>) <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; {
-                    <span class="kw">if</span> <span class="ident">click</span>.<span class="ident">button</span> <span class="op">==</span> <span class="ident">MouseButton::Left</span> {
-                        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="kw-2">ref</span> <span class="kw-2">mut</span> <span class="ident">format_alt</span>) <span class="op">=</span> <span class="ident">format_alt</span> {
-                            <span class="ident">std::mem::swap</span>(<span class="ident">format_alt</span>, <span class="kw-2">&amp;mut</span> <span class="ident">format</span>);
-                            <span class="ident">widget</span>.<span class="ident">set_format</span>(<span class="ident">format</span>.<span class="ident">clone</span>());
+        <span class="kw">loop </span>{
+            <span class="macro">select! </span>{
+                <span class="kw">_ </span>= timer.tick() =&gt; <span class="kw">break</span>,
+                Click(click) = api.event() =&gt; {
+                    <span class="kw">if </span>click.button == MouseButton::Left {
+                        <span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">ref mut </span>format_alt) = format_alt {
+                            std::mem::swap(format_alt, <span class="kw-2">&amp;mut </span>format);
+                            widget.set_format(format.clone());
                             <span class="kw">break</span>;
                         }
                     }
@@ -389,102 +389,102 @@
     }
 }
 
-<span class="comment">// Read frequencies (read in MHz, store in Hz)</span>
-<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">read_frequencies</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">freqs</span> <span class="op">=</span> <span class="ident">Vec::with_capacity</span>(<span class="number">32</span>);
+<span class="comment">// Read frequencies (read in MHz, store in Hz)
+</span><span class="kw">async fn </span>read_frequencies() -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;f64&gt;&gt; {
+    <span class="kw">let </span><span class="kw-2">mut </span>freqs = Vec::with_capacity(<span class="number">32</span>);
 
-    <span class="kw">let</span> <span class="ident">file</span> <span class="op">=</span> <span class="ident">File::open</span>(<span class="string">&quot;/proc/cpuinfo&quot;</span>)
-        .<span class="kw">await</span>
-        .<span class="ident">error</span>(<span class="string">&quot;failed to read /proc/cpuinfo&quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">file</span> <span class="op">=</span> <span class="ident">BufReader::new</span>(<span class="ident">file</span>);
+    <span class="kw">let </span>file = File::open(<span class="string">&quot;/proc/cpuinfo&quot;</span>)
+        .<span class="kw">await
+        </span>.error(<span class="string">&quot;failed to read /proc/cpuinfo&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>file = BufReader::new(file);
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">line</span> <span class="op">=</span> <span class="ident">String::new</span>();
-    <span class="kw">while</span> <span class="ident">file</span>
-        .<span class="ident">read_line</span>(<span class="kw-2">&amp;mut</span> <span class="ident">line</span>)
-        .<span class="kw">await</span>
-        .<span class="ident">error</span>(<span class="string">&quot;failed to read /proc/cpuinfo&quot;</span>)<span class="question-mark">?</span>
-        <span class="op">!</span><span class="op">=</span> <span class="number">0</span>
-    {
-        <span class="kw">if</span> <span class="ident">line</span>.<span class="ident">starts_with</span>(<span class="string">&quot;cpu MHz&quot;</span>) {
-            <span class="kw">let</span> <span class="ident">slice</span> <span class="op">=</span> <span class="ident">line</span>
-                .<span class="ident">trim_end</span>()
-                .<span class="ident">trim_start_matches</span>(<span class="op">|</span><span class="ident">c</span>: <span class="ident">char</span><span class="op">|</span> <span class="op">!</span><span class="ident">c</span>.<span class="ident">is_ascii_digit</span>());
-            <span class="ident">freqs</span>.<span class="ident">push</span>(<span class="ident">f64::from_str</span>(<span class="ident">slice</span>).<span class="ident">error</span>(<span class="string">&quot;failed to parse /proc/cpuinfo&quot;</span>)<span class="question-mark">?</span> <span class="op">*</span> <span class="number">1e6</span>);
+    <span class="kw">let </span><span class="kw-2">mut </span>line = String::new();
+    <span class="kw">while </span>file
+        .read_line(<span class="kw-2">&amp;mut </span>line)
+        .<span class="kw">await
+        </span>.error(<span class="string">&quot;failed to read /proc/cpuinfo&quot;</span>)<span class="question-mark">?
+        </span>!= <span class="number">0
+    </span>{
+        <span class="kw">if </span>line.starts_with(<span class="string">&quot;cpu MHz&quot;</span>) {
+            <span class="kw">let </span>slice = line
+                .trim_end()
+                .trim_start_matches(|c: char| !c.is_ascii_digit());
+            freqs.push(f64::from_str(slice).error(<span class="string">&quot;failed to parse /proc/cpuinfo&quot;</span>)<span class="question-mark">? </span>* <span class="number">1e6</span>);
         }
-        <span class="ident">line</span>.<span class="ident">clear</span>();
+        line.clear();
     }
 
-    <span class="prelude-val">Ok</span>(<span class="ident">freqs</span>)
+    <span class="prelude-val">Ok</span>(freqs)
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
-<span class="kw">struct</span> <span class="ident">CpuTime</span> {
-    <span class="ident">idle</span>: <span class="ident">u64</span>,
-    <span class="ident">non_idle</span>: <span class="ident">u64</span>,
+<span class="attribute">#[derive(Debug, Clone, Copy)]
+</span><span class="kw">struct </span>CpuTime {
+    idle: u64,
+    non_idle: u64,
 }
 
-<span class="kw">impl</span> <span class="ident">CpuTime</span> {
-    <span class="kw">fn</span> <span class="ident">from_str</span>(<span class="ident">s</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">s</span> <span class="op">=</span> <span class="ident">s</span>.<span class="ident">trim</span>().<span class="ident">split_ascii_whitespace</span>();
-        <span class="kw">let</span> <span class="ident">user</span> <span class="op">=</span> <span class="ident">u64::from_str</span>(<span class="ident">s</span>.<span class="ident">next</span>()<span class="question-mark">?</span>).<span class="ident">ok</span>()<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">nice</span> <span class="op">=</span> <span class="ident">u64::from_str</span>(<span class="ident">s</span>.<span class="ident">next</span>()<span class="question-mark">?</span>).<span class="ident">ok</span>()<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">system</span> <span class="op">=</span> <span class="ident">u64::from_str</span>(<span class="ident">s</span>.<span class="ident">next</span>()<span class="question-mark">?</span>).<span class="ident">ok</span>()<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">idle</span> <span class="op">=</span> <span class="ident">u64::from_str</span>(<span class="ident">s</span>.<span class="ident">next</span>()<span class="question-mark">?</span>).<span class="ident">ok</span>()<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">iowait</span> <span class="op">=</span> <span class="ident">u64::from_str</span>(<span class="ident">s</span>.<span class="ident">next</span>()<span class="question-mark">?</span>).<span class="ident">ok</span>()<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">irq</span> <span class="op">=</span> <span class="ident">u64::from_str</span>(<span class="ident">s</span>.<span class="ident">next</span>()<span class="question-mark">?</span>).<span class="ident">ok</span>()<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">softirq</span> <span class="op">=</span> <span class="ident">u64::from_str</span>(<span class="ident">s</span>.<span class="ident">next</span>()<span class="question-mark">?</span>).<span class="ident">ok</span>()<span class="question-mark">?</span>;
+<span class="kw">impl </span>CpuTime {
+    <span class="kw">fn </span>from_str(s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>&gt; {
+        <span class="kw">let </span><span class="kw-2">mut </span>s = s.trim().split_ascii_whitespace();
+        <span class="kw">let </span>user = u64::from_str(s.next()<span class="question-mark">?</span>).ok()<span class="question-mark">?</span>;
+        <span class="kw">let </span>nice = u64::from_str(s.next()<span class="question-mark">?</span>).ok()<span class="question-mark">?</span>;
+        <span class="kw">let </span>system = u64::from_str(s.next()<span class="question-mark">?</span>).ok()<span class="question-mark">?</span>;
+        <span class="kw">let </span>idle = u64::from_str(s.next()<span class="question-mark">?</span>).ok()<span class="question-mark">?</span>;
+        <span class="kw">let </span>iowait = u64::from_str(s.next()<span class="question-mark">?</span>).ok()<span class="question-mark">?</span>;
+        <span class="kw">let </span>irq = u64::from_str(s.next()<span class="question-mark">?</span>).ok()<span class="question-mark">?</span>;
+        <span class="kw">let </span>softirq = u64::from_str(s.next()<span class="question-mark">?</span>).ok()<span class="question-mark">?</span>;
 
-        <span class="prelude-val">Some</span>(<span class="self">Self</span> {
-            <span class="ident">idle</span>: <span class="ident">idle</span> <span class="op">+</span> <span class="ident">iowait</span>,
-            <span class="ident">non_idle</span>: <span class="ident">user</span> <span class="op">+</span> <span class="ident">nice</span> <span class="op">+</span> <span class="ident">system</span> <span class="op">+</span> <span class="ident">irq</span> <span class="op">+</span> <span class="ident">softirq</span>,
+        <span class="prelude-val">Some</span>(<span class="self">Self </span>{
+            idle: idle + iowait,
+            non_idle: user + nice + system + irq + softirq,
         })
     }
 
-    <span class="kw">fn</span> <span class="ident">utilization</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">old</span>: <span class="self">Self</span>) -&gt; <span class="ident">f64</span> {
-        <span class="kw">let</span> <span class="ident">elapsed</span> <span class="op">=</span> (<span class="self">self</span>.<span class="ident">idle</span> <span class="op">+</span> <span class="self">self</span>.<span class="ident">non_idle</span>) <span class="kw">as</span> <span class="ident">f64</span> <span class="op">-</span> (<span class="ident">old</span>.<span class="ident">idle</span> <span class="op">+</span> <span class="ident">old</span>.<span class="ident">non_idle</span>) <span class="kw">as</span> <span class="ident">f64</span>;
-        ((<span class="self">self</span>.<span class="ident">non_idle</span> <span class="op">-</span> <span class="ident">old</span>.<span class="ident">non_idle</span>) <span class="kw">as</span> <span class="ident">f64</span> <span class="op">/</span> <span class="ident">elapsed</span>).<span class="ident">clamp</span>(<span class="number">0.</span>, <span class="number">1.</span>)
+    <span class="kw">fn </span>utilization(<span class="kw-2">&amp;</span><span class="self">self</span>, old: <span class="self">Self</span>) -&gt; f64 {
+        <span class="kw">let </span>elapsed = (<span class="self">self</span>.idle + <span class="self">self</span>.non_idle) <span class="kw">as </span>f64 - (old.idle + old.non_idle) <span class="kw">as </span>f64;
+        ((<span class="self">self</span>.non_idle - old.non_idle) <span class="kw">as </span>f64 / elapsed).clamp(<span class="number">0.</span>, <span class="number">1.</span>)
     }
 }
 
-<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">read_proc_stat</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">CpuTime</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">CpuTime</span><span class="op">&gt;</span>)<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">utilizations</span> <span class="op">=</span> <span class="ident">Vec::with_capacity</span>(<span class="number">32</span>);
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">total</span> <span class="op">=</span> <span class="prelude-val">None</span>;
+<span class="kw">async fn </span>read_proc_stat() -&gt; <span class="prelude-ty">Result</span>&lt;(CpuTime, Vec&lt;CpuTime&gt;)&gt; {
+    <span class="kw">let </span><span class="kw-2">mut </span>utilizations = Vec::with_capacity(<span class="number">32</span>);
+    <span class="kw">let </span><span class="kw-2">mut </span>total = <span class="prelude-val">None</span>;
 
-    <span class="kw">let</span> <span class="ident">file</span> <span class="op">=</span> <span class="ident">File::open</span>(<span class="string">&quot;/proc/stat&quot;</span>)
-        .<span class="kw">await</span>
-        .<span class="ident">error</span>(<span class="string">&quot;failed to read /proc/stat&quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">file</span> <span class="op">=</span> <span class="ident">BufReader::new</span>(<span class="ident">file</span>);
+    <span class="kw">let </span>file = File::open(<span class="string">&quot;/proc/stat&quot;</span>)
+        .<span class="kw">await
+        </span>.error(<span class="string">&quot;failed to read /proc/stat&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>file = BufReader::new(file);
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">line</span> <span class="op">=</span> <span class="ident">String::new</span>();
-    <span class="kw">while</span> <span class="ident">file</span>
-        .<span class="ident">read_line</span>(<span class="kw-2">&amp;mut</span> <span class="ident">line</span>)
-        .<span class="kw">await</span>
-        .<span class="ident">error</span>(<span class="string">&quot;failed to read /proc/sta&quot;</span>)<span class="question-mark">?</span>
-        <span class="op">!</span><span class="op">=</span> <span class="number">0</span>
-    {
-        <span class="comment">// Total time</span>
-        <span class="kw">let</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">line</span>.<span class="ident">trim_start_matches</span>(<span class="op">|</span><span class="ident">c</span>: <span class="ident">char</span><span class="op">|</span> <span class="op">!</span><span class="ident">c</span>.<span class="ident">is_ascii_whitespace</span>());
-        <span class="kw">if</span> <span class="ident">line</span>.<span class="ident">starts_with</span>(<span class="string">&quot;cpu &quot;</span>) {
-            <span class="ident">total</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">CpuTime::from_str</span>(<span class="ident">data</span>).<span class="ident">error</span>(<span class="string">&quot;failed to parse /proc/stat&quot;</span>)<span class="question-mark">?</span>);
-        } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">line</span>.<span class="ident">starts_with</span>(<span class="string">&quot;cpu&quot;</span>) {
-            <span class="ident">utilizations</span>.<span class="ident">push</span>(<span class="ident">CpuTime::from_str</span>(<span class="ident">data</span>).<span class="ident">error</span>(<span class="string">&quot;failed to parse /proc/stat&quot;</span>)<span class="question-mark">?</span>);
+    <span class="kw">let </span><span class="kw-2">mut </span>line = String::new();
+    <span class="kw">while </span>file
+        .read_line(<span class="kw-2">&amp;mut </span>line)
+        .<span class="kw">await
+        </span>.error(<span class="string">&quot;failed to read /proc/sta&quot;</span>)<span class="question-mark">?
+        </span>!= <span class="number">0
+    </span>{
+        <span class="comment">// Total time
+        </span><span class="kw">let </span>data = line.trim_start_matches(|c: char| !c.is_ascii_whitespace());
+        <span class="kw">if </span>line.starts_with(<span class="string">&quot;cpu &quot;</span>) {
+            total = <span class="prelude-val">Some</span>(CpuTime::from_str(data).error(<span class="string">&quot;failed to parse /proc/stat&quot;</span>)<span class="question-mark">?</span>);
+        } <span class="kw">else if </span>line.starts_with(<span class="string">&quot;cpu&quot;</span>) {
+            utilizations.push(CpuTime::from_str(data).error(<span class="string">&quot;failed to parse /proc/stat&quot;</span>)<span class="question-mark">?</span>);
         }
-        <span class="ident">line</span>.<span class="ident">clear</span>();
+        line.clear();
     }
 
-    <span class="prelude-val">Ok</span>((<span class="ident">total</span>.<span class="ident">error</span>(<span class="string">&quot;failed to parse /proc/stat&quot;</span>)<span class="question-mark">?</span>, <span class="ident">utilizations</span>))
+    <span class="prelude-val">Ok</span>((total.error(<span class="string">&quot;failed to parse /proc/stat&quot;</span>)<span class="question-mark">?</span>, utilizations))
 }
 
-<span class="doccomment">/// Read the cpu turbo boost status from kernel sys interface</span>
-<span class="doccomment">/// or intel pstate interface</span>
-<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">boost_status</span>() -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> {
-    <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">boost</span>) <span class="op">=</span> <span class="ident">read_file</span>(<span class="ident">CPU_BOOST_PATH</span>).<span class="kw">await</span> {
-        <span class="prelude-val">Some</span>(<span class="ident">boost</span>.<span class="ident">starts_with</span>(<span class="string">&#39;1&#39;</span>))
-    } <span class="kw">else</span> <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">no_turbo</span>) <span class="op">=</span> <span class="ident">read_file</span>(<span class="ident">CPU_NO_TURBO_PATH</span>).<span class="kw">await</span> {
-        <span class="prelude-val">Some</span>(<span class="ident">no_turbo</span>.<span class="ident">starts_with</span>(<span class="string">&#39;0&#39;</span>))
-    } <span class="kw">else</span> {
-        <span class="prelude-val">None</span>
-    }
+<span class="doccomment">/// Read the cpu turbo boost status from kernel sys interface
+/// or intel pstate interface
+</span><span class="kw">async fn </span>boost_status() -&gt; <span class="prelude-ty">Option</span>&lt;bool&gt; {
+    <span class="kw">if let </span><span class="prelude-val">Ok</span>(boost) = read_file(CPU_BOOST_PATH).<span class="kw">await </span>{
+        <span class="prelude-val">Some</span>(boost.starts_with(<span class="string">&#39;1&#39;</span>))
+    } <span class="kw">else if let </span><span class="prelude-val">Ok</span>(no_turbo) = read_file(CPU_NO_TURBO_PATH).<span class="kw">await </span>{
+        <span class="prelude-val">Some</span>(no_turbo.starts_with(<span class="string">&#39;0&#39;</span>))
+    } <span class="kw">else </span>{
+        <span class="prelude-val">None
+    </span>}
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/net.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>net.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/net.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>net.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -198,171 +198,171 @@
 <span id="198">198</span>
 <span id="199">199</span>
 <span id="200">200</span>
-</pre><pre class="rust"><code><span class="doccomment">//! Network information</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! This block uses `sysfs` and `netlink` and thus does not require any external dependencies.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Configuration</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Key | Values | Default</span>
-<span class="doccomment">//! ----|--------|--------</span>
-<span class="doccomment">//! `device` | Network interface to monitor (as specified in `/sys/class/net/`). Supports regex. | If not set, device will be automatically selected every `interval`</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon ^icon_net_down $speed_down.eng(3,B,K) ^icon_net_up $speed_up.eng(3,B,K) &quot;`</span>
-<span class="doccomment">//! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`</span>
-<span class="doccomment">//! `interval` | Update interval in seconds | `2`</span>
-<span class="doccomment">//! `missing_format` | Same as `format` if the interface cannot be connected (or missing). | `&quot; × &quot;`</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Placeholder       | Value                       | Type   | Unit</span>
-<span class="doccomment">//! ------------------|-----------------------------|--------|---------------</span>
-<span class="doccomment">//! `icon`            | Icon based on device&#39;s type | Icon   | -</span>
-<span class="doccomment">//! `speed_down`      | Download speed              | Number | Bytes per second</span>
-<span class="doccomment">//! `speed_up`        | Upload speed                | Number | Bytes per second</span>
-<span class="doccomment">//! `graph_down`      | Download speed graph        | Text   | -</span>
-<span class="doccomment">//! `graph_up`        | Upload speed graph          | Text   | -</span>
-<span class="doccomment">//! `device`          | The name of device          | Text   | -</span>
-<span class="doccomment">//! `ssid`            | Netfork SSID (WiFi only)    | Text   | -</span>
-<span class="doccomment">//! `frequency`       | WiFi frequency              | Number | Hz</span>
-<span class="doccomment">//! `signal_strength` | WiFi signal                 | Number | %</span>
-<span class="doccomment">//! `bitrate`         | WiFi connection bitrate     | Number | Bits per second</span>
-<span class="doccomment">//! `ip`              | IPv4 address of the iface   | Text   | -</span>
-<span class="doccomment">//! `ipv6`            | IPv6 address of the iface   | Text   | -</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Example</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Display WiFi info if available</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;net&quot;</span>
-<span class="doccomment">//! format = &quot; $icon {$signal_strength $ssid $frequency|Wired connection} via $device &quot;</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Display exact device</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;net&quot;</span>
-<span class="doccomment">//! device = &quot;^wlo0$&quot;</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Icons Used</span>
-<span class="doccomment">//! - `net_loopback`</span>
-<span class="doccomment">//! - `net_vpn`</span>
-<span class="doccomment">//! - `net_wired`</span>
-<span class="doccomment">//! - `net_wireless`</span>
-<span class="doccomment">//! - `net_up`</span>
-<span class="doccomment">//! - `net_down`</span>
+</pre><pre class="rust"><code><span class="doccomment">//! Network information
+//!
+//! This block uses `sysfs` and `netlink` and thus does not require any external dependencies.
+//!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `device` | Network interface to monitor (as specified in `/sys/class/net/`). Supports regex. | If not set, device will be automatically selected every `interval`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon ^icon_net_down $speed_down.eng(3,B,K) ^icon_net_up $speed_up.eng(3,B,K) &quot;`
+//! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
+//! `interval` | Update interval in seconds | `2`
+//! `missing_format` | Same as `format` if the interface cannot be connected (or missing). | `&quot; × &quot;`
+//!
+//! Placeholder       | Value                       | Type   | Unit
+//! ------------------|-----------------------------|--------|---------------
+//! `icon`            | Icon based on device&#39;s type | Icon   | -
+//! `speed_down`      | Download speed              | Number | Bytes per second
+//! `speed_up`        | Upload speed                | Number | Bytes per second
+//! `graph_down`      | Download speed graph        | Text   | -
+//! `graph_up`        | Upload speed graph          | Text   | -
+//! `device`          | The name of device          | Text   | -
+//! `ssid`            | Netfork SSID (WiFi only)    | Text   | -
+//! `frequency`       | WiFi frequency              | Number | Hz
+//! `signal_strength` | WiFi signal                 | Number | %
+//! `bitrate`         | WiFi connection bitrate     | Number | Bits per second
+//! `ip`              | IPv4 address of the iface   | Text   | -
+//! `ipv6`            | IPv6 address of the iface   | Text   | -
+//!
+//! # Example
+//!
+//! Display WiFi info if available
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;net&quot;
+//! format = &quot; $icon {$signal_strength $ssid $frequency|Wired connection} via $device &quot;
+//! ```
+//!
+//! Display exact device
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;net&quot;
+//! device = &quot;^wlo0$&quot;
+//! ```
+//!
+//! # Icons Used
+//! - `net_loopback`
+//! - `net_vpn`
+//! - `net_wired`
+//! - `net_wireless`
+//! - `net_up`
+//! - `net_down`
 
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::netlink::NetDevice</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::util</span>;
-<span class="kw">use</span> <span class="ident">regex::Regex</span>;
-<span class="kw">use</span> <span class="ident">std::time::Instant</span>;
+</span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span><span class="kw">crate</span>::netlink::NetDevice;
+<span class="kw">use </span><span class="kw">crate</span>::util;
+<span class="kw">use </span>regex::Regex;
+<span class="kw">use </span>std::time::Instant;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
-<span class="kw">struct</span> <span class="ident">NetConfig</span> {
-    <span class="ident">device</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
-    <span class="ident">format_alt</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">FormatConfig</span><span class="op">&gt;</span>,
-    <span class="ident">missing_format</span>: <span class="ident">FormatConfig</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">2</span>.<span class="ident">into</span>())]</span>
-    <span class="ident">interval</span>: <span class="ident">Seconds</span>,
+<span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
+#[serde(deny_unknown_fields, default)]
+</span><span class="kw">struct </span>NetConfig {
+    device: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    format: FormatConfig,
+    format_alt: <span class="prelude-ty">Option</span>&lt;FormatConfig&gt;,
+    missing_format: FormatConfig,
+    <span class="attribute">#[default(<span class="number">2</span>.into())]
+    </span>interval: Seconds,
 }
 
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">NetConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
+<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span>config = NetConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">format</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(
+    <span class="kw">let </span><span class="kw-2">mut </span>format = config.format.with_default(
         <span class="string">&quot; $icon ^icon_net_down $speed_down.eng(3,B,K) ^icon_net_up $speed_up.eng(3,B,K) &quot;</span>,
     )<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">missing_format</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">missing_format</span>.<span class="ident">with_default</span>(<span class="string">&quot; × &quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">format_alt</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">format_alt</span> {
-        <span class="prelude-val">Some</span>(<span class="ident">f</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">f</span>.<span class="ident">with_default</span>(<span class="string">&quot;&quot;</span>)<span class="question-mark">?</span>),
-        <span class="prelude-val">None</span> =&gt; <span class="prelude-val">None</span>,
+    <span class="kw">let </span>missing_format = config.missing_format.with_default(<span class="string">&quot; × &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>format_alt = <span class="kw">match </span>config.format_alt {
+        <span class="prelude-val">Some</span>(f) =&gt; <span class="prelude-val">Some</span>(f.with_default(<span class="string">&quot;&quot;</span>)<span class="question-mark">?</span>),
+        <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
     };
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">Widget::new</span>().<span class="ident">with_format</span>(<span class="ident">format</span>.<span class="ident">clone</span>());
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">timer</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">interval</span>.<span class="ident">timer</span>();
+    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
+    <span class="kw">let </span><span class="kw-2">mut </span>timer = config.interval.timer();
 
-    <span class="kw">let</span> <span class="ident">device_re</span> <span class="op">=</span> <span class="ident">config</span>
-        .<span class="ident">device</span>
-        .<span class="ident">as_deref</span>()
-        .<span class="ident">map</span>(<span class="ident">Regex::new</span>)
-        .<span class="ident">transpose</span>()
-        .<span class="ident">error</span>(<span class="string">&quot;Failed to parse device regex&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>device_re = config
+        .device
+        .as_deref()
+        .map(Regex::new)
+        .transpose()
+        .error(<span class="string">&quot;Failed to parse device regex&quot;</span>)<span class="question-mark">?</span>;
 
-    <span class="comment">// Stats</span>
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">stats</span> <span class="op">=</span> <span class="prelude-val">None</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">stats_timer</span> <span class="op">=</span> <span class="ident">Instant::now</span>();
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">tx_hist</span> <span class="op">=</span> [<span class="number">0f64</span>; <span class="number">8</span>];
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rx_hist</span> <span class="op">=</span> [<span class="number">0f64</span>; <span class="number">8</span>];
+    <span class="comment">// Stats
+    </span><span class="kw">let </span><span class="kw-2">mut </span>stats = <span class="prelude-val">None</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>stats_timer = Instant::now();
+    <span class="kw">let </span><span class="kw-2">mut </span>tx_hist = [<span class="number">0f64</span>; <span class="number">8</span>];
+    <span class="kw">let </span><span class="kw-2">mut </span>rx_hist = [<span class="number">0f64</span>; <span class="number">8</span>];
 
-    <span class="kw">loop</span> {
-        <span class="kw">match</span> <span class="ident">NetDevice::new</span>(<span class="ident">device_re</span>.<span class="ident">as_ref</span>()).<span class="kw">await</span><span class="question-mark">?</span> {
-            <span class="prelude-val">None</span> =&gt; {
-                <span class="ident">widget</span>.<span class="ident">set_format</span>(<span class="ident">missing_format</span>.<span class="ident">clone</span>());
-                <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">default</span>());
-                <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">loop </span>{
+        <span class="kw">match </span>NetDevice::new(device_re.as_ref()).<span class="kw">await</span><span class="question-mark">? </span>{
+            <span class="prelude-val">None </span>=&gt; {
+                widget.set_format(missing_format.clone());
+                widget.set_values(default());
+                api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
             }
-            <span class="prelude-val">Some</span>(<span class="ident">device</span>) <span class="kw">if</span> <span class="op">!</span><span class="ident">device</span>.<span class="ident">is_up</span>() =&gt; {
-                <span class="ident">widget</span>.<span class="ident">set_format</span>(<span class="ident">missing_format</span>.<span class="ident">clone</span>());
-                <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">default</span>());
-                <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+            <span class="prelude-val">Some</span>(device) <span class="kw">if </span>!device.is_up() =&gt; {
+                widget.set_format(missing_format.clone());
+                widget.set_values(default());
+                api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
             }
-            <span class="prelude-val">Some</span>(<span class="ident">device</span>) =&gt; {
-                <span class="ident">widget</span>.<span class="ident">set_format</span>(<span class="ident">format</span>.<span class="ident">clone</span>());
+            <span class="prelude-val">Some</span>(device) =&gt; {
+                widget.set_format(format.clone());
 
-                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">speed_down</span>: <span class="ident">f64</span> <span class="op">=</span> <span class="number">0.0</span>;
-                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">speed_up</span>: <span class="ident">f64</span> <span class="op">=</span> <span class="number">0.0</span>;
+                <span class="kw">let </span><span class="kw-2">mut </span>speed_down: f64 = <span class="number">0.0</span>;
+                <span class="kw">let </span><span class="kw-2">mut </span>speed_up: f64 = <span class="number">0.0</span>;
 
-                <span class="comment">// Calculate speed</span>
-                <span class="kw">match</span> (<span class="ident">stats</span>, <span class="ident">device</span>.<span class="ident">iface</span>.<span class="ident">stats</span>) {
-                    <span class="comment">// No previous stats available</span>
-                    (<span class="prelude-val">None</span>, <span class="ident">new_stats</span>) =&gt; <span class="ident">stats</span> <span class="op">=</span> <span class="ident">new_stats</span>,
-                    <span class="comment">// No new stats available</span>
-                    (<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="prelude-val">None</span>) =&gt; <span class="ident">stats</span> <span class="op">=</span> <span class="prelude-val">None</span>,
-                    <span class="comment">// All stats available</span>
-                    (<span class="prelude-val">Some</span>(<span class="ident">old_stats</span>), <span class="prelude-val">Some</span>(<span class="ident">new_stats</span>)) =&gt; {
-                        <span class="kw">let</span> <span class="ident">diff</span> <span class="op">=</span> <span class="ident">new_stats</span> <span class="op">-</span> <span class="ident">old_stats</span>;
-                        <span class="kw">let</span> <span class="ident">elapsed</span> <span class="op">=</span> <span class="ident">stats_timer</span>.<span class="ident">elapsed</span>().<span class="ident">as_secs_f64</span>();
-                        <span class="ident">stats_timer</span> <span class="op">=</span> <span class="ident">Instant::now</span>();
-                        <span class="ident">speed_down</span> <span class="op">=</span> <span class="ident">diff</span>.<span class="ident">rx_bytes</span> <span class="kw">as</span> <span class="ident">f64</span> <span class="op">/</span> <span class="ident">elapsed</span>;
-                        <span class="ident">speed_up</span> <span class="op">=</span> <span class="ident">diff</span>.<span class="ident">tx_bytes</span> <span class="kw">as</span> <span class="ident">f64</span> <span class="op">/</span> <span class="ident">elapsed</span>;
-                        <span class="ident">stats</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">new_stats</span>);
+                <span class="comment">// Calculate speed
+                </span><span class="kw">match </span>(stats, device.iface.stats) {
+                    <span class="comment">// No previous stats available
+                    </span>(<span class="prelude-val">None</span>, new_stats) =&gt; stats = new_stats,
+                    <span class="comment">// No new stats available
+                    </span>(<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="prelude-val">None</span>) =&gt; stats = <span class="prelude-val">None</span>,
+                    <span class="comment">// All stats available
+                    </span>(<span class="prelude-val">Some</span>(old_stats), <span class="prelude-val">Some</span>(new_stats)) =&gt; {
+                        <span class="kw">let </span>diff = new_stats - old_stats;
+                        <span class="kw">let </span>elapsed = stats_timer.elapsed().as_secs_f64();
+                        stats_timer = Instant::now();
+                        speed_down = diff.rx_bytes <span class="kw">as </span>f64 / elapsed;
+                        speed_up = diff.tx_bytes <span class="kw">as </span>f64 / elapsed;
+                        stats = <span class="prelude-val">Some</span>(new_stats);
                     }
                 }
-                <span class="ident">push_to_hist</span>(<span class="kw-2">&amp;mut</span> <span class="ident">rx_hist</span>, <span class="ident">speed_down</span>);
-                <span class="ident">push_to_hist</span>(<span class="kw-2">&amp;mut</span> <span class="ident">tx_hist</span>, <span class="ident">speed_up</span>);
+                push_to_hist(<span class="kw-2">&amp;mut </span>rx_hist, speed_down);
+                push_to_hist(<span class="kw-2">&amp;mut </span>tx_hist, speed_up);
 
-                <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span> {
-                    <span class="string">&quot;icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="ident">device</span>.<span class="ident">icon</span>)<span class="question-mark">?</span>),
-                    <span class="string">&quot;speed_down&quot;</span> =&gt; <span class="ident">Value::bytes</span>(<span class="ident">speed_down</span>),
-                    <span class="string">&quot;speed_up&quot;</span> =&gt; <span class="ident">Value::bytes</span>(<span class="ident">speed_up</span>),
-                    <span class="string">&quot;graph_down&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">util::format_bar_graph</span>(<span class="kw-2">&amp;</span><span class="ident">rx_hist</span>)),
-                    <span class="string">&quot;graph_up&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">util::format_bar_graph</span>(<span class="kw-2">&amp;</span><span class="ident">tx_hist</span>)),
-                    [<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">v</span>) <span class="op">=</span> <span class="ident">device</span>.<span class="ident">ip</span>] <span class="string">&quot;ip&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">v</span>.<span class="ident">to_string</span>()),
-                    [<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">v</span>) <span class="op">=</span> <span class="ident">device</span>.<span class="ident">ipv6</span>] <span class="string">&quot;ipv6&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">v</span>.<span class="ident">to_string</span>()),
-                    [<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">v</span>) <span class="op">=</span> <span class="ident">device</span>.<span class="ident">ssid</span>()] <span class="string">&quot;ssid&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">v</span>),
-                    [<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">v</span>) <span class="op">=</span> <span class="ident">device</span>.<span class="ident">frequency</span>()] <span class="string">&quot;frequency&quot;</span> =&gt; <span class="ident">Value::hertz</span>(<span class="ident">v</span>),
-                    [<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">v</span>) <span class="op">=</span> <span class="ident">device</span>.<span class="ident">bitrate</span>()] <span class="string">&quot;bitrate&quot;</span> =&gt; <span class="ident">Value::bits</span>(<span class="ident">v</span>),
-                    [<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">v</span>) <span class="op">=</span> <span class="ident">device</span>.<span class="ident">signal</span>()] <span class="string">&quot;signal_strength&quot;</span> =&gt; <span class="ident">Value::percents</span>(<span class="ident">v</span>),
-                    <span class="string">&quot;device&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">device</span>.<span class="ident">iface</span>.<span class="ident">name</span>),
+                widget.set_values(<span class="macro">map! </span>{
+                    <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(device.icon)<span class="question-mark">?</span>),
+                    <span class="string">&quot;speed_down&quot; </span>=&gt; Value::bytes(speed_down),
+                    <span class="string">&quot;speed_up&quot; </span>=&gt; Value::bytes(speed_up),
+                    <span class="string">&quot;graph_down&quot; </span>=&gt; Value::text(util::format_bar_graph(<span class="kw-2">&amp;</span>rx_hist)),
+                    <span class="string">&quot;graph_up&quot; </span>=&gt; Value::text(util::format_bar_graph(<span class="kw-2">&amp;</span>tx_hist)),
+                    [<span class="kw">if let </span><span class="prelude-val">Some</span>(v) = device.ip] <span class="string">&quot;ip&quot; </span>=&gt; Value::text(v.to_string()),
+                    [<span class="kw">if let </span><span class="prelude-val">Some</span>(v) = device.ipv6] <span class="string">&quot;ipv6&quot; </span>=&gt; Value::text(v.to_string()),
+                    [<span class="kw">if let </span><span class="prelude-val">Some</span>(v) = device.ssid()] <span class="string">&quot;ssid&quot; </span>=&gt; Value::text(v),
+                    [<span class="kw">if let </span><span class="prelude-val">Some</span>(v) = device.frequency()] <span class="string">&quot;frequency&quot; </span>=&gt; Value::hertz(v),
+                    [<span class="kw">if let </span><span class="prelude-val">Some</span>(v) = device.bitrate()] <span class="string">&quot;bitrate&quot; </span>=&gt; Value::bits(v),
+                    [<span class="kw">if let </span><span class="prelude-val">Some</span>(v) = device.signal()] <span class="string">&quot;signal_strength&quot; </span>=&gt; Value::percents(v),
+                    <span class="string">&quot;device&quot; </span>=&gt; Value::text(device.iface.name),
                 });
 
-                <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+                api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
             }
         }
 
-        <span class="kw">loop</span> {
-            <span class="macro">select!</span> {
-                <span class="kw">_</span> <span class="op">=</span> <span class="ident">timer</span>.<span class="ident">tick</span>() =&gt; <span class="kw">break</span>,
-                <span class="ident">event</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; <span class="kw">match</span> <span class="ident">event</span> {
-                    <span class="ident">UpdateRequest</span> =&gt; <span class="kw">break</span>,
-                    <span class="ident">Click</span>(<span class="ident">click</span>) =&gt; {
-                        <span class="kw">if</span> <span class="ident">click</span>.<span class="ident">button</span> <span class="op">==</span> <span class="ident">MouseButton::Left</span> {
-                            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">format_alt</span>) <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="ident">format_alt</span> {
-                                <span class="ident">std::mem::swap</span>(<span class="ident">format_alt</span>, <span class="kw-2">&amp;mut</span> <span class="ident">format</span>);
+        <span class="kw">loop </span>{
+            <span class="macro">select! </span>{
+                <span class="kw">_ </span>= timer.tick() =&gt; <span class="kw">break</span>,
+                event = api.event() =&gt; <span class="kw">match </span>event {
+                    UpdateRequest =&gt; <span class="kw">break</span>,
+                    Click(click) =&gt; {
+                        <span class="kw">if </span>click.button == MouseButton::Left {
+                            <span class="kw">if let </span><span class="prelude-val">Some</span>(format_alt) = <span class="kw-2">&amp;mut </span>format_alt {
+                                std::mem::swap(format_alt, <span class="kw-2">&amp;mut </span>format);
                                 <span class="kw">break</span>;
                             }
                         }
@@ -373,30 +373,30 @@
     }
 }
 
-<span class="kw">fn</span> <span class="ident">push_to_hist</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">hist</span>: <span class="kw-2">&amp;mut</span> [<span class="ident">T</span>], <span class="ident">elem</span>: <span class="ident">T</span>) {
-    <span class="ident">hist</span>[<span class="number">0</span>] <span class="op">=</span> <span class="ident">elem</span>;
-    <span class="ident">hist</span>.<span class="ident">rotate_left</span>(<span class="number">1</span>);
+<span class="kw">fn </span>push_to_hist&lt;T&gt;(hist: <span class="kw-2">&amp;mut </span>[T], elem: T) {
+    hist[<span class="number">0</span>] = elem;
+    hist.rotate_left(<span class="number">1</span>);
 }
 
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-<span class="kw">mod</span> <span class="ident">tests</span> {
-    <span class="kw">use</span> <span class="ident"><span class="kw">super</span>::push_to_hist</span>;
+<span class="attribute">#[cfg(test)]
+</span><span class="kw">mod </span>tests {
+    <span class="kw">use </span><span class="kw">super</span>::push_to_hist;
 
-    <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">test_push_to_hist</span>() {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">hist</span> <span class="op">=</span> [<span class="number">0</span>; <span class="number">4</span>];
-        <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span><span class="ident">hist</span>, <span class="kw-2">&amp;</span>[<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>]);
-        <span class="ident">push_to_hist</span>(<span class="kw-2">&amp;mut</span> <span class="ident">hist</span>, <span class="number">1</span>);
-        <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span><span class="ident">hist</span>, <span class="kw-2">&amp;</span>[<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>]);
-        <span class="ident">push_to_hist</span>(<span class="kw-2">&amp;mut</span> <span class="ident">hist</span>, <span class="number">3</span>);
-        <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span><span class="ident">hist</span>, <span class="kw-2">&amp;</span>[<span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">3</span>]);
-        <span class="ident">push_to_hist</span>(<span class="kw-2">&amp;mut</span> <span class="ident">hist</span>, <span class="number">0</span>);
-        <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span><span class="ident">hist</span>, <span class="kw-2">&amp;</span>[<span class="number">0</span>, <span class="number">1</span>, <span class="number">3</span>, <span class="number">0</span>]);
-        <span class="ident">push_to_hist</span>(<span class="kw-2">&amp;mut</span> <span class="ident">hist</span>, <span class="number">10</span>);
-        <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span><span class="ident">hist</span>, <span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">3</span>, <span class="number">0</span>, <span class="number">10</span>]);
-        <span class="ident">push_to_hist</span>(<span class="kw-2">&amp;mut</span> <span class="ident">hist</span>, <span class="number">2</span>);
-        <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span><span class="ident">hist</span>, <span class="kw-2">&amp;</span>[<span class="number">3</span>, <span class="number">0</span>, <span class="number">10</span>, <span class="number">2</span>]);
+    <span class="attribute">#[test]
+    </span><span class="kw">fn </span>test_push_to_hist() {
+        <span class="kw">let </span><span class="kw-2">mut </span>hist = [<span class="number">0</span>; <span class="number">4</span>];
+        <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>hist, <span class="kw-2">&amp;</span>[<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>]);
+        push_to_hist(<span class="kw-2">&amp;mut </span>hist, <span class="number">1</span>);
+        <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>hist, <span class="kw-2">&amp;</span>[<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>]);
+        push_to_hist(<span class="kw-2">&amp;mut </span>hist, <span class="number">3</span>);
+        <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>hist, <span class="kw-2">&amp;</span>[<span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>, <span class="number">3</span>]);
+        push_to_hist(<span class="kw-2">&amp;mut </span>hist, <span class="number">0</span>);
+        <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>hist, <span class="kw-2">&amp;</span>[<span class="number">0</span>, <span class="number">1</span>, <span class="number">3</span>, <span class="number">0</span>]);
+        push_to_hist(<span class="kw-2">&amp;mut </span>hist, <span class="number">10</span>);
+        <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>hist, <span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">3</span>, <span class="number">0</span>, <span class="number">10</span>]);
+        push_to_hist(<span class="kw-2">&amp;mut </span>hist, <span class="number">2</span>);
+        <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>hist, <span class="kw-2">&amp;</span>[<span class="number">3</span>, <span class="number">0</span>, <span class="number">10</span>, <span class="number">2</span>]);
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

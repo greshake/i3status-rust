@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/docker.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>docker.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/docker.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>docker.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -109,116 +109,116 @@
 <span id="109">109</span>
 <span id="110">110</span>
 <span id="111">111</span>
-</pre><pre class="rust"><code><span class="doccomment">//! Local docker daemon status</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Configuration</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Key | Values | Default</span>
-<span class="doccomment">//! ----|--------|--------</span>
-<span class="doccomment">//! `interval` | Update interval, in seconds. | `5`</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $running.eng(1) &quot;`</span>
-<span class="doccomment">//! `socket_path` | The path to the docker socket. Supports path expansions e.g. `~`. | `&quot;/var/run/docker.sock&quot;`</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Key       | Value                          | Type   | Unit</span>
-<span class="doccomment">//! ----------|--------------------------------|--------|-----</span>
-<span class="doccomment">//! `icon`    | A static icon                  | Icon   | -</span>
-<span class="doccomment">//! `total`   | Total containers on the host   | Number | -</span>
-<span class="doccomment">//! `running` | Containers running on the host | Number | -</span>
-<span class="doccomment">//! `stopped` | Containers stopped on the host | Number | -</span>
-<span class="doccomment">//! `paused`  | Containers paused on the host  | Number | -</span>
-<span class="doccomment">//! `images`  | Total images on the host       | Number | -</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Example</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;docker&quot;</span>
-<span class="doccomment">//! interval = 2</span>
-<span class="doccomment">//! format = &quot; $icon $running/$total &quot;</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Icons Used</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! - `docker`</span>
+</pre><pre class="rust"><code><span class="doccomment">//! Local docker daemon status
+//!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `interval` | Update interval, in seconds. | `5`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $running.eng(1) &quot;`
+//! `socket_path` | The path to the docker socket. Supports path expansions e.g. `~`. | `&quot;/var/run/docker.sock&quot;`
+//!
+//! Key       | Value                          | Type   | Unit
+//! ----------|--------------------------------|--------|-----
+//! `icon`    | A static icon                  | Icon   | -
+//! `total`   | Total containers on the host   | Number | -
+//! `running` | Containers running on the host | Number | -
+//! `stopped` | Containers stopped on the host | Number | -
+//! `paused`  | Containers paused on the host  | Number | -
+//! `images`  | Total images on the host       | Number | -
+//!
+//! # Example
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;docker&quot;
+//! interval = 2
+//! format = &quot; $icon $running/$total &quot;
+//! ```
+//!
+//! # Icons Used
+//!
+//! - `docker`
 
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">std::path::Path</span>;
-<span class="kw">use</span> <span class="ident">tokio::net::UnixStream</span>;
+</span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span>std::path::Path;
+<span class="kw">use </span>tokio::net::UnixStream;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
-<span class="kw">struct</span> <span class="ident">DockerConfig</span> {
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">5</span>.<span class="ident">into</span>())]</span>
-    <span class="ident">interval</span>: <span class="ident">Seconds</span>,
-    <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="string">&quot;/var/run/docker.sock&quot;</span>.<span class="ident">into</span>())]</span>
-    <span class="ident">socket_path</span>: <span class="ident">ShellString</span>,
+<span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
+#[serde(deny_unknown_fields, default)]
+</span><span class="kw">struct </span>DockerConfig {
+    <span class="attribute">#[default(<span class="number">5</span>.into())]
+    </span>interval: Seconds,
+    format: FormatConfig,
+    <span class="attribute">#[default(<span class="string">&quot;/var/run/docker.sock&quot;</span>.into())]
+    </span>socket_path: ShellString,
 }
 
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">DockerConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span>
-        <span class="ident">Widget::new</span>().<span class="ident">with_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon $running.eng(1) &quot;</span>)<span class="question-mark">?</span>);
-    <span class="kw">let</span> <span class="ident">socket_path</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">socket_path</span>.<span class="ident">expand</span>()<span class="question-mark">?</span>;
+<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span>config = DockerConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>widget =
+        Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon $running.eng(1) &quot;</span>)<span class="question-mark">?</span>);
+    <span class="kw">let </span>socket_path = config.socket_path.expand()<span class="question-mark">?</span>;
 
-    <span class="kw">loop</span> {
-        <span class="kw">let</span> <span class="ident">status</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">recoverable</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">Status::new</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">socket_path</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">loop </span>{
+        <span class="kw">let </span>status = api.recoverable(|| Status::new(<span class="kw-2">&amp;*</span>socket_path)).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span> {
-            <span class="string">&quot;icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;docker&quot;</span>)<span class="question-mark">?</span>),
-            <span class="string">&quot;total&quot;</span> =&gt;   <span class="ident">Value::number</span>(<span class="ident">status</span>.<span class="ident">total</span>),
-            <span class="string">&quot;running&quot;</span> =&gt; <span class="ident">Value::number</span>(<span class="ident">status</span>.<span class="ident">running</span>),
-            <span class="string">&quot;paused&quot;</span> =&gt;  <span class="ident">Value::number</span>(<span class="ident">status</span>.<span class="ident">paused</span>),
-            <span class="string">&quot;stopped&quot;</span> =&gt; <span class="ident">Value::number</span>(<span class="ident">status</span>.<span class="ident">stopped</span>),
-            <span class="string">&quot;images&quot;</span> =&gt;  <span class="ident">Value::number</span>(<span class="ident">status</span>.<span class="ident">images</span>),
+        widget.set_values(<span class="macro">map! </span>{
+            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;docker&quot;</span>)<span class="question-mark">?</span>),
+            <span class="string">&quot;total&quot; </span>=&gt;   Value::number(status.total),
+            <span class="string">&quot;running&quot; </span>=&gt; Value::number(status.running),
+            <span class="string">&quot;paused&quot; </span>=&gt;  Value::number(status.paused),
+            <span class="string">&quot;stopped&quot; </span>=&gt; Value::number(status.stopped),
+            <span class="string">&quot;images&quot; </span>=&gt;  Value::number(status.images),
         });
-        <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="macro">select!</span> {
-            <span class="kw">_</span> <span class="op">=</span> <span class="ident">sleep</span>(<span class="ident">config</span>.<span class="ident">interval</span>.<span class="number">0</span>) =&gt; (),
-            <span class="kw">_</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">wait_for_update_request</span>() =&gt; (),
+        <span class="macro">select! </span>{
+            <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt; (),
+            <span class="kw">_ </span>= api.wait_for_update_request() =&gt; (),
         }
     }
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>)]</span>
-<span class="kw">struct</span> <span class="ident">Status</span> {
-    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename</span> <span class="op">=</span> <span class="string">&quot;Containers&quot;</span>)]</span>
-    <span class="ident">total</span>: <span class="ident">i64</span>,
-    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename</span> <span class="op">=</span> <span class="string">&quot;ContainersRunning&quot;</span>)]</span>
-    <span class="ident">running</span>: <span class="ident">i64</span>,
-    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename</span> <span class="op">=</span> <span class="string">&quot;ContainersStopped&quot;</span>)]</span>
-    <span class="ident">stopped</span>: <span class="ident">i64</span>,
-    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename</span> <span class="op">=</span> <span class="string">&quot;ContainersPaused&quot;</span>)]</span>
-    <span class="ident">paused</span>: <span class="ident">i64</span>,
-    <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename</span> <span class="op">=</span> <span class="string">&quot;Images&quot;</span>)]</span>
-    <span class="ident">images</span>: <span class="ident">i64</span>,
+<span class="attribute">#[derive(Deserialize, Debug)]
+</span><span class="kw">struct </span>Status {
+    <span class="attribute">#[serde(rename = <span class="string">&quot;Containers&quot;</span>)]
+    </span>total: i64,
+    <span class="attribute">#[serde(rename = <span class="string">&quot;ContainersRunning&quot;</span>)]
+    </span>running: i64,
+    <span class="attribute">#[serde(rename = <span class="string">&quot;ContainersStopped&quot;</span>)]
+    </span>stopped: i64,
+    <span class="attribute">#[serde(rename = <span class="string">&quot;ContainersPaused&quot;</span>)]
+    </span>paused: i64,
+    <span class="attribute">#[serde(rename = <span class="string">&quot;Images&quot;</span>)]
+    </span>images: i64,
 }
 
-<span class="kw">impl</span> <span class="ident">Status</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">socket_path</span>: <span class="kw">impl</span> <span class="ident">AsRef</span><span class="op">&lt;</span><span class="ident">Path</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">socket</span> <span class="op">=</span> <span class="ident">UnixStream::connect</span>(<span class="ident">socket_path</span>)
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to connect to socket&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> (<span class="kw-2">mut</span> <span class="ident">request_sender</span>, <span class="ident">connection</span>) <span class="op">=</span> <span class="ident">hyper::client::conn::handshake</span>(<span class="ident">socket</span>)
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to create request sender&quot;</span>)<span class="question-mark">?</span>;
-        <span class="ident">tokio::spawn</span>(<span class="ident">connection</span>);
-        <span class="kw">let</span> <span class="ident">request</span> <span class="op">=</span> <span class="ident">hyper::Request::builder</span>()
-            .<span class="ident">header</span>(<span class="string">&quot;Host&quot;</span>, <span class="string">&quot;localhost&quot;</span>)
-            .<span class="ident">uri</span>(<span class="string">&quot;http://api/info&quot;</span>)
-            .<span class="ident">method</span>(<span class="string">&quot;GET&quot;</span>)
-            .<span class="ident">body</span>(<span class="ident">hyper::Body::empty</span>())
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to create request&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">response</span> <span class="op">=</span> <span class="ident">request_sender</span>
-            .<span class="ident">send_request</span>(<span class="ident">request</span>)
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to get response&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">bytes</span> <span class="op">=</span> <span class="ident">hyper::body::to_bytes</span>(<span class="ident">response</span>.<span class="ident">into_body</span>())
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to get response bytes&quot;</span>)<span class="question-mark">?</span>;
-        <span class="ident">serde_json::from_slice</span>::<span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">bytes</span>).<span class="ident">error</span>(<span class="string">&quot;Failed to deserialize JSON&quot;</span>)
+<span class="kw">impl </span>Status {
+    <span class="kw">async fn </span>new(socket_path: <span class="kw">impl </span>AsRef&lt;Path&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
+        <span class="kw">let </span>socket = UnixStream::connect(socket_path)
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to connect to socket&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>(<span class="kw-2">mut </span>request_sender, connection) = hyper::client::conn::handshake(socket)
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to create request sender&quot;</span>)<span class="question-mark">?</span>;
+        tokio::spawn(connection);
+        <span class="kw">let </span>request = hyper::Request::builder()
+            .header(<span class="string">&quot;Host&quot;</span>, <span class="string">&quot;localhost&quot;</span>)
+            .uri(<span class="string">&quot;http://api/info&quot;</span>)
+            .method(<span class="string">&quot;GET&quot;</span>)
+            .body(hyper::Body::empty())
+            .error(<span class="string">&quot;Failed to create request&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>response = request_sender
+            .send_request(request)
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to get response&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>bytes = hyper::body::to_bytes(response.into_body())
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to get response bytes&quot;</span>)<span class="question-mark">?</span>;
+        serde_json::from_slice::&lt;<span class="self">Self</span>&gt;(<span class="kw-2">&amp;</span>bytes).error(<span class="string">&quot;Failed to deserialize JSON&quot;</span>)
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

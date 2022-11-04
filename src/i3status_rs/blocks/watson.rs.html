@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/watson.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>watson.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/watson.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>watson.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -221,136 +221,136 @@
 <span id="221">221</span>
 <span id="222">222</span>
 <span id="223">223</span>
-</pre><pre class="rust"><code><span class="doccomment">//! Watson statistics</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! [Watson](http://tailordev.github.io/Watson/) is a simple CLI time tracking application. This block will show the name of your current active project, tags and optionally recorded time. Clicking the widget will toggle the `show_time` variable dynamically.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Configuration</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Key | Values | Default</span>
-<span class="doccomment">//! ----|--------|--------</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders | `&quot; $text |&quot;`</span>
-<span class="doccomment">//! `show_time` | Whether to show recorded time. | `false`</span>
-<span class="doccomment">//! `state_path` | Path to the Watson state file. Supports path expansions e.g. `~`. | `$XDG_CONFIG_HOME/watson/state`</span>
-<span class="doccomment">//! `interval` | Update interval, in seconds. | `60`</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Placeholder   | Value                   | Type   | Unit</span>
-<span class="doccomment">//! --------------|-------------------------|--------|-----</span>
-<span class="doccomment">//! `text`        | Current activity        | Text   | -</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Example</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;watson&quot;</span>
-<span class="doccomment">//! show_time = true</span>
-<span class="doccomment">//! state_path = &quot;~/.config/watson/state&quot;</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # TODO</span>
-<span class="doccomment">//! - Extend functionality: start / stop watson using this block</span>
+</pre><pre class="rust"><code><span class="doccomment">//! Watson statistics
+//!
+//! [Watson](http://tailordev.github.io/Watson/) is a simple CLI time tracking application. This block will show the name of your current active project, tags and optionally recorded time. Clicking the widget will toggle the `show_time` variable dynamically.
+//!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `format` | A string to customise the output of this block. See below for available placeholders | `&quot; $text |&quot;`
+//! `show_time` | Whether to show recorded time. | `false`
+//! `state_path` | Path to the Watson state file. Supports path expansions e.g. `~`. | `$XDG_CONFIG_HOME/watson/state`
+//! `interval` | Update interval, in seconds. | `60`
+//!
+//! Placeholder   | Value                   | Type   | Unit
+//! --------------|-------------------------|--------|-----
+//! `text`        | Current activity        | Text   | -
+//!
+//! # Example
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;watson&quot;
+//! show_time = true
+//! state_path = &quot;~/.config/watson/state&quot;
+//! ```
+//!
+//! # TODO
+//! - Extend functionality: start / stop watson using this block
 
-<span class="kw">use</span> <span class="ident">chrono</span>::{<span class="ident">offset::Local</span>, <span class="ident">DateTime</span>};
-<span class="kw">use</span> <span class="ident">dirs_next::config_dir</span>;
-<span class="kw">use</span> <span class="ident">inotify</span>::{<span class="ident">Inotify</span>, <span class="ident">WatchMask</span>};
-<span class="kw">use</span> <span class="ident">serde::de::Deserializer</span>;
-<span class="kw">use</span> <span class="ident">std::path::PathBuf</span>;
-<span class="kw">use</span> <span class="ident">tokio::fs::read_to_string</span>;
+</span><span class="kw">use </span>chrono::{offset::Local, DateTime};
+<span class="kw">use </span>dirs_next::config_dir;
+<span class="kw">use </span>inotify::{Inotify, WatchMask};
+<span class="kw">use </span>serde::de::Deserializer;
+<span class="kw">use </span>std::path::PathBuf;
+<span class="kw">use </span>tokio::fs::read_to_string;
 
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
+<span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
-<span class="kw">struct</span> <span class="ident">WatsonConfig</span> {
-    <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
-    <span class="ident">state_path</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ShellString</span><span class="op">&gt;</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">60</span>.<span class="ident">into</span>())]</span>
-    <span class="ident">interval</span>: <span class="ident">Seconds</span>,
-    <span class="ident">show_time</span>: <span class="ident">bool</span>,
+<span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
+#[serde(deny_unknown_fields, default)]
+</span><span class="kw">struct </span>WatsonConfig {
+    format: FormatConfig,
+    state_path: <span class="prelude-ty">Option</span>&lt;ShellString&gt;,
+    <span class="attribute">#[default(<span class="number">60</span>.into())]
+    </span>interval: Seconds,
+    show_time: bool,
 }
 
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">WatsonConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">Widget::new</span>().<span class="ident">with_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $text |&quot;</span>)<span class="question-mark">?</span>);
+<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span>config = WatsonConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(config.format.with_default(<span class="string">&quot; $text |&quot;</span>)<span class="question-mark">?</span>);
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">show_time</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">show_time</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>show_time = config.show_time;
 
-    <span class="kw">let</span> (<span class="ident">state_dir</span>, <span class="ident">state_file</span>, <span class="ident">state_path</span>) <span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">state_path</span> {
-        <span class="prelude-val">Some</span>(<span class="ident">p</span>) =&gt; {
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">p</span>: <span class="ident">PathBuf</span> <span class="op">=</span> (<span class="kw-2">*</span><span class="ident">p</span>.<span class="ident">expand</span>()<span class="question-mark">?</span>).<span class="ident">into</span>();
-            <span class="kw">let</span> <span class="ident">path</span> <span class="op">=</span> <span class="ident">p</span>.<span class="ident">clone</span>();
-            <span class="kw">let</span> <span class="ident">file</span> <span class="op">=</span> <span class="ident">p</span>.<span class="ident">file_name</span>().<span class="ident">error</span>(<span class="string">&quot;Failed to parse state_dir&quot;</span>)<span class="question-mark">?</span>.<span class="ident">to_owned</span>();
-            <span class="ident">p</span>.<span class="ident">pop</span>();
-            (<span class="ident">p</span>, <span class="ident">file</span>, <span class="ident">path</span>)
+    <span class="kw">let </span>(state_dir, state_file, state_path) = <span class="kw">match </span>config.state_path {
+        <span class="prelude-val">Some</span>(p) =&gt; {
+            <span class="kw">let </span><span class="kw-2">mut </span>p: PathBuf = (<span class="kw-2">*</span>p.expand()<span class="question-mark">?</span>).into();
+            <span class="kw">let </span>path = p.clone();
+            <span class="kw">let </span>file = p.file_name().error(<span class="string">&quot;Failed to parse state_dir&quot;</span>)<span class="question-mark">?</span>.to_owned();
+            p.pop();
+            (p, file, path)
         }
-        <span class="prelude-val">None</span> =&gt; {
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">path</span> <span class="op">=</span> <span class="ident">config_dir</span>().<span class="ident">error</span>(<span class="string">&quot;xdg config directory not found&quot;</span>)<span class="question-mark">?</span>;
-            <span class="ident">path</span>.<span class="ident">push</span>(<span class="string">&quot;watson&quot;</span>);
-            <span class="kw">let</span> <span class="ident">dir</span> <span class="op">=</span> <span class="ident">path</span>.<span class="ident">clone</span>();
-            <span class="ident">path</span>.<span class="ident">push</span>(<span class="string">&quot;state&quot;</span>);
-            (<span class="ident">dir</span>, <span class="string">&quot;state&quot;</span>.<span class="ident">into</span>(), <span class="ident">path</span>)
+        <span class="prelude-val">None </span>=&gt; {
+            <span class="kw">let </span><span class="kw-2">mut </span>path = config_dir().error(<span class="string">&quot;xdg config directory not found&quot;</span>)<span class="question-mark">?</span>;
+            path.push(<span class="string">&quot;watson&quot;</span>);
+            <span class="kw">let </span>dir = path.clone();
+            path.push(<span class="string">&quot;state&quot;</span>);
+            (dir, <span class="string">&quot;state&quot;</span>.into(), path)
         }
     };
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">notify</span> <span class="op">=</span> <span class="ident">Inotify::init</span>().<span class="ident">error</span>(<span class="string">&quot;Failed to start inotify&quot;</span>)<span class="question-mark">?</span>;
-    <span class="ident">notify</span>
-        .<span class="ident">add_watch</span>(<span class="kw-2">&amp;</span><span class="ident">state_dir</span>, <span class="ident">WatchMask::CREATE</span> <span class="op">|</span> <span class="ident">WatchMask::MOVED_TO</span>)
-        .<span class="ident">error</span>(<span class="string">&quot;Failed to watch watson state directory&quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">state_updates</span> <span class="op">=</span> <span class="ident">notify</span>
-        .<span class="ident">event_stream</span>([<span class="number">0</span>; <span class="number">1024</span>])
-        .<span class="ident">error</span>(<span class="string">&quot;Failed to create event stream&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>notify = Inotify::init().error(<span class="string">&quot;Failed to start inotify&quot;</span>)<span class="question-mark">?</span>;
+    notify
+        .add_watch(<span class="kw-2">&amp;</span>state_dir, WatchMask::CREATE | WatchMask::MOVED_TO)
+        .error(<span class="string">&quot;Failed to watch watson state directory&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>state_updates = notify
+        .event_stream([<span class="number">0</span>; <span class="number">1024</span>])
+        .error(<span class="string">&quot;Failed to create event stream&quot;</span>)<span class="question-mark">?</span>;
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">timer</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">interval</span>.<span class="ident">timer</span>();
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">prev_state</span> <span class="op">=</span> <span class="prelude-val">None</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>timer = config.interval.timer();
+    <span class="kw">let </span><span class="kw-2">mut </span>prev_state = <span class="prelude-val">None</span>;
 
-    <span class="kw">loop</span> {
-        <span class="kw">let</span> <span class="ident">state</span> <span class="op">=</span> <span class="ident">read_to_string</span>(<span class="kw-2">&amp;</span><span class="ident">state_path</span>)
-            .<span class="kw">await</span>
-            .<span class="ident">error</span>(<span class="string">&quot;Failed to read state file&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="ident">state</span> <span class="op">=</span> <span class="ident">serde_json::from_str</span>(<span class="kw-2">&amp;</span><span class="ident">state</span>).<span class="ident">error</span>(<span class="string">&quot;Fnable to deserialize state&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">match</span> <span class="ident">state</span> {
-            <span class="ident">state</span> @ <span class="ident">WatsonState::Active</span> { .. } =&gt; {
-                <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Good</span>;
-                <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span>(
-                  <span class="string">&quot;text&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">state</span>.<span class="ident">format</span>(<span class="ident">show_time</span>, <span class="string">&quot;started&quot;</span>, <span class="ident">format_delta_past</span>))
+    <span class="kw">loop </span>{
+        <span class="kw">let </span>state = read_to_string(<span class="kw-2">&amp;</span>state_path)
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to read state file&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>state = serde_json::from_str(<span class="kw-2">&amp;</span>state).error(<span class="string">&quot;Fnable to deserialize state&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">match </span>state {
+            state @ WatsonState::Active { .. } =&gt; {
+                widget.state = State::Good;
+                widget.set_values(<span class="macro">map!</span>(
+                  <span class="string">&quot;text&quot; </span>=&gt; Value::text(state.format(show_time, <span class="string">&quot;started&quot;</span>, format_delta_past))
                 ));
-                <span class="ident">prev_state</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">state</span>);
+                prev_state = <span class="prelude-val">Some</span>(state);
             }
-            <span class="ident">WatsonState::Idle</span> {} =&gt; {
-                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">prev</span> @ <span class="ident">WatsonState::Active</span> { .. }) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">prev_state</span> {
-                    <span class="comment">// The previous state was active, which means that we just now stopped the time</span>
-                    <span class="comment">// tracking. This means that we could show some statistics.</span>
-                    <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Idle</span>;
-                    <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span>(
-                      <span class="string">&quot;text&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">prev</span>.<span class="ident">format</span>(<span class="bool-val">true</span>, <span class="string">&quot;stopped&quot;</span>, <span class="ident">format_delta_after</span>))
+            WatsonState::Idle {} =&gt; {
+                <span class="kw">if let </span><span class="prelude-val">Some</span>(prev @ WatsonState::Active { .. }) = <span class="kw-2">&amp;</span>prev_state {
+                    <span class="comment">// The previous state was active, which means that we just now stopped the time
+                    // tracking. This means that we could show some statistics.
+                    </span>widget.state = State::Idle;
+                    widget.set_values(<span class="macro">map!</span>(
+                      <span class="string">&quot;text&quot; </span>=&gt; Value::text(prev.format(<span class="bool-val">true</span>, <span class="string">&quot;stopped&quot;</span>, format_delta_after))
                     ));
-                } <span class="kw">else</span> {
-                    <span class="comment">// File is empty which means that there is currently no active time tracking,</span>
-                    <span class="comment">// and the previous state wasn&#39;t time tracking neither so we reset the</span>
-                    <span class="comment">// contents.</span>
-                    <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Idle</span>;
-                    <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">Values::default</span>());
+                } <span class="kw">else </span>{
+                    <span class="comment">// File is empty which means that there is currently no active time tracking,
+                    // and the previous state wasn&#39;t time tracking neither so we reset the
+                    // contents.
+                    </span>widget.state = State::Idle;
+                    widget.set_values(Values::default());
                 }
-                <span class="ident">prev_state</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">state</span>);
+                prev_state = <span class="prelude-val">Some</span>(state);
             }
         }
 
-        <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="kw">loop</span> {
-            <span class="macro">select!</span> {
-                <span class="kw">_</span> <span class="op">=</span> <span class="ident">timer</span>.<span class="ident">tick</span>() =&gt; <span class="kw">break</span>,
-                <span class="prelude-val">Some</span>(<span class="ident">update</span>) <span class="op">=</span> <span class="ident">state_updates</span>.<span class="ident">next</span>() =&gt; {
-                    <span class="kw">let</span> <span class="ident">update</span> <span class="op">=</span> <span class="ident">update</span>.<span class="ident">error</span>(<span class="string">&quot;Bad inoify update&quot;</span>)<span class="question-mark">?</span>;
-                    <span class="kw">if</span> <span class="ident">update</span>.<span class="ident">name</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">state_file</span> <span class="op">==</span> <span class="ident">x</span>).<span class="ident">unwrap_or</span>(<span class="bool-val">false</span>) {
+        <span class="kw">loop </span>{
+            <span class="macro">select! </span>{
+                <span class="kw">_ </span>= timer.tick() =&gt; <span class="kw">break</span>,
+                <span class="prelude-val">Some</span>(update) = state_updates.next() =&gt; {
+                    <span class="kw">let </span>update = update.error(<span class="string">&quot;Bad inoify update&quot;</span>)<span class="question-mark">?</span>;
+                    <span class="kw">if </span>update.name.map(|x| state_file == x).unwrap_or(<span class="bool-val">false</span>) {
                         <span class="kw">break</span>;
                     }
                 }
-                <span class="ident">event</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; <span class="kw">match</span> <span class="ident">event</span> {
-                    <span class="ident">UpdateRequest</span> =&gt; <span class="kw">break</span>,
-                    <span class="ident">Click</span>(<span class="ident">click</span>) =&gt; {
-                        <span class="kw">if</span> <span class="ident">click</span>.<span class="ident">button</span> <span class="op">==</span> <span class="ident">MouseButton::Left</span> {
-                            <span class="ident">show_time</span> <span class="op">=</span> <span class="op">!</span><span class="ident">show_time</span>;
+                event = api.event() =&gt; <span class="kw">match </span>event {
+                    UpdateRequest =&gt; <span class="kw">break</span>,
+                    Click(click) =&gt; {
+                        <span class="kw">if </span>click.button == MouseButton::Left {
+                            show_time = !show_time;
                             <span class="kw">break</span>;
                         }
                     }
@@ -360,89 +360,89 @@
     }
 }
 
-<span class="kw">fn</span> <span class="ident">format_delta_past</span>(<span class="ident">delta</span>: <span class="kw-2">&amp;</span><span class="ident">chrono::Duration</span>) -&gt; <span class="ident">String</span> {
-    <span class="kw">let</span> <span class="ident">spans</span> <span class="op">=</span> <span class="kw-2">&amp;</span>[
-        (<span class="string">&quot;week&quot;</span>, <span class="ident">delta</span>.<span class="ident">num_weeks</span>()),
-        (<span class="string">&quot;day&quot;</span>, <span class="ident">delta</span>.<span class="ident">num_days</span>()),
-        (<span class="string">&quot;hour&quot;</span>, <span class="ident">delta</span>.<span class="ident">num_hours</span>()),
-        (<span class="string">&quot;minute&quot;</span>, <span class="ident">delta</span>.<span class="ident">num_minutes</span>()),
+<span class="kw">fn </span>format_delta_past(delta: <span class="kw-2">&amp;</span>chrono::Duration) -&gt; String {
+    <span class="kw">let </span>spans = <span class="kw-2">&amp;</span>[
+        (<span class="string">&quot;week&quot;</span>, delta.num_weeks()),
+        (<span class="string">&quot;day&quot;</span>, delta.num_days()),
+        (<span class="string">&quot;hour&quot;</span>, delta.num_hours()),
+        (<span class="string">&quot;minute&quot;</span>, delta.num_minutes()),
     ];
 
-    <span class="ident">spans</span>
-        .<span class="ident">iter</span>()
-        .<span class="ident">filter</span>(<span class="op">|</span><span class="kw-2">&amp;</span>(<span class="kw">_</span>, <span class="ident">n</span>)<span class="op">|</span> <span class="kw-2">*</span><span class="ident">n</span> <span class="op">!</span><span class="op">=</span> <span class="number">0</span>)
-        .<span class="ident">map</span>(<span class="op">|</span><span class="kw-2">&amp;</span>(<span class="ident">label</span>, <span class="ident">n</span>)<span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;{n} {label}{} ago&quot;</span>, <span class="kw">if</span> <span class="ident">n</span> <span class="op">&gt;</span> <span class="number">1</span> { <span class="string">&quot;s&quot;</span> } <span class="kw">else</span> { <span class="string">&quot;&quot;</span> }))
-        .<span class="ident">next</span>()
-        .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;now&quot;</span>.<span class="ident">into</span>())
+    spans
+        .iter()
+        .filter(|<span class="kw-2">&amp;</span>(<span class="kw">_</span>, n)| <span class="kw-2">*</span>n != <span class="number">0</span>)
+        .map(|<span class="kw-2">&amp;</span>(label, n)| <span class="macro">format!</span>(<span class="string">&quot;{n} {label}{} ago&quot;</span>, <span class="kw">if </span>n &gt; <span class="number">1 </span>{ <span class="string">&quot;s&quot; </span>} <span class="kw">else </span>{ <span class="string">&quot;&quot; </span>}))
+        .next()
+        .unwrap_or_else(|| <span class="string">&quot;now&quot;</span>.into())
 }
 
-<span class="kw">fn</span> <span class="ident">format_delta_after</span>(<span class="ident">delta</span>: <span class="kw-2">&amp;</span><span class="ident">chrono::Duration</span>) -&gt; <span class="ident">String</span> {
-    <span class="kw">let</span> <span class="ident">spans</span> <span class="op">=</span> <span class="kw-2">&amp;</span>[
-        (<span class="string">&quot;week&quot;</span>, <span class="ident">delta</span>.<span class="ident">num_weeks</span>()),
-        (<span class="string">&quot;day&quot;</span>, <span class="ident">delta</span>.<span class="ident">num_days</span>()),
-        (<span class="string">&quot;hour&quot;</span>, <span class="ident">delta</span>.<span class="ident">num_hours</span>()),
-        (<span class="string">&quot;minute&quot;</span>, <span class="ident">delta</span>.<span class="ident">num_minutes</span>()),
-        (<span class="string">&quot;second&quot;</span>, <span class="ident">delta</span>.<span class="ident">num_seconds</span>()),
+<span class="kw">fn </span>format_delta_after(delta: <span class="kw-2">&amp;</span>chrono::Duration) -&gt; String {
+    <span class="kw">let </span>spans = <span class="kw-2">&amp;</span>[
+        (<span class="string">&quot;week&quot;</span>, delta.num_weeks()),
+        (<span class="string">&quot;day&quot;</span>, delta.num_days()),
+        (<span class="string">&quot;hour&quot;</span>, delta.num_hours()),
+        (<span class="string">&quot;minute&quot;</span>, delta.num_minutes()),
+        (<span class="string">&quot;second&quot;</span>, delta.num_seconds()),
     ];
 
-    <span class="ident">spans</span>
-        .<span class="ident">iter</span>()
-        .<span class="ident">find</span>(<span class="op">|</span><span class="kw-2">&amp;</span>(<span class="kw">_</span>, <span class="ident">n</span>)<span class="op">|</span> <span class="kw-2">*</span><span class="ident">n</span> <span class="op">!</span><span class="op">=</span> <span class="number">0</span>)
-        .<span class="ident">map</span>(<span class="op">|</span><span class="kw-2">&amp;</span>(<span class="ident">label</span>, <span class="ident">n</span>)<span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;after {n} {label}{}&quot;</span>, <span class="kw">if</span> <span class="ident">n</span> <span class="op">&gt;</span> <span class="number">1</span> { <span class="string">&quot;s&quot;</span> } <span class="kw">else</span> { <span class="string">&quot;&quot;</span> }))
-        .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;now&quot;</span>.<span class="ident">into</span>())
+    spans
+        .iter()
+        .find(|<span class="kw-2">&amp;</span>(<span class="kw">_</span>, n)| <span class="kw-2">*</span>n != <span class="number">0</span>)
+        .map(|<span class="kw-2">&amp;</span>(label, n)| <span class="macro">format!</span>(<span class="string">&quot;after {n} {label}{}&quot;</span>, <span class="kw">if </span>n &gt; <span class="number">1 </span>{ <span class="string">&quot;s&quot; </span>} <span class="kw">else </span>{ <span class="string">&quot;&quot; </span>}))
+        .unwrap_or_else(|| <span class="string">&quot;now&quot;</span>.into())
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Clone</span>, <span class="ident">Debug</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">untagged</span>)]</span>
-<span class="kw">enum</span> <span class="ident">WatsonState</span> {
-    <span class="ident">Active</span> {
-        <span class="ident">project</span>: <span class="ident">String</span>,
-        <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deserialize_with</span> <span class="op">=</span> <span class="string">&quot;deserialize_local_timestamp&quot;</span>)]</span>
-        <span class="ident">start</span>: <span class="ident">DateTime</span><span class="op">&lt;</span><span class="ident">Local</span><span class="op">&gt;</span>,
-        <span class="ident">tags</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
+<span class="attribute">#[derive(Deserialize, Clone, Debug)]
+#[serde(untagged)]
+</span><span class="kw">enum </span>WatsonState {
+    Active {
+        project: String,
+        <span class="attribute">#[serde(deserialize_with = <span class="string">&quot;deserialize_local_timestamp&quot;</span>)]
+        </span>start: DateTime&lt;Local&gt;,
+        tags: Vec&lt;String&gt;,
     },
-    <span class="comment">// This matches an empty JSON object</span>
-    <span class="ident">Idle</span> {},
+    <span class="comment">// This matches an empty JSON object
+    </span>Idle {},
 }
 
-<span class="kw">impl</span> <span class="ident">WatsonState</span> {
-    <span class="kw">fn</span> <span class="ident">format</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">show_time</span>: <span class="ident">bool</span>, <span class="ident">verb</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">f</span>: <span class="kw">fn</span>(<span class="kw-2">&amp;</span><span class="ident">chrono::Duration</span>) -&gt; <span class="ident">String</span>) -&gt; <span class="ident">String</span> {
-        <span class="kw">if</span> <span class="kw">let</span> <span class="ident">WatsonState::Active</span> {
-            <span class="ident">project</span>,
-            <span class="ident">start</span>,
-            <span class="ident">tags</span>,
-        } <span class="op">=</span> <span class="self">self</span>
-        {
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">s</span> <span class="op">=</span> <span class="ident">project</span>.<span class="ident">clone</span>();
-            <span class="kw">if</span> <span class="kw">let</span> [<span class="ident">first</span>, <span class="ident">other</span> @ ..] <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">tags</span>[..] {
-                <span class="ident">s</span>.<span class="ident">push_str</span>(<span class="string">&quot; [&quot;</span>);
-                <span class="ident">s</span>.<span class="ident">push_str</span>(<span class="ident">first</span>);
-                <span class="kw">for</span> <span class="ident">tag</span> <span class="kw">in</span> <span class="ident">other</span> {
-                    <span class="ident">s</span>.<span class="ident">push</span>(<span class="string">&#39; &#39;</span>);
-                    <span class="ident">s</span>.<span class="ident">push_str</span>(<span class="ident">tag</span>);
+<span class="kw">impl </span>WatsonState {
+    <span class="kw">fn </span>format(<span class="kw-2">&amp;</span><span class="self">self</span>, show_time: bool, verb: <span class="kw-2">&amp;</span>str, f: <span class="kw">fn</span>(<span class="kw-2">&amp;</span>chrono::Duration) -&gt; String) -&gt; String {
+        <span class="kw">if let </span>WatsonState::Active {
+            project,
+            start,
+            tags,
+        } = <span class="self">self
+        </span>{
+            <span class="kw">let </span><span class="kw-2">mut </span>s = project.clone();
+            <span class="kw">if let </span>[first, other @ ..] = <span class="kw-2">&amp;</span>tags[..] {
+                s.push_str(<span class="string">&quot; [&quot;</span>);
+                s.push_str(first);
+                <span class="kw">for </span>tag <span class="kw">in </span>other {
+                    s.push(<span class="string">&#39; &#39;</span>);
+                    s.push_str(tag);
                 }
-                <span class="ident">s</span>.<span class="ident">push</span>(<span class="string">&#39;]&#39;</span>);
+                s.push(<span class="string">&#39;]&#39;</span>);
             }
-            <span class="kw">if</span> <span class="ident">show_time</span> {
-                <span class="ident">s</span>.<span class="ident">push</span>(<span class="string">&#39; &#39;</span>);
-                <span class="ident">s</span>.<span class="ident">push_str</span>(<span class="ident">verb</span>);
-                <span class="kw">let</span> <span class="ident">delta</span> <span class="op">=</span> <span class="ident">Local::now</span>() <span class="op">-</span> <span class="kw-2">*</span><span class="ident">start</span>;
-                <span class="ident">s</span>.<span class="ident">push</span>(<span class="string">&#39; &#39;</span>);
-                <span class="ident">s</span>.<span class="ident">push_str</span>(<span class="kw-2">&amp;</span><span class="ident">f</span>(<span class="kw-2">&amp;</span><span class="ident">delta</span>));
+            <span class="kw">if </span>show_time {
+                s.push(<span class="string">&#39; &#39;</span>);
+                s.push_str(verb);
+                <span class="kw">let </span>delta = Local::now() - <span class="kw-2">*</span>start;
+                s.push(<span class="string">&#39; &#39;</span>);
+                s.push_str(<span class="kw-2">&amp;</span>f(<span class="kw-2">&amp;</span>delta));
             }
-            <span class="ident">s</span>
-        } <span class="kw">else</span> {
+            s
+        } <span class="kw">else </span>{
             <span class="macro">panic!</span>(<span class="string">&quot;WatsonState::Idle does not have a specified format&quot;</span>)
         }
     }
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">deserialize_local_timestamp</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span>, <span class="ident">D</span><span class="op">&gt;</span>(<span class="ident">deserializer</span>: <span class="ident">D</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">DateTime</span><span class="op">&lt;</span><span class="ident">Local</span><span class="op">&gt;</span>, <span class="ident">D::Error</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-    <span class="ident">D</span>: <span class="ident">Deserializer</span><span class="op">&lt;</span><span class="lifetime">&#39;de</span><span class="op">&gt;</span>,
+<span class="kw">pub fn </span>deserialize_local_timestamp&lt;<span class="lifetime">&#39;de</span>, D&gt;(deserializer: D) -&gt; <span class="prelude-ty">Result</span>&lt;DateTime&lt;Local&gt;, D::Error&gt;
+<span class="kw">where
+    </span>D: Deserializer&lt;<span class="lifetime">&#39;de</span>&gt;,
 {
-    <span class="kw">use</span> <span class="ident">chrono::TimeZone</span>;
-    <span class="ident">i64::deserialize</span>(<span class="ident">deserializer</span>).<span class="ident">map</span>(<span class="op">|</span><span class="ident">seconds</span><span class="op">|</span> <span class="ident">Local</span>.<span class="ident">timestamp</span>(<span class="ident">seconds</span>, <span class="number">0</span>))
+    <span class="kw">use </span>chrono::TimeZone;
+    i64::deserialize(deserializer).map(|seconds| Local.timestamp(seconds, <span class="number">0</span>))
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/battery.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>battery.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/battery.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>battery.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -272,279 +272,279 @@
 <span id="272">272</span>
 <span id="273">273</span>
 <span id="274">274</span>
-</pre><pre class="rust"><code><span class="doccomment">//! Information about the internal power supply</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! This block can display the current battery state (Full, Charging or Discharging), percentage</span>
-<span class="doccomment">//! charged and estimate time until (dis)charged for an internal power supply.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Configuration</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Key | Values | Default</span>
-<span class="doccomment">//! ----|--------|--------</span>
-<span class="doccomment">//! `device` | The device in `/sys/class/power_supply/` to read from. When using UPower, this can also be `&quot;DisplayDevice&quot;`. Regular expressions can be used. | Any battery device</span>
-<span class="doccomment">//! `driver` | One of `&quot;sysfs&quot;`, `&quot;apc_ups&quot;`, or `&quot;upower&quot;` | `&quot;sysfs&quot;`</span>
-<span class="doccomment">//! `interval` | Update interval, in seconds. Only relevant for `driver = &quot;sysfs&quot;` \|\| &quot;apc_ups&quot;`. | `10`</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $percentage &quot;`</span>
-<span class="doccomment">//! `full_format` | Same as `format` but for when the battery is full | `&quot; $icon &quot;`</span>
-<span class="doccomment">//! `empty_format` | Same as `format` but for when the battery is empty | `&quot; $icon &quot;`</span>
-<span class="doccomment">//! `missing_format` | Same as `format` if the battery cannot be found. | `&quot; $icon &quot;`</span>
-<span class="doccomment">//! `info` | Minimum battery level, where state is set to info | `60`</span>
-<span class="doccomment">//! `good` | Minimum battery level, where state is set to good | `60`</span>
-<span class="doccomment">//! `warning` | Minimum battery level, where state is set to warning | `30`</span>
-<span class="doccomment">//! `critical` | Minimum battery level, where state is set to critical | `15`</span>
-<span class="doccomment">//! `full_threshold` | Percentage above which the battery is considered full (`full_format` shown) | `95`</span>
-<span class="doccomment">//! `empty_threshold` | Percentage below which the battery is considered empty | `7.5`</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Placeholder  | Value                                                                   | Type              | Unit</span>
-<span class="doccomment">//! -------------|-------------------------------------------------------------------------|-------------------|-----</span>
-<span class="doccomment">//! `icon`       | Icon based on battery&#39;s state                                           | Icon   | -</span>
-<span class="doccomment">//! `percentage` | Battery level, in percent                                               | Number | Percents</span>
-<span class="doccomment">//! `time`       | Time remaining until (dis)charge is complete. Presented only if battery&#39;s status is (dis)charging. | String | -</span>
-<span class="doccomment">//! `power`      | Power consumption by the battery or from the power supply when charging | String or Float   | Watts</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Examples</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Basic usage:</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [block]</span>
-<span class="doccomment">//! block = &quot;battery&quot;</span>
-<span class="doccomment">//! format = &quot; $icon $percentage &quot;</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Hide missing battery:</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [block]</span>
-<span class="doccomment">//! block = &quot;battery&quot;</span>
-<span class="doccomment">//! missing_format = &quot;&quot;</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Icons Used</span>
-<span class="doccomment">//! - `bat_charging`</span>
-<span class="doccomment">//! - `bat_not_available`</span>
-<span class="doccomment">//! - `bat_10`</span>
-<span class="doccomment">//! - `bat_20`</span>
-<span class="doccomment">//! - `bat_30`</span>
-<span class="doccomment">//! - `bat_40`</span>
-<span class="doccomment">//! - `bat_50`</span>
-<span class="doccomment">//! - `bat_60`</span>
-<span class="doccomment">//! - `bat_70`</span>
-<span class="doccomment">//! - `bat_80`</span>
-<span class="doccomment">//! - `bat_90`</span>
-<span class="doccomment">//! - `bat_full`</span>
+</pre><pre class="rust"><code><span class="doccomment">//! Information about the internal power supply
+//!
+//! This block can display the current battery state (Full, Charging or Discharging), percentage
+//! charged and estimate time until (dis)charged for an internal power supply.
+//!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `device` | The device in `/sys/class/power_supply/` to read from. When using UPower, this can also be `&quot;DisplayDevice&quot;`. Regular expressions can be used. | Any battery device
+//! `driver` | One of `&quot;sysfs&quot;`, `&quot;apc_ups&quot;`, or `&quot;upower&quot;` | `&quot;sysfs&quot;`
+//! `interval` | Update interval, in seconds. Only relevant for `driver = &quot;sysfs&quot;` \|\| &quot;apc_ups&quot;`. | `10`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $percentage &quot;`
+//! `full_format` | Same as `format` but for when the battery is full | `&quot; $icon &quot;`
+//! `empty_format` | Same as `format` but for when the battery is empty | `&quot; $icon &quot;`
+//! `missing_format` | Same as `format` if the battery cannot be found. | `&quot; $icon &quot;`
+//! `info` | Minimum battery level, where state is set to info | `60`
+//! `good` | Minimum battery level, where state is set to good | `60`
+//! `warning` | Minimum battery level, where state is set to warning | `30`
+//! `critical` | Minimum battery level, where state is set to critical | `15`
+//! `full_threshold` | Percentage above which the battery is considered full (`full_format` shown) | `95`
+//! `empty_threshold` | Percentage below which the battery is considered empty | `7.5`
+//!
+//! Placeholder  | Value                                                                   | Type              | Unit
+//! -------------|-------------------------------------------------------------------------|-------------------|-----
+//! `icon`       | Icon based on battery&#39;s state                                           | Icon   | -
+//! `percentage` | Battery level, in percent                                               | Number | Percents
+//! `time`       | Time remaining until (dis)charge is complete. Presented only if battery&#39;s status is (dis)charging. | String | -
+//! `power`      | Power consumption by the battery or from the power supply when charging | String or Float   | Watts
+//!
+//! # Examples
+//!
+//! Basic usage:
+//!
+//! ```toml
+//! [block]
+//! block = &quot;battery&quot;
+//! format = &quot; $icon $percentage &quot;
+//! ```
+//!
+//! Hide missing battery:
+//!
+//! ```toml
+//! [block]
+//! block = &quot;battery&quot;
+//! missing_format = &quot;&quot;
+//! ```
+//!
+//! # Icons Used
+//! - `bat_charging`
+//! - `bat_not_available`
+//! - `bat_10`
+//! - `bat_20`
+//! - `bat_30`
+//! - `bat_40`
+//! - `bat_50`
+//! - `bat_60`
+//! - `bat_70`
+//! - `bat_80`
+//! - `bat_90`
+//! - `bat_full`
 
-<span class="kw">use</span> <span class="ident">regex::Regex</span>;
-<span class="kw">use</span> <span class="ident">std::convert::Infallible</span>;
-<span class="kw">use</span> <span class="ident">std::str::FromStr</span>;
+</span><span class="kw">use </span>regex::Regex;
+<span class="kw">use </span>std::convert::Infallible;
+<span class="kw">use </span>std::str::FromStr;
 
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::util::battery_level_icon</span>;
+<span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span><span class="kw">crate</span>::util::battery_level_icon;
 
-<span class="kw">mod</span> <span class="ident">apc_ups</span>;
-<span class="kw">mod</span> <span class="ident">sysfs</span>;
-<span class="kw">mod</span> <span class="ident">upower</span>;
+<span class="kw">mod </span>apc_ups;
+<span class="kw">mod </span>sysfs;
+<span class="kw">mod </span>upower;
 
-<span class="comment">// make_log_macro!(debug, &quot;battery&quot;);</span>
+<span class="comment">// make_log_macro!(debug, &quot;battery&quot;);
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
-<span class="kw">struct</span> <span class="ident">BatteryConfig</span> {
-    <span class="ident">device</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
-    <span class="ident">driver</span>: <span class="ident">BatteryDriver</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">10</span>.<span class="ident">into</span>())]</span>
-    <span class="ident">interval</span>: <span class="ident">Seconds</span>,
-    <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
-    <span class="ident">full_format</span>: <span class="ident">FormatConfig</span>,
-    <span class="ident">empty_format</span>: <span class="ident">FormatConfig</span>,
-    <span class="ident">missing_format</span>: <span class="ident">FormatConfig</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">60.0</span>)]</span>
-    <span class="ident">info</span>: <span class="ident">f64</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">60.0</span>)]</span>
-    <span class="ident">good</span>: <span class="ident">f64</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">30.0</span>)]</span>
-    <span class="ident">warning</span>: <span class="ident">f64</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">15.0</span>)]</span>
-    <span class="ident">critical</span>: <span class="ident">f64</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">95.0</span>)]</span>
-    <span class="ident">full_threshold</span>: <span class="ident">f64</span>,
-    <span class="attribute">#[<span class="ident">default</span>(<span class="number">7.5</span>)]</span>
-    <span class="ident">empty_threshold</span>: <span class="ident">f64</span>,
+</span><span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
+#[serde(deny_unknown_fields, default)]
+</span><span class="kw">struct </span>BatteryConfig {
+    device: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    driver: BatteryDriver,
+    <span class="attribute">#[default(<span class="number">10</span>.into())]
+    </span>interval: Seconds,
+    format: FormatConfig,
+    full_format: FormatConfig,
+    empty_format: FormatConfig,
+    missing_format: FormatConfig,
+    <span class="attribute">#[default(<span class="number">60.0</span>)]
+    </span>info: f64,
+    <span class="attribute">#[default(<span class="number">60.0</span>)]
+    </span>good: f64,
+    <span class="attribute">#[default(<span class="number">30.0</span>)]
+    </span>warning: f64,
+    <span class="attribute">#[default(<span class="number">15.0</span>)]
+    </span>critical: f64,
+    <span class="attribute">#[default(<span class="number">95.0</span>)]
+    </span>full_threshold: f64,
+    <span class="attribute">#[default(<span class="number">7.5</span>)]
+    </span>empty_threshold: f64,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">SmartDefault</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;snake_case&quot;</span>)]</span>
-<span class="kw">enum</span> <span class="ident">BatteryDriver</span> {
-    <span class="attribute">#[<span class="ident">default</span>]</span>
-    <span class="ident">Sysfs</span>,
-    <span class="ident">ApcUps</span>,
-    <span class="ident">Upower</span>,
+<span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
+#[serde(rename_all = <span class="string">&quot;snake_case&quot;</span>)]
+</span><span class="kw">enum </span>BatteryDriver {
+    <span class="attribute">#[default]
+    </span>Sysfs,
+    ApcUps,
+    Upower,
 }
 
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">BatteryConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">format</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon $percentage &quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">format_full</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">full_format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">format_empty</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">empty_format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="ident">missing_format</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">missing_format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span> <span class="ident">Widget::new</span>();
+<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span>config = BatteryConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+    <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $percentage &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>format_full = config.full_format.with_default(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>format_empty = config.empty_format.with_default(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>missing_format = config.missing_format.with_default(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new();
 
-    <span class="kw">let</span> <span class="ident">dev_name</span> <span class="op">=</span> <span class="ident">DeviceName::new</span>(<span class="ident">config</span>.<span class="ident">device</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">device</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">BatteryDevice</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">config</span>.<span class="ident">driver</span> {
-        <span class="ident">BatteryDriver::Sysfs</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">sysfs::Device::new</span>(<span class="ident">dev_name</span>, <span class="ident">config</span>.<span class="ident">interval</span>)),
-        <span class="ident">BatteryDriver::ApcUps</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">apc_ups::Device::new</span>(<span class="ident">dev_name</span>, <span class="ident">config</span>.<span class="ident">interval</span>).<span class="kw">await</span><span class="question-mark">?</span>),
-        <span class="ident">BatteryDriver::Upower</span> =&gt; <span class="ident">Box::new</span>(<span class="ident">upower::Device::new</span>(<span class="ident">dev_name</span>).<span class="kw">await</span><span class="question-mark">?</span>),
+    <span class="kw">let </span>dev_name = DeviceName::new(config.device)<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>device: Box&lt;<span class="kw">dyn </span>BatteryDevice + Send + Sync&gt; = <span class="kw">match </span>config.driver {
+        BatteryDriver::Sysfs =&gt; Box::new(sysfs::Device::new(dev_name, config.interval)),
+        BatteryDriver::ApcUps =&gt; Box::new(apc_ups::Device::new(dev_name, config.interval).<span class="kw">await</span><span class="question-mark">?</span>),
+        BatteryDriver::Upower =&gt; Box::new(upower::Device::new(dev_name).<span class="kw">await</span><span class="question-mark">?</span>),
     };
 
-    <span class="kw">loop</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">info</span> <span class="op">=</span> <span class="ident">device</span>.<span class="ident">get_info</span>().<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">loop </span>{
+        <span class="kw">let </span><span class="kw-2">mut </span>info = device.get_info().<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">info</span>) <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="ident">info</span> {
-            <span class="kw">if</span> <span class="ident">info</span>.<span class="ident">capacity</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">full_threshold</span> {
-                <span class="ident">info</span>.<span class="ident">status</span> <span class="op">=</span> <span class="ident">BatteryStatus::Full</span>;
-            } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">info</span>.<span class="ident">capacity</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">empty_threshold</span> {
-                <span class="ident">info</span>.<span class="ident">status</span> <span class="op">=</span> <span class="ident">BatteryStatus::Empty</span>;
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(info) = <span class="kw-2">&amp;mut </span>info {
+            <span class="kw">if </span>info.capacity &gt;= config.full_threshold {
+                info.status = BatteryStatus::Full;
+            } <span class="kw">else if </span>info.capacity &lt;= config.empty_threshold {
+                info.status = BatteryStatus::Empty;
             }
         }
 
-        <span class="kw">match</span> <span class="ident">info</span> {
-            <span class="prelude-val">Some</span>(<span class="ident">info</span>) =&gt; {
-                <span class="ident">widget</span>.<span class="ident">set_format</span>(<span class="kw">match</span> <span class="ident">info</span>.<span class="ident">status</span> {
-                    <span class="ident">BatteryStatus::Empty</span> =&gt; <span class="ident">format_empty</span>.<span class="ident">clone</span>(),
-                    <span class="ident">BatteryStatus::Full</span> <span class="op">|</span> <span class="ident">BatteryStatus::NotCharging</span> =&gt; <span class="ident">format_full</span>.<span class="ident">clone</span>(),
-                    <span class="kw">_</span> =&gt; <span class="ident">format</span>.<span class="ident">clone</span>(),
+        <span class="kw">match </span>info {
+            <span class="prelude-val">Some</span>(info) =&gt; {
+                widget.set_format(<span class="kw">match </span>info.status {
+                    BatteryStatus::Empty =&gt; format_empty.clone(),
+                    BatteryStatus::Full | BatteryStatus::NotCharging =&gt; format_full.clone(),
+                    <span class="kw">_ </span>=&gt; format.clone(),
                 });
 
-                <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">values</span> <span class="op">=</span> <span class="macro">map!</span>(
-                    <span class="string">&quot;percentage&quot;</span> =&gt; <span class="ident">Value::percents</span>(<span class="ident">info</span>.<span class="ident">capacity</span>)
+                <span class="kw">let </span><span class="kw-2">mut </span>values = <span class="macro">map!</span>(
+                    <span class="string">&quot;percentage&quot; </span>=&gt; Value::percents(info.capacity)
                 );
 
-                <span class="ident">info</span>.<span class="ident">power</span>
-                    .<span class="ident">map</span>(<span class="op">|</span><span class="ident">p</span><span class="op">|</span> <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;power&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::watts</span>(<span class="ident">p</span>)));
-                <span class="ident">info</span>.<span class="ident">time_remaining</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">t</span><span class="op">|</span> {
-                    <span class="ident">values</span>.<span class="ident">insert</span>(
-                        <span class="string">&quot;time&quot;</span>.<span class="ident">into</span>(),
-                        <span class="ident">Value::text</span>(<span class="macro">format!</span>(
+                info.power
+                    .map(|p| values.insert(<span class="string">&quot;power&quot;</span>.into(), Value::watts(p)));
+                info.time_remaining.map(|t| {
+                    values.insert(
+                        <span class="string">&quot;time&quot;</span>.into(),
+                        Value::text(<span class="macro">format!</span>(
                             <span class="string">&quot;{}:{:02}&quot;</span>,
-                            (<span class="ident">t</span> <span class="op">/</span> <span class="number">3600.</span>) <span class="kw">as</span> <span class="ident">i32</span>,
-                            (<span class="ident">t</span> <span class="op">%</span> <span class="number">3600.</span> <span class="op">/</span> <span class="number">60.</span>) <span class="kw">as</span> <span class="ident">i32</span>
+                            (t / <span class="number">3600.</span>) <span class="kw">as </span>i32,
+                            (t % <span class="number">3600. </span>/ <span class="number">60.</span>) <span class="kw">as </span>i32
                         )),
                     )
                 });
 
-                <span class="kw">let</span> (<span class="ident">icon</span>, <span class="ident">state</span>) <span class="op">=</span> <span class="kw">match</span> (<span class="ident">info</span>.<span class="ident">status</span>, <span class="ident">info</span>.<span class="ident">capacity</span>) {
-                    (<span class="ident">BatteryStatus::Empty</span>, <span class="kw">_</span>) =&gt; (<span class="ident">battery_level_icon</span>(<span class="number">0</span>, <span class="bool-val">false</span>), <span class="ident">State::Critical</span>),
-                    (<span class="ident">BatteryStatus::Full</span>, <span class="kw">_</span>) =&gt; (<span class="ident">battery_level_icon</span>(<span class="number">100</span>, <span class="bool-val">false</span>), <span class="ident">State::Idle</span>),
-                    (<span class="ident">status</span>, <span class="ident">capacity</span>) =&gt; (
-                        <span class="ident">battery_level_icon</span>(<span class="ident">capacity</span> <span class="kw">as</span> <span class="ident">u8</span>, <span class="ident">status</span> <span class="op">==</span> <span class="ident">BatteryStatus::Charging</span>),
-                        <span class="kw">if</span> <span class="ident">status</span> <span class="op">==</span> <span class="ident">BatteryStatus::Charging</span> {
-                            <span class="ident">State::Good</span>
-                        } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">capacity</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">critical</span> {
-                            <span class="ident">State::Critical</span>
-                        } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">capacity</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">warning</span> {
-                            <span class="ident">State::Warning</span>
-                        } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">capacity</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">info</span> {
-                            <span class="ident">State::Info</span>
-                        } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">capacity</span> <span class="op">&gt;</span> <span class="ident">config</span>.<span class="ident">good</span> {
-                            <span class="ident">State::Good</span>
-                        } <span class="kw">else</span> {
-                            <span class="ident">State::Idle</span>
+                <span class="kw">let </span>(icon, state) = <span class="kw">match </span>(info.status, info.capacity) {
+                    (BatteryStatus::Empty, <span class="kw">_</span>) =&gt; (battery_level_icon(<span class="number">0</span>, <span class="bool-val">false</span>), State::Critical),
+                    (BatteryStatus::Full, <span class="kw">_</span>) =&gt; (battery_level_icon(<span class="number">100</span>, <span class="bool-val">false</span>), State::Idle),
+                    (status, capacity) =&gt; (
+                        battery_level_icon(capacity <span class="kw">as </span>u8, status == BatteryStatus::Charging),
+                        <span class="kw">if </span>status == BatteryStatus::Charging {
+                            State::Good
+                        } <span class="kw">else if </span>capacity &lt;= config.critical {
+                            State::Critical
+                        } <span class="kw">else if </span>capacity &lt;= config.warning {
+                            State::Warning
+                        } <span class="kw">else if </span>capacity &lt;= config.info {
+                            State::Info
+                        } <span class="kw">else if </span>capacity &gt; config.good {
+                            State::Good
+                        } <span class="kw">else </span>{
+                            State::Idle
                         },
                     ),
                 };
-                <span class="ident">values</span>.<span class="ident">insert</span>(<span class="string">&quot;icon&quot;</span>.<span class="ident">into</span>(), <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="ident">icon</span>)<span class="question-mark">?</span>));
+                values.insert(<span class="string">&quot;icon&quot;</span>.into(), Value::icon(api.get_icon(icon)<span class="question-mark">?</span>));
 
-                <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="ident">values</span>);
-                <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">state</span>;
-                <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+                widget.set_values(values);
+                widget.state = state;
+                api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
             }
-            <span class="prelude-val">None</span> =&gt; {
-                <span class="ident">widget</span>.<span class="ident">set_format</span>(<span class="ident">missing_format</span>.<span class="ident">clone</span>());
-                <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span>(<span class="string">&quot;icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;bat_not_available&quot;</span>)<span class="question-mark">?</span>)));
-                <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">State::Critical</span>;
-                <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+            <span class="prelude-val">None </span>=&gt; {
+                widget.set_format(missing_format.clone());
+                widget.set_values(<span class="macro">map!</span>(<span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;bat_not_available&quot;</span>)<span class="question-mark">?</span>)));
+                widget.state = State::Critical;
+                api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
             }
         }
 
-        <span class="macro">select!</span> {
-            <span class="ident">update</span> <span class="op">=</span> <span class="ident">device</span>.<span class="ident">wait_for_change</span>() =&gt; <span class="ident">update</span><span class="question-mark">?</span>,
-            <span class="kw">_</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">wait_for_update_request</span>() =&gt; (),
+        <span class="macro">select! </span>{
+            update = device.wait_for_change() =&gt; update<span class="question-mark">?</span>,
+            <span class="kw">_ </span>= api.wait_for_update_request() =&gt; (),
         }
     }
 }
 
-<span class="attribute">#[<span class="ident">async_trait</span>]</span>
-<span class="kw">trait</span> <span class="ident">BatteryDevice</span> {
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_info</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BatteryInfo</span><span class="op">&gt;</span><span class="op">&gt;</span>;
-    <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">wait_for_change</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span>;
+<span class="attribute">#[async_trait]
+</span><span class="kw">trait </span>BatteryDevice {
+    <span class="kw">async fn </span>get_info(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;BatteryInfo&gt;&gt;;
+    <span class="kw">async fn </span>wait_for_change(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
 }
 
-<span class="doccomment">/// `Option&lt;Regex&gt;`, but more intuitive</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
-<span class="kw">enum</span> <span class="ident">DeviceName</span> {
-    <span class="ident">Any</span>,
-    <span class="ident">Regex</span>(<span class="ident">Regex</span>),
+<span class="doccomment">/// `Option&lt;Regex&gt;`, but more intuitive
+</span><span class="attribute">#[derive(Debug)]
+</span><span class="kw">enum </span>DeviceName {
+    Any,
+    Regex(Regex),
 }
 
-<span class="kw">impl</span> <span class="ident">DeviceName</span> {
-    <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">pat</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="prelude-val">Ok</span>(<span class="kw">match</span> <span class="ident">pat</span> {
-            <span class="prelude-val">None</span> =&gt; <span class="ident"><span class="self">Self</span>::Any</span>,
-            <span class="prelude-val">Some</span>(<span class="ident">pat</span>) =&gt; <span class="ident"><span class="self">Self</span>::Regex</span>(<span class="ident">pat</span>.<span class="ident">parse</span>().<span class="ident">error</span>(<span class="string">&quot;failed to parse regex&quot;</span>)<span class="question-mark">?</span>),
+<span class="kw">impl </span>DeviceName {
+    <span class="kw">fn </span>new(pat: <span class="prelude-ty">Option</span>&lt;String&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
+        <span class="prelude-val">Ok</span>(<span class="kw">match </span>pat {
+            <span class="prelude-val">None </span>=&gt; <span class="self">Self</span>::Any,
+            <span class="prelude-val">Some</span>(pat) =&gt; <span class="self">Self</span>::Regex(pat.parse().error(<span class="string">&quot;failed to parse regex&quot;</span>)<span class="question-mark">?</span>),
         })
     }
 
-    <span class="kw">fn</span> <span class="ident">matches</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="ident">bool</span> {
-        <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident"><span class="self">Self</span>::Any</span> =&gt; <span class="bool-val">true</span>,
-            <span class="ident"><span class="self">Self</span>::Regex</span>(<span class="ident">pat</span>) =&gt; <span class="ident">pat</span>.<span class="ident">is_match</span>(<span class="ident">name</span>),
+    <span class="kw">fn </span>matches(<span class="kw-2">&amp;</span><span class="self">self</span>, name: <span class="kw-2">&amp;</span>str) -&gt; bool {
+        <span class="kw">match </span><span class="self">self </span>{
+            <span class="self">Self</span>::Any =&gt; <span class="bool-val">true</span>,
+            <span class="self">Self</span>::Regex(pat) =&gt; pat.is_match(name),
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">exact</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">str</span><span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident"><span class="self">Self</span>::Any</span> =&gt; <span class="prelude-val">None</span>,
-            <span class="ident"><span class="self">Self</span>::Regex</span>(<span class="ident">pat</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">pat</span>.<span class="ident">as_str</span>()),
+    <span class="kw">fn </span>exact(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt; {
+        <span class="kw">match </span><span class="self">self </span>{
+            <span class="self">Self</span>::Any =&gt; <span class="prelude-val">None</span>,
+            <span class="self">Self</span>::Regex(pat) =&gt; <span class="prelude-val">Some</span>(pat.as_str()),
         }
     }
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
-<span class="kw">struct</span> <span class="ident">BatteryInfo</span> {
-    <span class="doccomment">/// Current status, e.g. &quot;charging&quot;, &quot;discharging&quot;, etc.</span>
-    <span class="ident">status</span>: <span class="ident">BatteryStatus</span>,
-    <span class="doccomment">/// The capacity in percents</span>
-    <span class="ident">capacity</span>: <span class="ident">f64</span>,
-    <span class="doccomment">/// Power consumption in watts</span>
-    <span class="ident">power</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>,
-    <span class="doccomment">/// Time in seconds</span>
-    <span class="ident">time_remaining</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">f64</span><span class="op">&gt;</span>,
+<span class="attribute">#[derive(Debug, Clone, Copy)]
+</span><span class="kw">struct </span>BatteryInfo {
+    <span class="doccomment">/// Current status, e.g. &quot;charging&quot;, &quot;discharging&quot;, etc.
+    </span>status: BatteryStatus,
+    <span class="doccomment">/// The capacity in percents
+    </span>capacity: f64,
+    <span class="doccomment">/// Power consumption in watts
+    </span>power: <span class="prelude-ty">Option</span>&lt;f64&gt;,
+    <span class="doccomment">/// Time in seconds
+    </span>time_remaining: <span class="prelude-ty">Option</span>&lt;f64&gt;,
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">SmartDefault</span>)]</span>
-<span class="kw">enum</span> <span class="ident">BatteryStatus</span> {
-    <span class="ident">Charging</span>,
-    <span class="ident">Discharging</span>,
-    <span class="ident">Empty</span>,
-    <span class="ident">Full</span>,
-    <span class="ident">NotCharging</span>,
-    <span class="attribute">#[<span class="ident">default</span>]</span>
-    <span class="ident">Unknown</span>,
+<span class="attribute">#[derive(Copy, Clone, Debug, Eq, PartialEq, SmartDefault)]
+</span><span class="kw">enum </span>BatteryStatus {
+    Charging,
+    Discharging,
+    Empty,
+    Full,
+    NotCharging,
+    <span class="attribute">#[default]
+    </span>Unknown,
 }
 
-<span class="kw">impl</span> <span class="ident">FromStr</span> <span class="kw">for</span> <span class="ident">BatteryStatus</span> {
-    <span class="kw">type</span> <span class="prelude-val">Err</span> <span class="op">=</span> <span class="ident">Infallible</span>;
+<span class="kw">impl </span>FromStr <span class="kw">for </span>BatteryStatus {
+    <span class="kw">type </span><span class="prelude-val">Err </span>= Infallible;
 
-    <span class="kw">fn</span> <span class="ident">from_str</span>(<span class="ident">s</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident"><span class="self">Self</span>::Err</span><span class="op">&gt;</span> {
-        <span class="prelude-val">Ok</span>(<span class="kw">match</span> <span class="ident">s</span> {
-            <span class="string">&quot;Charging&quot;</span> =&gt; <span class="ident"><span class="self">Self</span>::Charging</span>,
-            <span class="string">&quot;Discharging&quot;</span> =&gt; <span class="ident"><span class="self">Self</span>::Discharging</span>,
-            <span class="string">&quot;Empty&quot;</span> =&gt; <span class="ident"><span class="self">Self</span>::Empty</span>,
-            <span class="string">&quot;Full&quot;</span> =&gt; <span class="ident"><span class="self">Self</span>::Full</span>,
-            <span class="string">&quot;Not charging&quot;</span> =&gt; <span class="ident"><span class="self">Self</span>::NotCharging</span>,
-            <span class="kw">_</span> =&gt; <span class="ident"><span class="self">Self</span>::Unknown</span>,
+    <span class="kw">fn </span>from_str(s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Err&gt; {
+        <span class="prelude-val">Ok</span>(<span class="kw">match </span>s {
+            <span class="string">&quot;Charging&quot; </span>=&gt; <span class="self">Self</span>::Charging,
+            <span class="string">&quot;Discharging&quot; </span>=&gt; <span class="self">Self</span>::Discharging,
+            <span class="string">&quot;Empty&quot; </span>=&gt; <span class="self">Self</span>::Empty,
+            <span class="string">&quot;Full&quot; </span>=&gt; <span class="self">Self</span>::Full,
+            <span class="string">&quot;Not charging&quot; </span>=&gt; <span class="self">Self</span>::NotCharging,
+            <span class="kw">_ </span>=&gt; <span class="self">Self</span>::Unknown,
         })
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

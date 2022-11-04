@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/taskwarrior.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>taskwarrior.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/taskwarrior.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>taskwarrior.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../normalize.css"><link rel="stylesheet" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../ayu.css" disabled><link rel="stylesheet" href="../../../dark.css" disabled><link rel="stylesheet" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -154,135 +154,135 @@
 <span id="154">154</span>
 <span id="155">155</span>
 <span id="156">156</span>
-</pre><pre class="rust"><code><span class="doccomment">//! The number of tasks from the taskwarrior list</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Clicking on the block updates the number of tasks immediately. Clicking the right mouse button on the icon cycles the view of the block through the user&#39;s filters.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Configuration</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Key | Values | Default</span>
-<span class="doccomment">//! ----|--------|--------</span>
-<span class="doccomment">//! `interval` | Update interval in seconds | `600` (10min)</span>
-<span class="doccomment">//! `warning_threshold` | The threshold of pending (or started) tasks when the block turns into a warning state | `10`</span>
-<span class="doccomment">//! `critical_threshold` | The threshold of pending (or started) tasks when the block turns into a critical state | `20`</span>
-<span class="doccomment">//! `hide_when_zero` | Whethere to hide the block when the number of tasks is zero | `false`</span>
-<span class="doccomment">//! `filters` | A list of tables with the keys `name` and `filter`. `filter` specifies the criteria that must be met for a task to be counted towards this filter. | ```[{name = &quot;pending&quot;, filter = &quot;-COMPLETED -DELETED&quot;}]```</span>
-<span class="doccomment">//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $done\|$count.eng(1) &quot;`</span>
-<span class="doccomment">//! `data_location`| Directory in which taskwarrior stores its data files. Supports path expansions e.g. `~`. | `&quot;~/.task&quot;`</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! Placeholder   | Value                                       | Type   | Unit</span>
-<span class="doccomment">//! --------------|---------------------------------------------|--------|-----</span>
-<span class="doccomment">//! `icon`        | A static icon                               | Icon   | -</span>
-<span class="doccomment">//! `count`       | The number of tasks matching current filter | Number | -</span>
-<span class="doccomment">//! `filter_name` | The name of current filter                  | Text   | -</span>
-<span class="doccomment">//! `done`        | Present only if `count` is zero             | Flag   | -</span>
-<span class="doccomment">//! `single`      | Present only if `count` is one              | Flag   | -</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Example</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! In this example, block will display &quot;All done&quot; if `count` is zero, &quot;One task&quot; if `count` is one</span>
-<span class="doccomment">//! and &quot;Tasks: N&quot; if there are more than one task.</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! ```toml</span>
-<span class="doccomment">//! [[block]]</span>
-<span class="doccomment">//! block = &quot;taskwarrior&quot;</span>
-<span class="doccomment">//! interval = 60</span>
-<span class="doccomment">//! format = &quot; $icon $done{All done}|$single{One task}|Tasks: $count.eng(1) &quot;</span>
-<span class="doccomment">//! warning_threshold = 10</span>
-<span class="doccomment">//! critical_threshold = 20</span>
-<span class="doccomment">//! [[block.filters]]</span>
-<span class="doccomment">//! name = &quot;today&quot;</span>
-<span class="doccomment">//! filter = &quot;+PENDING +OVERDUE or +DUETODAY&quot;</span>
-<span class="doccomment">//! [[block.filters]]</span>
-<span class="doccomment">//! name = &quot;some-project&quot;</span>
-<span class="doccomment">//! filter = &quot;project:some-project +PENDING&quot;</span>
-<span class="doccomment">//! ```</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! # Icons Used</span>
-<span class="doccomment">//! - `tasks`</span>
+</pre><pre class="rust"><code><span class="doccomment">//! The number of tasks from the taskwarrior list
+//!
+//! Clicking on the block updates the number of tasks immediately. Clicking the right mouse button on the icon cycles the view of the block through the user&#39;s filters.
+//!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `interval` | Update interval in seconds | `600` (10min)
+//! `warning_threshold` | The threshold of pending (or started) tasks when the block turns into a warning state | `10`
+//! `critical_threshold` | The threshold of pending (or started) tasks when the block turns into a critical state | `20`
+//! `hide_when_zero` | Whethere to hide the block when the number of tasks is zero | `false`
+//! `filters` | A list of tables with the keys `name` and `filter`. `filter` specifies the criteria that must be met for a task to be counted towards this filter. | ```[{name = &quot;pending&quot;, filter = &quot;-COMPLETED -DELETED&quot;}]```
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $done\|$count.eng(1) &quot;`
+//! `data_location`| Directory in which taskwarrior stores its data files. Supports path expansions e.g. `~`. | `&quot;~/.task&quot;`
+//!
+//! Placeholder   | Value                                       | Type   | Unit
+//! --------------|---------------------------------------------|--------|-----
+//! `icon`        | A static icon                               | Icon   | -
+//! `count`       | The number of tasks matching current filter | Number | -
+//! `filter_name` | The name of current filter                  | Text   | -
+//! `done`        | Present only if `count` is zero             | Flag   | -
+//! `single`      | Present only if `count` is one              | Flag   | -
+//!
+//! # Example
+//!
+//! In this example, block will display &quot;All done&quot; if `count` is zero, &quot;One task&quot; if `count` is one
+//! and &quot;Tasks: N&quot; if there are more than one task.
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;taskwarrior&quot;
+//! interval = 60
+//! format = &quot; $icon $done{All done}|$single{One task}|Tasks: $count.eng(1) &quot;
+//! warning_threshold = 10
+//! critical_threshold = 20
+//! [[block.filters]]
+//! name = &quot;today&quot;
+//! filter = &quot;+PENDING +OVERDUE or +DUETODAY&quot;
+//! [[block.filters]]
+//! name = &quot;some-project&quot;
+//! filter = &quot;project:some-project +PENDING&quot;
+//! ```
+//!
+//! # Icons Used
+//! - `tasks`
 
-<span class="kw">use</span> <span class="ident"><span class="kw">super</span>::prelude</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">inotify</span>::{<span class="ident">Inotify</span>, <span class="ident">WatchMask</span>};
-<span class="kw">use</span> <span class="ident">tokio::process::Command</span>;
+</span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span>inotify::{Inotify, WatchMask};
+<span class="kw">use </span>tokio::process::Command;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>, <span class="ident">default</span>)]</span>
-<span class="kw">struct</span> <span class="ident">TaskwarriorConfig</span> {
-    <span class="ident">interval</span>: <span class="ident">Seconds</span>,
-    <span class="ident">warning_threshold</span>: <span class="ident">u32</span>,
-    <span class="ident">critical_threshold</span>: <span class="ident">u32</span>,
-    <span class="ident">hide_when_zero</span>: <span class="ident">bool</span>,
-    <span class="ident">filters</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Filter</span><span class="op">&gt;</span>,
-    <span class="ident">format</span>: <span class="ident">FormatConfig</span>,
-    <span class="ident">data_location</span>: <span class="ident">ShellString</span>,
+<span class="attribute">#[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields, default)]
+</span><span class="kw">struct </span>TaskwarriorConfig {
+    interval: Seconds,
+    warning_threshold: u32,
+    critical_threshold: u32,
+    hide_when_zero: bool,
+    filters: Vec&lt;Filter&gt;,
+    format: FormatConfig,
+    data_location: ShellString,
 }
 
-<span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">TaskwarriorConfig</span> {
-    <span class="kw">fn</span> <span class="ident">default</span>() -&gt; <span class="self">Self</span> {
-        <span class="self">Self</span> {
-            <span class="ident">interval</span>: <span class="ident">Seconds::new</span>(<span class="number">600</span>),
-            <span class="ident">warning_threshold</span>: <span class="number">10</span>,
-            <span class="ident">critical_threshold</span>: <span class="number">20</span>,
-            <span class="ident">hide_when_zero</span>: <span class="bool-val">false</span>,
-            <span class="ident">filters</span>: <span class="macro">vec!</span>[<span class="ident">Filter</span> {
-                <span class="ident">name</span>: <span class="string">&quot;pending&quot;</span>.<span class="ident">into</span>(),
-                <span class="ident">filter</span>: <span class="string">&quot;-COMPLETED -DELETED&quot;</span>.<span class="ident">into</span>(),
+<span class="kw">impl </span>Default <span class="kw">for </span>TaskwarriorConfig {
+    <span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
+        <span class="self">Self </span>{
+            interval: Seconds::new(<span class="number">600</span>),
+            warning_threshold: <span class="number">10</span>,
+            critical_threshold: <span class="number">20</span>,
+            hide_when_zero: <span class="bool-val">false</span>,
+            filters: <span class="macro">vec!</span>[Filter {
+                name: <span class="string">&quot;pending&quot;</span>.into(),
+                filter: <span class="string">&quot;-COMPLETED -DELETED&quot;</span>.into(),
             }],
-            <span class="ident">format</span>: <span class="ident">default</span>(),
-            <span class="ident">data_location</span>: <span class="ident">ShellString::new</span>(<span class="string">&quot;~/.task&quot;</span>),
+            format: default(),
+            data_location: ShellString::new(<span class="string">&quot;~/.task&quot;</span>),
         }
     }
 }
 
-<span class="kw">pub</span> <span class="kw">async</span> <span class="kw">fn</span> <span class="ident">run</span>(<span class="ident">config</span>: <span class="ident">toml::Value</span>, <span class="kw-2">mut</span> <span class="ident">api</span>: <span class="ident">CommonApi</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="ident">TaskwarriorConfig::deserialize</span>(<span class="ident">config</span>).<span class="ident">config_error</span>()<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">widget</span> <span class="op">=</span>
-        <span class="ident">Widget::new</span>().<span class="ident">with_format</span>(<span class="ident">config</span>.<span class="ident">format</span>.<span class="ident">with_default</span>(<span class="string">&quot; $icon $done|$count.eng(1) &quot;</span>)<span class="question-mark">?</span>);
+<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span>config = TaskwarriorConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>widget =
+        Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon $done|$count.eng(1) &quot;</span>)<span class="question-mark">?</span>);
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">filters</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">filters</span>.<span class="ident">iter</span>().<span class="ident">cycle</span>();
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">filter</span> <span class="op">=</span> <span class="ident">filters</span>.<span class="ident">next</span>().<span class="ident">error</span>(<span class="string">&quot;failed to get next filter&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>filters = config.filters.iter().cycle();
+    <span class="kw">let </span><span class="kw-2">mut </span>filter = filters.next().error(<span class="string">&quot;failed to get next filter&quot;</span>)<span class="question-mark">?</span>;
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">notify</span> <span class="op">=</span> <span class="ident">Inotify::init</span>().<span class="ident">error</span>(<span class="string">&quot;Failed to start inotify&quot;</span>)<span class="question-mark">?</span>;
-    <span class="ident">notify</span>
-        .<span class="ident">add_watch</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">config</span>.<span class="ident">data_location</span>.<span class="ident">expand</span>()<span class="question-mark">?</span>, <span class="ident">WatchMask::MODIFY</span>)
-        .<span class="ident">error</span>(<span class="string">&quot;Failed to watch data location&quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">updates</span> <span class="op">=</span> <span class="ident">notify</span>
-        .<span class="ident">event_stream</span>([<span class="number">0</span>; <span class="number">1024</span>])
-        .<span class="ident">error</span>(<span class="string">&quot;Failed to create event stream&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>notify = Inotify::init().error(<span class="string">&quot;Failed to start inotify&quot;</span>)<span class="question-mark">?</span>;
+    notify
+        .add_watch(<span class="kw-2">&amp;*</span>config.data_location.expand()<span class="question-mark">?</span>, WatchMask::MODIFY)
+        .error(<span class="string">&quot;Failed to watch data location&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>updates = notify
+        .event_stream([<span class="number">0</span>; <span class="number">1024</span>])
+        .error(<span class="string">&quot;Failed to create event stream&quot;</span>)<span class="question-mark">?</span>;
 
-    <span class="kw">loop</span> {
-        <span class="kw">let</span> <span class="ident">number_of_tasks</span> <span class="op">=</span> <span class="ident">get_number_of_tasks</span>(<span class="kw-2">&amp;</span><span class="ident">filter</span>.<span class="ident">filter</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">loop </span>{
+        <span class="kw">let </span>number_of_tasks = get_number_of_tasks(<span class="kw-2">&amp;</span>filter.filter).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="kw">if</span> <span class="ident">number_of_tasks</span> <span class="op">!</span><span class="op">=</span> <span class="number">0</span> <span class="op">|</span><span class="op">|</span> <span class="op">!</span><span class="ident">config</span>.<span class="ident">hide_when_zero</span> {
-            <span class="ident">widget</span>.<span class="ident">set_values</span>(<span class="macro">map!</span> {
-                <span class="string">&quot;icon&quot;</span> =&gt; <span class="ident">Value::icon</span>(<span class="ident">api</span>.<span class="ident">get_icon</span>(<span class="string">&quot;tasks&quot;</span>)<span class="question-mark">?</span>),
-                <span class="string">&quot;count&quot;</span> =&gt; <span class="ident">Value::number</span>(<span class="ident">number_of_tasks</span>),
-                <span class="string">&quot;filter_name&quot;</span> =&gt; <span class="ident">Value::text</span>(<span class="ident">filter</span>.<span class="ident">name</span>.<span class="ident">clone</span>()),
-                [<span class="kw">if</span> <span class="ident">number_of_tasks</span> <span class="op">==</span> <span class="number">0</span>] <span class="string">&quot;done&quot;</span> =&gt; <span class="ident">Value::flag</span>(),
-                [<span class="kw">if</span> <span class="ident">number_of_tasks</span> <span class="op">==</span> <span class="number">1</span>] <span class="string">&quot;single&quot;</span> =&gt; <span class="ident">Value::flag</span>(),
+        <span class="kw">if </span>number_of_tasks != <span class="number">0 </span>|| !config.hide_when_zero {
+            widget.set_values(<span class="macro">map! </span>{
+                <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;tasks&quot;</span>)<span class="question-mark">?</span>),
+                <span class="string">&quot;count&quot; </span>=&gt; Value::number(number_of_tasks),
+                <span class="string">&quot;filter_name&quot; </span>=&gt; Value::text(filter.name.clone()),
+                [<span class="kw">if </span>number_of_tasks == <span class="number">0</span>] <span class="string">&quot;done&quot; </span>=&gt; Value::flag(),
+                [<span class="kw">if </span>number_of_tasks == <span class="number">1</span>] <span class="string">&quot;single&quot; </span>=&gt; Value::flag(),
             });
 
-            <span class="ident">widget</span>.<span class="ident">state</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">number_of_tasks</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">critical_threshold</span> {
-                <span class="ident">State::Critical</span>
-            } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">number_of_tasks</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">config</span>.<span class="ident">warning_threshold</span> {
-                <span class="ident">State::Warning</span>
-            } <span class="kw">else</span> {
-                <span class="ident">State::Idle</span>
+            widget.state = <span class="kw">if </span>number_of_tasks &gt;= config.critical_threshold {
+                State::Critical
+            } <span class="kw">else if </span>number_of_tasks &gt;= config.warning_threshold {
+                State::Warning
+            } <span class="kw">else </span>{
+                State::Idle
             };
 
-            <span class="ident">api</span>.<span class="ident">set_widget</span>(<span class="kw-2">&amp;</span><span class="ident">widget</span>).<span class="kw">await</span><span class="question-mark">?</span>;
-        } <span class="kw">else</span> {
-            <span class="ident">api</span>.<span class="ident">hide</span>().<span class="kw">await</span><span class="question-mark">?</span>;
+            api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+        } <span class="kw">else </span>{
+            api.hide().<span class="kw">await</span><span class="question-mark">?</span>;
         }
 
-        <span class="macro">select!</span> {
-            <span class="kw">_</span> <span class="op">=</span> <span class="ident">sleep</span>(<span class="ident">config</span>.<span class="ident">interval</span>.<span class="number">0</span>) =&gt;(),
-            <span class="kw">_</span> <span class="op">=</span> <span class="ident">updates</span>.<span class="ident">next</span>() =&gt; (),
-            <span class="ident">event</span> <span class="op">=</span> <span class="ident">api</span>.<span class="ident">event</span>() =&gt; <span class="kw">match</span> <span class="ident">event</span> {
-                <span class="ident">UpdateRequest</span> =&gt; (),
-                <span class="ident">Click</span>(<span class="ident">click</span>) =&gt; {
-                    <span class="kw">if</span> <span class="ident">click</span>.<span class="ident">button</span> <span class="op">==</span> <span class="ident">MouseButton::Right</span> {
-                        <span class="ident">filter</span> <span class="op">=</span> <span class="ident">filters</span>.<span class="ident">next</span>().<span class="ident">error</span>(<span class="string">&quot;failed to get next filter&quot;</span>)<span class="question-mark">?</span>;
+        <span class="macro">select! </span>{
+            <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt;(),
+            <span class="kw">_ </span>= updates.next() =&gt; (),
+            event = api.event() =&gt; <span class="kw">match </span>event {
+                UpdateRequest =&gt; (),
+                Click(click) =&gt; {
+                    <span class="kw">if </span>click.button == MouseButton::Right {
+                        filter = filters.next().error(<span class="string">&quot;failed to get next filter&quot;</span>)<span class="question-mark">?</span>;
                     }
                 }
             }
@@ -290,25 +290,25 @@
     }
 }
 
-<span class="kw">async</span> <span class="kw">fn</span> <span class="ident">get_number_of_tasks</span>(<span class="ident">filter</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="ident">output</span> <span class="op">=</span> <span class="ident">Command::new</span>(<span class="string">&quot;task&quot;</span>)
-        .<span class="ident">args</span>([<span class="string">&quot;rc.gc=off&quot;</span>, <span class="ident">filter</span>, <span class="string">&quot;count&quot;</span>])
-        .<span class="ident">output</span>()
-        .<span class="kw">await</span>
-        .<span class="ident">error</span>(<span class="string">&quot;failed to run taskwarrior for getting the number of tasks&quot;</span>)<span class="question-mark">?</span>
-        .<span class="ident">stdout</span>;
-    <span class="ident">std::str::from_utf8</span>(<span class="kw-2">&amp;</span><span class="ident">output</span>)
-        .<span class="ident">error</span>(<span class="string">&quot;failed to get the number of tasks from taskwarrior (invalid UTF-8)&quot;</span>)<span class="question-mark">?</span>
-        .<span class="ident">trim</span>()
-        .<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>()
-        .<span class="ident">error</span>(<span class="string">&quot;could not parse the result of taskwarrior&quot;</span>)
+<span class="kw">async fn </span>get_number_of_tasks(filter: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;u32&gt; {
+    <span class="kw">let </span>output = Command::new(<span class="string">&quot;task&quot;</span>)
+        .args([<span class="string">&quot;rc.gc=off&quot;</span>, filter, <span class="string">&quot;count&quot;</span>])
+        .output()
+        .<span class="kw">await
+        </span>.error(<span class="string">&quot;failed to run taskwarrior for getting the number of tasks&quot;</span>)<span class="question-mark">?
+        </span>.stdout;
+    std::str::from_utf8(<span class="kw-2">&amp;</span>output)
+        .error(<span class="string">&quot;failed to get the number of tasks from taskwarrior (invalid UTF-8)&quot;</span>)<span class="question-mark">?
+        </span>.trim()
+        .parse::&lt;u32&gt;()
+        .error(<span class="string">&quot;could not parse the result of taskwarrior&quot;</span>)
 }
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Deserialize</span>, <span class="ident">Debug</span>, <span class="ident">Default</span>, <span class="ident">Clone</span>)]</span>
-<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">deny_unknown_fields</span>)]</span>
-<span class="kw">struct</span> <span class="ident">Filter</span> {
-    <span class="kw">pub</span> <span class="ident">name</span>: <span class="ident">String</span>,
-    <span class="kw">pub</span> <span class="ident">filter</span>: <span class="ident">String</span>,
+<span class="attribute">#[derive(Deserialize, Debug, Default, Clone)]
+#[serde(deny_unknown_fields)]
+</span><span class="kw">struct </span>Filter {
+    <span class="kw">pub </span>name: String,
+    <span class="kw">pub </span>filter: String,
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>

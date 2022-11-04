@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/widget.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>widget.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../i3status_rs/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/widget.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>widget.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../normalize.css"><link rel="stylesheet" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../ayu.css" disabled><link rel="stylesheet" href="../../dark.css" disabled><link rel="stylesheet" href="../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../storage.js"></script><script defer src="../../source-script.js"></script><script defer src="../../source-files.js"></script><script defer src="../../main.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../i3status_rs/index.html"><div class="logo-container"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../i3status_rs/index.html"><img class="rust-logo" src="../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -144,151 +144,151 @@
 <span id="144">144</span>
 <span id="145">145</span>
 <span id="146">146</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::config::SharedConfig</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errors</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::formatting</span>::{<span class="ident">Format</span>, <span class="ident">Fragment</span>, <span class="ident">Values</span>};
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::protocol::i3bar_block::I3BarBlock</span>;
-<span class="kw">use</span> <span class="ident">serde::Deserialize</span>;
-<span class="kw">use</span> <span class="ident">smart_default::SmartDefault</span>;
+</pre><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::SharedConfig;
+<span class="kw">use </span><span class="kw">crate</span>::errors::<span class="kw-2">*</span>;
+<span class="kw">use </span><span class="kw">crate</span>::formatting::{Format, Fragment, Values};
+<span class="kw">use </span><span class="kw">crate</span>::protocol::i3bar_block::I3BarBlock;
+<span class="kw">use </span>serde::Deserialize;
+<span class="kw">use </span>smart_default::SmartDefault;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Default</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Widget</span> {
-    <span class="kw">pub</span> <span class="ident">state</span>: <span class="ident">State</span>,
-    <span class="ident">source</span>: <span class="ident">Source</span>,
+<span class="attribute">#[derive(Debug, Clone, Default)]
+</span><span class="kw">pub struct </span>Widget {
+    <span class="kw">pub </span>state: State,
+    source: Source,
 }
 
-<span class="kw">impl</span> <span class="ident">Widget</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() -&gt; <span class="self">Self</span> {
-        <span class="ident"><span class="self">Self</span>::default</span>()
+<span class="kw">impl </span>Widget {
+    <span class="kw">pub fn </span>new() -&gt; <span class="self">Self </span>{
+        <span class="self">Self</span>::default()
     }
 
     <span class="comment">/*
      * Builders
-     */</span>
+     */
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">with_text</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">text</span>: <span class="ident">String</span>) -&gt; <span class="self">Self</span> {
-        <span class="self">self</span>.<span class="ident">set_text</span>(<span class="ident">text</span>);
-        <span class="self">self</span>
-    }
+    </span><span class="kw">pub fn </span>with_text(<span class="kw-2">mut </span><span class="self">self</span>, text: String) -&gt; <span class="self">Self </span>{
+        <span class="self">self</span>.set_text(text);
+        <span class="self">self
+    </span>}
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">with_state</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">state</span>: <span class="ident">State</span>) -&gt; <span class="self">Self</span> {
-        <span class="self">self</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">state</span>;
-        <span class="self">self</span>
-    }
+    <span class="kw">pub fn </span>with_state(<span class="kw-2">mut </span><span class="self">self</span>, state: State) -&gt; <span class="self">Self </span>{
+        <span class="self">self</span>.state = state;
+        <span class="self">self
+    </span>}
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">with_format</span>(<span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">format</span>: <span class="ident">Format</span>) -&gt; <span class="self">Self</span> {
-        <span class="self">self</span>.<span class="ident">set_format</span>(<span class="ident">format</span>);
-        <span class="self">self</span>
-    }
+    <span class="kw">pub fn </span>with_format(<span class="kw-2">mut </span><span class="self">self</span>, format: Format) -&gt; <span class="self">Self </span>{
+        <span class="self">self</span>.set_format(format);
+        <span class="self">self
+    </span>}
 
     <span class="comment">/*
      * Setters
-     */</span>
+     */
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_text</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">text</span>: <span class="ident">String</span>) {
-        <span class="kw">if</span> <span class="ident">text</span>.<span class="ident">is_empty</span>() {
-            <span class="self">self</span>.<span class="ident">source</span> <span class="op">=</span> <span class="ident">Source::None</span>;
-        } <span class="kw">else</span> {
-            <span class="self">self</span>.<span class="ident">source</span> <span class="op">=</span> <span class="ident">Source::Text</span>(<span class="ident">text</span>);
+    </span><span class="kw">pub fn </span>set_text(<span class="kw-2">&amp;mut </span><span class="self">self</span>, text: String) {
+        <span class="kw">if </span>text.is_empty() {
+            <span class="self">self</span>.source = Source::None;
+        } <span class="kw">else </span>{
+            <span class="self">self</span>.source = Source::Text(text);
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_format</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">format</span>: <span class="ident">Format</span>) {
-        <span class="kw">match</span> <span class="kw-2">&amp;mut</span> <span class="self">self</span>.<span class="ident">source</span> {
-            <span class="ident">Source::Format</span>(<span class="ident">old</span>, <span class="kw">_</span>) =&gt; <span class="kw-2">*</span><span class="ident">old</span> <span class="op">=</span> <span class="ident">format</span>,
-            <span class="kw">_</span> =&gt; <span class="self">self</span>.<span class="ident">source</span> <span class="op">=</span> <span class="ident">Source::Format</span>(<span class="ident">format</span>, <span class="prelude-val">None</span>),
+    <span class="kw">pub fn </span>set_format(<span class="kw-2">&amp;mut </span><span class="self">self</span>, format: Format) {
+        <span class="kw">match </span><span class="kw-2">&amp;mut </span><span class="self">self</span>.source {
+            Source::Format(old, <span class="kw">_</span>) =&gt; <span class="kw-2">*</span>old = format,
+            <span class="kw">_ </span>=&gt; <span class="self">self</span>.source = Source::Format(format, <span class="prelude-val">None</span>),
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_values</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">new_values</span>: <span class="ident">Values</span>) {
-        <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Source::Format</span>(<span class="kw">_</span>, <span class="ident">values</span>) <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="self">self</span>.<span class="ident">source</span> {
-            <span class="kw-2">*</span><span class="ident">values</span> <span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">new_values</span>);
+    <span class="kw">pub fn </span>set_values(<span class="kw-2">&amp;mut </span><span class="self">self</span>, new_values: Values) {
+        <span class="kw">if let </span>Source::Format(<span class="kw">_</span>, values) = <span class="kw-2">&amp;mut </span><span class="self">self</span>.source {
+            <span class="kw-2">*</span>values = <span class="prelude-val">Some</span>(new_values);
         }
     }
 
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">intervals</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">source</span> {
-            <span class="ident">Source::Format</span>(<span class="ident">f</span>, <span class="kw">_</span>) =&gt; <span class="ident">f</span>.<span class="ident">intervals</span>(),
-            <span class="kw">_</span> =&gt; <span class="ident">Vec::new</span>(),
+    <span class="kw">pub fn </span>intervals(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Vec&lt;u64&gt; {
+        <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.source {
+            Source::Format(f, <span class="kw">_</span>) =&gt; f.intervals(),
+            <span class="kw">_ </span>=&gt; Vec::new(),
         }
     }
 
-    <span class="doccomment">/// Constuct `I3BarBlock` from this widget</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_data</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">shared_config</span>: <span class="kw-2">&amp;</span><span class="ident">SharedConfig</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">I3BarBlock</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="comment">// Create a &quot;template&quot; block</span>
-        <span class="kw">let</span> (<span class="ident">key_bg</span>, <span class="ident">key_fg</span>) <span class="op">=</span> <span class="ident">shared_config</span>.<span class="ident">theme</span>.<span class="ident">get_colors</span>(<span class="self">self</span>.<span class="ident">state</span>);
-        <span class="kw">let</span> (<span class="ident">full</span>, <span class="ident">short</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">source</span>.<span class="ident">render</span>(<span class="ident">shared_config</span>)<span class="question-mark">?</span>;
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">template</span> <span class="op">=</span> <span class="ident">I3BarBlock</span> {
-            <span class="ident">background</span>: <span class="ident">key_bg</span>,
-            <span class="ident">color</span>: <span class="ident">key_fg</span>,
-            ..<span class="ident">I3BarBlock::default</span>()
+    <span class="doccomment">/// Constuct `I3BarBlock` from this widget
+    </span><span class="kw">pub fn </span>get_data(<span class="kw-2">&amp;</span><span class="self">self</span>, shared_config: <span class="kw-2">&amp;</span>SharedConfig) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;I3BarBlock&gt;&gt; {
+        <span class="comment">// Create a &quot;template&quot; block
+        </span><span class="kw">let </span>(key_bg, key_fg) = shared_config.theme.get_colors(<span class="self">self</span>.state);
+        <span class="kw">let </span>(full, short) = <span class="self">self</span>.source.render(shared_config)<span class="question-mark">?</span>;
+        <span class="kw">let </span><span class="kw-2">mut </span>template = I3BarBlock {
+            background: key_bg,
+            color: key_fg,
+            ..I3BarBlock::default()
         };
 
-        <span class="comment">// Collect all the pieces into &quot;parts&quot;</span>
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">parts</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
+        <span class="comment">// Collect all the pieces into &quot;parts&quot;
+        </span><span class="kw">let </span><span class="kw-2">mut </span>parts = Vec::new();
 
-        <span class="kw">if</span> <span class="ident">full</span>.<span class="ident">is_empty</span>() {
-            <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">parts</span>);
+        <span class="kw">if </span>full.is_empty() {
+            <span class="kw">return </span><span class="prelude-val">Ok</span>(parts);
         }
 
-        <span class="comment">// If short text is available, it&#39;s necessary to hide all full blocks. `swaybar`/`i3bar`</span>
-        <span class="comment">// will switch a block to &quot;short mode&quot; only if it&#39;s &quot;short_text&quot; is set to a non-empty</span>
-        <span class="comment">// string &quot;&lt;span/&gt;&quot; is a non-empty string and it doesn&#39;t display anything. It&#39;s kinda hacky,</span>
-        <span class="comment">// but it works.</span>
-        <span class="kw">if</span> <span class="op">!</span><span class="ident">short</span>.<span class="ident">is_empty</span>() {
-            <span class="ident">template</span>.<span class="ident">short_text</span> <span class="op">=</span> <span class="string">&quot;&lt;span/&gt;&quot;</span>.<span class="ident">into</span>();
+        <span class="comment">// If short text is available, it&#39;s necessary to hide all full blocks. `swaybar`/`i3bar`
+        // will switch a block to &quot;short mode&quot; only if it&#39;s &quot;short_text&quot; is set to a non-empty
+        // string &quot;&lt;span/&gt;&quot; is a non-empty string and it doesn&#39;t display anything. It&#39;s kinda hacky,
+        // but it works.
+        </span><span class="kw">if </span>!short.is_empty() {
+            template.short_text = <span class="string">&quot;&lt;span/&gt;&quot;</span>.into();
         }
 
-        <span class="ident">parts</span>.<span class="ident">extend</span>(<span class="ident">full</span>.<span class="ident">into_iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">w</span><span class="op">|</span> {
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">template</span>.<span class="ident">clone</span>();
-            <span class="ident">data</span>.<span class="ident">full_text</span> <span class="op">=</span> <span class="ident">w</span>.<span class="ident">formated_text</span>();
-            <span class="ident">data</span>.<span class="ident">instance</span> <span class="op">=</span> <span class="ident">w</span>.<span class="ident">metadata</span>.<span class="ident">instance</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">i</span><span class="op">|</span> <span class="ident">i</span>.<span class="ident">to_string</span>());
-            <span class="ident">data</span>
+        parts.extend(full.into_iter().map(|w| {
+            <span class="kw">let </span><span class="kw-2">mut </span>data = template.clone();
+            data.full_text = w.formated_text();
+            data.instance = w.metadata.instance.map(|i| i.to_string());
+            data
         }));
 
-        <span class="ident">template</span>.<span class="ident">full_text</span> <span class="op">=</span> <span class="string">&quot;&lt;span/&gt;&quot;</span>.<span class="ident">into</span>();
-        <span class="ident">parts</span>.<span class="ident">extend</span>(<span class="ident">short</span>.<span class="ident">into_iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">w</span><span class="op">|</span> {
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data</span> <span class="op">=</span> <span class="ident">template</span>.<span class="ident">clone</span>();
-            <span class="ident">data</span>.<span class="ident">short_text</span> <span class="op">=</span> <span class="ident">w</span>.<span class="ident">formated_text</span>();
-            <span class="ident">data</span>.<span class="ident">instance</span> <span class="op">=</span> <span class="ident">w</span>.<span class="ident">metadata</span>.<span class="ident">instance</span>.<span class="ident">map</span>(<span class="op">|</span><span class="ident">i</span><span class="op">|</span> <span class="ident">i</span>.<span class="ident">to_string</span>());
-            <span class="ident">data</span>
+        template.full_text = <span class="string">&quot;&lt;span/&gt;&quot;</span>.into();
+        parts.extend(short.into_iter().map(|w| {
+            <span class="kw">let </span><span class="kw-2">mut </span>data = template.clone();
+            data.short_text = w.formated_text();
+            data.instance = w.metadata.instance.map(|i| i.to_string());
+            data
         }));
 
-        <span class="prelude-val">Ok</span>(<span class="ident">parts</span>)
+        <span class="prelude-val">Ok</span>(parts)
     }
 }
 
-<span class="doccomment">/// State of the widget. Affects the theming.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">Deserialize</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">SmartDefault</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">State</span> {
-    <span class="attribute">#[<span class="ident">default</span>]</span>
-    <span class="ident">Idle</span>,
-    <span class="ident">Info</span>,
-    <span class="ident">Good</span>,
-    <span class="ident">Warning</span>,
-    <span class="ident">Critical</span>,
+<span class="doccomment">/// State of the widget. Affects the theming.
+</span><span class="attribute">#[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq, SmartDefault)]
+</span><span class="kw">pub enum </span>State {
+    <span class="attribute">#[default]
+    </span>Idle,
+    Info,
+    Good,
+    Warning,
+    Critical,
 }
 
-<span class="doccomment">/// The source of text for widget</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">SmartDefault</span>)]</span>
-<span class="kw">enum</span> <span class="ident">Source</span> {
-    <span class="doccomment">/// Collapsed widget (only icon will be displayed)</span>
-    <span class="attribute">#[<span class="ident">default</span>]</span>
-    <span class="prelude-val">None</span>,
-    <span class="doccomment">/// Simple text</span>
-    <span class="ident">Text</span>(<span class="ident">String</span>),
-    <span class="doccomment">/// A format template</span>
-    <span class="ident">Format</span>(<span class="ident">Format</span>, <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Values</span><span class="op">&gt;</span>),
+<span class="doccomment">/// The source of text for widget
+</span><span class="attribute">#[derive(Debug, Clone, SmartDefault)]
+</span><span class="kw">enum </span>Source {
+    <span class="doccomment">/// Collapsed widget (only icon will be displayed)
+    </span><span class="attribute">#[default]
+    </span><span class="prelude-val">None</span>,
+    <span class="doccomment">/// Simple text
+    </span>Text(String),
+    <span class="doccomment">/// A format template
+    </span>Format(Format, <span class="prelude-ty">Option</span>&lt;Values&gt;),
 }
 
-<span class="kw">impl</span> <span class="ident">Source</span> {
-    <span class="kw">fn</span> <span class="ident">render</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">config</span>: <span class="kw-2">&amp;</span><span class="ident">SharedConfig</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Fragment</span><span class="op">&gt;</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Fragment</span><span class="op">&gt;</span>)<span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident"><span class="self">Self</span>::Text</span>(<span class="ident">text</span>) =&gt; <span class="prelude-val">Ok</span>((<span class="macro">vec!</span>[<span class="ident">text</span>.<span class="ident">clone</span>().<span class="ident">into</span>()], <span class="macro">vec!</span>[])),
-            <span class="ident"><span class="self">Self</span>::Format</span>(<span class="ident">format</span>, <span class="prelude-val">Some</span>(<span class="ident">values</span>)) =&gt; <span class="ident">format</span>.<span class="ident">render</span>(<span class="ident">values</span>, <span class="ident">config</span>),
-            <span class="ident"><span class="self">Self</span>::None</span> <span class="op">|</span> <span class="ident"><span class="self">Self</span>::Format</span>(<span class="kw">_</span>, <span class="prelude-val">None</span>) =&gt; <span class="prelude-val">Ok</span>((<span class="macro">vec!</span>[], <span class="macro">vec!</span>[])),
+<span class="kw">impl </span>Source {
+    <span class="kw">fn </span>render(<span class="kw-2">&amp;</span><span class="self">self</span>, config: <span class="kw-2">&amp;</span>SharedConfig) -&gt; <span class="prelude-ty">Result</span>&lt;(Vec&lt;Fragment&gt;, Vec&lt;Fragment&gt;)&gt; {
+        <span class="kw">match </span><span class="self">self </span>{
+            <span class="self">Self</span>::Text(text) =&gt; <span class="prelude-val">Ok</span>((<span class="macro">vec!</span>[text.clone().into()], <span class="macro">vec!</span>[])),
+            <span class="self">Self</span>::Format(format, <span class="prelude-val">Some</span>(values)) =&gt; format.render(values, config),
+            <span class="self">Self</span>::None | <span class="self">Self</span>::Format(<span class="kw">_</span>, <span class="prelude-val">None</span>) =&gt; <span class="prelude-val">Ok</span>((<span class="macro">vec!</span>[], <span class="macro">vec!</span>[])),
         }
     }
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0 (a55dd71d5 2022-09-19)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0 (897e37553 2022-11-02)" ></div></body></html>
