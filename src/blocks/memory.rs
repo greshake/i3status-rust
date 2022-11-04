@@ -121,13 +121,15 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         let buffers = mem_state.buffers as f64 * 1024.;
 
         // same logic as htop
-        // TODO: consider zfs here too?
         let used_diff = mem_free + buffers + pagecache + reclaimable;
         let mem_used = if mem_total >= used_diff {
             mem_total - used_diff
         } else {
             mem_total - mem_free
         };
+
+        // account for ZFS ARC cache
+        let mem_used = mem_used - zfs_arc_cache
 
         let swap_total = mem_state.swap_total as f64 * 1024.;
         let swap_free = mem_state.swap_free as f64 * 1024.;
