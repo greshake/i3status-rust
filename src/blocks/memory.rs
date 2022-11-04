@@ -17,7 +17,7 @@
 //! `icon`                    | Memory icon                                                                     | Icon   | -
 //! `icon_swap`               | Swap icon                                                                       | Icon   | -
 //! `mem_total`               | Total physical ram available                                                    | Number | Bytes
-//! `mem_free`                | Free memory not yet used by the kernel or userspace                             | Number | Bytes
+//! `mem_free`                | Free memory not yet used by the kernel or userspace (in general you would want mem_avail) | Number | Bytes
 //! `mem_free_percents`       | as above but as a percentage of total memory                                    | Number | Percents
 //! `mem_total_used`          | mem_total - mem_free                                                            | Number | Bytes
 //! `mem_total_used_percents` | as above but as a percentage of total memory                                    | Number | Percents
@@ -81,7 +81,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut widget = Widget::new();
 
     let mut format = config.format.with_default(
-        " $icon $mem_free.eng(3,B,M)/$mem_total.eng(3,B,M)($mem_total_used_percents.eng(2)) ",
+        " $icon $mem_available.eng(3,B,M)/$mem_total.eng(3,B,M)($mem_total_used_percents.eng(2)) ",
     )?;
     let mut format_alt = match config.format_alt {
         Some(f) => Some(f.with_default("")?),
