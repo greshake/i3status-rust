@@ -100,6 +100,8 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         // htop and such only display equivalent of `mem_used`
         let mem_total_used = mem_total - mem_free;
 
+        // dev note: difference between avail and free: 
+        // https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=34e431b0ae398fc54ea69ff85ec700722c9da773
         // same logic as htop
         let mem_avail = if mem_state.mem_available != 0 {
             min(mem_state.mem_available, mem_state.mem_total)
