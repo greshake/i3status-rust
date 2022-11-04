@@ -300,13 +300,13 @@
 //! `icon_swap`               | Swap icon                                                                       | Icon   | -
 //! `mem_total`               | Total physical ram available                                                    | Number | Bytes
 //! `mem_free`                | Free memory not yet used by the kernel or userspace (in general you would want mem_avail) | Number | Bytes
+//! `mem_avail`               | Kernel estimate of usable free memory which includes cached memory and buffers  | Number | Bytes
+//! `mem_avail_percents`      | as above but as a percentage of total memory                                    | Number | Percents
 //! `mem_free_percents`       | as above but as a percentage of total memory                                    | Number | Percents
 //! `mem_total_used`          | mem_total - mem_free                                                            | Number | Bytes
 //! `mem_total_used_percents` | as above but as a percentage of total memory                                    | Number | Percents
 //! `mem_used`                | Memory used, excluding cached memory and buffers; same as htop&#39;s green bar      | Number | Bytes
 //! `mem_used_percents`       | as above but as a percentage of total memory                                    | Number | Percents
-//! `mem_avail`               | Available memory, including cached memory and buffers                           | Number | Bytes
-//! `mem_avail_percents`      | as above but as a percentage of total memory                                    | Number | Percents
 //! `buffers`                 | Buffers, similar to htop&#39;s blue bar                                             | Number | Bytes
 //! `buffers_percent`         | as above but as a percentage of total memory                                    | Number | Percents
 //! `cached`                  | Cached memory (taking into account ZFS ARC cache), similar to htop&#39;s yellow bar | Number | Bytes
