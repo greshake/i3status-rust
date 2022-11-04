@@ -51,6 +51,7 @@
 //! - `memory_mem`
 //! - `memory_swap`
 
+use std::cmp::min;
 use std::str::FromStr;
 use tokio::fs::File;
 use tokio::io::{AsyncBufReadExt, BufReader};
@@ -95,13 +96,37 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
         let mem_total = mem_state.mem_total as f64 * 1024.;
         let mem_free = mem_state.mem_free as f64 * 1024.;
 
+        // TODO: possibly remove this as it is confusing to have `mem_total_used` and `mem_used`
+        // htop and such only display equivalent of `mem_used`
         let mem_total_used = mem_total - mem_free;
+
+        // same logic as htop
+        let mem_avail = if mem_state.mem_available != 0 {
+            min(mem_state.mem_available, mem_state.mem_total)
+        } else {
+            mem_state.mem_free
+        } as f64
+            * 1024.;
+
+        let pagecache = mem_state.pagecache as f64 * 1024.;
+        let reclaimable = mem_state.s_reclaimable as f64 * 1024.;
+        let shmem = mem_state.shmem as f64 * 1024.;
+
+        // TODO: see https://github.com/htop-dev/htop/pull/1003
+        let zfs_arc_cache = mem_state.zfs_arc_cache as f64;
+
+        let cached = pagecache + reclaimable - shmem + zfs_arc_cache;
+
         let buffers = mem_state.buffers as f64 * 1024.;
-        let cached = (mem_state.pagecache + mem_state.s_reclaimable - mem_state.shmem) as f64
-            * 1024.
-            + mem_state.zfs_arc_cache as f64;
-        let mem_used = mem_total_used - (buffers + cached);
-        let mem_avail = mem_total - mem_used;
+
+        // same logic as htop
+        // TODO: consider zfs here too?
+        let used_diff = mem_free + buffers + pagecache + reclaimable;
+        let mem_used = if mem_total >= used_diff {
+            mem_total - used_diff
+        } else {
+            mem_total - mem_free
+        };
 
         let swap_total = mem_state.swap_total as f64 * 1024.;
         let swap_free = mem_state.swap_free as f64 * 1024.;
@@ -179,6 +204,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 struct Memstate {
     mem_total: u64,
     mem_free: u64,
+    mem_available: u64,
     buffers: u64,
     pagecache: u64,
     s_reclaimable: u64,
@@ -225,6 +251,7 @@ impl Memstate {
             match name {
                 "MemTotal:" => mem_state.mem_total = val,
                 "MemFree:" => mem_state.mem_free = val,
+                "MemAvailable:" => mem_state.mem_available = val,
                 "Buffers:" => mem_state.buffers = val,
                 "Cached:" => mem_state.pagecache = val,
                 "SReclaimable:" => mem_state.s_reclaimable = val,
