@@ -198,8 +198,8 @@
     <span class="kw">let </span>config = NotifyConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>);
 
-    <span class="kw">let </span><span class="kw-2">mut </span>driver: Box&lt;<span class="kw">dyn </span>Driver + Send + Sync&gt; = <span class="kw">match </span>config.driver {
-        DriverType::Dunst =&gt; Box::new(MakoDriver::new().<span class="kw">await</span><span class="question-mark">?</span>),
+    <span class="kw">let </span><span class="kw-2">mut </span>driver: Box&lt;<span class="kw">dyn </span>Driver&gt; = <span class="kw">match </span>config.driver {
+        DriverType::Dunst =&gt; Box::new(DunstDriver::new().<span class="kw">await</span><span class="question-mark">?</span>),
     };
 
     <span class="kw">loop </span>{
@@ -236,12 +236,12 @@
     <span class="kw">async fn </span>wait_for_change(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
 }
 
-<span class="kw">struct </span>MakoDriver {
+<span class="kw">struct </span>DunstDriver {
     proxy: DunstDbusProxy&lt;<span class="lifetime">&#39;static</span>&gt;,
     changes: PropertyStream&lt;<span class="lifetime">&#39;static</span>, bool&gt;,
 }
 
-<span class="kw">impl </span>MakoDriver {
+<span class="kw">impl </span>DunstDriver {
     <span class="kw">async fn </span>new() -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
         <span class="kw">let </span>dbus_conn = new_dbus_connection().<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">let </span>proxy = DunstDbusProxy::new(<span class="kw-2">&amp;</span>dbus_conn)
@@ -255,7 +255,7 @@
 }
 
 <span class="attribute">#[async_trait]
-</span><span class="kw">impl </span>Driver <span class="kw">for </span>MakoDriver {
+</span><span class="kw">impl </span>Driver <span class="kw">for </span>DunstDriver {
     <span class="kw">async fn </span>is_paused(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;bool&gt; {
         <span class="self">self</span>.proxy.paused().<span class="kw">await</span>.error(<span class="string">&quot;Failed to get &#39;paused&#39;&quot;</span>)
     }
