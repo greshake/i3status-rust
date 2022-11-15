@@ -1,7 +1,5 @@
 //! Display and toggle the state of notifications daemon
 //!
-//! Right now only `dunst` is supported.
-//!
 //! Left-clicking on this block will enable/disable notifications.
 //!
 //! # Configuration
@@ -11,10 +9,11 @@
 //! `driver` | Which notifications daemon is running. Available drivers are: `"dunst"` and `"swaync"` | `"dunst"`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon "`
 //!
-//! Placeholder | Value                                      | Type   | Unit
-//! ------------|--------------------------------------------|--------|-----
-//! `icon`      | Icon based on notification's state         | Icon   | -
-//! `paused`    | Present only if notifications are disabled | Flag   | -
+//! Placeholder                               | Value                                      | Type   | Unit
+//! ------------------------------------------|--------------------------------------------|--------|-----
+//! `icon`                                    | Icon based on notification's state         | Icon   | -
+//! `notification_count`[^dunst_version_note] | The number of notification (omitted if 0)  | Number | -
+//! `paused`                                  | Present only if notifications are disabled | Flag   | -
 //!
 //! Action          | Default button
 //! ----------------|---------------
@@ -29,12 +28,22 @@
 //! block = "notify"
 //! format = " $icon {$paused{Off}|On} "
 //! ```
+//! How to use `notification_count`
+//!
+//! ```toml
+//! [[block]]
+//! block = "notify"
+//! format = " $icon {($notification_count.eng(1)) |}"
+//! ```
 //!
 //! # Icons Used
 //! - `bell`
 //! - `bell-slash`
+//!
+//! [^dunst_version_note]: when using `notification_count` with the `dunst` driver use dunst > 1.9.0
 
 use super::prelude::*;
+use tokio::try_join;
 use zbus::dbus_proxy;
 use zbus::PropertyStream;
 
@@ -68,11 +77,19 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     };
 
     loop {
-        let is_paused = driver.is_paused().await?;
+        let (is_paused, notification_count) =
+            try_join!(driver.is_paused(), driver.notification_count())?;
+
         widget.set_values(map!(
             "icon" => Value::icon(api.get_icon(if is_paused { ICON_OFF } else { ICON_ON })?),
+            [if notification_count != 0] "notification_count" => Value::number(notification_count),
             [if is_paused] "paused" => Value::flag(),
         ));
+        widget.state = if notification_count == 0 {
+            State::Idle
+        } else {
+            State::Info
+        };
         api.set_widget(&widget).await?;
 
         select! {
@@ -91,12 +108,15 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 trait Driver {
     async fn is_paused(&self) -> Result<bool>;
     async fn set_paused(&self, paused: bool) -> Result<()>;
+    async fn notification_count(&self) -> Result<u32>;
     async fn wait_for_change(&mut self) -> Result<()>;
 }
 
 struct DunstDriver {
     proxy: DunstDbusProxy<'static>,
-    changes: PropertyStream<'static, bool>,
+    paused_changes: PropertyStream<'static, bool>,
+    displayed_length_changes: PropertyStream<'static, u32>,
+    waiting_length_changes: PropertyStream<'static, u32>,
 }
 
 impl DunstDriver {
@@ -106,7 +126,9 @@ impl DunstDriver {
             .await
             .error("Failed to create DunstDbusProxy")?;
         Ok(Self {
-            changes: proxy.receive_paused_changed().await,
+            paused_changes: proxy.receive_paused_changed().await,
+            displayed_length_changes: proxy.receive_displayed_length_changed().await,
+            waiting_length_changes: proxy.receive_waiting_length_changed().await,
             proxy,
         })
     }
@@ -125,8 +147,20 @@ impl Driver for DunstDriver {
             .error("Failed to set 'paused'")
     }
 
+    async fn notification_count(&self) -> Result<u32> {
+        let (displayed_length, waiting_length) =
+            try_join!(self.proxy.displayed_length(), self.proxy.waiting_length())
+                .error("Failed to get property")?;
+
+        Ok(displayed_length + waiting_length)
+    }
+
     async fn wait_for_change(&mut self) -> Result<()> {
-        self.changes.next().await;
+        select! {
+            _ = self.paused_changes.next() => {}
+            _ = self.displayed_length_changes.next() => {}
+            _ = self.waiting_length_changes.next() => {}
+        }
         Ok(())
     }
 }
@@ -141,6 +175,10 @@ trait DunstDbus {
     fn paused(&self) -> zbus::Result<bool>;
     #[dbus_proxy(property, name = "paused")]
     fn set_paused(&self, value: bool) -> zbus::Result<()>;
+    #[dbus_proxy(property, name = "displayedLength")]
+    fn displayed_length(&self) -> zbus::Result<u32>;
+    #[dbus_proxy(property, name = "waitingLength")]
+    fn waiting_length(&self) -> zbus::Result<u32>;
 }
 struct SwayNCDriver {
     proxy: SwayNCDbusProxy<'static>,
@@ -166,11 +204,21 @@ impl SwayNCDriver {
 #[async_trait]
 impl Driver for SwayNCDriver {
     async fn is_paused(&self) -> Result<bool> {
-        self.proxy.get_dnd().await.error("Failed to 'GetDnd'")
+        self.proxy.get_dnd().await.error("Failed to call 'GetDnd'")
     }
 
     async fn set_paused(&self, paused: bool) -> Result<()> {
-        self.proxy.set_dnd(paused).await.error("Failed to 'SetDnd'")
+        self.proxy
+            .set_dnd(paused)
+            .await
+            .error("Failed to call 'SetDnd'")
+    }
+
+    async fn notification_count(&self) -> Result<u32> {
+        self.proxy
+            .notification_count()
+            .await
+            .error("Failed to call 'NotificationCount'")
     }
 
     async fn wait_for_change(&mut self) -> Result<()> {
@@ -187,6 +235,7 @@ impl Driver for SwayNCDriver {
 trait SwayNCDbus {
     fn get_dnd(&self) -> zbus::Result<bool>;
     fn set_dnd(&self, value: bool) -> zbus::Result<()>;
+    fn notification_count(&self) -> zbus::Result<u32>;
     #[dbus_proxy(signal)]
     fn subscribe(&self, value: bool) -> zbus::Result<()>;
 }
