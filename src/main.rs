@@ -107,7 +107,7 @@ fn main() {
 
         println!(
             "{},",
-            serde_json::to_string(&error_widget.get_data(&Default::default()).unwrap()).unwrap()
+            serde_json::to_string(&error_widget.get_data(&Default::default(), 0).unwrap()).unwrap()
         );
         eprintln!("\n\n{}\n\n", error);
         dbg!(error);
@@ -345,7 +345,7 @@ impl BarState {
             }
             BlockState::Normal { widget } | BlockState::Error { widget, .. } => {
                 *data = widget
-                    .get_data(&block.shared_config)
+                    .get_data(&block.shared_config, id)
                     .in_block(*block_type, id)?;
             }
         }

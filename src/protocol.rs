@@ -22,12 +22,7 @@ pub fn print_blocks(blocks: &[Vec<I3BarBlock>], config: &SharedConfig) {
     // The right most block should never be alternated
     let mut alt = blocks.iter().filter(|x| !x.is_empty()).count() % 2 == 0;
 
-    for (id, mut widgets) in blocks
-        .iter()
-        .cloned()
-        .enumerate()
-        .filter(|x| !x.1.is_empty())
-    {
+    for mut widgets in blocks.iter().cloned().filter(|x| !x.is_empty()) {
         // Apply tint for all widgets of every second block
         // TODO: Allow for other non-additive tints
         if alt {
@@ -37,10 +32,6 @@ pub fn print_blocks(blocks: &[Vec<I3BarBlock>], config: &SharedConfig) {
             }
         }
         alt = !alt;
-
-        for data in &mut widgets {
-            data.name = Some(id.to_string());
-        }
 
         if let Separator::Custom(separator) = &config.theme.separator {
             // The first widget's BG is used to get the FG color for the current separator
