@@ -56,7 +56,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
     let mut widget = Widget::new().with_format(config.format.with_default(" $icon ")?);
 
     let mut driver: Box<dyn Driver + Send + Sync> = match config.driver {
-        DriverType::Dunst => Box::new(MakoDriver::new().await?),
+        DriverType::Dunst => Box::new(DunstDriver::new().await?),
     };
 
     loop {
@@ -93,12 +93,12 @@ trait Driver {
     async fn wait_for_change(&mut self) -> Result<()>;
 }
 
-struct MakoDriver {
+struct DunstDriver {
     proxy: DunstDbusProxy<'static>,
     changes: PropertyStream<'static, bool>,
 }
 
-impl MakoDriver {
+impl DunstDriver {
     async fn new() -> Result<Self> {
         let dbus_conn = new_dbus_connection().await?;
         let proxy = DunstDbusProxy::new(&dbus_conn)
@@ -112,7 +112,7 @@ impl MakoDriver {
 }
 
 #[async_trait]
-impl Driver for MakoDriver {
+impl Driver for DunstDriver {
     async fn is_paused(&self) -> Result<bool> {
         self.proxy.paused().await.error("Failed to get 'paused'")
     }
