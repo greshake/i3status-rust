@@ -598,7 +598,7 @@
 
         <span class="macro">println!</span>(
             <span class="string">&quot;{},&quot;</span>,
-            serde_json::to_string(<span class="kw-2">&amp;</span>error_widget.get_data(<span class="kw-2">&amp;</span>Default::default()).unwrap()).unwrap()
+            serde_json::to_string(<span class="kw-2">&amp;</span>error_widget.get_data(<span class="kw-2">&amp;</span>Default::default(), <span class="number">0</span>).unwrap()).unwrap()
         );
         <span class="macro">eprintln!</span>(<span class="string">&quot;\n\n{}\n\n&quot;</span>, error);
         <span class="macro">dbg!</span>(error);
@@ -836,7 +836,7 @@
             }
             BlockState::Normal { widget } | BlockState::Error { widget, .. } =&gt; {
                 <span class="kw-2">*</span>data = widget
-                    .get_data(<span class="kw-2">&amp;</span>block.shared_config)
+                    .get_data(<span class="kw-2">&amp;</span>block.shared_config, id)
                     .in_block(<span class="kw-2">*</span>block_type, id)<span class="question-mark">?</span>;
             }
         }

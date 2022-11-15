@@ -80,15 +80,6 @@
 <span id="80">80</span>
 <span id="81">81</span>
 <span id="82">82</span>
-<span id="83">83</span>
-<span id="84">84</span>
-<span id="85">85</span>
-<span id="86">86</span>
-<span id="87">87</span>
-<span id="88">88</span>
-<span id="89">89</span>
-<span id="90">90</span>
-<span id="91">91</span>
 </pre><pre class="rust"><code><span class="kw">pub mod </span>i3bar_block;
 <span class="kw">pub mod </span>i3bar_event;
 
@@ -113,12 +104,7 @@
     <span class="comment">// The right most block should never be alternated
     </span><span class="kw">let </span><span class="kw-2">mut </span>alt = blocks.iter().filter(|x| !x.is_empty()).count() % <span class="number">2 </span>== <span class="number">0</span>;
 
-    <span class="kw">for </span>(id, <span class="kw-2">mut </span>widgets) <span class="kw">in </span>blocks
-        .iter()
-        .cloned()
-        .enumerate()
-        .filter(|x| !x.<span class="number">1</span>.is_empty())
-    {
+    <span class="kw">for </span><span class="kw-2">mut </span>widgets <span class="kw">in </span>blocks.iter().cloned().filter(|x| !x.is_empty()) {
         <span class="comment">// Apply tint for all widgets of every second block
         // TODO: Allow for other non-additive tints
         </span><span class="kw">if </span>alt {
@@ -128,10 +114,6 @@
             }
         }
         alt = !alt;
-
-        <span class="kw">for </span>data <span class="kw">in </span><span class="kw-2">&amp;mut </span>widgets {
-            data.name = <span class="prelude-val">Some</span>(id.to_string());
-        }
 
         <span class="kw">if let </span>Separator::Custom(separator) = <span class="kw-2">&amp;</span>config.theme.separator {
             <span class="comment">// The first widget&#39;s BG is used to get the FG color for the current separator
