@@ -62,8 +62,8 @@ const DEFAULT_INFO: f64 = 60.0;
 const DEFAULT_WARN: f64 = 80.0;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-struct TemperatureConfig {
+#[serde(default)]
+pub struct Config {
     format: FormatConfig,
     format_alt: Option<FormatConfig>,
     #[default(5.into())]
@@ -95,9 +95,7 @@ impl TemperatureScale {
     }
 }
 
-pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let config = TemperatureConfig::deserialize(config).config_error()?;
-
+pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut format = config
         .format
         .with_default(" $icon $average avg, $max max ")?;

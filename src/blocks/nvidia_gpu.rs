@@ -62,8 +62,8 @@ const FORMAT: &str = "--format=csv,noheader,nounits";
 use super::prelude::*;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-struct NvidiaGpuConfig {
+#[serde(default)]
+pub struct Config {
     format: FormatConfig,
     #[default(1.into())]
     interval: Seconds,
@@ -79,8 +79,7 @@ struct NvidiaGpuConfig {
     warning: u32,
 }
 
-pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let config = NvidiaGpuConfig::deserialize(config).config_error()?;
+pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut widget = Widget::new().with_format(
         config
             .format

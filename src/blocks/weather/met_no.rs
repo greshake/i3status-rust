@@ -2,7 +2,7 @@ use super::*;
 
 type LegendsStore = HashMap<String, LegendsResult>;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 #[serde(tag = "name", rename_all = "lowercase")]
 pub(super) struct Config {
     coordinates: Option<(String, String)>,

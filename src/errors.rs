@@ -2,8 +2,6 @@ use std::borrow::Cow;
 use std::fmt;
 use std::sync::Arc;
 
-use crate::blocks::BlockType;
-
 pub use std::error::Error as StdError;
 
 /// Result type returned from functions that can have our `Error`s.
@@ -17,7 +15,7 @@ pub struct Error {
     pub kind: ErrorKind,
     pub message: Option<ErrorMsg>,
     pub cause: Option<Arc<dyn StdError + Send + Sync + 'static>>,
-    pub block: Option<(BlockType, usize)>,
+    pub block: Option<(&'static str, usize)>,
 }
 
 /// A set of errors that can occur during the runtime
@@ -49,18 +47,18 @@ impl Error {
 }
 
 pub trait InBlock {
-    fn in_block(self, block: BlockType, block_id: usize) -> Self;
+    fn in_block(self, block: &'static str, block_id: usize) -> Self;
 }
 
 impl InBlock for Error {
-    fn in_block(mut self, block: BlockType, block_id: usize) -> Self {
+    fn in_block(mut self, block: &'static str, block_id: usize) -> Self {
         self.block = Some((block, block_id));
         self
     }
 }
 
 impl<T> InBlock for Result<T> {
-    fn in_block(self, block: BlockType, block_id: usize) -> Self {
+    fn in_block(self, block: &'static str, block_id: usize) -> Self {
         self.map_err(|e| e.in_block(block, block_id))
     }
 }
@@ -164,7 +162,7 @@ impl fmt::Display for Error {
                     ErrorKind::Other => f.write_str("Error")?,
                 }
 
-                write!(f, " in {:?}", block.0)?;
+                write!(f, " in {}", block.0)?;
 
                 if let Some(message) = &self.message {
                     write!(f, ": {}", message)?;

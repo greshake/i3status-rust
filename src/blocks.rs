@@ -2,20 +2,14 @@
 
 pub mod prelude;
 
-use crate::formatting::config::Config as FormatConfig;
-use crate::themes::ThemeOverrides;
 use crate::BoxedFuture;
 use futures::future::FutureExt;
-use serde::de::{self, Deserializer};
 use serde::Deserialize;
 use tokio::sync::mpsc;
-use toml::value::Table;
 
-use std::collections::HashMap;
 use std::future::Future;
 use std::time::Duration;
 
-use crate::click::ClickHandler;
 use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::protocol::i3bar_event::I3BarEvent;
@@ -31,65 +25,42 @@ macro_rules! define_blocks {
             pub mod $block;
         )*
 
-        #[derive(Debug, Clone, Copy)]
-        pub enum BlockType {
+        #[derive(Debug, Deserialize)]
+        #[serde(tag = "block")]
+        #[serde(deny_unknown_fields)]
+        pub enum BlockConfig {
             $(
                 $(#[cfg($attr)])?
                 #[allow(non_camel_case_types)]
-                $block,
+                $block {
+                    #[serde(flatten)]
+                    config: $block::Config,
+                },
             )*
         }
 
-        impl BlockType {
-            pub fn run(self, config: toml::Value, api: CommonApi) -> BlockFuture {
+        impl BlockConfig {
+            pub fn name(&self) -> &'static str {
+                match self {
+                    $(
+                        $(#[cfg($attr)])?
+                        Self::$block { .. } => stringify!($block),
+                    )*
+                }
+            }
+
+            pub fn run(self, api: CommonApi) -> BlockFuture {
                 let id = api.id;
                 match self {
                     $(
                         $(#[cfg($attr)])?
-                        Self::$block => {
-                            $block::run(config, api).map(move |e| e.in_block(self, id)).boxed_local()
+                        Self::$block { config } => {
+                            $block::run(config, api).map(move |e| e.in_block(stringify!($block), id)).boxed_local()
                         }
                     )*
                 }
             }
         }
-
-        impl<'de> Deserialize<'de> for BlockType {
-            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-            where
-                D: Deserializer<'de>,
-            {
-                struct Visitor;
-
-                impl<'de> de::Visitor<'de> for Visitor {
-                    type Value = BlockType;
-
-                    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-                        formatter.write_str("a block name")
-                    }
-
-                    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
-                    where
-                        E: de::Error,
-                    {
-                        match v {
-                            $(
-                            $(#[cfg($attr)])?
-                            stringify!($block) => Ok(BlockType::$block),
-                            $(
-                            #[cfg(not($attr))]
-                            stringify!($block) => Err(E::custom(format!("Block '{}' has to be enabled at the compile time", stringify!($block)))),
-                            )?
-                            )*
-                            unknown => Err(E::custom(format!("Unknown block '{unknown}'")))
-                        }
-                    }
-                }
-
-                deserializer.deserialize_str(Visitor)
-            }
-        }
-
     };
 }
 
@@ -279,62 +250,5 @@ impl CommonApi {
                 }
             }
         }
-    }
-}
-
-#[derive(Deserialize, Debug)]
-pub struct CommonConfig {
-    pub block: BlockType,
-
-    #[serde(default)]
-    pub click: ClickHandler,
-    #[serde(default)]
-    pub signal: Option<i32>,
-    #[serde(default)]
-    pub icons_format: Option<String>,
-    #[serde(default)]
-    pub theme_overrides: Option<ThemeOverrides>,
-    #[serde(default)]
-    pub icons_overrides: Option<HashMap<String, String>>,
-
-    #[serde(default = "CommonConfig::default_error_interval")]
-    pub error_interval: u64,
-    #[serde(default)]
-    pub error_format: FormatConfig,
-    #[serde(default)]
-    pub error_fullscreen_format: FormatConfig,
-
-    #[serde(default)]
-    pub if_command: Option<String>,
-}
-
-impl CommonConfig {
-    fn default_error_interval() -> u64 {
-        5
-    }
-
-    pub fn new(from: &mut toml::Value) -> Result<Self> {
-        const FIELDS: &[&str] = &[
-            "block",
-            "click",
-            "signal",
-            "icons_format",
-            "theme_overrides",
-            "icons_overrides",
-            "error_interval",
-            "error_format",
-            "error_fullscreen_format",
-            "if_command",
-        ];
-        let mut common_table = Table::new();
-        if let Some(table) = from.as_table_mut() {
-            for &field in FIELDS {
-                if let Some(it) = table.remove(field) {
-                    common_table.insert(field.to_string(), it);
-                }
-            }
-        }
-        let common_value: toml::Value = common_table.into();
-        CommonConfig::deserialize(common_value).config_error()
     }
 }

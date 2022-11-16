@@ -98,8 +98,8 @@ use tokio::io::{self, AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-struct CustomConfig {
+#[serde(default)]
+pub struct Config {
     format: FormatConfig,
     command: Option<String>,
     persistent: bool,
@@ -146,8 +146,7 @@ async fn update_bar(
     }
 }
 
-pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let config = CustomConfig::deserialize(config).config_error()?;
+pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut widget = Widget::new().with_format(
         config
             .format

@@ -33,8 +33,8 @@ use super::prelude::*;
 use crate::util;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-struct LoadConfig {
+#[serde(default)]
+pub struct Config {
     format: FormatConfig,
     #[default(3.into())]
     interval: Seconds,
@@ -46,8 +46,7 @@ struct LoadConfig {
     critical: f64,
 }
 
-pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let config = LoadConfig::deserialize(config).config_error()?;
+pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut widget = Widget::new().with_format(config.format.with_default(" $icon $1m.eng(3) ")?);
 
     // borrowed from https://docs.rs/cpuinfo/0.1.1/src/cpuinfo/count/logical.rs.html#4-6

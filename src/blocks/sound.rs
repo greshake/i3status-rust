@@ -73,8 +73,8 @@ mod pulseaudio;
 use super::prelude::*;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-struct SoundConfig {
+#[serde(default)]
+pub struct Config {
     driver: SoundDriver,
     name: Option<String>,
     device: Option<String>,
@@ -89,8 +89,7 @@ struct SoundConfig {
     max_vol: Option<u32>,
 }
 
-pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let config = SoundConfig::deserialize(config).config_error()?;
+pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut widget =
         Widget::new().with_format(config.format.with_default(" $icon {$volume.eng(2)|} ")?);
 

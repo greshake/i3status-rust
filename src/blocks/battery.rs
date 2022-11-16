@@ -74,8 +74,8 @@ mod upower;
 // make_log_macro!(debug, "battery");
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-struct BatteryConfig {
+#[serde(default)]
+pub struct Config {
     device: Option<String>,
     driver: BatteryDriver,
     #[default(10.into())]
@@ -107,8 +107,7 @@ enum BatteryDriver {
     Upower,
 }
 
-pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let config = BatteryConfig::deserialize(config).config_error()?;
+pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let format = config.format.with_default(" $icon $percentage ")?;
     let format_full = config.full_format.with_default(" $icon ")?;
     let format_empty = config.empty_format.with_default(" $icon ")?;

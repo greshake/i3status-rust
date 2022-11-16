@@ -65,8 +65,8 @@ use crate::util::{country_flag_from_iso_code, new_system_dbus_connection};
 const API_ENDPOINT: &str = "https://ipapi.co/json/";
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-struct ExternalIpConfig {
+#[serde(default)]
+pub struct Config {
     format: FormatConfig,
     #[default(300.into())]
     interval: Seconds,
@@ -74,8 +74,7 @@ struct ExternalIpConfig {
     with_network_manager: bool,
 }
 
-pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let config = ExternalIpConfig::deserialize(config).config_error()?;
+pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut widget = Widget::new().with_format(config.format.with_default(" $ip $country_flag ")?);
 
     type UpdatesStream = Pin<Box<dyn Stream<Item = ()>>>;

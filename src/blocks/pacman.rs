@@ -144,8 +144,8 @@ static PACMAN_DB: Lazy<PathBuf> = Lazy::new(|| {
 });
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-struct PacmanConfig {
+#[serde(default)]
+pub struct Config {
     #[default(600.into())]
     interval: Seconds,
     format: FormatConfig,
@@ -156,8 +156,7 @@ struct PacmanConfig {
     aur_command: Option<String>,
 }
 
-pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let config = PacmanConfig::deserialize(config).config_error()?;
+pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut widget = Widget::new();
 
     let format = config.format.with_default(" $icon $pacman.eng(1) ")?;

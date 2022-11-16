@@ -40,8 +40,8 @@ use super::prelude::*;
 use maildir::Maildir;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-struct MaildirConfig {
+#[serde(default)]
+pub struct Config {
     format: FormatConfig,
     #[default(5.into())]
     interval: Seconds,
@@ -54,8 +54,7 @@ struct MaildirConfig {
     display_type: MailType,
 }
 
-pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let mut config = MaildirConfig::deserialize(config).config_error()?;
+pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut widget = Widget::new().with_format(config.format.with_default(" $icon $status ")?);
 
     for inbox in &mut config.inboxes {

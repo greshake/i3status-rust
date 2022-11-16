@@ -110,8 +110,8 @@ const BACKLIGHT_ICONS: &[&str] = &[
 ];
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-struct BacklightConfig {
+#[serde(default)]
+pub struct Config {
     device: Option<String>,
     format: FormatConfig,
     #[default(5)]
@@ -126,8 +126,7 @@ struct BacklightConfig {
     invert_icons: bool,
 }
 
-pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let config = BacklightConfig::deserialize(config).config_error()?;
+pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut widget = Widget::new().with_format(config.format.with_default(" $icon $brightness ")?);
 
     let mut cycle = config

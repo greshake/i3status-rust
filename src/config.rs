@@ -1,20 +1,43 @@
 use serde::{Deserialize, Deserializer};
+use smart_default::SmartDefault;
+use std::collections::HashMap;
 use std::sync::Arc;
-use toml::value;
 
+use crate::blocks::BlockConfig;
+use crate::click::ClickHandler;
 use crate::errors::*;
+use crate::formatting::config::Config as FormatConfig;
 use crate::icons::Icons;
-use crate::themes::{Theme, ThemeUserConfig};
-use crate::util::default;
+use crate::themes::{Theme, ThemeOverrides, ThemeUserConfig};
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, SmartDefault)]
+#[serde(default)]
+pub struct Config {
+    #[serde(flatten)]
+    pub shared: SharedConfig,
+
+    /// Set to `true` to invert mouse wheel direction
+    pub invert_scrolling: bool,
+
+    /// The maximum delay (ms) between two clicks that are considered as doulble click
+    pub double_click_delay: u64,
+
+    #[default(" {$short_error_message|X} ".into())]
+    pub error_format: String,
+    #[default(" $full_error_message ".into())]
+    pub error_fullscreen_format: String,
+
+    #[serde(rename = "block")]
+    pub blocks: Vec<BlockConfigEntry>,
+}
+
+#[derive(Deserialize, Debug, Clone, SmartDefault)]
+#[serde(default)]
 pub struct SharedConfig {
-    #[serde(default)]
     #[serde(deserialize_with = "deserialize_theme_config")]
     pub theme: Arc<Theme>,
-    #[serde(default)]
     pub icons: Arc<Icons>,
-    #[serde(default = "Config::default_icons_format")]
+    #[default(Arc::new("{icon}".into()))]
     pub icons_format: Arc<String>,
 }
 
@@ -28,50 +51,29 @@ impl SharedConfig {
     }
 }
 
-impl Default for SharedConfig {
-    fn default() -> Self {
-        Self {
-            theme: default(),
-            icons: default(),
-            icons_format: Arc::new("{icon}".into()),
-        }
-    }
-}
-
 #[derive(Deserialize, Debug)]
-pub struct Config {
+pub struct BlockConfigEntry {
     #[serde(flatten)]
-    pub shared: SharedConfig,
-
-    /// Set to `true` to invert mouse wheel direction
-    #[serde(default)]
-    pub invert_scrolling: bool,
-
-    /// The maximum delay (ms) between two clicks that are considered as doulble click
-    #[serde(default)]
-    pub double_click_delay: u64,
-
-    #[serde(default = "Config::default_error_format")]
-    pub error_format: String,
-    #[serde(default = "Config::default_error_fullscreen_format")]
-    pub error_fullscreen_format: String,
-
-    #[serde(rename = "block")]
-    pub blocks: Vec<value::Value>,
+    pub common: CommonBlockConfig,
+    #[serde(flatten)]
+    pub config: BlockConfig,
 }
 
-impl Config {
-    fn default_icons_format() -> Arc<String> {
-        Arc::new("{icon}".into())
-    }
+#[derive(Deserialize, Debug, SmartDefault)]
+#[serde(default)]
+pub struct CommonBlockConfig {
+    pub click: ClickHandler,
+    pub signal: Option<i32>,
+    pub icons_format: Option<String>,
+    pub theme_overrides: Option<ThemeOverrides>,
+    pub icons_overrides: Option<HashMap<String, String>>,
 
-    fn default_error_format() -> String {
-        " {$short_error_message|X} ".into()
-    }
+    #[default(5)]
+    pub error_interval: u64,
+    pub error_format: FormatConfig,
+    pub error_fullscreen_format: FormatConfig,
 
-    fn default_error_fullscreen_format() -> String {
-        " $full_error_message ".into()
-    }
+    pub if_command: Option<String>,
 }
 
 fn deserialize_theme_config<'de, D>(deserializer: D) -> Result<Arc<Theme>, D::Error>

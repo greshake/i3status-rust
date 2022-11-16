@@ -45,17 +45,15 @@ const CPU_BOOST_PATH: &str = "/sys/devices/system/cpu/cpufreq/boost";
 const CPU_NO_TURBO_PATH: &str = "/sys/devices/system/cpu/intel_pstate/no_turbo";
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-struct CpuConfig {
+#[serde(default)]
+pub struct Config {
     format: FormatConfig,
     format_alt: Option<FormatConfig>,
     #[default(5.into())]
     interval: Seconds,
 }
 
-pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let config = CpuConfig::deserialize(config).config_error()?;
-
+pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut format = config.format.with_default(" $icon $utilization ")?;
     let mut format_alt = match config.format_alt {
         Some(f) => Some(f.with_default("")?),

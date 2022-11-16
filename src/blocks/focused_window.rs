@@ -43,8 +43,8 @@ use tokio::{
 };
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-struct FocusedWindowConfig {
+#[serde(default)]
+pub struct Config {
     format: FormatConfig,
     driver: Driver,
 }
@@ -58,8 +58,7 @@ enum Driver {
     Ristate,
 }
 
-pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let config = FocusedWindowConfig::deserialize(config).config_error()?;
+pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut widget = Widget::new().with_format(config.format.with_default(" $title.str(0,21) |")?);
 
     let mut backend: Box<dyn Backend> = match config.driver {

@@ -60,8 +60,8 @@ use regex::Regex;
 use std::time::Instant;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-struct NetConfig {
+#[serde(default)]
+pub struct Config {
     device: Option<String>,
     format: FormatConfig,
     format_alt: Option<FormatConfig>,
@@ -70,9 +70,7 @@ struct NetConfig {
     interval: Seconds,
 }
 
-pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
-    let config = NetConfig::deserialize(config).config_error()?;
-
+pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut format = config.format.with_default(
         " $icon ^icon_net_down $speed_down.eng(3,B,K) ^icon_net_up $speed_up.eng(3,B,K) ",
     )?;

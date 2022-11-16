@@ -63,8 +63,7 @@ static DBUS_CONNECTION: async_once_cell::OnceCell<Result<zbus::Connection>> =
 const DBUS_NAME: &str = "rs.i3status";
 
 #[derive(Deserialize, Debug)]
-#[serde(deny_unknown_fields)]
-struct CustomDBusConfig {
+pub struct Config {
     #[serde(default)]
     format: FormatConfig,
     path: String,
@@ -121,13 +120,12 @@ impl Block {
     }
 }
 
-pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
+pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     // This block doesn't listen for any events. Closing the channel is necessary, because channels
     // are bounded by the number of pending messages, and if we don't close it now, main thread
     // will get blocked while trying to send a new message.
     api.event_receiver.close();
 
-    let config = CustomDBusConfig::deserialize(config).config_error()?;
     let widget = Widget::new().with_format(
         config
             .format
