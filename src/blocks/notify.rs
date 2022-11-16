@@ -18,6 +18,7 @@
 //! Action          | Default button
 //! ----------------|---------------
 //! `toggle_paused` | Left
+//! `show`          | -
 //!
 //! # Examples
 //!
@@ -34,6 +35,19 @@
 //! [[block]]
 //! block = "notify"
 //! format = " $icon {($notification_count.eng(1)) |}"
+//! ```
+//! How to remap actions
+//!
+//! ```toml
+//! [[block]]
+//! block = "notify"
+//! driver = "swaync"
+//! [[block.click]]
+//! button = "left"
+//! action = "show"
+//! [[block.click]]
+//! button = "right"
+//! action = "toggle_paused"
 //! ```
 //!
 //! # Icons Used
@@ -98,6 +112,9 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                 Action(a) if a == "toggle_paused" => {
                     driver.set_paused(!is_paused).await?;
                 }
+                Action(a) if a == "show" => {
+                    driver.notification_show().await?;
+                }
                 _ => (),
             }
         }
@@ -108,6 +125,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 trait Driver {
     async fn is_paused(&self) -> Result<bool>;
     async fn set_paused(&self, paused: bool) -> Result<()>;
+    async fn notification_show(&self) -> Result<()>;
     async fn notification_count(&self) -> Result<u32>;
     async fn wait_for_change(&mut self) -> Result<()>;
 }
@@ -147,6 +165,13 @@ impl Driver for DunstDriver {
             .error("Failed to set 'paused'")
     }
 
+    async fn notification_show(&self) -> Result<()> {
+        self.proxy
+            .notification_show()
+            .await
+            .error("Could not call 'NotificationShow'")
+    }
+
     async fn notification_count(&self) -> Result<u32> {
         let (displayed_length, waiting_length) =
             try_join!(self.proxy.displayed_length(), self.proxy.waiting_length())
@@ -175,6 +200,7 @@ trait DunstDbus {
     fn paused(&self) -> zbus::Result<bool>;
     #[dbus_proxy(property, name = "paused")]
     fn set_paused(&self, value: bool) -> zbus::Result<()>;
+    fn notification_show(&self) -> zbus::Result<()>;
     #[dbus_proxy(property, name = "displayedLength")]
     fn displayed_length(&self) -> zbus::Result<u32>;
     #[dbus_proxy(property, name = "waitingLength")]
@@ -214,6 +240,13 @@ impl Driver for SwayNCDriver {
             .error("Failed to call 'SetDnd'")
     }
 
+    async fn notification_show(&self) -> Result<()> {
+        self.proxy
+            .toggle_visibility()
+            .await
+            .error("Failed to call 'ToggleVisibility'")
+    }
+
     async fn notification_count(&self) -> Result<u32> {
         self.proxy
             .notification_count()
@@ -235,6 +268,7 @@ impl Driver for SwayNCDriver {
 trait SwayNCDbus {
     fn get_dnd(&self) -> zbus::Result<bool>;
     fn set_dnd(&self, value: bool) -> zbus::Result<()>;
+    fn toggle_visibility(&self) -> zbus::Result<()>;
     fn notification_count(&self) -> zbus::Result<u32>;
     #[dbus_proxy(signal)]
     fn subscribe(&self, value: bool) -> zbus::Result<()>;
