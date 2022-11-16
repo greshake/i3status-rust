@@ -8,7 +8,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `driver` | Which notifications daemon is running. Available drivers are: `"dunst"` | `"dunst"`
+//! `driver` | Which notifications daemon is running. Available drivers are: `"dunst"` and `"swaync"` | `"dunst"`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon "`
 //!
 //! Placeholder | Value                                      | Type   | Unit
@@ -49,6 +49,7 @@ struct NotifyConfig {
 enum DriverType {
     #[default]
     Dunst,
+    SwayNC,
 }
 
 pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
@@ -57,6 +58,7 @@ pub async fn run(config: toml::Value, mut api: CommonApi) -> Result<()> {
 
     let mut driver: Box<dyn Driver> = match config.driver {
         DriverType::Dunst => Box::new(DunstDriver::new().await?),
+        DriverType::SwayNC => Box::new(SwayNCDriver::new().await?),
     };
 
     loop {
@@ -140,4 +142,52 @@ trait DunstDbus {
     fn paused(&self) -> zbus::Result<bool>;
     #[dbus_proxy(property, name = "paused")]
     fn set_paused(&self, value: bool) -> zbus::Result<()>;
+}
+struct SwayNCDriver {
+    proxy: SwayNCDbusProxy<'static>,
+    changes: SubscribeStream<'static>,
+}
+
+impl SwayNCDriver {
+    async fn new() -> Result<Self> {
+        let dbus_conn = new_dbus_connection().await?;
+        let proxy = SwayNCDbusProxy::new(&dbus_conn)
+            .await
+            .error("Failed to create SwayNCDbusProxy")?;
+        Ok(Self {
+            changes: proxy
+                .receive_subscribe()
+                .await
+                .error("Failed to create SubscribeStream")?,
+            proxy,
+        })
+    }
+}
+
+#[async_trait]
+impl Driver for SwayNCDriver {
+    async fn is_paused(&self) -> Result<bool> {
+        self.proxy.get_dnd().await.error("Failed to 'GetDnd'")
+    }
+
+    async fn set_paused(&self, paused: bool) -> Result<()> {
+        self.proxy.set_dnd(paused).await.error("Failed to 'SetDnd'")
+    }
+
+    async fn wait_for_change(&mut self) -> Result<()> {
+        self.changes.next().await;
+        Ok(())
+    }
+}
+
+#[dbus_proxy(
+    interface = "org.erikreider.swaync.cc",
+    default_service = "org.freedesktop.Notifications",
+    default_path = "/org/erikreider/swaync/cc"
+)]
+trait SwayNCDbus {
+    fn get_dnd(&self) -> zbus::Result<bool>;
+    fn set_dnd(&self, value: bool) -> zbus::Result<()>;
+    #[dbus_proxy(signal)]
+    fn subscribe(&self, value: bool) -> zbus::Result<()>;
 }
