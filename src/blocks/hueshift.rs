@@ -57,13 +57,14 @@ use futures::future::pending;
 #[serde(default)]
 pub struct Config {
     format: FormatConfig,
+    // TODO: Document once this option becomes usefull
     #[default(5.into())]
     interval: Seconds,
     #[default(10_000)]
     max_temp: u16,
     #[default(1_000)]
     min_temp: u16,
-    // TODO: Detect currently defined temperature
+    // TODO: Remove (this option is undocumented)
     #[default(6_500)]
     current_temp: u16,
     hue_shifter: Option<HueShifter>,
@@ -103,22 +104,21 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     };
 
     let mut driver: Box<dyn HueShiftDriver> = match hue_shifter {
-        HueShifter::Redshift => Box::new(Redshift),
-        HueShifter::Sct => Box::new(Sct),
-        HueShifter::Gammastep => Box::new(Gammastep),
-        HueShifter::Wlsunset => Box::new(Wlsunset),
+        HueShifter::Redshift => Box::new(Redshift::new(config.interval)),
+        HueShifter::Sct => Box::new(Sct::new(config.interval)),
+        HueShifter::Gammastep => Box::new(Gammastep::new(config.interval)),
+        HueShifter::Wlsunset => Box::new(Wlsunset::new(config.interval)),
         HueShifter::WlGammarelay => Box::new(WlGammarelayRs::new("wl-gammarelay").await?),
         HueShifter::WlGammarelayRs => Box::new(WlGammarelayRs::new("wl-gammarelay-rs").await?),
     };
 
-    let mut current_temp = config.current_temp;
+    let mut current_temp = driver.get().await?.unwrap_or(config.current_temp);
 
     loop {
         widget.set_values(map!("temperature" => Value::number(current_temp)));
         api.set_widget(&widget).await?;
 
         select! {
-            _ = sleep(config.interval.0) => (),
             update = driver.receive_update() => {
                 current_temp = update?;
             }
@@ -148,7 +148,11 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                         }
                         _ => (),
                     }
-                    UpdateRequest => (),
+                    UpdateRequest => {
+                        if let Some(val) = driver.get().await? {
+                            current_temp = val;
+                        }
+                    }
                 }
             }
         }
@@ -168,17 +172,28 @@ enum HueShifter {
 
 #[async_trait]
 trait HueShiftDriver {
+    async fn get(&mut self) -> Result<Option<u16>>;
     async fn update(&mut self, temp: u16) -> Result<()>;
-
     async fn reset(&mut self) -> Result<()>;
-
     async fn receive_update(&mut self) -> Result<u16>;
 }
 
-struct Redshift;
+struct Redshift {
+    interval: Seconds,
+}
+
+impl Redshift {
+    fn new(interval: Seconds) -> Self {
+        Self { interval }
+    }
+}
 
 #[async_trait]
 impl HueShiftDriver for Redshift {
+    async fn get(&mut self) -> Result<Option<u16>> {
+        // TODO
+        Ok(None)
+    }
     async fn update(&mut self, temp: u16) -> Result<()> {
         spawn_process("redshift", &["-O", &temp.to_string(), "-P"])
             .error("Failed to set new color temperature using redshift.")
@@ -188,30 +203,58 @@ impl HueShiftDriver for Redshift {
             .error("Failed to set new color temperature using redshift.")
     }
     async fn receive_update(&mut self) -> Result<u16> {
+        sleep(self.interval.0).await;
+        // self.get().await
         pending().await
     }
 }
 
-struct Sct;
+struct Sct {
+    interval: Seconds,
+}
+
+impl Sct {
+    fn new(interval: Seconds) -> Self {
+        Self { interval }
+    }
+}
 
 #[async_trait]
 impl HueShiftDriver for Sct {
+    async fn get(&mut self) -> Result<Option<u16>> {
+        // TODO
+        Ok(None)
+    }
     async fn update(&mut self, temp: u16) -> Result<()> {
-        spawn_process("sct", &[&format!("sct {temp} >/dev/null 2>&1")])
+        spawn_shell(&format!("sct {temp} >/dev/null 2>&1"))
             .error("Failed to set new color temperature using sct.")
     }
     async fn reset(&mut self) -> Result<()> {
         spawn_process("sct", &[]).error("Failed to set new color temperature using sct.")
     }
     async fn receive_update(&mut self) -> Result<u16> {
+        sleep(self.interval.0).await;
+        // self.get().await
         pending().await
     }
 }
 
-struct Gammastep;
+struct Gammastep {
+    interval: Seconds,
+}
+
+impl Gammastep {
+    fn new(interval: Seconds) -> Self {
+        Self { interval }
+    }
+}
 
 #[async_trait]
 impl HueShiftDriver for Gammastep {
+    async fn get(&mut self) -> Result<Option<u16>> {
+        // TODO
+        Ok(None)
+    }
     async fn update(&mut self, temp: u16) -> Result<()> {
         spawn_shell(&format!("killall gammastep; gammastep -O {temp} -P &",))
             .error("Failed to set new color temperature using gammastep.")
@@ -221,14 +264,28 @@ impl HueShiftDriver for Gammastep {
             .error("Failed to set new color temperature using gammastep.")
     }
     async fn receive_update(&mut self) -> Result<u16> {
+        sleep(self.interval.0).await;
+        // self.get().await
         pending().await
     }
 }
 
-struct Wlsunset;
+struct Wlsunset {
+    interval: Seconds,
+}
+
+impl Wlsunset {
+    fn new(interval: Seconds) -> Self {
+        Self { interval }
+    }
+}
 
 #[async_trait]
 impl HueShiftDriver for Wlsunset {
+    async fn get(&mut self) -> Result<Option<u16>> {
+        // TODO
+        Ok(None)
+    }
     async fn update(&mut self, temp: u16) -> Result<()> {
         // wlsunset does not have a oneshot option, so set both day and
         // night temperature. wlsunset dose not allow for day and night
@@ -253,6 +310,8 @@ impl HueShiftDriver for Wlsunset {
             .error("Failed to set new color temperature using wlsunset.")
     }
     async fn receive_update(&mut self) -> Result<u16> {
+        sleep(self.interval.0).await;
+        // self.get().await
         pending().await
     }
 }
@@ -279,26 +338,30 @@ impl WlGammarelayRs {
 
 #[async_trait]
 impl HueShiftDriver for WlGammarelayRs {
+    async fn get(&mut self) -> Result<Option<u16>> {
+        let value = self
+            .proxy
+            .temperature()
+            .await
+            .error("Failed to get temperature")?;
+        Ok(Some(value))
+    }
     async fn update(&mut self, temp: u16) -> Result<()> {
         self.proxy
             .set_temperature(temp)
             .await
             .error("Failed to set temperature")
     }
-
     async fn reset(&mut self) -> Result<()> {
         self.update(6500).await
     }
-
     async fn receive_update(&mut self) -> Result<u16> {
         let update = self.updates.next().await.error("No next update")?;
         update.get().await.error("Failed to get temperature")
     }
 }
 
-use zbus::dbus_proxy;
-
-#[dbus_proxy(
+#[zbus::dbus_proxy(
     interface = "rs.wl.gammarelay",
     default_service = "rs.wl-gammarelay",
     default_path = "/"

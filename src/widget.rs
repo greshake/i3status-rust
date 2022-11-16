@@ -68,11 +68,12 @@ impl Widget {
     }
 
     /// Constuct `I3BarBlock` from this widget
-    pub fn get_data(&self, shared_config: &SharedConfig) -> Result<Vec<I3BarBlock>> {
+    pub fn get_data(&self, shared_config: &SharedConfig, id: usize) -> Result<Vec<I3BarBlock>> {
         // Create a "template" block
         let (key_bg, key_fg) = shared_config.theme.get_colors(self.state);
         let (full, short) = self.source.render(shared_config)?;
         let mut template = I3BarBlock {
+            name: Some(id.to_string()),
             background: key_bg,
             color: key_fg,
             ..I3BarBlock::default()

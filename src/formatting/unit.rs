@@ -73,7 +73,7 @@ impl Unit {
     pub fn clamp_prefix(self, prefix: Prefix) -> Prefix {
         match self {
             Self::Bytes | Self::Bits => prefix.max(Prefix::One),
-            Self::Percents | Self::None => Prefix::One,
+            Self::Percents | Self::Degrees | Self::None => Prefix::One,
             _ => prefix,
         }
     }
