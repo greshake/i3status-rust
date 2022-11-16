@@ -196,8 +196,6 @@
 <span id="196">196</span>
 <span id="197">197</span>
 <span id="198">198</span>
-<span id="199">199</span>
-<span id="200">200</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Network information
 //!
 //! This block uses `sysfs` and `netlink` and thus does not require any external dependencies.
@@ -260,8 +258,8 @@
 <span class="kw">use </span>std::time::Instant;
 
 <span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-</span><span class="kw">struct </span>NetConfig {
+#[serde(default)]
+</span><span class="kw">pub struct </span>Config {
     device: <span class="prelude-ty">Option</span>&lt;String&gt;,
     format: FormatConfig,
     format_alt: <span class="prelude-ty">Option</span>&lt;FormatConfig&gt;,
@@ -270,9 +268,7 @@
     </span>interval: Seconds,
 }
 
-<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span>config = NetConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
-
+<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>format = config.format.with_default(
         <span class="string">&quot; $icon ^icon_net_down $speed_down.eng(3,B,K) ^icon_net_up $speed_up.eng(3,B,K) &quot;</span>,
     )<span class="question-mark">?</span>;

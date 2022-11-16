@@ -220,13 +220,9 @@
 <span id="220">220</span>
 <span id="221">221</span>
 <span id="222">222</span>
-<span id="223">223</span>
-<span id="224">224</span>
 </pre><pre class="rust"><code><span class="kw">use </span>std::borrow::Cow;
 <span class="kw">use </span>std::fmt;
 <span class="kw">use </span>std::sync::Arc;
-
-<span class="kw">use </span><span class="kw">crate</span>::blocks::BlockType;
 
 <span class="kw">pub use </span>std::error::Error <span class="kw">as </span>StdError;
 
@@ -241,7 +237,7 @@
     <span class="kw">pub </span>kind: ErrorKind,
     <span class="kw">pub </span>message: <span class="prelude-ty">Option</span>&lt;ErrorMsg&gt;,
     <span class="kw">pub </span>cause: <span class="prelude-ty">Option</span>&lt;Arc&lt;<span class="kw">dyn </span>StdError + Send + Sync + <span class="lifetime">&#39;static</span>&gt;&gt;,
-    <span class="kw">pub </span>block: <span class="prelude-ty">Option</span>&lt;(BlockType, usize)&gt;,
+    <span class="kw">pub </span>block: <span class="prelude-ty">Option</span>&lt;(<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str, usize)&gt;,
 }
 
 <span class="doccomment">/// A set of errors that can occur during the runtime
@@ -273,18 +269,18 @@
 }
 
 <span class="kw">pub trait </span>InBlock {
-    <span class="kw">fn </span>in_block(<span class="self">self</span>, block: BlockType, block_id: usize) -&gt; <span class="self">Self</span>;
+    <span class="kw">fn </span>in_block(<span class="self">self</span>, block: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str, block_id: usize) -&gt; <span class="self">Self</span>;
 }
 
 <span class="kw">impl </span>InBlock <span class="kw">for </span>Error {
-    <span class="kw">fn </span>in_block(<span class="kw-2">mut </span><span class="self">self</span>, block: BlockType, block_id: usize) -&gt; <span class="self">Self </span>{
+    <span class="kw">fn </span>in_block(<span class="kw-2">mut </span><span class="self">self</span>, block: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str, block_id: usize) -&gt; <span class="self">Self </span>{
         <span class="self">self</span>.block = <span class="prelude-val">Some</span>((block, block_id));
         <span class="self">self
     </span>}
 }
 
 <span class="kw">impl</span>&lt;T&gt; InBlock <span class="kw">for </span><span class="prelude-ty">Result</span>&lt;T&gt; {
-    <span class="kw">fn </span>in_block(<span class="self">self</span>, block: BlockType, block_id: usize) -&gt; <span class="self">Self </span>{
+    <span class="kw">fn </span>in_block(<span class="self">self</span>, block: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str, block_id: usize) -&gt; <span class="self">Self </span>{
         <span class="self">self</span>.map_err(|e| e.in_block(block, block_id))
     }
 }
@@ -388,7 +384,7 @@
                     ErrorKind::Other =&gt; f.write_str(<span class="string">&quot;Error&quot;</span>)<span class="question-mark">?</span>,
                 }
 
-                <span class="macro">write!</span>(f, <span class="string">&quot; in {:?}&quot;</span>, block.<span class="number">0</span>)<span class="question-mark">?</span>;
+                <span class="macro">write!</span>(f, <span class="string">&quot; in {}&quot;</span>, block.<span class="number">0</span>)<span class="question-mark">?</span>;
 
                 <span class="kw">if let </span><span class="prelude-val">Some</span>(message) = <span class="kw-2">&amp;</span><span class="self">self</span>.message {
                     <span class="macro">write!</span>(f, <span class="string">&quot;: {}&quot;</span>, message)<span class="question-mark">?</span>;

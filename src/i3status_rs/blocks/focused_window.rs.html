@@ -216,7 +216,6 @@
 <span id="216">216</span>
 <span id="217">217</span>
 <span id="218">218</span>
-<span id="219">219</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Currently focused window
 //!
 //! This block displays the title and/or the active marks (when used with `sway`/`i3`) of the currently
@@ -262,8 +261,8 @@
 };
 
 <span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-</span><span class="kw">struct </span>FocusedWindowConfig {
+#[serde(default)]
+</span><span class="kw">pub struct </span>Config {
     format: FormatConfig,
     driver: Driver,
 }
@@ -277,8 +276,7 @@
     Ristate,
 }
 
-<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span>config = FocusedWindowConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(config.format.with_default(<span class="string">&quot; $title.str(0,21) |&quot;</span>)<span class="question-mark">?</span>);
 
     <span class="kw">let </span><span class="kw-2">mut </span>backend: Box&lt;<span class="kw">dyn </span>Backend&gt; = <span class="kw">match </span>config.driver {

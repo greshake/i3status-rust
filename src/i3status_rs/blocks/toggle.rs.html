@@ -151,8 +151,6 @@
 <span id="151">151</span>
 <span id="152">152</span>
 <span id="153">153</span>
-<span id="154">154</span>
-<span id="155">155</span>
 </pre><pre class="rust"><code><span class="doccomment">//! A Toggle block
 //!
 //! You can add commands to be executed to disable the toggle (`command_off`), and to enable it
@@ -204,8 +202,7 @@
 <span class="kw">use </span>tokio::process::Command;
 
 <span class="attribute">#[derive(Deserialize, Debug)]
-#[serde(deny_unknown_fields)]
-</span><span class="kw">pub struct </span>ToggleConfig {
+</span><span class="kw">pub struct </span>Config {
     format: FormatConfig,
     command_on: String,
     command_off: String,
@@ -218,8 +215,7 @@
     </span>interval: <span class="prelude-ty">Option</span>&lt;u64&gt;,
 }
 
-<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span>config = ToggleConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span>interval = config.interval.map(Duration::from_secs);
     <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>);
 

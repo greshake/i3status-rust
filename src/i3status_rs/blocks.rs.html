@@ -252,110 +252,18 @@
 <span id="252">252</span>
 <span id="253">253</span>
 <span id="254">254</span>
-<span id="255">255</span>
-<span id="256">256</span>
-<span id="257">257</span>
-<span id="258">258</span>
-<span id="259">259</span>
-<span id="260">260</span>
-<span id="261">261</span>
-<span id="262">262</span>
-<span id="263">263</span>
-<span id="264">264</span>
-<span id="265">265</span>
-<span id="266">266</span>
-<span id="267">267</span>
-<span id="268">268</span>
-<span id="269">269</span>
-<span id="270">270</span>
-<span id="271">271</span>
-<span id="272">272</span>
-<span id="273">273</span>
-<span id="274">274</span>
-<span id="275">275</span>
-<span id="276">276</span>
-<span id="277">277</span>
-<span id="278">278</span>
-<span id="279">279</span>
-<span id="280">280</span>
-<span id="281">281</span>
-<span id="282">282</span>
-<span id="283">283</span>
-<span id="284">284</span>
-<span id="285">285</span>
-<span id="286">286</span>
-<span id="287">287</span>
-<span id="288">288</span>
-<span id="289">289</span>
-<span id="290">290</span>
-<span id="291">291</span>
-<span id="292">292</span>
-<span id="293">293</span>
-<span id="294">294</span>
-<span id="295">295</span>
-<span id="296">296</span>
-<span id="297">297</span>
-<span id="298">298</span>
-<span id="299">299</span>
-<span id="300">300</span>
-<span id="301">301</span>
-<span id="302">302</span>
-<span id="303">303</span>
-<span id="304">304</span>
-<span id="305">305</span>
-<span id="306">306</span>
-<span id="307">307</span>
-<span id="308">308</span>
-<span id="309">309</span>
-<span id="310">310</span>
-<span id="311">311</span>
-<span id="312">312</span>
-<span id="313">313</span>
-<span id="314">314</span>
-<span id="315">315</span>
-<span id="316">316</span>
-<span id="317">317</span>
-<span id="318">318</span>
-<span id="319">319</span>
-<span id="320">320</span>
-<span id="321">321</span>
-<span id="322">322</span>
-<span id="323">323</span>
-<span id="324">324</span>
-<span id="325">325</span>
-<span id="326">326</span>
-<span id="327">327</span>
-<span id="328">328</span>
-<span id="329">329</span>
-<span id="330">330</span>
-<span id="331">331</span>
-<span id="332">332</span>
-<span id="333">333</span>
-<span id="334">334</span>
-<span id="335">335</span>
-<span id="336">336</span>
-<span id="337">337</span>
-<span id="338">338</span>
-<span id="339">339</span>
-<span id="340">340</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The collection of blocks
 
 </span><span class="kw">pub mod </span>prelude;
 
-<span class="kw">use </span><span class="kw">crate</span>::formatting::config::Config <span class="kw">as </span>FormatConfig;
-<span class="kw">use </span><span class="kw">crate</span>::themes::ThemeOverrides;
 <span class="kw">use </span><span class="kw">crate</span>::BoxedFuture;
 <span class="kw">use </span>futures::future::FutureExt;
-<span class="kw">use </span>serde::de::{<span class="self">self</span>, Deserializer};
 <span class="kw">use </span>serde::Deserialize;
 <span class="kw">use </span>tokio::sync::mpsc;
-<span class="kw">use </span>toml::value::Table;
 
-<span class="kw">use </span>std::collections::HashMap;
 <span class="kw">use </span>std::future::Future;
 <span class="kw">use </span>std::time::Duration;
 
-<span class="kw">use </span><span class="kw">crate</span>::click::ClickHandler;
 <span class="kw">use </span><span class="kw">crate</span>::config::SharedConfig;
 <span class="kw">use </span><span class="kw">crate</span>::errors::<span class="kw-2">*</span>;
 <span class="kw">use </span><span class="kw">crate</span>::protocol::i3bar_event::I3BarEvent;
@@ -371,65 +279,42 @@
             </span><span class="kw">pub mod </span><span class="macro-nonterminal">$block</span>;
         )*
 
-        <span class="attribute">#[derive(Debug, Clone, Copy)]
-        </span><span class="kw">pub enum </span>BlockType {
+        <span class="attribute">#[derive(Debug, Deserialize)]
+        #[serde(tag = <span class="string">&quot;block&quot;</span>)]
+        #[serde(deny_unknown_fields)]
+        </span><span class="kw">pub enum </span>BlockConfig {
             $(
                 $(<span class="attribute">#[cfg(<span class="macro-nonterminal">$attr</span>)]</span>)<span class="question-mark">?
                 </span><span class="attribute">#[allow(non_camel_case_types)]
-                </span><span class="macro-nonterminal">$block</span>,
+                </span><span class="macro-nonterminal">$block </span>{
+                    <span class="attribute">#[serde(flatten)]
+                    </span>config: <span class="macro-nonterminal">$block::Config</span>,
+                },
             )*
         }
 
-        <span class="kw">impl </span>BlockType {
-            <span class="kw">pub fn </span>run(<span class="self">self</span>, config: toml::Value, api: CommonApi) -&gt; BlockFuture {
+        <span class="kw">impl </span>BlockConfig {
+            <span class="kw">pub fn </span>name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str {
+                <span class="kw">match </span><span class="self">self </span>{
+                    $(
+                        $(<span class="attribute">#[cfg(<span class="macro-nonterminal">$attr</span>)]</span>)<span class="question-mark">?
+                        </span><span class="self">Self</span>::<span class="macro-nonterminal">$block </span>{ .. } =&gt; <span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>),
+                    )*
+                }
+            }
+
+            <span class="kw">pub fn </span>run(<span class="self">self</span>, api: CommonApi) -&gt; BlockFuture {
                 <span class="kw">let </span>id = api.id;
                 <span class="kw">match </span><span class="self">self </span>{
                     $(
                         $(<span class="attribute">#[cfg(<span class="macro-nonterminal">$attr</span>)]</span>)<span class="question-mark">?
-                        </span><span class="self">Self</span>::<span class="macro-nonterminal">$block </span>=&gt; {
-                            <span class="macro-nonterminal">$block::run</span>(config, api).map(<span class="kw">move </span>|e| e.in_block(<span class="self">self</span>, id)).boxed_local()
+                        </span><span class="self">Self</span>::<span class="macro-nonterminal">$block </span>{ config } =&gt; {
+                            <span class="macro-nonterminal">$block::run</span>(config, api).map(<span class="kw">move </span>|e| e.in_block(<span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>), id)).boxed_local()
                         }
                     )*
                 }
             }
         }
-
-        <span class="kw">impl</span>&lt;<span class="lifetime">&#39;de</span>&gt; Deserialize&lt;<span class="lifetime">&#39;de</span>&gt; <span class="kw">for </span>BlockType {
-            <span class="kw">fn </span>deserialize&lt;D&gt;(deserializer: D) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, D::Error&gt;
-            <span class="kw">where
-                </span>D: Deserializer&lt;<span class="lifetime">&#39;de</span>&gt;,
-            {
-                <span class="kw">struct </span>Visitor;
-
-                <span class="kw">impl</span>&lt;<span class="lifetime">&#39;de</span>&gt; de::Visitor&lt;<span class="lifetime">&#39;de</span>&gt; <span class="kw">for </span>Visitor {
-                    <span class="kw">type </span>Value = BlockType;
-
-                    <span class="kw">fn </span>expecting(<span class="kw-2">&amp;</span><span class="self">self</span>, formatter: <span class="kw-2">&amp;mut </span>std::fmt::Formatter) -&gt; std::fmt::Result {
-                        formatter.write_str(<span class="string">&quot;a block name&quot;</span>)
-                    }
-
-                    <span class="kw">fn </span>visit_str&lt;E&gt;(<span class="self">self</span>, v: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>::Value, E&gt;
-                    <span class="kw">where
-                        </span>E: de::Error,
-                    {
-                        <span class="kw">match </span>v {
-                            $(
-                            $(<span class="attribute">#[cfg(<span class="macro-nonterminal">$attr</span>)]</span>)<span class="question-mark">?
-                            </span><span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>) =&gt; <span class="prelude-val">Ok</span>(BlockType::<span class="macro-nonterminal">$block</span>),
-                            $(
-                            <span class="attribute">#[cfg(not(<span class="macro-nonterminal">$attr</span>))]
-                            </span><span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>) =&gt; <span class="prelude-val">Err</span>(E::custom(<span class="macro">format!</span>(<span class="string">&quot;Block &#39;{}&#39; has to be enabled at the compile time&quot;</span>, <span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>)))),
-                            )<span class="question-mark">?
-                            </span>)*
-                            unknown =&gt; <span class="prelude-val">Err</span>(E::custom(<span class="macro">format!</span>(<span class="string">&quot;Unknown block &#39;{unknown}&#39;&quot;</span>)))
-                        }
-                    }
-                }
-
-                deserializer.deserialize_str(Visitor)
-            }
-        }
-
     };
 }
 
@@ -619,63 +504,6 @@
                 }
             }
         }
-    }
-}
-
-<span class="attribute">#[derive(Deserialize, Debug)]
-</span><span class="kw">pub struct </span>CommonConfig {
-    <span class="kw">pub </span>block: BlockType,
-
-    <span class="attribute">#[serde(default)]
-    </span><span class="kw">pub </span>click: ClickHandler,
-    <span class="attribute">#[serde(default)]
-    </span><span class="kw">pub </span>signal: <span class="prelude-ty">Option</span>&lt;i32&gt;,
-    <span class="attribute">#[serde(default)]
-    </span><span class="kw">pub </span>icons_format: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    <span class="attribute">#[serde(default)]
-    </span><span class="kw">pub </span>theme_overrides: <span class="prelude-ty">Option</span>&lt;ThemeOverrides&gt;,
-    <span class="attribute">#[serde(default)]
-    </span><span class="kw">pub </span>icons_overrides: <span class="prelude-ty">Option</span>&lt;HashMap&lt;String, String&gt;&gt;,
-
-    <span class="attribute">#[serde(default = <span class="string">&quot;CommonConfig::default_error_interval&quot;</span>)]
-    </span><span class="kw">pub </span>error_interval: u64,
-    <span class="attribute">#[serde(default)]
-    </span><span class="kw">pub </span>error_format: FormatConfig,
-    <span class="attribute">#[serde(default)]
-    </span><span class="kw">pub </span>error_fullscreen_format: FormatConfig,
-
-    <span class="attribute">#[serde(default)]
-    </span><span class="kw">pub </span>if_command: <span class="prelude-ty">Option</span>&lt;String&gt;,
-}
-
-<span class="kw">impl </span>CommonConfig {
-    <span class="kw">fn </span>default_error_interval() -&gt; u64 {
-        <span class="number">5
-    </span>}
-
-    <span class="kw">pub fn </span>new(from: <span class="kw-2">&amp;mut </span>toml::Value) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
-        <span class="kw">const </span>FIELDS: <span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span>str] = <span class="kw-2">&amp;</span>[
-            <span class="string">&quot;block&quot;</span>,
-            <span class="string">&quot;click&quot;</span>,
-            <span class="string">&quot;signal&quot;</span>,
-            <span class="string">&quot;icons_format&quot;</span>,
-            <span class="string">&quot;theme_overrides&quot;</span>,
-            <span class="string">&quot;icons_overrides&quot;</span>,
-            <span class="string">&quot;error_interval&quot;</span>,
-            <span class="string">&quot;error_format&quot;</span>,
-            <span class="string">&quot;error_fullscreen_format&quot;</span>,
-            <span class="string">&quot;if_command&quot;</span>,
-        ];
-        <span class="kw">let </span><span class="kw-2">mut </span>common_table = Table::new();
-        <span class="kw">if let </span><span class="prelude-val">Some</span>(table) = from.as_table_mut() {
-            <span class="kw">for </span><span class="kw-2">&amp;</span>field <span class="kw">in </span>FIELDS {
-                <span class="kw">if let </span><span class="prelude-val">Some</span>(it) = table.remove(field) {
-                    common_table.insert(field.to_string(), it);
-                }
-            }
-        }
-        <span class="kw">let </span>common_value: toml::Value = common_table.into();
-        CommonConfig::deserialize(common_value).config_error()
     }
 }
 </code></pre></div>

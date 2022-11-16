@@ -507,7 +507,6 @@
 <span id="507">507</span>
 <span id="508">508</span>
 <span id="509">509</span>
-<span id="510">510</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The current song title and artist
 //!
 //! Also provides buttons for play/pause, previous and next.
@@ -605,8 +604,8 @@
 <span class="kw">const </span>PREV_BTN: usize = <span class="number">3</span>;
 
 <span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-</span><span class="kw">struct </span>MusicConfig {
+#[serde(default)]
+</span><span class="kw">pub struct </span>Config {
     format: FormatConfig,
     player: PlayerName,
     interface_name_exclude: Vec&lt;String&gt;,
@@ -639,8 +638,7 @@
     <span class="kw">pub </span>new_owner: Optional&lt;String&gt;,
 }
 
-<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span>config = MusicConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span>dbus_conn = new_dbus_connection().<span class="kw">await</span><span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(
         config

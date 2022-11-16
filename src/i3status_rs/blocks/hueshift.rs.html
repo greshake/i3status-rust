@@ -379,7 +379,6 @@
 <span id="379">379</span>
 <span id="380">380</span>
 <span id="381">381</span>
-<span id="382">382</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Manage display temperature
 //!
 //! This block displays the current color temperature in Kelvin. When scrolling upon the block the color temperature is changed.
@@ -436,8 +435,8 @@
 <span class="kw">use </span>futures::future::pending;
 
 <span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-</span><span class="kw">struct </span>HueshiftConfig {
+#[serde(default)]
+</span><span class="kw">pub struct </span>Config {
     format: FormatConfig,
     <span class="comment">// TODO: Document once this option becomes usefull
     </span><span class="attribute">#[default(<span class="number">5</span>.into())]
@@ -456,8 +455,7 @@
     </span>click_temp: u16,
 }
 
-<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span>config = HueshiftConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(config.format.with_default(<span class="string">&quot; $temperature &quot;</span>)<span class="question-mark">?</span>);
 
     <span class="comment">// limit too big steps at 500K to avoid too brutal changes

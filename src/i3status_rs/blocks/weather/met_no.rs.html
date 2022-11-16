@@ -221,7 +221,7 @@
 
 <span class="kw">type </span>LegendsStore = HashMap&lt;String, LegendsResult&gt;;
 
-<span class="attribute">#[derive(Deserialize)]
+<span class="attribute">#[derive(Deserialize, Debug)]
 #[serde(tag = <span class="string">&quot;name&quot;</span>, rename_all = <span class="string">&quot;lowercase&quot;</span>)]
 </span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct </span>Config {
     coordinates: <span class="prelude-ty">Option</span>&lt;(String, String)&gt;,

@@ -184,7 +184,6 @@
 <span id="184">184</span>
 <span id="185">185</span>
 <span id="186">186</span>
-<span id="187">187</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The number of GitHub notifications
 //!
 //! This block shows the unread notification count for a GitHub account. A GitHub [personal access token](https://github.com/settings/tokens/new) with the &quot;notifications&quot; scope is required, and must be passed using the `I3RS_GITHUB_TOKEN` environment variable or `token` configuration option. Optionally the colour of the block is determined by the highest notification in the following lists from highest to lowest: `critical`,`warning`,`info`,`good`
@@ -248,8 +247,8 @@
 </span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
 
 <span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-</span><span class="kw">struct </span>GithubConfig {
+#[serde(default)]
+</span><span class="kw">pub struct </span>Config {
     <span class="attribute">#[default(<span class="number">60</span>.into())]
     </span>interval: Seconds,
     format: FormatConfig,
@@ -261,8 +260,7 @@
     critical: <span class="prelude-ty">Option</span>&lt;Vec&lt;String&gt;&gt;,
 }
 
-<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span>config = GithubConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>widget =
         Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon $total.eng(1) &quot;</span>)<span class="question-mark">?</span>);
 

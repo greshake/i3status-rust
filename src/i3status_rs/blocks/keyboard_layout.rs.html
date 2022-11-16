@@ -390,7 +390,6 @@
 <span id="390">390</span>
 <span id="391">391</span>
 <span id="392">392</span>
-<span id="393">393</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Keyboard layout indicator
 //!
 //! Four drivers are available:
@@ -478,8 +477,8 @@
 <span class="kw">use </span>zbus::dbus_proxy;
 
 <span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default, deny_unknown_fields)]
-</span><span class="kw">struct </span>KeyboardLayoutConfig {
+#[serde(default)]
+</span><span class="kw">pub struct </span>Config {
     format: FormatConfig,
     driver: KeyboardLayoutDriver,
     <span class="attribute">#[default(<span class="number">60</span>.into())]
@@ -498,8 +497,7 @@
     Sway,
 }
 
-<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span>config = KeyboardLayoutConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(config.format.with_default(<span class="string">&quot; $layout &quot;</span>)<span class="question-mark">?</span>);
 
     <span class="kw">let </span><span class="kw-2">mut </span>backend: Box&lt;<span class="kw">dyn </span>Backend&gt; = <span class="kw">match </span>config.driver {

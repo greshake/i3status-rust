@@ -124,9 +124,6 @@
 <span id="124">124</span>
 <span id="125">125</span>
 <span id="126">126</span>
-<span id="127">127</span>
-<span id="128">128</span>
-<span id="129">129</span>
 </pre><pre class="rust"><code><span class="doccomment">//! A custom menu
 //!
 //! This block allows you to quickly run a custom shell command. Left-click on this block to
@@ -164,8 +161,7 @@
 <span class="kw">use </span><span class="kw">crate</span>::subprocess::spawn_shell;
 
 <span class="attribute">#[derive(Deserialize, Debug)]
-#[serde(deny_unknown_fields)]
-</span><span class="kw">struct </span>Config {
+</span><span class="kw">pub struct </span>Config {
     text: String,
     items: Vec&lt;Item&gt;,
 }
@@ -233,9 +229,7 @@
     }
 }
 
-<span class="kw">pub async fn </span>run(config: toml::Value, api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span>config = Config::deserialize(config).config_error()<span class="question-mark">?</span>;
-
+<span class="kw">pub async fn </span>run(config: Config, api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>block = Block {
         widget: Widget::new(),
         api,

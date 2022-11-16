@@ -271,7 +271,6 @@
 <span id="271">271</span>
 <span id="272">272</span>
 <span id="273">273</span>
-<span id="274">274</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Information about the internal power supply
 //!
 //! This block can display the current battery state (Full, Charging or Discharging), percentage
@@ -348,8 +347,8 @@
 <span class="comment">// make_log_macro!(debug, &quot;battery&quot;);
 
 </span><span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-</span><span class="kw">struct </span>BatteryConfig {
+#[serde(default)]
+</span><span class="kw">pub struct </span>Config {
     device: <span class="prelude-ty">Option</span>&lt;String&gt;,
     driver: BatteryDriver,
     <span class="attribute">#[default(<span class="number">10</span>.into())]
@@ -381,8 +380,7 @@
     Upower,
 }
 
-<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span>config = BatteryConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $percentage &quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>format_full = config.full_format.with_default(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>format_empty = config.empty_format.with_default(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>;

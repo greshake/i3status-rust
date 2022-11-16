@@ -148,7 +148,6 @@
 <span id="148">148</span>
 <span id="149">149</span>
 <span id="150">150</span>
-<span id="151">151</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Pending updates available for your Fedora system
 //!
 //!
@@ -195,8 +194,8 @@
 <span class="kw">use </span>tokio::process::Command;
 
 <span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-</span><span class="kw">struct </span>DnfConfig {
+#[serde(default)]
+</span><span class="kw">pub struct </span>Config {
     <span class="attribute">#[default(<span class="number">600</span>.into())]
     </span>interval: Seconds,
     format: FormatConfig,
@@ -206,8 +205,7 @@
     critical_updates_regex: <span class="prelude-ty">Option</span>&lt;String&gt;,
 }
 
-<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span>config = DnfConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new();
 
     <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $count.eng(1) &quot;</span>)<span class="question-mark">?</span>;

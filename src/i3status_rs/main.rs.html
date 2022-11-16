@@ -489,6 +489,7 @@
 <span id="489">489</span>
 <span id="490">490</span>
 <span id="491">491</span>
+<span id="492">492</span>
 </pre><pre class="rust"><code><span class="attribute">#![warn(clippy::match_same_arms)]
 #![warn(clippy::semicolon_if_nothing_returned)]
 #![warn(clippy::unnecessary_wraps)]
@@ -525,10 +526,10 @@
 <span class="kw">use </span>tokio::process::Command;
 <span class="kw">use </span>tokio::sync::mpsc;
 
-<span class="kw">use </span>blocks::{BlockEvent, BlockFuture, BlockType, CommonApi, CommonConfig};
+<span class="kw">use </span>blocks::{BlockEvent, BlockFuture, CommonApi};
 <span class="kw">use </span>click::ClickHandler;
-<span class="kw">use </span>config::Config;
 <span class="kw">use </span>config::SharedConfig;
+<span class="kw">use </span>config::{BlockConfigEntry, Config};
 <span class="kw">use </span>errors::<span class="kw-2">*</span>;
 <span class="kw">use </span>escape::CollectEscaped;
 <span class="kw">use </span>formatting::{scheduling, Format};
@@ -687,7 +688,7 @@
 <span class="kw">struct </span>BarState {
     config: Config,
 
-    blocks: Vec&lt;(Block, BlockType)&gt;,
+    blocks: Vec&lt;(Block, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str)&gt;,
     fullscreen_block: <span class="prelude-ty">Option</span>&lt;usize&gt;,
     running_blocks: FuturesUnordered&lt;BlockFuture&gt;,
 
@@ -728,9 +729,8 @@
         }
     }
 
-    <span class="kw">async fn </span>spawn_block(<span class="kw-2">&amp;mut </span><span class="self">self</span>, <span class="kw-2">mut </span>block_config: toml::Value) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-        <span class="kw">let </span>common_config = CommonConfig::new(<span class="kw-2">&amp;mut </span>block_config)<span class="question-mark">?</span>;
-        <span class="kw">if let </span><span class="prelude-val">Some</span>(cmd) = <span class="kw-2">&amp;</span>common_config.if_command {
+    <span class="kw">async fn </span>spawn_block(<span class="kw-2">&amp;mut </span><span class="self">self</span>, block_config: BlockConfigEntry) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(cmd) = <span class="kw-2">&amp;</span>block_config.common.if_command {
             <span class="kw">if </span>!Command::new(<span class="string">&quot;sh&quot;</span>)
                 .args([<span class="string">&quot;-c&quot;</span>, cmd])
                 .output()
@@ -743,17 +743,16 @@
             }
         }
 
-        <span class="kw">let </span>block_type = common_config.block;
         <span class="kw">let </span><span class="kw-2">mut </span>shared_config = <span class="self">self</span>.config.shared.clone();
 
         <span class="comment">// Overrides
-        </span><span class="kw">if let </span><span class="prelude-val">Some</span>(icons_format) = common_config.icons_format {
+        </span><span class="kw">if let </span><span class="prelude-val">Some</span>(icons_format) = block_config.common.icons_format {
             shared_config.icons_format = Arc::new(icons_format);
         }
-        <span class="kw">if let </span><span class="prelude-val">Some</span>(theme_overrides) = common_config.theme_overrides {
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(theme_overrides) = block_config.common.theme_overrides {
             Arc::make_mut(<span class="kw-2">&amp;mut </span>shared_config.theme).apply_overrides(theme_overrides)<span class="question-mark">?</span>;
         }
-        <span class="kw">if let </span><span class="prelude-val">Some</span>(icons_overrides) = common_config.icons_overrides {
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(icons_overrides) = block_config.common.icons_overrides {
             Arc::make_mut(<span class="kw-2">&amp;mut </span>shared_config.icons).apply_overrides(icons_overrides);
         }
 
@@ -766,17 +765,20 @@
 
             request_sender: <span class="self">self</span>.request_sender.clone(),
 
-            error_interval: Duration::from_secs(common_config.error_interval),
+            error_interval: Duration::from_secs(block_config.common.error_interval),
         };
 
-        <span class="kw">let </span>error_format = common_config
+        <span class="kw">let </span>error_format = block_config
+            .common
             .error_format
             .with_default(<span class="kw-2">&amp;</span><span class="self">self</span>.config.error_format)<span class="question-mark">?</span>;
-        <span class="kw">let </span>error_fullscreen_format = common_config
+        <span class="kw">let </span>error_fullscreen_format = block_config
+            .common
             .error_fullscreen_format
             .with_default(<span class="kw-2">&amp;</span><span class="self">self</span>.config.error_fullscreen_format)<span class="question-mark">?</span>;
 
-        <span class="kw">let </span>(block_fut, abort_handle) = abortable(block_type.run(block_config, api));
+        <span class="kw">let </span>block_name = block_config.config.name();
+        <span class="kw">let </span>(block_fut, abort_handle) = abortable(block_config.config.run(api));
 
         <span class="kw">let </span>block = Block {
             id: <span class="self">self</span>.blocks.len(),
@@ -785,8 +787,8 @@
             widget_updates_sender: <span class="self">self</span>.widget_updates_sender.clone(),
             abort_handle,
 
-            click_handler: common_config.click,
-            signal: common_config.signal,
+            click_handler: block_config.common.click,
+            signal: block_config.common.signal,
             shared_config,
 
             error_format,
@@ -800,7 +802,7 @@
                 <span class="prelude-val">Ok</span>(res) =&gt; res,
                 <span class="prelude-val">Err</span>(_aborted) =&gt; <span class="prelude-val">Ok</span>(()),
             })));
-        <span class="self">self</span>.blocks.push((block, block_type));
+        <span class="self">self</span>.blocks.push((block, block_name));
         <span class="self">self</span>.blocks_render_cache.push(Vec::new());
         <span class="prelude-val">Ok</span>(())
     }
@@ -837,7 +839,7 @@
             BlockState::Normal { widget } | BlockState::Error { widget, .. } =&gt; {
                 <span class="kw-2">*</span>data = widget
                     .get_data(<span class="kw-2">&amp;</span>block.shared_config, id)
-                    .in_block(<span class="kw-2">*</span>block_type, id)<span class="question-mark">?</span>;
+                    .in_block(block_type, id)<span class="question-mark">?</span>;
             }
         }
         <span class="prelude-val">Ok</span>(())
@@ -879,7 +881,7 @@
                 <span class="kw">match </span><span class="kw-2">&amp;mut </span>block.state {
                     BlockState::None =&gt; (),
                     BlockState::Normal { .. } =&gt; {
-                        <span class="kw">let </span>post_actions = block.click_handler.handle(event.button).<span class="kw">await</span>.in_block(<span class="kw-2">*</span>block_type, event.id)<span class="question-mark">?</span>;
+                        <span class="kw">let </span>post_actions = block.click_handler.handle(event.button).<span class="kw">await</span>.in_block(block_type, event.id)<span class="question-mark">?</span>;
                         <span class="kw">if let </span><span class="prelude-val">Some</span>(sender) = <span class="kw-2">&amp;</span>block.event_sender {
                             <span class="kw">if </span>post_actions.pass {
                                 <span class="kw">let _ </span>= sender.send(BlockEvent::Click(event)).<span class="kw">await</span>;

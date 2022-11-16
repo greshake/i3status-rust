@@ -351,8 +351,6 @@
 <span id="351">351</span>
 <span id="352">352</span>
 <span id="353">353</span>
-<span id="354">354</span>
-<span id="355">355</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Current weather
 //!
 //! This block displays local weather and temperature information. In order to use this block, you
@@ -454,9 +452,8 @@
 
 <span class="kw">const </span>IP_API_URL: <span class="kw-2">&amp;</span>str = <span class="string">&quot;https://ipapi.co/json&quot;</span>;
 
-<span class="attribute">#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-</span><span class="kw">struct </span>WeatherConfig {
+<span class="attribute">#[derive(Deserialize, Debug)]
+</span><span class="kw">pub struct </span>Config {
     <span class="attribute">#[serde(default = <span class="string">&quot;default_interval&quot;</span>)]
     </span>interval: Seconds,
     <span class="attribute">#[serde(default)]
@@ -477,7 +474,7 @@
         -&gt; <span class="prelude-ty">Result</span>&lt;WeatherResult&gt;;
 }
 
-<span class="attribute">#[derive(Deserialize)]
+<span class="attribute">#[derive(Deserialize, Debug)]
 #[serde(tag = <span class="string">&quot;name&quot;</span>, rename_all = <span class="string">&quot;lowercase&quot;</span>)]
 </span><span class="kw">enum </span>WeatherService {
     OpenWeatherMap(open_weather_map::Config),
@@ -536,8 +533,7 @@
     }
 }
 
-<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span>config = WeatherConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>widget =
         Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon $weather $temp &quot;</span>)<span class="question-mark">?</span>);
 

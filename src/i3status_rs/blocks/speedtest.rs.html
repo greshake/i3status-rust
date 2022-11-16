@@ -94,7 +94,6 @@
 <span id="94">94</span>
 <span id="95">95</span>
 <span id="96">96</span>
-<span id="97">97</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Ping, download, and upload speeds
 //!
 //! This block which requires [`speedtest-cli`](https://github.com/sivel/speedtest-cli).
@@ -141,15 +140,14 @@
 <span class="kw">use </span>tokio::process::Command;
 
 <span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-</span><span class="kw">struct </span>SpeedtestConfig {
+#[serde(default)]
+</span><span class="kw">pub struct </span>Config {
     format: FormatConfig,
     <span class="attribute">#[default(<span class="number">1800</span>.into())]
     </span>interval: Seconds,
 }
 
-<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span>config = SpeedtestConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>widget =
         Widget::new().with_format(config.format.with_default(
             <span class="string">&quot; ^icon_ping $ping ^icon_net_down $speed_down ^icon_net_up $speed_up &quot;</span>,

@@ -366,8 +366,6 @@
 <span id="366">366</span>
 <span id="367">367</span>
 <span id="368">368</span>
-<span id="369">369</span>
-<span id="370">370</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Monitor Bluetooth device
 //!
 //! This block displays the connectivity of a given Bluetooth device and the battery level if this
@@ -419,8 +417,7 @@
 <span class="macro">make_log_macro!</span>(debug, <span class="string">&quot;bluetooth&quot;</span>);
 
 <span class="attribute">#[derive(Deserialize, Debug)]
-#[serde(deny_unknown_fields)]
-</span><span class="kw">struct </span>BluetoothConfig {
+</span><span class="kw">pub struct </span>Config {
     mac: String,
     <span class="attribute">#[serde(default)]
     </span>adapter_mac: <span class="prelude-ty">Option</span>&lt;String&gt;,
@@ -430,8 +427,7 @@
     </span>disconnected_format: FormatConfig,
 }
 
-<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span>config = BluetoothConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $name{ $percentage|} &quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>disconnected_format = config
         .disconnected_format

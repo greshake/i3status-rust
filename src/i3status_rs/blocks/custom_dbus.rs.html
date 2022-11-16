@@ -166,8 +166,6 @@
 <span id="166">166</span>
 <span id="167">167</span>
 <span id="168">168</span>
-<span id="169">169</span>
-<span id="170">170</span>
 </pre><pre class="rust"><code><span class="doccomment">//! A block controled by the DBus
 //!
 //! This block creates a new DBus object in `rs.i3status` service. This object implements
@@ -233,8 +231,7 @@
 <span class="kw">const </span>DBUS_NAME: <span class="kw-2">&amp;</span>str = <span class="string">&quot;rs.i3status&quot;</span>;
 
 <span class="attribute">#[derive(Deserialize, Debug)]
-#[serde(deny_unknown_fields)]
-</span><span class="kw">struct </span>CustomDBusConfig {
+</span><span class="kw">pub struct </span>Config {
     <span class="attribute">#[serde(default)]
     </span>format: FormatConfig,
     path: String,
@@ -291,13 +288,12 @@
     }
 }
 
-<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="comment">// This block doesn&#39;t listen for any events. Closing the channel is necessary, because channels
     // are bounded by the number of pending messages, and if we don&#39;t close it now, main thread
     // will get blocked while trying to send a new message.
     </span>api.event_receiver.close();
 
-    <span class="kw">let </span>config = CustomDBusConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
     <span class="kw">let </span>widget = Widget::new().with_format(
         config
             .format

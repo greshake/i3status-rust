@@ -272,7 +272,6 @@
 <span id="272">272</span>
 <span id="273">273</span>
 <span id="274">274</span>
-<span id="275">275</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Volume level
 //!
 //! This block displays the volume level (according to PulseAudio or ALSA). Right click to toggle mute, scroll to adjust volume.
@@ -348,8 +347,8 @@
 <span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
 
 <span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-</span><span class="kw">struct </span>SoundConfig {
+#[serde(default)]
+</span><span class="kw">pub struct </span>Config {
     driver: SoundDriver,
     name: <span class="prelude-ty">Option</span>&lt;String&gt;,
     device: <span class="prelude-ty">Option</span>&lt;String&gt;,
@@ -364,8 +363,7 @@
     max_vol: <span class="prelude-ty">Option</span>&lt;u32&gt;,
 }
 
-<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span>config = SoundConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>widget =
         Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon {$volume.eng(2)|} &quot;</span>)<span class="question-mark">?</span>);
 

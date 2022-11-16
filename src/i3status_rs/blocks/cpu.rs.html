@@ -240,8 +240,6 @@
 <span id="240">240</span>
 <span id="241">241</span>
 <span id="242">242</span>
-<span id="243">243</span>
-<span id="244">244</span>
 </pre><pre class="rust"><code><span class="doccomment">//! CPU statistics
 //!
 //! # Configuration
@@ -289,17 +287,15 @@
 <span class="kw">const </span>CPU_NO_TURBO_PATH: <span class="kw-2">&amp;</span>str = <span class="string">&quot;/sys/devices/system/cpu/intel_pstate/no_turbo&quot;</span>;
 
 <span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-</span><span class="kw">struct </span>CpuConfig {
+#[serde(default)]
+</span><span class="kw">pub struct </span>Config {
     format: FormatConfig,
     format_alt: <span class="prelude-ty">Option</span>&lt;FormatConfig&gt;,
     <span class="attribute">#[default(<span class="number">5</span>.into())]
     </span>interval: Seconds,
 }
 
-<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span>config = CpuConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
-
+<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>format = config.format.with_default(<span class="string">&quot; $icon $utilization &quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>format_alt = <span class="kw">match </span>config.format_alt {
         <span class="prelude-val">Some</span>(f) =&gt; <span class="prelude-val">Some</span>(f.with_default(<span class="string">&quot;&quot;</span>)<span class="question-mark">?</span>),

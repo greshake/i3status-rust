@@ -82,23 +82,48 @@
 <span id="82">82</span>
 <span id="83">83</span>
 <span id="84">84</span>
+<span id="85">85</span>
+<span id="86">86</span>
 </pre><pre class="rust"><code><span class="kw">use </span>serde::{Deserialize, Deserializer};
+<span class="kw">use </span>smart_default::SmartDefault;
+<span class="kw">use </span>std::collections::HashMap;
 <span class="kw">use </span>std::sync::Arc;
-<span class="kw">use </span>toml::value;
 
+<span class="kw">use </span><span class="kw">crate</span>::blocks::BlockConfig;
+<span class="kw">use </span><span class="kw">crate</span>::click::ClickHandler;
 <span class="kw">use </span><span class="kw">crate</span>::errors::<span class="kw-2">*</span>;
+<span class="kw">use </span><span class="kw">crate</span>::formatting::config::Config <span class="kw">as </span>FormatConfig;
 <span class="kw">use </span><span class="kw">crate</span>::icons::Icons;
-<span class="kw">use </span><span class="kw">crate</span>::themes::{Theme, ThemeUserConfig};
-<span class="kw">use </span><span class="kw">crate</span>::util::default;
+<span class="kw">use </span><span class="kw">crate</span>::themes::{Theme, ThemeOverrides, ThemeUserConfig};
 
-<span class="attribute">#[derive(Deserialize, Debug, Clone)]
+<span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
+#[serde(default)]
+</span><span class="kw">pub struct </span>Config {
+    <span class="attribute">#[serde(flatten)]
+    </span><span class="kw">pub </span>shared: SharedConfig,
+
+    <span class="doccomment">/// Set to `true` to invert mouse wheel direction
+    </span><span class="kw">pub </span>invert_scrolling: bool,
+
+    <span class="doccomment">/// The maximum delay (ms) between two clicks that are considered as doulble click
+    </span><span class="kw">pub </span>double_click_delay: u64,
+
+    <span class="attribute">#[default(<span class="string">&quot; {$short_error_message|X} &quot;</span>.into())]
+    </span><span class="kw">pub </span>error_format: String,
+    <span class="attribute">#[default(<span class="string">&quot; $full_error_message &quot;</span>.into())]
+    </span><span class="kw">pub </span>error_fullscreen_format: String,
+
+    <span class="attribute">#[serde(rename = <span class="string">&quot;block&quot;</span>)]
+    </span><span class="kw">pub </span>blocks: Vec&lt;BlockConfigEntry&gt;,
+}
+
+<span class="attribute">#[derive(Deserialize, Debug, Clone, SmartDefault)]
+#[serde(default)]
 </span><span class="kw">pub struct </span>SharedConfig {
-    <span class="attribute">#[serde(default)]
-    #[serde(deserialize_with = <span class="string">&quot;deserialize_theme_config&quot;</span>)]
+    <span class="attribute">#[serde(deserialize_with = <span class="string">&quot;deserialize_theme_config&quot;</span>)]
     </span><span class="kw">pub </span>theme: Arc&lt;Theme&gt;,
-    <span class="attribute">#[serde(default)]
-    </span><span class="kw">pub </span>icons: Arc&lt;Icons&gt;,
-    <span class="attribute">#[serde(default = <span class="string">&quot;Config::default_icons_format&quot;</span>)]
+    <span class="kw">pub </span>icons: Arc&lt;Icons&gt;,
+    <span class="attribute">#[default(Arc::new(<span class="string">&quot;{icon}&quot;</span>.into()))]
     </span><span class="kw">pub </span>icons_format: Arc&lt;String&gt;,
 }
 
@@ -112,50 +137,29 @@
     }
 }
 
-<span class="kw">impl </span>Default <span class="kw">for </span>SharedConfig {
-    <span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
-        <span class="self">Self </span>{
-            theme: default(),
-            icons: default(),
-            icons_format: Arc::new(<span class="string">&quot;{icon}&quot;</span>.into()),
-        }
-    }
-}
-
 <span class="attribute">#[derive(Deserialize, Debug)]
-</span><span class="kw">pub struct </span>Config {
+</span><span class="kw">pub struct </span>BlockConfigEntry {
     <span class="attribute">#[serde(flatten)]
-    </span><span class="kw">pub </span>shared: SharedConfig,
-
-    <span class="doccomment">/// Set to `true` to invert mouse wheel direction
-    </span><span class="attribute">#[serde(default)]
-    </span><span class="kw">pub </span>invert_scrolling: bool,
-
-    <span class="doccomment">/// The maximum delay (ms) between two clicks that are considered as doulble click
-    </span><span class="attribute">#[serde(default)]
-    </span><span class="kw">pub </span>double_click_delay: u64,
-
-    <span class="attribute">#[serde(default = <span class="string">&quot;Config::default_error_format&quot;</span>)]
-    </span><span class="kw">pub </span>error_format: String,
-    <span class="attribute">#[serde(default = <span class="string">&quot;Config::default_error_fullscreen_format&quot;</span>)]
-    </span><span class="kw">pub </span>error_fullscreen_format: String,
-
-    <span class="attribute">#[serde(rename = <span class="string">&quot;block&quot;</span>)]
-    </span><span class="kw">pub </span>blocks: Vec&lt;value::Value&gt;,
+    </span><span class="kw">pub </span>common: CommonBlockConfig,
+    <span class="attribute">#[serde(flatten)]
+    </span><span class="kw">pub </span>config: BlockConfig,
 }
 
-<span class="kw">impl </span>Config {
-    <span class="kw">fn </span>default_icons_format() -&gt; Arc&lt;String&gt; {
-        Arc::new(<span class="string">&quot;{icon}&quot;</span>.into())
-    }
+<span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
+#[serde(default)]
+</span><span class="kw">pub struct </span>CommonBlockConfig {
+    <span class="kw">pub </span>click: ClickHandler,
+    <span class="kw">pub </span>signal: <span class="prelude-ty">Option</span>&lt;i32&gt;,
+    <span class="kw">pub </span>icons_format: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="kw">pub </span>theme_overrides: <span class="prelude-ty">Option</span>&lt;ThemeOverrides&gt;,
+    <span class="kw">pub </span>icons_overrides: <span class="prelude-ty">Option</span>&lt;HashMap&lt;String, String&gt;&gt;,
 
-    <span class="kw">fn </span>default_error_format() -&gt; String {
-        <span class="string">&quot; {$short_error_message|X} &quot;</span>.into()
-    }
+    <span class="attribute">#[default(<span class="number">5</span>)]
+    </span><span class="kw">pub </span>error_interval: u64,
+    <span class="kw">pub </span>error_format: FormatConfig,
+    <span class="kw">pub </span>error_fullscreen_format: FormatConfig,
 
-    <span class="kw">fn </span>default_error_fullscreen_format() -&gt; String {
-        <span class="string">&quot; $full_error_message &quot;</span>.into()
-    }
+    <span class="kw">pub </span>if_command: <span class="prelude-ty">Option</span>&lt;String&gt;,
 }
 
 <span class="kw">fn </span>deserialize_theme_config&lt;<span class="lifetime">&#39;de</span>, D&gt;(deserializer: D) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;Theme&gt;, D::Error&gt;

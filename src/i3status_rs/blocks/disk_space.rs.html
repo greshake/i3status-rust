@@ -182,8 +182,6 @@
 <span id="182">182</span>
 <span id="183">183</span>
 <span id="184">184</span>
-<span id="185">185</span>
-<span id="186">186</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Disk usage statistics
 //!
 //! # Configuration
@@ -251,8 +249,8 @@
 }
 
 <span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-</span><span class="kw">struct </span>DiskSpaceConfig {
+#[serde(default)]
+</span><span class="kw">pub struct </span>Config {
     <span class="attribute">#[default(<span class="string">&quot;/&quot;</span>.into())]
     </span>path: ShellString,
     info_type: InfoType,
@@ -267,9 +265,7 @@
     </span>alert: f64,
 }
 
-<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span>config = DiskSpaceConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
-
+<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>format = config.format.with_default(<span class="string">&quot; $icon $available &quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>format_alt = <span class="kw">match </span>config.format_alt {
         <span class="prelude-val">Some</span>(f) =&gt; <span class="prelude-val">Some</span>(f.with_default(<span class="string">&quot;&quot;</span>)<span class="question-mark">?</span>),

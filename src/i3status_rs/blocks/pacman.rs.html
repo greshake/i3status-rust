@@ -399,7 +399,6 @@
 <span id="399">399</span>
 <span id="400">400</span>
 <span id="401">401</span>
-<span id="402">402</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Pending updates available on pacman or an AUR helper.
 //!
 //! Requires fakeroot to be installed (only required for pacman).
@@ -546,8 +545,8 @@
 });
 
 <span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-</span><span class="kw">struct </span>PacmanConfig {
+#[serde(default)]
+</span><span class="kw">pub struct </span>Config {
     <span class="attribute">#[default(<span class="number">600</span>.into())]
     </span>interval: Seconds,
     format: FormatConfig,
@@ -558,8 +557,7 @@
     aur_command: <span class="prelude-ty">Option</span>&lt;String&gt;,
 }
 
-<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span>config = PacmanConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new();
 
     <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $pacman.eng(1) &quot;</span>)<span class="question-mark">?</span>;

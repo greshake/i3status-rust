@@ -253,7 +253,6 @@
 <span id="253">253</span>
 <span id="254">254</span>
 <span id="255">255</span>
-<span id="256">256</span>
 </pre><pre class="rust"><code><span class="doccomment">//! A [pomodoro timer](https://en.wikipedia.org/wiki/Pomodoro_Technique)
 //!
 //! # Technique
@@ -318,8 +317,8 @@
 <span class="kw">use </span>std::time::Instant;
 
 <span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-</span><span class="kw">struct </span>PomodoroConfig {
+#[serde(default)]
+</span><span class="kw">pub struct </span>Config {
     format: FormatConfig,
     <span class="attribute">#[default(<span class="string">&quot;Pomodoro over! Take a break!&quot;</span>.into())]
     </span>message: String,
@@ -332,7 +331,7 @@
 <span class="kw">struct </span>Block {
     widget: Widget,
     api: CommonApi,
-    block_config: PomodoroConfig,
+    block_config: Config,
 }
 
 <span class="kw">impl </span>Block {
@@ -484,8 +483,7 @@
     }
 }
 
-<span class="kw">pub async fn </span>run(block_config: toml::Value, api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span>block_config = PomodoroConfig::deserialize(block_config).config_error()<span class="question-mark">?</span>;
+<span class="kw">pub async fn </span>run(block_config: Config, api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span>format = FormatConfig::default().with_default(<span class="string">&quot; $icon{ $message|} &quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>widget = Widget::new().with_format(format);
 

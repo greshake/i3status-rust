@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["run",""]],"macro":[["debug",""]],"struct":[["Battery1Proxy",""],["Battery1ProxyBlocking",""],["BluetoothConfig",""],["Device",""],["Device1Proxy",""],["Device1ProxyBlocking",""],["DeviceMonitor",""]]};
+window.SIDEBAR_ITEMS = {"fn":[["run",""]],"macro":[["debug",""]],"struct":[["Battery1Proxy",""],["Battery1ProxyBlocking",""],["Config",""],["Device",""],["Device1Proxy",""],["Device1ProxyBlocking",""],["DeviceMonitor",""]]};

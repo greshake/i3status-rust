@@ -190,7 +190,6 @@
 <span id="190">190</span>
 <span id="191">191</span>
 <span id="192">192</span>
-<span id="193">193</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Display and toggle the state of notifications daemon
 //!
 //! Right now only `dunst` is supported.
@@ -231,8 +230,8 @@
 <span class="kw">const </span>ICON_OFF: <span class="kw-2">&amp;</span>str = <span class="string">&quot;bell-slash&quot;</span>;
 
 <span class="attribute">#[derive(Deserialize, Debug, Default)]
-#[serde(deny_unknown_fields, default)]
-</span><span class="kw">struct </span>NotifyConfig {
+#[serde(default)]
+</span><span class="kw">pub struct </span>Config {
     driver: DriverType,
     format: FormatConfig,
 }
@@ -245,8 +244,7 @@
     SwayNC,
 }
 
-<span class="kw">pub async fn </span>run(config: toml::Value, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span>config = NotifyConfig::deserialize(config).config_error()<span class="question-mark">?</span>;
+<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>);
 
     <span class="kw">let </span><span class="kw-2">mut </span>driver: Box&lt;<span class="kw">dyn </span>Driver&gt; = <span class="kw">match </span>config.driver {
