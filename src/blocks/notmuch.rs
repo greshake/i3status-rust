@@ -107,7 +107,12 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 }
 
 fn run_query(db_path: &str, query_string: &str) -> std::result::Result<u32, notmuch::Error> {
-    let db = notmuch::Database::open(&db_path, notmuch::DatabaseMode::ReadOnly)?;
+    let db = notmuch::Database::open_with_config(
+        Some(db_path),
+        notmuch::DatabaseMode::ReadOnly,
+        None::<&str>,
+        None,
+    )?;
     let query = db.create_query(query_string)?;
     query.count_messages()
 }
