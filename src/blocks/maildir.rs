@@ -54,7 +54,7 @@ pub struct Config {
     display_type: MailType,
 }
 
-pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+pub async fn run(mut config: Config, mut api: CommonApi) -> Result<()> {
     let mut widget = Widget::new().with_format(config.format.with_default(" $icon $status ")?);
 
     for inbox in &mut config.inboxes {
