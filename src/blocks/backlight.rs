@@ -21,6 +21,7 @@
 //! `cycle` | The brightnesses to cycle through on each click | `[minimum, maximum]`
 //! `root_scaling` | Scaling exponent reciprocal (ie. root) | `1.0`
 //! `invert_icons` | Invert icons' ordering, useful if you have colorful emoji | `false`
+//! `hide_on_unavailable` | Hide this block when the backlight device does not exist | `false`
 //!
 //! Placeholder  | Value                                     | Type   | Unit
 //! -------------|-------------------------------------------|--------|---------------
@@ -124,6 +125,8 @@ pub struct Config {
     #[default(1.0)]
     root_scaling: f64,
     invert_icons: bool,
+    #[default(false)]
+    hide_on_unavailable: bool,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
@@ -136,9 +139,21 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         .cycle();
 
     let device = match &config.device {
-        None => BacklightDevice::default(config.root_scaling).await?,
-        Some(path) => BacklightDevice::from_device(path, config.root_scaling).await?,
+        None => BacklightDevice::default(config.root_scaling).await,
+        Some(path) => BacklightDevice::from_device(path, config.root_scaling).await,
     };
+
+    if device.is_err() && config.hide_on_unavailable {
+        widget.set_text("".to_string());
+        loop {
+            select! {
+                _ = api.event() => (),
+            }
+        }
+
+    }
+
+    let device = device?;
 
     // Watch for brightness changes
     let mut notify = Inotify::init().error("Failed to start inotify")?;
