@@ -111,6 +111,11 @@
 <span id="111">111</span>
 <span id="112">112</span>
 <span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
+<span id="118">118</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Count of notmuch messages
 //!
 //! This block queries a notmuch database and displays the count of messages.
@@ -220,7 +225,12 @@
 }
 
 <span class="kw">fn </span>run_query(db_path: <span class="kw-2">&amp;</span>str, query_string: <span class="kw-2">&amp;</span>str) -&gt; std::result::Result&lt;u32, notmuch::Error&gt; {
-    <span class="kw">let </span>db = notmuch::Database::open(<span class="kw-2">&amp;</span>db_path, notmuch::DatabaseMode::ReadOnly)<span class="question-mark">?</span>;
+    <span class="kw">let </span>db = notmuch::Database::open_with_config(
+        <span class="prelude-val">Some</span>(db_path),
+        notmuch::DatabaseMode::ReadOnly,
+        <span class="prelude-val">None</span>::&lt;<span class="kw-2">&amp;</span>str&gt;,
+        <span class="prelude-val">None</span>,
+    )<span class="question-mark">?</span>;
     <span class="kw">let </span>query = db.create_query(query_string)<span class="question-mark">?</span>;
     query.count_messages()
 }
