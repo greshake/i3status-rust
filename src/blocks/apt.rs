@@ -163,9 +163,9 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 }
 
 async fn get_updates_list(config_path: &str) -> Result<String> {
-    Command::new("sh")
+    Command::new("apt")
         .env("APT_CONFIG", config_path)
-        .args(["-c", "apt update"])
+        .args(["update"])
         .stdout(Stdio::null())
         .stdin(Stdio::null())
         .spawn()
@@ -173,9 +173,9 @@ async fn get_updates_list(config_path: &str) -> Result<String> {
         .wait()
         .await
         .error("Failed to run `apt update`")?;
-    let stdout = Command::new("sh")
+    let stdout = Command::new("apt")
         .env("APT_CONFIG", config_path)
-        .args(["-c", "apt list --upgradable"])
+        .args(["list", "--upgradable"])
         .output()
         .await
         .error("Problem running apt command")?
