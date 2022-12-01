@@ -43,6 +43,7 @@
 //! - `update`
 
 use std::env;
+use std::process::Stdio;
 
 use regex::Regex;
 
@@ -165,11 +166,13 @@ async fn get_updates_list(config_path: &str) -> Result<String> {
     Command::new("sh")
         .env("APT_CONFIG", config_path)
         .args(["-c", "apt update"])
+        .stdout(Stdio::null())
+        .stdin(Stdio::null())
         .spawn()
-        .error("Failed to ren `apt update` command")?
+        .error("Failed to run `apt update`")?
         .wait()
         .await
-        .error("Failed to run `apt update` command")?;
+        .error("Failed to run `apt update`")?;
     let stdout = Command::new("sh")
         .env("APT_CONFIG", config_path)
         .args(["-c", "apt list --upgradable"])
