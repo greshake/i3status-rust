@@ -190,6 +190,9 @@
 <span id="190">190</span>
 <span id="191">191</span>
 <span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Pending updates available for your Debian/Ubuntu based system
 //!
 //! Behind the scenes this uses `apt`, and in order to run it without root privileges i3status-rust will create its own package database in `/tmp/i3rs-apt/` which may take up several MB or more. If you have a custom apt config then this block may not work as expected - in that case please open an issue.
@@ -235,6 +238,7 @@
 //! - `update`
 
 </span><span class="kw">use </span>std::env;
+<span class="kw">use </span>std::process::Stdio;
 
 <span class="kw">use </span>regex::Regex;
 
@@ -357,11 +361,13 @@
     Command::new(<span class="string">&quot;sh&quot;</span>)
         .env(<span class="string">&quot;APT_CONFIG&quot;</span>, config_path)
         .args([<span class="string">&quot;-c&quot;</span>, <span class="string">&quot;apt update&quot;</span>])
+        .stdout(Stdio::null())
+        .stdin(Stdio::null())
         .spawn()
-        .error(<span class="string">&quot;Failed to ren `apt update` command&quot;</span>)<span class="question-mark">?
+        .error(<span class="string">&quot;Failed to run `apt update`&quot;</span>)<span class="question-mark">?
         </span>.wait()
         .<span class="kw">await
-        </span>.error(<span class="string">&quot;Failed to run `apt update` command&quot;</span>)<span class="question-mark">?</span>;
+        </span>.error(<span class="string">&quot;Failed to run `apt update`&quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>stdout = Command::new(<span class="string">&quot;sh&quot;</span>)
         .env(<span class="string">&quot;APT_CONFIG&quot;</span>, config_path)
         .args([<span class="string">&quot;-c&quot;</span>, <span class="string">&quot;apt list --upgradable&quot;</span>])
