@@ -358,9 +358,9 @@
 }
 
 <span class="kw">async fn </span>get_updates_list(config_path: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;String&gt; {
-    Command::new(<span class="string">&quot;sh&quot;</span>)
+    Command::new(<span class="string">&quot;apt&quot;</span>)
         .env(<span class="string">&quot;APT_CONFIG&quot;</span>, config_path)
-        .args([<span class="string">&quot;-c&quot;</span>, <span class="string">&quot;apt update&quot;</span>])
+        .args([<span class="string">&quot;update&quot;</span>])
         .stdout(Stdio::null())
         .stdin(Stdio::null())
         .spawn()
@@ -368,9 +368,9 @@
         </span>.wait()
         .<span class="kw">await
         </span>.error(<span class="string">&quot;Failed to run `apt update`&quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let </span>stdout = Command::new(<span class="string">&quot;sh&quot;</span>)
+    <span class="kw">let </span>stdout = Command::new(<span class="string">&quot;apt&quot;</span>)
         .env(<span class="string">&quot;APT_CONFIG&quot;</span>, config_path)
-        .args([<span class="string">&quot;-c&quot;</span>, <span class="string">&quot;apt list --upgradable&quot;</span>])
+        .args([<span class="string">&quot;list&quot;</span>, <span class="string">&quot;--upgradable&quot;</span>])
         .output()
         .<span class="kw">await
         </span>.error(<span class="string">&quot;Problem running apt command&quot;</span>)<span class="question-mark">?
