@@ -502,11 +502,6 @@
 <span id="502">502</span>
 <span id="503">503</span>
 <span id="504">504</span>
-<span id="505">505</span>
-<span id="506">506</span>
-<span id="507">507</span>
-<span id="508">508</span>
-<span id="509">509</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The current song title and artist
 //!
 //! Also provides buttons for play/pause, previous and next.
@@ -532,9 +527,8 @@
 //! `interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore. | `[]`
 //! `separator` | String to insert between artist and title. | `&quot; - &quot;`
 //! `seek_step` | Number of microseconds to seek forward/backward when scrolling on the bar. | `1000`
-//! `hide_when_empty` | Hides the block when there is no player available. | `false`
 //!
-//! Note: All placeholders can be absent. See the examples below to learn how to handle this.
+//! Note: All placeholders exctpt `icon` can be absent. See the examples below to learn how to handle this.
 //!
 //! Placeholder | Value          | Type
 //! ------------|----------------|------
@@ -613,7 +607,6 @@
     </span>separator: String,
     <span class="attribute">#[default(<span class="number">1_000</span>)]
     </span>seek_step: i64,
-    hide_when_empty: bool,
 }
 
 <span class="attribute">#[derive(Deserialize, Debug, Clone, SmartDefault)]
@@ -741,9 +734,6 @@
                 widget.set_values(values);
                 widget.state = state;
                 api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
-            }
-            <span class="prelude-val">None </span><span class="kw">if </span>config.hide_when_empty =&gt; {
-                api.hide().<span class="kw">await</span><span class="question-mark">?</span>;
             }
             <span class="prelude-val">None </span>=&gt; {
                 widget.set_values(<span class="macro">map!</span>(<span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;music&quot;</span>)<span class="question-mark">?</span>)));
