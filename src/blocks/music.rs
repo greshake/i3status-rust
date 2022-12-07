@@ -23,9 +23,8 @@
 //! `interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore. | `[]`
 //! `separator` | String to insert between artist and title. | `" - "`
 //! `seek_step` | Number of microseconds to seek forward/backward when scrolling on the bar. | `1000`
-//! `hide_when_empty` | Hides the block when there is no player available. | `false`
 //!
-//! Note: All placeholders can be absent. See the examples below to learn how to handle this.
+//! Note: All placeholders exctpt `icon` can be absent. See the examples below to learn how to handle this.
 //!
 //! Placeholder | Value          | Type
 //! ------------|----------------|------
@@ -104,7 +103,6 @@ pub struct Config {
     separator: String,
     #[default(1_000)]
     seek_step: i64,
-    hide_when_empty: bool,
 }
 
 #[derive(Deserialize, Debug, Clone, SmartDefault)]
@@ -232,9 +230,6 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                 widget.set_values(values);
                 widget.state = state;
                 api.set_widget(&widget).await?;
-            }
-            None if config.hide_when_empty => {
-                api.hide().await?;
             }
             None => {
                 widget.set_values(map!("icon" => Value::icon(api.get_icon("music")?)));
