@@ -9,7 +9,7 @@ This is a major release which rewrites the core code to be asynchronous.
 
 - Formatting system has been overhauled, introducing some breaking changes. For example, previously you might have had `format = "{percentage}"`, but placeholders are now denoted with a dollar sign rather then enclosed in brackets: `format = "$percentage"`.
 
-- 'scrolling' option has been renamed to 'invert_scrolling' and now accepts 'true' or 'false'.
+- `scrolling` option has been renamed to `invert_scrolling` and now accepts `true` or `false`.
 
 - `ibus` block has been removed. Suggested example replacement:
   ```toml
