@@ -95,6 +95,7 @@
 //! [[block]]
 //! block = "pacman"
 //! interval = 600
+//! error_interval = 300
 //! format = " $icon $pacman + $aur = $both updates available "
 //! format_singular = " $icon $both update available "
 //! format_up_to_date = " $icon system up to date "
