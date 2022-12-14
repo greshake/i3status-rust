@@ -75,6 +75,7 @@ pomodoro_started = "\uf04b" # nf-fa-play
 pomodoro_stopped = "\uf04d" # nf-fa-stop
 resolution = "\uf792" # nf-mdi-fullscreen
 tasks = "\ufac6" # nf-mdi-playlist_check
+tea = "\uf675" # nf-mdi-coffee
 thermometer = "\ufa0e" # nf-mdi-thermometer
 time = "\uf64f" # nf-mdi-clock
 toggle_off = "\ufa21" # nf-mdi-toggle_switch_off
