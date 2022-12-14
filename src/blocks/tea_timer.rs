@@ -78,8 +78,9 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     let now = Utc::now();
 
                     match click.button {
-                        MouseButton::Left if is_timer_active => timer_end += increment,
-                        MouseButton::Left => timer_end = now + increment,
+                        MouseButton::Left | MouseButton::WheelUp if is_timer_active => timer_end += increment,
+                        MouseButton::Left | MouseButton::WheelUp => timer_end = now + increment,
+                        MouseButton::WheelDown if is_timer_active => timer_end -= increment,
                         MouseButton::Right => timer_end = now,
                         _ => {}
                     }
