@@ -127,7 +127,7 @@ static PACMAN_UPDATES_DB: Lazy<PathBuf> = Lazy::new(|| {
         Some(val) => val.into(),
         None => {
             let mut path = env::temp_dir();
-            path.push(format!("checkup-db-i3statusrs"));
+            path.push("checkup-db-i3statusrs");
             path
         }
     };
