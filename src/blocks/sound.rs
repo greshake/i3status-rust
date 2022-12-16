@@ -46,6 +46,7 @@
 //! `show_volume_when_muted` | Show the volume even if it is currently muted. | `false`
 //! `headphones_indicator` | Change icon when headphones are plugged in (pulseaudio only) | `false`
 //! `mappings` | Map `output_name` to custom name. | `None`
+//! `reverse_levels` | Reverse the warning/ok levels, so muted is "OK" and active is "WARN". | false
 //!
 //! Placeholder          | Value                             | Type   | Unit
 //! ---------------------|-----------------------------------|--------|---------------
@@ -87,6 +88,7 @@ pub struct Config {
     show_volume_when_muted: bool,
     mappings: Option<HashMap<String, String>>,
     max_vol: Option<u32>,
+    reverse_levels: bool,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
@@ -184,12 +186,13 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             "output_description" => Value::text(output_description),
         };
 
-        if device.muted() {
+        let muted = device.muted();
+
+        if muted {
             values.insert(
                 "icon".into(),
                 Value::icon(api.get_icon(&icon(0, &*device))?),
             );
-            widget.state = State::Warning;
             if !config.show_volume_when_muted {
                 values.remove("volume");
             }
@@ -198,8 +201,13 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                 "icon".into(),
                 Value::icon(api.get_icon(&icon(volume, &*device))?),
             );
-            widget.state = State::Idle;
         }
+
+        widget.state = if config.reverse_levels ^ muted {
+            State::Warning
+        } else {
+            State::Info
+        };
 
         widget.set_values(values);
         api.set_widget(&widget).await?;
