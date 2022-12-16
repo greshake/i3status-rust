@@ -127,8 +127,7 @@ static PACMAN_UPDATES_DB: Lazy<PathBuf> = Lazy::new(|| {
         Some(val) => val.into(),
         None => {
             let mut path = env::temp_dir();
-            let user = env::var("USER").unwrap_or_default();
-            path.push(format!("checkup-db-{user}"));
+            path.push(format!("checkup-db-i3statusrs"));
             path
         }
     };
@@ -359,6 +358,7 @@ async fn get_pacman_available_updates() -> Result<String> {
         .await
         .error("Failed to run command")?;
     if !status.success() {
+        debug!("{}", status);
         return Err(Error::new("pacman -Sy exited with non zero exit status"));
     }
 
