@@ -70,6 +70,7 @@ pomodoro_started = "\uf04b"       # fa-play
 pomodoro_stopped = "\uf04d"       # fa-stop
 resolution = "\uf096"             # fa-square-o
 tasks = "\uf0ae"
+tea = "\uf875"
 thermometer = "\uf2c8"
 time = "\uf017"
 toggle_off = "\uf204"
