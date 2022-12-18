@@ -110,7 +110,7 @@ $ fc-match FontAwesome
 fontawesome-webfont.ttf: "FontAwesome" "Regular"
 ```
 
-Note that the name of the Font Awesome font may have changed in version 5.  
+Note that the name of the Font Awesome font may have changed in version 5 or above.  
 You can use `fc-list` to see the names of your available Awesome Fonts.
 
 ```shell
