@@ -149,8 +149,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                                     vals.push(config.scale.from_celsius(value));
                                 } else {
                                     eprintln!(
-                                        "Temperature ({}) outside of range ([-100, 150])",
-                                        value
+                                        "Temperature ({value}) outside of range ([-100, 150])"
                                     );
                                 }
                             }

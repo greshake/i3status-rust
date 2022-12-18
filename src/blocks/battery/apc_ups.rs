@@ -26,18 +26,17 @@ impl PropertyMap {
     ) -> Result<T> {
         let stat = self
             .get(property_name)
-            .or_error(|| format!("{} not in apc ups data", property_name))?;
+            .or_error(|| format!("{property_name} not in apc ups data"))?;
         let (value, unit) = stat
             .split_once(' ')
-            .or_error(|| format!("could not split {}", property_name))?;
+            .or_error(|| format!("could not split {property_name}"))?;
         if unit == required_unit {
             value
                 .parse::<T>()
                 .map_err(|_| Error::new("Could not parse data"))
         } else {
             Err(Error::new(format!(
-                "Expected unit for {} are {}, but got {}",
-                property_name, required_unit, unit
+                "Expected unit for {property_name} are {required_unit}, but got {unit}"
             )))
         }
     }

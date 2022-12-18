@@ -165,17 +165,17 @@ impl fmt::Display for Error {
                 write!(f, " in {}", block.0)?;
 
                 if let Some(message) = &self.message {
-                    write!(f, ": {}", message)?;
+                    write!(f, ": {message}")?;
                 }
 
                 if let Some(cause) = &self.cause {
-                    write!(f, ". (Cause: {})", cause)?;
+                    write!(f, ". (Cause: {cause})")?;
                 }
             }
             None => {
                 f.write_str(self.message.as_deref().unwrap_or("Error"))?;
                 if let Some(cause) = &self.cause {
-                    write!(f, ". (Cause: {})", cause)?;
+                    write!(f, ". (Cause: {cause})")?;
                 }
             }
         }

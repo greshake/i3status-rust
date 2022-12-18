@@ -109,7 +109,7 @@ fn main() {
             "{},",
             serde_json::to_string(&error_widget.get_data(&Default::default(), 0).unwrap()).unwrap()
         );
-        eprintln!("\n\n{}\n\n", error);
+        eprintln!("\n\n{error}\n\n");
         dbg!(error);
 
         // Wait for USR2 signal to restart

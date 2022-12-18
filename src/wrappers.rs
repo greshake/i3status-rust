@@ -49,7 +49,7 @@ impl<'de> Deserialize<'de> for Seconds {
                 if v == "once" {
                     Ok(Seconds(Duration::from_secs(60 * 60 * 24 * 365)))
                 } else {
-                    Err(E::custom(format!("'{}' is not a valid duration", v)))
+                    Err(E::custom(format!("'{v}' is not a valid duration")))
                 }
             }
 

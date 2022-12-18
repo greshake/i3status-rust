@@ -86,8 +86,8 @@ impl WeatherProvider for Service {
                     .as_ref()
                     .map(|(lat, lon)| format!("lat={lat}&lon={lon}"))
             })
-            .or_else(|| self.config.city_id.as_ref().map(|x| format!("id={}", x)))
-            .or_else(|| self.config.place.as_ref().map(|x| format!("q={}", x)))
+            .or_else(|| self.config.city_id.as_ref().map(|x| format!("id={x}")))
+            .or_else(|| self.config.place.as_ref().map(|x| format!("q={x}")))
             .error("no location was provided")?;
 
         // Refer to https://openweathermap.org/current

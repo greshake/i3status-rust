@@ -52,7 +52,7 @@ impl FromStr for Unit {
             "W" => Ok(Unit::Watts),
             "Hz" => Ok(Unit::Hertz),
             "" => Ok(Unit::None),
-            x => Err(Error::new(format!("Unknown unit: '{}'", x))),
+            x => Err(Error::new(format!("Unknown unit: '{x}'"))),
         }
     }
 }
@@ -63,10 +63,7 @@ impl Unit {
             (x, y) if x == y => Ok(value),
             (Self::Bytes, Self::Bits) => Ok(value * 8.),
             (Self::Bits, Self::Bytes) => Ok(value / 8.),
-            _ => Err(Error::new(format!(
-                "Failed to convert '{}' to '{}",
-                self, unit
-            ))),
+            _ => Err(Error::new(format!("Failed to convert '{self}' to '{unit}"))),
         }
     }
 

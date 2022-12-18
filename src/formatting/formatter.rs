@@ -128,7 +128,7 @@ pub fn new_formatter(name: &str, args: &[String]) -> Result<Box<dyn Formatter>> 
         }
         "eng" => Ok(Box::new(EngFormatter(EngFixConfig::from_args(args)?))),
         "fix" => Ok(Box::new(FixFormatter(EngFixConfig::from_args(args)?))),
-        _ => Err(Error::new(format!("Unknown formatter: '{}'", name))),
+        _ => Err(Error::new(format!("Unknown formatter: '{name}'"))),
     }
 }
 

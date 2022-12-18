@@ -18,7 +18,7 @@ fn main() {
             hash.trim(),
             date.trim_matches('\'')
         );
-        println!("cargo:rustc-env=VERSION={}", ver);
+        println!("cargo:rustc-env=VERSION={ver}");
     } else {
         println!("cargo:rustc-env=VERSION={}", env!("CARGO_PKG_VERSION"));
     }

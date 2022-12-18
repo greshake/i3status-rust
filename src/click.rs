@@ -44,9 +44,7 @@ impl ClickHandler {
                     } else {
                         spawn_shell(cmd)
                     }
-                    .or_error(|| {
-                        format!("'{:?}' button handler: Failed to run '{}", button, cmd)
-                    })?;
+                    .or_error(|| format!("'{button:?}' button handler: Failed to run '{cmd}"))?;
                 }
                 PostActions {
                     pass: entry.pass,

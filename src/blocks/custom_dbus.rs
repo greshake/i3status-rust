@@ -156,7 +156,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
 async fn dbus_conn() -> Result<zbus::Connection> {
     let dbus_interface_name = match env::var("I3RS_DBUS_NAME") {
-        Ok(v) => format!("{}.{}", DBUS_NAME, v),
+        Ok(v) => format!("{DBUS_NAME}.{v}"),
         Err(_) => DBUS_NAME.to_string(),
     };
 

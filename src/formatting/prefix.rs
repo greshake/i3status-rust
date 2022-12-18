@@ -146,7 +146,7 @@ impl FromStr for Prefix {
             "Gi" => Ok(Prefix::Gibi),
             "T" => Ok(Prefix::Tera),
             "Ti" => Ok(Prefix::Tebi),
-            x => Err(Error::new(format!("Unknown prefix: '{}'", x))),
+            x => Err(Error::new(format!("Unknown prefix: '{x}'"))),
         }
     }
 }

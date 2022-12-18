@@ -93,7 +93,7 @@ impl TokenList {
                 Token::Placeholder { name, formatter } => {
                     let value = values
                         .get(name.as_str())
-                        .or_format_error(|| format!("Placeholder '{}' not found", name))?;
+                        .or_format_error(|| format!("Placeholder '{name}' not found"))?;
                     let formatter = formatter
                         .as_ref()
                         .map(Box::as_ref)
@@ -114,7 +114,7 @@ impl TokenList {
                 Token::Icon { name } => {
                     let icon = config
                         .get_icon(name)
-                        .or_format_error(|| format!("Icon '{}' not found", name))?;
+                        .or_format_error(|| format!("Icon '{name}' not found"))?;
                     if cur.metadata.is_default() {
                         cur.text.push_str(&icon);
                     } else {
