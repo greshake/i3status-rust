@@ -601,7 +601,7 @@
             <span class="string">&quot;{},&quot;</span>,
             serde_json::to_string(<span class="kw-2">&amp;</span>error_widget.get_data(<span class="kw-2">&amp;</span>Default::default(), <span class="number">0</span>).unwrap()).unwrap()
         );
-        <span class="macro">eprintln!</span>(<span class="string">&quot;\n\n{}\n\n&quot;</span>, error);
+        <span class="macro">eprintln!</span>(<span class="string">&quot;\n\n{error}\n\n&quot;</span>);
         <span class="macro">dbg!</span>(error);
 
         <span class="comment">// Wait for USR2 signal to restart

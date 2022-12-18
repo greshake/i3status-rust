@@ -593,7 +593,7 @@
         }
         <span class="string">&quot;eng&quot; </span>=&gt; <span class="prelude-val">Ok</span>(Box::new(EngFormatter(EngFixConfig::from_args(args)<span class="question-mark">?</span>))),
         <span class="string">&quot;fix&quot; </span>=&gt; <span class="prelude-val">Ok</span>(Box::new(FixFormatter(EngFixConfig::from_args(args)<span class="question-mark">?</span>))),
-        <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">&quot;Unknown formatter: &#39;{}&#39;&quot;</span>, name))),
+        <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">&quot;Unknown formatter: &#39;{name}&#39;&quot;</span>))),
     }
 }
 

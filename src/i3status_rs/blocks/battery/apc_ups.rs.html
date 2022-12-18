@@ -190,7 +190,6 @@
 <span id="190">190</span>
 <span id="191">191</span>
 <span id="192">192</span>
-<span id="193">193</span>
 </pre><pre class="rust"><code><span class="kw">use </span>std::str::FromStr;
 <span class="kw">use </span>tokio::net::TcpStream;
 <span class="kw">use </span>tokio::time::Interval;
@@ -219,19 +218,18 @@
     ) -&gt; <span class="prelude-ty">Result</span>&lt;T&gt; {
         <span class="kw">let </span>stat = <span class="self">self
             </span>.get(property_name)
-            .or_error(|| <span class="macro">format!</span>(<span class="string">&quot;{} not in apc ups data&quot;</span>, property_name))<span class="question-mark">?</span>;
+            .or_error(|| <span class="macro">format!</span>(<span class="string">&quot;{property_name} not in apc ups data&quot;</span>))<span class="question-mark">?</span>;
         <span class="kw">let </span>(value, unit) = stat
             .split_once(<span class="string">&#39; &#39;</span>)
-            .or_error(|| <span class="macro">format!</span>(<span class="string">&quot;could not split {}&quot;</span>, property_name))<span class="question-mark">?</span>;
+            .or_error(|| <span class="macro">format!</span>(<span class="string">&quot;could not split {property_name}&quot;</span>))<span class="question-mark">?</span>;
         <span class="kw">if </span>unit == required_unit {
             value
                 .parse::&lt;T&gt;()
                 .map_err(|<span class="kw">_</span>| Error::new(<span class="string">&quot;Could not parse data&quot;</span>))
         } <span class="kw">else </span>{
             <span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(
-                <span class="string">&quot;Expected unit for {} are {}, but got {}&quot;</span>,
-                property_name, required_unit, unit
-            )))
+                <span class="string">&quot;Expected unit for {property_name} are {required_unit}, but got {unit}&quot;
+            </span>)))
         }
     }
 }

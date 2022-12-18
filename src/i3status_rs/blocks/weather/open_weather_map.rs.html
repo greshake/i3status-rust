@@ -222,8 +222,8 @@
                     .as_ref()
                     .map(|(lat, lon)| <span class="macro">format!</span>(<span class="string">&quot;lat={lat}&amp;lon={lon}&quot;</span>))
             })
-            .or_else(|| <span class="self">self</span>.config.city_id.as_ref().map(|x| <span class="macro">format!</span>(<span class="string">&quot;id={}&quot;</span>, x)))
-            .or_else(|| <span class="self">self</span>.config.place.as_ref().map(|x| <span class="macro">format!</span>(<span class="string">&quot;q={}&quot;</span>, x)))
+            .or_else(|| <span class="self">self</span>.config.city_id.as_ref().map(|x| <span class="macro">format!</span>(<span class="string">&quot;id={x}&quot;</span>)))
+            .or_else(|| <span class="self">self</span>.config.place.as_ref().map(|x| <span class="macro">format!</span>(<span class="string">&quot;q={x}&quot;</span>)))
             .error(<span class="string">&quot;no location was provided&quot;</span>)<span class="question-mark">?</span>;
 
         <span class="comment">// Refer to https://openweathermap.org/current

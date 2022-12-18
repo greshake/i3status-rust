@@ -148,8 +148,6 @@
 <span id="148">148</span>
 <span id="149">149</span>
 <span id="150">150</span>
-<span id="151">151</span>
-<span id="152">152</span>
 </pre><pre class="rust"><code><span class="kw">use </span>std::fmt;
 
 <span class="kw">use </span>serde::de::{<span class="self">self</span>, Deserializer, Visitor};
@@ -196,9 +194,7 @@
                     </span>} <span class="kw">else </span>{
                         spawn_shell(cmd)
                     }
-                    .or_error(|| {
-                        <span class="macro">format!</span>(<span class="string">&quot;&#39;{:?}&#39; button handler: Failed to run &#39;{}&quot;</span>, button, cmd)
-                    })<span class="question-mark">?</span>;
+                    .or_error(|| <span class="macro">format!</span>(<span class="string">&quot;&#39;{button:?}&#39; button handler: Failed to run &#39;{cmd}&quot;</span>))<span class="question-mark">?</span>;
                 }
                 PostActions {
                     pass: entry.pass,

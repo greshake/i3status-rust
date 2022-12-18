@@ -170,7 +170,7 @@
                 <span class="kw">if </span>v == <span class="string">&quot;once&quot; </span>{
                     <span class="prelude-val">Ok</span>(Seconds(Duration::from_secs(<span class="number">60 </span>* <span class="number">60 </span>* <span class="number">24 </span>* <span class="number">365</span>)))
                 } <span class="kw">else </span>{
-                    <span class="prelude-val">Err</span>(E::custom(<span class="macro">format!</span>(<span class="string">&quot;&#39;{}&#39; is not a valid duration&quot;</span>, v)))
+                    <span class="prelude-val">Err</span>(E::custom(<span class="macro">format!</span>(<span class="string">&quot;&#39;{v}&#39; is not a valid duration&quot;</span>)))
                 }
             }
 

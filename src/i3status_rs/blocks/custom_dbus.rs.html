@@ -324,7 +324,7 @@
 
 <span class="kw">async fn </span>dbus_conn() -&gt; <span class="prelude-ty">Result</span>&lt;zbus::Connection&gt; {
     <span class="kw">let </span>dbus_interface_name = <span class="kw">match </span>env::var(<span class="string">&quot;I3RS_DBUS_NAME&quot;</span>) {
-        <span class="prelude-val">Ok</span>(v) =&gt; <span class="macro">format!</span>(<span class="string">&quot;{}.{}&quot;</span>, DBUS_NAME, v),
+        <span class="prelude-val">Ok</span>(v) =&gt; <span class="macro">format!</span>(<span class="string">&quot;{DBUS_NAME}.{v}&quot;</span>),
         <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; DBUS_NAME.to_string(),
     };
 

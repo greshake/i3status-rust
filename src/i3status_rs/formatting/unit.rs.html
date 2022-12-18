@@ -75,9 +75,6 @@
 <span id="75">75</span>
 <span id="76">76</span>
 <span id="77">77</span>
-<span id="78">78</span>
-<span id="79">79</span>
-<span id="80">80</span>
 </pre><pre class="rust"><code><span class="kw">use </span>std::fmt;
 <span class="kw">use </span>std::str::FromStr;
 
@@ -132,7 +129,7 @@
             <span class="string">&quot;W&quot; </span>=&gt; <span class="prelude-val">Ok</span>(Unit::Watts),
             <span class="string">&quot;Hz&quot; </span>=&gt; <span class="prelude-val">Ok</span>(Unit::Hertz),
             <span class="string">&quot;&quot; </span>=&gt; <span class="prelude-val">Ok</span>(Unit::None),
-            x =&gt; <span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">&quot;Unknown unit: &#39;{}&#39;&quot;</span>, x))),
+            x =&gt; <span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">&quot;Unknown unit: &#39;{x}&#39;&quot;</span>))),
         }
     }
 }
@@ -143,10 +140,7 @@
             (x, y) <span class="kw">if </span>x == y =&gt; <span class="prelude-val">Ok</span>(value),
             (<span class="self">Self</span>::Bytes, <span class="self">Self</span>::Bits) =&gt; <span class="prelude-val">Ok</span>(value * <span class="number">8.</span>),
             (<span class="self">Self</span>::Bits, <span class="self">Self</span>::Bytes) =&gt; <span class="prelude-val">Ok</span>(value / <span class="number">8.</span>),
-            <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(
-                <span class="string">&quot;Failed to convert &#39;{}&#39; to &#39;{}&quot;</span>,
-                <span class="self">self</span>, unit
-            ))),
+            <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">&quot;Failed to convert &#39;{self}&#39; to &#39;{unit}&quot;</span>))),
         }
     }
 

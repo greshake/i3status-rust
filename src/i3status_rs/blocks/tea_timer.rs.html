@@ -154,9 +154,9 @@
 
         widget.set_values(<span class="macro">map!</span>(
             <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;tea&quot;</span>)<span class="question-mark">?</span>),
-            [<span class="kw">if </span>is_timer_active] <span class="string">&quot;hours&quot; </span>=&gt; Value::text(<span class="macro">format!</span>(<span class="string">&quot;{:02}&quot;</span>, hours)),
-            [<span class="kw">if </span>is_timer_active] <span class="string">&quot;minutes&quot; </span>=&gt; Value::text(<span class="macro">format!</span>(<span class="string">&quot;{:02}&quot;</span>, minutes)),
-            [<span class="kw">if </span>is_timer_active] <span class="string">&quot;seconds&quot; </span>=&gt; Value::text(<span class="macro">format!</span>(<span class="string">&quot;{:02}&quot;</span>, seconds)),
+            [<span class="kw">if </span>is_timer_active] <span class="string">&quot;hours&quot; </span>=&gt; Value::text(<span class="macro">format!</span>(<span class="string">&quot;{hours:02}&quot;</span>)),
+            [<span class="kw">if </span>is_timer_active] <span class="string">&quot;minutes&quot; </span>=&gt; Value::text(<span class="macro">format!</span>(<span class="string">&quot;{minutes:02}&quot;</span>)),
+            [<span class="kw">if </span>is_timer_active] <span class="string">&quot;seconds&quot; </span>=&gt; Value::text(<span class="macro">format!</span>(<span class="string">&quot;{seconds:02}&quot;</span>)),
         ));
 
         api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;

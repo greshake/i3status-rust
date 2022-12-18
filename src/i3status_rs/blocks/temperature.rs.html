@@ -212,7 +212,6 @@
 <span id="212">212</span>
 <span id="213">213</span>
 <span id="214">214</span>
-<span id="215">215</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The system temperature
 //!
 //! This block displays the system temperature, based on `libsensors` library.
@@ -364,9 +363,8 @@
                                     vals.push(config.scale.from_celsius(value));
                                 } <span class="kw">else </span>{
                                     <span class="macro">eprintln!</span>(
-                                        <span class="string">&quot;Temperature ({}) outside of range ([-100, 150])&quot;</span>,
-                                        value
-                                    );
+                                        <span class="string">&quot;Temperature ({value}) outside of range ([-100, 150])&quot;
+                                    </span>);
                                 }
                             }
                         }

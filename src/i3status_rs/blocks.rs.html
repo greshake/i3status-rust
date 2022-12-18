@@ -475,7 +475,7 @@
     <span class="kw">pub fn </span>get_icon(<span class="kw-2">&amp;</span><span class="self">self</span>, icon: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;String&gt; {
         <span class="self">self</span>.shared_config
             .get_icon(icon)
-            .or_error(|| <span class="macro">format!</span>(<span class="string">&quot;Icon &#39;{}&#39; not found&quot;</span>, icon))
+            .or_error(|| <span class="macro">format!</span>(<span class="string">&quot;Icon &#39;{icon}&#39; not found&quot;</span>))
     }
 
     <span class="doccomment">/// Repeatedly call provided async function until it succeeds.

@@ -298,7 +298,7 @@
             <span class="string">&quot;Gi&quot; </span>=&gt; <span class="prelude-val">Ok</span>(Prefix::Gibi),
             <span class="string">&quot;T&quot; </span>=&gt; <span class="prelude-val">Ok</span>(Prefix::Tera),
             <span class="string">&quot;Ti&quot; </span>=&gt; <span class="prelude-val">Ok</span>(Prefix::Tebi),
-            x =&gt; <span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">&quot;Unknown prefix: &#39;{}&#39;&quot;</span>, x))),
+            x =&gt; <span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">&quot;Unknown prefix: &#39;{x}&#39;&quot;</span>))),
         }
     }
 }

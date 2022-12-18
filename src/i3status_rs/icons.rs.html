@@ -262,8 +262,8 @@
             <span class="prelude-val">Ok</span>(Icons::default())
         } <span class="kw">else </span>{
             <span class="kw">let </span>file = util::find_file(file, <span class="prelude-val">Some</span>(<span class="string">&quot;icons&quot;</span>), <span class="prelude-val">Some</span>(<span class="string">&quot;toml&quot;</span>))
-                .or_error(|| <span class="macro">format!</span>(<span class="string">&quot;Icon set &#39;{}&#39; not found&quot;</span>, file))<span class="question-mark">?</span>;
-            <span class="prelude-val">Ok</span>(Icons(util::deserialize_toml_file(<span class="kw-2">&amp;</span>file)<span class="question-mark">?</span>))
+                .or_error(|| <span class="macro">format!</span>(<span class="string">&quot;Icon set &#39;{file}&#39; not found&quot;</span>))<span class="question-mark">?</span>;
+            <span class="prelude-val">Ok</span>(Icons(util::deserialize_toml_file(file)<span class="question-mark">?</span>))
         }
     }
 
