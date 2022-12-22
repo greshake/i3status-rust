@@ -35,6 +35,10 @@
 //! `swap_used`               | Swap used                                                                       | Number | Bytes
 //! `swap_used_percents`      | as above but as a percentage of total memory                                    | Number | Percents
 //!
+//! Action          | Description                               | Default button
+//! ----------------|-------------------------------------------|---------------
+//! `toggle_format` | Toggles between `format` and `format_alt` | Left
+//!
 //! # Example
 //!
 //! ```toml
@@ -77,6 +81,9 @@ pub struct Config {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+    api.set_default_actions(&[(MouseButton::Left, None, "toggle_format")])
+        .await?;
+
     let mut widget = Widget::new();
 
     let mut format = config.format.with_default(
@@ -188,16 +195,14 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                 _ = timer.tick() => break,
                 event = api.event() => match event {
                     UpdateRequest => break,
-                    Click(click) => {
-                        if click.button == MouseButton::Left {
-                            if let Some(ref mut format_alt) = format_alt {
-                                std::mem::swap(format_alt, &mut format);
-                                widget.set_format(format.clone());
-                                break;
-                            }
+                    Action(a) if a == "toggle_format" => {
+                        if let Some(ref mut format_alt) = format_alt {
+                            std::mem::swap(format_alt, &mut format);
+                            widget.set_format(format.clone());
+                            break;
                         }
                     }
-
+                    _ => (),
                 }
             }
         }

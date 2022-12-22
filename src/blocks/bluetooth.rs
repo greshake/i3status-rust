@@ -24,6 +24,10 @@
 //! `percentage` | Device's battery level (may be absent if the device is not supported) | Number | %
 //! `available`  | Present if the device is available                                    | Flag   | -
 //!
+//! Action   | Default button
+//! ---------|---------------
+//! `toggle` | Right
+//!
 //! # Examples
 //!
 //! This example just shows the icon when device is connected.
@@ -60,6 +64,9 @@ pub struct Config {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+    api.set_default_actions(&[(MouseButton::Right, None, "toggle")])
+        .await?;
+
     let format = config.format.with_default(" $icon $name{ $percentage|} ")?;
     let disconnected_format = config
         .disconnected_format
@@ -111,8 +118,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     res?;
                     break;
                 },
-                event = api.event() => if let Click(click) = event {
-                    if click.button == MouseButton::Right {
+                event = api.event() => match event {
+                    Action(a) if a == "toggle" => {
                         if let Some(dev) = &monitor.device {
                             if let Ok(connected) = dev.connected().await {
                                 if connected {
@@ -123,6 +130,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                             }
                         }
                     }
+                    _ => (),
                 }
             }
         }

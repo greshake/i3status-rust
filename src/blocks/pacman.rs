@@ -70,6 +70,10 @@
 //! # pop-up a menu showing the available updates. Replace wofi with your favourite menu command.
 //! button = "left"
 //! cmd = "fakeroot pacman -Qu --dbpath /tmp/checkup-db-yourusername/ | wofi --show dmenu"
+//! [[block.click]]
+//! # Updates the block on right click
+//! button = "right"
+//! update = true
 //! ```
 //!
 //! pacman only config using warnings with ZFS modules:
@@ -292,18 +296,9 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         };
         api.set_widget(&widget).await?;
 
-        loop {
-            select! {
-                _ = sleep(config.interval.0) => break,
-                event = api.event() => match event {
-                    UpdateRequest => break,
-                    Click(click) => {
-                        if click.button == MouseButton::Left {
-                            break;
-                        }
-                    }
-                }
-            }
+        select! {
+            _ = sleep(config.interval.0) => (),
+            _ = api.wait_for_update_request() => (),
         }
     }
 }

@@ -12,6 +12,10 @@
 //! `interval` | Update interval in seconds | `2`
 //! `missing_format` | Same as `format` if the interface cannot be connected (or missing). | `" × "`
 //!
+//! Action          | Description                               | Default button
+//! ----------------|-------------------------------------------|---------------
+//! `toggle_format` | Toggles between `format` and `format_alt` | Left
+//!
 //! Placeholder       | Value                       | Type   | Unit
 //! ------------------|-----------------------------|--------|---------------
 //! `icon`            | Icon based on device's type | Icon   | -
@@ -71,6 +75,9 @@ pub struct Config {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+    api.set_default_actions(&[(MouseButton::Left, None, "toggle_format")])
+        .await?;
+
     let mut format = config.format.with_default(
         " $icon ^icon_net_down $speed_down.eng(3,B,K) ^icon_net_up $speed_up.eng(3,B,K) ",
     )?;
@@ -157,14 +164,13 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                 _ = timer.tick() => break,
                 event = api.event() => match event {
                     UpdateRequest => break,
-                    Click(click) => {
-                        if click.button == MouseButton::Left {
-                            if let Some(format_alt) = &mut format_alt {
-                                std::mem::swap(format_alt, &mut format);
-                                break;
-                            }
+                    Action(a) if a == "toggle_format" => {
+                        if let Some(format_alt) = &mut format_alt {
+                            std::mem::swap(format_alt, &mut format);
+                            break;
                         }
                     }
+                    _ => ()
                 }
             }
         }

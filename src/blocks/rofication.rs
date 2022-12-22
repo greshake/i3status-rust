@@ -1,6 +1,6 @@
 //! The number of pending notifications in rofication-daemon
 //!
-//! A different color is used is there are critical notications. Left clicking the block opens the GUI.
+//! A different color is used is there are critical notications.
 //!
 //! # Configuration
 //!
@@ -22,15 +22,16 @@
 //! block = "rofication"
 //! interval = 1
 //! socket_path = "/tmp/rofi_notification_daemon"
+//! [[block.click]]
+//! button = "left"
+//! cmd = "rofication-gui"
 //! ```
 //!
 //! # Icons Used
 //! - `bell`
 
-use tokio::net::UnixStream;
-
 use super::prelude::*;
-use crate::subprocess::spawn_shell;
+use tokio::net::UnixStream;
 
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(default)]
@@ -65,18 +66,9 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         };
         api.set_widget(&widget).await?;
 
-        loop {
-            tokio::select! {
-                _ = timer.tick() => break,
-                event = api.event() => match event {
-                    UpdateRequest => break,
-                    Click(click) => {
-                        if click.button == MouseButton::Left {
-                            let _ = spawn_shell("rofication-gui");
-                        }
-                    }
-                }
-            }
+        tokio::select! {
+            _ = timer.tick() => (),
+            _ = api.wait_for_update_request() => (),
         }
     }
 }

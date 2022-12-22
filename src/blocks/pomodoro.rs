@@ -91,10 +91,10 @@ impl Block {
         self.api.set_widget(&self.widget).await
     }
 
-    async fn wait_for_click(&mut self, button: MouseButton) {
+    async fn wait_for_click(&mut self, button: &str) {
         loop {
-            if let Click(click) = self.api.event().await {
-                if click.button == button {
+            if let Action(action) = self.api.event().await {
+                if action == button {
                     break;
                 }
             }
@@ -115,11 +115,11 @@ impl Block {
     async fn read_u64(&mut self, mut number: u64, msg: &str) -> Result<u64> {
         loop {
             self.set_text(format!("{msg} {number}")).await?;
-            if let Click(click) = self.api.event().await {
-                match click.button {
-                    MouseButton::Left => break,
-                    MouseButton::WheelUp => number += 1,
-                    MouseButton::WheelDown => number = number.saturating_sub(1),
+            if let Action(action) = self.api.event().await {
+                match action.as_ref() {
+                    "_left" => break,
+                    "_up" => number += 1,
+                    "_down" => number = number.saturating_sub(1),
                     _ => (),
                 }
             }
@@ -155,10 +155,11 @@ impl Block {
                 self.set_text(text).await?;
                 select! {
                     _ = sleep(Duration::from_secs(10)) => (),
-                    Click(click) = self.api.event() => {
-                        if click.button == MouseButton::Middle {
+                    event = self.api.event() => match event {
+                        Action(a) if a == "_middle" => {
                             return Ok(());
                         }
+                        _ => (),
                     }
                 }
             }
@@ -174,10 +175,10 @@ impl Block {
                         .error("failed to run notify_cmd")?;
                 } else {
                     spawn_shell(&cmd).error("failed to run notify_cmd")?;
-                    self.wait_for_click(MouseButton::Left).await;
+                    self.wait_for_click("_left").await;
                 }
             } else {
-                self.wait_for_click(MouseButton::Left).await;
+                self.wait_for_click("_left").await;
             }
 
             // No break after the last pomodoro
@@ -197,10 +198,11 @@ impl Block {
                     .await?;
                 select! {
                     _ = sleep(Duration::from_secs(10)) => (),
-                    Click(click) = self.api.event() => {
-                        if click.button == MouseButton::Middle {
+                    event = self.api.event() => match event {
+                        Action(a) if a == "_middle" => {
                             return Ok(());
                         }
+                        _ => (),
                     }
                 }
             }
@@ -217,10 +219,10 @@ impl Block {
                         .error("failed to run notify_cmd")?;
                 } else {
                     spawn_shell(&cmd).error("failed to run notify_cmd")?;
-                    self.wait_for_click(MouseButton::Left).await;
+                    self.wait_for_click("_left").await;
                 }
             } else {
-                self.wait_for_click(MouseButton::Left).await;
+                self.wait_for_click("_left").await;
             }
         }
 
@@ -243,13 +245,9 @@ pub async fn run(block_config: Config, api: CommonApi) -> Result<()> {
         block.widget.state = State::Idle;
         block.set_text(String::new()).await?;
 
-        // Wait for left click
-        block.wait_for_click(MouseButton::Left).await;
+        block.wait_for_click("_left").await;
 
-        // Read params
         let (task_len, break_len, pomodoros) = block.read_params().await?;
-
-        // Run!
         block.run_pomodoro(task_len, break_len, pomodoros).await?;
     }
 }

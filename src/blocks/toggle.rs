@@ -26,6 +26,10 @@
 //! --------------|---------------------------------------------|--------|-----
 //! `icon`        | Icon based on toggle's state                | Icon   | -
 //!
+//! Action   | Default button
+//! ---------|---------------
+//! `toggle` | Left
+//!
 //! # Examples
 //!
 //! This is what can be used to toggle an external monitor configuration:
@@ -63,6 +67,9 @@ pub struct Config {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+    api.set_default_actions(&[(MouseButton::Left, None, "toggle")])
+        .await?;
+
     let interval = config.interval.map(Duration::from_secs);
     let mut widget = Widget::new().with_format(config.format.with_default(" $icon ")?);
 
@@ -101,51 +108,49 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                         _ = sleep(interval) => break,
                         event = api.event() => match event {
                             UpdateRequest => break,
-                            Click(click) => {
-                                if click.button == MouseButton::Left {
-                                    let cmd = if is_toggled {
-                                        &config.command_off
-                                    } else {
-                                        &config.command_on
-                                    };
-                                    let output = Command::new(&shell)
-                                        .args(["-c", cmd])
-                                        .output()
-                                        .await
-                                        .error("Failed to run command")?;
-                                    if output.status.success() {
-                                        widget.state = State::Idle;
-                                        break;
-                                    } else {
-                                        widget.state = State::Critical;
-                                    }
+                            Action(a) if a == "toggle" => {
+                                let cmd = if is_toggled {
+                                    &config.command_off
+                                } else {
+                                    &config.command_on
+                                };
+                                let output = Command::new(&shell)
+                                    .args(["-c", cmd])
+                                    .output()
+                                    .await
+                                    .error("Failed to run command")?;
+                                if output.status.success() {
+                                    widget.state = State::Idle;
+                                    break;
+                                } else {
+                                    widget.state = State::Critical;
                                 }
                             }
+                            _ => (),
                         }
                     }
                 }
                 None => match api.event().await {
                     UpdateRequest => break,
-                    Click(click) => {
-                        if click.button == MouseButton::Left {
-                            let cmd = if is_toggled {
-                                &config.command_off
-                            } else {
-                                &config.command_on
-                            };
-                            let output = Command::new(&shell)
-                                .args(["-c", cmd])
-                                .output()
-                                .await
-                                .error("Failed to run command")?;
-                            if output.status.success() {
-                                widget.state = State::Idle;
-                                break;
-                            } else {
-                                widget.state = State::Critical;
-                            }
+                    Action(a) if a == "toggle" => {
+                        let cmd = if is_toggled {
+                            &config.command_off
+                        } else {
+                            &config.command_on
+                        };
+                        let output = Command::new(&shell)
+                            .args(["-c", cmd])
+                            .output()
+                            .await
+                            .error("Failed to run command")?;
+                        if output.status.success() {
+                            widget.state = State::Idle;
+                            break;
+                        } else {
+                            widget.state = State::Critical;
                         }
                     }
+                    _ => (),
                 },
             }
         }

@@ -10,10 +10,10 @@ use tokio::io::{AsyncBufReadExt, BufReader};
 use crate::click::MouseButton;
 use crate::BoxedStream;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct I3BarEvent {
     pub id: usize,
-    pub instance: Option<usize>,
+    pub instance: Option<String>,
     pub button: MouseButton,
 }
 
@@ -46,7 +46,6 @@ fn unprocessed_events_stream(invert_scrolling: bool) -> BoxedStream<I3BarEvent> 
                 Some(name) => name.parse().unwrap(),
                 None => continue,
             };
-            let instance = event.instance.map(|x| x.parse::<usize>().unwrap());
 
             use MouseButton::*;
             let button = match (event.button, invert_scrolling) {
@@ -57,7 +56,7 @@ fn unprocessed_events_stream(invert_scrolling: bool) -> BoxedStream<I3BarEvent> 
 
             let event = I3BarEvent {
                 id,
-                instance,
+                instance: event.instance,
                 button,
             };
 

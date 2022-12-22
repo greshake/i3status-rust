@@ -28,6 +28,10 @@
 //! `text`           | Output of the script or text field from JSON output        | Text   |
 //! `short_text`     | short_text field from JSON output                          | Text   |
 //!
+//! Action  | Default button
+//! --------|---------------
+//! `cycle` | Left
+//!
 //! # Examples
 //!
 //! Display temperature, update every 10 seconds:
@@ -147,6 +151,9 @@ async fn update_bar(
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+    api.set_default_actions(&[(MouseButton::Left, None, "cycle")])
+        .await?;
+
     let mut widget = Widget::new().with_format(
         config
             .format
@@ -250,12 +257,11 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     _ = file_updates.next() => break,
                     event = api.event() => match event {
                         UpdateRequest => break,
-                        Click(click) => {
-                            if click.button == MouseButton::Left {
-                                cmd = cycle.next().unwrap();
-                                break;
-                            }
+                        Action(a) if a == "cycle" => {
+                            cmd = cycle.next().unwrap();
+                            break;
                         }
+                        _ => (),
                     }
                 }
             }

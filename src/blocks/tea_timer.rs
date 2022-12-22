@@ -16,6 +16,12 @@
 //!
 //! `hours`, `minutes`, and `seconds` are unset when the timer is inactive.
 //!
+//! Action      | Default button
+//! ------------|---------------
+//! `increment` | Left / Wheel Up
+//! `decrement` | Wheel Down
+//! `reset`     | Right
+//!
 //! # Example
 //!
 //! ```toml
@@ -38,6 +44,14 @@ pub struct Config {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+    api.set_default_actions(&[
+        (MouseButton::Left, None, "increment"),
+        (MouseButton::WheelUp, None, "increment"),
+        (MouseButton::WheelDown, None, "decrement"),
+        (MouseButton::Right, None, "reset"),
+    ])
+    .await?;
+
     let interval: Seconds = 1.into();
     let mut timer = interval.timer();
 
@@ -74,15 +88,14 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             _ = timer.tick(), if is_timer_active => (),
             event = api.event() => match event {
                 UpdateRequest => (),
-                Click(click) => {
+                Action(action) => {
                     let now = Utc::now();
-
-                    match click.button {
-                        MouseButton::Left | MouseButton::WheelUp if is_timer_active => timer_end += increment,
-                        MouseButton::Left | MouseButton::WheelUp => timer_end = now + increment,
-                        MouseButton::WheelDown if is_timer_active => timer_end -= increment,
-                        MouseButton::Right => timer_end = now,
-                        _ => {}
+                    match action.as_ref() {
+                        "increment" if is_timer_active => timer_end += increment,
+                        "increment" => timer_end = now + increment,
+                        "decrement" if is_timer_active => timer_end -= increment,
+                        "reset" => timer_end = now,
+                        _ => (),
                     }
                 },
             }

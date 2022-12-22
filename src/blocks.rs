@@ -7,12 +7,13 @@ use futures::future::FutureExt;
 use serde::Deserialize;
 use tokio::sync::mpsc;
 
+use std::borrow::Cow;
 use std::future::Future;
 use std::time::Duration;
 
+use crate::click::MouseButton;
 use crate::config::SharedConfig;
 use crate::errors::*;
-use crate::protocol::i3bar_event::I3BarEvent;
 use crate::widget::Widget;
 use crate::{Request, RequestCmd};
 
@@ -110,9 +111,9 @@ define_blocks!(
 
 pub type BlockFuture = BoxedFuture<Result<()>>;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BlockEvent {
-    Click(I3BarEvent),
+    Action(Cow<'static, str>),
     UpdateRequest,
 }
 
@@ -155,6 +156,19 @@ impl CommonApi {
             .send(Request {
                 block_id: self.id,
                 cmd: RequestCmd::SetError(error),
+            })
+            .await
+            .error("Failed to send Request")
+    }
+
+    pub async fn set_default_actions(
+        &mut self,
+        actions: &'static [(MouseButton, Option<&'static str>, &'static str)],
+    ) -> Result<()> {
+        self.request_sender
+            .send(Request {
+                block_id: self.id,
+                cmd: RequestCmd::SetDefaultActions(actions),
             })
             .await
             .error("Failed to send Request")

@@ -23,6 +23,10 @@
 //! `free`       | Free disk space                                                    | Number | Bytes
 //! `available`  | Available disk space (free disk space minus reserved system space) | Number | Bytes
 //!
+//! Action          | Description                               | Default button
+//! ----------------|-------------------------------------------|---------------
+//! `toggle_format` | Toggles between `format` and `format_alt` | Left
+//!
 //! # Example
 //!
 //! ```toml
@@ -82,6 +86,9 @@ pub struct Config {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+    api.set_default_actions(&[(MouseButton::Left, None, "toggle_format")])
+        .await?;
+
     let mut format = config.format.with_default(" $icon $available ")?;
     let mut format_alt = match config.format_alt {
         Some(f) => Some(f.with_default("")?),
@@ -168,15 +175,14 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                 _ = timer.tick() => break,
                 event = api.event() => match event {
                     UpdateRequest => break,
-                    Click(click) => {
-                        if click.button == MouseButton::Left {
-                            if let Some(ref mut format_alt) = format_alt {
-                                std::mem::swap(format_alt, &mut format);
-                                widget.set_format(format.clone());
-                                break;
-                            }
+                    Action(a) if a == "toggle_format" => {
+                        if let Some(ref mut format_alt) = format_alt {
+                            std::mem::swap(format_alt, &mut format);
+                            widget.set_format(format.clone());
+                            break;
                         }
                     }
+                    _ => (),
                 }
             }
         }

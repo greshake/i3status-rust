@@ -66,10 +66,10 @@ impl Block {
         self.api.set_widget(&self.widget).await
     }
 
-    async fn wait_for_click(&mut self, button: MouseButton) {
+    async fn wait_for_click(&mut self, button: &str) {
         loop {
             match self.api.event().await {
-                Click(c) if c.button == button => break,
+                Action(a) if a == button => break,
                 _ => (),
             }
         }
@@ -79,13 +79,12 @@ impl Block {
         let mut index = 0;
         loop {
             self.set_text(self.items[index].display.clone()).await?;
-
-            if let Click(click) = self.api.event().await {
-                match click.button {
-                    MouseButton::WheelUp => index += 1,
-                    MouseButton::WheelDown => index += self.items.len() + 1,
-                    MouseButton::Left => return Ok(Some(self.items[index].clone())),
-                    MouseButton::Right => return Ok(None),
+            if let Action(action) = self.api.event().await {
+                match action.as_ref() {
+                    "_up" => index += 1,
+                    "_down" => index += self.items.len() + 1,
+                    "_left" => return Ok(Some(self.items[index].clone())),
+                    "_right" => return Ok(None),
                     _ => (),
                 }
             }
@@ -96,14 +95,22 @@ impl Block {
     async fn confirm(&mut self, msg: String) -> Result<bool> {
         self.set_text(msg).await?;
         loop {
-            if let Click(click) = self.api.event().await {
-                return Ok(click.button == MouseButton::DoubleLeft);
+            if let Action(action) = self.api.event().await {
+                return Ok(action == "_left");
             }
         }
     }
 }
 
-pub async fn run(config: Config, api: CommonApi) -> Result<()> {
+pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+    api.set_default_actions(&[
+        (MouseButton::Left, None, "_left"),
+        (MouseButton::Right, None, "_right"),
+        (MouseButton::WheelUp, None, "_up"),
+        (MouseButton::WheelDown, None, "_down"),
+    ])
+    .await?;
+
     let mut block = Block {
         widget: Widget::new(),
         api,
@@ -113,7 +120,7 @@ pub async fn run(config: Config, api: CommonApi) -> Result<()> {
 
     loop {
         block.reset().await?;
-        block.wait_for_click(MouseButton::Left).await;
+        block.wait_for_click("_left").await;
         if let Some(res) = block.run_menu().await? {
             if let Some(msg) = res.confirm_msg {
                 if !block.confirm(msg).await? {

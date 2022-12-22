@@ -1,6 +1,6 @@
 //! The number of tasks from the taskwarrior list
 //!
-//! Clicking on the block updates the number of tasks immediately. Clicking the right mouse button on the icon cycles the view of the block through the user's filters.
+//! Clicking the right mouse button on the icon cycles the view of the block through the user's filters.
 //!
 //! # Configuration
 //!
@@ -21,6 +21,10 @@
 //! `filter_name` | The name of current filter                  | Text   | -
 //! `done`        | Present only if `count` is zero             | Flag   | -
 //! `single`      | Present only if `count` is one              | Flag   | -
+//!
+//! Action        | Default button
+//! --------------|---------------
+//! `next_filter` | Right
 //!
 //! # Example
 //!
@@ -79,11 +83,14 @@ impl Default for Config {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+    api.set_default_actions(&[(MouseButton::Right, None, "next_filter")])
+        .await?;
+
     let mut widget =
         Widget::new().with_format(config.format.with_default(" $icon $done|$count.eng(1) ")?);
 
     let mut filters = config.filters.iter().cycle();
-    let mut filter = filters.next().error("failed to get next filter")?;
+    let mut filter = filters.next().error("`filters` is empty")?;
 
     let mut notify = Inotify::init().error("Failed to start inotify")?;
     notify
@@ -122,12 +129,10 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             _ = sleep(config.interval.0) =>(),
             _ = updates.next() => (),
             event = api.event() => match event {
-                UpdateRequest => (),
-                Click(click) => {
-                    if click.button == MouseButton::Right {
-                        filter = filters.next().error("failed to get next filter")?;
-                    }
+                Action(a) if a == "next_filter" => {
+                    filter = filters.next().unwrap();
                 }
+                _ => (),
             }
         }
     }

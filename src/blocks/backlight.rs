@@ -27,6 +27,12 @@
 //! `icon`       | Icon based on backlight's state           | Icon   | -
 //! `brightness` | Current brightness                        | Number | %
 //!
+//! Action            | Default button
+//! ------------------|---------------
+//! `cycle`           | Left
+//! `brightness_up`   | Wheel Up
+//! `brightness_down` | Wheel Down
+//!
 //! # Example
 //!
 //! ```toml
@@ -127,6 +133,13 @@ pub struct Config {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+    api.set_default_actions(&[
+        (MouseButton::Left, None, "cycle"),
+        (MouseButton::WheelUp, None, "brightness_up"),
+        (MouseButton::WheelDown, None, "brightness_down"),
+    ])
+    .await?;
+
     let mut widget = Widget::new().with_format(config.format.with_default(" $icon $brightness ")?);
 
     let mut cycle = config
@@ -166,29 +179,24 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             select! {
                 _ = file_changes.next() => break,
                 event = api.event() => match event {
-                    UpdateRequest => (),
-                    Click(click) => {
-                        match click.button {
-                            MouseButton::Left => {
-                                if let Some(brightness) = cycle.next() {
-                                    device.set_brightness(brightness).await?;
-                                }
-                            }
-                            MouseButton::WheelUp => {
-                                device.set_brightness(
-                                    (brightness + config.step_width) .clamp(config.minimum, config.maximum)
-                                ).await?;
-                            }
-                            MouseButton::WheelDown => {
-                                device.set_brightness(
-                                    brightness
-                                        .saturating_sub(config.step_width)
-                                        .clamp(config.minimum, config.maximum)
-                                ).await?;
-                            }
-                            _ => (),
+                    Action(a) if a == "cycle" => {
+                        if let Some(brightness) = cycle.next() {
+                            device.set_brightness(brightness).await?;
                         }
                     }
+                    Action(a) if a == "brightness_up" => {
+                        device.set_brightness(
+                            (brightness + config.step_width) .clamp(config.minimum, config.maximum)
+                        ).await?;
+                    }
+                    Action(a) if a == "brightness_down" => {
+                        device.set_brightness(
+                            brightness
+                                .saturating_sub(config.step_width)
+                                .clamp(config.minimum, config.maximum)
+                        ).await?;
+                    }
+                    _ => (),
                 }
             }
         }

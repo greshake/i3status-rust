@@ -114,18 +114,9 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
         api.set_widget(&widget).await?;
 
-        loop {
-            select! {
-                _ = sleep(config.interval.0) => break,
-                event = api.event() => match event {
-                    UpdateRequest => break,
-                    Click(click) => {
-                        if click.button == MouseButton::Left {
-                            break;
-                        }
-                    }
-                }
-            }
+        select! {
+            _ = sleep(config.interval.0) => (),
+            _ = api.wait_for_update_request() => (),
         }
     }
 }

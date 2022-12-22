@@ -159,7 +159,7 @@ impl Fragment {
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct Metadata {
-    pub instance: Option<usize>,
+    pub instance: Option<&'static str>,
     pub underline: bool,
     pub italic: bool,
 }

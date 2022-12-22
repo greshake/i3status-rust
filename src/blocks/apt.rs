@@ -36,6 +36,10 @@
 //! # shows dmenu with cached available updates. Any dmenu alternative should also work.
 //! button = "left"
 //! cmd = "APT_CONFIG=/tmp/i3rs-apt/apt.conf apt list --upgradable | tail -n +2 | rofi -dmenu"
+//! [[block.click]]
+//! # Updates the block on right click
+//! button = "right"
+//! update = true
 //! ```
 //!
 //! # Icons Used
@@ -146,18 +150,9 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
         api.set_widget(&widget).await?;
 
-        loop {
-            select! {
-                _ = sleep(config.interval.0) => break,
-                event = api.event() => match event {
-                    UpdateRequest => break,
-                    Click(click) => {
-                        if click.button == MouseButton::Left {
-                            break;
-                        }
-                    }
-                }
-            }
+        select! {
+            _ = sleep(config.interval.0) => (),
+            _ = api.wait_for_update_request() => (),
         }
     }
 }

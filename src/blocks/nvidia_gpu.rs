@@ -33,6 +33,13 @@
 //! `clocks`      | Number | Hertz
 //! `power`       | Number | Watts
 //!
+//! Action                  | Default button
+//! ------------------------|----------------
+//! `toggle_mem_total`      | Left on `$memory`
+//! `toggle_fan_controlled` | Left on `$fan_speed`
+//! `fan_speed_up`          | Wheel Up on `$fan_speed`
+//! `fan_speed_down`        | Wheel Down on `$fan_speed`
+//!
 //! # Example
 //!
 //! ```toml
@@ -54,8 +61,8 @@ use std::str::FromStr;
 use tokio::io::{BufReader, Lines};
 use tokio::process::Command;
 
-const MEM_BTN: usize = 1;
-const FAN_BTN: usize = 2;
+const MEM_BTN: &str = "mem_btn";
+const FAN_BTN: &str = "fan_btn";
 const QUERY: &str = "--query-gpu=name,memory.total,utilization.gpu,memory.used,temperature.gpu,fan.speed,clocks.current.graphics,power.draw,";
 const FORMAT: &str = "--format=csv,noheader,nounits";
 
@@ -80,6 +87,14 @@ pub struct Config {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+    api.set_default_actions(&[
+        (MouseButton::Left, Some(MEM_BTN), "toggle_mem_totoal"),
+        (MouseButton::Left, Some(FAN_BTN), "toggle_fan_controlled"),
+        (MouseButton::WheelUp, Some(FAN_BTN), "fan_speed_up"),
+        (MouseButton::WheelDown, Some(FAN_BTN), "fan_speed_down"),
+    ])
+    .await?;
+
     let mut widget = Widget::new().with_format(
         config
             .format
@@ -133,31 +148,26 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             select! {
                 event = api.event() => match event {
                     UpdateRequest => break,
-                    Click(click) => match click.instance {
-                        Some(MEM_BTN) if click.button == MouseButton::Left => {
-                            show_mem_total = !show_mem_total;
-                            break;
-                        }
-                        Some(FAN_BTN ) => match click.button {
-                            MouseButton::Left => {
-                                fan_controlled = !fan_controlled;
-                                set_fan_speed(config.gpu_id, fan_controlled.then_some(info.fan_speed)).await?;
-                                break;
-                            }
-                            MouseButton::WheelUp if fan_controlled && info.fan_speed < 100 => {
-                                info.fan_speed += 1;
-                                set_fan_speed(config.gpu_id, Some(info.fan_speed)).await?;
-                                break;
-                            }
-                            MouseButton::WheelDown if fan_controlled && info.fan_speed > 0 => {
-                                info.fan_speed -= 1;
-                                set_fan_speed(config.gpu_id, Some(info.fan_speed)).await?;
-                                break;
-                            }
-                            _ => (),
-                        }
-                        _ => (),
+                    Action(a) if a == "toggle_mem_total" => {
+                        show_mem_total = !show_mem_total;
+                        break;
                     }
+                    Action(a) if a == "toggle_fan_controlled" => {
+                        fan_controlled = !fan_controlled;
+                        set_fan_speed(config.gpu_id, fan_controlled.then_some(info.fan_speed)).await?;
+                        break;
+                    }
+                    Action(a) if a == "fan_speed_up" && fan_controlled && info.fan_speed < 100 => {
+                        info.fan_speed += 1;
+                        set_fan_speed(config.gpu_id, Some(info.fan_speed)).await?;
+                        break;
+                    }
+                    Action(a) if a == "fan_speed_down" && fan_controlled && info.fan_speed > 0 => {
+                        info.fan_speed -= 1;
+                        set_fan_speed(config.gpu_id, Some(info.fan_speed)).await?;
+                        break;
+                    }
+                    _ => (),
                 },
                 new_info = GpuInfo::from_reader(&mut reader) => {
                     info = new_info?;

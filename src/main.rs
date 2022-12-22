@@ -27,6 +27,7 @@ use futures::stream::{AbortHandle, Stream, StreamExt};
 use once_cell::sync::Lazy;
 use protocol::i3bar_block::I3BarBlock;
 use protocol::i3bar_event::I3BarEvent;
+use std::borrow::Cow;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
@@ -35,7 +36,7 @@ use tokio::process::Command;
 use tokio::sync::mpsc;
 
 use blocks::{BlockEvent, BlockFuture, CommonApi};
-use click::ClickHandler;
+use click::{ClickHandler, MouseButton};
 use config::SharedConfig;
 use config::{BlockConfigEntry, Config};
 use errors::*;
@@ -131,6 +132,7 @@ pub struct Block {
     abort_handle: AbortHandle,
 
     click_handler: ClickHandler,
+    default_actions: Option<&'static [(MouseButton, Option<&'static str>, &'static str)]>,
     signal: Option<i32>,
     shared_config: SharedConfig,
 
@@ -191,6 +193,7 @@ pub enum RequestCmd {
     SetWidget(Widget),
     UnsetWidget,
     SetError(Error),
+    SetDefaultActions(&'static [(MouseButton, Option<&'static str>, &'static str)]),
 }
 
 struct BarState {
@@ -296,6 +299,7 @@ impl BarState {
             abort_handle,
 
             click_handler: block_config.common.click,
+            default_actions: None,
             signal: block_config.common.signal,
             shared_config,
 
@@ -332,6 +336,9 @@ impl BarState {
             }
             RequestCmd::SetError(error) => {
                 block.set_error(self.fullscreen_block == Some(request.block_id), error);
+            }
+            RequestCmd::SetDefaultActions(actions) => {
+                block.default_actions = Some(actions);
             }
         }
         block.notify_intervals();
@@ -389,10 +396,16 @@ impl BarState {
                 match &mut block.state {
                     BlockState::None => (),
                     BlockState::Normal { .. } => {
-                        let post_actions = block.click_handler.handle(event.button).await.in_block(block_type, event.id)?;
+                        let post_actions = block.click_handler.handle(&event).await.in_block(block_type, event.id)?;
                         if let Some(sender) = &block.event_sender {
-                            if post_actions.pass {
-                                let _ = sender.send(BlockEvent::Click(event)).await;
+                            if let Some(action) = post_actions.action {
+                                let _ = sender.send(BlockEvent::Action(Cow::Owned(action))).await;
+                            } else if let Some(actions) = block.default_actions {
+                                if let Some((_, _, action)) = actions
+                                    .iter()
+                                    .find(|(btn, widget, _)| *btn == event.button && *widget == event.instance.as_deref()) {
+                                    let _ = sender.send(BlockEvent::Action(Cow::Borrowed(action))).await;
+                                }
                             }
                             if post_actions.update {
                                 let _ = sender.send(BlockEvent::UpdateRequest).await;

@@ -16,6 +16,10 @@
 //! `icon`      | Icon based on notification's state         | Icon   | -
 //! `paused`    | Present only if notifications are disabled | Flag   | -
 //!
+//! Action   | Default button
+//! ---------|---------------
+//! `toggle` | Left
+//!
 //! # Examples
 //!
 //! How to use `paused` flag
@@ -53,6 +57,9 @@ enum DriverType {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+    api.set_default_actions(&[(MouseButton::Left, None, "toggle")])
+        .await?;
+
     let mut widget = Widget::new().with_format(config.format.with_default(" $icon ")?);
 
     let mut driver: Box<dyn Driver> = match config.driver {
@@ -68,20 +75,13 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         ));
         api.set_widget(&widget).await?;
 
-        loop {
-            select! {
-                x = driver.wait_for_change() => {
-                    x?;
-                    break;
+        select! {
+            x = driver.wait_for_change() => x?,
+            event = api.event() => match event {
+                Action(a) if a == "toggle" => {
+                    driver.set_paused(!is_paused).await?;
                 }
-                event = api.event() => match event {
-                    UpdateRequest => break,
-                    Click(click) => {
-                        if click.button == MouseButton::Left {
-                            driver.set_paused(!is_paused).await?;
-                        }
-                    }
-                }
+                _ => (),
             }
         }
     }

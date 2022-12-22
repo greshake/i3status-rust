@@ -69,10 +69,11 @@ Per block click configuration `[[block.click]]`:
 Key | Description | Default
 ----|-------------|----------
 `button` | `left`, `right`, etc. For more info see [here](https://greshake.github.io/i3status-rust/i3status_rs/click/enum.MouseButton.html). | -
+`widget` | To which part of the block this entry applies | None
 `cmd` | Command to run when mouse button event is detected. | None
+`action` | Which block action to trigger | None
 `sync` | Whether to wait for command to exit or not. | `false`
 `update` | Whether to update the block on click. | `false`
-`pass` | Whether to also pass click event to the block (if block has an action for the button and `cmd` is also defined, both will be run if `pass` is true). | `true`
 
 ### Further documentation:
 
