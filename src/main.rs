@@ -132,7 +132,7 @@ pub struct Block {
     abort_handle: AbortHandle,
 
     click_handler: ClickHandler,
-    default_actions: Option<&'static [(MouseButton, Option<&'static str>, &'static str)]>,
+    default_actions: &'static [(MouseButton, Option<&'static str>, &'static str)],
     signal: Option<i32>,
     shared_config: SharedConfig,
 
@@ -299,7 +299,7 @@ impl BarState {
             abort_handle,
 
             click_handler: block_config.common.click,
-            default_actions: None,
+            default_actions: &[],
             signal: block_config.common.signal,
             shared_config,
 
@@ -338,7 +338,7 @@ impl BarState {
                 block.set_error(self.fullscreen_block == Some(request.block_id), error);
             }
             RequestCmd::SetDefaultActions(actions) => {
-                block.default_actions = Some(actions);
+                block.default_actions = actions;
             }
         }
         block.notify_intervals();
@@ -400,12 +400,10 @@ impl BarState {
                         if let Some(sender) = &block.event_sender {
                             if let Some(action) = post_actions.action {
                                 let _ = sender.send(BlockEvent::Action(Cow::Owned(action))).await;
-                            } else if let Some(actions) = block.default_actions {
-                                if let Some((_, _, action)) = actions
-                                    .iter()
-                                    .find(|(btn, widget, _)| *btn == event.button && *widget == event.instance.as_deref()) {
-                                    let _ = sender.send(BlockEvent::Action(Cow::Borrowed(action))).await;
-                                }
+                            } else if let Some((_, _, action)) = block.default_actions
+                                .iter()
+                                .find(|(btn, widget, _)| *btn == event.button && *widget == event.instance.as_deref()) {
+                                let _ = sender.send(BlockEvent::Action(Cow::Borrowed(action))).await;
                             }
                             if post_actions.update {
                                 let _ = sender.send(BlockEvent::UpdateRequest).await;
