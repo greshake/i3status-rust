@@ -271,6 +271,10 @@
 <span id="271">271</span>
 <span id="272">272</span>
 <span id="273">273</span>
+<span id="274">274</span>
+<span id="275">275</span>
+<span id="276">276</span>
+<span id="277">277</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Information about the internal power supply
 //!
 //! This block can display the current battery state (Full, Charging or Discharging), percentage
@@ -286,6 +290,7 @@
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $percentage &quot;`
 //! `full_format` | Same as `format` but for when the battery is full | `&quot; $icon &quot;`
 //! `empty_format` | Same as `format` but for when the battery is empty | `&quot; $icon &quot;`
+//! `not_charging_format` | Same as `format` but for when the battery is not charging. Defaults to the full battery icon as many batteries report this status when they are full. | `&quot; $icon &quot;`
 //! `missing_format` | Same as `format` if the battery cannot be found. | `&quot; $icon &quot;`
 //! `info` | Minimum battery level, where state is set to info | `60`
 //! `good` | Minimum battery level, where state is set to good | `60`
@@ -356,6 +361,7 @@
     format: FormatConfig,
     full_format: FormatConfig,
     empty_format: FormatConfig,
+    not_charging_format: FormatConfig,
     missing_format: FormatConfig,
     <span class="attribute">#[default(<span class="number">60.0</span>)]
     </span>info: f64,
@@ -384,6 +390,7 @@
     <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $percentage &quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>format_full = config.full_format.with_default(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>format_empty = config.empty_format.with_default(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>format_not_charging = config.not_charging_format.with_default(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>missing_format = config.missing_format.with_default(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new();
 
@@ -409,7 +416,8 @@
             <span class="prelude-val">Some</span>(info) =&gt; {
                 widget.set_format(<span class="kw">match </span>info.status {
                     BatteryStatus::Empty =&gt; format_empty.clone(),
-                    BatteryStatus::Full | BatteryStatus::NotCharging =&gt; format_full.clone(),
+                    BatteryStatus::Full =&gt; format_full.clone(),
+                    BatteryStatus::NotCharging =&gt; format_not_charging.clone(),
                     <span class="kw">_ </span>=&gt; format.clone(),
                 });
 
@@ -432,7 +440,7 @@
 
                 <span class="kw">let </span>(icon, state) = <span class="kw">match </span>(info.status, info.capacity) {
                     (BatteryStatus::Empty, <span class="kw">_</span>) =&gt; (battery_level_icon(<span class="number">0</span>, <span class="bool-val">false</span>), State::Critical),
-                    (BatteryStatus::Full, <span class="kw">_</span>) =&gt; (battery_level_icon(<span class="number">100</span>, <span class="bool-val">false</span>), State::Idle),
+                    (BatteryStatus::Full | BatteryStatus::NotCharging, <span class="kw">_</span>) =&gt; (battery_level_icon(<span class="number">100</span>, <span class="bool-val">false</span>), State::Idle),
                     (status, capacity) =&gt; (
                         battery_level_icon(capacity <span class="kw">as </span>u8, status == BatteryStatus::Charging),
                         <span class="kw">if </span>status == BatteryStatus::Charging {
