@@ -13,6 +13,7 @@
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $percentage "`
 //! `full_format` | Same as `format` but for when the battery is full | `" $icon "`
 //! `empty_format` | Same as `format` but for when the battery is empty | `" $icon "`
+//! `not_charging_format` | Same as `format` but for when the battery is not charging. Defaults to the full battery icon as many batteries report this status when they are full. | `" $icon "`
 //! `missing_format` | Same as `format` if the battery cannot be found. | `" $icon "`
 //! `info` | Minimum battery level, where state is set to info | `60`
 //! `good` | Minimum battery level, where state is set to good | `60`
@@ -83,6 +84,7 @@ pub struct Config {
     format: FormatConfig,
     full_format: FormatConfig,
     empty_format: FormatConfig,
+    not_charging_format: FormatConfig,
     missing_format: FormatConfig,
     #[default(60.0)]
     info: f64,
@@ -111,6 +113,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let format = config.format.with_default(" $icon $percentage ")?;
     let format_full = config.full_format.with_default(" $icon ")?;
     let format_empty = config.empty_format.with_default(" $icon ")?;
+    let format_not_charging = config.not_charging_format.with_default(" $icon ")?;
     let missing_format = config.missing_format.with_default(" $icon ")?;
     let mut widget = Widget::new();
 
@@ -136,7 +139,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             Some(info) => {
                 widget.set_format(match info.status {
                     BatteryStatus::Empty => format_empty.clone(),
-                    BatteryStatus::Full | BatteryStatus::NotCharging => format_full.clone(),
+                    BatteryStatus::Full => format_full.clone(),
+                    BatteryStatus::NotCharging => format_not_charging.clone(),
                     _ => format.clone(),
                 });
 
@@ -159,7 +163,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
                 let (icon, state) = match (info.status, info.capacity) {
                     (BatteryStatus::Empty, _) => (battery_level_icon(0, false), State::Critical),
-                    (BatteryStatus::Full, _) => (battery_level_icon(100, false), State::Idle),
+                    (BatteryStatus::Full | BatteryStatus::NotCharging, _) => (battery_level_icon(100, false), State::Idle),
                     (status, capacity) => (
                         battery_level_icon(capacity as u8, status == BatteryStatus::Charging),
                         if status == BatteryStatus::Charging {
