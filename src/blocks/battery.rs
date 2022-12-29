@@ -34,7 +34,7 @@
 //! Basic usage:
 //!
 //! ```toml
-//! [block]
+//! [[block]]
 //! block = "battery"
 //! format = " $icon $percentage "
 //! ```
@@ -42,7 +42,7 @@
 //! Hide missing battery:
 //!
 //! ```toml
-//! [block]
+//! [[block]]
 //! block = "battery"
 //! missing_format = ""
 //! ```
