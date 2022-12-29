@@ -230,14 +230,20 @@ impl Device {
         mac: &str,
         adapter_mac: Option<&str>,
     ) -> Result<Option<Self>> {
+        let Ok(devices) = manager_proxy
+            .get_managed_objects()
+            .await
+        else {
+            debug!("could not get the list of managed objects");
+            return Ok(None);
+        };
+
+        debug!("all managed devices: {:?}", devices);
+
         let root_object: String = match adapter_mac {
             Some(adapter_mac) => {
-                let adapters = manager_proxy
-                    .get_managed_objects()
-                    .await
-                    .error("Failed to get a list of adapters")?;
                 let mut adapter_path = None;
-                for (path, interfaces) in adapters {
+                for (path, interfaces) in &devices {
                     let adapter_interface = match interfaces.get("org.bluez.Adapter1") {
                         Some(i) => i,
                         None => continue, // Not an adapter
@@ -260,14 +266,6 @@ impl Device {
         };
 
         debug!("root object: {:?}", root_object);
-
-        // Iterate over all devices
-        let devices = manager_proxy
-            .get_managed_objects()
-            .await
-            .error("Failed to get the list of devices")?;
-
-        debug!("all managed devices: {:?}", devices);
 
         for (path, interfaces) in devices {
             if !path.starts_with(&format!("{root_object}/")) {
