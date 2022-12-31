@@ -1734,7 +1734,7 @@ format = "{output_name} {volume}"
 ```
 
 Since the default value for the `device_kind` key is `sink`,
-to display ***microphone*** block you have to use the `source` value and make another block `sound`
+to display ***microphone*** block you have to use the `source` value:
 
 ```toml
 [[block]]
