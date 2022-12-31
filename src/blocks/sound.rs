@@ -31,6 +31,16 @@
 //! "alsa_output.pci-0000_00_1b.0.analog-stereo" = "🎧"
 //! ```
 //!
+//! Since the default value for the `device_kind` key is `sink`,
+//! to display ***microphone*** block you have to use the `source` value:
+//!
+//! ```toml
+//! [[block]]
+//! block = "sound"
+//! driver = "pulseaudio"
+//! device_kind = "source"
+//! ```
+//!
 //! # Configuration
 //!
 //! Key | Values | Default
