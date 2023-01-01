@@ -224,5 +224,5 @@ where
     D: Deserializer<'de>,
 {
     use chrono::TimeZone;
-    i64::deserialize(deserializer).map(|seconds| Local.timestamp(seconds, 0))
+    i64::deserialize(deserializer).map(|seconds| Local.timestamp_opt(seconds, 0).single().unwrap())
 }
