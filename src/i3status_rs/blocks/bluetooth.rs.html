@@ -372,8 +372,6 @@
 <span id="372">372</span>
 <span id="373">373</span>
 <span id="374">374</span>
-<span id="375">375</span>
-<span id="376">376</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Monitor Bluetooth device
 //!
 //! This block displays the connectivity of a given Bluetooth device and the battery level if this
@@ -614,14 +612,20 @@
         mac: <span class="kw-2">&amp;</span>str,
         adapter_mac: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt;,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>&gt;&gt; {
+        <span class="kw">let </span><span class="prelude-val">Ok</span>(devices) = manager_proxy
+            .get_managed_objects()
+            .<span class="kw">await
+        else </span>{
+            <span class="macro">debug!</span>(<span class="string">&quot;could not get the list of managed objects&quot;</span>);
+            <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
+        };
+
+        <span class="macro">debug!</span>(<span class="string">&quot;all managed devices: {:?}&quot;</span>, devices);
+
         <span class="kw">let </span>root_object: String = <span class="kw">match </span>adapter_mac {
             <span class="prelude-val">Some</span>(adapter_mac) =&gt; {
-                <span class="kw">let </span>adapters = manager_proxy
-                    .get_managed_objects()
-                    .<span class="kw">await
-                    </span>.error(<span class="string">&quot;Failed to get a list of adapters&quot;</span>)<span class="question-mark">?</span>;
                 <span class="kw">let </span><span class="kw-2">mut </span>adapter_path = <span class="prelude-val">None</span>;
-                <span class="kw">for </span>(path, interfaces) <span class="kw">in </span>adapters {
+                <span class="kw">for </span>(path, interfaces) <span class="kw">in </span><span class="kw-2">&amp;</span>devices {
                     <span class="kw">let </span>adapter_interface = <span class="kw">match </span>interfaces.get(<span class="string">&quot;org.bluez.Adapter1&quot;</span>) {
                         <span class="prelude-val">Some</span>(i) =&gt; i,
                         <span class="prelude-val">None </span>=&gt; <span class="kw">continue</span>, <span class="comment">// Not an adapter
@@ -644,14 +648,6 @@
         };
 
         <span class="macro">debug!</span>(<span class="string">&quot;root object: {:?}&quot;</span>, root_object);
-
-        <span class="comment">// Iterate over all devices
-        </span><span class="kw">let </span>devices = manager_proxy
-            .get_managed_objects()
-            .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to get the list of devices&quot;</span>)<span class="question-mark">?</span>;
-
-        <span class="macro">debug!</span>(<span class="string">&quot;all managed devices: {:?}&quot;</span>, devices);
 
         <span class="kw">for </span>(path, interfaces) <span class="kw">in </span>devices {
             <span class="kw">if </span>!path.starts_with(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;{root_object}/&quot;</span>)) {
