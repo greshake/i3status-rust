@@ -201,6 +201,12 @@
 <span id="201">201</span>
 <span id="202">202</span>
 <span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
 </pre><pre class="rust"><code><span class="doccomment">//! X11 screen information
 //!
 //! X11 screen information (name, brightness, resolution). With a click you can toggle through your active screens and with wheel up and down you can adjust the selected screens brightness. Regarding brightness control, xrandr changes the brightness of the display using gamma rather than changing the brightness in hardware, so if that is not desirable then consider using the `backlight` block instead.
@@ -223,6 +229,12 @@
 //! `brightness_icon` | A static icon                | Icon   | -
 //! `resolution`      | The resolution of a monitor  | Text   | -
 //! `res_icon`        | A static icon                | Icon   | -
+//!
+//! Action            | Default button
+//! ------------------|---------------
+//! `cycle_outputs`   | Left
+//! `brightness_up`   | Wheel Up
+//! `brightness_down` | Wheel Down
 //!
 //! # Example
 //!
@@ -253,6 +265,13 @@
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    api.set_default_actions(<span class="kw-2">&amp;</span>[
+        (MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;cycle_outputs&quot;</span>),
+        (MouseButton::WheelUp, <span class="prelude-val">None</span>, <span class="string">&quot;brightness_up&quot;</span>),
+        (MouseButton::WheelDown, <span class="prelude-val">None</span>, <span class="string">&quot;brightness_down&quot;</span>),
+    ])
+    .<span class="kw">await</span><span class="question-mark">?</span>;
+
     <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(
         config
             .format
@@ -288,29 +307,22 @@
                 <span class="kw">_ </span>= timer.tick() =&gt; <span class="kw">break</span>,
                 event = api.event() =&gt; <span class="kw">match </span>event {
                     UpdateRequest =&gt; <span class="kw">break</span>,
-                    Click(click) =&gt; {
-                        <span class="kw">match </span>click.button {
-                            MouseButton::Left =&gt; {
-                                cur_indx += <span class="number">1</span>;
-                                <span class="kw">if </span>cur_indx &gt;= monitors.len() {
-                                    cur_indx = <span class="number">0</span>;
-                                }
-                            }
-                            MouseButton::WheelUp =&gt; {
-                                <span class="kw">if let </span><span class="prelude-val">Some</span>(monitor) = monitors.get_mut(cur_indx) {
-                                    <span class="kw">let </span>bright = (monitor.brightness + config.step_width).min(<span class="number">100</span>);
-                                    monitor.set_brightness(bright);
-                                }
-                            }
-                            MouseButton::WheelDown =&gt; {
-                                <span class="kw">if let </span><span class="prelude-val">Some</span>(monitor) = monitors.get_mut(cur_indx) {
-                                    <span class="kw">let </span>bright = monitor.brightness.saturating_sub(config.step_width);
-                                    monitor.set_brightness(bright);
-                                }
-                            }
-                            <span class="kw">_ </span>=&gt; (),
+                    Action(a) <span class="kw">if </span>a == <span class="string">&quot;cycle_outputs&quot; </span>=&gt; {
+                        cur_indx = (cur_indx + <span class="number">1</span>) % monitors.len();
+                    }
+                    Action(a) <span class="kw">if </span>a == <span class="string">&quot;brightness_up&quot; </span>=&gt; {
+                        <span class="kw">if let </span><span class="prelude-val">Some</span>(monitor) = monitors.get_mut(cur_indx) {
+                            <span class="kw">let </span>bright = (monitor.brightness + config.step_width).min(<span class="number">100</span>);
+                            monitor.set_brightness(bright);
                         }
                     }
+                    Action(a) <span class="kw">if </span>a == <span class="string">&quot;brightness_down&quot; </span>=&gt; {
+                        <span class="kw">if let </span><span class="prelude-val">Some</span>(monitor) = monitors.get_mut(cur_indx) {
+                            <span class="kw">let </span>bright = monitor.brightness.saturating_sub(config.step_width);
+                            monitor.set_brightness(bright);
+                        }
+                    }
+                    <span class="kw">_ </span>=&gt; (),
                 }
             }
         }

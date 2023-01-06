@@ -366,6 +366,14 @@
 <span id="366">366</span>
 <span id="367">367</span>
 <span id="368">368</span>
+<span id="369">369</span>
+<span id="370">370</span>
+<span id="371">371</span>
+<span id="372">372</span>
+<span id="373">373</span>
+<span id="374">374</span>
+<span id="375">375</span>
+<span id="376">376</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Monitor Bluetooth device
 //!
 //! This block displays the connectivity of a given Bluetooth device and the battery level if this
@@ -391,6 +399,10 @@
 //! `name`       | Device&#39;s name                                                         | Text   | -
 //! `percentage` | Device&#39;s battery level (may be absent if the device is not supported) | Number | %
 //! `available`  | Present if the device is available                                    | Flag   | -
+//!
+//! Action   | Default button
+//! ---------|---------------
+//! `toggle` | Right
 //!
 //! # Examples
 //!
@@ -428,6 +440,9 @@
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Right, <span class="prelude-val">None</span>, <span class="string">&quot;toggle&quot;</span>)])
+        .<span class="kw">await</span><span class="question-mark">?</span>;
+
     <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $name{ $percentage|} &quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>disconnected_format = config
         .disconnected_format
@@ -479,8 +494,8 @@
                     res<span class="question-mark">?</span>;
                     <span class="kw">break</span>;
                 },
-                event = api.event() =&gt; <span class="kw">if let </span>Click(click) = event {
-                    <span class="kw">if </span>click.button == MouseButton::Right {
+                event = api.event() =&gt; <span class="kw">match </span>event {
+                    Action(a) <span class="kw">if </span>a == <span class="string">&quot;toggle&quot; </span>=&gt; {
                         <span class="kw">if let </span><span class="prelude-val">Some</span>(dev) = <span class="kw-2">&amp;</span>monitor.device {
                             <span class="kw">if let </span><span class="prelude-val">Ok</span>(connected) = dev.connected().<span class="kw">await </span>{
                                 <span class="kw">if </span>connected {
@@ -491,6 +506,7 @@
                             }
                         }
                     }
+                    <span class="kw">_ </span>=&gt; (),
                 }
             }
         }

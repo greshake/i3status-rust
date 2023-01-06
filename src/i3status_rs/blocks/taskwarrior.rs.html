@@ -153,9 +153,14 @@
 <span id="153">153</span>
 <span id="154">154</span>
 <span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The number of tasks from the taskwarrior list
 //!
-//! Clicking on the block updates the number of tasks immediately. Clicking the right mouse button on the icon cycles the view of the block through the user&#39;s filters.
+//! Clicking the right mouse button on the icon cycles the view of the block through the user&#39;s filters.
 //!
 //! # Configuration
 //!
@@ -176,6 +181,10 @@
 //! `filter_name` | The name of current filter                  | Text   | -
 //! `done`        | Present only if `count` is zero             | Flag   | -
 //! `single`      | Present only if `count` is one              | Flag   | -
+//!
+//! Action        | Default button
+//! --------------|---------------
+//! `next_filter` | Right
 //!
 //! # Example
 //!
@@ -234,11 +243,14 @@
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Right, <span class="prelude-val">None</span>, <span class="string">&quot;next_filter&quot;</span>)])
+        .<span class="kw">await</span><span class="question-mark">?</span>;
+
     <span class="kw">let </span><span class="kw-2">mut </span>widget =
         Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon $done|$count.eng(1) &quot;</span>)<span class="question-mark">?</span>);
 
     <span class="kw">let </span><span class="kw-2">mut </span>filters = config.filters.iter().cycle();
-    <span class="kw">let </span><span class="kw-2">mut </span>filter = filters.next().error(<span class="string">&quot;failed to get next filter&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>filter = filters.next().error(<span class="string">&quot;`filters` is empty&quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>notify = Inotify::init().error(<span class="string">&quot;Failed to start inotify&quot;</span>)<span class="question-mark">?</span>;
     notify
@@ -277,12 +289,10 @@
             <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt;(),
             <span class="kw">_ </span>= updates.next() =&gt; (),
             event = api.event() =&gt; <span class="kw">match </span>event {
-                UpdateRequest =&gt; (),
-                Click(click) =&gt; {
-                    <span class="kw">if </span>click.button == MouseButton::Right {
-                        filter = filters.next().error(<span class="string">&quot;failed to get next filter&quot;</span>)<span class="question-mark">?</span>;
-                    }
+                Action(a) <span class="kw">if </span>a == <span class="string">&quot;next_filter&quot; </span>=&gt; {
+                    filter = filters.next().unwrap();
                 }
+                <span class="kw">_ </span>=&gt; (),
             }
         }
     }

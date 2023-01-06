@@ -256,6 +256,16 @@
 <span id="256">256</span>
 <span id="257">257</span>
 <span id="258">258</span>
+<span id="259">259</span>
+<span id="260">260</span>
+<span id="261">261</span>
+<span id="262">262</span>
+<span id="263">263</span>
+<span id="264">264</span>
+<span id="265">265</span>
+<span id="266">266</span>
+<span id="267">267</span>
+<span id="268">268</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Display the stats of your NVidia GPU
 //!
 //! By default `show_temperature` shows the used memory. Clicking the left mouse on the
@@ -291,6 +301,13 @@
 //! `clocks`      | Number | Hertz
 //! `power`       | Number | Watts
 //!
+//! Action                  | Default button
+//! ------------------------|----------------
+//! `toggle_mem_total`      | Left on `$memory`
+//! `toggle_fan_controlled` | Left on `$fan_speed`
+//! `fan_speed_up`          | Wheel Up on `$fan_speed`
+//! `fan_speed_down`        | Wheel Down on `$fan_speed`
+//!
 //! # Example
 //!
 //! ```toml
@@ -312,8 +329,8 @@
 <span class="kw">use </span>tokio::io::{BufReader, Lines};
 <span class="kw">use </span>tokio::process::Command;
 
-<span class="kw">const </span>MEM_BTN: usize = <span class="number">1</span>;
-<span class="kw">const </span>FAN_BTN: usize = <span class="number">2</span>;
+<span class="kw">const </span>MEM_BTN: <span class="kw-2">&amp;</span>str = <span class="string">&quot;mem_btn&quot;</span>;
+<span class="kw">const </span>FAN_BTN: <span class="kw-2">&amp;</span>str = <span class="string">&quot;fan_btn&quot;</span>;
 <span class="kw">const </span>QUERY: <span class="kw-2">&amp;</span>str = <span class="string">&quot;--query-gpu=name,memory.total,utilization.gpu,memory.used,temperature.gpu,fan.speed,clocks.current.graphics,power.draw,&quot;</span>;
 <span class="kw">const </span>FORMAT: <span class="kw-2">&amp;</span>str = <span class="string">&quot;--format=csv,noheader,nounits&quot;</span>;
 
@@ -338,6 +355,14 @@
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    api.set_default_actions(<span class="kw-2">&amp;</span>[
+        (MouseButton::Left, <span class="prelude-val">Some</span>(MEM_BTN), <span class="string">&quot;toggle_mem_totoal&quot;</span>),
+        (MouseButton::Left, <span class="prelude-val">Some</span>(FAN_BTN), <span class="string">&quot;toggle_fan_controlled&quot;</span>),
+        (MouseButton::WheelUp, <span class="prelude-val">Some</span>(FAN_BTN), <span class="string">&quot;fan_speed_up&quot;</span>),
+        (MouseButton::WheelDown, <span class="prelude-val">Some</span>(FAN_BTN), <span class="string">&quot;fan_speed_down&quot;</span>),
+    ])
+    .<span class="kw">await</span><span class="question-mark">?</span>;
+
     <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(
         config
             .format
@@ -391,31 +416,26 @@
             <span class="macro">select! </span>{
                 event = api.event() =&gt; <span class="kw">match </span>event {
                     UpdateRequest =&gt; <span class="kw">break</span>,
-                    Click(click) =&gt; <span class="kw">match </span>click.instance {
-                        <span class="prelude-val">Some</span>(MEM_BTN) <span class="kw">if </span>click.button == MouseButton::Left =&gt; {
-                            show_mem_total = !show_mem_total;
-                            <span class="kw">break</span>;
-                        }
-                        <span class="prelude-val">Some</span>(FAN_BTN ) =&gt; <span class="kw">match </span>click.button {
-                            MouseButton::Left =&gt; {
-                                fan_controlled = !fan_controlled;
-                                set_fan_speed(config.gpu_id, fan_controlled.then_some(info.fan_speed)).<span class="kw">await</span><span class="question-mark">?</span>;
-                                <span class="kw">break</span>;
-                            }
-                            MouseButton::WheelUp <span class="kw">if </span>fan_controlled &amp;&amp; info.fan_speed &lt; <span class="number">100 </span>=&gt; {
-                                info.fan_speed += <span class="number">1</span>;
-                                set_fan_speed(config.gpu_id, <span class="prelude-val">Some</span>(info.fan_speed)).<span class="kw">await</span><span class="question-mark">?</span>;
-                                <span class="kw">break</span>;
-                            }
-                            MouseButton::WheelDown <span class="kw">if </span>fan_controlled &amp;&amp; info.fan_speed &gt; <span class="number">0 </span>=&gt; {
-                                info.fan_speed -= <span class="number">1</span>;
-                                set_fan_speed(config.gpu_id, <span class="prelude-val">Some</span>(info.fan_speed)).<span class="kw">await</span><span class="question-mark">?</span>;
-                                <span class="kw">break</span>;
-                            }
-                            <span class="kw">_ </span>=&gt; (),
-                        }
-                        <span class="kw">_ </span>=&gt; (),
+                    Action(a) <span class="kw">if </span>a == <span class="string">&quot;toggle_mem_total&quot; </span>=&gt; {
+                        show_mem_total = !show_mem_total;
+                        <span class="kw">break</span>;
                     }
+                    Action(a) <span class="kw">if </span>a == <span class="string">&quot;toggle_fan_controlled&quot; </span>=&gt; {
+                        fan_controlled = !fan_controlled;
+                        set_fan_speed(config.gpu_id, fan_controlled.then_some(info.fan_speed)).<span class="kw">await</span><span class="question-mark">?</span>;
+                        <span class="kw">break</span>;
+                    }
+                    Action(a) <span class="kw">if </span>a == <span class="string">&quot;fan_speed_up&quot; </span>&amp;&amp; fan_controlled &amp;&amp; info.fan_speed &lt; <span class="number">100 </span>=&gt; {
+                        info.fan_speed += <span class="number">1</span>;
+                        set_fan_speed(config.gpu_id, <span class="prelude-val">Some</span>(info.fan_speed)).<span class="kw">await</span><span class="question-mark">?</span>;
+                        <span class="kw">break</span>;
+                    }
+                    Action(a) <span class="kw">if </span>a == <span class="string">&quot;fan_speed_down&quot; </span>&amp;&amp; fan_controlled &amp;&amp; info.fan_speed &gt; <span class="number">0 </span>=&gt; {
+                        info.fan_speed -= <span class="number">1</span>;
+                        set_fan_speed(config.gpu_id, <span class="prelude-val">Some</span>(info.fan_speed)).<span class="kw">await</span><span class="question-mark">?</span>;
+                        <span class="kw">break</span>;
+                    }
+                    <span class="kw">_ </span>=&gt; (),
                 },
                 new_info = GpuInfo::from_reader(<span class="kw-2">&amp;mut </span>reader) =&gt; {
                     info = new_info<span class="question-mark">?</span>;

@@ -110,12 +110,6 @@
 <span id="110">110</span>
 <span id="111">111</span>
 <span id="112">112</span>
-<span id="113">113</span>
-<span id="114">114</span>
-<span id="115">115</span>
-<span id="116">116</span>
-<span id="117">117</span>
-<span id="118">118</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Count of notmuch messages
 //!
 //! This block queries a notmuch database and displays the count of messages.
@@ -153,6 +147,9 @@
 //! query = &quot;tag:alert and not tag:trash&quot;
 //! threshold_warning = 1
 //! threshold_critical = 10
+//! [[block.click]]
+//! button = &quot;left&quot;
+//! update = true
 //! ```
 //!
 //! # Icons Used
@@ -208,18 +205,9 @@
 
         api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="kw">loop </span>{
-            <span class="macro">tokio::select! </span>{
-                <span class="kw">_ </span>= timer.tick() =&gt; <span class="kw">break</span>,
-                event = api.event() =&gt; <span class="kw">match </span>event {
-                    UpdateRequest =&gt; <span class="kw">break</span>,
-                    Click(click) =&gt; {
-                        <span class="kw">if </span>click.button == MouseButton::Left {
-                            <span class="kw">break</span>;
-                        }
-                    }
-                }
-            }
+        <span class="macro">tokio::select! </span>{
+            <span class="kw">_ </span>= timer.tick() =&gt; (),
+            <span class="kw">_ </span>= api.wait_for_update_request() =&gt; (),
         }
     }
 }

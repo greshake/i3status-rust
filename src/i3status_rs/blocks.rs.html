@@ -253,6 +253,20 @@
 <span id="253">253</span>
 <span id="254">254</span>
 <span id="255">255</span>
+<span id="256">256</span>
+<span id="257">257</span>
+<span id="258">258</span>
+<span id="259">259</span>
+<span id="260">260</span>
+<span id="261">261</span>
+<span id="262">262</span>
+<span id="263">263</span>
+<span id="264">264</span>
+<span id="265">265</span>
+<span id="266">266</span>
+<span id="267">267</span>
+<span id="268">268</span>
+<span id="269">269</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The collection of blocks
 
 </span><span class="kw">pub mod </span>prelude;
@@ -262,12 +276,13 @@
 <span class="kw">use </span>serde::Deserialize;
 <span class="kw">use </span>tokio::sync::mpsc;
 
+<span class="kw">use </span>std::borrow::Cow;
 <span class="kw">use </span>std::future::Future;
 <span class="kw">use </span>std::time::Duration;
 
+<span class="kw">use </span><span class="kw">crate</span>::click::MouseButton;
 <span class="kw">use </span><span class="kw">crate</span>::config::SharedConfig;
 <span class="kw">use </span><span class="kw">crate</span>::errors::<span class="kw-2">*</span>;
-<span class="kw">use </span><span class="kw">crate</span>::protocol::i3bar_event::I3BarEvent;
 <span class="kw">use </span><span class="kw">crate</span>::widget::Widget;
 <span class="kw">use crate</span>::{Request, RequestCmd};
 
@@ -365,9 +380,9 @@
 
 <span class="kw">pub type </span>BlockFuture = BoxedFuture&lt;<span class="prelude-ty">Result</span>&lt;()&gt;&gt;;
 
-<span class="attribute">#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+<span class="attribute">#[derive(Debug, Clone, PartialEq, Eq)]
 </span><span class="kw">pub enum </span>BlockEvent {
-    Click(I3BarEvent),
+    Action(Cow&lt;<span class="lifetime">&#39;static</span>, str&gt;),
     UpdateRequest,
 }
 
@@ -410,6 +425,19 @@
             .send(Request {
                 block_id: <span class="self">self</span>.id,
                 cmd: RequestCmd::SetError(error),
+            })
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to send Request&quot;</span>)
+    }
+
+    <span class="kw">pub async fn </span>set_default_actions(
+        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+        actions: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>[(MouseButton, <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt;, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str)],
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        <span class="self">self</span>.request_sender
+            .send(Request {
+                block_id: <span class="self">self</span>.id,
+                cmd: RequestCmd::SetDefaultActions(actions),
             })
             .<span class="kw">await
             </span>.error(<span class="string">&quot;Failed to send Request&quot;</span>)

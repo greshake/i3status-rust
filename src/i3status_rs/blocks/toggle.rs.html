@@ -151,6 +151,11 @@
 <span id="151">151</span>
 <span id="152">152</span>
 <span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
 </pre><pre class="rust"><code><span class="doccomment">//! A Toggle block
 //!
 //! You can add commands to be executed to disable the toggle (`command_off`), and to enable it
@@ -178,6 +183,10 @@
 //! Placeholder   | Value                                       | Type   | Unit
 //! --------------|---------------------------------------------|--------|-----
 //! `icon`        | Icon based on toggle&#39;s state                | Icon   | -
+//!
+//! Action   | Default button
+//! ---------|---------------
+//! `toggle` | Left
 //!
 //! # Examples
 //!
@@ -216,6 +225,9 @@
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;toggle&quot;</span>)])
+        .<span class="kw">await</span><span class="question-mark">?</span>;
+
     <span class="kw">let </span>interval = config.interval.map(Duration::from_secs);
     <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>);
 
@@ -254,51 +266,49 @@
                         <span class="kw">_ </span>= sleep(interval) =&gt; <span class="kw">break</span>,
                         event = api.event() =&gt; <span class="kw">match </span>event {
                             UpdateRequest =&gt; <span class="kw">break</span>,
-                            Click(click) =&gt; {
-                                <span class="kw">if </span>click.button == MouseButton::Left {
-                                    <span class="kw">let </span>cmd = <span class="kw">if </span>is_toggled {
-                                        <span class="kw-2">&amp;</span>config.command_off
-                                    } <span class="kw">else </span>{
-                                        <span class="kw-2">&amp;</span>config.command_on
-                                    };
-                                    <span class="kw">let </span>output = Command::new(<span class="kw-2">&amp;</span>shell)
-                                        .args([<span class="string">&quot;-c&quot;</span>, cmd])
-                                        .output()
-                                        .<span class="kw">await
-                                        </span>.error(<span class="string">&quot;Failed to run command&quot;</span>)<span class="question-mark">?</span>;
-                                    <span class="kw">if </span>output.status.success() {
-                                        widget.state = State::Idle;
-                                        <span class="kw">break</span>;
-                                    } <span class="kw">else </span>{
-                                        widget.state = State::Critical;
-                                    }
+                            Action(a) <span class="kw">if </span>a == <span class="string">&quot;toggle&quot; </span>=&gt; {
+                                <span class="kw">let </span>cmd = <span class="kw">if </span>is_toggled {
+                                    <span class="kw-2">&amp;</span>config.command_off
+                                } <span class="kw">else </span>{
+                                    <span class="kw-2">&amp;</span>config.command_on
+                                };
+                                <span class="kw">let </span>output = Command::new(<span class="kw-2">&amp;</span>shell)
+                                    .args([<span class="string">&quot;-c&quot;</span>, cmd])
+                                    .output()
+                                    .<span class="kw">await
+                                    </span>.error(<span class="string">&quot;Failed to run command&quot;</span>)<span class="question-mark">?</span>;
+                                <span class="kw">if </span>output.status.success() {
+                                    widget.state = State::Idle;
+                                    <span class="kw">break</span>;
+                                } <span class="kw">else </span>{
+                                    widget.state = State::Critical;
                                 }
                             }
+                            <span class="kw">_ </span>=&gt; (),
                         }
                     }
                 }
                 <span class="prelude-val">None </span>=&gt; <span class="kw">match </span>api.event().<span class="kw">await </span>{
                     UpdateRequest =&gt; <span class="kw">break</span>,
-                    Click(click) =&gt; {
-                        <span class="kw">if </span>click.button == MouseButton::Left {
-                            <span class="kw">let </span>cmd = <span class="kw">if </span>is_toggled {
-                                <span class="kw-2">&amp;</span>config.command_off
-                            } <span class="kw">else </span>{
-                                <span class="kw-2">&amp;</span>config.command_on
-                            };
-                            <span class="kw">let </span>output = Command::new(<span class="kw-2">&amp;</span>shell)
-                                .args([<span class="string">&quot;-c&quot;</span>, cmd])
-                                .output()
-                                .<span class="kw">await
-                                </span>.error(<span class="string">&quot;Failed to run command&quot;</span>)<span class="question-mark">?</span>;
-                            <span class="kw">if </span>output.status.success() {
-                                widget.state = State::Idle;
-                                <span class="kw">break</span>;
-                            } <span class="kw">else </span>{
-                                widget.state = State::Critical;
-                            }
+                    Action(a) <span class="kw">if </span>a == <span class="string">&quot;toggle&quot; </span>=&gt; {
+                        <span class="kw">let </span>cmd = <span class="kw">if </span>is_toggled {
+                            <span class="kw-2">&amp;</span>config.command_off
+                        } <span class="kw">else </span>{
+                            <span class="kw-2">&amp;</span>config.command_on
+                        };
+                        <span class="kw">let </span>output = Command::new(<span class="kw-2">&amp;</span>shell)
+                            .args([<span class="string">&quot;-c&quot;</span>, cmd])
+                            .output()
+                            .<span class="kw">await
+                            </span>.error(<span class="string">&quot;Failed to run command&quot;</span>)<span class="question-mark">?</span>;
+                        <span class="kw">if </span>output.status.success() {
+                            widget.state = State::Idle;
+                            <span class="kw">break</span>;
+                        } <span class="kw">else </span>{
+                            widget.state = State::Critical;
                         }
                     }
+                    <span class="kw">_ </span>=&gt; (),
                 },
             }
         }

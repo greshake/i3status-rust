@@ -148,12 +148,21 @@
 <span id="148">148</span>
 <span id="149">149</span>
 <span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
 </pre><pre class="rust"><code><span class="kw">use </span>std::fmt;
 
 <span class="kw">use </span>serde::de::{<span class="self">self</span>, Deserializer, Visitor};
 <span class="kw">use </span>serde::Deserialize;
 
 <span class="kw">use </span><span class="kw">crate</span>::errors::{<span class="prelude-ty">Result</span>, ResultExt};
+<span class="kw">use </span><span class="kw">crate</span>::protocol::i3bar_event::I3BarEvent;
 <span class="kw">use </span><span class="kw">crate</span>::subprocess::{spawn_shell, spawn_shell_sync};
 
 <span class="doccomment">/// Can be one of `left`, `middle`, `right`, `wheel_up`, `wheel_down`, `forward`, `back`, or
@@ -175,9 +184,9 @@
     DoubleLeft,
 }
 
-<span class="attribute">#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+<span class="attribute">#[derive(Debug, Clone)]
 </span><span class="kw">pub struct </span>PostActions {
-    <span class="kw">pub </span>pass: bool,
+    <span class="kw">pub </span>action: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="kw">pub </span>update: bool,
 }
 
@@ -185,27 +194,35 @@
 </span><span class="kw">pub struct </span>ClickHandler(Vec&lt;ClickConfigEntry&gt;);
 
 <span class="kw">impl </span>ClickHandler {
-    <span class="kw">pub async fn </span>handle(<span class="kw-2">&amp;</span><span class="self">self</span>, button: MouseButton) -&gt; <span class="prelude-ty">Result</span>&lt;PostActions&gt; {
-        <span class="prelude-val">Ok</span>(<span class="kw">match </span><span class="self">self</span>.<span class="number">0</span>.iter().find(|e| e.button == button) {
-            <span class="prelude-val">Some</span>(entry) =&gt; {
-                <span class="kw">if let </span><span class="prelude-val">Some</span>(cmd) = <span class="kw-2">&amp;</span>entry.cmd {
-                    <span class="kw">if </span>entry.sync {
-                        spawn_shell_sync(cmd).<span class="kw">await
-                    </span>} <span class="kw">else </span>{
-                        spawn_shell(cmd)
+    <span class="kw">pub async fn </span>handle(<span class="kw-2">&amp;</span><span class="self">self</span>, event: <span class="kw-2">&amp;</span>I3BarEvent) -&gt; <span class="prelude-ty">Result</span>&lt;PostActions&gt; {
+        <span class="prelude-val">Ok</span>(
+            <span class="kw">match </span><span class="self">self
+                </span>.<span class="number">0
+                </span>.iter()
+                .find(|e| e.button == event.button &amp;&amp; e.widget == event.instance)
+            {
+                <span class="prelude-val">Some</span>(entry) =&gt; {
+                    <span class="kw">if let </span><span class="prelude-val">Some</span>(cmd) = <span class="kw-2">&amp;</span>entry.cmd {
+                        <span class="kw">if </span>entry.sync {
+                            spawn_shell_sync(cmd).<span class="kw">await
+                        </span>} <span class="kw">else </span>{
+                            spawn_shell(cmd)
+                        }
+                        .or_error(|| {
+                            <span class="macro">format!</span>(<span class="string">&quot;&#39;{:?}&#39; button handler: Failed to run &#39;{cmd}&quot;</span>, event.button)
+                        })<span class="question-mark">?</span>;
                     }
-                    .or_error(|| <span class="macro">format!</span>(<span class="string">&quot;&#39;{button:?}&#39; button handler: Failed to run &#39;{cmd}&quot;</span>))<span class="question-mark">?</span>;
+                    PostActions {
+                        action: entry.action.clone(),
+                        update: entry.update,
+                    }
                 }
-                PostActions {
-                    pass: entry.pass,
-                    update: entry.update,
-                }
-            }
-            <span class="prelude-val">None </span>=&gt; PostActions {
-                pass: <span class="bool-val">true</span>,
-                update: <span class="bool-val">false</span>,
+                <span class="prelude-val">None </span>=&gt; PostActions {
+                    action: <span class="prelude-val">None</span>,
+                    update: <span class="bool-val">false</span>,
+                },
             },
-        })
+        )
     }
 }
 
@@ -214,23 +231,22 @@
 </span><span class="kw">pub struct </span>ClickConfigEntry {
     <span class="doccomment">/// Which button to handle
     </span>button: MouseButton,
+    <span class="doccomment">/// To which part of the block this entry applies
+    </span><span class="attribute">#[serde(default)]
+    </span>widget: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="doccomment">/// Which command to run
     </span><span class="attribute">#[serde(default)]
     </span>cmd: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="doccomment">/// Which block action to trigger
+    </span><span class="attribute">#[serde(default)]
+    </span>action: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="doccomment">/// Whether to wait for command to exit or not (default is `false`)
     </span><span class="attribute">#[serde(default)]
     </span>sync: bool,
     <span class="doccomment">/// Whether to update the block on click (default is `false`)
     </span><span class="attribute">#[serde(default)]
     </span>update: bool,
-    <span class="doccomment">/// Whether to also pass click event to the block (if block has an action for the button and `cmd` is also defined, both will be run if `pass` is true) (default is `true`)
-    </span><span class="attribute">#[serde(default = <span class="string">&quot;return_true&quot;</span>)]
-    </span>pass: bool,
 }
-
-<span class="kw">fn </span>return_true() -&gt; bool {
-    <span class="bool-val">true
-</span>}
 
 <span class="kw">impl</span>&lt;<span class="lifetime">&#39;de</span>&gt; Deserialize&lt;<span class="lifetime">&#39;de</span>&gt; <span class="kw">for </span>MouseButton {
     <span class="kw">fn </span>deserialize&lt;D&gt;(deserializer: D) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, D::Error&gt;

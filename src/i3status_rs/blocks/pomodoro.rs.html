@@ -251,8 +251,6 @@
 <span id="251">251</span>
 <span id="252">252</span>
 <span id="253">253</span>
-<span id="254">254</span>
-<span id="255">255</span>
 </pre><pre class="rust"><code><span class="doccomment">//! A [pomodoro timer](https://en.wikipedia.org/wiki/Pomodoro_Technique)
 //!
 //! # Technique
@@ -346,10 +344,10 @@
         <span class="self">self</span>.api.set_widget(<span class="kw-2">&amp;</span><span class="self">self</span>.widget).<span class="kw">await
     </span>}
 
-    <span class="kw">async fn </span>wait_for_click(<span class="kw-2">&amp;mut </span><span class="self">self</span>, button: MouseButton) {
+    <span class="kw">async fn </span>wait_for_click(<span class="kw-2">&amp;mut </span><span class="self">self</span>, button: <span class="kw-2">&amp;</span>str) {
         <span class="kw">loop </span>{
-            <span class="kw">if let </span>Click(click) = <span class="self">self</span>.api.event().<span class="kw">await </span>{
-                <span class="kw">if </span>click.button == button {
+            <span class="kw">if let </span>Action(action) = <span class="self">self</span>.api.event().<span class="kw">await </span>{
+                <span class="kw">if </span>action == button {
                     <span class="kw">break</span>;
                 }
             }
@@ -370,11 +368,11 @@
     <span class="kw">async fn </span>read_u64(<span class="kw-2">&amp;mut </span><span class="self">self</span>, <span class="kw-2">mut </span>number: u64, msg: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;u64&gt; {
         <span class="kw">loop </span>{
             <span class="self">self</span>.set_text(<span class="macro">format!</span>(<span class="string">&quot;{msg} {number}&quot;</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
-            <span class="kw">if let </span>Click(click) = <span class="self">self</span>.api.event().<span class="kw">await </span>{
-                <span class="kw">match </span>click.button {
-                    MouseButton::Left =&gt; <span class="kw">break</span>,
-                    MouseButton::WheelUp =&gt; number += <span class="number">1</span>,
-                    MouseButton::WheelDown =&gt; number = number.saturating_sub(<span class="number">1</span>),
+            <span class="kw">if let </span>Action(action) = <span class="self">self</span>.api.event().<span class="kw">await </span>{
+                <span class="kw">match </span>action.as_ref() {
+                    <span class="string">&quot;_left&quot; </span>=&gt; <span class="kw">break</span>,
+                    <span class="string">&quot;_up&quot; </span>=&gt; number += <span class="number">1</span>,
+                    <span class="string">&quot;_down&quot; </span>=&gt; number = number.saturating_sub(<span class="number">1</span>),
                     <span class="kw">_ </span>=&gt; (),
                 }
             }
@@ -410,10 +408,11 @@
                 <span class="self">self</span>.set_text(text).<span class="kw">await</span><span class="question-mark">?</span>;
                 <span class="macro">select! </span>{
                     <span class="kw">_ </span>= sleep(Duration::from_secs(<span class="number">10</span>)) =&gt; (),
-                    Click(click) = <span class="self">self</span>.api.event() =&gt; {
-                        <span class="kw">if </span>click.button == MouseButton::Middle {
+                    event = <span class="self">self</span>.api.event() =&gt; <span class="kw">match </span>event {
+                        Action(a) <span class="kw">if </span>a == <span class="string">&quot;_middle&quot; </span>=&gt; {
                             <span class="kw">return </span><span class="prelude-val">Ok</span>(());
                         }
+                        <span class="kw">_ </span>=&gt; (),
                     }
                 }
             }
@@ -429,10 +428,10 @@
                         </span>.error(<span class="string">&quot;failed to run notify_cmd&quot;</span>)<span class="question-mark">?</span>;
                 } <span class="kw">else </span>{
                     spawn_shell(<span class="kw-2">&amp;</span>cmd).error(<span class="string">&quot;failed to run notify_cmd&quot;</span>)<span class="question-mark">?</span>;
-                    <span class="self">self</span>.wait_for_click(MouseButton::Left).<span class="kw">await</span>;
+                    <span class="self">self</span>.wait_for_click(<span class="string">&quot;_left&quot;</span>).<span class="kw">await</span>;
                 }
             } <span class="kw">else </span>{
-                <span class="self">self</span>.wait_for_click(MouseButton::Left).<span class="kw">await</span>;
+                <span class="self">self</span>.wait_for_click(<span class="string">&quot;_left&quot;</span>).<span class="kw">await</span>;
             }
 
             <span class="comment">// No break after the last pomodoro
@@ -452,10 +451,11 @@
                     .<span class="kw">await</span><span class="question-mark">?</span>;
                 <span class="macro">select! </span>{
                     <span class="kw">_ </span>= sleep(Duration::from_secs(<span class="number">10</span>)) =&gt; (),
-                    Click(click) = <span class="self">self</span>.api.event() =&gt; {
-                        <span class="kw">if </span>click.button == MouseButton::Middle {
+                    event = <span class="self">self</span>.api.event() =&gt; <span class="kw">match </span>event {
+                        Action(a) <span class="kw">if </span>a == <span class="string">&quot;_middle&quot; </span>=&gt; {
                             <span class="kw">return </span><span class="prelude-val">Ok</span>(());
                         }
+                        <span class="kw">_ </span>=&gt; (),
                     }
                 }
             }
@@ -472,10 +472,10 @@
                         </span>.error(<span class="string">&quot;failed to run notify_cmd&quot;</span>)<span class="question-mark">?</span>;
                 } <span class="kw">else </span>{
                     spawn_shell(<span class="kw-2">&amp;</span>cmd).error(<span class="string">&quot;failed to run notify_cmd&quot;</span>)<span class="question-mark">?</span>;
-                    <span class="self">self</span>.wait_for_click(MouseButton::Left).<span class="kw">await</span>;
+                    <span class="self">self</span>.wait_for_click(<span class="string">&quot;_left&quot;</span>).<span class="kw">await</span>;
                 }
             } <span class="kw">else </span>{
-                <span class="self">self</span>.wait_for_click(MouseButton::Left).<span class="kw">await</span>;
+                <span class="self">self</span>.wait_for_click(<span class="string">&quot;_left&quot;</span>).<span class="kw">await</span>;
             }
         }
 
@@ -498,14 +498,10 @@
         </span>block.widget.state = State::Idle;
         block.set_text(String::new()).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="comment">// Wait for left click
-        </span>block.wait_for_click(MouseButton::Left).<span class="kw">await</span>;
+        block.wait_for_click(<span class="string">&quot;_left&quot;</span>).<span class="kw">await</span>;
 
-        <span class="comment">// Read params
-        </span><span class="kw">let </span>(task_len, break_len, pomodoros) = block.read_params().<span class="kw">await</span><span class="question-mark">?</span>;
-
-        <span class="comment">// Run!
-        </span>block.run_pomodoro(task_len, break_len, pomodoros).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let </span>(task_len, break_len, pomodoros) = block.read_params().<span class="kw">await</span><span class="question-mark">?</span>;
+        block.run_pomodoro(task_len, break_len, pomodoros).<span class="kw">await</span><span class="question-mark">?</span>;
     }
 }
 </code></pre></div>

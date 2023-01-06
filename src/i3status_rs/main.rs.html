@@ -490,6 +490,17 @@
 <span id="490">490</span>
 <span id="491">491</span>
 <span id="492">492</span>
+<span id="493">493</span>
+<span id="494">494</span>
+<span id="495">495</span>
+<span id="496">496</span>
+<span id="497">497</span>
+<span id="498">498</span>
+<span id="499">499</span>
+<span id="500">500</span>
+<span id="501">501</span>
+<span id="502">502</span>
+<span id="503">503</span>
 </pre><pre class="rust"><code><span class="attribute">#![warn(clippy::match_same_arms)]
 #![warn(clippy::semicolon_if_nothing_returned)]
 #![warn(clippy::unnecessary_wraps)]
@@ -519,6 +530,7 @@
 <span class="kw">use </span>once_cell::sync::Lazy;
 <span class="kw">use </span>protocol::i3bar_block::I3BarBlock;
 <span class="kw">use </span>protocol::i3bar_event::I3BarEvent;
+<span class="kw">use </span>std::borrow::Cow;
 <span class="kw">use </span>std::future::Future;
 <span class="kw">use </span>std::pin::Pin;
 <span class="kw">use </span>std::sync::Arc;
@@ -527,7 +539,7 @@
 <span class="kw">use </span>tokio::sync::mpsc;
 
 <span class="kw">use </span>blocks::{BlockEvent, BlockFuture, CommonApi};
-<span class="kw">use </span>click::ClickHandler;
+<span class="kw">use </span>click::{ClickHandler, MouseButton};
 <span class="kw">use </span>config::SharedConfig;
 <span class="kw">use </span>config::{BlockConfigEntry, Config};
 <span class="kw">use </span>errors::<span class="kw-2">*</span>;
@@ -623,6 +635,7 @@
     abort_handle: AbortHandle,
 
     click_handler: ClickHandler,
+    default_actions: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>[(MouseButton, <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt;, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str)],
     signal: <span class="prelude-ty">Option</span>&lt;i32&gt;,
     shared_config: SharedConfig,
 
@@ -683,6 +696,7 @@
     SetWidget(Widget),
     UnsetWidget,
     SetError(Error),
+    SetDefaultActions(<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>[(MouseButton, <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt;, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str)]),
 }
 
 <span class="kw">struct </span>BarState {
@@ -788,6 +802,7 @@
             abort_handle,
 
             click_handler: block_config.common.click,
+            default_actions: <span class="kw-2">&amp;</span>[],
             signal: block_config.common.signal,
             shared_config,
 
@@ -824,6 +839,9 @@
             }
             RequestCmd::SetError(error) =&gt; {
                 block.set_error(<span class="self">self</span>.fullscreen_block == <span class="prelude-val">Some</span>(request.block_id), error);
+            }
+            RequestCmd::SetDefaultActions(actions) =&gt; {
+                block.default_actions = actions;
             }
         }
         block.notify_intervals();
@@ -881,10 +899,14 @@
                 <span class="kw">match </span><span class="kw-2">&amp;mut </span>block.state {
                     BlockState::None =&gt; (),
                     BlockState::Normal { .. } =&gt; {
-                        <span class="kw">let </span>post_actions = block.click_handler.handle(event.button).<span class="kw">await</span>.in_block(block_type, event.id)<span class="question-mark">?</span>;
+                        <span class="kw">let </span>post_actions = block.click_handler.handle(<span class="kw-2">&amp;</span>event).<span class="kw">await</span>.in_block(block_type, event.id)<span class="question-mark">?</span>;
                         <span class="kw">if let </span><span class="prelude-val">Some</span>(sender) = <span class="kw-2">&amp;</span>block.event_sender {
-                            <span class="kw">if </span>post_actions.pass {
-                                <span class="kw">let _ </span>= sender.send(BlockEvent::Click(event)).<span class="kw">await</span>;
+                            <span class="kw">if let </span><span class="prelude-val">Some</span>(action) = post_actions.action {
+                                <span class="kw">let _ </span>= sender.send(BlockEvent::Action(Cow::Owned(action))).<span class="kw">await</span>;
+                            } <span class="kw">else if let </span><span class="prelude-val">Some</span>((<span class="kw">_</span>, <span class="kw">_</span>, action)) = block.default_actions
+                                .iter()
+                                .find(|(btn, widget, <span class="kw">_</span>)| <span class="kw-2">*</span>btn == event.button &amp;&amp; <span class="kw-2">*</span>widget == event.instance.as_deref()) {
+                                <span class="kw">let _ </span>= sender.send(BlockEvent::Action(Cow::Borrowed(action))).<span class="kw">await</span>;
                             }
                             <span class="kw">if </span>post_actions.update {
                                 <span class="kw">let _ </span>= sender.send(BlockEvent::UpdateRequest).<span class="kw">await</span>;

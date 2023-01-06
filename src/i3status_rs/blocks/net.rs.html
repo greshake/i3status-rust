@@ -196,6 +196,12 @@
 <span id="196">196</span>
 <span id="197">197</span>
 <span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Network information
 //!
 //! This block uses `sysfs` and `netlink` and thus does not require any external dependencies.
@@ -209,6 +215,10 @@
 //! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
 //! `interval` | Update interval in seconds | `2`
 //! `missing_format` | Same as `format` if the interface cannot be connected (or missing). | `&quot; × &quot;`
+//!
+//! Action          | Description                               | Default button
+//! ----------------|-------------------------------------------|---------------
+//! `toggle_format` | Toggles between `format` and `format_alt` | Left
 //!
 //! Placeholder       | Value                       | Type   | Unit
 //! ------------------|-----------------------------|--------|---------------
@@ -269,6 +279,9 @@
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;toggle_format&quot;</span>)])
+        .<span class="kw">await</span><span class="question-mark">?</span>;
+
     <span class="kw">let </span><span class="kw-2">mut </span>format = config.format.with_default(
         <span class="string">&quot; $icon ^icon_net_down $speed_down.eng(3,B,K) ^icon_net_up $speed_up.eng(3,B,K) &quot;</span>,
     )<span class="question-mark">?</span>;
@@ -355,14 +368,13 @@
                 <span class="kw">_ </span>= timer.tick() =&gt; <span class="kw">break</span>,
                 event = api.event() =&gt; <span class="kw">match </span>event {
                     UpdateRequest =&gt; <span class="kw">break</span>,
-                    Click(click) =&gt; {
-                        <span class="kw">if </span>click.button == MouseButton::Left {
-                            <span class="kw">if let </span><span class="prelude-val">Some</span>(format_alt) = <span class="kw-2">&amp;mut </span>format_alt {
-                                std::mem::swap(format_alt, <span class="kw-2">&amp;mut </span>format);
-                                <span class="kw">break</span>;
-                            }
+                    Action(a) <span class="kw">if </span>a == <span class="string">&quot;toggle_format&quot; </span>=&gt; {
+                        <span class="kw">if let </span><span class="prelude-val">Some</span>(format_alt) = <span class="kw-2">&amp;mut </span>format_alt {
+                            std::mem::swap(format_alt, <span class="kw-2">&amp;mut </span>format);
+                            <span class="kw">break</span>;
                         }
                     }
+                    <span class="kw">_ </span>=&gt; ()
                 }
             }
         }

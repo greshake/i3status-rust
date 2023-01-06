@@ -282,6 +282,17 @@
 <span id="282">282</span>
 <span id="283">283</span>
 <span id="284">284</span>
+<span id="285">285</span>
+<span id="286">286</span>
+<span id="287">287</span>
+<span id="288">288</span>
+<span id="289">289</span>
+<span id="290">290</span>
+<span id="291">291</span>
+<span id="292">292</span>
+<span id="293">293</span>
+<span id="294">294</span>
+<span id="295">295</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Volume level
 //!
 //! This block displays the volume level (according to PulseAudio or ALSA). Right click to toggle mute, scroll to adjust volume.
@@ -348,6 +359,12 @@
 //! `output_name`        | PulseAudio or ALSA device name    | Text   | -
 //! `output_description` | PulseAudio device description, will fallback to `output_name` if no description is available and will be overwritten by mappings (mappings will still use `output_name`) | Text | -
 //!
+//! Action        | Default button
+//! --------------|---------------
+//! `toggle_mute` | Rigth
+//! `volume_up`   | Wheel Up
+//! `volume_down` | Wheel Down
+//!
 //! #  Icons Used
 //!
 //! - `microphone_muted`
@@ -384,6 +401,13 @@
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    api.set_default_actions(<span class="kw-2">&amp;</span>[
+        (MouseButton::Right, <span class="prelude-val">None</span>, <span class="string">&quot;toggle_mute&quot;</span>),
+        (MouseButton::WheelUp, <span class="prelude-val">None</span>, <span class="string">&quot;volume_up&quot;</span>),
+        (MouseButton::WheelDown, <span class="prelude-val">None</span>, <span class="string">&quot;volume_down&quot;</span>),
+    ])
+    .<span class="kw">await</span><span class="question-mark">?</span>;
+
     <span class="kw">let </span><span class="kw-2">mut </span>widget =
         Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon {$volume.eng(2)|} &quot;</span>)<span class="question-mark">?</span>);
 
@@ -506,18 +530,16 @@
                 }
                 event = api.event() =&gt; <span class="kw">match </span>event {
                     UpdateRequest =&gt; <span class="kw">break</span>,
-                    Click(click) =&gt; <span class="kw">match </span>click.button {
-                        MouseButton::Right =&gt; {
-                            device.toggle().<span class="kw">await</span><span class="question-mark">?</span>;
-                        }
-                        MouseButton::WheelUp =&gt; {
-                            device.set_volume(step_width, config.max_vol).<span class="kw">await</span><span class="question-mark">?</span>;
-                        }
-                        MouseButton::WheelDown =&gt; {
-                            device.set_volume(-step_width, config.max_vol).<span class="kw">await</span><span class="question-mark">?</span>;
-                        }
-                        <span class="kw">_ </span>=&gt; ()
+                    Action(a) <span class="kw">if </span>a == <span class="string">&quot;toggle_mute&quot; </span>=&gt; {
+                        device.toggle().<span class="kw">await</span><span class="question-mark">?</span>;
                     }
+                    Action(a) <span class="kw">if </span>a == <span class="string">&quot;volume_up&quot; </span>=&gt; {
+                        device.set_volume(step_width, config.max_vol).<span class="kw">await</span><span class="question-mark">?</span>;
+                    }
+                    Action(a) <span class="kw">if </span>a == <span class="string">&quot;volume_down&quot; </span>=&gt; {
+                        device.set_volume(-step_width, config.max_vol).<span class="kw">await</span><span class="question-mark">?</span>;
+                    }
+                    <span class="kw">_ </span>=&gt; (),
                 }
             }
         }

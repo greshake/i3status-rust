@@ -124,6 +124,13 @@
 <span id="124">124</span>
 <span id="125">125</span>
 <span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
+<span id="129">129</span>
+<span id="130">130</span>
+<span id="131">131</span>
+<span id="132">132</span>
+<span id="133">133</span>
 </pre><pre class="rust"><code><span class="doccomment">//! A custom menu
 //!
 //! This block allows you to quickly run a custom shell command. Left-click on this block to
@@ -192,10 +199,10 @@
         <span class="self">self</span>.api.set_widget(<span class="kw-2">&amp;</span><span class="self">self</span>.widget).<span class="kw">await
     </span>}
 
-    <span class="kw">async fn </span>wait_for_click(<span class="kw-2">&amp;mut </span><span class="self">self</span>, button: MouseButton) {
+    <span class="kw">async fn </span>wait_for_click(<span class="kw-2">&amp;mut </span><span class="self">self</span>, button: <span class="kw-2">&amp;</span>str) {
         <span class="kw">loop </span>{
             <span class="kw">match </span><span class="self">self</span>.api.event().<span class="kw">await </span>{
-                Click(c) <span class="kw">if </span>c.button == button =&gt; <span class="kw">break</span>,
+                Action(a) <span class="kw">if </span>a == button =&gt; <span class="kw">break</span>,
                 <span class="kw">_ </span>=&gt; (),
             }
         }
@@ -205,13 +212,12 @@
         <span class="kw">let </span><span class="kw-2">mut </span>index = <span class="number">0</span>;
         <span class="kw">loop </span>{
             <span class="self">self</span>.set_text(<span class="self">self</span>.items[index].display.clone()).<span class="kw">await</span><span class="question-mark">?</span>;
-
-            <span class="kw">if let </span>Click(click) = <span class="self">self</span>.api.event().<span class="kw">await </span>{
-                <span class="kw">match </span>click.button {
-                    MouseButton::WheelUp =&gt; index += <span class="number">1</span>,
-                    MouseButton::WheelDown =&gt; index += <span class="self">self</span>.items.len() + <span class="number">1</span>,
-                    MouseButton::Left =&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="self">self</span>.items[index].clone())),
-                    MouseButton::Right =&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+            <span class="kw">if let </span>Action(action) = <span class="self">self</span>.api.event().<span class="kw">await </span>{
+                <span class="kw">match </span>action.as_ref() {
+                    <span class="string">&quot;_up&quot; </span>=&gt; index += <span class="number">1</span>,
+                    <span class="string">&quot;_down&quot; </span>=&gt; index += <span class="self">self</span>.items.len() + <span class="number">1</span>,
+                    <span class="string">&quot;_left&quot; </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="self">self</span>.items[index].clone())),
+                    <span class="string">&quot;_right&quot; </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
                     <span class="kw">_ </span>=&gt; (),
                 }
             }
@@ -222,14 +228,22 @@
     <span class="kw">async fn </span>confirm(<span class="kw-2">&amp;mut </span><span class="self">self</span>, msg: String) -&gt; <span class="prelude-ty">Result</span>&lt;bool&gt; {
         <span class="self">self</span>.set_text(msg).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">loop </span>{
-            <span class="kw">if let </span>Click(click) = <span class="self">self</span>.api.event().<span class="kw">await </span>{
-                <span class="kw">return </span><span class="prelude-val">Ok</span>(click.button == MouseButton::DoubleLeft);
+            <span class="kw">if let </span>Action(action) = <span class="self">self</span>.api.event().<span class="kw">await </span>{
+                <span class="kw">return </span><span class="prelude-val">Ok</span>(action == <span class="string">&quot;_left&quot;</span>);
             }
         }
     }
 }
 
-<span class="kw">pub async fn </span>run(config: Config, api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    api.set_default_actions(<span class="kw-2">&amp;</span>[
+        (MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;_left&quot;</span>),
+        (MouseButton::Right, <span class="prelude-val">None</span>, <span class="string">&quot;_right&quot;</span>),
+        (MouseButton::WheelUp, <span class="prelude-val">None</span>, <span class="string">&quot;_up&quot;</span>),
+        (MouseButton::WheelDown, <span class="prelude-val">None</span>, <span class="string">&quot;_down&quot;</span>),
+    ])
+    .<span class="kw">await</span><span class="question-mark">?</span>;
+
     <span class="kw">let </span><span class="kw-2">mut </span>block = Block {
         widget: Widget::new(),
         api,
@@ -239,7 +253,7 @@
 
     <span class="kw">loop </span>{
         block.reset().<span class="kw">await</span><span class="question-mark">?</span>;
-        block.wait_for_click(MouseButton::Left).<span class="kw">await</span>;
+        block.wait_for_click(<span class="string">&quot;_left&quot;</span>).<span class="kw">await</span>;
         <span class="kw">if let </span><span class="prelude-val">Some</span>(res) = block.run_menu().<span class="kw">await</span><span class="question-mark">? </span>{
             <span class="kw">if let </span><span class="prelude-val">Some</span>(msg) = res.confirm_msg {
                 <span class="kw">if </span>!block.confirm(msg).<span class="kw">await</span><span class="question-mark">? </span>{

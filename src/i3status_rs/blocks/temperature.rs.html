@@ -212,6 +212,12 @@
 <span id="212">212</span>
 <span id="213">213</span>
 <span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The system temperature
 //!
 //! This block displays the system temperature, based on `libsensors` library.
@@ -242,6 +248,10 @@
 //! `warning` | Maximum temperature to set state to warning. Beyond this temperature, state is set to critical | `80` °C (`176` °F)
 //! `chip` | Narrows the results to a given chip name. `*` may be used as a wildcard. | None
 //! `inputs` | Narrows the results to individual inputs reported by each chip. | None
+//!
+//! Action          | Description                               | Default button
+//! ----------------|-------------------------------------------|---------------
+//! `toggle_format` | Toggles between `format` and `format_alt` | Left
 //!
 //! Placeholder | Value                                | Type   | Unit
 //! ------------|--------------------------------------|--------|--------
@@ -310,6 +320,9 @@
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;toggle_format&quot;</span>)])
+        .<span class="kw">await</span><span class="question-mark">?</span>;
+
     <span class="kw">let </span><span class="kw-2">mut </span>format = config
         .format
         .with_default(<span class="string">&quot; $icon $average avg, $max max &quot;</span>)<span class="question-mark">?</span>;
@@ -410,16 +423,15 @@
                 <span class="macro">select! </span>{
                     <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt; <span class="kw">break </span><span class="lifetime">&#39;outer</span>,
                     event = api.event() =&gt; <span class="kw">match </span>event {
-                        UpdateRequest =&gt; <span class="kw">break </span><span class="lifetime">&#39;outer</span>,
-                        Click(click) =&gt; {
-                            <span class="kw">if </span>click.button == MouseButton::Left  {
-                                <span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">ref mut </span>format_alt) = format_alt {
-                                    std::mem::swap(format_alt, <span class="kw-2">&amp;mut </span>format);
-                                    widget.set_format(format.clone());
-                                    <span class="kw">break</span>;
-                                }
+                        UpdateRequest =&gt; <span class="kw">break</span>,
+                        Action(a) <span class="kw">if </span>a == <span class="string">&quot;toggle_format&quot; </span>=&gt; {
+                            <span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">ref mut </span>format_alt) = format_alt {
+                                std::mem::swap(format_alt, <span class="kw-2">&amp;mut </span>format);
+                                widget.set_format(format.clone());
+                                <span class="kw">break</span>;
                             }
                         }
+                        <span class="kw">_ </span>=&gt; (),
                     }
                 }
             }

@@ -330,7 +330,7 @@
 
 <span class="attribute">#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 </span><span class="kw">pub struct </span>Metadata {
-    <span class="kw">pub </span>instance: <span class="prelude-ty">Option</span>&lt;usize&gt;,
+    <span class="kw">pub </span>instance: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt;,
     <span class="kw">pub </span>underline: bool,
     <span class="kw">pub </span>italic: bool,
 }

@@ -188,11 +188,6 @@
 <span id="188">188</span>
 <span id="189">189</span>
 <span id="190">190</span>
-<span id="191">191</span>
-<span id="192">192</span>
-<span id="193">193</span>
-<span id="194">194</span>
-<span id="195">195</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Pending updates available for your Debian/Ubuntu based system
 //!
 //! Behind the scenes this uses `apt`, and in order to run it without root privileges i3status-rust will create its own package database in `/tmp/i3rs-apt/` which may take up several MB or more. If you have a custom apt config then this block may not work as expected - in that case please open an issue.
@@ -231,6 +226,10 @@
 //! # shows dmenu with cached available updates. Any dmenu alternative should also work.
 //! button = &quot;left&quot;
 //! cmd = &quot;APT_CONFIG=/tmp/i3rs-apt/apt.conf apt list --upgradable | tail -n +2 | rofi -dmenu&quot;
+//! [[block.click]]
+//! # Updates the block on right click
+//! button = &quot;right&quot;
+//! update = true
 //! ```
 //!
 //! # Icons Used
@@ -341,18 +340,9 @@
 
         api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="kw">loop </span>{
-            <span class="macro">select! </span>{
-                <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt; <span class="kw">break</span>,
-                event = api.event() =&gt; <span class="kw">match </span>event {
-                    UpdateRequest =&gt; <span class="kw">break</span>,
-                    Click(click) =&gt; {
-                        <span class="kw">if </span>click.button == MouseButton::Left {
-                            <span class="kw">break</span>;
-                        }
-                    }
-                }
-            }
+        <span class="macro">select! </span>{
+            <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt; (),
+            <span class="kw">_ </span>= api.wait_for_update_request() =&gt; (),
         }
     }
 }

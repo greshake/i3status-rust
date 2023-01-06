@@ -208,6 +208,10 @@
 //! `icon`      | Icon based on notification&#39;s state         | Icon   | -
 //! `paused`    | Present only if notifications are disabled | Flag   | -
 //!
+//! Action          | Default button
+//! ----------------|---------------
+//! `toggle_paused` | Left
+//!
 //! # Examples
 //!
 //! How to use `paused` flag
@@ -245,6 +249,9 @@
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;toggle_paused&quot;</span>)])
+        .<span class="kw">await</span><span class="question-mark">?</span>;
+
     <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>);
 
     <span class="kw">let </span><span class="kw-2">mut </span>driver: Box&lt;<span class="kw">dyn </span>Driver&gt; = <span class="kw">match </span>config.driver {
@@ -260,20 +267,13 @@
         ));
         api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="kw">loop </span>{
-            <span class="macro">select! </span>{
-                x = driver.wait_for_change() =&gt; {
-                    x<span class="question-mark">?</span>;
-                    <span class="kw">break</span>;
+        <span class="macro">select! </span>{
+            x = driver.wait_for_change() =&gt; x<span class="question-mark">?</span>,
+            event = api.event() =&gt; <span class="kw">match </span>event {
+                Action(a) <span class="kw">if </span>a == <span class="string">&quot;toggle_paused&quot; </span>=&gt; {
+                    driver.set_paused(!is_paused).<span class="kw">await</span><span class="question-mark">?</span>;
                 }
-                event = api.event() =&gt; <span class="kw">match </span>event {
-                    UpdateRequest =&gt; <span class="kw">break</span>,
-                    Click(click) =&gt; {
-                        <span class="kw">if </span>click.button == MouseButton::Left {
-                            driver.set_paused(!is_paused).<span class="kw">await</span><span class="question-mark">?</span>;
-                        }
-                    }
-                }
+                <span class="kw">_ </span>=&gt; (),
             }
         }
     }

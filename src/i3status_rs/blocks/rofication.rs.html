@@ -100,17 +100,9 @@
 <span id="100">100</span>
 <span id="101">101</span>
 <span id="102">102</span>
-<span id="103">103</span>
-<span id="104">104</span>
-<span id="105">105</span>
-<span id="106">106</span>
-<span id="107">107</span>
-<span id="108">108</span>
-<span id="109">109</span>
-<span id="110">110</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The number of pending notifications in rofication-daemon
 //!
-//! A different color is used is there are critical notications. Left clicking the block opens the GUI.
+//! A different color is used is there are critical notications.
 //!
 //! # Configuration
 //!
@@ -132,15 +124,16 @@
 //! block = &quot;rofication&quot;
 //! interval = 1
 //! socket_path = &quot;/tmp/rofi_notification_daemon&quot;
+//! [[block.click]]
+//! button = &quot;left&quot;
+//! cmd = &quot;rofication-gui&quot;
 //! ```
 //!
 //! # Icons Used
 //! - `bell`
 
-</span><span class="kw">use </span>tokio::net::UnixStream;
-
-<span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
-<span class="kw">use </span><span class="kw">crate</span>::subprocess::spawn_shell;
+</span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span>tokio::net::UnixStream;
 
 <span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(default)]
@@ -175,18 +168,9 @@
         };
         api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="kw">loop </span>{
-            <span class="macro">tokio::select! </span>{
-                <span class="kw">_ </span>= timer.tick() =&gt; <span class="kw">break</span>,
-                event = api.event() =&gt; <span class="kw">match </span>event {
-                    UpdateRequest =&gt; <span class="kw">break</span>,
-                    Click(click) =&gt; {
-                        <span class="kw">if </span>click.button == MouseButton::Left {
-                            <span class="kw">let _ </span>= spawn_shell(<span class="string">&quot;rofication-gui&quot;</span>);
-                        }
-                    }
-                }
-            }
+        <span class="macro">tokio::select! </span>{
+            <span class="kw">_ </span>= timer.tick() =&gt; (),
+            <span class="kw">_ </span>= api.wait_for_update_request() =&gt; (),
         }
     }
 }

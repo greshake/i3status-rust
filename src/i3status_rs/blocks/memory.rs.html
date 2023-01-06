@@ -281,6 +281,11 @@
 <span id="281">281</span>
 <span id="282">282</span>
 <span id="283">283</span>
+<span id="284">284</span>
+<span id="285">285</span>
+<span id="286">286</span>
+<span id="287">287</span>
+<span id="288">288</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Memory and swap usage
 //!
 //! # Configuration
@@ -317,6 +322,10 @@
 //! `swap_free_percents`      | as above but as a percentage of total memory                                    | Number | Percents
 //! `swap_used`               | Swap used                                                                       | Number | Bytes
 //! `swap_used_percents`      | as above but as a percentage of total memory                                    | Number | Percents
+//!
+//! Action          | Description                               | Default button
+//! ----------------|-------------------------------------------|---------------
+//! `toggle_format` | Toggles between `format` and `format_alt` | Left
 //!
 //! # Example
 //!
@@ -360,6 +369,9 @@
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;toggle_format&quot;</span>)])
+        .<span class="kw">await</span><span class="question-mark">?</span>;
+
     <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new();
 
     <span class="kw">let </span><span class="kw-2">mut </span>format = config.format.with_default(
@@ -471,16 +483,14 @@
                 <span class="kw">_ </span>= timer.tick() =&gt; <span class="kw">break</span>,
                 event = api.event() =&gt; <span class="kw">match </span>event {
                     UpdateRequest =&gt; <span class="kw">break</span>,
-                    Click(click) =&gt; {
-                        <span class="kw">if </span>click.button == MouseButton::Left {
-                            <span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">ref mut </span>format_alt) = format_alt {
-                                std::mem::swap(format_alt, <span class="kw-2">&amp;mut </span>format);
-                                widget.set_format(format.clone());
-                                <span class="kw">break</span>;
-                            }
+                    Action(a) <span class="kw">if </span>a == <span class="string">&quot;toggle_format&quot; </span>=&gt; {
+                        <span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">ref mut </span>format_alt) = format_alt {
+                            std::mem::swap(format_alt, <span class="kw-2">&amp;mut </span>format);
+                            widget.set_format(format.clone());
+                            <span class="kw">break</span>;
                         }
                     }
-
+                    <span class="kw">_ </span>=&gt; (),
                 }
             }
         }

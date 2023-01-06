@@ -203,7 +203,7 @@
 
 <span class="doccomment">/// Set options
 </span><span class="kw">impl </span>Value {
-    <span class="kw">pub fn </span>with_instance(<span class="kw-2">mut </span><span class="self">self</span>, instance: usize) -&gt; <span class="self">Self </span>{
+    <span class="kw">pub fn </span>with_instance(<span class="kw-2">mut </span><span class="self">self</span>, instance: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str) -&gt; <span class="self">Self </span>{
         <span class="self">self</span>.metadata.instance = <span class="prelude-val">Some</span>(instance);
         <span class="self">self
     </span>}

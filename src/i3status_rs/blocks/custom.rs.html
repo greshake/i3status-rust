@@ -271,6 +271,12 @@
 <span id="271">271</span>
 <span id="272">272</span>
 <span id="273">273</span>
+<span id="274">274</span>
+<span id="275">275</span>
+<span id="276">276</span>
+<span id="277">277</span>
+<span id="278">278</span>
+<span id="279">279</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The output of a custom shell command
 //!
 //! For further customisation, use the `json` option and have the shell command output valid JSON in the schema below:
@@ -300,6 +306,10 @@
 //! `icon`           | Value of icon field from JSON output when it&#39;s non-empty   | Icon   | -
 //! `text`           | Output of the script or text field from JSON output        | Text   |
 //! `short_text`     | short_text field from JSON output                          | Text   |
+//!
+//! Action  | Default button
+//! --------|---------------
+//! `cycle` | Left
 //!
 //! # Examples
 //!
@@ -420,6 +430,9 @@
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;cycle&quot;</span>)])
+        .<span class="kw">await</span><span class="question-mark">?</span>;
+
     <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(
         config
             .format
@@ -523,12 +536,11 @@
                     <span class="kw">_ </span>= file_updates.next() =&gt; <span class="kw">break</span>,
                     event = api.event() =&gt; <span class="kw">match </span>event {
                         UpdateRequest =&gt; <span class="kw">break</span>,
-                        Click(click) =&gt; {
-                            <span class="kw">if </span>click.button == MouseButton::Left {
-                                cmd = cycle.next().unwrap();
-                                <span class="kw">break</span>;
-                            }
+                        Action(a) <span class="kw">if </span>a == <span class="string">&quot;cycle&quot; </span>=&gt; {
+                            cmd = cycle.next().unwrap();
+                            <span class="kw">break</span>;
                         }
+                        <span class="kw">_ </span>=&gt; (),
                     }
                 }
             }

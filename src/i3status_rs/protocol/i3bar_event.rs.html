@@ -94,7 +94,6 @@
 <span id="94">94</span>
 <span id="95">95</span>
 <span id="96">96</span>
-<span id="97">97</span>
 </pre><pre class="rust"><code><span class="kw">use </span>std::os::unix::io::FromRawFd;
 <span class="kw">use </span>std::time::Duration;
 
@@ -107,10 +106,10 @@
 <span class="kw">use </span><span class="kw">crate</span>::click::MouseButton;
 <span class="kw">use </span><span class="kw">crate</span>::BoxedStream;
 
-<span class="attribute">#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+<span class="attribute">#[derive(Debug, Clone, PartialEq, Eq)]
 </span><span class="kw">pub struct </span>I3BarEvent {
     <span class="kw">pub </span>id: usize,
-    <span class="kw">pub </span>instance: <span class="prelude-ty">Option</span>&lt;usize&gt;,
+    <span class="kw">pub </span>instance: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="kw">pub </span>button: MouseButton,
 }
 
@@ -143,7 +142,6 @@
                 <span class="prelude-val">Some</span>(name) =&gt; name.parse().unwrap(),
                 <span class="prelude-val">None </span>=&gt; <span class="kw">continue</span>,
             };
-            <span class="kw">let </span>instance = event.instance.map(|x| x.parse::&lt;usize&gt;().unwrap());
 
             <span class="kw">use </span>MouseButton::<span class="kw-2">*</span>;
             <span class="kw">let </span>button = <span class="kw">match </span>(event.button, invert_scrolling) {
@@ -154,7 +152,7 @@
 
             <span class="kw">let </span>event = I3BarEvent {
                 id,
-                instance,
+                instance: event.instance,
                 button,
             };
 
