@@ -4,6 +4,7 @@ use serde::de::{self, Deserializer, Visitor};
 use serde::Deserialize;
 
 use crate::errors::{Result, ResultExt};
+use crate::protocol::i3bar_event::I3BarEvent;
 use crate::subprocess::{spawn_shell, spawn_shell_sync};
 
 /// Can be one of `left`, `middle`, `right`, `wheel_up`, `wheel_down`, `forward`, `back`, or
@@ -25,9 +26,9 @@ pub enum MouseButton {
     DoubleLeft,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct PostActions {
-    pub pass: bool,
+    pub action: Option<String>,
     pub update: bool,
 }
 
@@ -35,27 +36,35 @@ pub struct PostActions {
 pub struct ClickHandler(Vec<ClickConfigEntry>);
 
 impl ClickHandler {
-    pub async fn handle(&self, button: MouseButton) -> Result<PostActions> {
-        Ok(match self.0.iter().find(|e| e.button == button) {
-            Some(entry) => {
-                if let Some(cmd) = &entry.cmd {
-                    if entry.sync {
-                        spawn_shell_sync(cmd).await
-                    } else {
-                        spawn_shell(cmd)
+    pub async fn handle(&self, event: &I3BarEvent) -> Result<PostActions> {
+        Ok(
+            match self
+                .0
+                .iter()
+                .find(|e| e.button == event.button && e.widget == event.instance)
+            {
+                Some(entry) => {
+                    if let Some(cmd) = &entry.cmd {
+                        if entry.sync {
+                            spawn_shell_sync(cmd).await
+                        } else {
+                            spawn_shell(cmd)
+                        }
+                        .or_error(|| {
+                            format!("'{:?}' button handler: Failed to run '{cmd}", event.button)
+                        })?;
                     }
-                    .or_error(|| format!("'{button:?}' button handler: Failed to run '{cmd}"))?;
+                    PostActions {
+                        action: entry.action.clone(),
+                        update: entry.update,
+                    }
                 }
-                PostActions {
-                    pass: entry.pass,
-                    update: entry.update,
-                }
-            }
-            None => PostActions {
-                pass: true,
-                update: false,
+                None => PostActions {
+                    action: None,
+                    update: false,
+                },
             },
-        })
+        )
     }
 }
 
@@ -64,22 +73,21 @@ impl ClickHandler {
 pub struct ClickConfigEntry {
     /// Which button to handle
     button: MouseButton,
+    /// To which part of the block this entry applies
+    #[serde(default)]
+    widget: Option<String>,
     /// Which command to run
     #[serde(default)]
     cmd: Option<String>,
+    /// Which block action to trigger
+    #[serde(default)]
+    action: Option<String>,
     /// Whether to wait for command to exit or not (default is `false`)
     #[serde(default)]
     sync: bool,
     /// Whether to update the block on click (default is `false`)
     #[serde(default)]
     update: bool,
-    /// Whether to also pass click event to the block (if block has an action for the button and `cmd` is also defined, both will be run if `pass` is true) (default is `true`)
-    #[serde(default = "return_true")]
-    pass: bool,
-}
-
-fn return_true() -> bool {
-    true
 }
 
 impl<'de> Deserialize<'de> for MouseButton {

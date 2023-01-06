@@ -21,6 +21,12 @@
 //! `resolution`      | The resolution of a monitor  | Text   | -
 //! `res_icon`        | A static icon                | Icon   | -
 //!
+//! Action            | Default button
+//! ------------------|---------------
+//! `cycle_outputs`   | Left
+//! `brightness_up`   | Wheel Up
+//! `brightness_down` | Wheel Down
+//!
 //! # Example
 //!
 //! ```toml
@@ -50,6 +56,13 @@ pub struct Config {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+    api.set_default_actions(&[
+        (MouseButton::Left, None, "cycle_outputs"),
+        (MouseButton::WheelUp, None, "brightness_up"),
+        (MouseButton::WheelDown, None, "brightness_down"),
+    ])
+    .await?;
+
     let mut widget = Widget::new().with_format(
         config
             .format
@@ -85,29 +98,22 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                 _ = timer.tick() => break,
                 event = api.event() => match event {
                     UpdateRequest => break,
-                    Click(click) => {
-                        match click.button {
-                            MouseButton::Left => {
-                                cur_indx += 1;
-                                if cur_indx >= monitors.len() {
-                                    cur_indx = 0;
-                                }
-                            }
-                            MouseButton::WheelUp => {
-                                if let Some(monitor) = monitors.get_mut(cur_indx) {
-                                    let bright = (monitor.brightness + config.step_width).min(100);
-                                    monitor.set_brightness(bright);
-                                }
-                            }
-                            MouseButton::WheelDown => {
-                                if let Some(monitor) = monitors.get_mut(cur_indx) {
-                                    let bright = monitor.brightness.saturating_sub(config.step_width);
-                                    monitor.set_brightness(bright);
-                                }
-                            }
-                            _ => (),
+                    Action(a) if a == "cycle_outputs" => {
+                        cur_indx = (cur_indx + 1) % monitors.len();
+                    }
+                    Action(a) if a == "brightness_up" => {
+                        if let Some(monitor) = monitors.get_mut(cur_indx) {
+                            let bright = (monitor.brightness + config.step_width).min(100);
+                            monitor.set_brightness(bright);
                         }
                     }
+                    Action(a) if a == "brightness_down" => {
+                        if let Some(monitor) = monitors.get_mut(cur_indx) {
+                            let bright = monitor.brightness.saturating_sub(config.step_width);
+                            monitor.set_brightness(bright);
+                        }
+                    }
+                    _ => (),
                 }
             }
         }

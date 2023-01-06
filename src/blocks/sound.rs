@@ -64,6 +64,12 @@
 //! `output_name`        | PulseAudio or ALSA device name    | Text   | -
 //! `output_description` | PulseAudio device description, will fallback to `output_name` if no description is available and will be overwritten by mappings (mappings will still use `output_name`) | Text | -
 //!
+//! Action        | Default button
+//! --------------|---------------
+//! `toggle_mute` | Rigth
+//! `volume_up`   | Wheel Up
+//! `volume_down` | Wheel Down
+//!
 //! #  Icons Used
 //!
 //! - `microphone_muted`
@@ -100,6 +106,13 @@ pub struct Config {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+    api.set_default_actions(&[
+        (MouseButton::Right, None, "toggle_mute"),
+        (MouseButton::WheelUp, None, "volume_up"),
+        (MouseButton::WheelDown, None, "volume_down"),
+    ])
+    .await?;
+
     let mut widget =
         Widget::new().with_format(config.format.with_default(" $icon {$volume.eng(2)|} ")?);
 
@@ -222,18 +235,16 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                 }
                 event = api.event() => match event {
                     UpdateRequest => break,
-                    Click(click) => match click.button {
-                        MouseButton::Right => {
-                            device.toggle().await?;
-                        }
-                        MouseButton::WheelUp => {
-                            device.set_volume(step_width, config.max_vol).await?;
-                        }
-                        MouseButton::WheelDown => {
-                            device.set_volume(-step_width, config.max_vol).await?;
-                        }
-                        _ => ()
+                    Action(a) if a == "toggle_mute" => {
+                        device.toggle().await?;
                     }
+                    Action(a) if a == "volume_up" => {
+                        device.set_volume(step_width, config.max_vol).await?;
+                    }
+                    Action(a) if a == "volume_down" => {
+                        device.set_volume(-step_width, config.max_vol).await?;
+                    }
+                    _ => (),
                 }
             }
         }

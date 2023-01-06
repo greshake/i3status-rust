@@ -40,6 +40,15 @@
 //! `next`      | Next button | Clickable icon
 //! `prev`      | Previous button | Clickable icon
 //!
+//! Action          | Default button
+//! ----------------|------------------
+//! `play_pause`    | Left on `$play`
+//! `next`          | Left on `$next`
+//! `prev`          | Left on `$prev`
+//! `next_player`   | Right
+//! `seek_forward`  | Wheel Up
+//! `seek_backward` | Wheel Down
+//!
 //! # Examples
 //!
 //! Show the currently playing song on Spotify only, with play & next buttons and limit the width
@@ -70,6 +79,16 @@
 //! interface_name_exclude = [".*kdeconnect.*", "mpd"]
 //! ```
 //!
+//! Click anywhere to paly/pause:
+//!
+//! ```toml
+//! [[block]]
+//! block = "music"
+//! [[block.click]]
+//! button = "left"
+//! action = "play_pause"
+//! ```
+//!
 //! # Icons Used
 //! - `music`
 //! - `music_next`
@@ -89,9 +108,9 @@ mod zbus_mpris;
 
 make_log_macro!(debug, "music");
 
-const PLAY_PAUSE_BTN: usize = 1;
-const NEXT_BTN: usize = 2;
-const PREV_BTN: usize = 3;
+const PLAY_PAUSE_BTN: &str = "play_pause_btn";
+const NEXT_BTN: &str = "next_btn";
+const PREV_BTN: &str = "prev_btn";
 
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(default)]
@@ -128,6 +147,16 @@ struct OwnerChange {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+    api.set_default_actions(&[
+        (MouseButton::Left, Some(PLAY_PAUSE_BTN), "play_pause"),
+        (MouseButton::Left, Some(NEXT_BTN), "next"),
+        (MouseButton::Left, Some(PREV_BTN), "prev"),
+        (MouseButton::Right, None, "next_player"),
+        (MouseButton::WheelUp, None, "seek_forward"),
+        (MouseButton::WheelDown, None, "seek_backward"),
+    ])
+    .await?;
+
     let dbus_conn = new_dbus_connection().await?;
     let mut widget = Widget::new().with_format(
         config
@@ -135,8 +164,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             .with_default(" $icon {$combo.rot-str() $play |}")?,
     );
 
-    let new_btn = |icon: &str, id: usize, api: &mut CommonApi| -> Result<Value> {
-        Ok(Value::icon(api.get_icon(icon)?).with_instance(id))
+    let new_btn = |icon: &str, instance: &'static str, api: &mut CommonApi| -> Result<Value> {
+        Ok(Value::icon(api.get_icon(icon)?).with_instance(instance))
     };
 
     let values = map! {
@@ -238,85 +267,91 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             }
         }
 
-        select! {
-            // Wait for a DBUS event
-            Some(msg) = dbus_stream.next() => {
-                let msg = msg.unwrap();
-                match msg.member().as_ref().map(|m| m.as_str()) {
-                    Some("PropertiesChanged") => {
-                        let header = msg.header().unwrap();
-                        let sender = header.sender().unwrap().unwrap();
-                        if let Some(player) = players.iter_mut().find(|p| p.owner == sender.to_string()) {
-                            let body: PropChange = msg.body().unwrap();
-                            let props = body.changed_properties;
-
-                            if let Some(status) = props.get("PlaybackStatus") {
-                                let status: &str = status.downcast_ref().unwrap();
-                                player.status = PlaybackStatus::from_str(status);
-                            }
-                            if let Some(metadata) = props.get("Metadata") {
-                                let metadata =
-                                    zbus_mpris::PlayerMetadata::try_from(metadata.clone()).unwrap();
-                                player.update_metadata(metadata);
+        loop {
+            select! {
+                // Wait for a DBUS event
+                Some(msg) = dbus_stream.next() => {
+                    let msg = msg.unwrap();
+                    match msg.member().as_ref().map(|m| m.as_str()) {
+                        Some("PropertiesChanged") => {
+                            let header = msg.header().unwrap();
+                            let sender = header.sender().unwrap().unwrap();
+                            if let Some(player) = players.iter_mut().find(|p| p.owner == sender.to_string()) {
+                                let body: PropChange = msg.body().unwrap();
+                                let props = body.changed_properties;
+                                if let Some(status) = props.get("PlaybackStatus") {
+                                    let status: &str = status.downcast_ref().unwrap();
+                                    player.status = PlaybackStatus::from_str(status);
+                                }
+                                if let Some(metadata) = props.get("Metadata") {
+                                    let metadata =
+                                        zbus_mpris::PlayerMetadata::try_from(metadata.clone()).unwrap();
+                                    player.update_metadata(metadata);
+                                }
+                                break;
                             }
                         }
-                    }
-                    Some("NameOwnerChanged") => {
-                        let body: OwnerChange = msg.body().unwrap();
-                        let old: Option<String> = body.old_owner.into();
-                        let new: Option<String> = body.new_owner.into();
-                        match (old, new) {
-                            (None, Some(new)) => if new != body.name.to_string() && player_matches(body.name.as_str(), &prefered_players, &exclude_regex) {
-                                players.push(Player::new(&dbus_conn, body.name, new).await?);
-                                cur_player = Some(players.len() - 1);
-                            }
-                            (Some(old), None) => {
-                                if let Some(pos) = players.iter().position(|p| p.owner == old) {
-                                    players.remove(pos);
-                                    if let Some(cur) = cur_player {
-                                        if players.is_empty() {
-                                            cur_player = None;
-                                        } else if pos == cur {
-                                            cur_player = Some(0);
-                                        } else if pos < cur {
-                                            cur_player = Some(cur - 1);
+                        Some("NameOwnerChanged") => {
+                            let body: OwnerChange = msg.body().unwrap();
+                            let old: Option<String> = body.old_owner.into();
+                            let new: Option<String> = body.new_owner.into();
+                            match (old, new) {
+                                (None, Some(new)) => if new != body.name.to_string() && player_matches(body.name.as_str(), &prefered_players, &exclude_regex) {
+                                    players.push(Player::new(&dbus_conn, body.name, new).await?);
+                                    cur_player = Some(players.len() - 1);
+                                }
+                                (Some(old), None) => {
+                                    if let Some(pos) = players.iter().position(|p| p.owner == old) {
+                                        players.remove(pos);
+                                        if let Some(cur) = cur_player {
+                                            if players.is_empty() {
+                                                cur_player = None;
+                                            } else if pos == cur {
+                                                cur_player = Some(0);
+                                            } else if pos < cur {
+                                                cur_player = Some(cur - 1);
+                                            }
                                         }
                                     }
                                 }
+                                _ => (),
                             }
-                            _ => (),
+                            break;
                         }
+                        _ => (),
                     }
-                    _ => (),
                 }
-            }
-            // Wait for a click
-            Click(click) = api.event() => {
-                if let Some(i) = cur_player {
-                    match click.button {
-                        MouseButton::Left => {
-                            let player = &mut players[i];
-                            match click.instance {
-                                Some(PLAY_PAUSE_BTN) => player.play_pause().await?,
-                                Some(NEXT_BTN) => player.next().await?,
-                                Some(PREV_BTN) => player.prev().await?,
+                event = api.event() => match event {
+                    UpdateRequest => (),
+                    Action(a) => {
+                        if let Some(i) = cur_player {
+                            let player = &players[i];
+                            match a.as_ref() {
+                                "play_pause" => {
+                                    player.play_pause().await?;
+                                }
+                                "next" => {
+                                    player.next().await?;
+                                }
+                                "prev" => {
+                                    player.prev().await?;
+                                }
+                                "next_player" => {
+                                    if i + 1 < players.len() {
+                                        cur_player = Some(i + 1);
+                                    } else {
+                                        cur_player = Some(0);
+                                    }
+                                }
+                                "seek_forward" => {
+                                    player.seek(config.seek_step).await?;
+                                }
+                                "seek_backward" => {
+                                    player.seek(-config.seek_step).await?;
+                                }
                                 _ => (),
                             }
                         }
-                        MouseButton::Right => {
-                            if i + 1 < players.len() {
-                                cur_player = Some(i + 1);
-                            } else {
-                                cur_player = Some(0);
-                            }
-                        }
-                        MouseButton::WheelUp => {
-                            players[i].seek(config.seek_step).await?;
-                        }
-                        MouseButton::WheelDown => {
-                            players[i].seek(-config.seek_step).await?;
-                        }
-                        _ => (),
                     }
                 }
             }

@@ -19,6 +19,13 @@
 //! ----------------------|------------------------------|--------|---------------
 //! `temperature`         | Current temperature          | Number | -
 //!
+//! Action             | Default button
+//! -------------------|---------------
+//! `set_click_temp`   | Left
+//! `reset`            | Right
+//! `temperature_up`   | Wheel Up
+//! `temperature_down` | Wheel Down
+//!
 //! # Available Hue Shifters
 //!
 //! Name                 | Supports
@@ -75,6 +82,14 @@ pub struct Config {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+    api.set_default_actions(&[
+        (MouseButton::Left, None, "set_click_temp"),
+        (MouseButton::Right, None, "reset"),
+        (MouseButton::WheelUp, None, "temperature_up"),
+        (MouseButton::WheelDown, None, "temperature_down"),
+    ])
+    .await?;
+
     let mut widget = Widget::new().with_format(config.format.with_default(" $temperature ")?);
 
     // limit too big steps at 500K to avoid too brutal changes
@@ -124,35 +139,33 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             }
             event = api.event() => {
                 match event {
-                    Click(click) => match click.button {
-                        MouseButton::Left => {
-                            current_temp = config.click_temp;
-                            driver.update(current_temp).await?;
-                        }
-                        MouseButton::Right => {
-                            if max_temp > 6500 {
-                                current_temp = 6500;
-                                driver.reset().await?;
-                            } else {
-                                current_temp = max_temp;
-                                driver.update(current_temp).await?;
-                            }
-                        }
-                        MouseButton::WheelUp => {
-                            current_temp = (current_temp + step).min(max_temp);
-                            driver.update(current_temp).await?;
-                        }
-                        MouseButton::WheelDown => {
-                            current_temp = current_temp.saturating_sub(step).max(min_temp);
-                            driver.update(current_temp).await?;
-                        }
-                        _ => (),
-                    }
                     UpdateRequest => {
                         if let Some(val) = driver.get().await? {
                             current_temp = val;
                         }
                     }
+                    Action(a) if a == "set_click_temp" => {
+                        current_temp = config.click_temp;
+                        driver.update(current_temp).await?;
+                    }
+                    Action(a) if a == "reset" => {
+                        if max_temp > 6500 {
+                            current_temp = 6500;
+                            driver.reset().await?;
+                        } else {
+                            current_temp = max_temp;
+                            driver.update(current_temp).await?;
+                        }
+                    }
+                    Action(a) if a == "temperature_up" => {
+                        current_temp = (current_temp + step).min(max_temp);
+                        driver.update(current_temp).await?;
+                    }
+                    Action(a) if a == "temperature_down" => {
+                        current_temp = current_temp.saturating_sub(step).max(min_temp);
+                        driver.update(current_temp).await?;
+                    }
+                    _ => (),
                 }
             }
         }

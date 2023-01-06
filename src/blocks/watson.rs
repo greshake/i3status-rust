@@ -15,6 +15,10 @@
 //! --------------|-------------------------|--------|-----
 //! `text`        | Current activity        | Text   | -
 //!
+//! Action             | Description                     | Default button
+//! -------------------|---------------------------------|---------------
+//! `toggle_show_time` | Toggle the value of `show_time` | Left
+//!
 //! # Example
 //!
 //! ```toml
@@ -47,6 +51,9 @@ pub struct Config {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+    api.set_default_actions(&[(MouseButton::Left, None, "toggle_show_time")])
+        .await?;
+
     let mut widget = Widget::new().with_format(config.format.with_default(" $text |")?);
 
     let mut show_time = config.show_time;
@@ -124,12 +131,11 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                 }
                 event = api.event() => match event {
                     UpdateRequest => break,
-                    Click(click) => {
-                        if click.button == MouseButton::Left {
-                            show_time = !show_time;
-                            break;
-                        }
+                    Action(a) if a == "toggle_show_time" => {
+                        show_time = !show_time;
+                        break;
                     }
+                    _ => (),
                 }
             }
         }

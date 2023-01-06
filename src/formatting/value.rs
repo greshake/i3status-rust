@@ -89,7 +89,7 @@ impl Value {
 
 /// Set options
 impl Value {
-    pub fn with_instance(mut self, instance: usize) -> Self {
+    pub fn with_instance(mut self, instance: &'static str) -> Self {
         self.metadata.instance = Some(instance);
         self
     }

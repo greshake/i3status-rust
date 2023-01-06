@@ -29,6 +29,10 @@
 //! `chip` | Narrows the results to a given chip name. `*` may be used as a wildcard. | None
 //! `inputs` | Narrows the results to individual inputs reported by each chip. | None
 //!
+//! Action          | Description                               | Default button
+//! ----------------|-------------------------------------------|---------------
+//! `toggle_format` | Toggles between `format` and `format_alt` | Left
+//!
 //! Placeholder | Value                                | Type   | Unit
 //! ------------|--------------------------------------|--------|--------
 //! `min`       | Minimum temperature among all inputs | Number | Degrees
@@ -96,6 +100,9 @@ impl TemperatureScale {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+    api.set_default_actions(&[(MouseButton::Left, None, "toggle_format")])
+        .await?;
+
     let mut format = config
         .format
         .with_default(" $icon $average avg, $max max ")?;
@@ -196,16 +203,15 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                 select! {
                     _ = sleep(config.interval.0) => break 'outer,
                     event = api.event() => match event {
-                        UpdateRequest => break 'outer,
-                        Click(click) => {
-                            if click.button == MouseButton::Left  {
-                                if let Some(ref mut format_alt) = format_alt {
-                                    std::mem::swap(format_alt, &mut format);
-                                    widget.set_format(format.clone());
-                                    break;
-                                }
+                        UpdateRequest => break,
+                        Action(a) if a == "toggle_format" => {
+                            if let Some(ref mut format_alt) = format_alt {
+                                std::mem::swap(format_alt, &mut format);
+                                widget.set_format(format.clone());
+                                break;
                             }
                         }
+                        _ => (),
                     }
                 }
             }

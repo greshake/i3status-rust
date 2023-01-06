@@ -18,6 +18,10 @@
 //! `frequency<N>`   | Frequency of Nth logical CPU                                   | Number | Hz
 //! `boost`          | CPU turbo boost status (may be absent if CPU is not supported) | Text   | -
 //!
+//! Action          | Description                               | Default button
+//! ----------------|-------------------------------------------|---------------
+//! `toggle_format` | Toggles between `format` and `format_alt` | Left
+//!
 //! # Example
 //!
 //! ```toml
@@ -54,6 +58,9 @@ pub struct Config {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+    api.set_default_actions(&[(MouseButton::Left, None, "toggle_format")])
+        .await?;
+
     let mut format = config.format.with_default(" $icon $utilization ")?;
     let mut format_alt = match config.format_alt {
         Some(f) => Some(f.with_default("")?),
@@ -129,14 +136,16 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         loop {
             select! {
                 _ = timer.tick() => break,
-                Click(click) = api.event() => {
-                    if click.button == MouseButton::Left {
+                event = api.event() => match event {
+                    UpdateRequest => break,
+                    Action(a) if a == "toggle_format" => {
                         if let Some(ref mut format_alt) = format_alt {
                             std::mem::swap(format_alt, &mut format);
                             widget.set_format(format.clone());
                             break;
                         }
                     }
+                    _ => (),
                 }
             }
         }

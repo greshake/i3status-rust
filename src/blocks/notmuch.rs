@@ -35,6 +35,9 @@
 //! query = "tag:alert and not tag:trash"
 //! threshold_warning = 1
 //! threshold_critical = 10
+//! [[block.click]]
+//! button = "left"
+//! update = true
 //! ```
 //!
 //! # Icons Used
@@ -90,18 +93,9 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
         api.set_widget(&widget).await?;
 
-        loop {
-            tokio::select! {
-                _ = timer.tick() => break,
-                event = api.event() => match event {
-                    UpdateRequest => break,
-                    Click(click) => {
-                        if click.button == MouseButton::Left {
-                            break;
-                        }
-                    }
-                }
-            }
+        tokio::select! {
+            _ = timer.tick() => (),
+            _ = api.wait_for_update_request() => (),
         }
     }
 }
