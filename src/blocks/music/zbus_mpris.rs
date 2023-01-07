@@ -21,7 +21,7 @@
 
 use std::collections::HashMap;
 use zbus::dbus_proxy;
-use zbus::zvariant::{ObjectPath, OwnedValue, Type};
+use zbus::zvariant::{self, ObjectPath, OwnedValue, Type};
 
 #[derive(Debug, Clone, Type)]
 pub struct PlayerMetadata(pub HashMap<String, OwnedValue>);

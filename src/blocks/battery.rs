@@ -163,7 +163,9 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
                 let (icon, state) = match (info.status, info.capacity) {
                     (BatteryStatus::Empty, _) => (battery_level_icon(0, false), State::Critical),
-                    (BatteryStatus::Full | BatteryStatus::NotCharging, _) => (battery_level_icon(100, false), State::Idle),
+                    (BatteryStatus::Full | BatteryStatus::NotCharging, _) => {
+                        (battery_level_icon(100, false), State::Idle)
+                    }
                     (status, capacity) => (
                         battery_level_icon(capacity as u8, status == BatteryStatus::Charging),
                         if status == BatteryStatus::Charging {

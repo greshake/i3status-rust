@@ -102,7 +102,7 @@ use regex::Regex;
 use zbus::fdo::DBusProxy;
 use zbus::names::{OwnedBusName, OwnedInterfaceName};
 use zbus::zvariant::{Optional, OwnedValue, Type};
-use zbus::MessageStream;
+use zbus::{MatchRule, MessageStream};
 
 mod zbus_mpris;
 
@@ -194,16 +194,33 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         }
     }
 
-    let dbus_proxy = DBusProxy::new(&dbus_conn)
-        .await
-        .error("failed to create DBusProxy")?;
-    dbus_proxy.add_match("type='signal',interface='org.freedesktop.DBus.Properties',member='PropertiesChanged',path='/org/mpris/MediaPlayer2'")
-            .await
-            .error( "failed to add match")?;
-    dbus_proxy.add_match("type='signal',interface='org.freedesktop.DBus',member='NameOwnerChanged',arg0namespace='org.mpris.MediaPlayer2'")
-            .await
-            .error( "failed to add match")?;
-    let mut dbus_stream = MessageStream::from(&dbus_conn);
+    let mut properties_stream = MessageStream::for_match_rule(
+        MatchRule::builder()
+            .msg_type(zbus::MessageType::Signal)
+            .interface("org.freedesktop.DBus.Properties")
+            .and_then(|x| x.member("PropertiesChanged"))
+            .and_then(|x| x.path("/org/mpris/MediaPlayer2"))
+            .unwrap()
+            .build(),
+        &dbus_conn,
+        None,
+    )
+    .await
+    .error("Failed to add match rule")?;
+
+    let mut name_owner_changed_stream = MessageStream::for_match_rule(
+        MatchRule::builder()
+            .msg_type(zbus::MessageType::Signal)
+            .interface("org.freedesktop.DBus")
+            .and_then(|x| x.member("NameOwnerChanged"))
+            .and_then(|x| x.arg0namespace("org.mpris.MediaPlayer2"))
+            .unwrap()
+            .build(),
+        &dbus_conn,
+        None,
+    )
+    .await
+    .error("Failed to add match rule")?;
 
     loop {
         debug!("available players:");
@@ -269,57 +286,52 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
         loop {
             select! {
-                // Wait for a DBUS event
-                Some(msg) = dbus_stream.next() => {
+                Some(msg) = properties_stream.next() => {
                     let msg = msg.unwrap();
-                    match msg.member().as_ref().map(|m| m.as_str()) {
-                        Some("PropertiesChanged") => {
-                            let header = msg.header().unwrap();
-                            let sender = header.sender().unwrap().unwrap();
-                            if let Some(player) = players.iter_mut().find(|p| p.owner == sender.to_string()) {
-                                let body: PropChange = msg.body().unwrap();
-                                let props = body.changed_properties;
-                                if let Some(status) = props.get("PlaybackStatus") {
-                                    let status: &str = status.downcast_ref().unwrap();
-                                    player.status = PlaybackStatus::from_str(status);
-                                }
-                                if let Some(metadata) = props.get("Metadata") {
-                                    let metadata =
-                                        zbus_mpris::PlayerMetadata::try_from(metadata.clone()).unwrap();
-                                    player.update_metadata(metadata);
-                                }
-                                break;
-                            }
+                    let header = msg.header().unwrap();
+                    let sender = header.sender().unwrap().unwrap();
+                    if let Some(player) = players.iter_mut().find(|p| p.owner == sender.to_string()) {
+                        let body: PropChange = msg.body().unwrap();
+                        let props = body.changed_properties;
+                        if let Some(status) = props.get("PlaybackStatus") {
+                            let status: &str = status.downcast_ref().unwrap();
+                            player.status = PlaybackStatus::from_str(status);
                         }
-                        Some("NameOwnerChanged") => {
-                            let body: OwnerChange = msg.body().unwrap();
-                            let old: Option<String> = body.old_owner.into();
-                            let new: Option<String> = body.new_owner.into();
-                            match (old, new) {
-                                (None, Some(new)) => if new != body.name.to_string() && player_matches(body.name.as_str(), &prefered_players, &exclude_regex) {
-                                    players.push(Player::new(&dbus_conn, body.name, new).await?);
-                                    cur_player = Some(players.len() - 1);
-                                }
-                                (Some(old), None) => {
-                                    if let Some(pos) = players.iter().position(|p| p.owner == old) {
-                                        players.remove(pos);
-                                        if let Some(cur) = cur_player {
-                                            if players.is_empty() {
-                                                cur_player = None;
-                                            } else if pos == cur {
-                                                cur_player = Some(0);
-                                            } else if pos < cur {
-                                                cur_player = Some(cur - 1);
-                                            }
-                                        }
+                        if let Some(metadata) = props.get("Metadata") {
+                            let metadata =
+                                zbus_mpris::PlayerMetadata::try_from(metadata.clone()).unwrap();
+                            player.update_metadata(metadata);
+                        }
+                        break;
+                    }
+                }
+                Some(msg) = name_owner_changed_stream.next() => {
+                    let msg = msg.unwrap();
+                    let body: OwnerChange = msg.body().unwrap();
+                    let old: Option<String> = body.old_owner.into();
+                    let new: Option<String> = body.new_owner.into();
+                    match (old, new) {
+                        (None, Some(new)) => if new != body.name.to_string() && player_matches(body.name.as_str(), &prefered_players, &exclude_regex) {
+                            players.push(Player::new(&dbus_conn, body.name, new).await?);
+                            cur_player = Some(players.len() - 1);
+                        }
+                        (Some(old), None) => {
+                            if let Some(pos) = players.iter().position(|p| p.owner == old) {
+                                players.remove(pos);
+                                if let Some(cur) = cur_player {
+                                    if players.is_empty() {
+                                        cur_player = None;
+                                    } else if pos == cur {
+                                        cur_player = Some(0);
+                                    } else if pos < cur {
+                                        cur_player = Some(cur - 1);
                                     }
                                 }
-                                _ => (),
                             }
-                            break;
                         }
                         _ => (),
                     }
+                    break;
                 }
                 event = api.event() => match event {
                     UpdateRequest => (),

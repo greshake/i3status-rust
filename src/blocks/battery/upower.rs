@@ -1,6 +1,5 @@
-use zbus::dbus_proxy;
-use zbus::fdo::DBusProxy;
-use zbus::MessageStream;
+use zbus::fdo::{PropertiesChangedStream, PropertiesProxy};
+use zbus::zvariant;
 use zvariant::ObjectPath;
 
 use super::{BatteryDevice, BatteryInfo, BatteryStatus, DeviceName};
@@ -9,71 +8,72 @@ use crate::util::new_system_dbus_connection;
 
 pub(super) struct Device {
     device_proxy: DeviceProxy<'static>,
-    changes: MessageStream,
+    changes: PropertiesChangedStream<'static>,
 }
 
 impl Device {
     pub(super) async fn new(device: DeviceName) -> Result<Self> {
         let dbus_conn = new_system_dbus_connection().await?;
-        let (device_path, device_proxy) = {
-            if device.exact() == Some("DisplayDevice") {
-                let path: ObjectPath = "/org/freedesktop/UPower/devices/DisplayDevice"
-                    .try_into()
-                    .unwrap();
+
+        let (device_path, device_proxy) = if device.exact() == Some("DisplayDevice") {
+            let path: ObjectPath = "/org/freedesktop/UPower/devices/DisplayDevice"
+                .try_into()
+                .unwrap();
+            let proxy = DeviceProxy::builder(&dbus_conn)
+                .path(path.clone())
+                .unwrap()
+                .build()
+                .await
+                .error("Failed to create DeviceProxy")?;
+            (path, proxy)
+        } else {
+            let mut res = None;
+            for path in UPowerProxy::new(&dbus_conn)
+                .await
+                .error("Failed to create UPwerProxy")?
+                .enumerate_devices()
+                .await
+                .error("Failed to retrieve UPower devices")?
+            {
                 let proxy = DeviceProxy::builder(&dbus_conn)
                     .path(path.clone())
                     .unwrap()
                     .build()
                     .await
                     .error("Failed to create DeviceProxy")?;
-                (path, proxy)
-            } else {
-                let mut res = None;
-                for path in UPowerProxy::new(&dbus_conn)
-                    .await
-                    .error("Failed to create UPwerProxy")?
-                    .enumerate_devices()
-                    .await
-                    .error("Failed to retrieve UPower devices")?
-                {
-                    let proxy = DeviceProxy::builder(&dbus_conn)
-                        .path(path.clone())
-                        .unwrap()
-                        .build()
-                        .await
-                        .error("Failed to create DeviceProxy")?;
-                    // Verify device type
-                    // https://upower.freedesktop.org/docs/Device.html#Device:Type
-                    // consider any peripheral, UPS and internal battery
-                    let device_type = proxy.type_().await.error("Failed to get device's type")?;
-                    if device_type == 1 {
-                        continue;
-                    }
-                    let name = proxy
-                        .native_path()
-                        .await
-                        .error("Failed to get device's native path")?;
-                    if device.matches(&name) {
-                        res = Some((path.into_inner(), proxy));
-                        break;
-                    }
+                // Verify device type
+                // https://upower.freedesktop.org/docs/Device.html#Device:Type
+                // consider any peripheral, UPS and internal battery
+                let device_type = proxy.type_().await.error("Failed to get device's type")?;
+                if device_type == 1 {
+                    continue;
                 }
-                match res {
-                    Some(res) => res,
-                    // FIXME
-                    None => return Err(Error::new("UPower device could not be found")),
+                let name = proxy
+                    .native_path()
+                    .await
+                    .error("Failed to get device's native path")?;
+                if device.matches(&name) {
+                    res = Some((path.into_inner(), proxy));
+                    break;
                 }
+            }
+            match res {
+                Some(res) => res,
+                // FIXME
+                None => return Err(Error::new("UPower device could not be found")),
             }
         };
 
-        let dbus_conn = new_system_dbus_connection().await?;
-        DBusProxy::new(&dbus_conn)
+        let changes = PropertiesProxy::builder(&dbus_conn)
+            .destination("org.freedesktop.UPower")
+            .and_then(|x| x.path(device_path))
+            .unwrap()
+            .build()
             .await
-            .error("failed to cerate DBusProxy")?
-            .add_match(&format!("type='signal',interface='org.freedesktop.DBus.Properties',member='PropertiesChanged',path='{}'", device_path.as_str()))
+            .error("Failed to create PropertiesProxy")?
+            .receive_properties_changed()
             .await
-            .error("Failed to add match")?;
-        let changes = MessageStream::from(dbus_conn);
+            .error("Failed to create PropertiesChangedStream")?;
 
         Ok(Self {
             device_proxy,
@@ -141,7 +141,7 @@ impl BatteryDevice for Device {
     }
 }
 
-#[dbus_proxy(
+#[zbus::dbus_proxy(
     interface = "org.freedesktop.UPower.Device",
     default_service = "org.freedesktop.UPower"
 )]
@@ -174,7 +174,7 @@ trait Device {
     fn type_(&self) -> zbus::Result<u32>;
 }
 
-#[dbus_proxy(
+#[zbus::dbus_proxy(
     interface = "org.freedesktop.UPower",
     default_service = "org.freedesktop.UPower",
     default_path = "/org/freedesktop/UPower"

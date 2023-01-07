@@ -59,6 +59,8 @@
 //! Flags: They are not icons but unicode glyphs. You will need a font that
 //! includes them. Tested with: <https://www.babelstone.co.uk/Fonts/Flags.html>
 
+use zbus::MatchRule;
+
 use super::prelude::*;
 use crate::util::{country_flag_from_iso_code, new_system_dbus_connection};
 
@@ -84,29 +86,38 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             .await
             .error("Failed to create DBusProxy")?;
         proxy
-            .add_match(
-                "type='signal',\
-                    path='/org/freedesktop/NetworkManager',\
-                    interface='org.freedesktop.DBus.Properties',\
-                    member='PropertiesChanged'",
+            .add_match_rule(
+                MatchRule::builder()
+                    .msg_type(zbus::MessageType::Signal)
+                    .path("/org/freedesktop/NetworkManager")
+                    .and_then(|x| x.interface("org.freedesktop.DBus.Properties"))
+                    .and_then(|x| x.member("PropertiesChanged"))
+                    .unwrap()
+                    .build(),
             )
             .await
             .error("Failed to add match")?;
         proxy
-            .add_match(
-                "type='signal',\
-                    path_namespace='/org/freedesktop/NetworkManager/ActiveConnection',\
-                    interface='org.freedesktop.DBus.Properties',\
-                    member='PropertiesChanged'",
+            .add_match_rule(
+                MatchRule::builder()
+                    .msg_type(zbus::MessageType::Signal)
+                    .path_namespace("/org/freedesktop/NetworkManager/ActiveConnection")
+                    .and_then(|x| x.interface("org.freedesktop.DBus.Properties"))
+                    .and_then(|x| x.member("PropertiesChanged"))
+                    .unwrap()
+                    .build(),
             )
             .await
             .error("Failed to add match")?;
         proxy
-            .add_match(
-                "type='signal',\
-                    path_namespace='/org/freedesktop/NetworkManager/IP4Config',\
-                    interface='org.freedesktop.DBus',\
-                    member='PropertiesChanged'",
+            .add_match_rule(
+                MatchRule::builder()
+                    .msg_type(zbus::MessageType::Signal)
+                    .path_namespace("/org/freedesktop/NetworkManager/IP4Config")
+                    .and_then(|x| x.interface("org.freedesktop.DBus.Properties"))
+                    .and_then(|x| x.member("PropertiesChanged"))
+                    .unwrap()
+                    .build(),
             )
             .await
             .error("Failed to add match")?;
