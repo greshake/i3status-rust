@@ -48,7 +48,7 @@
 //! - `bluetooth` for all other devices
 
 use super::prelude::*;
-use zbus::fdo::{ObjectManagerProxy, PropertiesProxy};
+use zbus::fdo::{DBusProxy, ObjectManagerProxy, PropertiesProxy};
 
 make_log_macro!(debug, "bluetooth");
 
@@ -202,11 +202,20 @@ impl DeviceMonitor {
                     .receive_properties_changed()
                     .await
                     .error("Failed to receive updates")?;
+
                 let mut interface_removed = self
                     .manager_proxy
                     .receive_interfaces_removed()
                     .await
                     .error("Failed to monitor interfaces")?;
+
+                let mut bluez_owner_changed = DBusProxy::new(self.manager_proxy.connection())
+                    .await
+                    .error("Failed to create DBusProxy")?
+                    .receive_name_owner_changed_with_args(&[(0, "org.bluez")])
+                    .await
+                    .unwrap();
+
                 loop {
                     select! {
                         _ = updates.next() => {
@@ -224,7 +233,15 @@ impl DeviceMonitor {
                                 debug!("Device is no longer available");
                                 return Ok(());
                             }
-                        },
+                        }
+                        Some(event) = bluez_owner_changed.next() => {
+                            let args = event.args().error("Failed to get the args")?;
+                            if args.new_owner.is_none() {
+                                self.device = None;
+                                debug!("org.bluez disappeared");
+                                return Ok(());
+                            }
+                        }
                     }
                 }
             }
@@ -248,7 +265,7 @@ impl Device {
 
         debug!("all managed devices: {:?}", devices);
 
-        let root_object: String = match adapter_mac {
+        let root_object: Option<String> = match adapter_mac {
             Some(adapter_mac) => {
                 let mut adapter_path = None;
                 for (path, interfaces) in &devices {
@@ -266,23 +283,26 @@ impl Device {
                     }
                 }
                 match adapter_path {
-                    Some(path) => path.as_str().into(),
+                    Some(path) => Some(format!("{}/", path.as_str())),
                     None => return Ok(None),
                 }
             }
-            None => String::new(),
+            None => None,
         };
 
         debug!("root object: {:?}", root_object);
 
         for (path, interfaces) in devices {
-            if !path.starts_with(&format!("{root_object}/")) {
-                continue;
+            if let Some(root) = &root_object {
+                if !path.starts_with(root) {
+                    continue;
+                }
             }
 
-            let device_interface = match interfaces.get("org.bluez.Device1") {
-                Some(i) => i,
-                None => continue, // Not a device
+            let Some(device_interface) = interfaces.get("org.bluez.Device1")
+            else {
+                // Not a device
+                continue;
             };
 
             let addr: &str = device_interface
