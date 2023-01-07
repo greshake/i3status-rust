@@ -818,7 +818,6 @@ dependencies = [
  "tokio-test",
  "toml",
  "zbus",
- "zvariant",
 ]
 
 [[package]]
@@ -2298,8 +2297,7 @@ dependencies = [
 [[package]]
 name = "zbus"
 version = "3.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "379d587c0ccb632d1179cf44082653f682842f0535f0fdfaefffc34849cc855e"
+source = "git+https://gitlab.freedesktop.org/dbus/zbus?rev=18240526a612e56e9379f64d42c07053eed9657e#18240526a612e56e9379f64d42c07053eed9657e"
 dependencies = [
  "async-broadcast",
  "async-recursion",
@@ -2334,8 +2332,7 @@ dependencies = [
 [[package]]
 name = "zbus_macros"
 version = "3.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "66492a2e90c0df7190583eccb8424aa12eb7ff06edea415a4fff6688fae18cf8"
+source = "git+https://gitlab.freedesktop.org/dbus/zbus?rev=18240526a612e56e9379f64d42c07053eed9657e#18240526a612e56e9379f64d42c07053eed9657e"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
@@ -2347,8 +2344,7 @@ dependencies = [
 [[package]]
 name = "zbus_names"
 version = "2.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f34f314916bd89bdb9934154627fab152f4f28acdda03e7c4c68181b214fe7e3"
+source = "git+https://gitlab.freedesktop.org/dbus/zbus?rev=18240526a612e56e9379f64d42c07053eed9657e#18240526a612e56e9379f64d42c07053eed9657e"
 dependencies = [
  "serde",
  "static_assertions",
@@ -2358,8 +2354,7 @@ dependencies = [
 [[package]]
 name = "zvariant"
 version = "3.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "576cc41e65c7f283e5460f5818073e68fb1f1631502b969ef228c2e03c862efb"
+source = "git+https://gitlab.freedesktop.org/dbus/zbus?rev=18240526a612e56e9379f64d42c07053eed9657e#18240526a612e56e9379f64d42c07053eed9657e"
 dependencies = [
  "byteorder",
  "enumflags2",
@@ -2372,8 +2367,7 @@ dependencies = [
 [[package]]
 name = "zvariant_derive"
 version = "3.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0fd4aafc0dee96ae7242a24249ce9babf21e1562822f03df650d4e68c20e41ed"
+source = "git+https://gitlab.freedesktop.org/dbus/zbus?rev=18240526a612e56e9379f64d42c07053eed9657e#18240526a612e56e9379f64d42c07053eed9657e"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
