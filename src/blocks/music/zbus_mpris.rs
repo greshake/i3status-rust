@@ -179,12 +179,12 @@ trait Player {
     /// Rate property
     #[dbus_proxy(property)]
     fn rate(&self) -> zbus::Result<f64>;
-    #[DBusProxy(property)]
+    #[dbus_proxy(property)]
     fn set_rate(&self, value: f64) -> zbus::Result<()>;
 
     /// Volume property
     #[dbus_proxy(property)]
     fn volume(&self) -> zbus::Result<f64>;
-    #[DBusProxy(property)]
+    #[dbus_proxy(property)]
     fn set_volume(&self, value: f64) -> zbus::Result<()>;
 }
