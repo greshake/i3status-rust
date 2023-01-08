@@ -275,6 +275,8 @@
 <span id="275">275</span>
 <span id="276">276</span>
 <span id="277">277</span>
+<span id="278">278</span>
+<span id="279">279</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Information about the internal power supply
 //!
 //! This block can display the current battery state (Full, Charging or Discharging), percentage
@@ -440,7 +442,9 @@
 
                 <span class="kw">let </span>(icon, state) = <span class="kw">match </span>(info.status, info.capacity) {
                     (BatteryStatus::Empty, <span class="kw">_</span>) =&gt; (battery_level_icon(<span class="number">0</span>, <span class="bool-val">false</span>), State::Critical),
-                    (BatteryStatus::Full | BatteryStatus::NotCharging, <span class="kw">_</span>) =&gt; (battery_level_icon(<span class="number">100</span>, <span class="bool-val">false</span>), State::Idle),
+                    (BatteryStatus::Full | BatteryStatus::NotCharging, <span class="kw">_</span>) =&gt; {
+                        (battery_level_icon(<span class="number">100</span>, <span class="bool-val">false</span>), State::Idle)
+                    }
                     (status, capacity) =&gt; (
                         battery_level_icon(capacity <span class="kw">as </span>u8, status == BatteryStatus::Charging),
                         <span class="kw">if </span>status == BatteryStatus::Charging {

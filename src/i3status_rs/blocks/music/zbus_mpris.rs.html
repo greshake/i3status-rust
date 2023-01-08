@@ -211,7 +211,7 @@
 
 </span><span class="kw">use </span>std::collections::HashMap;
 <span class="kw">use </span>zbus::dbus_proxy;
-<span class="kw">use </span>zbus::zvariant::{ObjectPath, OwnedValue, Type};
+<span class="kw">use </span>zbus::zvariant::{<span class="self">self</span>, ObjectPath, OwnedValue, Type};
 
 <span class="attribute">#[derive(Debug, Clone, Type)]
 </span><span class="kw">pub struct </span>PlayerMetadata(<span class="kw">pub </span>HashMap&lt;String, OwnedValue&gt;);
@@ -369,13 +369,13 @@
     <span class="doccomment">/// Rate property
     </span><span class="attribute">#[dbus_proxy(property)]
     </span><span class="kw">fn </span>rate(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;f64&gt;;
-    <span class="attribute">#[DBusProxy(property)]
+    <span class="attribute">#[dbus_proxy(property)]
     </span><span class="kw">fn </span>set_rate(<span class="kw-2">&amp;</span><span class="self">self</span>, value: f64) -&gt; zbus::Result&lt;()&gt;;
 
     <span class="doccomment">/// Volume property
     </span><span class="attribute">#[dbus_proxy(property)]
     </span><span class="kw">fn </span>volume(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;f64&gt;;
-    <span class="attribute">#[DBusProxy(property)]
+    <span class="attribute">#[dbus_proxy(property)]
     </span><span class="kw">fn </span>set_volume(<span class="kw-2">&amp;</span><span class="self">self</span>, value: f64) -&gt; zbus::Result&lt;()&gt;;
 }
 </code></pre></div>

@@ -193,9 +193,8 @@
 <span id="193">193</span>
 <span id="194">194</span>
 <span id="195">195</span>
-</pre><pre class="rust"><code><span class="kw">use </span>zbus::dbus_proxy;
-<span class="kw">use </span>zbus::fdo::DBusProxy;
-<span class="kw">use </span>zbus::MessageStream;
+</pre><pre class="rust"><code><span class="kw">use </span>zbus::fdo::{PropertiesChangedStream, PropertiesProxy};
+<span class="kw">use </span>zbus::zvariant;
 <span class="kw">use </span>zvariant::ObjectPath;
 
 <span class="kw">use super</span>::{BatteryDevice, BatteryInfo, BatteryStatus, DeviceName};
@@ -204,71 +203,72 @@
 
 <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct </span>Device {
     device_proxy: DeviceProxy&lt;<span class="lifetime">&#39;static</span>&gt;,
-    changes: MessageStream,
+    changes: PropertiesChangedStream&lt;<span class="lifetime">&#39;static</span>&gt;,
 }
 
 <span class="kw">impl </span>Device {
     <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">async fn </span>new(device: DeviceName) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
         <span class="kw">let </span>dbus_conn = new_system_dbus_connection().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">let </span>(device_path, device_proxy) = {
-            <span class="kw">if </span>device.exact() == <span class="prelude-val">Some</span>(<span class="string">&quot;DisplayDevice&quot;</span>) {
-                <span class="kw">let </span>path: ObjectPath = <span class="string">&quot;/org/freedesktop/UPower/devices/DisplayDevice&quot;
-                    </span>.try_into()
-                    .unwrap();
+
+        <span class="kw">let </span>(device_path, device_proxy) = <span class="kw">if </span>device.exact() == <span class="prelude-val">Some</span>(<span class="string">&quot;DisplayDevice&quot;</span>) {
+            <span class="kw">let </span>path: ObjectPath = <span class="string">&quot;/org/freedesktop/UPower/devices/DisplayDevice&quot;
+                </span>.try_into()
+                .unwrap();
+            <span class="kw">let </span>proxy = DeviceProxy::builder(<span class="kw-2">&amp;</span>dbus_conn)
+                .path(path.clone())
+                .unwrap()
+                .build()
+                .<span class="kw">await
+                </span>.error(<span class="string">&quot;Failed to create DeviceProxy&quot;</span>)<span class="question-mark">?</span>;
+            (path, proxy)
+        } <span class="kw">else </span>{
+            <span class="kw">let </span><span class="kw-2">mut </span>res = <span class="prelude-val">None</span>;
+            <span class="kw">for </span>path <span class="kw">in </span>UPowerProxy::new(<span class="kw-2">&amp;</span>dbus_conn)
+                .<span class="kw">await
+                </span>.error(<span class="string">&quot;Failed to create UPwerProxy&quot;</span>)<span class="question-mark">?
+                </span>.enumerate_devices()
+                .<span class="kw">await
+                </span>.error(<span class="string">&quot;Failed to retrieve UPower devices&quot;</span>)<span class="question-mark">?
+            </span>{
                 <span class="kw">let </span>proxy = DeviceProxy::builder(<span class="kw-2">&amp;</span>dbus_conn)
                     .path(path.clone())
                     .unwrap()
                     .build()
                     .<span class="kw">await
                     </span>.error(<span class="string">&quot;Failed to create DeviceProxy&quot;</span>)<span class="question-mark">?</span>;
-                (path, proxy)
-            } <span class="kw">else </span>{
-                <span class="kw">let </span><span class="kw-2">mut </span>res = <span class="prelude-val">None</span>;
-                <span class="kw">for </span>path <span class="kw">in </span>UPowerProxy::new(<span class="kw-2">&amp;</span>dbus_conn)
-                    .<span class="kw">await
-                    </span>.error(<span class="string">&quot;Failed to create UPwerProxy&quot;</span>)<span class="question-mark">?
-                    </span>.enumerate_devices()
-                    .<span class="kw">await
-                    </span>.error(<span class="string">&quot;Failed to retrieve UPower devices&quot;</span>)<span class="question-mark">?
-                </span>{
-                    <span class="kw">let </span>proxy = DeviceProxy::builder(<span class="kw-2">&amp;</span>dbus_conn)
-                        .path(path.clone())
-                        .unwrap()
-                        .build()
-                        .<span class="kw">await
-                        </span>.error(<span class="string">&quot;Failed to create DeviceProxy&quot;</span>)<span class="question-mark">?</span>;
-                    <span class="comment">// Verify device type
-                    // https://upower.freedesktop.org/docs/Device.html#Device:Type
-                    // consider any peripheral, UPS and internal battery
-                    </span><span class="kw">let </span>device_type = proxy.type_().<span class="kw">await</span>.error(<span class="string">&quot;Failed to get device&#39;s type&quot;</span>)<span class="question-mark">?</span>;
-                    <span class="kw">if </span>device_type == <span class="number">1 </span>{
-                        <span class="kw">continue</span>;
-                    }
-                    <span class="kw">let </span>name = proxy
-                        .native_path()
-                        .<span class="kw">await
-                        </span>.error(<span class="string">&quot;Failed to get device&#39;s native path&quot;</span>)<span class="question-mark">?</span>;
-                    <span class="kw">if </span>device.matches(<span class="kw-2">&amp;</span>name) {
-                        res = <span class="prelude-val">Some</span>((path.into_inner(), proxy));
-                        <span class="kw">break</span>;
-                    }
+                <span class="comment">// Verify device type
+                // https://upower.freedesktop.org/docs/Device.html#Device:Type
+                // consider any peripheral, UPS and internal battery
+                </span><span class="kw">let </span>device_type = proxy.type_().<span class="kw">await</span>.error(<span class="string">&quot;Failed to get device&#39;s type&quot;</span>)<span class="question-mark">?</span>;
+                <span class="kw">if </span>device_type == <span class="number">1 </span>{
+                    <span class="kw">continue</span>;
                 }
-                <span class="kw">match </span>res {
-                    <span class="prelude-val">Some</span>(res) =&gt; res,
-                    <span class="comment">// FIXME
-                    </span><span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="string">&quot;UPower device could not be found&quot;</span>)),
+                <span class="kw">let </span>name = proxy
+                    .native_path()
+                    .<span class="kw">await
+                    </span>.error(<span class="string">&quot;Failed to get device&#39;s native path&quot;</span>)<span class="question-mark">?</span>;
+                <span class="kw">if </span>device.matches(<span class="kw-2">&amp;</span>name) {
+                    res = <span class="prelude-val">Some</span>((path.into_inner(), proxy));
+                    <span class="kw">break</span>;
                 }
+            }
+            <span class="kw">match </span>res {
+                <span class="prelude-val">Some</span>(res) =&gt; res,
+                <span class="comment">// FIXME
+                </span><span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="string">&quot;UPower device could not be found&quot;</span>)),
             }
         };
 
-        <span class="kw">let </span>dbus_conn = new_system_dbus_connection().<span class="kw">await</span><span class="question-mark">?</span>;
-        DBusProxy::new(<span class="kw-2">&amp;</span>dbus_conn)
+        <span class="kw">let </span>changes = PropertiesProxy::builder(<span class="kw-2">&amp;</span>dbus_conn)
+            .destination(<span class="string">&quot;org.freedesktop.UPower&quot;</span>)
+            .and_then(|x| x.path(device_path))
+            .unwrap()
+            .build()
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;failed to cerate DBusProxy&quot;</span>)<span class="question-mark">?
-            </span>.add_match(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;type=&#39;signal&#39;,interface=&#39;org.freedesktop.DBus.Properties&#39;,member=&#39;PropertiesChanged&#39;,path=&#39;{}&#39;&quot;</span>, device_path.as_str()))
+            </span>.error(<span class="string">&quot;Failed to create PropertiesProxy&quot;</span>)<span class="question-mark">?
+            </span>.receive_properties_changed()
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to add match&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">let </span>changes = MessageStream::from(dbus_conn);
+            </span>.error(<span class="string">&quot;Failed to create PropertiesChangedStream&quot;</span>)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
             device_proxy,
@@ -336,7 +336,7 @@
     }
 }
 
-<span class="attribute">#[dbus_proxy(
+<span class="attribute">#[zbus::dbus_proxy(
     interface = <span class="string">&quot;org.freedesktop.UPower.Device&quot;</span>,
     default_service = <span class="string">&quot;org.freedesktop.UPower&quot;
 </span>)]
@@ -369,7 +369,7 @@
     </span><span class="kw">fn </span>type_(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;u32&gt;;
 }
 
-<span class="attribute">#[dbus_proxy(
+<span class="attribute">#[zbus::dbus_proxy(
     interface = <span class="string">&quot;org.freedesktop.UPower&quot;</span>,
     default_service = <span class="string">&quot;org.freedesktop.UPower&quot;</span>,
     default_path = <span class="string">&quot;/org/freedesktop/UPower&quot;

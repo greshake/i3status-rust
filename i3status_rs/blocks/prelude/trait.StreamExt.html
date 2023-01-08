@@ -811,10 +811,10 @@ resolve to <a href="https://doc.rust-lang.org/1.66.0/core/option/enum.Option.htm
 returned future type will return <code>true</code> from
 <a href="futures_core::future::FusedFuture::is_terminated"><code>FusedFuture::is_terminated</code></a> when the <a href="trait.Stream.html" title="Stream"><code>Stream</code></a> is empty, allowing
 <a href="trait.StreamExt.html#method.select_next_some" title="StreamExt::select_next_some"><code>select_next_some</code></a> to be easily used with
-the [<code>select!</code>] macro.</p>
+the <a href="crate::select"><code>select!</code></a> macro.</p>
 <p>If the future is polled after this <a href="trait.Stream.html" title="Stream"><code>Stream</code></a> is empty it will panic.
 Using the future with a <a href="futures_core::future::FusedFuture"><code>FusedFuture</code></a>-aware primitive like the
-[<code>select!</code>] macro will prevent this.</p>
+<a href="crate::select"><code>select!</code></a> macro will prevent this.</p>
 <h5 id="examples-32"><a href="#examples-32">Examples</a></h5>
 <div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>futures::{future, select};
 <span class="kw">use </span>futures::stream::{StreamExt, FuturesUnordered};

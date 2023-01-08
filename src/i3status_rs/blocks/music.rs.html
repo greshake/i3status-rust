@@ -537,6 +537,18 @@
 <span id="537">537</span>
 <span id="538">538</span>
 <span id="539">539</span>
+<span id="540">540</span>
+<span id="541">541</span>
+<span id="542">542</span>
+<span id="543">543</span>
+<span id="544">544</span>
+<span id="545">545</span>
+<span id="546">546</span>
+<span id="547">547</span>
+<span id="548">548</span>
+<span id="549">549</span>
+<span id="550">550</span>
+<span id="551">551</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The current song title and artist
 //!
 //! Also provides buttons for play/pause, previous and next.
@@ -641,7 +653,7 @@
 <span class="kw">use </span>zbus::fdo::DBusProxy;
 <span class="kw">use </span>zbus::names::{OwnedBusName, OwnedInterfaceName};
 <span class="kw">use </span>zbus::zvariant::{Optional, OwnedValue, Type};
-<span class="kw">use </span>zbus::MessageStream;
+<span class="kw">use </span>zbus::{MatchRule, MessageStream};
 
 <span class="kw">mod </span>zbus_mpris;
 
@@ -733,16 +745,33 @@
         }
     }
 
-    <span class="kw">let </span>dbus_proxy = DBusProxy::new(<span class="kw-2">&amp;</span>dbus_conn)
-        .<span class="kw">await
-        </span>.error(<span class="string">&quot;failed to create DBusProxy&quot;</span>)<span class="question-mark">?</span>;
-    dbus_proxy.add_match(<span class="string">&quot;type=&#39;signal&#39;,interface=&#39;org.freedesktop.DBus.Properties&#39;,member=&#39;PropertiesChanged&#39;,path=&#39;/org/mpris/MediaPlayer2&#39;&quot;</span>)
-            .<span class="kw">await
-            </span>.error( <span class="string">&quot;failed to add match&quot;</span>)<span class="question-mark">?</span>;
-    dbus_proxy.add_match(<span class="string">&quot;type=&#39;signal&#39;,interface=&#39;org.freedesktop.DBus&#39;,member=&#39;NameOwnerChanged&#39;,arg0namespace=&#39;org.mpris.MediaPlayer2&#39;&quot;</span>)
-            .<span class="kw">await
-            </span>.error( <span class="string">&quot;failed to add match&quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let </span><span class="kw-2">mut </span>dbus_stream = MessageStream::from(<span class="kw-2">&amp;</span>dbus_conn);
+    <span class="kw">let </span><span class="kw-2">mut </span>properties_stream = MessageStream::for_match_rule(
+        MatchRule::builder()
+            .msg_type(zbus::MessageType::Signal)
+            .interface(<span class="string">&quot;org.freedesktop.DBus.Properties&quot;</span>)
+            .and_then(|x| x.member(<span class="string">&quot;PropertiesChanged&quot;</span>))
+            .and_then(|x| x.path(<span class="string">&quot;/org/mpris/MediaPlayer2&quot;</span>))
+            .unwrap()
+            .build(),
+        <span class="kw-2">&amp;</span>dbus_conn,
+        <span class="prelude-val">None</span>,
+    )
+    .<span class="kw">await
+    </span>.error(<span class="string">&quot;Failed to add match rule&quot;</span>)<span class="question-mark">?</span>;
+
+    <span class="kw">let </span><span class="kw-2">mut </span>name_owner_changed_stream = MessageStream::for_match_rule(
+        MatchRule::builder()
+            .msg_type(zbus::MessageType::Signal)
+            .interface(<span class="string">&quot;org.freedesktop.DBus&quot;</span>)
+            .and_then(|x| x.member(<span class="string">&quot;NameOwnerChanged&quot;</span>))
+            .and_then(|x| x.arg0namespace(<span class="string">&quot;org.mpris.MediaPlayer2&quot;</span>))
+            .unwrap()
+            .build(),
+        <span class="kw-2">&amp;</span>dbus_conn,
+        <span class="prelude-val">None</span>,
+    )
+    .<span class="kw">await
+    </span>.error(<span class="string">&quot;Failed to add match rule&quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">loop </span>{
         <span class="macro">debug!</span>(<span class="string">&quot;available players:&quot;</span>);
@@ -808,57 +837,52 @@
 
         <span class="kw">loop </span>{
             <span class="macro">select! </span>{
-                <span class="comment">// Wait for a DBUS event
-                </span><span class="prelude-val">Some</span>(msg) = dbus_stream.next() =&gt; {
+                <span class="prelude-val">Some</span>(msg) = properties_stream.next() =&gt; {
                     <span class="kw">let </span>msg = msg.unwrap();
-                    <span class="kw">match </span>msg.member().as_ref().map(|m| m.as_str()) {
-                        <span class="prelude-val">Some</span>(<span class="string">&quot;PropertiesChanged&quot;</span>) =&gt; {
-                            <span class="kw">let </span>header = msg.header().unwrap();
-                            <span class="kw">let </span>sender = header.sender().unwrap().unwrap();
-                            <span class="kw">if let </span><span class="prelude-val">Some</span>(player) = players.iter_mut().find(|p| p.owner == sender.to_string()) {
-                                <span class="kw">let </span>body: PropChange = msg.body().unwrap();
-                                <span class="kw">let </span>props = body.changed_properties;
-                                <span class="kw">if let </span><span class="prelude-val">Some</span>(status) = props.get(<span class="string">&quot;PlaybackStatus&quot;</span>) {
-                                    <span class="kw">let </span>status: <span class="kw-2">&amp;</span>str = status.downcast_ref().unwrap();
-                                    player.status = PlaybackStatus::from_str(status);
-                                }
-                                <span class="kw">if let </span><span class="prelude-val">Some</span>(metadata) = props.get(<span class="string">&quot;Metadata&quot;</span>) {
-                                    <span class="kw">let </span>metadata =
-                                        zbus_mpris::PlayerMetadata::try_from(metadata.clone()).unwrap();
-                                    player.update_metadata(metadata);
-                                }
-                                <span class="kw">break</span>;
-                            }
+                    <span class="kw">let </span>header = msg.header().unwrap();
+                    <span class="kw">let </span>sender = header.sender().unwrap().unwrap();
+                    <span class="kw">if let </span><span class="prelude-val">Some</span>(player) = players.iter_mut().find(|p| p.owner == sender.to_string()) {
+                        <span class="kw">let </span>body: PropChange = msg.body().unwrap();
+                        <span class="kw">let </span>props = body.changed_properties;
+                        <span class="kw">if let </span><span class="prelude-val">Some</span>(status) = props.get(<span class="string">&quot;PlaybackStatus&quot;</span>) {
+                            <span class="kw">let </span>status: <span class="kw-2">&amp;</span>str = status.downcast_ref().unwrap();
+                            player.status = PlaybackStatus::from_str(status);
                         }
-                        <span class="prelude-val">Some</span>(<span class="string">&quot;NameOwnerChanged&quot;</span>) =&gt; {
-                            <span class="kw">let </span>body: OwnerChange = msg.body().unwrap();
-                            <span class="kw">let </span>old: <span class="prelude-ty">Option</span>&lt;String&gt; = body.old_owner.into();
-                            <span class="kw">let </span>new: <span class="prelude-ty">Option</span>&lt;String&gt; = body.new_owner.into();
-                            <span class="kw">match </span>(old, new) {
-                                (<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(new)) =&gt; <span class="kw">if </span>new != body.name.to_string() &amp;&amp; player_matches(body.name.as_str(), <span class="kw-2">&amp;</span>prefered_players, <span class="kw-2">&amp;</span>exclude_regex) {
-                                    players.push(Player::new(<span class="kw-2">&amp;</span>dbus_conn, body.name, new).<span class="kw">await</span><span class="question-mark">?</span>);
-                                    cur_player = <span class="prelude-val">Some</span>(players.len() - <span class="number">1</span>);
-                                }
-                                (<span class="prelude-val">Some</span>(old), <span class="prelude-val">None</span>) =&gt; {
-                                    <span class="kw">if let </span><span class="prelude-val">Some</span>(pos) = players.iter().position(|p| p.owner == old) {
-                                        players.remove(pos);
-                                        <span class="kw">if let </span><span class="prelude-val">Some</span>(cur) = cur_player {
-                                            <span class="kw">if </span>players.is_empty() {
-                                                cur_player = <span class="prelude-val">None</span>;
-                                            } <span class="kw">else if </span>pos == cur {
-                                                cur_player = <span class="prelude-val">Some</span>(<span class="number">0</span>);
-                                            } <span class="kw">else if </span>pos &lt; cur {
-                                                cur_player = <span class="prelude-val">Some</span>(cur - <span class="number">1</span>);
-                                            }
-                                        }
+                        <span class="kw">if let </span><span class="prelude-val">Some</span>(metadata) = props.get(<span class="string">&quot;Metadata&quot;</span>) {
+                            <span class="kw">let </span>metadata =
+                                zbus_mpris::PlayerMetadata::try_from(metadata.clone()).unwrap();
+                            player.update_metadata(metadata);
+                        }
+                        <span class="kw">break</span>;
+                    }
+                }
+                <span class="prelude-val">Some</span>(msg) = name_owner_changed_stream.next() =&gt; {
+                    <span class="kw">let </span>msg = msg.unwrap();
+                    <span class="kw">let </span>body: OwnerChange = msg.body().unwrap();
+                    <span class="kw">let </span>old: <span class="prelude-ty">Option</span>&lt;String&gt; = body.old_owner.into();
+                    <span class="kw">let </span>new: <span class="prelude-ty">Option</span>&lt;String&gt; = body.new_owner.into();
+                    <span class="kw">match </span>(old, new) {
+                        (<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(new)) =&gt; <span class="kw">if </span>new != body.name.to_string() &amp;&amp; player_matches(body.name.as_str(), <span class="kw-2">&amp;</span>prefered_players, <span class="kw-2">&amp;</span>exclude_regex) {
+                            players.push(Player::new(<span class="kw-2">&amp;</span>dbus_conn, body.name, new).<span class="kw">await</span><span class="question-mark">?</span>);
+                            cur_player = <span class="prelude-val">Some</span>(players.len() - <span class="number">1</span>);
+                        }
+                        (<span class="prelude-val">Some</span>(old), <span class="prelude-val">None</span>) =&gt; {
+                            <span class="kw">if let </span><span class="prelude-val">Some</span>(pos) = players.iter().position(|p| p.owner == old) {
+                                players.remove(pos);
+                                <span class="kw">if let </span><span class="prelude-val">Some</span>(cur) = cur_player {
+                                    <span class="kw">if </span>players.is_empty() {
+                                        cur_player = <span class="prelude-val">None</span>;
+                                    } <span class="kw">else if </span>pos == cur {
+                                        cur_player = <span class="prelude-val">Some</span>(<span class="number">0</span>);
+                                    } <span class="kw">else if </span>pos &lt; cur {
+                                        cur_player = <span class="prelude-val">Some</span>(cur - <span class="number">1</span>);
                                     }
                                 }
-                                <span class="kw">_ </span>=&gt; (),
                             }
-                            <span class="kw">break</span>;
                         }
                         <span class="kw">_ </span>=&gt; (),
                     }
+                    <span class="kw">break</span>;
                 }
                 event = api.event() =&gt; <span class="kw">match </span>event {
                     UpdateRequest =&gt; (),

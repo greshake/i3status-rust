@@ -216,6 +216,17 @@
 <span id="216">216</span>
 <span id="217">217</span>
 <span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
 </pre><pre class="rust"><code><span class="doccomment">//! External IP address and various information about it
 //!
 //! # Configuration
@@ -277,7 +288,9 @@
 //! Flags: They are not icons but unicode glyphs. You will need a font that
 //! includes them. Tested with: &lt;https://www.babelstone.co.uk/Fonts/Flags.html&gt;
 
-</span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+</span><span class="kw">use </span>zbus::MatchRule;
+
+<span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
 <span class="kw">use </span><span class="kw">crate</span>::util::{country_flag_from_iso_code, new_system_dbus_connection};
 
 <span class="kw">const </span>API_ENDPOINT: <span class="kw-2">&amp;</span>str = <span class="string">&quot;https://ipapi.co/json/&quot;</span>;
@@ -302,29 +315,38 @@
             .<span class="kw">await
             </span>.error(<span class="string">&quot;Failed to create DBusProxy&quot;</span>)<span class="question-mark">?</span>;
         proxy
-            .add_match(
-                <span class="string">&quot;type=&#39;signal&#39;,\
-                    path=&#39;/org/freedesktop/NetworkManager&#39;,\
-                    interface=&#39;org.freedesktop.DBus.Properties&#39;,\
-                    member=&#39;PropertiesChanged&#39;&quot;</span>,
+            .add_match_rule(
+                MatchRule::builder()
+                    .msg_type(zbus::MessageType::Signal)
+                    .path(<span class="string">&quot;/org/freedesktop/NetworkManager&quot;</span>)
+                    .and_then(|x| x.interface(<span class="string">&quot;org.freedesktop.DBus.Properties&quot;</span>))
+                    .and_then(|x| x.member(<span class="string">&quot;PropertiesChanged&quot;</span>))
+                    .unwrap()
+                    .build(),
             )
             .<span class="kw">await
             </span>.error(<span class="string">&quot;Failed to add match&quot;</span>)<span class="question-mark">?</span>;
         proxy
-            .add_match(
-                <span class="string">&quot;type=&#39;signal&#39;,\
-                    path_namespace=&#39;/org/freedesktop/NetworkManager/ActiveConnection&#39;,\
-                    interface=&#39;org.freedesktop.DBus.Properties&#39;,\
-                    member=&#39;PropertiesChanged&#39;&quot;</span>,
+            .add_match_rule(
+                MatchRule::builder()
+                    .msg_type(zbus::MessageType::Signal)
+                    .path_namespace(<span class="string">&quot;/org/freedesktop/NetworkManager/ActiveConnection&quot;</span>)
+                    .and_then(|x| x.interface(<span class="string">&quot;org.freedesktop.DBus.Properties&quot;</span>))
+                    .and_then(|x| x.member(<span class="string">&quot;PropertiesChanged&quot;</span>))
+                    .unwrap()
+                    .build(),
             )
             .<span class="kw">await
             </span>.error(<span class="string">&quot;Failed to add match&quot;</span>)<span class="question-mark">?</span>;
         proxy
-            .add_match(
-                <span class="string">&quot;type=&#39;signal&#39;,\
-                    path_namespace=&#39;/org/freedesktop/NetworkManager/IP4Config&#39;,\
-                    interface=&#39;org.freedesktop.DBus&#39;,\
-                    member=&#39;PropertiesChanged&#39;&quot;</span>,
+            .add_match_rule(
+                MatchRule::builder()
+                    .msg_type(zbus::MessageType::Signal)
+                    .path_namespace(<span class="string">&quot;/org/freedesktop/NetworkManager/IP4Config&quot;</span>)
+                    .and_then(|x| x.interface(<span class="string">&quot;org.freedesktop.DBus.Properties&quot;</span>))
+                    .and_then(|x| x.member(<span class="string">&quot;PropertiesChanged&quot;</span>))
+                    .unwrap()
+                    .build(),
             )
             .<span class="kw">await
             </span>.error(<span class="string">&quot;Failed to add match&quot;</span>)<span class="question-mark">?</span>;
