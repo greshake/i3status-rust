@@ -523,32 +523,6 @@
 <span id="523">523</span>
 <span id="524">524</span>
 <span id="525">525</span>
-<span id="526">526</span>
-<span id="527">527</span>
-<span id="528">528</span>
-<span id="529">529</span>
-<span id="530">530</span>
-<span id="531">531</span>
-<span id="532">532</span>
-<span id="533">533</span>
-<span id="534">534</span>
-<span id="535">535</span>
-<span id="536">536</span>
-<span id="537">537</span>
-<span id="538">538</span>
-<span id="539">539</span>
-<span id="540">540</span>
-<span id="541">541</span>
-<span id="542">542</span>
-<span id="543">543</span>
-<span id="544">544</span>
-<span id="545">545</span>
-<span id="546">546</span>
-<span id="547">547</span>
-<span id="548">548</span>
-<span id="549">549</span>
-<span id="550">550</span>
-<span id="551">551</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The current song title and artist
 //!
 //! Also provides buttons for play/pause, previous and next.
@@ -650,9 +624,8 @@
 
 </span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
 <span class="kw">use </span>regex::Regex;
-<span class="kw">use </span>zbus::fdo::DBusProxy;
-<span class="kw">use </span>zbus::names::{OwnedBusName, OwnedInterfaceName};
-<span class="kw">use </span>zbus::zvariant::{Optional, OwnedValue, Type};
+<span class="kw">use </span>zbus::fdo::{DBusProxy, NameOwnerChanged, PropertiesChanged};
+<span class="kw">use </span>zbus::names::{OwnedBusName, OwnedUniqueName};
 <span class="kw">use </span>zbus::{MatchRule, MessageStream};
 
 <span class="kw">mod </span>zbus_mpris;
@@ -681,20 +654,6 @@
     Single(String),
     <span class="attribute">#[default]
     </span>Multiple(Vec&lt;String&gt;),
-}
-
-<span class="attribute">#[derive(Debug, Clone, Type, Deserialize)]
-</span><span class="kw">struct </span>PropChange {
-    _interface_name: OwnedInterfaceName,
-    changed_properties: HashMap&lt;String, OwnedValue&gt;,
-    _invalidated_properties: Vec&lt;String&gt;,
-}
-
-<span class="attribute">#[derive(Debug, Clone, Type, Deserialize)]
-</span><span class="kw">struct </span>OwnerChange {
-    <span class="kw">pub </span>name: OwnedBusName,
-    <span class="kw">pub </span>old_owner: Optional&lt;String&gt;,
-    <span class="kw">pub </span>new_owner: Optional&lt;String&gt;,
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
@@ -799,10 +758,14 @@
                     <span class="kw">_ </span>=&gt; (State::Idle, <span class="string">&quot;music_play&quot;</span>),
                 };
                 values.insert(<span class="string">&quot;play&quot;</span>.into(), new_btn(play_icon, PLAY_PAUSE_BTN, <span class="kw-2">&amp;mut </span>api)<span class="question-mark">?</span>);
-                <span class="kw">if let </span><span class="prelude-val">Some</span>(url) = <span class="kw-2">&amp;</span>player.url {
+                <span class="kw">if let </span><span class="prelude-val">Some</span>(url) = <span class="kw-2">&amp;</span>player.metadata.url {
                     values.insert(<span class="string">&quot;url&quot;</span>.into(), Value::text(url.clone()));
                 }
-                <span class="kw">match </span>(<span class="kw-2">&amp;</span>player.title, <span class="kw-2">&amp;</span>player.artist, <span class="kw-2">&amp;</span>player.url) {
+                <span class="kw">match </span>(
+                    <span class="kw-2">&amp;</span>player.metadata.title,
+                    <span class="kw-2">&amp;</span>player.metadata.artist,
+                    <span class="kw-2">&amp;</span>player.metadata.url,
+                ) {
                     (<span class="prelude-val">Some</span>(t), <span class="prelude-val">None</span>, <span class="kw">_</span>) =&gt; {
                         values.insert(<span class="string">&quot;combo&quot;</span>.into(), Value::text(t.clone()));
                         values.insert(<span class="string">&quot;title&quot;</span>.into(), Value::text(t.clone()));
@@ -839,35 +802,34 @@
             <span class="macro">select! </span>{
                 <span class="prelude-val">Some</span>(msg) = properties_stream.next() =&gt; {
                     <span class="kw">let </span>msg = msg.unwrap();
+                    <span class="kw">let </span>msg = PropertiesChanged::from_message(msg).unwrap();
+                    <span class="kw">let </span>args = msg.args().unwrap();
                     <span class="kw">let </span>header = msg.header().unwrap();
                     <span class="kw">let </span>sender = header.sender().unwrap().unwrap();
-                    <span class="kw">if let </span><span class="prelude-val">Some</span>(player) = players.iter_mut().find(|p| p.owner == sender.to_string()) {
-                        <span class="kw">let </span>body: PropChange = msg.body().unwrap();
-                        <span class="kw">let </span>props = body.changed_properties;
+                    <span class="kw">if let </span><span class="prelude-val">Some</span>(player) = players.iter_mut().find(|p| <span class="kw-2">&amp;*</span>p.owner == sender) {
+                        <span class="kw">let </span>props = args.changed_properties;
                         <span class="kw">if let </span><span class="prelude-val">Some</span>(status) = props.get(<span class="string">&quot;PlaybackStatus&quot;</span>) {
                             <span class="kw">let </span>status: <span class="kw-2">&amp;</span>str = status.downcast_ref().unwrap();
                             player.status = PlaybackStatus::from_str(status);
                         }
                         <span class="kw">if let </span><span class="prelude-val">Some</span>(metadata) = props.get(<span class="string">&quot;Metadata&quot;</span>) {
-                            <span class="kw">let </span>metadata =
-                                zbus_mpris::PlayerMetadata::try_from(metadata.clone()).unwrap();
-                            player.update_metadata(metadata);
+                            player.metadata =
+                                zbus_mpris::PlayerMetadata::try_from(metadata.to_owned()).unwrap();
                         }
                         <span class="kw">break</span>;
                     }
                 }
                 <span class="prelude-val">Some</span>(msg) = name_owner_changed_stream.next() =&gt; {
                     <span class="kw">let </span>msg = msg.unwrap();
-                    <span class="kw">let </span>body: OwnerChange = msg.body().unwrap();
-                    <span class="kw">let </span>old: <span class="prelude-ty">Option</span>&lt;String&gt; = body.old_owner.into();
-                    <span class="kw">let </span>new: <span class="prelude-ty">Option</span>&lt;String&gt; = body.new_owner.into();
-                    <span class="kw">match </span>(old, new) {
-                        (<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(new)) =&gt; <span class="kw">if </span>new != body.name.to_string() &amp;&amp; player_matches(body.name.as_str(), <span class="kw-2">&amp;</span>prefered_players, <span class="kw-2">&amp;</span>exclude_regex) {
-                            players.push(Player::new(<span class="kw-2">&amp;</span>dbus_conn, body.name, new).<span class="kw">await</span><span class="question-mark">?</span>);
+                    <span class="kw">let </span>msg = NameOwnerChanged::from_message(msg).unwrap();
+                    <span class="kw">let </span>args = msg.args().unwrap();
+                    <span class="kw">match </span>(args.old_owner.as_ref(), args.new_owner.as_ref()) {
+                        (<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(new)) =&gt; <span class="kw">if </span>player_matches(args.name.as_str(), <span class="kw-2">&amp;</span>prefered_players, <span class="kw-2">&amp;</span>exclude_regex) {
+                            players.push(Player::new(<span class="kw-2">&amp;</span>dbus_conn, args.name.to_owned().into(), new.to_owned().into()).<span class="kw">await</span><span class="question-mark">?</span>);
                             cur_player = <span class="prelude-val">Some</span>(players.len() - <span class="number">1</span>);
                         }
                         (<span class="prelude-val">Some</span>(old), <span class="prelude-val">None</span>) =&gt; {
-                            <span class="kw">if let </span><span class="prelude-val">Some</span>(pos) = players.iter().position(|p| p.owner == old) {
+                            <span class="kw">if let </span><span class="prelude-val">Some</span>(pos) = players.iter().position(|p| <span class="kw-2">&amp;*</span>p.owner == old) {
                                 players.remove(pos);
                                 <span class="kw">if let </span><span class="prelude-val">Some</span>(cur) = cur_player {
                                     <span class="kw">if </span>players.is_empty() {
@@ -937,11 +899,7 @@
     <span class="kw">let </span><span class="kw-2">mut </span>players = Vec::new();
     <span class="kw">for </span>name <span class="kw">in </span>names {
         <span class="kw">if </span>player_matches(name.as_str(), prefered_players, exclude_regex) {
-            <span class="kw">let </span>owner = proxy
-                .get_name_owner(name.as_ref())
-                .<span class="kw">await
-                </span>.unwrap()
-                .to_string();
+            <span class="kw">let </span>owner = proxy.get_name_owner(name.as_ref()).<span class="kw">await</span>.unwrap();
             players.push(Player::new(dbus_conn, name, owner).<span class="kw">await</span><span class="question-mark">?</span>);
         }
     }
@@ -951,19 +909,17 @@
 <span class="attribute">#[derive(Debug)]
 </span><span class="kw">struct </span>Player {
     status: <span class="prelude-ty">Option</span>&lt;PlaybackStatus&gt;,
-    owner: String,
+    owner: OwnedUniqueName,
     bus_name: OwnedBusName,
     player_proxy: zbus_mpris::PlayerProxy&lt;<span class="lifetime">&#39;static</span>&gt;,
-    title: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    artist: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    url: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    metadata: zbus_mpris::PlayerMetadata,
 }
 
 <span class="kw">impl </span>Player {
     <span class="kw">async fn </span>new(
         dbus_conn: <span class="kw-2">&amp;</span>zbus::Connection,
         bus_name: OwnedBusName,
-        owner: String,
+        owner: OwnedUniqueName,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Player&gt; {
         <span class="kw">let </span>proxy = zbus_mpris::PlayerProxy::builder(dbus_conn)
             .destination(bus_name.clone())
@@ -985,16 +941,8 @@
             owner,
             bus_name,
             player_proxy: proxy,
-            title: metadata.title(),
-            artist: metadata.artist(),
-            url: metadata.url(),
+            metadata,
         })
-    }
-
-    <span class="kw">fn </span>update_metadata(<span class="kw-2">&amp;mut </span><span class="self">self</span>, metadata: zbus_mpris::PlayerMetadata) {
-        <span class="self">self</span>.title = metadata.title();
-        <span class="self">self</span>.artist = metadata.artist();
-        <span class="self">self</span>.url = metadata.url();
     }
 
     <span class="kw">async fn </span>play_pause(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
