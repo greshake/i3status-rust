@@ -99,9 +99,8 @@
 
 use super::prelude::*;
 use regex::Regex;
-use zbus::fdo::DBusProxy;
-use zbus::names::{OwnedBusName, OwnedInterfaceName};
-use zbus::zvariant::{Optional, OwnedValue, Type};
+use zbus::fdo::{DBusProxy, NameOwnerChanged, PropertiesChanged};
+use zbus::names::{OwnedBusName, OwnedUniqueName};
 use zbus::{MatchRule, MessageStream};
 
 mod zbus_mpris;
@@ -130,20 +129,6 @@ pub enum PlayerName {
     Single(String),
     #[default]
     Multiple(Vec<String>),
-}
-
-#[derive(Debug, Clone, Type, Deserialize)]
-struct PropChange {
-    _interface_name: OwnedInterfaceName,
-    changed_properties: HashMap<String, OwnedValue>,
-    _invalidated_properties: Vec<String>,
-}
-
-#[derive(Debug, Clone, Type, Deserialize)]
-struct OwnerChange {
-    pub name: OwnedBusName,
-    pub old_owner: Optional<String>,
-    pub new_owner: Optional<String>,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
@@ -248,10 +233,14 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     _ => (State::Idle, "music_play"),
                 };
                 values.insert("play".into(), new_btn(play_icon, PLAY_PAUSE_BTN, &mut api)?);
-                if let Some(url) = &player.url {
+                if let Some(url) = &player.metadata.url {
                     values.insert("url".into(), Value::text(url.clone()));
                 }
-                match (&player.title, &player.artist, &player.url) {
+                match (
+                    &player.metadata.title,
+                    &player.metadata.artist,
+                    &player.metadata.url,
+                ) {
                     (Some(t), None, _) => {
                         values.insert("combo".into(), Value::text(t.clone()));
                         values.insert("title".into(), Value::text(t.clone()));
@@ -288,35 +277,34 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             select! {
                 Some(msg) = properties_stream.next() => {
                     let msg = msg.unwrap();
+                    let msg = PropertiesChanged::from_message(msg).unwrap();
+                    let args = msg.args().unwrap();
                     let header = msg.header().unwrap();
                     let sender = header.sender().unwrap().unwrap();
-                    if let Some(player) = players.iter_mut().find(|p| p.owner == sender.to_string()) {
-                        let body: PropChange = msg.body().unwrap();
-                        let props = body.changed_properties;
+                    if let Some(player) = players.iter_mut().find(|p| &*p.owner == sender) {
+                        let props = args.changed_properties;
                         if let Some(status) = props.get("PlaybackStatus") {
                             let status: &str = status.downcast_ref().unwrap();
                             player.status = PlaybackStatus::from_str(status);
                         }
                         if let Some(metadata) = props.get("Metadata") {
-                            let metadata =
-                                zbus_mpris::PlayerMetadata::try_from(metadata.clone()).unwrap();
-                            player.update_metadata(metadata);
+                            player.metadata =
+                                zbus_mpris::PlayerMetadata::try_from(metadata.to_owned()).unwrap();
                         }
                         break;
                     }
                 }
                 Some(msg) = name_owner_changed_stream.next() => {
                     let msg = msg.unwrap();
-                    let body: OwnerChange = msg.body().unwrap();
-                    let old: Option<String> = body.old_owner.into();
-                    let new: Option<String> = body.new_owner.into();
-                    match (old, new) {
-                        (None, Some(new)) => if new != body.name.to_string() && player_matches(body.name.as_str(), &prefered_players, &exclude_regex) {
-                            players.push(Player::new(&dbus_conn, body.name, new).await?);
+                    let msg = NameOwnerChanged::from_message(msg).unwrap();
+                    let args = msg.args().unwrap();
+                    match (args.old_owner.as_ref(), args.new_owner.as_ref()) {
+                        (None, Some(new)) => if player_matches(args.name.as_str(), &prefered_players, &exclude_regex) {
+                            players.push(Player::new(&dbus_conn, args.name.to_owned().into(), new.to_owned().into()).await?);
                             cur_player = Some(players.len() - 1);
                         }
                         (Some(old), None) => {
-                            if let Some(pos) = players.iter().position(|p| p.owner == old) {
+                            if let Some(pos) = players.iter().position(|p| &*p.owner == old) {
                                 players.remove(pos);
                                 if let Some(cur) = cur_player {
                                     if players.is_empty() {
@@ -386,11 +374,7 @@ async fn get_players(
     let mut players = Vec::new();
     for name in names {
         if player_matches(name.as_str(), prefered_players, exclude_regex) {
-            let owner = proxy
-                .get_name_owner(name.as_ref())
-                .await
-                .unwrap()
-                .to_string();
+            let owner = proxy.get_name_owner(name.as_ref()).await.unwrap();
             players.push(Player::new(dbus_conn, name, owner).await?);
         }
     }
@@ -400,19 +384,17 @@ async fn get_players(
 #[derive(Debug)]
 struct Player {
     status: Option<PlaybackStatus>,
-    owner: String,
+    owner: OwnedUniqueName,
     bus_name: OwnedBusName,
     player_proxy: zbus_mpris::PlayerProxy<'static>,
-    title: Option<String>,
-    artist: Option<String>,
-    url: Option<String>,
+    metadata: zbus_mpris::PlayerMetadata,
 }
 
 impl Player {
     async fn new(
         dbus_conn: &zbus::Connection,
         bus_name: OwnedBusName,
-        owner: String,
+        owner: OwnedUniqueName,
     ) -> Result<Player> {
         let proxy = zbus_mpris::PlayerProxy::builder(dbus_conn)
             .destination(bus_name.clone())
@@ -434,16 +416,8 @@ impl Player {
             owner,
             bus_name,
             player_proxy: proxy,
-            title: metadata.title(),
-            artist: metadata.artist(),
-            url: metadata.url(),
+            metadata,
         })
-    }
-
-    fn update_metadata(&mut self, metadata: zbus_mpris::PlayerMetadata) {
-        self.title = metadata.title();
-        self.artist = metadata.artist();
-        self.url = metadata.url();
     }
 
     async fn play_pause(&self) -> Result<()> {

@@ -21,38 +21,43 @@
 
 use std::collections::HashMap;
 use zbus::dbus_proxy;
-use zbus::zvariant::{self, ObjectPath, OwnedValue, Type};
+use zbus::zvariant::{self, ObjectPath, OwnedValue, Type, Value};
 
-#[derive(Debug, Clone, Type)]
-pub struct PlayerMetadata(pub HashMap<String, OwnedValue>);
+#[derive(Debug, Clone)]
+pub struct PlayerMetadata {
+    pub title: Option<String>,
+    pub artist: Option<String>,
+    pub url: Option<String>,
+}
+
+impl Type for PlayerMetadata {
+    fn signature() -> zvariant::Signature<'static> {
+        <HashMap<String, OwnedValue> as Type>::signature()
+    }
+}
 
 impl TryFrom<OwnedValue> for PlayerMetadata {
     type Error = <HashMap<String, OwnedValue> as TryFrom<OwnedValue>>::Error;
 
     fn try_from(value: OwnedValue) -> Result<Self, Self::Error> {
-        HashMap::try_from(value).map(Self)
-    }
-}
+        let map = HashMap::<String, OwnedValue>::try_from(value)?;
 
-impl PlayerMetadata {
-    pub fn title(&self) -> Option<String> {
-        let title = self.0.get("xesam:title")?.downcast_ref::<str>()?;
-        (!title.is_empty()).then(|| title.into())
-    }
+        let val_to_string = |val: &Value| {
+            val.downcast_ref::<str>()
+                .and_then(|val| (!val.is_empty()).then(|| val.to_string()))
+        };
 
-    pub fn artist(&self) -> Option<String> {
-        let artists = self
-            .0
-            .get("xesam:artist")?
-            .downcast_ref::<zvariant::Array>()?
-            .get();
-        let artist = artists.get(0)?.downcast_ref::<str>()?;
-        (!artist.is_empty()).then(|| artist.into())
-    }
+        let title = map.get("xesam:title").and_then(|val| val_to_string(val));
 
-    pub fn url(&self) -> Option<String> {
-        let url = self.0.get("xesam:url")?.downcast_ref::<str>()?;
-        (!url.is_empty()).then(|| url.into())
+        let artists = map
+            .get("xesam:artist")
+            .and_then(|val| val.downcast_ref::<zvariant::Array>())
+            .map(|val| val.get());
+        let artist = artists.and_then(|val| val.get(0)).and_then(val_to_string);
+
+        let url = map.get("xesam:url").and_then(|val| val_to_string(val));
+
+        Ok(Self { title, artist, url })
     }
 }
 
