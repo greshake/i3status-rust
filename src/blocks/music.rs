@@ -57,7 +57,7 @@
 //! ```toml
 //! [[block]]
 //! block = "music"
-//! format = " $icon {$combo.str(0,20) $play $next |}"
+//! format = " $icon {$combo.str(max_w:20) $play $next |}"
 //! player = "spotify"
 //! ```
 //!
@@ -66,7 +66,7 @@
 //! ```toml
 //! [[block]]
 //! block = "music"
-//! format = " $icon {$combo.str(0,20) $play $next |}"
+//! format = " $icon {$combo.str(max_w:20) $play $next |}"
 //! interface_name_exclude = [".*kdeconnect.*", "mpd"]
 //! ```
 //!
@@ -75,7 +75,7 @@
 //! ```toml
 //! [[block]]
 //! block = "music"
-//! format = " $icon {$combo.rot-str(20) $play $next |}"
+//! format = " $icon {$combo.rot-str(w:20) $play $next |}"
 //! interface_name_exclude = [".*kdeconnect.*", "mpd"]
 //! ```
 //!

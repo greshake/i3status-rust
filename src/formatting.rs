@@ -24,36 +24,42 @@
 //!
 //! A formatter is something that converts a value into a text. Because there are many ways to do
 //! this, a number of formatters is available. Formatter can be specified using the syntax similar
-//! to method calls in many programming languages: `<variable>.<formatter>(<args>)`.
+//! to method calls in many programming languages: `<variable>.<formatter>(<args>)`. For example:
+//! `$title.str(min_w:10, max_w:20)`.
 //!
 //! ## `str` - Format text
 //!
-//! Argument | Default value
-//! ---------|--------------
-//! Min width - if text is shorter it will be padded using spaces | `0`
-//! Max width - if text is longer it will be truncated | `inf`
+//! Argument               | Description                                       |Default value
+//! -----------------------|---------------------------------------------------|-------------
+//! `min_width` or `min_w` | if text is shorter it will be padded using spaces | `0`
+//! `max_width` or `max_w` | if text is longer it will be truncated            | Infinity
 //!
 //! ## `rot-str` - Rotating text
 //!
-//! Argument | Default value
-//! ---------|--------------
-//! Width - if text is shorter it will be padded using spaces | `15`
-//! Interval - If text is longer than `width` it will be rotated every `interval` seconds | `1.0`
+//! Argument               | Description                                                                |Default value
+//! -----------------------|----------------------------------------------------------------------------|-------------
+//! `width` or 'w'         | if text is shorter it will be padded using spaces                          | `15`
+//! `interval`             | if text is longer than `width` it will be rotated every `interval` seconds | `0.5`
 //!
 //! ## `eng` - Format numbers using engineering notation
 //!
-//! Argument | Default value
-//! ---------|--------------
-//! Width - the resulting text will be at least `width` characters long | `2`
-//! Unit - some values have a [unit](unit::Unit), and it is possible to convert them by setting this option. Prepend this with a space to split unit from number/prefix. Prepend this with a `_` to hide. | `auto`
-//! Prefix - specifiy this argument if you want to set the minimal [SI prefix](prefix::Prefix). Prepend this with a space to split prefix from number. Prepend this with a `_` to hide. Prepend this with a `!` to force the prefix. | `auto`
+//! Argument        | Description                                                                                      |Default value
+//! ----------------|--------------------------------------------------------------------------------------------------|-------------
+//! `width` or `w`  | the resulting text will be at least `width` characters long                                      | `3`
+//! `unit` or `u`   | some values have a [unit](unit::Unit), and it is possible to convert them by setting this option | N/A
+//! `hide_unit`     | hide the unit symbol                                                                             | `false`
+//! `unit_space`    | have a whitespace before unit symbol                                                             | `false`
+//! `prefix` or `p` | specifiy this argument if you want to set the minimal [SI prefix](prefix::Prefix)                | N/A
+//! `hide_prefix`   | hide the prefix symbol                                                                           | `false`
+//! `prefix_space`  | have a whitespace before prefix symbol                                                           | `false`
+//! `force_prefix`  | force the prefix value instead of setting a "minimal prefix"                                     | `false`
 //!
 //! ## `bar` - Display numbers as progress bars
 //!
-//! Argument | Default value
-//! ---------|--------------
-//! Width - the width of the bar (in characters) | `5`
-//! Max value - which value is treated as "full". For example, for battery level `100` is full. | `100`
+//! Argument               | Description                                                                     |Default value
+//! -----------------------|---------------------------------------------------------------------------------|-------------
+//! `width` or `w`         | the width of the bar (in characters)                                            | `5`
+//! `max_value`            | which value is treated as "full". For example, for battery level `100` is full. | `100`
 //!
 //! # Handling missing placeholders and incorrect types
 //!
@@ -79,6 +85,7 @@
 
 pub mod config;
 pub mod formatter;
+pub mod parse;
 pub mod prefix;
 pub mod scheduling;
 pub mod template;

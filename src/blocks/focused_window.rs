@@ -8,7 +8,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>" $title.str(0,21) &vert;"</code>
+//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>" $title.str(max_w:21) &vert;"</code>
 //! `driver` | Which driver to use. Available values: `sway_ipc` - for `i3` and `sway`, `wlr_toplevel_management` - for Wayland compositors that implement [wlr-foreign-toplevel-management-unstable-v1](https://gitlab.freedesktop.org/wlroots/wlr-protocols/-/blob/master/unstable/wlr-foreign-toplevel-management-unstable-v1.xml), `auto` - try to automatically guess which driver to use. | `"auto"`
 //!
 //! Placeholder     | Value                                                                 | Type | Unit
@@ -23,8 +23,8 @@
 //! [[block]]
 //! block = "focused_window"
 //! [block.format]
-//! full = " $title.str(0,15) |"
-//! short = " $title.str(0,10) |"
+//! full = " $title.str(max_w:15) |"
+//! short = " $title.str(max_w:10) |"
 //! ```
 //!
 //! This example instead of hiding block when the window's title is empty displays "Missing"
@@ -59,7 +59,8 @@ enum Driver {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
-    let mut widget = Widget::new().with_format(config.format.with_default(" $title.str(0,21) |")?);
+    let mut widget =
+        Widget::new().with_format(config.format.with_default(" $title.str(max_w:21) |")?);
 
     let mut backend: Box<dyn Backend> = match config.driver {
         Driver::Auto => match SwayIpc::new().await {

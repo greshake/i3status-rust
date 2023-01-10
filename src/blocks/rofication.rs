@@ -7,7 +7,7 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `interval` | Refresh rate in seconds. | `1`
-//! `format` | A string to customise the output of this block. See below for placeholders. | `" $icon $num.eng(1) "`
+//! `format` | A string to customise the output of this block. See below for placeholders. | `" $icon $num.eng(w:1) "`
 //! `socket_path` | Socket path for the rofication daemon. Supports path expansions e.g. `~`. | `"/tmp/rofi_notification_daemon"`
 //!
 //!  Placeholder | Value | Type | Unit
@@ -44,7 +44,8 @@ pub struct Config {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
-    let mut widget = Widget::new().with_format(config.format.with_default(" $icon $num.eng(1) ")?);
+    let mut widget =
+        Widget::new().with_format(config.format.with_default(" $icon $num.eng(w:1) ")?);
 
     let path = config.socket_path.expand()?;
     let mut timer = config.interval.timer();

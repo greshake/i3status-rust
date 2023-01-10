@@ -1,8 +1,8 @@
 use std::fmt::Debug;
 use std::iter::repeat;
-use std::str::FromStr;
 use std::time::{Duration, Instant};
 
+use super::parse::Arg;
 use super::prefix::Prefix;
 use super::unit::Unit;
 use super::value::ValueInner as Value;
@@ -25,41 +25,17 @@ pub const DEFAULT_STRING_FORMATTER: StrFormatter = StrFormatter {
 
 // TODO: split those defaults
 pub const DEFAULT_NUMBER_FORMATTER: EngFormatter = EngFormatter(EngFixConfig {
-    width: 2,
-    unit: UnitConfig {
-        unit: None,
-        has_space: false,
-        hidden: false,
-    },
-    prefix: PrefixConfig {
-        prefix: None,
-        has_space: false,
-        hidden: false,
-    },
+    width: 3,
+    unit: None,
+    unit_has_space: false,
+    unit_hidden: false,
+    prefix: None,
+    prefix_has_space: false,
+    prefix_hidden: false,
+    prefix_forced: false,
 });
 
 pub const DEFAULT_FLAG_FORMATTER: FlagFormatter = FlagFormatter;
-
-enum StrArgs {
-    MinWidth,
-    MaxWidth,
-}
-
-enum RotStrArgs {
-    Width,
-    Interval,
-}
-
-enum BarArgs {
-    Width,
-    MaxValue,
-}
-
-enum EngFixArgs {
-    Width,
-    Unit,
-    Prefix,
-}
 
 pub trait Formatter: Debug + Send + Sync {
     fn format(&self, val: &Value) -> Result<String>;
@@ -69,19 +45,25 @@ pub trait Formatter: Debug + Send + Sync {
     }
 }
 
-pub fn new_formatter(name: &str, args: &[String]) -> Result<Box<dyn Formatter>> {
+pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
     match name {
         "str" => {
-            let min_width: usize = match args.get(StrArgs::MinWidth as usize) {
-                Some(v) => v.parse().error("Width must be a positive integer")?,
-                None => DEFAULT_STR_MIN_WIDTH,
-            };
-            let max_width: Option<usize> =
-                match args.get(StrArgs::MaxWidth as usize).map(|x| x.as_str()) {
-                    Some("inf") => None,
-                    Some(v) => Some(v.parse().error("Width must be a positive integer")?),
-                    None => DEFAULT_STR_MAX_WIDTH,
-                };
+            let mut min_width = DEFAULT_STR_MIN_WIDTH;
+            let mut max_width = DEFAULT_STR_MAX_WIDTH;
+            for arg in args {
+                match arg.key {
+                    "min_width" | "min_w" => {
+                        min_width = arg.val.parse().error("Width must be a positive integer")?;
+                    }
+                    "max_width" | "max_w" => {
+                        max_width =
+                            Some(arg.val.parse().error("Width must be a positive integer")?);
+                    }
+                    other => {
+                        return Err(Error::new(format!("Unknown argumnt for 'str': '{other}'")));
+                    }
+                }
+            }
             if let Some(max_width) = max_width {
                 if max_width < min_width {
                     return Err(Error::new(
@@ -95,17 +77,26 @@ pub fn new_formatter(name: &str, args: &[String]) -> Result<Box<dyn Formatter>> 
             }))
         }
         "rot-str" => {
-            let width: usize = match args.get(RotStrArgs::Width as usize) {
-                Some(v) => v.parse().error("Width must be a positive integer")?,
-                None => DEFAULT_STRROT_WIDTH,
-            };
-            let interval: f64 = match args.get(RotStrArgs::Interval as usize) {
-                Some(v) => v
-                    .trim()
-                    .parse()
-                    .error("Interval must be a positive number")?,
-                None => DEFAULT_STRROT_INTERVAL,
-            };
+            let mut width = DEFAULT_STRROT_WIDTH;
+            let mut interval = DEFAULT_STRROT_INTERVAL;
+            for arg in args {
+                match arg.key {
+                    "width" | "w" => {
+                        width = arg.val.parse().error("Width must be a positive integer")?;
+                    }
+                    "interval" => {
+                        interval = arg
+                            .val
+                            .parse()
+                            .error("Interval must be a positive integer")?;
+                    }
+                    other => {
+                        return Err(Error::new(format!(
+                            "Unknown argumnt for 'rot-str': '{other}'"
+                        )));
+                    }
+                }
+            }
             if interval < 0.1 {
                 return Err(Error::new("Interval must be greater than 0.1"));
             }
@@ -116,14 +107,21 @@ pub fn new_formatter(name: &str, args: &[String]) -> Result<Box<dyn Formatter>> 
             }))
         }
         "bar" => {
-            let width: usize = match args.get(BarArgs::Width as usize) {
-                Some(v) => v.parse().error("Width must be a positive integer")?,
-                None => DEFAULT_BAR_WIDTH,
-            };
-            let max_value: f64 = match args.get(BarArgs::MaxValue as usize) {
-                Some(v) => v.parse().error("Max value must be a number")?,
-                None => DEFAULT_BAR_MAX_VAL,
-            };
+            let mut width = DEFAULT_BAR_WIDTH;
+            let mut max_value = DEFAULT_BAR_MAX_VAL;
+            for arg in args {
+                match arg.key {
+                    "width" | "w" => {
+                        width = arg.val.parse().error("Width must be a positive integer")?;
+                    }
+                    "max_value" => {
+                        max_value = arg.val.parse().error("Max value must be a number")?;
+                    }
+                    other => {
+                        return Err(Error::new(format!("Unknown argumnt for 'bar': '{other}'")));
+                    }
+                }
+            }
             Ok(Box::new(BarFormatter { width, max_value }))
         }
         "eng" => Ok(Box::new(EngFormatter(EngFixConfig::from_args(args)?))),
@@ -247,111 +245,78 @@ impl Formatter for BarFormatter {
     }
 }
 
-#[derive(Debug, Default)]
-struct PrefixConfig {
-    pub prefix: Option<(Prefix, bool)>,
-    pub has_space: bool,
-    pub hidden: bool,
-}
-
-impl FromStr for PrefixConfig {
-    type Err = Error;
-
-    fn from_str(mut s: &str) -> Result<Self> {
-        let has_space = if s.starts_with(' ') {
-            s = &s[1..];
-            true
-        } else {
-            false
-        };
-
-        let hidden = if s.starts_with('_') {
-            s = &s[1..];
-            true
-        } else {
-            false
-        };
-
-        let forced = if s.starts_with('!') {
-            s = &s[1..];
-            true
-        } else {
-            false
-        };
-
-        let prefix = if s == "auto" {
-            None
-        } else {
-            Some((s.parse()?, forced))
-        };
-
-        Ok(Self {
-            prefix,
-            has_space,
-            hidden,
-        })
-    }
-}
-
-#[derive(Debug, Default)]
-struct UnitConfig {
-    pub unit: Option<Unit>,
-    pub has_space: bool,
-    pub hidden: bool,
-}
-
-impl FromStr for UnitConfig {
-    type Err = Error;
-
-    fn from_str(mut s: &str) -> Result<Self> {
-        let has_space = if s.starts_with(' ') {
-            s = &s[1..];
-            true
-        } else {
-            false
-        };
-
-        let hidden = if s.starts_with('_') {
-            s = &s[1..];
-            true
-        } else {
-            false
-        };
-
-        Ok(Self {
-            unit: if s == "auto" { None } else { Some(s.parse()?) },
-            has_space,
-            hidden,
-        })
-    }
-}
-
 #[derive(Debug)]
 struct EngFixConfig {
     width: usize,
-    unit: UnitConfig,
-    prefix: PrefixConfig,
+    unit: Option<Unit>,
+    unit_has_space: bool,
+    unit_hidden: bool,
+    prefix: Option<Prefix>,
+    prefix_has_space: bool,
+    prefix_hidden: bool,
+    prefix_forced: bool,
 }
 
 impl EngFixConfig {
-    fn from_args(args: &[String]) -> Result<Self> {
+    fn from_args(args: &[Arg]) -> Result<Self> {
+        let mut width = 3;
+        let mut unit = None;
+        let mut unit_has_space = false;
+        let mut unit_hidden = false;
+        let mut prefix = None;
+        let mut prefix_has_space = false;
+        let mut prefix_hidden = false;
+        let mut prefix_forced = false;
+
+        for arg in args {
+            match arg.key {
+                "width" | "w" => {
+                    width = arg.val.parse().error("Width must be a positive integer")?;
+                }
+                "unit" | "u" => {
+                    unit = Some(arg.val.parse()?);
+                }
+                "hide_unit" => {
+                    unit_hidden = arg.val.parse().error("hide_unit must be true or false")?;
+                }
+                "unit_space" => {
+                    unit_has_space = arg.val.parse().error("unit_space must be true or false")?;
+                }
+                "prefix" | "p" => {
+                    prefix = Some(arg.val.parse()?);
+                }
+                "hide_prefix" => {
+                    prefix_hidden = arg.val.parse().error("hide_prefix must be true or false")?;
+                }
+                "prefix_space" => {
+                    prefix_has_space = arg
+                        .val
+                        .parse()
+                        .error("prefix_space must be true or false")?;
+                }
+                "force_prefix" => {
+                    prefix_forced = arg
+                        .val
+                        .parse()
+                        .error("force_prefix must be true or false")?;
+                }
+                other => {
+                    return Err(Error::new(format!(
+                        "Unknown argumnt for 'fix'/'eng': '{other}'"
+                    )));
+                }
+            }
+        }
+
         Ok(Self {
-            width: args
-                .get(EngFixArgs::Width as usize)
-                .map(|x| x.parse::<usize>())
-                .transpose()
-                .error("Width must be a positive integer")?
-                .unwrap_or(3),
-            unit: args
-                .get(EngFixArgs::Unit as usize)
-                .map(|x| x.parse::<UnitConfig>())
-                .transpose()?
-                .unwrap_or_default(),
-            prefix: args
-                .get(EngFixArgs::Prefix as usize)
-                .map(|x| x.parse::<PrefixConfig>())
-                .transpose()?
-                .unwrap_or_default(),
+            width,
+            unit,
+            unit_has_space,
+            unit_hidden,
+            prefix,
+            prefix_has_space,
+            prefix_hidden,
+            prefix_forced,
         })
     }
 }
@@ -363,15 +328,15 @@ impl Formatter for EngFormatter {
     fn format(&self, val: &Value) -> Result<String> {
         match val {
             Value::Number { mut val, mut unit } => {
-                if let Some(new_unit) = self.0.unit.unit {
+                if let Some(new_unit) = self.0.unit {
                     val = unit.convert(val, new_unit)?;
                     unit = new_unit;
                 }
 
-                let (min_prefix, max_prefix) = match self.0.prefix.prefix {
-                    Some((prefix, true)) => (prefix, prefix),
-                    Some((prefix, false)) => (prefix, Prefix::max_available()),
-                    None => (Prefix::min_available(), Prefix::max_available()),
+                let (min_prefix, max_prefix) = match (self.0.prefix, self.0.prefix_forced) {
+                    (Some(prefix), true) => (prefix, prefix),
+                    (Some(prefix), false) => (prefix, Prefix::max_available()),
+                    (None, _) => (Prefix::min_available(), Prefix::max_available()),
                 };
 
                 let prefix = unit
@@ -394,19 +359,19 @@ impl Formatter for EngFormatter {
                     rest => format!("{:.*}", rest as usize - 1, val),
                 };
 
-                let display_prefix = !self.0.prefix.hidden
+                let display_prefix = !self.0.prefix_hidden
                     && prefix != Prefix::One
                     && prefix != Prefix::OneButBinary;
-                let display_unit = !self.0.unit.hidden && unit != Unit::None;
+                let display_unit = !self.0.unit_hidden && unit != Unit::None;
 
                 if display_prefix {
-                    if self.0.prefix.has_space {
+                    if self.0.prefix_has_space {
                         retval.push(' ');
                     }
                     retval.push_str(&prefix.to_string());
                 }
                 if display_unit {
-                    if self.0.unit.has_space || (self.0.prefix.has_space && !display_prefix) {
+                    if self.0.unit_has_space || (self.0.prefix_has_space && !display_prefix) {
                         retval.push(' ');
                     }
                     retval.push_str(&unit.to_string());

@@ -1,9 +1,9 @@
 use super::formatter::{new_formatter, Formatter};
+use super::parse;
 use super::{Fragment, Values};
 use crate::config::SharedConfig;
 use crate::errors::*;
 
-use std::iter::Peekable;
 use std::str::FromStr;
 
 #[derive(Debug)]
@@ -139,145 +139,68 @@ impl FromStr for FormatTemplate {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self> {
-        let mut it = s.chars().chain(std::iter::once('}')).peekable();
-        let template = read_format_template(&mut it)?;
-        if it.next().is_some() {
-            Err(Error::new("Unexpected '}'"))
-        } else {
-            Ok(template)
-        }
-    }
-}
-
-fn read_format_template(it: &mut Peekable<impl Iterator<Item = char>>) -> Result<FormatTemplate> {
-    let mut token_lists = Vec::new();
-    let mut cur_list = Vec::new();
-    loop {
-        match *it.peek().error("Missing '}'")? {
-            '{' => {
-                let _ = it.next();
-                cur_list.push(Token::Recursive(read_format_template(it)?));
+        match parse::parse_format_template(s) {
+            Ok((rest, parsed)) => {
+                assert!(rest.is_empty());
+                parsed.try_into()
             }
-            '}' => {
-                let _ = it.next();
-                token_lists.push(TokenList(cur_list));
-                return Ok(FormatTemplate(token_lists));
-            }
-            '|' => {
-                let _ = it.next();
-                token_lists.push(TokenList(cur_list));
-                cur_list = Vec::new();
-            }
-            '$' => {
-                let _ = it.next();
-                let name = read_ident(it);
-                let formatter = match it.peek() {
-                    Some('.') => {
-                        let _ = it.next();
-                        Some(new_formatter(&read_formatter(it)?, &read_args(it)?)?)
-                    }
-                    _ => None,
-                };
-                cur_list.push(Token::Placeholder { name, formatter });
-            }
-            '^' => {
-                let _ = it.next();
-                if !consume_exact(it, "icon_") {
-                    return Err(Error::new("^ should be followed by 'icon_<name>'"));
+            Err(e) => match e {
+                nom::Err::Incomplete(_) => unreachable!(),
+                nom::Err::Error(e) | nom::Err::Failure(e) => {
+                    let err_cause: Box<dyn StdError + Send + Sync + 'static> =
+                        format!("Input: {:?}, ErrorCode: {:?}", e.input, e.code).into();
+                    let mut err = Error::new("Incorrect format template");
+                    err.cause = Some(err_cause.into());
+                    Err(err)
                 }
-                let name = read_ident(it);
-                cur_list.push(Token::Icon { name });
-            }
-            _ => {
-                cur_list.push(Token::Text(read_text(it)));
-            }
+            },
         }
     }
 }
 
-fn read_text(it: &mut Peekable<impl Iterator<Item = char>>) -> String {
-    let mut retval = String::new();
-    let mut escaped = false;
-    while let Some(&c) = it.peek() {
-        if escaped {
-            escaped = false;
-            retval.push(c);
-            let _ = it.next();
-            continue;
-        }
-        match c {
-            '\\' => {
-                let _ = it.next();
-                escaped = true;
-            }
-            '{' | '}' | '$' | '^' | '|' => break,
-            x => {
-                let _ = it.next();
-                retval.push(x);
-            }
-        }
+impl TryFrom<parse::FormatTemplate<'_>> for FormatTemplate {
+    type Error = Error;
+
+    fn try_from(value: parse::FormatTemplate) -> Result<Self, Self::Error> {
+        value
+            .0
+            .into_iter()
+            .map(TryInto::try_into)
+            .collect::<Result<Vec<_>>>()
+            .map(Self)
     }
-    retval
 }
 
-fn read_ident(it: &mut Peekable<impl Iterator<Item = char>>) -> String {
-    let mut retval = String::new();
-    while let Some(&c) = it.peek() {
-        match c {
-            x if !x.is_alphanumeric() && x != '_' => break,
-            x => {
-                let _ = it.next();
-                retval.push(x);
-            }
-        }
+impl TryFrom<parse::TokenList<'_>> for TokenList {
+    type Error = Error;
+
+    fn try_from(value: parse::TokenList) -> Result<Self, Self::Error> {
+        value
+            .0
+            .into_iter()
+            .map(TryInto::try_into)
+            .collect::<Result<Vec<_>>>()
+            .map(Self)
     }
-    retval
 }
 
-fn read_formatter(it: &mut impl Iterator<Item = char>) -> Result<String> {
-    let mut retval = String::new();
-    for c in it {
-        match c {
-            '(' => return Ok(retval),
-            x => retval.push(x),
-        }
-    }
-    Err(Error::new("Missing '('"))
-}
+impl TryFrom<parse::Token<'_>> for Token {
+    type Error = Error;
 
-fn read_args(it: &mut impl Iterator<Item = char>) -> Result<Vec<String>> {
-    let mut args = Vec::new();
-    let mut cur_arg = String::new();
-    let mut escaped = false;
-    for c in it {
-        if escaped {
-            escaped = false;
-            cur_arg.push(c);
-            continue;
-        }
-        match c {
-            '\\' => escaped = true,
-            ',' => {
-                args.push(cur_arg);
-                cur_arg = String::new();
-            }
-            ')' => {
-                if !cur_arg.is_empty() || !args.is_empty() {
-                    args.push(cur_arg);
-                }
-                return Ok(args);
-            }
-            x => cur_arg.push(x),
-        }
+    fn try_from(value: parse::Token) -> Result<Self, Self::Error> {
+        Ok(match value {
+            parse::Token::Text(text) => Self::Text(text),
+            parse::Token::Placeholder(placeholder) => Self::Placeholder {
+                name: placeholder.name.to_owned(),
+                formatter: placeholder
+                    .formatter
+                    .map(|fmt| new_formatter(fmt.name, &fmt.args))
+                    .transpose()?,
+            },
+            parse::Token::Icon(icon) => Self::Icon {
+                name: icon.to_owned(),
+            },
+            parse::Token::Recursive(rec) => Self::Recursive(rec.try_into()?),
+        })
     }
-    Err(Error::new("Missing ')'"))
-}
-
-fn consume_exact(it: &mut impl Iterator<Item = char>, tag: &str) -> bool {
-    for c in tag.chars() {
-        if it.next() != Some(c) {
-            return false;
-        }
-    }
-    true
 }

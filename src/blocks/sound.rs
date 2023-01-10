@@ -46,7 +46,7 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `driver` | `"auto"`, `"pulseaudio"`, `"alsa"`. | `"auto"` (Pulseaudio with ALSA fallback)
-//! `format` | A string to customise the output of this block. See below for available placeholders. | <code> $icon {$volume.eng(2) &vert;}</code>
+//! `format` | A string to customise the output of this block. See below for available placeholders. | <code> $icon {$volume.eng(w:2) &vert;}</code>
 //! `name` | PulseAudio device name, or the ALSA control name as found in the output of `amixer -D yourdevice scontrols`. | PulseAudio: `@DEFAULT_SINK@` / ALSA: `Master`
 //! `device` | ALSA device name, usually in the form "hw:X" or "hw:X,Y" where `X` is the card number and `Y` is the device number as found in the output of `aplay -l`. | `default`
 //! `device_kind` | PulseAudio device kind: `source` or `sink`. | `"sink"`
@@ -114,7 +114,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     .await?;
 
     let mut widget =
-        Widget::new().with_format(config.format.with_default(" $icon {$volume.eng(2)|} ")?);
+        Widget::new().with_format(config.format.with_default(" $icon {$volume.eng(w:2)|} ")?);
 
     let device_kind = config.device_kind;
     let step_width = config.step_width.clamp(0, 50) as i32;

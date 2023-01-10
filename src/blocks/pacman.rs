@@ -39,9 +39,9 @@
 //! Key | Values | Default
 //! ----|--------|---------
 //! `interval` | Update interval, in seconds. If setting `aur_command` then set interval appropriately as to not exceed the AUR's daily rate limit. | `600`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $pacman.eng(1) "`
-//! `format_singular` | Same as `format` but for when exactly one update is available. | `" $icon $pacman.eng(1) "`
-//! `format_up_to_date` | Same as `format` but for when no updates are available. | `" $icon $pacman.eng(1) "`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $pacman.eng(w:1) "`
+//! `format_singular` | Same as `format` but for when exactly one update is available. | `" $icon $pacman.eng(w:1) "`
+//! `format_up_to_date` | Same as `format` but for when no updates are available. | `" $icon $pacman.eng(w:1) "`
 //! `warning_updates_regex` | Display block as warning if updates matching regex are available. | `None`
 //! `critical_updates_regex` | Display block as critical if updates matching regex are available. | `None`
 //! `aur_command` | AUR command to check available updates, which outputs in the same format as pacman. e.g. `yay -Qua` | Required if `$both` or `$aur` are used
@@ -162,13 +162,13 @@ pub struct Config {
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut widget = Widget::new();
 
-    let format = config.format.with_default(" $icon $pacman.eng(1) ")?;
+    let format = config.format.with_default(" $icon $pacman.eng(w:1) ")?;
     let format_singular = config
         .format_singular
-        .with_default(" $icon $pacman.eng(1) ")?;
+        .with_default(" $icon $pacman.eng(w:1) ")?;
     let format_up_to_date = config
         .format_up_to_date
-        .with_default(" $icon $pacman.eng(1) ")?;
+        .with_default(" $icon $pacman.eng(w:1) ")?;
 
     macro_rules! any_format_contains {
         ($name:expr) => {
