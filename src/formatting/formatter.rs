@@ -17,6 +17,8 @@ const DEFAULT_STR_ROT_INTERVAL: Option<f64> = None;
 const DEFAULT_BAR_WIDTH: usize = 5;
 const DEFAULT_BAR_MAX_VAL: f64 = 100.0;
 
+const DEFAULT_NUMBER_WIDTH: usize = 2;
+
 pub const DEFAULT_STRING_FORMATTER: StrFormatter = StrFormatter {
     min_width: DEFAULT_STR_MIN_WIDTH,
     max_width: DEFAULT_STR_MAX_WIDTH,
@@ -27,7 +29,7 @@ pub const DEFAULT_STRING_FORMATTER: StrFormatter = StrFormatter {
 
 // TODO: split those defaults
 pub const DEFAULT_NUMBER_FORMATTER: EngFormatter = EngFormatter(EngFixConfig {
-    width: 3,
+    width: DEFAULT_NUMBER_WIDTH,
     unit: None,
     unit_has_space: false,
     unit_hidden: false,
@@ -227,7 +229,7 @@ struct EngFixConfig {
 
 impl EngFixConfig {
     fn from_args(args: &[Arg]) -> Result<Self> {
-        let mut width = 3;
+        let mut width = DEFAULT_NUMBER_WIDTH;
         let mut unit = None;
         let mut unit_has_space = false;
         let mut unit_hidden = false;

@@ -40,7 +40,7 @@
 //!
 //! Argument        | Description                                                                                      |Default value
 //! ----------------|--------------------------------------------------------------------------------------------------|-------------
-//! `width` or `w`  | the resulting text will be at least `width` characters long                                      | `3`
+//! `width` or `w`  | the resulting text will be at least `width` characters long                                      | `2`
 //! `unit` or `u`   | some values have a [unit](unit::Unit), and it is possible to convert them by setting this option | N/A
 //! `hide_unit`     | hide the unit symbol                                                                             | `false`
 //! `unit_space`    | have a whitespace before unit symbol                                                             | `false`
