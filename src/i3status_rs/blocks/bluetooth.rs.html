@@ -392,6 +392,9 @@
 <span id="392">392</span>
 <span id="393">393</span>
 <span id="394">394</span>
+<span id="395">395</span>
+<span id="396">396</span>
+<span id="397">397</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Monitor Bluetooth device
 //!
 //! This block displays the connectivity of a given Bluetooth device and the battery level if this
@@ -521,6 +524,7 @@
                                 } <span class="kw">else </span>{
                                     <span class="kw">let _ </span>= dev.device.connect().<span class="kw">await</span>;
                                 }
+                                <span class="kw">break</span>;
                             }
                         }
                     }
@@ -718,6 +722,8 @@
                     .<span class="kw">await
                     </span>.error(<span class="string">&quot;Failed to create PropertiesProxy&quot;</span>)<span class="question-mark">?</span>,
                 device: Device1Proxy::builder(manager_proxy.connection())
+                    <span class="comment">// No caching because https://github.com/greshake/i3status-rust/issues/1565#issuecomment-1379308681
+                    </span>.cache_properties(zbus::CacheProperties::No)
                     .path(path.clone())
                     .unwrap()
                     .build()
@@ -787,4 +793,4 @@
     </span><span class="kw">fn </span>percentage(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;u8&gt;;
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0 (69f9c33d7 2022-12-12)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="i3status_rs" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.1 (90743e729 2023-01-10)" ></div></body></html>
