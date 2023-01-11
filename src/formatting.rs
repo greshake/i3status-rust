@@ -33,14 +33,8 @@
 //! -----------------------|---------------------------------------------------|-------------
 //! `min_width` or `min_w` | if text is shorter it will be padded using spaces | `0`
 //! `max_width` or `max_w` | if text is longer it will be truncated            | Infinity
-//! `pango`                | if `true`, text is treated as [pango](https://docs.gtk.org/Pango/pango_markup.html#pango-markup), meaning symbols such as "<", ">" and "&" will not be escaped | `false`
-//!
-//! ## `rot-str` - Rotating text
-//!
-//! Argument               | Description                                                                |Default value
-//! -----------------------|----------------------------------------------------------------------------|-------------
-//! `width` or 'w'         | if text is shorter it will be padded using spaces                          | `15`
-//! `interval`             | if text is longer than `width` it will be rotated every `interval` seconds | `0.5`
+//! `pango`                | if `true`, text is treated as [pango](https://docs.gtk.org/Pango/pango_markup.html#pango-markup), meaning symbols such as "<", ">" and "&" will not be escaped. Does not work well with `max_width` and 'rot_interval' | `false`
+//! `rot_interval`         | if text is longer than `max_width` it will be rotated every `rot_interval` seconds | `0.5`
 //!
 //! ## `eng` - Format numbers using engineering notation
 //!

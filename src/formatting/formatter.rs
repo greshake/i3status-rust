@@ -12,9 +12,7 @@ use crate::escape::CollectEscaped;
 const DEFAULT_STR_MIN_WIDTH: usize = 0;
 const DEFAULT_STR_MAX_WIDTH: usize = usize::MAX;
 const DEFAULT_STR_PANGO: bool = false;
-
-const DEFAULT_STRROT_WIDTH: usize = 15;
-const DEFAULT_STRROT_INTERVAL: f64 = 0.5;
+const DEFAULT_STR_ROT_INTERVAL: Option<f64> = None;
 
 const DEFAULT_BAR_WIDTH: usize = 5;
 const DEFAULT_BAR_MAX_VAL: f64 = 100.0;
@@ -23,6 +21,8 @@ pub const DEFAULT_STRING_FORMATTER: StrFormatter = StrFormatter {
     min_width: DEFAULT_STR_MIN_WIDTH,
     max_width: DEFAULT_STR_MAX_WIDTH,
     pango: DEFAULT_STR_PANGO,
+    rot_interval_ms: None,
+    init_time: None,
 };
 
 // TODO: split those defaults
@@ -53,6 +53,7 @@ pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
             let mut min_width = DEFAULT_STR_MIN_WIDTH;
             let mut max_width = DEFAULT_STR_MAX_WIDTH;
             let mut pango = DEFAULT_STR_PANGO;
+            let mut rot_interval = DEFAULT_STR_ROT_INTERVAL;
             for arg in args {
                 match arg.key {
                     "min_width" | "min_w" => {
@@ -64,6 +65,13 @@ pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
                     "pango" => {
                         pango = arg.val.parse().error("pango must be true or false")?;
                     }
+                    "rot_interval" => {
+                        rot_interval = Some(
+                            arg.val
+                                .parse()
+                                .error("Interval must be a positive number")?,
+                        );
+                    }
                     other => {
                         return Err(Error::new(format!("Unknown argumnt for 'str': '{other}'")));
                     }
@@ -74,40 +82,17 @@ pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
                     "Max width must be greater of equal to min width",
                 ));
             }
+            if let Some(rot_interval) = rot_interval {
+                if rot_interval < 0.1 {
+                    return Err(Error::new("Interval must be greater than 0.1"));
+                }
+            }
             Ok(Box::new(StrFormatter {
                 min_width,
                 max_width,
                 pango,
-            }))
-        }
-        "rot-str" => {
-            let mut width = DEFAULT_STRROT_WIDTH;
-            let mut interval = DEFAULT_STRROT_INTERVAL;
-            for arg in args {
-                match arg.key {
-                    "width" | "w" => {
-                        width = arg.val.parse().error("Width must be a positive integer")?;
-                    }
-                    "interval" => {
-                        interval = arg
-                            .val
-                            .parse()
-                            .error("Interval must be a positive integer")?;
-                    }
-                    other => {
-                        return Err(Error::new(format!(
-                            "Unknown argumnt for 'rot-str': '{other}'"
-                        )));
-                    }
-                }
-            }
-            if interval < 0.1 {
-                return Err(Error::new("Interval must be greater than 0.1"));
-            }
-            Ok(Box::new(RotStrFormatter {
-                width,
-                interval: (interval * 1000.0) as u64,
-                init_time: Instant::now(),
+                rot_interval_ms: rot_interval.map(|x| (x * 1e3) as u64),
+                init_time: Some(Instant::now()),
             }))
         }
         "bar" => {
@@ -139,6 +124,8 @@ pub struct StrFormatter {
     min_width: usize,
     max_width: usize,
     pango: bool,
+    rot_interval_ms: Option<u64>,
+    init_time: Option<Instant>,
 }
 
 impl Formatter for StrFormatter {
@@ -146,14 +133,33 @@ impl Formatter for StrFormatter {
         match val {
             Value::Text(text) => {
                 let width = text.chars().count();
-                let chars = text
-                    .chars()
-                    .chain(repeat(' ').take(self.min_width.saturating_sub(width)))
-                    .take(self.max_width);
-                Ok(if self.pango {
-                    chars.collect()
-                } else {
-                    chars.collect_pango_escaped()
+                Ok(match (self.rot_interval_ms, self.init_time) {
+                    (Some(rot_interval_ms), Some(init_time)) if width > self.max_width => {
+                        let width = width + 1; // Now we include '|' at the end
+                        let step = (init_time.elapsed().as_millis() as u64 / rot_interval_ms)
+                            as usize
+                            % width;
+                        let w1 = self.max_width.min(width - step);
+                        text.chars()
+                            .chain(Some('|'))
+                            .skip(step)
+                            .take(w1)
+                            .chain(text.chars())
+                            .take(self.max_width)
+                            .collect_pango_escaped()
+                    }
+                    _ => {
+                        let chars = text
+                            .chars()
+                            .chain(repeat(' ').take(self.min_width.saturating_sub(width)))
+                            .take(self.max_width);
+
+                        if self.pango {
+                            chars.collect()
+                        } else {
+                            chars.collect_pango_escaped()
+                        }
+                    }
                 })
             }
             Value::Icon(icon) => Ok(icon.clone()), // No escaping
@@ -165,56 +171,9 @@ impl Formatter for StrFormatter {
             )),
         }
     }
-}
-
-#[derive(Debug)]
-pub struct RotStrFormatter {
-    width: usize,
-    interval: u64,
-    init_time: Instant,
-}
-
-impl Formatter for RotStrFormatter {
-    fn format(&self, val: &Value) -> Result<String> {
-        match val {
-            Value::Text(text) => {
-                let full_width = text.chars().count();
-                if full_width <= self.width {
-                    Ok(text
-                        .chars()
-                        .chain(repeat(' '))
-                        .take(self.width)
-                        .collect_pango_escaped())
-                } else {
-                    let full_width = full_width + 1; // Now we include '|' at the end
-                    let step = (self.init_time.elapsed().as_millis() as u64 / self.interval)
-                        as usize
-                        % full_width;
-                    let w1 = self.width.min(full_width - step);
-                    Ok(text
-                        .chars()
-                        .chain(Some('|'))
-                        .skip(step)
-                        .take(w1)
-                        .chain(text.chars())
-                        .take(self.width)
-                        .collect_pango_escaped())
-                }
-            }
-            Value::Icon(_) => Err(Error::new_format(
-                "An icon cannot be formatted with 'rot-str' formatter",
-            )),
-            Value::Number { .. } => Err(Error::new_format(
-                "A number cannot be formatted with 'rot-str' formatter",
-            )),
-            Value::Flag => Err(Error::new_format(
-                "A flag cannot be formatted with 'rot-str' formatter",
-            )),
-        }
-    }
 
     fn interval(&self) -> Option<Duration> {
-        Some(Duration::from_millis(self.interval))
+        self.rot_interval_ms.map(Duration::from_millis)
     }
 }
 
