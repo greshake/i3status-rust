@@ -127,6 +127,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                                 } else {
                                     let _ = dev.device.connect().await;
                                 }
+                                break;
                             }
                         }
                     }
@@ -324,6 +325,8 @@ impl Device {
                     .await
                     .error("Failed to create PropertiesProxy")?,
                 device: Device1Proxy::builder(manager_proxy.connection())
+                    // No caching because https://github.com/greshake/i3status-rust/issues/1565#issuecomment-1379308681
+                    .cache_properties(zbus::CacheProperties::No)
                     .path(path.clone())
                     .unwrap()
                     .build()
