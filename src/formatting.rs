@@ -33,6 +33,7 @@
 //! -----------------------|---------------------------------------------------|-------------
 //! `min_width` or `min_w` | if text is shorter it will be padded using spaces | `0`
 //! `max_width` or `max_w` | if text is longer it will be truncated            | Infinity
+//! `pango`                | if `true`, text is treated as [pango](https://docs.gtk.org/Pango/pango_markup.html#pango-markup), meaning symbols such as "<", ">" and "&" will not be escaped | `false`
 //!
 //! ## `rot-str` - Rotating text
 //!

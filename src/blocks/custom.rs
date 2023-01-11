@@ -12,7 +12,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>"{ $icon&vert;} $text "</code>
+//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>"{ $icon&vert;} $text.str(pango:true) "</code>
 //! `command` | Shell command to execute & display | `None`
 //! `persistent` | Run command in the background; update display for each output line of the command | `false`
 //! `cycle` | Commands to execute and change when the button is clicked | `None`
@@ -154,11 +154,10 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     api.set_default_actions(&[(MouseButton::Left, None, "cycle")])
         .await?;
 
-    let mut widget = Widget::new().with_format(
-        config
-            .format
-            .with_defaults("{ $icon|} $text ", "{ $icon|} $short_text |")?,
-    );
+    let mut widget = Widget::new().with_format(config.format.with_defaults(
+        "{ $icon|} $text.str(pango:true) ",
+        "{ $icon|} $short_text.str(pango:true) |",
+    )?);
 
     let mut timer = config.interval.timer();
 

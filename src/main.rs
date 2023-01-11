@@ -103,7 +103,7 @@ fn main() {
         });
     if let Err(error) = result {
         let error_widget = Widget::new()
-            .with_text(error.to_string().chars().collect_pango())
+            .with_text(error.to_string().chars().collect_pango_escaped())
             .with_state(State::Critical);
 
         println!(

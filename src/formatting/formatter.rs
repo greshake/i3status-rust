@@ -10,7 +10,8 @@ use crate::errors::*;
 use crate::escape::CollectEscaped;
 
 const DEFAULT_STR_MIN_WIDTH: usize = 0;
-const DEFAULT_STR_MAX_WIDTH: Option<usize> = None;
+const DEFAULT_STR_MAX_WIDTH: usize = usize::MAX;
+const DEFAULT_STR_PANGO: bool = false;
 
 const DEFAULT_STRROT_WIDTH: usize = 15;
 const DEFAULT_STRROT_INTERVAL: f64 = 0.5;
@@ -21,6 +22,7 @@ const DEFAULT_BAR_MAX_VAL: f64 = 100.0;
 pub const DEFAULT_STRING_FORMATTER: StrFormatter = StrFormatter {
     min_width: DEFAULT_STR_MIN_WIDTH,
     max_width: DEFAULT_STR_MAX_WIDTH,
+    pango: DEFAULT_STR_PANGO,
 };
 
 // TODO: split those defaults
@@ -50,30 +52,32 @@ pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
         "str" => {
             let mut min_width = DEFAULT_STR_MIN_WIDTH;
             let mut max_width = DEFAULT_STR_MAX_WIDTH;
+            let mut pango = DEFAULT_STR_PANGO;
             for arg in args {
                 match arg.key {
                     "min_width" | "min_w" => {
                         min_width = arg.val.parse().error("Width must be a positive integer")?;
                     }
                     "max_width" | "max_w" => {
-                        max_width =
-                            Some(arg.val.parse().error("Width must be a positive integer")?);
+                        max_width = arg.val.parse().error("Width must be a positive integer")?;
+                    }
+                    "pango" => {
+                        pango = arg.val.parse().error("pango must be true or false")?;
                     }
                     other => {
                         return Err(Error::new(format!("Unknown argumnt for 'str': '{other}'")));
                     }
                 }
             }
-            if let Some(max_width) = max_width {
-                if max_width < min_width {
-                    return Err(Error::new(
-                        "Max width must be greater of equal to min width",
-                    ));
-                }
+            if max_width < min_width {
+                return Err(Error::new(
+                    "Max width must be greater of equal to min width",
+                ));
             }
             Ok(Box::new(StrFormatter {
                 min_width,
                 max_width,
+                pango,
             }))
         }
         "rot-str" => {
@@ -133,7 +137,8 @@ pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
 #[derive(Debug)]
 pub struct StrFormatter {
     min_width: usize,
-    max_width: Option<usize>,
+    max_width: usize,
+    pango: bool,
 }
 
 impl Formatter for StrFormatter {
@@ -141,11 +146,15 @@ impl Formatter for StrFormatter {
         match val {
             Value::Text(text) => {
                 let width = text.chars().count();
-                Ok(text
+                let chars = text
                     .chars()
                     .chain(repeat(' ').take(self.min_width.saturating_sub(width)))
-                    .take(self.max_width.unwrap_or(usize::MAX))
-                    .collect_pango())
+                    .take(self.max_width);
+                Ok(if self.pango {
+                    chars.collect()
+                } else {
+                    chars.collect_pango_escaped()
+                })
             }
             Value::Icon(icon) => Ok(icon.clone()), // No escaping
             Value::Number { .. } => Err(Error::new_format(
@@ -175,7 +184,7 @@ impl Formatter for RotStrFormatter {
                         .chars()
                         .chain(repeat(' '))
                         .take(self.width)
-                        .collect_pango())
+                        .collect_pango_escaped())
                 } else {
                     let full_width = full_width + 1; // Now we include '|' at the end
                     let step = (self.init_time.elapsed().as_millis() as u64 / self.interval)
@@ -189,7 +198,7 @@ impl Formatter for RotStrFormatter {
                         .take(w1)
                         .chain(text.chars())
                         .take(self.width)
-                        .collect_pango())
+                        .collect_pango_escaped())
                 }
             }
             Value::Icon(_) => Err(Error::new_format(
