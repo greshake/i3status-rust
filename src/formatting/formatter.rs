@@ -11,7 +11,6 @@ use crate::escape::CollectEscaped;
 
 const DEFAULT_STR_MIN_WIDTH: usize = 0;
 const DEFAULT_STR_MAX_WIDTH: usize = usize::MAX;
-const DEFAULT_STR_PANGO: bool = false;
 const DEFAULT_STR_ROT_INTERVAL: Option<f64> = None;
 
 const DEFAULT_BAR_WIDTH: usize = 5;
@@ -22,7 +21,6 @@ const DEFAULT_NUMBER_WIDTH: usize = 2;
 pub const DEFAULT_STRING_FORMATTER: StrFormatter = StrFormatter {
     min_width: DEFAULT_STR_MIN_WIDTH,
     max_width: DEFAULT_STR_MAX_WIDTH,
-    pango: DEFAULT_STR_PANGO,
     rot_interval_ms: None,
     init_time: None,
 };
@@ -54,7 +52,6 @@ pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
         "str" => {
             let mut min_width = DEFAULT_STR_MIN_WIDTH;
             let mut max_width = DEFAULT_STR_MAX_WIDTH;
-            let mut pango = DEFAULT_STR_PANGO;
             let mut rot_interval = DEFAULT_STR_ROT_INTERVAL;
             for arg in args {
                 match arg.key {
@@ -63,9 +60,6 @@ pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
                     }
                     "max_width" | "max_w" => {
                         max_width = arg.val.parse().error("Width must be a positive integer")?;
-                    }
-                    "pango" => {
-                        pango = arg.val.parse().error("pango must be true or false")?;
                     }
                     "rot_interval" => {
                         rot_interval = Some(
@@ -92,10 +86,19 @@ pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
             Ok(Box::new(StrFormatter {
                 min_width,
                 max_width,
-                pango,
                 rot_interval_ms: rot_interval.map(|x| (x * 1e3) as u64),
                 init_time: Some(Instant::now()),
             }))
+        }
+        "pango-str" => {
+            #[allow(clippy::never_loop)]
+            for arg in args {
+                return Err(Error::new(format!(
+                    "Unknown argumnt for 'pango-str': '{}'",
+                    arg.key
+                )));
+            }
+            Ok(Box::new(PangoStrFormatter))
         }
         "bar" => {
             let mut width = DEFAULT_BAR_WIDTH;
@@ -125,7 +128,6 @@ pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
 pub struct StrFormatter {
     min_width: usize,
     max_width: usize,
-    pango: bool,
     rot_interval_ms: Option<u64>,
     init_time: Option<Instant>,
 }
@@ -150,18 +152,11 @@ impl Formatter for StrFormatter {
                             .take(self.max_width)
                             .collect_pango_escaped()
                     }
-                    _ => {
-                        let chars = text
-                            .chars()
-                            .chain(repeat(' ').take(self.min_width.saturating_sub(width)))
-                            .take(self.max_width);
-
-                        if self.pango {
-                            chars.collect()
-                        } else {
-                            chars.collect_pango_escaped()
-                        }
-                    }
+                    _ => text
+                        .chars()
+                        .chain(repeat(' ').take(self.min_width.saturating_sub(width)))
+                        .take(self.max_width)
+                        .collect_pango_escaped(),
                 })
             }
             Value::Icon(icon) => Ok(icon.clone()), // No escaping
@@ -176,6 +171,23 @@ impl Formatter for StrFormatter {
 
     fn interval(&self) -> Option<Duration> {
         self.rot_interval_ms.map(Duration::from_millis)
+    }
+}
+
+#[derive(Debug)]
+pub struct PangoStrFormatter;
+
+impl Formatter for PangoStrFormatter {
+    fn format(&self, val: &Value) -> Result<String> {
+        match val {
+            Value::Text(x) | Value::Icon(x) => Ok(x.clone()), // No escaping
+            Value::Number { .. } => Err(Error::new_format(
+                "A number cannot be formatted with 'str' formatter",
+            )),
+            Value::Flag => Err(Error::new_format(
+                "A flag cannot be formatted with 'str' formatter",
+            )),
+        }
     }
 }
 

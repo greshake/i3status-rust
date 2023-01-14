@@ -12,7 +12,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>"{ $icon&vert;} $text.str(pango:true) "</code>
+//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>"{ $icon&vert;} $text.pango-str() "</code>
 //! `command` | Shell command to execute & display | `None`
 //! `persistent` | Run command in the background; update display for each output line of the command | `false`
 //! `cycle` | Commands to execute and change when the button is clicked | `None`
@@ -155,8 +155,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         .await?;
 
     let mut widget = Widget::new().with_format(config.format.with_defaults(
-        "{ $icon|} $text.str(pango:true) ",
-        "{ $icon|} $short_text.str(pango:true) |",
+        "{ $icon|} $text.pango-str() ",
+        "{ $icon|} $short_text.pango-str() |",
     )?);
 
     let mut timer = config.interval.timer();

@@ -33,7 +33,6 @@
 //! -----------------------|---------------------------------------------------|-------------
 //! `min_width` or `min_w` | if text is shorter it will be padded using spaces | `0`
 //! `max_width` or `max_w` | if text is longer it will be truncated            | Infinity
-//! `pango`                | if `true`, text is treated as [pango](https://docs.gtk.org/Pango/pango_markup.html#pango-markup), meaning symbols such as "<", ">" and "&" will not be escaped. Does not work well with `max_width` and 'rot_interval' | `false`
 //! `rot_interval`         | if text is longer than `max_width` it will be rotated every `rot_interval` seconds | `0.5`
 //!
 //! ## `eng` - Format numbers using engineering notation
@@ -55,6 +54,10 @@
 //! -----------------------|---------------------------------------------------------------------------------|-------------
 //! `width` or `w`         | the width of the bar (in characters)                                            | `5`
 //! `max_value`            | which value is treated as "full". For example, for battery level `100` is full. | `100`
+//!
+//! ## `pango-str` - Just display the text without pango markup escaping
+//!
+//! No arguments.
 //!
 //! # Handling missing placeholders and incorrect types
 //!
