@@ -76,23 +76,21 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut monitor = DeviceMonitor::new(config.mac, config.adapter_mac).await?;
 
     loop {
-        match &monitor.device {
+        match monitor.get_device_info().await {
             // Available
             Some(device) => {
-                let connected = device.connected().await?;
                 let mut values = map! {
-                    "icon" => Value::icon(api.get_icon(device.icon().await?)?),
-                    "name" => Value::text(device.name().await?),
+                    "icon" => Value::icon(api.get_icon(device.icon)?),
+                    "name" => Value::text(device.name),
                     "available" => Value::flag()
                 };
-                device
-                    .percentage()
-                    .await
-                    .map(|p| values.insert("percentage".into(), Value::percents(p)));
-                if connected {
+                if let Some(p) = device.battery_percentage {
+                    values.insert("percentage".into(), Value::percents(p));
+                }
+                if device.connected {
+                    debug!("Showing device as connected");
                     widget.state = State::Good;
                     widget.set_format(format.clone());
-                    debug!("Showing device as connected");
                 } else {
                     debug!("Showing device as disconnected");
                     widget.set_format(disconnected_format.clone());
@@ -121,7 +119,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                 event = api.event() => match event {
                     Action(a) if a == "toggle" => {
                         if let Some(dev) = &monitor.device {
-                            if let Ok(connected) = dev.connected().await {
+                            if let Ok(connected) = dev.device.connected().await {
                                 if connected {
                                     let _ = dev.device.disconnect().await;
                                 } else {
@@ -145,11 +143,17 @@ struct DeviceMonitor {
     device: Option<Device>,
 }
 
-#[derive(Clone)]
 struct Device {
     props: PropertiesProxy<'static>,
     device: Device1Proxy<'static>,
     battery: Battery1Proxy<'static>,
+}
+
+struct DeviceInfo {
+    connected: bool,
+    icon: &'static str,
+    name: String,
+    battery_percentage: Option<u8>,
 }
 
 impl DeviceMonitor {
@@ -248,6 +252,33 @@ impl DeviceMonitor {
             }
         }
     }
+
+    async fn get_device_info(&mut self) -> Option<DeviceInfo> {
+        let device = self.device.as_ref()?;
+
+        let Ok((connected, icon, name)) = tokio::try_join!(
+            device.device.connected(),
+            device.device.icon(),
+            device.device.name(),
+        ) else {
+            debug!("failed to fetch device info, assuming device or bluez disappeared");
+            self.device = None;
+            return None;
+        };
+
+        Some(DeviceInfo {
+            connected,
+            icon: match icon.as_str() {
+                "audio-card" | "audio-headset" => "headphones",
+                "input-gaming" => "joystick",
+                "input-keyboard" => "keyboard",
+                "input-mouse" => "mouse",
+                _ => "bluetooth",
+            },
+            name,
+            battery_percentage: device.battery.percentage().await.ok(),
+        })
+    }
 }
 
 impl Device {
@@ -343,35 +374,6 @@ impl Device {
 
         debug!("No device found");
         Ok(None)
-    }
-
-    async fn icon(&self) -> Result<&'static str> {
-        self.device
-            .icon()
-            .await
-            .map(|icon| match icon.as_str() {
-                "audio-card" | "audio-headset" => "headphones",
-                "input-gaming" => "joystick",
-                "input-keyboard" => "keyboard",
-                "input-mouse" => "mouse",
-                _ => "bluetooth",
-            })
-            .error("Failed to get icon")
-    }
-
-    async fn name(&self) -> Result<String> {
-        self.device.name().await.error("Failed to get name")
-    }
-
-    async fn connected(&self) -> Result<bool> {
-        self.device
-            .connected()
-            .await
-            .error("Failed to get connected state")
-    }
-
-    async fn percentage(&self) -> Option<u8> {
-        self.battery.percentage().await.ok()
     }
 }
 
