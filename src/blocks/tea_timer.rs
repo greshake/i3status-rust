@@ -6,6 +6,7 @@
 //! ----|--------|--------
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon {$minutes:$seconds |}"`
 //! `increment` | The numbers of seconds to add each time the block is clicked. | 30
+//! `done_cmd` | A command to run in `sh` when timer finishes. | None
 //!
 //! Placeholder      | Value                                                          | Type   | Unit
 //! -----------------|----------------------------------------------------------------|--------|---------------
@@ -28,12 +29,14 @@
 //! [[block]]
 //! block = "tea_timer"
 //! format = " $icon {$minutes:$seconds |}"
+//! done_cmd = "notify-send 'Timer Finished'"
 //! ```
 //!
 //! # Icons Used
 //! - `tea`
 
 use super::prelude::*;
+use crate::subprocess::spawn_shell;
 use chrono::{Duration, Utc};
 
 #[derive(Deserialize, Debug, SmartDefault)]
@@ -41,6 +44,7 @@ use chrono::{Duration, Utc};
 pub struct Config {
     format: FormatConfig,
     increment: Option<i64>,
+    done_cmd: Option<String>,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
@@ -61,9 +65,18 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let increment = Duration::seconds(config.increment.unwrap_or(30));
     let mut timer_end = Utc::now();
 
+    let mut timer_was_active = false;
+
     loop {
         let remaining_time = timer_end - Utc::now();
         let is_timer_active = remaining_time > Duration::zero();
+
+        if !is_timer_active && timer_was_active {
+            if let Some(cmd) = &config.done_cmd {
+                spawn_shell(cmd).error("done_cmd error")?;
+            }
+        }
+        timer_was_active = is_timer_active;
 
         let (hours, minutes, seconds) = if is_timer_active {
             (
