@@ -102,6 +102,19 @@
 <span id="102">102</span>
 <span id="103">103</span>
 <span id="104">104</span>
+<span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Timer
 //!
 //! # Configuration
@@ -110,6 +123,7 @@
 //! ----|--------|--------
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon {$minutes:$seconds |}&quot;`
 //! `increment` | The numbers of seconds to add each time the block is clicked. | 30
+//! `done_cmd` | A command to run in `sh` when timer finishes. | None
 //!
 //! Placeholder      | Value                                                          | Type   | Unit
 //! -----------------|----------------------------------------------------------------|--------|---------------
@@ -132,12 +146,14 @@
 //! [[block]]
 //! block = &quot;tea_timer&quot;
 //! format = &quot; $icon {$minutes:$seconds |}&quot;
+//! done_cmd = &quot;notify-send &#39;Timer Finished&#39;&quot;
 //! ```
 //!
 //! # Icons Used
 //! - `tea`
 
 </span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span><span class="kw">crate</span>::subprocess::spawn_shell;
 <span class="kw">use </span>chrono::{Duration, Utc};
 
 <span class="attribute">#[derive(Deserialize, Debug, SmartDefault)]
@@ -145,6 +161,7 @@
 </span><span class="kw">pub struct </span>Config {
     format: FormatConfig,
     increment: <span class="prelude-ty">Option</span>&lt;i64&gt;,
+    done_cmd: <span class="prelude-ty">Option</span>&lt;String&gt;,
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
@@ -165,9 +182,18 @@
     <span class="kw">let </span>increment = Duration::seconds(config.increment.unwrap_or(<span class="number">30</span>));
     <span class="kw">let </span><span class="kw-2">mut </span>timer_end = Utc::now();
 
+    <span class="kw">let </span><span class="kw-2">mut </span>timer_was_active = <span class="bool-val">false</span>;
+
     <span class="kw">loop </span>{
         <span class="kw">let </span>remaining_time = timer_end - Utc::now();
         <span class="kw">let </span>is_timer_active = remaining_time &gt; Duration::zero();
+
+        <span class="kw">if </span>!is_timer_active &amp;&amp; timer_was_active {
+            <span class="kw">if let </span><span class="prelude-val">Some</span>(cmd) = <span class="kw-2">&amp;</span>config.done_cmd {
+                spawn_shell(cmd).error(<span class="string">&quot;done_cmd error&quot;</span>)<span class="question-mark">?</span>;
+            }
+        }
+        timer_was_active = is_timer_active;
 
         <span class="kw">let </span>(hours, minutes, seconds) = <span class="kw">if </span>is_timer_active {
             (
