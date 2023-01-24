@@ -43,6 +43,7 @@ swayipc-async = "2.0"
 tokio-stream = "0.1"
 toml = "0.5"
 zbus = { version = "3.7", default-features = false, features = ["tokio"] }
+wayrs-client = { version = "0.3", features = ["tokio"] }
 
 [dependencies.clap]
 version = "3.0"
