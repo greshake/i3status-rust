@@ -596,7 +596,7 @@
         .block_on(<span class="kw">async move </span>{
             <span class="kw">let </span>config_path = util::find_file(<span class="kw-2">&amp;</span>args.config, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(<span class="string">&quot;toml&quot;</span>))
                 .or_error(|| <span class="macro">format!</span>(<span class="string">&quot;Configuration file &#39;{}&#39; not found&quot;</span>, args.config))<span class="question-mark">?</span>;
-            <span class="kw">let </span><span class="kw-2">mut </span>config: Config = util::deserialize_toml_file(<span class="kw-2">&amp;</span>config_path).config_error()<span class="question-mark">?</span>;
+            <span class="kw">let </span><span class="kw-2">mut </span>config: Config = util::deserialize_toml_file(<span class="kw-2">&amp;</span>config_path)<span class="question-mark">?</span>;
             <span class="kw">let </span>blocks = std::mem::take(<span class="kw-2">&amp;mut </span>config.blocks);
             <span class="kw">let </span><span class="kw-2">mut </span>bar = BarState::new(config);
             <span class="kw">for </span>block_config <span class="kw">in </span>blocks {

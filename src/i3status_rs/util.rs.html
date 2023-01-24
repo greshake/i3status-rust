@@ -253,6 +253,18 @@
 <span id="253">253</span>
 <span id="254">254</span>
 <span id="255">255</span>
+<span id="256">256</span>
+<span id="257">257</span>
+<span id="258">258</span>
+<span id="259">259</span>
+<span id="260">260</span>
+<span id="261">261</span>
+<span id="262">262</span>
+<span id="263">263</span>
+<span id="264">264</span>
+<span id="265">265</span>
+<span id="266">266</span>
+<span id="267">267</span>
 </pre><pre class="rust"><code><span class="kw">use </span>std::fs::File;
 <span class="kw">use </span>std::io::{<span class="self">self</span>, BufReader, Read};
 <span class="kw">use </span>std::path::{Path, PathBuf};
@@ -360,7 +372,19 @@
     BufReader::new(file)
         .read_to_string(<span class="kw-2">&amp;mut </span>contents)
         .or_error(|| <span class="macro">format!</span>(<span class="string">&quot;Failed to read file: {}&quot;</span>, path.display()))<span class="question-mark">?</span>;
-    toml::from_str(<span class="kw-2">&amp;</span>contents).or_error(|| <span class="macro">format!</span>(<span class="string">&quot;Failed to deserialize file: {}&quot;</span>, path.display()))
+    toml::from_str(<span class="kw-2">&amp;</span>contents).map_err(|err| {
+        <span class="attribute">#[allow(deprecated)]
+        </span><span class="kw">let </span>location_msg = err
+            .line_col()
+            .map(|(line, _col)| <span class="macro">format!</span>(<span class="string">&quot; at line {}&quot;</span>, line + <span class="number">1</span>))
+            .unwrap_or_default();
+        Error::new(<span class="macro">format!</span>(
+            <span class="string">&quot;Failed to deserialize TOML file {}{}: {}&quot;</span>,
+            path.display(),
+            location_msg,
+            err.message()
+        ))
+    })
 }
 
 <span class="kw">pub async fn </span>read_file(path: <span class="kw">impl </span>AsRef&lt;Path&gt;) -&gt; io::Result&lt;String&gt; {
