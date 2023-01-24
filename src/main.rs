@@ -93,7 +93,7 @@ fn main() {
         .block_on(async move {
             let config_path = util::find_file(&args.config, None, Some("toml"))
                 .or_error(|| format!("Configuration file '{}' not found", args.config))?;
-            let mut config: Config = util::deserialize_toml_file(&config_path).config_error()?;
+            let mut config: Config = util::deserialize_toml_file(&config_path)?;
             let blocks = std::mem::take(&mut config.blocks);
             let mut bar = BarState::new(config);
             for block_config in blocks {

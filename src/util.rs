@@ -105,7 +105,19 @@ where
     BufReader::new(file)
         .read_to_string(&mut contents)
         .or_error(|| format!("Failed to read file: {}", path.display()))?;
-    toml::from_str(&contents).or_error(|| format!("Failed to deserialize file: {}", path.display()))
+    toml::from_str(&contents).map_err(|err| {
+        #[allow(deprecated)]
+        let location_msg = err
+            .line_col()
+            .map(|(line, _col)| format!(" at line {}", line + 1))
+            .unwrap_or_default();
+        Error::new(format!(
+            "Failed to deserialize TOML file {}{}: {}",
+            path.display(),
+            location_msg,
+            err.message()
+        ))
+    })
 }
 
 pub async fn read_file(path: impl AsRef<Path>) -> io::Result<String> {
