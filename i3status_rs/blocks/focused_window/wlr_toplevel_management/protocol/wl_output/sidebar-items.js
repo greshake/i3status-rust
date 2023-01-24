@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["Event",""],["Subpixel",""],["Transform",""]],"static":[["INTERFACE",""]],"struct":[["GeometryArgs",""],["Mode",""],["ModeArgs",""],["WlOutput","compositor output region"]]};

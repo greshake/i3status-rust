@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["Error",""],["Event",""]],"static":[["INTERFACE",""]],"struct":[["WlSubsurface","sub-surface interface to a wl_surface"]]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["Event",""]],"static":[["INTERFACE",""]],"struct":[["DownArgs",""],["MotionArgs",""],["OrientationArgs",""],["ShapeArgs",""],["UpArgs",""],["WlTouch","touchscreen input device"]]};

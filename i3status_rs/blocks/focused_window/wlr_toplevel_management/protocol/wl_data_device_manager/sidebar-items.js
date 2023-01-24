@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["Event",""]],"static":[["INTERFACE",""]],"struct":[["DndAction",""],["WlDataDeviceManager","data transfer interface"]]};

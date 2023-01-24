@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["Event",""]],"static":[["INTERFACE",""]],"struct":[["ZwlrForeignToplevelManagerV1","list and control opened apps"]]};

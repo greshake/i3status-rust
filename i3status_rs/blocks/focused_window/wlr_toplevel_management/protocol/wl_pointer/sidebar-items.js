@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["Axis",""],["AxisSource",""],["ButtonState",""],["Error",""],["Event",""]],"static":[["INTERFACE",""]],"struct":[["AxisArgs",""],["AxisDiscreteArgs",""],["AxisStopArgs",""],["AxisValue120Args",""],["ButtonArgs",""],["EnterArgs",""],["LeaveArgs",""],["MotionArgs",""],["WlPointer","pointer input device"]]};

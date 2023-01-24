@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["Error",""],["Event",""]],"static":[["INTERFACE",""]],"struct":[["WlShell","create desktop-style surfaces"]]};

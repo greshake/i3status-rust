@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["Event",""]],"static":[["INTERFACE",""]],"struct":[["WlShmPool","a shared memory pool"]]};
