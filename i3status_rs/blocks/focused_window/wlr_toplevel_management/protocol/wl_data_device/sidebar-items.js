@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":[["Error",""],["Event",""]],"static":[["INTERFACE",""]],"struct":[["EnterArgs",""],["MotionArgs",""],["WlDataDevice","data transfer device"]]};

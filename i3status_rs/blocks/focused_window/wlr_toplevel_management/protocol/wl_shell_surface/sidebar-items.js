@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":[["Event",""],["FullscreenMethod",""]],"static":[["INTERFACE",""]],"struct":[["ConfigureArgs",""],["Resize",""],["Transient",""],["WlShellSurface","desktop-style metadata interface"]]};

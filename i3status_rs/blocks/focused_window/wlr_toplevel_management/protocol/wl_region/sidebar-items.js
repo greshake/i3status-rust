@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":[["Event",""]],"static":[["INTERFACE",""]],"struct":[["WlRegion","region interface"]]};

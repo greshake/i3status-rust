@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"enum":[["Error",""],["Event",""],["State",""]],"static":[["INTERFACE",""]],"struct":[["ZwlrForeignToplevelHandleV1","an opened toplevel"]]};
