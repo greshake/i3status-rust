@@ -1,13 +1,7 @@
 use super::{Backend, Info};
 use crate::blocks::prelude::*;
 
-mod protocol {
-    use wayrs_client;
-    pub use wayrs_client::protocol::*;
-    wayrs_client::scanner::generate!("wl-protocol/wlr-foreign-toplevel-management-unstable-v1.xml");
-}
-
-use protocol::*;
+use wayrs_protocols::wlr_foreign_toplevel_management_unstable_v1::*;
 
 use wayrs_client::connection::Connection;
 use wayrs_client::global::GlobalsExt;

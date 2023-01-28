@@ -44,6 +44,7 @@ tokio-stream = "0.1"
 toml = "0.6"
 zbus = { version = "3.7", default-features = false, features = ["tokio"] }
 wayrs-client = { version = "0.3", features = ["tokio"] }
+wayrs-protocols = { version = "0.3", features = ["wlr-foreign-toplevel-management-unstable-v1"] }
 
 [dependencies.clap]
 version = "4.0"
