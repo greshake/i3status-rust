@@ -17,11 +17,33 @@ This is a major release which rewrites the core code to be asynchronous.
   block = "custom"
   #TODO
   ```
-- `networkmanager` block has been removed (could be revisited in the future). Suggested example replacement:
+- `networkmanager` block has been removed (could be revisited in the future), so `net` block should be used instead.
+  Note there is no equivalent to `interface_name_exclude` in `net` as it only shows one interface at a time.
+  Example of a `networkmanager` config ported to `net`:
+
+Old:
+  ```toml
+  [[block]]
+block = "networkmanager"
+on_click = "alacritty -e nmtui"
+interface_name_include = ['br\-[0-9a-f]{12}', 'docker\d+']
+```
+
+New:  
   ```toml
   [[block]]
   block = "net"
-  #TODO
+  device = 'br\-[0-9a-f]{12}'
+  [[block.click]]
+  button = "left"
+  cmd = "alacritty -e nmtui"
+ 
+  [[block]]
+  block = "net"
+  device = 'docker\d+'
+  [[block.click]]
+  button = "left"
+  cmd = "alacritty -e nmtui"
   ```
 - `taskwarrior` block config options `format_singular` and `format_everything_done` have been removed, and instead implemented via the new formatter. Example:
   ```toml
