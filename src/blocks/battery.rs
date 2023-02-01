@@ -38,6 +38,14 @@
 //! block = "battery"
 //! format = " $icon $percentage "
 //! ```
+//! 
+//! ```toml
+//! [[block]]
+//! block = "battery"
+//! format = "$percentage $time|N/A"
+//! device = "DisplayDevice"
+//! driver = "upower"
+//! ```
 //!
 //! Hide missing battery:
 //!
