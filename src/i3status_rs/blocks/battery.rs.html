@@ -277,6 +277,14 @@
 <a href="#277" id="277">277</a>
 <a href="#278" id="278">278</a>
 <a href="#279" id="279">279</a>
+<a href="#280" id="280">280</a>
+<a href="#281" id="281">281</a>
+<a href="#282" id="282">282</a>
+<a href="#283" id="283">283</a>
+<a href="#284" id="284">284</a>
+<a href="#285" id="285">285</a>
+<a href="#286" id="286">286</a>
+<a href="#287" id="287">287</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Information about the internal power supply
 //!
 //! This block can display the current battery state (Full, Charging or Discharging), percentage
@@ -316,6 +324,14 @@
 //! [[block]]
 //! block = &quot;battery&quot;
 //! format = &quot; $icon $percentage &quot;
+//! ```
+//! 
+//! ```toml
+//! [[block]]
+//! block = &quot;battery&quot;
+//! format = &quot;$percentage $time|N/A&quot;
+//! device = &quot;DisplayDevice&quot;
+//! driver = &quot;upower&quot;
 //! ```
 //!
 //! Hide missing battery:
