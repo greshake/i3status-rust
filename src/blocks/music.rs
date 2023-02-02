@@ -20,7 +20,7 @@
 //! ----|--------|--------
 //! `format` | A string to customise the output of this block. See below for available placeholders. | <code>" $icon {$combo.str(max_w:25,rot_interval:0.5) $play &vert;}"</code>
 //! `player` | Name(s) of the music player(s) MPRIS interface. This can be either a music player name or an array of music player names. Run <code>busctl --user list &vert; grep "org.mpris.MediaPlayer2." &vert; cut -d' ' -f1</code> and the name is the part after "org.mpris.MediaPlayer2.". | `None`
-//! `interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore. | `[]`
+//! `interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore. | `["playerctld"]`
 //! `separator` | String to insert between artist and title. | `" - "`
 //! `seek_step` | Number of microseconds to seek forward/backward when scrolling on the bar. | `1000`
 //!
@@ -104,6 +104,7 @@ use zbus::names::{OwnedBusName, OwnedUniqueName};
 use zbus::{MatchRule, MessageStream};
 
 mod zbus_mpris;
+mod zbus_playerctld;
 
 make_log_macro!(debug, "music");
 
@@ -116,6 +117,7 @@ const PREV_BTN: &str = "prev_btn";
 pub struct Config {
     format: FormatConfig,
     player: PlayerName,
+    #[default(vec!["playerctld".into()])]
     interface_name_exclude: Vec<String>,
     #[default(" - ".into())]
     separator: String,
@@ -170,12 +172,33 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         .collect::<Result<Vec<_>, _>>()
         .error("Invalid regex")?;
 
+    let playerctrld_proxy = zbus_playerctld::PlayerctldProxy::new(&dbus_conn)
+        .await
+        .error("Failed to create PlayerctldProxy")?;
+
     let mut players = get_players(&dbus_conn, &prefered_players, &exclude_regex).await?;
     let mut cur_player = None;
-    for (i, player) in players.iter().enumerate() {
-        cur_player = Some(i);
-        if player.status == Some(PlaybackStatus::Playing) {
-            break;
+    if let Ok(playerctrld_players) = playerctrld_proxy.player_names().await {
+        // If we can get the list of players from playerctld then we should
+        // take the first matching player (this is the most recently active player)
+        for playerctrld_player in playerctrld_players {
+            if let Some(pos) = players
+                .iter()
+                .position(|p| p.bus_name.as_str() == playerctrld_player)
+            {
+                cur_player = Some(pos);
+                break;
+            }
+        }
+    } else {
+        // If we couldn't get the players from playerctld then fall back to walking over
+        // the players and select the first one found playing something, or the last one
+        // in the list (the most recently opened)
+        for (i, player) in players.iter().enumerate() {
+            cur_player = Some(i);
+            if player.status == Some(PlaybackStatus::Playing) {
+                break;
+            }
         }
     }
 
@@ -206,6 +229,11 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     )
     .await
     .error("Failed to add match rule")?;
+
+    let mut active_player_change_end_stream = playerctrld_proxy
+        .receive_active_player_change_end()
+        .await
+        .error("Failed to create ActivePlayerChangeEndStream")?;
 
     loop {
         debug!("available players:");
@@ -326,6 +354,20 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     }
                     break;
                 }
+                Some(msg)  = active_player_change_end_stream.next() => {
+                    let args = msg.args().unwrap();
+                    if let Some(pos) = players.iter().position(|p| p.bus_name == args.name){
+                        cur_player = Some(pos);
+                    }
+                    else{
+                        // We must have shifted to a player we wanted to skip (on the interface_name_exclude list).
+                        // Let's shift again
+                        if let Err(e) = playerctrld_proxy.shift().await{
+                            debug!("{}", e);
+                        }
+                    }
+                    break;
+                }
                 event = api.event() => match event {
                     UpdateRequest => (),
                     Action(a) => {
@@ -343,6 +385,9 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                                 }
                                 "next_player" => {
                                     cur_player = Some((i + 1) % players.len());
+                                    if let Err(e) = playerctrld_proxy.shift().await{
+                                        debug!("{}", e);
+                                    }
                                     break;
                                 }
                                 "seek_forward" => {
