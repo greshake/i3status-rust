@@ -290,6 +290,27 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                         if let Some(metadata) = props.get("Metadata") {
                             player.metadata =
                                 zbus_mpris::PlayerMetadata::try_from(metadata.to_owned()).unwrap();
+
+                            // TODO: refactor!!
+                            match (
+                                &player.metadata.title,
+                                &player.metadata.artist,
+                                &player.metadata.url,
+                            ) {
+                                (Some(_t), None, _) => {
+                                    cur_player = players.iter().position(|p| &*p.owner == sender);
+                                }
+                                (None, Some(_a), _) => {
+                                    cur_player = players.iter().position(|p| &*p.owner == sender);
+                                }
+                                (Some(_t), Some(_a), _) => {
+                                    cur_player = players.iter().position(|p| &*p.owner == sender);
+                                }
+                                (None, None, Some(_url)) => {
+                                    cur_player = players.iter().position(|p| &*p.owner == sender);
+                                }
+                                _ => (),
+                            }
                         }
                         break;
                     }
@@ -301,7 +322,6 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     match (args.old_owner.as_ref(), args.new_owner.as_ref()) {
                         (None, Some(new)) => if player_matches(args.name.as_str(), &prefered_players, &exclude_regex) {
                             players.push(Player::new(&dbus_conn, args.name.to_owned().into(), new.to_owned().into()).await?);
-                            cur_player = Some(players.len() - 1);
                         }
                         (Some(old), None) => {
                             if let Some(pos) = players.iter().position(|p| &*p.owner == old) {
