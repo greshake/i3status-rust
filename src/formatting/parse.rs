@@ -8,6 +8,8 @@ use nom::{
     IResult, Parser,
 };
 
+use crate::errors::*;
+
 #[derive(Debug, PartialEq, Eq)]
 pub struct Arg<'a> {
     pub key: &'a str,
@@ -40,20 +42,51 @@ pub struct TokenList<'a>(pub Vec<Token<'a>>);
 #[derive(Debug, PartialEq, Eq)]
 pub struct FormatTemplate<'a>(pub Vec<TokenList<'a>>);
 
-fn spaces(i: &str) -> IResult<&str, &str> {
+#[derive(Debug, PartialEq, Eq)]
+enum PError<'a> {
+    Expected {
+        expected: char,
+        actual: Option<char>,
+    },
+    Other {
+        input: &'a str,
+        kind: nom::error::ErrorKind,
+    },
+}
+
+impl<'a> nom::error::ParseError<&'a str> for PError<'a> {
+    fn from_error_kind(input: &'a str, kind: nom::error::ErrorKind) -> Self {
+        Self::Other { input, kind }
+    }
+
+    fn append(_: &'a str, _: nom::error::ErrorKind, other: Self) -> Self {
+        other
+    }
+
+    fn from_char(input: &'a str, expected: char) -> Self {
+        let actual = input.chars().next();
+        Self::Expected { expected, actual }
+    }
+
+    fn or(self, other: Self) -> Self {
+        other
+    }
+}
+
+fn spaces(i: &str) -> IResult<&str, &str, PError> {
     take_while(|x: char| x.is_ascii_whitespace())(i)
 }
 
-fn alphanum1(i: &str) -> IResult<&str, &str> {
+fn alphanum1(i: &str) -> IResult<&str, &str, PError> {
     take_while1(|x: char| x.is_alphanumeric() || x == '_' || x == '-')(i)
 }
 
-fn arg1(i: &str) -> IResult<&str, &str> {
+fn arg1(i: &str) -> IResult<&str, &str, PError> {
     take_while1(|x: char| x.is_alphanumeric() || x == '_' || x == '-' || x == '.')(i)
 }
 
 // `key:val`
-fn parse_arg(i: &str) -> IResult<&str, Arg> {
+fn parse_arg(i: &str) -> IResult<&str, Arg, PError> {
     map(
         separated_pair(alphanum1, cut(char(':')), cut(arg1)),
         |(key, val)| Arg { key, val },
@@ -62,7 +95,7 @@ fn parse_arg(i: &str) -> IResult<&str, Arg> {
 
 // `(arg,key:val)`
 // `( arg, key:val , abc)`
-fn parse_args(i: &str) -> IResult<&str, Vec<Arg>> {
+fn parse_args(i: &str) -> IResult<&str, Vec<Arg>, PError> {
     let inner = separated_list0(preceded(spaces, char(',')), preceded(spaces, parse_arg));
     preceded(
         char('('),
@@ -72,7 +105,7 @@ fn parse_args(i: &str) -> IResult<&str, Vec<Arg>> {
 
 // `.str(width:2)`
 // `.eng(unit:bits,bin)`
-fn parse_formatter(i: &str) -> IResult<&str, Formatter> {
+fn parse_formatter(i: &str) -> IResult<&str, Formatter, PError> {
     preceded(char('.'), cut(tuple((alphanum1, opt(parse_args)))))
         .map(|(name, args)| Formatter {
             name,
@@ -83,14 +116,14 @@ fn parse_formatter(i: &str) -> IResult<&str, Formatter> {
 
 // `$var`
 // `$key.eng(unit:bits,bin)`
-fn parse_placeholder(i: &str) -> IResult<&str, Placeholder> {
+fn parse_placeholder(i: &str) -> IResult<&str, Placeholder, PError> {
     preceded(char('$'), cut(tuple((alphanum1, opt(parse_formatter)))))
         .map(|(name, formatter)| Placeholder { name, formatter })
         .parse(i)
 }
 
 // `just escaped \| text`
-fn parse_string(i: &str) -> IResult<&str, String> {
+fn parse_string(i: &str) -> IResult<&str, String, PError> {
     preceded(
         not(eof),
         escaped_transform(
@@ -102,16 +135,16 @@ fn parse_string(i: &str) -> IResult<&str, String> {
 }
 
 // `^icon_name`
-fn parse_icon(i: &str) -> IResult<&str, &str> {
+fn parse_icon(i: &str) -> IResult<&str, &str, PError> {
     preceded(char('^'), cut(preceded(tag("icon_"), alphanum1)))(i)
 }
 
 // `{ a | b | c }`
-fn parse_recursive_template(i: &str) -> IResult<&str, FormatTemplate> {
+fn parse_recursive_template(i: &str) -> IResult<&str, FormatTemplate, PError> {
     preceded(char('{'), cut(terminated(parse_format_template, char('}'))))(i)
 }
 
-fn parse_token_list(i: &str) -> IResult<&str, TokenList> {
+fn parse_token_list(i: &str) -> IResult<&str, TokenList, PError> {
     map(
         many0(alt((
             map(parse_string, Token::Text),
@@ -123,8 +156,39 @@ fn parse_token_list(i: &str) -> IResult<&str, TokenList> {
     )(i)
 }
 
-pub fn parse_format_template(i: &str) -> IResult<&str, FormatTemplate> {
+fn parse_format_template(i: &str) -> IResult<&str, FormatTemplate, PError> {
     map(separated_list0(char('|'), parse_token_list), FormatTemplate)(i)
+}
+
+pub fn parse_full(i: &str) -> Result<FormatTemplate> {
+    match parse_format_template(i) {
+        Ok((rest, template)) => {
+            if rest.is_empty() {
+                Ok(template)
+            } else {
+                Err(Error::new(format!(
+                    "unexpected '{}'",
+                    rest.chars().next().unwrap()
+                )))
+            }
+        }
+        Err(err) => Err(match err {
+            nom::Err::Incomplete(_) => unreachable!(),
+            nom::Err::Error(err) | nom::Err::Failure(err) => match err {
+                PError::Expected { expected, actual } => {
+                    if let Some(actual) = actual {
+                        Error::new(format!("expected '{expected}', got '{actual}'"))
+                    } else {
+                        Error::new(format!("expected '{expected}', got EOF"))
+                    }
+                }
+                PError::Other { input, kind } => {
+                    // TODO: improve?
+                    Error::new(format!("{kind:?} error near '{input}'"))
+                }
+            },
+        }),
+    }
 }
 
 #[cfg(test)]

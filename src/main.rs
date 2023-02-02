@@ -282,11 +282,11 @@ impl BarState {
         let error_format = block_config
             .common
             .error_format
-            .with_default(&self.config.error_format)?;
+            .with_default_config(&self.config.error_format);
         let error_fullscreen_format = block_config
             .common
             .error_fullscreen_format
-            .with_default(&self.config.error_fullscreen_format)?;
+            .with_default_config(&self.config.error_fullscreen_format);
 
         let block_name = block_config.config.name();
         let (block_fut, abort_handle) = abortable(block_config.config.run(api));

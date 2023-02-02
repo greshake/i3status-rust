@@ -101,16 +101,14 @@ use value::Value;
 
 pub type Values = HashMap<Cow<'static, str>, Value>;
 
-pub type Format = Arc<FormatInner>;
-
-#[derive(Debug)]
-pub struct FormatInner {
-    full: FormatTemplate,
-    short: FormatTemplate,
+#[derive(Debug, Clone)]
+pub struct Format {
+    full: Arc<FormatTemplate>,
+    short: Arc<FormatTemplate>,
     intervals: Vec<u64>,
 }
 
-impl FormatInner {
+impl Format {
     pub fn contains_key(&self, key: &str) -> bool {
         self.full.contains_key(key) || self.short.contains_key(key)
     }

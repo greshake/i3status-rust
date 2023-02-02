@@ -1,14 +1,15 @@
-use super::{template::FormatTemplate, Format, FormatInner};
+use super::{template::FormatTemplate, Format};
 use crate::errors::*;
 use serde::de::{MapAccess, Visitor};
 use serde::{de, Deserialize, Deserializer};
 use std::fmt;
+use std::str::FromStr;
 use std::sync::Arc;
 
 #[derive(Debug, Default)]
 pub struct Config {
-    pub full: Option<FormatTemplate>,
-    pub short: Option<FormatTemplate>,
+    pub full: Option<Arc<FormatTemplate>>,
+    pub short: Option<Arc<FormatTemplate>>,
 }
 
 #[derive(Debug, Default)]
@@ -22,26 +23,58 @@ impl Config {
         self.with_defaults(default_full, "")
     }
 
+    pub fn with_default_config(self, default_config: &Self) -> Format {
+        let full = self
+            .full
+            .or_else(|| default_config.full.clone())
+            .unwrap_or_default();
+        let short = self
+            .short
+            .or_else(|| default_config.short.clone())
+            .unwrap_or_default();
+
+        let mut intervals = Vec::new();
+        full.init_intervals(&mut intervals);
+        short.init_intervals(&mut intervals);
+
+        Format {
+            full,
+            short,
+            intervals,
+        }
+    }
+
     pub fn with_defaults(self, default_full: &str, default_short: &str) -> Result<Format> {
         let full = match self.full {
             Some(full) => full,
-            None => default_full.parse()?,
+            None => Arc::new(default_full.parse()?),
         };
 
         let short = match self.short {
             Some(short) => short,
-            None => default_short.parse()?,
+            None => Arc::new(default_short.parse()?),
         };
 
         let mut intervals = Vec::new();
         full.init_intervals(&mut intervals);
         short.init_intervals(&mut intervals);
 
-        Ok(Arc::new(FormatInner {
+        Ok(Format {
             full,
             short,
             intervals,
-        }))
+        })
+    }
+}
+
+impl FromStr for Config {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self {
+            full: Some(Arc::new(s.parse()?)),
+            short: None,
+        })
     }
 }
 
@@ -75,10 +108,7 @@ impl<'de> Deserialize<'de> for Config {
             where
                 E: de::Error,
             {
-                Ok(Config {
-                    full: Some(full.parse().serde_error()?),
-                    short: None,
-                })
+                full.parse().serde_error()
             }
 
             /// Handle configs like:
@@ -92,21 +122,23 @@ impl<'de> Deserialize<'de> for Config {
             where
                 V: MapAccess<'de>,
             {
-                let mut full: Option<FormatTemplate> = None;
-                let mut short: Option<FormatTemplate> = None;
+                let mut full: Option<Arc<FormatTemplate>> = None;
+                let mut short: Option<Arc<FormatTemplate>> = None;
                 while let Some(key) = map.next_key()? {
                     match key {
                         Field::Full => {
                             if full.is_some() {
                                 return Err(de::Error::duplicate_field("full"));
                             }
-                            full = Some(map.next_value::<String>()?.parse().serde_error()?);
+                            full =
+                                Some(Arc::new(map.next_value::<String>()?.parse().serde_error()?));
                         }
                         Field::Short => {
                             if short.is_some() {
                                 return Err(de::Error::duplicate_field("short"));
                             }
-                            short = Some(map.next_value::<String>()?.parse().serde_error()?);
+                            short =
+                                Some(Arc::new(map.next_value::<String>()?.parse().serde_error()?));
                         }
                     }
                 }

@@ -22,10 +22,10 @@ pub struct Config {
     /// The maximum delay (ms) between two clicks that are considered as doulble click
     pub double_click_delay: u64,
 
-    #[default(" {$short_error_message|X} ".into())]
-    pub error_format: String,
-    #[default(" $full_error_message ".into())]
-    pub error_fullscreen_format: String,
+    #[default(" {$short_error_message|X} ".parse().unwrap())]
+    pub error_format: FormatConfig,
+    #[default(" $full_error_message ".parse().unwrap())]
+    pub error_fullscreen_format: FormatConfig,
 
     #[serde(rename = "block")]
     pub blocks: Vec<BlockConfigEntry>,

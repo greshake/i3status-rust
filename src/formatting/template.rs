@@ -6,7 +6,7 @@ use crate::errors::*;
 
 use std::str::FromStr;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct FormatTemplate(pub Vec<TokenList>);
 
 #[derive(Debug)]
@@ -139,22 +139,9 @@ impl FromStr for FormatTemplate {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self> {
-        match parse::parse_format_template(s) {
-            Ok((rest, parsed)) => {
-                assert!(rest.is_empty());
-                parsed.try_into()
-            }
-            Err(e) => match e {
-                nom::Err::Incomplete(_) => unreachable!(),
-                nom::Err::Error(e) | nom::Err::Failure(e) => {
-                    let err_cause: Box<dyn StdError + Send + Sync + 'static> =
-                        format!("Input: {:?}, ErrorCode: {:?}", e.input, e.code).into();
-                    let mut err = Error::new("Incorrect format template");
-                    err.cause = Some(err_cause.into());
-                    Err(err)
-                }
-            },
-        }
+        parse::parse_full(s)
+            .and_then(TryInto::try_into)
+            .error("Incorrect format template")
     }
 }
 
