@@ -42,7 +42,7 @@ smart-default = "0.6"
 swayipc-async = "2.0"
 tokio-stream = "0.1"
 toml = "0.6"
-zbus = { version = "3.7", default-features = false, features = ["tokio"] }
+zbus = { version = "3.8", default-features = false, features = ["tokio"] }
 wayrs-client = { version = "0.3", features = ["tokio"] }
 wayrs-protocols = { version = "0.3", features = ["wlr-foreign-toplevel-management-unstable-v1"] }
 
@@ -96,10 +96,6 @@ features = ["json"]
 # Test async code
 [dev-dependencies]
 tokio-test = "*"
-
-# TODO: remove once https://gitlab.freedesktop.org/dbus/zbus/-/merge_requests/637 is included in a release.
-[patch.crates-io]
-zbus = { git = "https://gitlab.freedesktop.org/dbus/zbus", rev = "18240526a612e56e9379f64d42c07053eed9657e" }
 
 [profile.release]
 lto = "thin"
