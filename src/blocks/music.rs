@@ -309,7 +309,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     let args = msg.args().unwrap();
                     let header = msg.header().unwrap();
                     let sender = header.sender().unwrap().unwrap();
-                    if let Some(player) = players.iter_mut().find(|p| &*p.owner == sender) {
+                    if let Some((pos, player)) = players.iter_mut().enumerate().find(|p| &*p.1.owner == sender) {
                         let props = args.changed_properties;
                         if let Some(status) = props.get("PlaybackStatus") {
                             let status: &str = status.downcast_ref().unwrap();
@@ -318,12 +318,14 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                         if let Some(metadata) = props.get("Metadata") {
                             player.metadata =
                                 zbus_mpris::PlayerMetadata::try_from(metadata.to_owned()).unwrap();
-
-                            if player.metadata.title.is_some()
-                                || player.metadata.artist.is_some()
-                                || player.metadata.url.is_some() {
-                                    cur_player = players.iter().position(|p| &*p.owner == sender);
-                            }
+                        }
+                        if player.status == Some(PlaybackStatus::Playing)
+                        && (
+                            player.metadata.title.is_some()
+                            || player.metadata.artist.is_some()
+                            || player.metadata.url.is_some()
+                        ) {
+                            cur_player = Some(pos);
                         }
                         break;
                     }
