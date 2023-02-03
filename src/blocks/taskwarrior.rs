@@ -11,7 +11,7 @@
 //! `critical_threshold` | The threshold of pending (or started) tasks when the block turns into a critical state | `20`
 //! `hide_when_zero` | Whethere to hide the block when the number of tasks is zero | `false`
 //! `filters` | A list of tables with the keys `name` and `filter`. `filter` specifies the criteria that must be met for a task to be counted towards this filter. | ```[{name = "pending", filter = "-COMPLETED -DELETED"}]```
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $done\|$count.eng(1) "`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $done\|$count.eng(w:1) "`
 //! `data_location`| Directory in which taskwarrior stores its data files. Supports path expansions e.g. `~`. | `"~/.task"`
 //!
 //! Placeholder   | Value                                       | Type   | Unit
@@ -35,7 +35,7 @@
 //! [[block]]
 //! block = "taskwarrior"
 //! interval = 60
-//! format = " $icon $done{All done}|$single{One task}|Tasks: $count.eng(1) "
+//! format = " $icon $done{All done}|$single{One task}|Tasks: $count.eng(w:1) "
 //! warning_threshold = 10
 //! critical_threshold = 20
 //! [[block.filters]]
@@ -86,8 +86,11 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     api.set_default_actions(&[(MouseButton::Right, None, "next_filter")])
         .await?;
 
-    let mut widget =
-        Widget::new().with_format(config.format.with_default(" $icon $done|$count.eng(1) ")?);
+    let mut widget = Widget::new().with_format(
+        config
+            .format
+            .with_default(" $icon $done|$count.eng(w:1) ")?,
+    );
 
     let mut filters = config.filters.iter().cycle();
     let mut filter = filters.next().error("`filters` is empty")?;

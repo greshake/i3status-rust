@@ -5,7 +5,7 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `interval` | Update interval, in seconds. | `5`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $running.eng(1) "`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $running.eng(w:1) "`
 //! `socket_path` | The path to the docker socket. Supports path expansions e.g. `~`. | `"/var/run/docker.sock"`
 //!
 //! Key       | Value                          | Type   | Unit
@@ -46,7 +46,7 @@ pub struct Config {
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut widget =
-        Widget::new().with_format(config.format.with_default(" $icon $running.eng(1) ")?);
+        Widget::new().with_format(config.format.with_default(" $icon $running.eng(w:1) ")?);
     let socket_path = config.socket_path.expand()?;
 
     loop {

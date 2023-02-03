@@ -103,7 +103,7 @@ fn main() {
         });
     if let Err(error) = result {
         let error_widget = Widget::new()
-            .with_text(error.to_string().chars().collect_pango())
+            .with_text(error.to_string().chars().collect_pango_escaped())
             .with_state(State::Critical);
 
         println!(
@@ -282,11 +282,11 @@ impl BarState {
         let error_format = block_config
             .common
             .error_format
-            .with_default(&self.config.error_format)?;
+            .with_default_config(&self.config.error_format);
         let error_fullscreen_format = block_config
             .common
             .error_fullscreen_format
-            .with_default(&self.config.error_fullscreen_format)?;
+            .with_default_config(&self.config.error_fullscreen_format);
 
         let block_name = block_config.config.name();
         let (block_fut, abort_handle) = abortable(block_config.config.run(api));

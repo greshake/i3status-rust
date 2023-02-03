@@ -31,6 +31,7 @@ maildir = { version = "0.6", optional = true }
 neli = { version = "0.6", features = ["async"] }
 neli-wifi = { version = "0.4", features = ["async"] }
 nix = "0.26"
+nom = "7.1.2"
 notmuch = { version = "0.8", optional = true }
 once_cell = "1"
 regex = "1.5"

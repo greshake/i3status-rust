@@ -4,7 +4,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block when in "Memory" view. See below for available placeholders. | `" $icon $mem_avail.eng(3,B,M)/$mem_total.eng(3,B,M)($mem_total_used_percents.eng(2)) "`
+//! `format` | A string to customise the output of this block when in "Memory" view. See below for available placeholders. | `" $icon $mem_avail.eng(prefix:M)/$mem_total.eng(prefix:M)($mem_total_used_percents.eng(w:2)) "`
 //! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
 //! `interval` | Update interval in seconds | `5`
 //! `warning_mem` | Percentage of memory usage, where state is set to warning | `80.0`
@@ -87,7 +87,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut widget = Widget::new();
 
     let mut format = config.format.with_default(
-        " $icon $mem_avail.eng(3,B,M)/$mem_total.eng(3,B,M)($mem_total_used_percents.eng(2)) ",
+        " $icon $mem_avail.eng(prefix:M)/$mem_total.eng(prefix:M)($mem_total_used_percents.eng(w:2)) ",
     )?;
     let mut format_alt = match config.format_alt {
         Some(f) => Some(f.with_default("")?),

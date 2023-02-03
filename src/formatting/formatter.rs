@@ -1,8 +1,8 @@
 use std::fmt::Debug;
 use std::iter::repeat;
-use std::str::FromStr;
 use std::time::{Duration, Instant};
 
+use super::parse::Arg;
 use super::prefix::Prefix;
 use super::unit::Unit;
 use super::value::ValueInner as Value;
@@ -10,56 +10,34 @@ use crate::errors::*;
 use crate::escape::CollectEscaped;
 
 const DEFAULT_STR_MIN_WIDTH: usize = 0;
-const DEFAULT_STR_MAX_WIDTH: Option<usize> = None;
-
-const DEFAULT_STRROT_WIDTH: usize = 15;
-const DEFAULT_STRROT_INTERVAL: f64 = 0.5;
+const DEFAULT_STR_MAX_WIDTH: usize = usize::MAX;
+const DEFAULT_STR_ROT_INTERVAL: Option<f64> = None;
 
 const DEFAULT_BAR_WIDTH: usize = 5;
 const DEFAULT_BAR_MAX_VAL: f64 = 100.0;
 
+const DEFAULT_NUMBER_WIDTH: usize = 2;
+
 pub const DEFAULT_STRING_FORMATTER: StrFormatter = StrFormatter {
     min_width: DEFAULT_STR_MIN_WIDTH,
     max_width: DEFAULT_STR_MAX_WIDTH,
+    rot_interval_ms: None,
+    init_time: None,
 };
 
 // TODO: split those defaults
 pub const DEFAULT_NUMBER_FORMATTER: EngFormatter = EngFormatter(EngFixConfig {
-    width: 2,
-    unit: UnitConfig {
-        unit: None,
-        has_space: false,
-        hidden: false,
-    },
-    prefix: PrefixConfig {
-        prefix: None,
-        has_space: false,
-        hidden: false,
-    },
+    width: DEFAULT_NUMBER_WIDTH,
+    unit: None,
+    unit_has_space: false,
+    unit_hidden: false,
+    prefix: None,
+    prefix_has_space: false,
+    prefix_hidden: false,
+    prefix_forced: false,
 });
 
 pub const DEFAULT_FLAG_FORMATTER: FlagFormatter = FlagFormatter;
-
-enum StrArgs {
-    MinWidth,
-    MaxWidth,
-}
-
-enum RotStrArgs {
-    Width,
-    Interval,
-}
-
-enum BarArgs {
-    Width,
-    MaxValue,
-}
-
-enum EngFixArgs {
-    Width,
-    Unit,
-    Prefix,
-}
 
 pub trait Formatter: Debug + Send + Sync {
     fn format(&self, val: &Value) -> Result<String>;
@@ -69,61 +47,75 @@ pub trait Formatter: Debug + Send + Sync {
     }
 }
 
-pub fn new_formatter(name: &str, args: &[String]) -> Result<Box<dyn Formatter>> {
+pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
     match name {
         "str" => {
-            let min_width: usize = match args.get(StrArgs::MinWidth as usize) {
-                Some(v) => v.parse().error("Width must be a positive integer")?,
-                None => DEFAULT_STR_MIN_WIDTH,
-            };
-            let max_width: Option<usize> =
-                match args.get(StrArgs::MaxWidth as usize).map(|x| x.as_str()) {
-                    Some("inf") => None,
-                    Some(v) => Some(v.parse().error("Width must be a positive integer")?),
-                    None => DEFAULT_STR_MAX_WIDTH,
-                };
-            if let Some(max_width) = max_width {
-                if max_width < min_width {
-                    return Err(Error::new(
-                        "Max width must be greater of equal to min width",
-                    ));
+            let mut min_width = DEFAULT_STR_MIN_WIDTH;
+            let mut max_width = DEFAULT_STR_MAX_WIDTH;
+            let mut rot_interval = DEFAULT_STR_ROT_INTERVAL;
+            for arg in args {
+                match arg.key {
+                    "min_width" | "min_w" => {
+                        min_width = arg.val.parse().error("Width must be a positive integer")?;
+                    }
+                    "max_width" | "max_w" => {
+                        max_width = arg.val.parse().error("Width must be a positive integer")?;
+                    }
+                    "rot_interval" => {
+                        rot_interval = Some(
+                            arg.val
+                                .parse()
+                                .error("Interval must be a positive number")?,
+                        );
+                    }
+                    other => {
+                        return Err(Error::new(format!("Unknown argumnt for 'str': '{other}'")));
+                    }
+                }
+            }
+            if max_width < min_width {
+                return Err(Error::new(
+                    "Max width must be greater of equal to min width",
+                ));
+            }
+            if let Some(rot_interval) = rot_interval {
+                if rot_interval < 0.1 {
+                    return Err(Error::new("Interval must be greater than 0.1"));
                 }
             }
             Ok(Box::new(StrFormatter {
                 min_width,
                 max_width,
+                rot_interval_ms: rot_interval.map(|x| (x * 1e3) as u64),
+                init_time: Some(Instant::now()),
             }))
         }
-        "rot-str" => {
-            let width: usize = match args.get(RotStrArgs::Width as usize) {
-                Some(v) => v.parse().error("Width must be a positive integer")?,
-                None => DEFAULT_STRROT_WIDTH,
-            };
-            let interval: f64 = match args.get(RotStrArgs::Interval as usize) {
-                Some(v) => v
-                    .trim()
-                    .parse()
-                    .error("Interval must be a positive number")?,
-                None => DEFAULT_STRROT_INTERVAL,
-            };
-            if interval < 0.1 {
-                return Err(Error::new("Interval must be greater than 0.1"));
+        "pango-str" => {
+            #[allow(clippy::never_loop)]
+            for arg in args {
+                return Err(Error::new(format!(
+                    "Unknown argumnt for 'pango-str': '{}'",
+                    arg.key
+                )));
             }
-            Ok(Box::new(RotStrFormatter {
-                width,
-                interval: (interval * 1000.0) as u64,
-                init_time: Instant::now(),
-            }))
+            Ok(Box::new(PangoStrFormatter))
         }
         "bar" => {
-            let width: usize = match args.get(BarArgs::Width as usize) {
-                Some(v) => v.parse().error("Width must be a positive integer")?,
-                None => DEFAULT_BAR_WIDTH,
-            };
-            let max_value: f64 = match args.get(BarArgs::MaxValue as usize) {
-                Some(v) => v.parse().error("Max value must be a number")?,
-                None => DEFAULT_BAR_MAX_VAL,
-            };
+            let mut width = DEFAULT_BAR_WIDTH;
+            let mut max_value = DEFAULT_BAR_MAX_VAL;
+            for arg in args {
+                match arg.key {
+                    "width" | "w" => {
+                        width = arg.val.parse().error("Width must be a positive integer")?;
+                    }
+                    "max_value" => {
+                        max_value = arg.val.parse().error("Max value must be a number")?;
+                    }
+                    other => {
+                        return Err(Error::new(format!("Unknown argumnt for 'bar': '{other}'")));
+                    }
+                }
+            }
             Ok(Box::new(BarFormatter { width, max_value }))
         }
         "eng" => Ok(Box::new(EngFormatter(EngFixConfig::from_args(args)?))),
@@ -135,7 +127,9 @@ pub fn new_formatter(name: &str, args: &[String]) -> Result<Box<dyn Formatter>> 
 #[derive(Debug)]
 pub struct StrFormatter {
     min_width: usize,
-    max_width: Option<usize>,
+    max_width: usize,
+    rot_interval_ms: Option<u64>,
+    init_time: Option<Instant>,
 }
 
 impl Formatter for StrFormatter {
@@ -143,11 +137,27 @@ impl Formatter for StrFormatter {
         match val {
             Value::Text(text) => {
                 let width = text.chars().count();
-                Ok(text
-                    .chars()
-                    .chain(repeat(' ').take(self.min_width.saturating_sub(width)))
-                    .take(self.max_width.unwrap_or(usize::MAX))
-                    .collect_pango())
+                Ok(match (self.rot_interval_ms, self.init_time) {
+                    (Some(rot_interval_ms), Some(init_time)) if width > self.max_width => {
+                        let width = width + 1; // Now we include '|' at the end
+                        let step = (init_time.elapsed().as_millis() as u64 / rot_interval_ms)
+                            as usize
+                            % width;
+                        let w1 = self.max_width.min(width - step);
+                        text.chars()
+                            .chain(Some('|'))
+                            .skip(step)
+                            .take(w1)
+                            .chain(text.chars())
+                            .take(self.max_width)
+                            .collect_pango_escaped()
+                    }
+                    _ => text
+                        .chars()
+                        .chain(repeat(' ').take(self.min_width.saturating_sub(width)))
+                        .take(self.max_width)
+                        .collect_pango_escaped(),
+                })
             }
             Value::Icon(icon) => Ok(icon.clone()), // No escaping
             Value::Number { .. } => Err(Error::new_format(
@@ -158,56 +168,26 @@ impl Formatter for StrFormatter {
             )),
         }
     }
+
+    fn interval(&self) -> Option<Duration> {
+        self.rot_interval_ms.map(Duration::from_millis)
+    }
 }
 
 #[derive(Debug)]
-pub struct RotStrFormatter {
-    width: usize,
-    interval: u64,
-    init_time: Instant,
-}
+pub struct PangoStrFormatter;
 
-impl Formatter for RotStrFormatter {
+impl Formatter for PangoStrFormatter {
     fn format(&self, val: &Value) -> Result<String> {
         match val {
-            Value::Text(text) => {
-                let full_width = text.chars().count();
-                if full_width <= self.width {
-                    Ok(text
-                        .chars()
-                        .chain(repeat(' '))
-                        .take(self.width)
-                        .collect_pango())
-                } else {
-                    let full_width = full_width + 1; // Now we include '|' at the end
-                    let step = (self.init_time.elapsed().as_millis() as u64 / self.interval)
-                        as usize
-                        % full_width;
-                    let w1 = self.width.min(full_width - step);
-                    Ok(text
-                        .chars()
-                        .chain(Some('|'))
-                        .skip(step)
-                        .take(w1)
-                        .chain(text.chars())
-                        .take(self.width)
-                        .collect_pango())
-                }
-            }
-            Value::Icon(_) => Err(Error::new_format(
-                "An icon cannot be formatted with 'rot-str' formatter",
-            )),
+            Value::Text(x) | Value::Icon(x) => Ok(x.clone()), // No escaping
             Value::Number { .. } => Err(Error::new_format(
-                "A number cannot be formatted with 'rot-str' formatter",
+                "A number cannot be formatted with 'str' formatter",
             )),
             Value::Flag => Err(Error::new_format(
-                "A flag cannot be formatted with 'rot-str' formatter",
+                "A flag cannot be formatted with 'str' formatter",
             )),
         }
-    }
-
-    fn interval(&self) -> Option<Duration> {
-        Some(Duration::from_millis(self.interval))
     }
 }
 
@@ -247,111 +227,78 @@ impl Formatter for BarFormatter {
     }
 }
 
-#[derive(Debug, Default)]
-struct PrefixConfig {
-    pub prefix: Option<(Prefix, bool)>,
-    pub has_space: bool,
-    pub hidden: bool,
-}
-
-impl FromStr for PrefixConfig {
-    type Err = Error;
-
-    fn from_str(mut s: &str) -> Result<Self> {
-        let has_space = if s.starts_with(' ') {
-            s = &s[1..];
-            true
-        } else {
-            false
-        };
-
-        let hidden = if s.starts_with('_') {
-            s = &s[1..];
-            true
-        } else {
-            false
-        };
-
-        let forced = if s.starts_with('!') {
-            s = &s[1..];
-            true
-        } else {
-            false
-        };
-
-        let prefix = if s == "auto" {
-            None
-        } else {
-            Some((s.parse()?, forced))
-        };
-
-        Ok(Self {
-            prefix,
-            has_space,
-            hidden,
-        })
-    }
-}
-
-#[derive(Debug, Default)]
-struct UnitConfig {
-    pub unit: Option<Unit>,
-    pub has_space: bool,
-    pub hidden: bool,
-}
-
-impl FromStr for UnitConfig {
-    type Err = Error;
-
-    fn from_str(mut s: &str) -> Result<Self> {
-        let has_space = if s.starts_with(' ') {
-            s = &s[1..];
-            true
-        } else {
-            false
-        };
-
-        let hidden = if s.starts_with('_') {
-            s = &s[1..];
-            true
-        } else {
-            false
-        };
-
-        Ok(Self {
-            unit: if s == "auto" { None } else { Some(s.parse()?) },
-            has_space,
-            hidden,
-        })
-    }
-}
-
 #[derive(Debug)]
 struct EngFixConfig {
     width: usize,
-    unit: UnitConfig,
-    prefix: PrefixConfig,
+    unit: Option<Unit>,
+    unit_has_space: bool,
+    unit_hidden: bool,
+    prefix: Option<Prefix>,
+    prefix_has_space: bool,
+    prefix_hidden: bool,
+    prefix_forced: bool,
 }
 
 impl EngFixConfig {
-    fn from_args(args: &[String]) -> Result<Self> {
+    fn from_args(args: &[Arg]) -> Result<Self> {
+        let mut width = DEFAULT_NUMBER_WIDTH;
+        let mut unit = None;
+        let mut unit_has_space = false;
+        let mut unit_hidden = false;
+        let mut prefix = None;
+        let mut prefix_has_space = false;
+        let mut prefix_hidden = false;
+        let mut prefix_forced = false;
+
+        for arg in args {
+            match arg.key {
+                "width" | "w" => {
+                    width = arg.val.parse().error("Width must be a positive integer")?;
+                }
+                "unit" | "u" => {
+                    unit = Some(arg.val.parse()?);
+                }
+                "hide_unit" => {
+                    unit_hidden = arg.val.parse().error("hide_unit must be true or false")?;
+                }
+                "unit_space" => {
+                    unit_has_space = arg.val.parse().error("unit_space must be true or false")?;
+                }
+                "prefix" | "p" => {
+                    prefix = Some(arg.val.parse()?);
+                }
+                "hide_prefix" => {
+                    prefix_hidden = arg.val.parse().error("hide_prefix must be true or false")?;
+                }
+                "prefix_space" => {
+                    prefix_has_space = arg
+                        .val
+                        .parse()
+                        .error("prefix_space must be true or false")?;
+                }
+                "force_prefix" => {
+                    prefix_forced = arg
+                        .val
+                        .parse()
+                        .error("force_prefix must be true or false")?;
+                }
+                other => {
+                    return Err(Error::new(format!(
+                        "Unknown argumnt for 'fix'/'eng': '{other}'"
+                    )));
+                }
+            }
+        }
+
         Ok(Self {
-            width: args
-                .get(EngFixArgs::Width as usize)
-                .map(|x| x.parse::<usize>())
-                .transpose()
-                .error("Width must be a positive integer")?
-                .unwrap_or(3),
-            unit: args
-                .get(EngFixArgs::Unit as usize)
-                .map(|x| x.parse::<UnitConfig>())
-                .transpose()?
-                .unwrap_or_default(),
-            prefix: args
-                .get(EngFixArgs::Prefix as usize)
-                .map(|x| x.parse::<PrefixConfig>())
-                .transpose()?
-                .unwrap_or_default(),
+            width,
+            unit,
+            unit_has_space,
+            unit_hidden,
+            prefix,
+            prefix_has_space,
+            prefix_hidden,
+            prefix_forced,
         })
     }
 }
@@ -363,15 +310,15 @@ impl Formatter for EngFormatter {
     fn format(&self, val: &Value) -> Result<String> {
         match val {
             Value::Number { mut val, mut unit } => {
-                if let Some(new_unit) = self.0.unit.unit {
+                if let Some(new_unit) = self.0.unit {
                     val = unit.convert(val, new_unit)?;
                     unit = new_unit;
                 }
 
-                let (min_prefix, max_prefix) = match self.0.prefix.prefix {
-                    Some((prefix, true)) => (prefix, prefix),
-                    Some((prefix, false)) => (prefix, Prefix::max_available()),
-                    None => (Prefix::min_available(), Prefix::max_available()),
+                let (min_prefix, max_prefix) = match (self.0.prefix, self.0.prefix_forced) {
+                    (Some(prefix), true) => (prefix, prefix),
+                    (Some(prefix), false) => (prefix, Prefix::max_available()),
+                    (None, _) => (Prefix::min_available(), Prefix::max_available()),
                 };
 
                 let prefix = unit
@@ -394,19 +341,19 @@ impl Formatter for EngFormatter {
                     rest => format!("{:.*}", rest as usize - 1, val),
                 };
 
-                let display_prefix = !self.0.prefix.hidden
+                let display_prefix = !self.0.prefix_hidden
                     && prefix != Prefix::One
                     && prefix != Prefix::OneButBinary;
-                let display_unit = !self.0.unit.hidden && unit != Unit::None;
+                let display_unit = !self.0.unit_hidden && unit != Unit::None;
 
                 if display_prefix {
-                    if self.0.prefix.has_space {
+                    if self.0.prefix_has_space {
                         retval.push(' ');
                     }
                     retval.push_str(&prefix.to_string());
                 }
                 if display_unit {
-                    if self.0.unit.has_space || (self.0.prefix.has_space && !display_prefix) {
+                    if self.0.unit_has_space || (self.0.prefix_has_space && !display_prefix) {
                         retval.push(' ');
                     }
                     retval.push_str(&unit.to_string());

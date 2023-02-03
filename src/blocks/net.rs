@@ -7,7 +7,7 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `device` | Network interface to monitor (as specified in `/sys/class/net/`). Supports regex. | If not set, device will be automatically selected every `interval`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon ^icon_net_down $speed_down.eng(3,B,K) ^icon_net_up $speed_up.eng(3,B,K) "`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon ^icon_net_down $speed_down.eng(prefix:K) ^icon_net_up $speed_up.eng(prefix:K) "`
 //! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
 //! `interval` | Update interval in seconds | `2`
 //! `missing_format` | Same as `format` if the interface cannot be connected (or missing). | `" × "`
@@ -79,7 +79,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         .await?;
 
     let mut format = config.format.with_default(
-        " $icon ^icon_net_down $speed_down.eng(3,B,K) ^icon_net_up $speed_up.eng(3,B,K) ",
+        " $icon ^icon_net_down $speed_down.eng(prefix:K) ^icon_net_up $speed_up.eng(prefix:K) ",
     )?;
     let missing_format = config.missing_format.with_default(" × ")?;
     let mut format_alt = match config.format_alt {
