@@ -196,6 +196,12 @@ pub enum RequestCmd {
     SetDefaultActions(&'static [(MouseButton, Option<&'static str>, &'static str)]),
 }
 
+#[derive(Debug, Clone)]
+pub struct RenderedBlock {
+    segments: Vec<I3BarBlock>,
+    marge_with_next: bool,
+}
+
 struct BarState {
     config: Config,
 
@@ -205,7 +211,7 @@ struct BarState {
 
     widget_updates_stream: BoxedStream<Vec<usize>>,
     widget_updates_sender: mpsc::UnboundedSender<(usize, Vec<u64>)>,
-    blocks_render_cache: Vec<Vec<I3BarBlock>>,
+    blocks_render_cache: Vec<RenderedBlock>,
 
     request_sender: mpsc::Sender<Request>,
     request_receiver: mpsc::Receiver<Request>,
@@ -315,7 +321,11 @@ impl BarState {
                 Err(_aborted) => Ok(()),
             })));
         self.blocks.push((block, block_name));
-        self.blocks_render_cache.push(Vec::new());
+        self.blocks_render_cache.push(RenderedBlock {
+            segments: Vec::new(),
+            marge_with_next: block_config.common.merge_with_next,
+        });
+
         Ok(())
     }
 
@@ -346,7 +356,7 @@ impl BarState {
 
     fn render_block(&mut self, id: usize) -> Result<()> {
         let (block, block_type) = &mut self.blocks[id];
-        let data = &mut self.blocks_render_cache[id];
+        let data = &mut self.blocks_render_cache[id].segments;
         match &block.state {
             BlockState::None => {
                 data.clear();
@@ -362,7 +372,7 @@ impl BarState {
 
     fn render(&self) {
         if let Some(id) = self.fullscreen_block {
-            protocol::print_blocks(&[self.blocks_render_cache[id].clone()], &self.config.shared);
+            protocol::print_blocks(&[&self.blocks_render_cache[id]], &self.config.shared);
         } else {
             protocol::print_blocks(&self.blocks_render_cache, &self.config.shared);
         }
