@@ -188,6 +188,10 @@
 <a href="#188" id="188">188</a>
 <a href="#189" id="189">189</a>
 <a href="#190" id="190">190</a>
+<a href="#191" id="191">191</a>
+<a href="#192" id="192">192</a>
+<a href="#193" id="193">193</a>
+<a href="#194" id="194">194</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Pending updates available for your Debian/Ubuntu based system
 //!
 //! Behind the scenes this uses `apt`, and in order to run it without root privileges i3status-rust will create its own package database in `/tmp/i3rs-apt/` which may take up several MB or more. If you have a custom apt config then this block may not work as expected - in that case please open an issue.
@@ -199,9 +203,9 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `interval` | Update interval in seconds. | `600`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $count.eng(1) &quot;`
-//! `format_singular` | Same as `format`, but for when exactly one update is available. | `&quot; $icon $count.eng(1) &quot;`
-//! `format_up_to_date` | Same as `format`, but for when no updates are available. | `&quot; $icon $count.eng(1) &quot;`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $count.eng(w:1) &quot;`
+//! `format_singular` | Same as `format`, but for when exactly one update is available. | `&quot; $icon $count.eng(w:1) &quot;`
+//! `format_up_to_date` | Same as `format`, but for when no updates are available. | `&quot; $icon $count.eng(w:1) &quot;`
 //! `warning_updates_regex` | Display block as warning if updates matching regex are available. | `None`
 //! `critical_updates_regex` | Display block as critical if updates matching regex are available. | `None`
 //!
@@ -261,9 +265,13 @@
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new();
 
-    <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $count.eng(1) &quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let </span>format_singular = config.format_singular.with_default(<span class="string">&quot;$count.eng(1)&quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let </span>format_up_to_date = config.format_up_to_date.with_default(<span class="string">&quot;$count.eng(1)&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $count.eng(w:1) &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>format_singular = config
+        .format_singular
+        .with_default(<span class="string">&quot; $icon $count.eng(w:1) &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>format_up_to_date = config
+        .format_up_to_date
+        .with_default(<span class="string">&quot; $icon $count.eng(w:1) &quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span>warning_updates_regex = config
         .warning_updates_regex

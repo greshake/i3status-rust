@@ -49,22 +49,22 @@
 
 <span class="kw">pub trait </span>CollectEscaped {
     <span class="doccomment">/// Write escaped version of `self` to `out`
-    </span><span class="kw">fn </span>collect_pango_into&lt;T: Write&gt;(<span class="self">self</span>, out: <span class="kw-2">&amp;mut </span>T);
+    </span><span class="kw">fn </span>collect_pango_escaped_into&lt;T: Write&gt;(<span class="self">self</span>, out: <span class="kw-2">&amp;mut </span>T);
 
     <span class="doccomment">/// Write escaped version of `self` to a new buffer
     </span><span class="attr">#[inline]
-    </span><span class="kw">fn </span>collect_pango&lt;T: Write + Default&gt;(<span class="self">self</span>) -&gt; T
+    </span><span class="kw">fn </span>collect_pango_escaped&lt;T: Write + Default&gt;(<span class="self">self</span>) -&gt; T
     <span class="kw">where
         </span><span class="self">Self</span>: Sized,
     {
         <span class="kw">let </span><span class="kw-2">mut </span>out = T::default();
-        <span class="self">self</span>.collect_pango_into(<span class="kw-2">&amp;mut </span>out);
+        <span class="self">self</span>.collect_pango_escaped_into(<span class="kw-2">&amp;mut </span>out);
         out
     }
 }
 
 <span class="kw">impl</span>&lt;I: Iterator&lt;Item = char&gt;&gt; CollectEscaped <span class="kw">for </span>I {
-    <span class="kw">fn </span>collect_pango_into&lt;T: Write&gt;(<span class="self">self</span>, out: <span class="kw-2">&amp;mut </span>T) {
+    <span class="kw">fn </span>collect_pango_escaped_into&lt;T: Write&gt;(<span class="self">self</span>, out: <span class="kw-2">&amp;mut </span>T) {
         <span class="kw">for </span>c <span class="kw">in </span><span class="self">self </span>{
             <span class="kw">let _ </span>= <span class="kw">match </span>c {
                 <span class="string">&#39;&amp;&#39; </span>=&gt; out.write_str(<span class="string">&quot;&amp;amp;&quot;</span>),
@@ -84,7 +84,7 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>pango() {
         <span class="kw">let </span>orig = <span class="string">&quot;&amp;my &#39;text&#39; &lt;&gt;&quot;</span>;
-        <span class="kw">let </span>escaped: String = orig.chars().collect_pango();
+        <span class="kw">let </span>escaped: String = orig.chars().collect_pango_escaped();
         <span class="macro">assert_eq!</span>(escaped, <span class="string">&quot;&amp;amp;my &amp;#39;text&amp;#39; &amp;lt;&amp;gt;&quot;</span>);
     }
 }

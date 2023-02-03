@@ -410,64 +410,11 @@
 <a href="#410" id="410">410</a>
 <a href="#411" id="411">411</a>
 <a href="#412" id="412">412</a>
-<a href="#413" id="413">413</a>
-<a href="#414" id="414">414</a>
-<a href="#415" id="415">415</a>
-<a href="#416" id="416">416</a>
-<a href="#417" id="417">417</a>
-<a href="#418" id="418">418</a>
-<a href="#419" id="419">419</a>
-<a href="#420" id="420">420</a>
-<a href="#421" id="421">421</a>
-<a href="#422" id="422">422</a>
-<a href="#423" id="423">423</a>
-<a href="#424" id="424">424</a>
-<a href="#425" id="425">425</a>
-<a href="#426" id="426">426</a>
-<a href="#427" id="427">427</a>
-<a href="#428" id="428">428</a>
-<a href="#429" id="429">429</a>
-<a href="#430" id="430">430</a>
-<a href="#431" id="431">431</a>
-<a href="#432" id="432">432</a>
-<a href="#433" id="433">433</a>
-<a href="#434" id="434">434</a>
-<a href="#435" id="435">435</a>
-<a href="#436" id="436">436</a>
-<a href="#437" id="437">437</a>
-<a href="#438" id="438">438</a>
-<a href="#439" id="439">439</a>
-<a href="#440" id="440">440</a>
-<a href="#441" id="441">441</a>
-<a href="#442" id="442">442</a>
-<a href="#443" id="443">443</a>
-<a href="#444" id="444">444</a>
-<a href="#445" id="445">445</a>
-<a href="#446" id="446">446</a>
-<a href="#447" id="447">447</a>
-<a href="#448" id="448">448</a>
-<a href="#449" id="449">449</a>
-<a href="#450" id="450">450</a>
-<a href="#451" id="451">451</a>
-<a href="#452" id="452">452</a>
-<a href="#453" id="453">453</a>
-<a href="#454" id="454">454</a>
-<a href="#455" id="455">455</a>
-<a href="#456" id="456">456</a>
-<a href="#457" id="457">457</a>
-<a href="#458" id="458">458</a>
-<a href="#459" id="459">459</a>
-<a href="#460" id="460">460</a>
-<a href="#461" id="461">461</a>
-<a href="#462" id="462">462</a>
-<a href="#463" id="463">463</a>
-<a href="#464" id="464">464</a>
-<a href="#465" id="465">465</a>
 </pre><pre class="rust"><code><span class="kw">use </span>std::fmt::Debug;
 <span class="kw">use </span>std::iter::repeat;
-<span class="kw">use </span>std::str::FromStr;
 <span class="kw">use </span>std::time::{Duration, Instant};
 
+<span class="kw">use </span><span class="kw">super</span>::parse::Arg;
 <span class="kw">use </span><span class="kw">super</span>::prefix::Prefix;
 <span class="kw">use </span><span class="kw">super</span>::unit::Unit;
 <span class="kw">use </span><span class="kw">super</span>::value::ValueInner <span class="kw">as </span>Value;
@@ -475,56 +422,34 @@
 <span class="kw">use </span><span class="kw">crate</span>::escape::CollectEscaped;
 
 <span class="kw">const </span>DEFAULT_STR_MIN_WIDTH: usize = <span class="number">0</span>;
-<span class="kw">const </span>DEFAULT_STR_MAX_WIDTH: <span class="prelude-ty">Option</span>&lt;usize&gt; = <span class="prelude-val">None</span>;
-
-<span class="kw">const </span>DEFAULT_STRROT_WIDTH: usize = <span class="number">15</span>;
-<span class="kw">const </span>DEFAULT_STRROT_INTERVAL: f64 = <span class="number">0.5</span>;
+<span class="kw">const </span>DEFAULT_STR_MAX_WIDTH: usize = usize::MAX;
+<span class="kw">const </span>DEFAULT_STR_ROT_INTERVAL: <span class="prelude-ty">Option</span>&lt;f64&gt; = <span class="prelude-val">None</span>;
 
 <span class="kw">const </span>DEFAULT_BAR_WIDTH: usize = <span class="number">5</span>;
 <span class="kw">const </span>DEFAULT_BAR_MAX_VAL: f64 = <span class="number">100.0</span>;
 
+<span class="kw">const </span>DEFAULT_NUMBER_WIDTH: usize = <span class="number">2</span>;
+
 <span class="kw">pub const </span>DEFAULT_STRING_FORMATTER: StrFormatter = StrFormatter {
     min_width: DEFAULT_STR_MIN_WIDTH,
     max_width: DEFAULT_STR_MAX_WIDTH,
+    rot_interval_ms: <span class="prelude-val">None</span>,
+    init_time: <span class="prelude-val">None</span>,
 };
 
 <span class="comment">// TODO: split those defaults
 </span><span class="kw">pub const </span>DEFAULT_NUMBER_FORMATTER: EngFormatter = EngFormatter(EngFixConfig {
-    width: <span class="number">2</span>,
-    unit: UnitConfig {
-        unit: <span class="prelude-val">None</span>,
-        has_space: <span class="bool-val">false</span>,
-        hidden: <span class="bool-val">false</span>,
-    },
-    prefix: PrefixConfig {
-        prefix: <span class="prelude-val">None</span>,
-        has_space: <span class="bool-val">false</span>,
-        hidden: <span class="bool-val">false</span>,
-    },
+    width: DEFAULT_NUMBER_WIDTH,
+    unit: <span class="prelude-val">None</span>,
+    unit_has_space: <span class="bool-val">false</span>,
+    unit_hidden: <span class="bool-val">false</span>,
+    prefix: <span class="prelude-val">None</span>,
+    prefix_has_space: <span class="bool-val">false</span>,
+    prefix_hidden: <span class="bool-val">false</span>,
+    prefix_forced: <span class="bool-val">false</span>,
 });
 
 <span class="kw">pub const </span>DEFAULT_FLAG_FORMATTER: FlagFormatter = FlagFormatter;
-
-<span class="kw">enum </span>StrArgs {
-    MinWidth,
-    MaxWidth,
-}
-
-<span class="kw">enum </span>RotStrArgs {
-    Width,
-    Interval,
-}
-
-<span class="kw">enum </span>BarArgs {
-    Width,
-    MaxValue,
-}
-
-<span class="kw">enum </span>EngFixArgs {
-    Width,
-    Unit,
-    Prefix,
-}
 
 <span class="kw">pub trait </span>Formatter: Debug + Send + Sync {
     <span class="kw">fn </span>format(<span class="kw-2">&amp;</span><span class="self">self</span>, val: <span class="kw-2">&amp;</span>Value) -&gt; <span class="prelude-ty">Result</span>&lt;String&gt;;
@@ -534,61 +459,75 @@
     </span>}
 }
 
-<span class="kw">pub fn </span>new_formatter(name: <span class="kw-2">&amp;</span>str, args: <span class="kw-2">&amp;</span>[String]) -&gt; <span class="prelude-ty">Result</span>&lt;Box&lt;<span class="kw">dyn </span>Formatter&gt;&gt; {
+<span class="kw">pub fn </span>new_formatter(name: <span class="kw-2">&amp;</span>str, args: <span class="kw-2">&amp;</span>[Arg]) -&gt; <span class="prelude-ty">Result</span>&lt;Box&lt;<span class="kw">dyn </span>Formatter&gt;&gt; {
     <span class="kw">match </span>name {
         <span class="string">&quot;str&quot; </span>=&gt; {
-            <span class="kw">let </span>min_width: usize = <span class="kw">match </span>args.get(StrArgs::MinWidth <span class="kw">as </span>usize) {
-                <span class="prelude-val">Some</span>(v) =&gt; v.parse().error(<span class="string">&quot;Width must be a positive integer&quot;</span>)<span class="question-mark">?</span>,
-                <span class="prelude-val">None </span>=&gt; DEFAULT_STR_MIN_WIDTH,
-            };
-            <span class="kw">let </span>max_width: <span class="prelude-ty">Option</span>&lt;usize&gt; =
-                <span class="kw">match </span>args.get(StrArgs::MaxWidth <span class="kw">as </span>usize).map(|x| x.as_str()) {
-                    <span class="prelude-val">Some</span>(<span class="string">&quot;inf&quot;</span>) =&gt; <span class="prelude-val">None</span>,
-                    <span class="prelude-val">Some</span>(v) =&gt; <span class="prelude-val">Some</span>(v.parse().error(<span class="string">&quot;Width must be a positive integer&quot;</span>)<span class="question-mark">?</span>),
-                    <span class="prelude-val">None </span>=&gt; DEFAULT_STR_MAX_WIDTH,
-                };
-            <span class="kw">if let </span><span class="prelude-val">Some</span>(max_width) = max_width {
-                <span class="kw">if </span>max_width &lt; min_width {
-                    <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(
-                        <span class="string">&quot;Max width must be greater of equal to min width&quot;</span>,
-                    ));
+            <span class="kw">let </span><span class="kw-2">mut </span>min_width = DEFAULT_STR_MIN_WIDTH;
+            <span class="kw">let </span><span class="kw-2">mut </span>max_width = DEFAULT_STR_MAX_WIDTH;
+            <span class="kw">let </span><span class="kw-2">mut </span>rot_interval = DEFAULT_STR_ROT_INTERVAL;
+            <span class="kw">for </span>arg <span class="kw">in </span>args {
+                <span class="kw">match </span>arg.key {
+                    <span class="string">&quot;min_width&quot; </span>| <span class="string">&quot;min_w&quot; </span>=&gt; {
+                        min_width = arg.val.parse().error(<span class="string">&quot;Width must be a positive integer&quot;</span>)<span class="question-mark">?</span>;
+                    }
+                    <span class="string">&quot;max_width&quot; </span>| <span class="string">&quot;max_w&quot; </span>=&gt; {
+                        max_width = arg.val.parse().error(<span class="string">&quot;Width must be a positive integer&quot;</span>)<span class="question-mark">?</span>;
+                    }
+                    <span class="string">&quot;rot_interval&quot; </span>=&gt; {
+                        rot_interval = <span class="prelude-val">Some</span>(
+                            arg.val
+                                .parse()
+                                .error(<span class="string">&quot;Interval must be a positive number&quot;</span>)<span class="question-mark">?</span>,
+                        );
+                    }
+                    other =&gt; {
+                        <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">&quot;Unknown argumnt for &#39;str&#39;: &#39;{other}&#39;&quot;</span>)));
+                    }
+                }
+            }
+            <span class="kw">if </span>max_width &lt; min_width {
+                <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(
+                    <span class="string">&quot;Max width must be greater of equal to min width&quot;</span>,
+                ));
+            }
+            <span class="kw">if let </span><span class="prelude-val">Some</span>(rot_interval) = rot_interval {
+                <span class="kw">if </span>rot_interval &lt; <span class="number">0.1 </span>{
+                    <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="string">&quot;Interval must be greater than 0.1&quot;</span>));
                 }
             }
             <span class="prelude-val">Ok</span>(Box::new(StrFormatter {
                 min_width,
                 max_width,
+                rot_interval_ms: rot_interval.map(|x| (x * <span class="number">1e3</span>) <span class="kw">as </span>u64),
+                init_time: <span class="prelude-val">Some</span>(Instant::now()),
             }))
         }
-        <span class="string">&quot;rot-str&quot; </span>=&gt; {
-            <span class="kw">let </span>width: usize = <span class="kw">match </span>args.get(RotStrArgs::Width <span class="kw">as </span>usize) {
-                <span class="prelude-val">Some</span>(v) =&gt; v.parse().error(<span class="string">&quot;Width must be a positive integer&quot;</span>)<span class="question-mark">?</span>,
-                <span class="prelude-val">None </span>=&gt; DEFAULT_STRROT_WIDTH,
-            };
-            <span class="kw">let </span>interval: f64 = <span class="kw">match </span>args.get(RotStrArgs::Interval <span class="kw">as </span>usize) {
-                <span class="prelude-val">Some</span>(v) =&gt; v
-                    .trim()
-                    .parse()
-                    .error(<span class="string">&quot;Interval must be a positive number&quot;</span>)<span class="question-mark">?</span>,
-                <span class="prelude-val">None </span>=&gt; DEFAULT_STRROT_INTERVAL,
-            };
-            <span class="kw">if </span>interval &lt; <span class="number">0.1 </span>{
-                <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="string">&quot;Interval must be greater than 0.1&quot;</span>));
+        <span class="string">&quot;pango-str&quot; </span>=&gt; {
+            <span class="attr">#[allow(clippy::never_loop)]
+            </span><span class="kw">for </span>arg <span class="kw">in </span>args {
+                <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(
+                    <span class="string">&quot;Unknown argumnt for &#39;pango-str&#39;: &#39;{}&#39;&quot;</span>,
+                    arg.key
+                )));
             }
-            <span class="prelude-val">Ok</span>(Box::new(RotStrFormatter {
-                width,
-                interval: (interval * <span class="number">1000.0</span>) <span class="kw">as </span>u64,
-                init_time: Instant::now(),
-            }))
+            <span class="prelude-val">Ok</span>(Box::new(PangoStrFormatter))
         }
         <span class="string">&quot;bar&quot; </span>=&gt; {
-            <span class="kw">let </span>width: usize = <span class="kw">match </span>args.get(BarArgs::Width <span class="kw">as </span>usize) {
-                <span class="prelude-val">Some</span>(v) =&gt; v.parse().error(<span class="string">&quot;Width must be a positive integer&quot;</span>)<span class="question-mark">?</span>,
-                <span class="prelude-val">None </span>=&gt; DEFAULT_BAR_WIDTH,
-            };
-            <span class="kw">let </span>max_value: f64 = <span class="kw">match </span>args.get(BarArgs::MaxValue <span class="kw">as </span>usize) {
-                <span class="prelude-val">Some</span>(v) =&gt; v.parse().error(<span class="string">&quot;Max value must be a number&quot;</span>)<span class="question-mark">?</span>,
-                <span class="prelude-val">None </span>=&gt; DEFAULT_BAR_MAX_VAL,
-            };
+            <span class="kw">let </span><span class="kw-2">mut </span>width = DEFAULT_BAR_WIDTH;
+            <span class="kw">let </span><span class="kw-2">mut </span>max_value = DEFAULT_BAR_MAX_VAL;
+            <span class="kw">for </span>arg <span class="kw">in </span>args {
+                <span class="kw">match </span>arg.key {
+                    <span class="string">&quot;width&quot; </span>| <span class="string">&quot;w&quot; </span>=&gt; {
+                        width = arg.val.parse().error(<span class="string">&quot;Width must be a positive integer&quot;</span>)<span class="question-mark">?</span>;
+                    }
+                    <span class="string">&quot;max_value&quot; </span>=&gt; {
+                        max_value = arg.val.parse().error(<span class="string">&quot;Max value must be a number&quot;</span>)<span class="question-mark">?</span>;
+                    }
+                    other =&gt; {
+                        <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">&quot;Unknown argumnt for &#39;bar&#39;: &#39;{other}&#39;&quot;</span>)));
+                    }
+                }
+            }
             <span class="prelude-val">Ok</span>(Box::new(BarFormatter { width, max_value }))
         }
         <span class="string">&quot;eng&quot; </span>=&gt; <span class="prelude-val">Ok</span>(Box::new(EngFormatter(EngFixConfig::from_args(args)<span class="question-mark">?</span>))),
@@ -600,7 +539,9 @@
 <span class="attr">#[derive(Debug)]
 </span><span class="kw">pub struct </span>StrFormatter {
     min_width: usize,
-    max_width: <span class="prelude-ty">Option</span>&lt;usize&gt;,
+    max_width: usize,
+    rot_interval_ms: <span class="prelude-ty">Option</span>&lt;u64&gt;,
+    init_time: <span class="prelude-ty">Option</span>&lt;Instant&gt;,
 }
 
 <span class="kw">impl </span>Formatter <span class="kw">for </span>StrFormatter {
@@ -608,11 +549,27 @@
         <span class="kw">match </span>val {
             Value::Text(text) =&gt; {
                 <span class="kw">let </span>width = text.chars().count();
-                <span class="prelude-val">Ok</span>(text
-                    .chars()
-                    .chain(repeat(<span class="string">&#39; &#39;</span>).take(<span class="self">self</span>.min_width.saturating_sub(width)))
-                    .take(<span class="self">self</span>.max_width.unwrap_or(usize::MAX))
-                    .collect_pango())
+                <span class="prelude-val">Ok</span>(<span class="kw">match </span>(<span class="self">self</span>.rot_interval_ms, <span class="self">self</span>.init_time) {
+                    (<span class="prelude-val">Some</span>(rot_interval_ms), <span class="prelude-val">Some</span>(init_time)) <span class="kw">if </span>width &gt; <span class="self">self</span>.max_width =&gt; {
+                        <span class="kw">let </span>width = width + <span class="number">1</span>; <span class="comment">// Now we include &#39;|&#39; at the end
+                        </span><span class="kw">let </span>step = (init_time.elapsed().as_millis() <span class="kw">as </span>u64 / rot_interval_ms)
+                            <span class="kw">as </span>usize
+                            % width;
+                        <span class="kw">let </span>w1 = <span class="self">self</span>.max_width.min(width - step);
+                        text.chars()
+                            .chain(<span class="prelude-val">Some</span>(<span class="string">&#39;|&#39;</span>))
+                            .skip(step)
+                            .take(w1)
+                            .chain(text.chars())
+                            .take(<span class="self">self</span>.max_width)
+                            .collect_pango_escaped()
+                    }
+                    <span class="kw">_ </span>=&gt; text
+                        .chars()
+                        .chain(repeat(<span class="string">&#39; &#39;</span>).take(<span class="self">self</span>.min_width.saturating_sub(width)))
+                        .take(<span class="self">self</span>.max_width)
+                        .collect_pango_escaped(),
+                })
             }
             Value::Icon(icon) =&gt; <span class="prelude-val">Ok</span>(icon.clone()), <span class="comment">// No escaping
             </span>Value::Number { .. } =&gt; <span class="prelude-val">Err</span>(Error::new_format(
@@ -623,56 +580,26 @@
             )),
         }
     }
+
+    <span class="kw">fn </span>interval(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Duration&gt; {
+        <span class="self">self</span>.rot_interval_ms.map(Duration::from_millis)
+    }
 }
 
 <span class="attr">#[derive(Debug)]
-</span><span class="kw">pub struct </span>RotStrFormatter {
-    width: usize,
-    interval: u64,
-    init_time: Instant,
-}
+</span><span class="kw">pub struct </span>PangoStrFormatter;
 
-<span class="kw">impl </span>Formatter <span class="kw">for </span>RotStrFormatter {
+<span class="kw">impl </span>Formatter <span class="kw">for </span>PangoStrFormatter {
     <span class="kw">fn </span>format(<span class="kw-2">&amp;</span><span class="self">self</span>, val: <span class="kw-2">&amp;</span>Value) -&gt; <span class="prelude-ty">Result</span>&lt;String&gt; {
         <span class="kw">match </span>val {
-            Value::Text(text) =&gt; {
-                <span class="kw">let </span>full_width = text.chars().count();
-                <span class="kw">if </span>full_width &lt;= <span class="self">self</span>.width {
-                    <span class="prelude-val">Ok</span>(text
-                        .chars()
-                        .chain(repeat(<span class="string">&#39; &#39;</span>))
-                        .take(<span class="self">self</span>.width)
-                        .collect_pango())
-                } <span class="kw">else </span>{
-                    <span class="kw">let </span>full_width = full_width + <span class="number">1</span>; <span class="comment">// Now we include &#39;|&#39; at the end
-                    </span><span class="kw">let </span>step = (<span class="self">self</span>.init_time.elapsed().as_millis() <span class="kw">as </span>u64 / <span class="self">self</span>.interval)
-                        <span class="kw">as </span>usize
-                        % full_width;
-                    <span class="kw">let </span>w1 = <span class="self">self</span>.width.min(full_width - step);
-                    <span class="prelude-val">Ok</span>(text
-                        .chars()
-                        .chain(<span class="prelude-val">Some</span>(<span class="string">&#39;|&#39;</span>))
-                        .skip(step)
-                        .take(w1)
-                        .chain(text.chars())
-                        .take(<span class="self">self</span>.width)
-                        .collect_pango())
-                }
-            }
-            Value::Icon(<span class="kw">_</span>) =&gt; <span class="prelude-val">Err</span>(Error::new_format(
-                <span class="string">&quot;An icon cannot be formatted with &#39;rot-str&#39; formatter&quot;</span>,
-            )),
-            Value::Number { .. } =&gt; <span class="prelude-val">Err</span>(Error::new_format(
-                <span class="string">&quot;A number cannot be formatted with &#39;rot-str&#39; formatter&quot;</span>,
+            Value::Text(x) | Value::Icon(x) =&gt; <span class="prelude-val">Ok</span>(x.clone()), <span class="comment">// No escaping
+            </span>Value::Number { .. } =&gt; <span class="prelude-val">Err</span>(Error::new_format(
+                <span class="string">&quot;A number cannot be formatted with &#39;str&#39; formatter&quot;</span>,
             )),
             Value::Flag =&gt; <span class="prelude-val">Err</span>(Error::new_format(
-                <span class="string">&quot;A flag cannot be formatted with &#39;rot-str&#39; formatter&quot;</span>,
+                <span class="string">&quot;A flag cannot be formatted with &#39;str&#39; formatter&quot;</span>,
             )),
         }
-    }
-
-    <span class="kw">fn </span>interval(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Duration&gt; {
-        <span class="prelude-val">Some</span>(Duration::from_millis(<span class="self">self</span>.interval))
     }
 }
 
@@ -712,111 +639,78 @@
     }
 }
 
-<span class="attr">#[derive(Debug, Default)]
-</span><span class="kw">struct </span>PrefixConfig {
-    <span class="kw">pub </span>prefix: <span class="prelude-ty">Option</span>&lt;(Prefix, bool)&gt;,
-    <span class="kw">pub </span>has_space: bool,
-    <span class="kw">pub </span>hidden: bool,
-}
-
-<span class="kw">impl </span>FromStr <span class="kw">for </span>PrefixConfig {
-    <span class="kw">type </span><span class="prelude-val">Err </span>= Error;
-
-    <span class="kw">fn </span>from_str(<span class="kw-2">mut </span>s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
-        <span class="kw">let </span>has_space = <span class="kw">if </span>s.starts_with(<span class="string">&#39; &#39;</span>) {
-            s = <span class="kw-2">&amp;</span>s[<span class="number">1</span>..];
-            <span class="bool-val">true
-        </span>} <span class="kw">else </span>{
-            <span class="bool-val">false
-        </span>};
-
-        <span class="kw">let </span>hidden = <span class="kw">if </span>s.starts_with(<span class="string">&#39;_&#39;</span>) {
-            s = <span class="kw-2">&amp;</span>s[<span class="number">1</span>..];
-            <span class="bool-val">true
-        </span>} <span class="kw">else </span>{
-            <span class="bool-val">false
-        </span>};
-
-        <span class="kw">let </span>forced = <span class="kw">if </span>s.starts_with(<span class="string">&#39;!&#39;</span>) {
-            s = <span class="kw-2">&amp;</span>s[<span class="number">1</span>..];
-            <span class="bool-val">true
-        </span>} <span class="kw">else </span>{
-            <span class="bool-val">false
-        </span>};
-
-        <span class="kw">let </span>prefix = <span class="kw">if </span>s == <span class="string">&quot;auto&quot; </span>{
-            <span class="prelude-val">None
-        </span>} <span class="kw">else </span>{
-            <span class="prelude-val">Some</span>((s.parse()<span class="question-mark">?</span>, forced))
-        };
-
-        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
-            prefix,
-            has_space,
-            hidden,
-        })
-    }
-}
-
-<span class="attr">#[derive(Debug, Default)]
-</span><span class="kw">struct </span>UnitConfig {
-    <span class="kw">pub </span>unit: <span class="prelude-ty">Option</span>&lt;Unit&gt;,
-    <span class="kw">pub </span>has_space: bool,
-    <span class="kw">pub </span>hidden: bool,
-}
-
-<span class="kw">impl </span>FromStr <span class="kw">for </span>UnitConfig {
-    <span class="kw">type </span><span class="prelude-val">Err </span>= Error;
-
-    <span class="kw">fn </span>from_str(<span class="kw-2">mut </span>s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
-        <span class="kw">let </span>has_space = <span class="kw">if </span>s.starts_with(<span class="string">&#39; &#39;</span>) {
-            s = <span class="kw-2">&amp;</span>s[<span class="number">1</span>..];
-            <span class="bool-val">true
-        </span>} <span class="kw">else </span>{
-            <span class="bool-val">false
-        </span>};
-
-        <span class="kw">let </span>hidden = <span class="kw">if </span>s.starts_with(<span class="string">&#39;_&#39;</span>) {
-            s = <span class="kw-2">&amp;</span>s[<span class="number">1</span>..];
-            <span class="bool-val">true
-        </span>} <span class="kw">else </span>{
-            <span class="bool-val">false
-        </span>};
-
-        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
-            unit: <span class="kw">if </span>s == <span class="string">&quot;auto&quot; </span>{ <span class="prelude-val">None </span>} <span class="kw">else </span>{ <span class="prelude-val">Some</span>(s.parse()<span class="question-mark">?</span>) },
-            has_space,
-            hidden,
-        })
-    }
-}
-
 <span class="attr">#[derive(Debug)]
 </span><span class="kw">struct </span>EngFixConfig {
     width: usize,
-    unit: UnitConfig,
-    prefix: PrefixConfig,
+    unit: <span class="prelude-ty">Option</span>&lt;Unit&gt;,
+    unit_has_space: bool,
+    unit_hidden: bool,
+    prefix: <span class="prelude-ty">Option</span>&lt;Prefix&gt;,
+    prefix_has_space: bool,
+    prefix_hidden: bool,
+    prefix_forced: bool,
 }
 
 <span class="kw">impl </span>EngFixConfig {
-    <span class="kw">fn </span>from_args(args: <span class="kw-2">&amp;</span>[String]) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
+    <span class="kw">fn </span>from_args(args: <span class="kw-2">&amp;</span>[Arg]) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
+        <span class="kw">let </span><span class="kw-2">mut </span>width = DEFAULT_NUMBER_WIDTH;
+        <span class="kw">let </span><span class="kw-2">mut </span>unit = <span class="prelude-val">None</span>;
+        <span class="kw">let </span><span class="kw-2">mut </span>unit_has_space = <span class="bool-val">false</span>;
+        <span class="kw">let </span><span class="kw-2">mut </span>unit_hidden = <span class="bool-val">false</span>;
+        <span class="kw">let </span><span class="kw-2">mut </span>prefix = <span class="prelude-val">None</span>;
+        <span class="kw">let </span><span class="kw-2">mut </span>prefix_has_space = <span class="bool-val">false</span>;
+        <span class="kw">let </span><span class="kw-2">mut </span>prefix_hidden = <span class="bool-val">false</span>;
+        <span class="kw">let </span><span class="kw-2">mut </span>prefix_forced = <span class="bool-val">false</span>;
+
+        <span class="kw">for </span>arg <span class="kw">in </span>args {
+            <span class="kw">match </span>arg.key {
+                <span class="string">&quot;width&quot; </span>| <span class="string">&quot;w&quot; </span>=&gt; {
+                    width = arg.val.parse().error(<span class="string">&quot;Width must be a positive integer&quot;</span>)<span class="question-mark">?</span>;
+                }
+                <span class="string">&quot;unit&quot; </span>| <span class="string">&quot;u&quot; </span>=&gt; {
+                    unit = <span class="prelude-val">Some</span>(arg.val.parse()<span class="question-mark">?</span>);
+                }
+                <span class="string">&quot;hide_unit&quot; </span>=&gt; {
+                    unit_hidden = arg.val.parse().error(<span class="string">&quot;hide_unit must be true or false&quot;</span>)<span class="question-mark">?</span>;
+                }
+                <span class="string">&quot;unit_space&quot; </span>=&gt; {
+                    unit_has_space = arg.val.parse().error(<span class="string">&quot;unit_space must be true or false&quot;</span>)<span class="question-mark">?</span>;
+                }
+                <span class="string">&quot;prefix&quot; </span>| <span class="string">&quot;p&quot; </span>=&gt; {
+                    prefix = <span class="prelude-val">Some</span>(arg.val.parse()<span class="question-mark">?</span>);
+                }
+                <span class="string">&quot;hide_prefix&quot; </span>=&gt; {
+                    prefix_hidden = arg.val.parse().error(<span class="string">&quot;hide_prefix must be true or false&quot;</span>)<span class="question-mark">?</span>;
+                }
+                <span class="string">&quot;prefix_space&quot; </span>=&gt; {
+                    prefix_has_space = arg
+                        .val
+                        .parse()
+                        .error(<span class="string">&quot;prefix_space must be true or false&quot;</span>)<span class="question-mark">?</span>;
+                }
+                <span class="string">&quot;force_prefix&quot; </span>=&gt; {
+                    prefix_forced = arg
+                        .val
+                        .parse()
+                        .error(<span class="string">&quot;force_prefix must be true or false&quot;</span>)<span class="question-mark">?</span>;
+                }
+                other =&gt; {
+                    <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(
+                        <span class="string">&quot;Unknown argumnt for &#39;fix&#39;/&#39;eng&#39;: &#39;{other}&#39;&quot;
+                    </span>)));
+                }
+            }
+        }
+
         <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
-            width: args
-                .get(EngFixArgs::Width <span class="kw">as </span>usize)
-                .map(|x| x.parse::&lt;usize&gt;())
-                .transpose()
-                .error(<span class="string">&quot;Width must be a positive integer&quot;</span>)<span class="question-mark">?
-                </span>.unwrap_or(<span class="number">3</span>),
-            unit: args
-                .get(EngFixArgs::Unit <span class="kw">as </span>usize)
-                .map(|x| x.parse::&lt;UnitConfig&gt;())
-                .transpose()<span class="question-mark">?
-                </span>.unwrap_or_default(),
-            prefix: args
-                .get(EngFixArgs::Prefix <span class="kw">as </span>usize)
-                .map(|x| x.parse::&lt;PrefixConfig&gt;())
-                .transpose()<span class="question-mark">?
-                </span>.unwrap_or_default(),
+            width,
+            unit,
+            unit_has_space,
+            unit_hidden,
+            prefix,
+            prefix_has_space,
+            prefix_hidden,
+            prefix_forced,
         })
     }
 }
@@ -828,15 +722,15 @@
     <span class="kw">fn </span>format(<span class="kw-2">&amp;</span><span class="self">self</span>, val: <span class="kw-2">&amp;</span>Value) -&gt; <span class="prelude-ty">Result</span>&lt;String&gt; {
         <span class="kw">match </span>val {
             Value::Number { <span class="kw-2">mut </span>val, <span class="kw-2">mut </span>unit } =&gt; {
-                <span class="kw">if let </span><span class="prelude-val">Some</span>(new_unit) = <span class="self">self</span>.<span class="number">0</span>.unit.unit {
+                <span class="kw">if let </span><span class="prelude-val">Some</span>(new_unit) = <span class="self">self</span>.<span class="number">0</span>.unit {
                     val = unit.convert(val, new_unit)<span class="question-mark">?</span>;
                     unit = new_unit;
                 }
 
-                <span class="kw">let </span>(min_prefix, max_prefix) = <span class="kw">match </span><span class="self">self</span>.<span class="number">0</span>.prefix.prefix {
-                    <span class="prelude-val">Some</span>((prefix, <span class="bool-val">true</span>)) =&gt; (prefix, prefix),
-                    <span class="prelude-val">Some</span>((prefix, <span class="bool-val">false</span>)) =&gt; (prefix, Prefix::max_available()),
-                    <span class="prelude-val">None </span>=&gt; (Prefix::min_available(), Prefix::max_available()),
+                <span class="kw">let </span>(min_prefix, max_prefix) = <span class="kw">match </span>(<span class="self">self</span>.<span class="number">0</span>.prefix, <span class="self">self</span>.<span class="number">0</span>.prefix_forced) {
+                    (<span class="prelude-val">Some</span>(prefix), <span class="bool-val">true</span>) =&gt; (prefix, prefix),
+                    (<span class="prelude-val">Some</span>(prefix), <span class="bool-val">false</span>) =&gt; (prefix, Prefix::max_available()),
+                    (<span class="prelude-val">None</span>, <span class="kw">_</span>) =&gt; (Prefix::min_available(), Prefix::max_available()),
                 };
 
                 <span class="kw">let </span>prefix = unit
@@ -859,19 +753,19 @@
                     rest =&gt; <span class="macro">format!</span>(<span class="string">&quot;{:.*}&quot;</span>, rest <span class="kw">as </span>usize - <span class="number">1</span>, val),
                 };
 
-                <span class="kw">let </span>display_prefix = !<span class="self">self</span>.<span class="number">0</span>.prefix.hidden
+                <span class="kw">let </span>display_prefix = !<span class="self">self</span>.<span class="number">0</span>.prefix_hidden
                     &amp;&amp; prefix != Prefix::One
                     &amp;&amp; prefix != Prefix::OneButBinary;
-                <span class="kw">let </span>display_unit = !<span class="self">self</span>.<span class="number">0</span>.unit.hidden &amp;&amp; unit != Unit::None;
+                <span class="kw">let </span>display_unit = !<span class="self">self</span>.<span class="number">0</span>.unit_hidden &amp;&amp; unit != Unit::None;
 
                 <span class="kw">if </span>display_prefix {
-                    <span class="kw">if </span><span class="self">self</span>.<span class="number">0</span>.prefix.has_space {
+                    <span class="kw">if </span><span class="self">self</span>.<span class="number">0</span>.prefix_has_space {
                         retval.push(<span class="string">&#39; &#39;</span>);
                     }
                     retval.push_str(<span class="kw-2">&amp;</span>prefix.to_string());
                 }
                 <span class="kw">if </span>display_unit {
-                    <span class="kw">if </span><span class="self">self</span>.<span class="number">0</span>.unit.has_space || (<span class="self">self</span>.<span class="number">0</span>.prefix.has_space &amp;&amp; !display_prefix) {
+                    <span class="kw">if </span><span class="self">self</span>.<span class="number">0</span>.unit_has_space || (<span class="self">self</span>.<span class="number">0</span>.prefix_has_space &amp;&amp; !display_prefix) {
                         retval.push(<span class="string">&#39; &#39;</span>);
                     }
                     retval.push_str(<span class="kw-2">&amp;</span>unit.to_string());

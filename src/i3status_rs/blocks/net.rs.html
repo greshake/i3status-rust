@@ -211,7 +211,7 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `device` | Network interface to monitor (as specified in `/sys/class/net/`). Supports regex. | If not set, device will be automatically selected every `interval`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon ^icon_net_down $speed_down.eng(3,B,K) ^icon_net_up $speed_up.eng(3,B,K) &quot;`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon ^icon_net_down $speed_down.eng(prefix:K) ^icon_net_up $speed_up.eng(prefix:K) &quot;`
 //! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
 //! `interval` | Update interval in seconds | `2`
 //! `missing_format` | Same as `format` if the interface cannot be connected (or missing). | `&quot; × &quot;`
@@ -283,7 +283,7 @@
         .<span class="kw">await</span><span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>format = config.format.with_default(
-        <span class="string">&quot; $icon ^icon_net_down $speed_down.eng(3,B,K) ^icon_net_up $speed_up.eng(3,B,K) &quot;</span>,
+        <span class="string">&quot; $icon ^icon_net_down $speed_down.eng(prefix:K) ^icon_net_up $speed_up.eng(prefix:K) &quot;</span>,
     )<span class="question-mark">?</span>;
     <span class="kw">let </span>missing_format = config.missing_format.with_default(<span class="string">&quot; × &quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>format_alt = <span class="kw">match </span>config.format_alt {

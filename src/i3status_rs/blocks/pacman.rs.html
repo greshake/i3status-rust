@@ -435,9 +435,9 @@
 //! Key | Values | Default
 //! ----|--------|---------
 //! `interval` | Update interval, in seconds. If setting `aur_command` then set interval appropriately as to not exceed the AUR&#39;s daily rate limit. | `600`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $pacman.eng(1) &quot;`
-//! `format_singular` | Same as `format` but for when exactly one update is available. | `&quot; $icon $pacman.eng(1) &quot;`
-//! `format_up_to_date` | Same as `format` but for when no updates are available. | `&quot; $icon $pacman.eng(1) &quot;`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $pacman.eng(w:1) &quot;`
+//! `format_singular` | Same as `format` but for when exactly one update is available. | `&quot; $icon $pacman.eng(w:1) &quot;`
+//! `format_up_to_date` | Same as `format` but for when no updates are available. | `&quot; $icon $pacman.eng(w:1) &quot;`
 //! `warning_updates_regex` | Display block as warning if updates matching regex are available. | `None`
 //! `critical_updates_regex` | Display block as critical if updates matching regex are available. | `None`
 //! `aur_command` | AUR command to check available updates, which outputs in the same format as pacman. e.g. `yay -Qua` | Required if `$both` or `$aur` are used
@@ -558,13 +558,13 @@
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new();
 
-    <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $pacman.eng(1) &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $pacman.eng(w:1) &quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>format_singular = config
         .format_singular
-        .with_default(<span class="string">&quot; $icon $pacman.eng(1) &quot;</span>)<span class="question-mark">?</span>;
+        .with_default(<span class="string">&quot; $icon $pacman.eng(w:1) &quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>format_up_to_date = config
         .format_up_to_date
-        .with_default(<span class="string">&quot; $icon $pacman.eng(1) &quot;</span>)<span class="question-mark">?</span>;
+        .with_default(<span class="string">&quot; $icon $pacman.eng(w:1) &quot;</span>)<span class="question-mark">?</span>;
 
     <span class="macro">macro_rules! </span>any_format_contains {
         (<span class="macro-nonterminal">$name</span>:expr) =&gt; {

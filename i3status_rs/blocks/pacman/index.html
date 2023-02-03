@@ -23,9 +23,9 @@ When = PostTransaction
 Exec = /usr/bin/pkill -SIGRTMIN+1 i3status-rs
 </code></pre></div><h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Default</th></tr></thead><tbody>
 <tr><td><code>interval</code></td><td>Update interval, in seconds. If setting <code>aur_command</code> then set interval appropriately as to not exceed the AUR’s daily rate limit.</td><td><code>600</code></td></tr>
-<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td><code>&quot; $icon $pacman.eng(1) &quot;</code></td></tr>
-<tr><td><code>format_singular</code></td><td>Same as <code>format</code> but for when exactly one update is available.</td><td><code>&quot; $icon $pacman.eng(1) &quot;</code></td></tr>
-<tr><td><code>format_up_to_date</code></td><td>Same as <code>format</code> but for when no updates are available.</td><td><code>&quot; $icon $pacman.eng(1) &quot;</code></td></tr>
+<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td><code>&quot; $icon $pacman.eng(w:1) &quot;</code></td></tr>
+<tr><td><code>format_singular</code></td><td>Same as <code>format</code> but for when exactly one update is available.</td><td><code>&quot; $icon $pacman.eng(w:1) &quot;</code></td></tr>
+<tr><td><code>format_up_to_date</code></td><td>Same as <code>format</code> but for when no updates are available.</td><td><code>&quot; $icon $pacman.eng(w:1) &quot;</code></td></tr>
 <tr><td><code>warning_updates_regex</code></td><td>Display block as warning if updates matching regex are available.</td><td><code>None</code></td></tr>
 <tr><td><code>critical_updates_regex</code></td><td>Display block as critical if updates matching regex are available.</td><td><code>None</code></td></tr>
 <tr><td><code>aur_command</code></td><td>AUR command to check available updates, which outputs in the same format as pacman. e.g. <code>yay -Qua</code></td><td>Required if <code>$both</code> or <code>$aur</code> are used</td></tr>

@@ -100,6 +100,7 @@
 <a href="#100" id="100">100</a>
 <a href="#101" id="101">101</a>
 <a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Currently focused window
 //!
 //! This block displays the title and/or the active marks (when used with `sway`/`i3`) of the currently
@@ -110,7 +111,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot; $title.str(0,21) &amp;vert;&quot;&lt;/code&gt;
+//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot; $title.str(max_w:21) &amp;vert;&quot;&lt;/code&gt;
 //! `driver` | Which driver to use. Available values: `sway_ipc` - for `i3` and `sway`, `wlr_toplevel_management` - for Wayland compositors that implement [wlr-foreign-toplevel-management-unstable-v1](https://gitlab.freedesktop.org/wlroots/wlr-protocols/-/blob/master/unstable/wlr-foreign-toplevel-management-unstable-v1.xml), `auto` - try to automatically guess which driver to use. | `&quot;auto&quot;`
 //!
 //! Placeholder     | Value                                                                 | Type | Unit
@@ -125,8 +126,8 @@
 //! [[block]]
 //! block = &quot;focused_window&quot;
 //! [block.format]
-//! full = &quot; $title.str(0,15) |&quot;
-//! short = &quot; $title.str(0,10) |&quot;
+//! full = &quot; $title.str(max_w:15) |&quot;
+//! short = &quot; $title.str(max_w:10) |&quot;
 //! ```
 //!
 //! This example instead of hiding block when the window&#39;s title is empty displays &quot;Missing&quot;
@@ -161,7 +162,8 @@
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(config.format.with_default(<span class="string">&quot; $title.str(0,21) |&quot;</span>)<span class="question-mark">?</span>);
+    <span class="kw">let </span><span class="kw-2">mut </span>widget =
+        Widget::new().with_format(config.format.with_default(<span class="string">&quot; $title.str(max_w:21) |&quot;</span>)<span class="question-mark">?</span>);
 
     <span class="kw">let </span><span class="kw-2">mut </span>backend: Box&lt;<span class="kw">dyn </span>Backend&gt; = <span class="kw">match </span>config.driver {
         Driver::Auto =&gt; <span class="kw">match </span>SwayIpc::new().<span class="kw">await </span>{

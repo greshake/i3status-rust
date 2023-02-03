@@ -563,7 +563,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot; $icon {$combo.rot-str() $play &amp;vert;}&quot;&lt;/code&gt;
+//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot; $icon {$combo.str(max_w:25,rot_interval:0.5) $play &amp;vert;}&quot;&lt;/code&gt;
 //! `player` | Name(s) of the music player(s) MPRIS interface. This can be either a music player name or an array of music player names. Run &lt;code&gt;busctl --user list &amp;vert; grep &quot;org.mpris.MediaPlayer2.&quot; &amp;vert; cut -d&#39; &#39; -f1&lt;/code&gt; and the name is the part after &quot;org.mpris.MediaPlayer2.&quot;. | `None`
 //! `interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore. | `[]`
 //! `separator` | String to insert between artist and title. | `&quot; - &quot;`
@@ -602,7 +602,7 @@
 //! ```toml
 //! [[block]]
 //! block = &quot;music&quot;
-//! format = &quot; $icon {$combo.str(0,20) $play $next |}&quot;
+//! format = &quot; $icon {$combo.str(max_w:20) $play $next |}&quot;
 //! player = &quot;spotify&quot;
 //! ```
 //!
@@ -611,7 +611,7 @@
 //! ```toml
 //! [[block]]
 //! block = &quot;music&quot;
-//! format = &quot; $icon {$combo.str(0,20) $play $next |}&quot;
+//! format = &quot; $icon {$combo.str(max_w:20) $play $next |}&quot;
 //! interface_name_exclude = [&quot;.*kdeconnect.*&quot;, &quot;mpd&quot;]
 //! ```
 //!
@@ -620,7 +620,7 @@
 //! ```toml
 //! [[block]]
 //! block = &quot;music&quot;
-//! format = &quot; $icon {$combo.rot-str(20) $play $next |}&quot;
+//! format = &quot; $icon {$combo.str(max_w:20,rot_interval:0.5) $play $next |}&quot;
 //! interface_name_exclude = [&quot;.*kdeconnect.*&quot;, &quot;mpd&quot;]
 //! ```
 //!
@@ -691,7 +691,7 @@
     <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(
         config
             .format
-            .with_default(<span class="string">&quot; $icon {$combo.rot-str() $play |}&quot;</span>)<span class="question-mark">?</span>,
+            .with_default(<span class="string">&quot; $icon {$combo.str(max_w:25,rot_interval:0.5) $play |}&quot;</span>)<span class="question-mark">?</span>,
     );
 
     <span class="kw">let </span>new_btn = |icon: <span class="kw-2">&amp;</span>str, instance: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str, api: <span class="kw-2">&amp;mut </span>CommonApi| -&gt; <span class="prelude-ty">Result</span>&lt;Value&gt; {

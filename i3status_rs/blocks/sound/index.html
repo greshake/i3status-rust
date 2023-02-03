@@ -25,7 +25,7 @@ driver = &quot;pulseaudio&quot;
 device_kind = &quot;source&quot;
 </code></pre></div><h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Default</th></tr></thead><tbody>
 <tr><td><code>driver</code></td><td><code>&quot;auto&quot;</code>, <code>&quot;pulseaudio&quot;</code>, <code>&quot;alsa&quot;</code>.</td><td><code>&quot;auto&quot;</code> (Pulseaudio with ALSA fallback)</td></tr>
-<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td><code> $icon {$volume.eng(2) |}</code></td></tr>
+<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td><code> $icon {$volume.eng(w:2) |}</code></td></tr>
 <tr><td><code>name</code></td><td>PulseAudio device name, or the ALSA control name as found in the output of <code>amixer -D yourdevice scontrols</code>.</td><td>PulseAudio: <code>@DEFAULT_SINK@</code> / ALSA: <code>Master</code></td></tr>
 <tr><td><code>device</code></td><td>ALSA device name, usually in the form “hw:X” or “hw:X,Y” where <code>X</code> is the card number and <code>Y</code> is the device number as found in the output of <code>aplay -l</code>.</td><td><code>default</code></td></tr>
 <tr><td><code>device_kind</code></td><td>PulseAudio device kind: <code>source</code> or <code>sink</code>.</td><td><code>&quot;sink&quot;</code></td></tr>

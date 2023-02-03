@@ -276,7 +276,6 @@
 <a href="#276" id="276">276</a>
 <a href="#277" id="277">277</a>
 <a href="#278" id="278">278</a>
-<a href="#279" id="279">279</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The output of a custom shell command
 //!
 //! For further customisation, use the `json` option and have the shell command output valid JSON in the schema below:
@@ -291,7 +290,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot;{ $icon&amp;vert;} $text &quot;&lt;/code&gt;
+//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot;{ $icon&amp;vert;} $text.pango-str() &quot;&lt;/code&gt;
 //! `command` | Shell command to execute &amp; display | `None`
 //! `persistent` | Run command in the background; update display for each output line of the command | `false`
 //! `cycle` | Commands to execute and change when the button is clicked | `None`
@@ -433,11 +432,10 @@
     api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;cycle&quot;</span>)])
         .<span class="kw">await</span><span class="question-mark">?</span>;
 
-    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(
-        config
-            .format
-            .with_defaults(<span class="string">&quot;{ $icon|} $text &quot;</span>, <span class="string">&quot;{ $icon|} $short_text |&quot;</span>)<span class="question-mark">?</span>,
-    );
+    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(config.format.with_defaults(
+        <span class="string">&quot;{ $icon|} $text.pango-str() &quot;</span>,
+        <span class="string">&quot;{ $icon|} $short_text.pango-str() |&quot;</span>,
+    )<span class="question-mark">?</span>);
 
     <span class="kw">let </span><span class="kw-2">mut </span>timer = config.interval.timer();
 

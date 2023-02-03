@@ -108,10 +108,10 @@
     <span class="doccomment">/// The maximum delay (ms) between two clicks that are considered as doulble click
     </span><span class="kw">pub </span>double_click_delay: u64,
 
-    <span class="attr">#[default(<span class="string">&quot; {$short_error_message|X} &quot;</span>.into())]
-    </span><span class="kw">pub </span>error_format: String,
-    <span class="attr">#[default(<span class="string">&quot; $full_error_message &quot;</span>.into())]
-    </span><span class="kw">pub </span>error_fullscreen_format: String,
+    <span class="attr">#[default(<span class="string">&quot; {$short_error_message|X} &quot;</span>.parse().unwrap())]
+    </span><span class="kw">pub </span>error_format: FormatConfig,
+    <span class="attr">#[default(<span class="string">&quot; $full_error_message &quot;</span>.parse().unwrap())]
+    </span><span class="kw">pub </span>error_fullscreen_format: FormatConfig,
 
     <span class="attr">#[serde(rename = <span class="string">&quot;block&quot;</span>)]
     </span><span class="kw">pub </span>blocks: Vec&lt;BlockConfigEntry&gt;,

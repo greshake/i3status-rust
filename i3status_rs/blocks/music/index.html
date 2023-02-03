@@ -11,7 +11,7 @@
 will cycle it to the next player. You can pin the widget to a given player via the “player”
 setting.</p>
 <h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Default</th></tr></thead><tbody>
-<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td><code>“ $icon {$combo.rot-str() $play |}“</code></td></tr>
+<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td><code>“ $icon {$combo.str(max_w:25,rot_interval:0.5) $play |}“</code></td></tr>
 <tr><td><code>player</code></td><td>Name(s) of the music player(s) MPRIS interface. This can be either a music player name or an array of music player names. Run <code>busctl –user list | grep “org.mpris.MediaPlayer2.” | cut -d’ ’ -f1</code> and the name is the part after “org.mpris.MediaPlayer2.”.</td><td><code>None</code></td></tr>
 <tr><td><code>interface_name_exclude</code></td><td>A list of regex patterns for player MPRIS interface names to ignore.</td><td><code>[]</code></td></tr>
 <tr><td><code>separator</code></td><td>String to insert between artist and title.</td><td><code>&quot; - &quot;</code></td></tr>
@@ -45,19 +45,19 @@ setting.</p>
 to 20 characters:</p>
 <div class="example-wrap"><pre class="language-toml"><code>[[block]]
 block = &quot;music&quot;
-format = &quot; $icon {$combo.str(0,20) $play $next |}&quot;
+format = &quot; $icon {$combo.str(max_w:20) $play $next |}&quot;
 player = &quot;spotify&quot;
 </code></pre></div>
 <p>Same thing for any compatible player, takes the first active on the bus, but ignores “mpd” or anything with “kdeconnect” in the name:</p>
 <div class="example-wrap"><pre class="language-toml"><code>[[block]]
 block = &quot;music&quot;
-format = &quot; $icon {$combo.str(0,20) $play $next |}&quot;
+format = &quot; $icon {$combo.str(max_w:20) $play $next |}&quot;
 interface_name_exclude = [&quot;.*kdeconnect.*&quot;, &quot;mpd&quot;]
 </code></pre></div>
 <p>Same as above, but displays with rotating text</p>
 <div class="example-wrap"><pre class="language-toml"><code>[[block]]
 block = &quot;music&quot;
-format = &quot; $icon {$combo.rot-str(20) $play $next |}&quot;
+format = &quot; $icon {$combo.str(max_w:20,rot_interval:0.5) $play $next |}&quot;
 interface_name_exclude = [&quot;.*kdeconnect.*&quot;, &quot;mpd&quot;]
 </code></pre></div>
 <p>Click anywhere to paly/pause:</p>

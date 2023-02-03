@@ -606,7 +606,7 @@
         </span>});
     <span class="kw">if let </span><span class="prelude-val">Err</span>(error) = result {
         <span class="kw">let </span>error_widget = Widget::new()
-            .with_text(error.to_string().chars().collect_pango())
+            .with_text(error.to_string().chars().collect_pango_escaped())
             .with_state(State::Critical);
 
         <span class="macro">println!</span>(
@@ -785,11 +785,11 @@
         <span class="kw">let </span>error_format = block_config
             .common
             .error_format
-            .with_default(<span class="kw-2">&amp;</span><span class="self">self</span>.config.error_format)<span class="question-mark">?</span>;
+            .with_default_config(<span class="kw-2">&amp;</span><span class="self">self</span>.config.error_format);
         <span class="kw">let </span>error_fullscreen_format = block_config
             .common
             .error_fullscreen_format
-            .with_default(<span class="kw-2">&amp;</span><span class="self">self</span>.config.error_fullscreen_format)<span class="question-mark">?</span>;
+            .with_default_config(<span class="kw-2">&amp;</span><span class="self">self</span>.config.error_fullscreen_format);
 
         <span class="kw">let </span>block_name = block_config.config.name();
         <span class="kw">let </span>(block_fut, abort_handle) = abortable(block_config.config.run(api));

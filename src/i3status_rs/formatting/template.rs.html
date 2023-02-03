@@ -191,105 +191,15 @@
 <a href="#191" id="191">191</a>
 <a href="#192" id="192">192</a>
 <a href="#193" id="193">193</a>
-<a href="#194" id="194">194</a>
-<a href="#195" id="195">195</a>
-<a href="#196" id="196">196</a>
-<a href="#197" id="197">197</a>
-<a href="#198" id="198">198</a>
-<a href="#199" id="199">199</a>
-<a href="#200" id="200">200</a>
-<a href="#201" id="201">201</a>
-<a href="#202" id="202">202</a>
-<a href="#203" id="203">203</a>
-<a href="#204" id="204">204</a>
-<a href="#205" id="205">205</a>
-<a href="#206" id="206">206</a>
-<a href="#207" id="207">207</a>
-<a href="#208" id="208">208</a>
-<a href="#209" id="209">209</a>
-<a href="#210" id="210">210</a>
-<a href="#211" id="211">211</a>
-<a href="#212" id="212">212</a>
-<a href="#213" id="213">213</a>
-<a href="#214" id="214">214</a>
-<a href="#215" id="215">215</a>
-<a href="#216" id="216">216</a>
-<a href="#217" id="217">217</a>
-<a href="#218" id="218">218</a>
-<a href="#219" id="219">219</a>
-<a href="#220" id="220">220</a>
-<a href="#221" id="221">221</a>
-<a href="#222" id="222">222</a>
-<a href="#223" id="223">223</a>
-<a href="#224" id="224">224</a>
-<a href="#225" id="225">225</a>
-<a href="#226" id="226">226</a>
-<a href="#227" id="227">227</a>
-<a href="#228" id="228">228</a>
-<a href="#229" id="229">229</a>
-<a href="#230" id="230">230</a>
-<a href="#231" id="231">231</a>
-<a href="#232" id="232">232</a>
-<a href="#233" id="233">233</a>
-<a href="#234" id="234">234</a>
-<a href="#235" id="235">235</a>
-<a href="#236" id="236">236</a>
-<a href="#237" id="237">237</a>
-<a href="#238" id="238">238</a>
-<a href="#239" id="239">239</a>
-<a href="#240" id="240">240</a>
-<a href="#241" id="241">241</a>
-<a href="#242" id="242">242</a>
-<a href="#243" id="243">243</a>
-<a href="#244" id="244">244</a>
-<a href="#245" id="245">245</a>
-<a href="#246" id="246">246</a>
-<a href="#247" id="247">247</a>
-<a href="#248" id="248">248</a>
-<a href="#249" id="249">249</a>
-<a href="#250" id="250">250</a>
-<a href="#251" id="251">251</a>
-<a href="#252" id="252">252</a>
-<a href="#253" id="253">253</a>
-<a href="#254" id="254">254</a>
-<a href="#255" id="255">255</a>
-<a href="#256" id="256">256</a>
-<a href="#257" id="257">257</a>
-<a href="#258" id="258">258</a>
-<a href="#259" id="259">259</a>
-<a href="#260" id="260">260</a>
-<a href="#261" id="261">261</a>
-<a href="#262" id="262">262</a>
-<a href="#263" id="263">263</a>
-<a href="#264" id="264">264</a>
-<a href="#265" id="265">265</a>
-<a href="#266" id="266">266</a>
-<a href="#267" id="267">267</a>
-<a href="#268" id="268">268</a>
-<a href="#269" id="269">269</a>
-<a href="#270" id="270">270</a>
-<a href="#271" id="271">271</a>
-<a href="#272" id="272">272</a>
-<a href="#273" id="273">273</a>
-<a href="#274" id="274">274</a>
-<a href="#275" id="275">275</a>
-<a href="#276" id="276">276</a>
-<a href="#277" id="277">277</a>
-<a href="#278" id="278">278</a>
-<a href="#279" id="279">279</a>
-<a href="#280" id="280">280</a>
-<a href="#281" id="281">281</a>
-<a href="#282" id="282">282</a>
-<a href="#283" id="283">283</a>
 </pre><pre class="rust"><code><span class="kw">use </span><span class="kw">super</span>::formatter::{new_formatter, Formatter};
+<span class="kw">use </span><span class="kw">super</span>::parse;
 <span class="kw">use super</span>::{Fragment, Values};
 <span class="kw">use </span><span class="kw">crate</span>::config::SharedConfig;
 <span class="kw">use </span><span class="kw">crate</span>::errors::<span class="kw-2">*</span>;
 
-<span class="kw">use </span>std::iter::Peekable;
 <span class="kw">use </span>std::str::FromStr;
 
-<span class="attr">#[derive(Debug)]
+<span class="attr">#[derive(Debug, Default)]
 </span><span class="kw">pub struct </span>FormatTemplate(<span class="kw">pub </span>Vec&lt;TokenList&gt;);
 
 <span class="attr">#[derive(Debug)]
@@ -422,147 +332,57 @@
     <span class="kw">type </span><span class="prelude-val">Err </span>= Error;
 
     <span class="kw">fn </span>from_str(s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
-        <span class="kw">let </span><span class="kw-2">mut </span>it = s.chars().chain(std::iter::once(<span class="string">&#39;}&#39;</span>)).peekable();
-        <span class="kw">let </span>template = read_format_template(<span class="kw-2">&amp;mut </span>it)<span class="question-mark">?</span>;
-        <span class="kw">if </span>it.next().is_some() {
-            <span class="prelude-val">Err</span>(Error::new(<span class="string">&quot;Unexpected &#39;}&#39;&quot;</span>))
-        } <span class="kw">else </span>{
-            <span class="prelude-val">Ok</span>(template)
-        }
+        parse::parse_full(s)
+            .and_then(TryInto::try_into)
+            .error(<span class="string">&quot;Incorrect format template&quot;</span>)
     }
 }
 
-<span class="kw">fn </span>read_format_template(it: <span class="kw-2">&amp;mut </span>Peekable&lt;<span class="kw">impl </span>Iterator&lt;Item = char&gt;&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;FormatTemplate&gt; {
-    <span class="kw">let </span><span class="kw-2">mut </span>token_lists = Vec::new();
-    <span class="kw">let </span><span class="kw-2">mut </span>cur_list = Vec::new();
-    <span class="kw">loop </span>{
-        <span class="kw">match </span><span class="kw-2">*</span>it.peek().error(<span class="string">&quot;Missing &#39;}&#39;&quot;</span>)<span class="question-mark">? </span>{
-            <span class="string">&#39;{&#39; </span>=&gt; {
-                <span class="kw">let _ </span>= it.next();
-                cur_list.push(Token::Recursive(read_format_template(it)<span class="question-mark">?</span>));
-            }
-            <span class="string">&#39;}&#39; </span>=&gt; {
-                <span class="kw">let _ </span>= it.next();
-                token_lists.push(TokenList(cur_list));
-                <span class="kw">return </span><span class="prelude-val">Ok</span>(FormatTemplate(token_lists));
-            }
-            <span class="string">&#39;|&#39; </span>=&gt; {
-                <span class="kw">let _ </span>= it.next();
-                token_lists.push(TokenList(cur_list));
-                cur_list = Vec::new();
-            }
-            <span class="string">&#39;$&#39; </span>=&gt; {
-                <span class="kw">let _ </span>= it.next();
-                <span class="kw">let </span>name = read_ident(it);
-                <span class="kw">let </span>formatter = <span class="kw">match </span>it.peek() {
-                    <span class="prelude-val">Some</span>(<span class="string">&#39;.&#39;</span>) =&gt; {
-                        <span class="kw">let _ </span>= it.next();
-                        <span class="prelude-val">Some</span>(new_formatter(<span class="kw-2">&amp;</span>read_formatter(it)<span class="question-mark">?</span>, <span class="kw-2">&amp;</span>read_args(it)<span class="question-mark">?</span>)<span class="question-mark">?</span>)
-                    }
-                    <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
-                };
-                cur_list.push(Token::Placeholder { name, formatter });
-            }
-            <span class="string">&#39;^&#39; </span>=&gt; {
-                <span class="kw">let _ </span>= it.next();
-                <span class="kw">if </span>!consume_exact(it, <span class="string">&quot;icon_&quot;</span>) {
-                    <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="string">&quot;^ should be followed by &#39;icon_&lt;name&gt;&#39;&quot;</span>));
-                }
-                <span class="kw">let </span>name = read_ident(it);
-                cur_list.push(Token::Icon { name });
-            }
-            <span class="kw">_ </span>=&gt; {
-                cur_list.push(Token::Text(read_text(it)));
-            }
-        }
+<span class="kw">impl </span>TryFrom&lt;parse::FormatTemplate&lt;<span class="lifetime">&#39;_</span>&gt;&gt; <span class="kw">for </span>FormatTemplate {
+    <span class="kw">type </span>Error = Error;
+
+    <span class="kw">fn </span>try_from(value: parse::FormatTemplate) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Error&gt; {
+        value
+            .<span class="number">0
+            </span>.into_iter()
+            .map(TryInto::try_into)
+            .collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;&gt;()
+            .map(<span class="self">Self</span>)
     }
 }
 
-<span class="kw">fn </span>read_text(it: <span class="kw-2">&amp;mut </span>Peekable&lt;<span class="kw">impl </span>Iterator&lt;Item = char&gt;&gt;) -&gt; String {
-    <span class="kw">let </span><span class="kw-2">mut </span>retval = String::new();
-    <span class="kw">let </span><span class="kw-2">mut </span>escaped = <span class="bool-val">false</span>;
-    <span class="kw">while let </span><span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>c) = it.peek() {
-        <span class="kw">if </span>escaped {
-            escaped = <span class="bool-val">false</span>;
-            retval.push(c);
-            <span class="kw">let _ </span>= it.next();
-            <span class="kw">continue</span>;
-        }
-        <span class="kw">match </span>c {
-            <span class="string">&#39;\\&#39; </span>=&gt; {
-                <span class="kw">let _ </span>= it.next();
-                escaped = <span class="bool-val">true</span>;
-            }
-            <span class="string">&#39;{&#39; </span>| <span class="string">&#39;}&#39; </span>| <span class="string">&#39;$&#39; </span>| <span class="string">&#39;^&#39; </span>| <span class="string">&#39;|&#39; </span>=&gt; <span class="kw">break</span>,
-            x =&gt; {
-                <span class="kw">let _ </span>= it.next();
-                retval.push(x);
-            }
-        }
+<span class="kw">impl </span>TryFrom&lt;parse::TokenList&lt;<span class="lifetime">&#39;_</span>&gt;&gt; <span class="kw">for </span>TokenList {
+    <span class="kw">type </span>Error = Error;
+
+    <span class="kw">fn </span>try_from(value: parse::TokenList) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Error&gt; {
+        value
+            .<span class="number">0
+            </span>.into_iter()
+            .map(TryInto::try_into)
+            .collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;&gt;()
+            .map(<span class="self">Self</span>)
     }
-    retval
 }
 
-<span class="kw">fn </span>read_ident(it: <span class="kw-2">&amp;mut </span>Peekable&lt;<span class="kw">impl </span>Iterator&lt;Item = char&gt;&gt;) -&gt; String {
-    <span class="kw">let </span><span class="kw-2">mut </span>retval = String::new();
-    <span class="kw">while let </span><span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>c) = it.peek() {
-        <span class="kw">match </span>c {
-            x <span class="kw">if </span>!x.is_alphanumeric() &amp;&amp; x != <span class="string">&#39;_&#39; </span>=&gt; <span class="kw">break</span>,
-            x =&gt; {
-                <span class="kw">let _ </span>= it.next();
-                retval.push(x);
-            }
-        }
-    }
-    retval
-}
+<span class="kw">impl </span>TryFrom&lt;parse::Token&lt;<span class="lifetime">&#39;_</span>&gt;&gt; <span class="kw">for </span>Token {
+    <span class="kw">type </span>Error = Error;
 
-<span class="kw">fn </span>read_formatter(it: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>Iterator&lt;Item = char&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;String&gt; {
-    <span class="kw">let </span><span class="kw-2">mut </span>retval = String::new();
-    <span class="kw">for </span>c <span class="kw">in </span>it {
-        <span class="kw">match </span>c {
-            <span class="string">&#39;(&#39; </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(retval),
-            x =&gt; retval.push(x),
-        }
+    <span class="kw">fn </span>try_from(value: parse::Token) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Error&gt; {
+        <span class="prelude-val">Ok</span>(<span class="kw">match </span>value {
+            parse::Token::Text(text) =&gt; <span class="self">Self</span>::Text(text),
+            parse::Token::Placeholder(placeholder) =&gt; <span class="self">Self</span>::Placeholder {
+                name: placeholder.name.to_owned(),
+                formatter: placeholder
+                    .formatter
+                    .map(|fmt| new_formatter(fmt.name, <span class="kw-2">&amp;</span>fmt.args))
+                    .transpose()<span class="question-mark">?</span>,
+            },
+            parse::Token::Icon(icon) =&gt; <span class="self">Self</span>::Icon {
+                name: icon.to_owned(),
+            },
+            parse::Token::Recursive(rec) =&gt; <span class="self">Self</span>::Recursive(rec.try_into()<span class="question-mark">?</span>),
+        })
     }
-    <span class="prelude-val">Err</span>(Error::new(<span class="string">&quot;Missing &#39;(&#39;&quot;</span>))
 }
-
-<span class="kw">fn </span>read_args(it: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>Iterator&lt;Item = char&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;String&gt;&gt; {
-    <span class="kw">let </span><span class="kw-2">mut </span>args = Vec::new();
-    <span class="kw">let </span><span class="kw-2">mut </span>cur_arg = String::new();
-    <span class="kw">let </span><span class="kw-2">mut </span>escaped = <span class="bool-val">false</span>;
-    <span class="kw">for </span>c <span class="kw">in </span>it {
-        <span class="kw">if </span>escaped {
-            escaped = <span class="bool-val">false</span>;
-            cur_arg.push(c);
-            <span class="kw">continue</span>;
-        }
-        <span class="kw">match </span>c {
-            <span class="string">&#39;\\&#39; </span>=&gt; escaped = <span class="bool-val">true</span>,
-            <span class="string">&#39;,&#39; </span>=&gt; {
-                args.push(cur_arg);
-                cur_arg = String::new();
-            }
-            <span class="string">&#39;)&#39; </span>=&gt; {
-                <span class="kw">if </span>!cur_arg.is_empty() || !args.is_empty() {
-                    args.push(cur_arg);
-                }
-                <span class="kw">return </span><span class="prelude-val">Ok</span>(args);
-            }
-            x =&gt; cur_arg.push(x),
-        }
-    }
-    <span class="prelude-val">Err</span>(Error::new(<span class="string">&quot;Missing &#39;)&#39;&quot;</span>))
-}
-
-<span class="kw">fn </span>consume_exact(it: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>Iterator&lt;Item = char&gt;, tag: <span class="kw-2">&amp;</span>str) -&gt; bool {
-    <span class="kw">for </span>c <span class="kw">in </span>tag.chars() {
-        <span class="kw">if </span>it.next() != <span class="prelude-val">Some</span>(c) {
-            <span class="kw">return </span><span class="bool-val">false</span>;
-        }
-    }
-    <span class="bool-val">true
-</span>}
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.67.0 (fc594f156 2023-01-24)" data-search-js="search-444266647c4dba98.js" data-settings-js="settings-bebeae96e00e4617.js" data-settings-css="settings-af96d9e2fc13e081.css" ></div></body></html>

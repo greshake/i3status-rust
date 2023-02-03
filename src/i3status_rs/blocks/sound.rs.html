@@ -341,7 +341,7 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `driver` | `&quot;auto&quot;`, `&quot;pulseaudio&quot;`, `&quot;alsa&quot;`. | `&quot;auto&quot;` (Pulseaudio with ALSA fallback)
-//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt; $icon {$volume.eng(2) &amp;vert;}&lt;/code&gt;
+//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt; $icon {$volume.eng(w:2) &amp;vert;}&lt;/code&gt;
 //! `name` | PulseAudio device name, or the ALSA control name as found in the output of `amixer -D yourdevice scontrols`. | PulseAudio: `@DEFAULT_SINK@` / ALSA: `Master`
 //! `device` | ALSA device name, usually in the form &quot;hw:X&quot; or &quot;hw:X,Y&quot; where `X` is the card number and `Y` is the device number as found in the output of `aplay -l`. | `default`
 //! `device_kind` | PulseAudio device kind: `source` or `sink`. | `&quot;sink&quot;`
@@ -409,7 +409,7 @@
     .<span class="kw">await</span><span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>widget =
-        Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon {$volume.eng(2)|} &quot;</span>)<span class="question-mark">?</span>);
+        Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon {$volume.eng(w:2)|} &quot;</span>)<span class="question-mark">?</span>);
 
     <span class="kw">let </span>device_kind = config.device_kind;
     <span class="kw">let </span>step_width = config.step_width.clamp(<span class="number">0</span>, <span class="number">50</span>) <span class="kw">as </span>i32;

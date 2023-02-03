@@ -100,6 +100,7 @@
 <a href="#100" id="100">100</a>
 <a href="#101" id="101">101</a>
 <a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The number of pending notifications in rofication-daemon
 //!
 //! A different color is used is there are critical notications.
@@ -109,7 +110,7 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `interval` | Refresh rate in seconds. | `1`
-//! `format` | A string to customise the output of this block. See below for placeholders. | `&quot; $icon $num.eng(1) &quot;`
+//! `format` | A string to customise the output of this block. See below for placeholders. | `&quot; $icon $num.eng(w:1) &quot;`
 //! `socket_path` | Socket path for the rofication daemon. Supports path expansions e.g. `~`. | `&quot;/tmp/rofi_notification_daemon&quot;`
 //!
 //!  Placeholder | Value | Type | Unit
@@ -146,7 +147,8 @@
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon $num.eng(1) &quot;</span>)<span class="question-mark">?</span>);
+    <span class="kw">let </span><span class="kw-2">mut </span>widget =
+        Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon $num.eng(w:1) &quot;</span>)<span class="question-mark">?</span>);
 
     <span class="kw">let </span>path = config.socket_path.expand()<span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>timer = config.interval.timer();
