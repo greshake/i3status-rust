@@ -36,14 +36,21 @@ fn unprocessed_events_stream(invert_scrolling: bool) -> BoxedStream<I3BarEvent> 
 
             #[derive(Deserialize)]
             struct I3BarEventRaw {
-                name: Option<String>,
                 instance: Option<String>,
                 button: MouseButton,
             }
 
             let event: I3BarEventRaw = serde_json::from_str(line).unwrap();
-            let id = match event.name {
-                Some(name) => name.parse().unwrap(),
+            let (id, instance) = match event.instance {
+                Some(name) => {
+                    let (id, instance) = name.split_once(':').unwrap();
+                    let instance = if instance.is_empty() {
+                        None
+                    } else {
+                        Some(instance.to_owned())
+                    };
+                    (id.parse().unwrap(), instance)
+                }
                 None => continue,
             };
 
@@ -56,7 +63,7 @@ fn unprocessed_events_stream(invert_scrolling: bool) -> BoxedStream<I3BarEvent> 
 
             let event = I3BarEvent {
                 id,
-                instance: event.instance,
+                instance,
                 button,
             };
 

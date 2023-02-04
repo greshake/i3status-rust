@@ -73,7 +73,7 @@ impl Widget {
         let (key_bg, key_fg) = shared_config.theme.get_colors(self.state);
         let (full, short) = self.source.render(shared_config)?;
         let mut template = I3BarBlock {
-            name: Some(id.to_string()),
+            instance: format!("{id}:"),
             background: key_bg,
             color: key_fg,
             ..I3BarBlock::default()
@@ -97,7 +97,9 @@ impl Widget {
         parts.extend(full.into_iter().map(|w| {
             let mut data = template.clone();
             data.full_text = w.formated_text();
-            data.instance = w.metadata.instance.map(|i| i.to_string());
+            if let Some(i) = &w.metadata.instance {
+                data.instance.push_str(i);
+            }
             data
         }));
 
@@ -105,7 +107,9 @@ impl Widget {
         parts.extend(short.into_iter().map(|w| {
             let mut data = template.clone();
             data.short_text = w.formated_text();
-            data.instance = w.metadata.instance.map(|i| i.to_string());
+            if let Some(i) = &w.metadata.instance {
+                data.instance.push_str(i);
+            }
             data
         }));
 

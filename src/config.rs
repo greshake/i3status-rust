@@ -67,6 +67,7 @@ pub struct CommonBlockConfig {
     pub icons_format: Option<String>,
     pub theme_overrides: Option<ThemeOverrides>,
     pub icons_overrides: Option<HashMap<String, String>>,
+    pub merge_with_next: bool,
 
     #[default(5)]
     pub error_interval: u64,

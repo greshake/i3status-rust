@@ -25,10 +25,17 @@ pub struct I3BarBlock {
     pub min_width: Option<I3BarBlockMinWidth>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub align: Option<I3BarBlockAlign>,
+    /// This project uses `name` field to uniquely identify each "logical block". For example two
+    /// "config blocks" merged using `merge_with_next` will have the same `name`. This information
+    /// could be used by some bar frontends (such as `i3bar-river`) and will be ignored by `i3bar`
+    /// and `swaybar`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub instance: Option<String>,
+    /// This project uses `instance` field to uniquely identify each block and optionally a part
+    /// of the block, e.g. a "button". The format is `{block_id}:{optional_widget_name}`. This info
+    /// is used when dispatching click events.
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub instance: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub urgent: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -58,7 +65,7 @@ impl Default for I3BarBlock {
             min_width: None,
             align: None,
             name: None,
-            instance: None,
+            instance: String::new(),
             urgent: None,
             separator: Some(false),
             separator_block_width: Some(0),
