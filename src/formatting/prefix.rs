@@ -14,6 +14,7 @@ pub enum Prefix {
     /// `1`
     One,
     /// `1i`
+    /// `1i` is a special prefix which means "one but binary". `1i` is to `1` as `Ki` is to `K`. 
     OneButBinary,
     /// `K`
     Kilo,
