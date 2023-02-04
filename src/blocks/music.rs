@@ -291,25 +291,10 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                             player.metadata =
                                 zbus_mpris::PlayerMetadata::try_from(metadata.to_owned()).unwrap();
 
-                            // TODO: refactor!!
-                            match (
-                                &player.metadata.title,
-                                &player.metadata.artist,
-                                &player.metadata.url,
-                            ) {
-                                (Some(_t), None, _) => {
+                            if player.metadata.title.is_some()
+                                || player.metadata.artist.is_some()
+                                || player.metadata.url.is_some() {
                                     cur_player = players.iter().position(|p| &*p.owner == sender);
-                                }
-                                (None, Some(_a), _) => {
-                                    cur_player = players.iter().position(|p| &*p.owner == sender);
-                                }
-                                (Some(_t), Some(_a), _) => {
-                                    cur_player = players.iter().position(|p| &*p.owner == sender);
-                                }
-                                (None, None, Some(_url)) => {
-                                    cur_player = players.iter().position(|p| &*p.owner == sender);
-                                }
-                                _ => (),
                             }
                         }
                         break;
