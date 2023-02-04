@@ -199,7 +199,7 @@ pub enum RequestCmd {
 #[derive(Debug, Clone)]
 pub struct RenderedBlock {
     segments: Vec<I3BarBlock>,
-    marge_with_next: bool,
+    merge_with_next: bool,
 }
 
 struct BarState {
@@ -323,7 +323,7 @@ impl BarState {
         self.blocks.push((block, block_name));
         self.blocks_render_cache.push(RenderedBlock {
             segments: Vec::new(),
-            marge_with_next: block_config.common.merge_with_next,
+            merge_with_next: block_config.common.merge_with_next,
         });
 
         Ok(())

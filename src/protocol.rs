@@ -29,7 +29,7 @@ where
     let mut alt = blocks
         .iter()
         .map(|x| x.borrow())
-        .filter(|x| !x.segments.is_empty() && !x.marge_with_next)
+        .filter(|x| !x.segments.is_empty() && !x.merge_with_next)
         .count()
         % 2
         == 0;
@@ -44,7 +44,7 @@ where
     {
         let RenderedBlock {
             mut segments,
-            marge_with_next: merge_with_next,
+            merge_with_next: merge_with_next,
         } = widgets;
 
         for segment in &mut segments {
