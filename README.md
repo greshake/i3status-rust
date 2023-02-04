@@ -56,6 +56,7 @@ Key | Description | Default
 `block` | Name of the i3status-rs block you want to use. See `Blocks` below for valid block names. | -
 `signal` | Signal value that causes an update for this block with `0` corresponding to `-SIGRTMIN+0` and the largest value being `-SIGRTMAX` | None
 `if_command` | Only display the block if the supplied command returns 0 on startup. | None
+`merge_with_next` | If true this will group the block with the next one, so rendering such as alternating_tint will apply to the whole group | `false`
 `icons_format` | Overrides global `icons_format` | None 
 `error_format` | Overrides global `error_format` | None
 `error_fullscreen_format` | Overrides global `error_fullscreen_format` | None
