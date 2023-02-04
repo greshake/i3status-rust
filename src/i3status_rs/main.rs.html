@@ -501,6 +501,16 @@
 <a href="#501" id="501">501</a>
 <a href="#502" id="502">502</a>
 <a href="#503" id="503">503</a>
+<a href="#504" id="504">504</a>
+<a href="#505" id="505">505</a>
+<a href="#506" id="506">506</a>
+<a href="#507" id="507">507</a>
+<a href="#508" id="508">508</a>
+<a href="#509" id="509">509</a>
+<a href="#510" id="510">510</a>
+<a href="#511" id="511">511</a>
+<a href="#512" id="512">512</a>
+<a href="#513" id="513">513</a>
 </pre><pre class="rust"><code><span class="attr">#![warn(clippy::match_same_arms)]
 #![warn(clippy::semicolon_if_nothing_returned)]
 #![warn(clippy::unnecessary_wraps)]
@@ -699,6 +709,12 @@
     SetDefaultActions(<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>[(MouseButton, <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt;, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str)]),
 }
 
+<span class="attr">#[derive(Debug, Clone)]
+</span><span class="kw">pub struct </span>RenderedBlock {
+    segments: Vec&lt;I3BarBlock&gt;,
+    merge_with_next: bool,
+}
+
 <span class="kw">struct </span>BarState {
     config: Config,
 
@@ -708,7 +724,7 @@
 
     widget_updates_stream: BoxedStream&lt;Vec&lt;usize&gt;&gt;,
     widget_updates_sender: mpsc::UnboundedSender&lt;(usize, Vec&lt;u64&gt;)&gt;,
-    blocks_render_cache: Vec&lt;Vec&lt;I3BarBlock&gt;&gt;,
+    blocks_render_cache: Vec&lt;RenderedBlock&gt;,
 
     request_sender: mpsc::Sender&lt;Request&gt;,
     request_receiver: mpsc::Receiver&lt;Request&gt;,
@@ -818,7 +834,11 @@
                 <span class="prelude-val">Err</span>(_aborted) =&gt; <span class="prelude-val">Ok</span>(()),
             })));
         <span class="self">self</span>.blocks.push((block, block_name));
-        <span class="self">self</span>.blocks_render_cache.push(Vec::new());
+        <span class="self">self</span>.blocks_render_cache.push(RenderedBlock {
+            segments: Vec::new(),
+            merge_with_next: block_config.common.merge_with_next,
+        });
+
         <span class="prelude-val">Ok</span>(())
     }
 
@@ -849,7 +869,7 @@
 
     <span class="kw">fn </span>render_block(<span class="kw-2">&amp;mut </span><span class="self">self</span>, id: usize) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="kw">let </span>(block, block_type) = <span class="kw-2">&amp;mut </span><span class="self">self</span>.blocks[id];
-        <span class="kw">let </span>data = <span class="kw-2">&amp;mut </span><span class="self">self</span>.blocks_render_cache[id];
+        <span class="kw">let </span>data = <span class="kw-2">&amp;mut </span><span class="self">self</span>.blocks_render_cache[id].segments;
         <span class="kw">match </span><span class="kw-2">&amp;</span>block.state {
             BlockState::None =&gt; {
                 data.clear();
@@ -865,7 +885,7 @@
 
     <span class="kw">fn </span>render(<span class="kw-2">&amp;</span><span class="self">self</span>) {
         <span class="kw">if let </span><span class="prelude-val">Some</span>(id) = <span class="self">self</span>.fullscreen_block {
-            protocol::print_blocks(<span class="kw-2">&amp;</span>[<span class="self">self</span>.blocks_render_cache[id].clone()], <span class="kw-2">&amp;</span><span class="self">self</span>.config.shared);
+            protocol::print_blocks(<span class="kw-2">&amp;</span>[<span class="kw-2">&amp;</span><span class="self">self</span>.blocks_render_cache[id]], <span class="kw-2">&amp;</span><span class="self">self</span>.config.shared);
         } <span class="kw">else </span>{
             protocol::print_blocks(<span class="kw-2">&amp;</span><span class="self">self</span>.blocks_render_cache, <span class="kw-2">&amp;</span><span class="self">self</span>.config.shared);
         }

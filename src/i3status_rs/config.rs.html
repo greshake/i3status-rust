@@ -84,6 +84,7 @@
 <a href="#84" id="84">84</a>
 <a href="#85" id="85">85</a>
 <a href="#86" id="86">86</a>
+<a href="#87" id="87">87</a>
 </pre><pre class="rust"><code><span class="kw">use </span>serde::{Deserialize, Deserializer};
 <span class="kw">use </span>smart_default::SmartDefault;
 <span class="kw">use </span>std::collections::HashMap;
@@ -153,6 +154,7 @@
     <span class="kw">pub </span>icons_format: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="kw">pub </span>theme_overrides: <span class="prelude-ty">Option</span>&lt;ThemeOverrides&gt;,
     <span class="kw">pub </span>icons_overrides: <span class="prelude-ty">Option</span>&lt;HashMap&lt;String, String&gt;&gt;,
+    <span class="kw">pub </span>merge_with_next: bool,
 
     <span class="attr">#[default(<span class="number">5</span>)]
     </span><span class="kw">pub </span>error_interval: u64,

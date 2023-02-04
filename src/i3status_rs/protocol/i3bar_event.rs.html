@@ -94,6 +94,13 @@
 <a href="#94" id="94">94</a>
 <a href="#95" id="95">95</a>
 <a href="#96" id="96">96</a>
+<a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
+<a href="#99" id="99">99</a>
+<a href="#100" id="100">100</a>
+<a href="#101" id="101">101</a>
+<a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a>
 </pre><pre class="rust"><code><span class="kw">use </span>std::os::unix::io::FromRawFd;
 <span class="kw">use </span>std::time::Duration;
 
@@ -132,14 +139,21 @@
 
             <span class="attr">#[derive(Deserialize)]
             </span><span class="kw">struct </span>I3BarEventRaw {
-                name: <span class="prelude-ty">Option</span>&lt;String&gt;,
                 instance: <span class="prelude-ty">Option</span>&lt;String&gt;,
                 button: MouseButton,
             }
 
             <span class="kw">let </span>event: I3BarEventRaw = serde_json::from_str(line).unwrap();
-            <span class="kw">let </span>id = <span class="kw">match </span>event.name {
-                <span class="prelude-val">Some</span>(name) =&gt; name.parse().unwrap(),
+            <span class="kw">let </span>(id, instance) = <span class="kw">match </span>event.instance {
+                <span class="prelude-val">Some</span>(name) =&gt; {
+                    <span class="kw">let </span>(id, instance) = name.split_once(<span class="string">&#39;:&#39;</span>).unwrap();
+                    <span class="kw">let </span>instance = <span class="kw">if </span>instance.is_empty() {
+                        <span class="prelude-val">None
+                    </span>} <span class="kw">else </span>{
+                        <span class="prelude-val">Some</span>(instance.to_owned())
+                    };
+                    (id.parse().unwrap(), instance)
+                }
                 <span class="prelude-val">None </span>=&gt; <span class="kw">continue</span>,
             };
 
@@ -152,7 +166,7 @@
 
             <span class="kw">let </span>event = I3BarEvent {
                 id,
-                instance: event.instance,
+                instance,
                 button,
             };
 

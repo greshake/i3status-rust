@@ -80,12 +80,49 @@
 <a href="#80" id="80">80</a>
 <a href="#81" id="81">81</a>
 <a href="#82" id="82">82</a>
+<a href="#83" id="83">83</a>
+<a href="#84" id="84">84</a>
+<a href="#85" id="85">85</a>
+<a href="#86" id="86">86</a>
+<a href="#87" id="87">87</a>
+<a href="#88" id="88">88</a>
+<a href="#89" id="89">89</a>
+<a href="#90" id="90">90</a>
+<a href="#91" id="91">91</a>
+<a href="#92" id="92">92</a>
+<a href="#93" id="93">93</a>
+<a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
+<a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
+<a href="#99" id="99">99</a>
+<a href="#100" id="100">100</a>
+<a href="#101" id="101">101</a>
+<a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a>
+<a href="#104" id="104">104</a>
+<a href="#105" id="105">105</a>
+<a href="#106" id="106">106</a>
+<a href="#107" id="107">107</a>
+<a href="#108" id="108">108</a>
+<a href="#109" id="109">109</a>
+<a href="#110" id="110">110</a>
+<a href="#111" id="111">111</a>
+<a href="#112" id="112">112</a>
+<a href="#113" id="113">113</a>
+<a href="#114" id="114">114</a>
+<a href="#115" id="115">115</a>
+<a href="#116" id="116">116</a>
 </pre><pre class="rust"><code><span class="kw">pub mod </span>i3bar_block;
 <span class="kw">pub mod </span>i3bar_event;
+
+<span class="kw">use </span>std::borrow::Borrow;
 
 <span class="kw">use </span><span class="kw">crate</span>::config::SharedConfig;
 <span class="kw">use </span><span class="kw">crate</span>::themes::color::Color;
 <span class="kw">use </span><span class="kw">crate</span>::themes::separator::Separator;
+<span class="kw">use </span><span class="kw">crate</span>::RenderedBlock;
 
 <span class="kw">use </span>i3bar_block::I3BarBlock;
 
@@ -97,57 +134,88 @@
     }
 }
 
-<span class="kw">pub fn </span>print_blocks(blocks: <span class="kw-2">&amp;</span>[Vec&lt;I3BarBlock&gt;], config: <span class="kw-2">&amp;</span>SharedConfig) {
+<span class="kw">pub fn </span>print_blocks&lt;B&gt;(blocks: <span class="kw-2">&amp;</span>[B], config: <span class="kw-2">&amp;</span>SharedConfig)
+<span class="kw">where
+    </span>B: Borrow&lt;RenderedBlock&gt;,
+{
     <span class="kw">let </span><span class="kw-2">mut </span>last_bg = Color::None;
     <span class="kw">let </span><span class="kw-2">mut </span>rendered_blocks = <span class="macro">vec!</span>[];
 
     <span class="comment">// The right most block should never be alternated
-    </span><span class="kw">let </span><span class="kw-2">mut </span>alt = blocks.iter().filter(|x| !x.is_empty()).count() % <span class="number">2 </span>== <span class="number">0</span>;
+    </span><span class="kw">let </span><span class="kw-2">mut </span>alt = blocks
+        .iter()
+        .map(|x| x.borrow())
+        .filter(|x| !x.segments.is_empty() &amp;&amp; !x.merge_with_next)
+        .count()
+        % <span class="number">2
+        </span>== <span class="number">0</span>;
 
-    <span class="kw">for </span><span class="kw-2">mut </span>widgets <span class="kw">in </span>blocks.iter().cloned().filter(|x| !x.is_empty()) {
-        <span class="comment">// Apply tint for all widgets of every second block
-        // TODO: Allow for other non-additive tints
-        </span><span class="kw">if </span>alt {
-            <span class="kw">for </span>data <span class="kw">in </span><span class="kw-2">&amp;mut </span>widgets {
-                data.background = data.background + config.theme.alternating_tint_bg;
-                data.color = data.color + config.theme.alternating_tint_fg;
+    <span class="kw">let </span><span class="kw-2">mut </span>logical_block_i = <span class="number">0</span>;
+
+    <span class="kw">for </span>widgets <span class="kw">in </span>blocks
+        .iter()
+        .map(|x| x.borrow())
+        .filter(|x| !x.segments.is_empty())
+        .cloned()
+    {
+        <span class="kw">let </span>RenderedBlock {
+            <span class="kw-2">mut </span>segments,
+            merge_with_next: merge_with_next,
+        } = widgets;
+
+        <span class="kw">for </span>segment <span class="kw">in </span><span class="kw-2">&amp;mut </span>segments {
+            segment.name = <span class="prelude-val">Some</span>(logical_block_i.to_string());
+
+            <span class="comment">// Apply tint for all widgets of every second block
+            // TODO: Allow for other non-additive tints
+            </span><span class="kw">if </span>alt {
+                segment.background = segment.background + config.theme.alternating_tint_bg;
+                segment.color = segment.color + config.theme.alternating_tint_fg;
             }
         }
-        alt = !alt;
 
-        <span class="kw">if let </span>Separator::Custom(separator) = <span class="kw-2">&amp;</span>config.theme.separator {
-            <span class="comment">// The first widget&#39;s BG is used to get the FG color for the current separator
-            </span><span class="kw">let </span>sep_fg = <span class="kw">if </span>config.theme.separator_fg == Color::Auto {
-                widgets.first().unwrap().background
+        <span class="kw">if </span>!merge_with_next {
+            alt = !alt;
+        }
+
+        <span class="kw">if </span>!merge_with_next {
+            <span class="kw">if let </span>Separator::Custom(separator) = <span class="kw-2">&amp;</span>config.theme.separator {
+                <span class="comment">// The first widget&#39;s BG is used to get the FG color for the current separator
+                </span><span class="kw">let </span>sep_fg = <span class="kw">if </span>config.theme.separator_fg == Color::Auto {
+                    segments.first().unwrap().background
+                } <span class="kw">else </span>{
+                    config.theme.separator_fg
+                };
+
+                <span class="comment">// The separator&#39;s BG is the last block&#39;s last widget&#39;s BG
+                </span><span class="kw">let </span>sep_bg = <span class="kw">if </span>config.theme.separator_bg == Color::Auto {
+                    last_bg
+                } <span class="kw">else </span>{
+                    config.theme.separator_bg
+                };
+
+                <span class="comment">// The last widget&#39;s BG is used to get the BG color for the next separator
+                </span>last_bg = segments.last().unwrap().background;
+
+                <span class="kw">let </span>separator = I3BarBlock {
+                    full_text: separator.clone(),
+                    background: sep_bg,
+                    color: sep_fg,
+                    ..Default::default()
+                };
+
+                rendered_blocks.push(separator);
             } <span class="kw">else </span>{
-                config.theme.separator_fg
-            };
+                <span class="comment">// Re-add native separator on last widget for native theme
+                </span>segments.last_mut().unwrap().separator = <span class="prelude-val">None</span>;
+                segments.last_mut().unwrap().separator_block_width = <span class="prelude-val">None</span>;
+            }
+        }
 
-            <span class="comment">// The separator&#39;s BG is the last block&#39;s last widget&#39;s BG
-            </span><span class="kw">let </span>sep_bg = <span class="kw">if </span>config.theme.separator_bg == Color::Auto {
-                last_bg
-            } <span class="kw">else </span>{
-                config.theme.separator_bg
-            };
+        rendered_blocks.extend(segments);
 
-            <span class="comment">// The last widget&#39;s BG is used to get the BG color for the next separator
-            </span>last_bg = widgets.last().unwrap().background;
-
-            <span class="kw">let </span>separator = I3BarBlock {
-                full_text: separator.clone(),
-                background: sep_bg,
-                color: sep_fg,
-                ..Default::default()
-            };
-
-            rendered_blocks.push(separator);
-            rendered_blocks.extend(widgets);
-        } <span class="kw">else </span>{
-            <span class="comment">// Re-add native separator on last widget for native theme
-            </span>widgets.last_mut().unwrap().separator = <span class="prelude-val">None</span>;
-            widgets.last_mut().unwrap().separator_block_width = <span class="prelude-val">None</span>;
-
-            rendered_blocks.extend(widgets);
+        <span class="kw">if </span>!merge_with_next {
+            logical_block_i += <span class="number">1</span>;
         }
     }
 
