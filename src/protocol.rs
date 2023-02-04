@@ -44,7 +44,7 @@ where
     {
         let RenderedBlock {
             mut segments,
-            merge_with_next: merge_with_next,
+            merge_with_next,
         } = widgets;
 
         for segment in &mut segments {

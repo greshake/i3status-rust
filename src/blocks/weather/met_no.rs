@@ -33,8 +33,10 @@ struct LegendsResult {
 }
 
 #[derive(Deserialize, Debug, Clone)]
+#[derive(Default)]
 pub(super) enum ApiLanguage {
     #[serde(rename = "en")]
+    #[default]
     English,
     #[serde(rename = "nn")]
     NorwegianNynorsk,
@@ -42,11 +44,7 @@ pub(super) enum ApiLanguage {
     NorwegianBokmaal,
 }
 
-impl Default for ApiLanguage {
-    fn default() -> Self {
-        ApiLanguage::English
-    }
-}
+
 
 #[derive(Deserialize, Debug)]
 struct ForecastResponse {
