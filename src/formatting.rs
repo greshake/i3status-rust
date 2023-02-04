@@ -3,7 +3,7 @@
 //! Many blocks have a `format` configuration option, which allows to heavily customize the block's
 //! appearance. In short, each block with `format` option provides a set of values, which are
 //! displayed according to `format`. `format`'s value is just a text with embeded variables.
-//! Simialrly to PHP and shell, variable name must start with a `$`:
+//! Similarly to PHP and shell, variable name must start with a `$`:
 //! `this is a variable: -> $var <-`.
 //!
 //! Also, format strings can embed icons. For example, `^icon_ping` in `" ^icon_ping $ping "` gets
