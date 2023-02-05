@@ -10,7 +10,7 @@
 //!
 //! Placeholder      | Value                                                          | Type   | Unit
 //! -----------------|----------------------------------------------------------------|--------|---------------
-//! `icon`           | A static icon                                                  | Icon   | -
+//! `icon`           | An icon                                                        | Icon   | -
 //! `utilization`    | Average CPU utilization                                        | Number | %
 //! `utilization<N>` | Utilization of Nth logical CPU                                 | Number | %
 //! `barchart`       | Utilization of all logical CPUs presented as a barchart        | Text   | -
@@ -33,7 +33,9 @@
 //! ```
 //!
 //! # Icons Used
-//! - `cpu`
+//! - `cpu_low`
+//! - `cpu_med`
+//! - `cpu_high`
 //! - `cpu_boost_on`
 //! - `cpu_boost_off`
 
@@ -107,8 +109,14 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             false => boost_icon_off.clone(),
         });
 
+        let icon = match utilization_avg {
+            x if x <= 0.33 => "cpu_low",
+            x if x <= 0.67 => "cpu_med",
+            _ => "cpu_high",
+        };
+
         let mut values = map!(
-            "icon" => Value::icon(api.get_icon("cpu")?),
+            "icon" => Value::icon(api.get_icon(icon)?),
             "barchart" => Value::text(barchart),
             "frequency" => Value::hertz(freq_avg),
             "utilization" => Value::percents(utilization_avg * 100.),
