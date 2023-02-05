@@ -38,11 +38,11 @@
 //! block = "battery"
 //! format = " $icon $percentage "
 //! ```
-//! 
+//!
 //! ```toml
 //! [[block]]
 //! block = "battery"
-//! format = "$percentage $time|N/A"
+//! format = " $percentage {$time |}"
 //! device = "DisplayDevice"
 //! driver = "upower"
 //! ```

@@ -25,7 +25,7 @@
 //! [[block]]
 //! block = "dnf"
 //! interval = 1800
-//! format = " $icon $count.eng(1) updates available "
+//! format = " $icon $count.eng(w:1) updates available "
 //! format_singular = " $icon One update available "
 //! format_up_to_date = " $icon system up to date "
 //! critical_updates_regex = "(linux|linux-lts|linux-zen)"

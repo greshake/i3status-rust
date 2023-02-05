@@ -40,7 +40,7 @@
 //! ```toml
 //! [[block]]
 //! block = "github"
-//! format = " $icon $total.eng(1)|$mention.eng(1) "
+//! format = " $icon $total.eng(w:1)|$mention.eng(w:1) "
 //! interval = 60
 //! token = "..."
 //! ```
@@ -49,7 +49,7 @@
 //! [[block]]
 //! block = "github"
 //! token = "..."
-//! format = " $icon $total.eng(1) "
+//! format = " $icon $total.eng(w:1) "
 //! info = ["total"]
 //! warning = ["mention","review_requested"]
 //! hide_if_total_is_zero = true

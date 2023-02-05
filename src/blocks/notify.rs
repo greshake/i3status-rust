@@ -34,7 +34,7 @@
 //! ```toml
 //! [[block]]
 //! block = "notify"
-//! format = " $icon {($notification_count.eng(1)) |}"
+//! format = " $icon {($notification_count.eng(w:1)) |}"
 //! ```
 //! How to remap actions
 //!

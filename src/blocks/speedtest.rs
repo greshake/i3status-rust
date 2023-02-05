@@ -32,7 +32,7 @@
 //! [[block]]
 //! block = "speedtest"
 //! interval = 1800
-//! format = " $speed_down.eng(4,B) $speed_up(4,B) "
+//! format = " $speed_down.eng(w:4,u:B) $speed_up(w:4,u:B) "
 //! ```
 //!
 //! # Icons Used
