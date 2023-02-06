@@ -14,6 +14,7 @@
 //! `format_up_to_date` | Same as `format`, but for when no updates are available. | `" $icon $count.eng(w:1) "`
 //! `warning_updates_regex` | Display block as warning if updates matching regex are available. | `None`
 //! `critical_updates_regex` | Display block as critical if updates matching regex are available. | `None`
+//! `ignore_phased_updates` | Doesn't include potentially held back phased updates in the count. | `false`
 //!
 //! Placeholder | Value                       | Type   | Unit
 //! ------------|-----------------------------|--------|------
@@ -66,6 +67,7 @@ pub struct Config {
     format_up_to_date: FormatConfig,
     warning_updates_regex: Option<String>,
     critical_updates_regex: Option<String>,
+    ignore_phased_updates: bool,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
@@ -121,7 +123,12 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
     loop {
         let updates = get_updates_list(config_file.to_str().unwrap()).await?;
-        let count = get_update_count(&updates);
+        let count = get_update_count(
+            config_file.to_str().unwrap(),
+            config.ignore_phased_updates,
+            &updates,
+        )
+        .await?;
 
         widget.set_format(match count {
             0 => format_up_to_date.clone(),
@@ -182,13 +189,45 @@ async fn get_updates_list(config_path: &str) -> Result<String> {
     String::from_utf8(stdout).error("apt produced non-UTF8 output")
 }
 
-fn get_update_count(updates: &str) -> usize {
-    updates
-        .lines()
-        .filter(|line| line.contains("[upgradable"))
-        .count()
+async fn get_update_count(
+    config_path: &str,
+    ignore_phased_updates: bool,
+    updates: &str,
+) -> Result<usize> {
+    let mut cnt = 0;
+
+    for update_line in updates.lines().filter(|line| line.contains("[upgradable")) {
+        if !ignore_phased_updates || !is_phased_update(config_path, update_line).await? {
+            cnt += 1;
+        }
+    }
+
+    Ok(cnt)
 }
 
 fn has_matching_update(updates: &str, regex: &Regex) -> bool {
     updates.lines().any(|line| regex.is_match(line))
+}
+
+async fn is_phased_update(config_path: &str, package_line: &str) -> Result<bool> {
+    let package_name_regex = regex!(r#"(.*)/.*"#);
+    let package_name = &package_name_regex
+        .captures(package_line)
+        .error("Couldn't find package name")?[1];
+
+    let output = String::from_utf8(
+        Command::new("apt-cache")
+            .args(["-c", config_path, "policy", package_name])
+            .output()
+            .await
+            .error("Problem running apt-cache command")?
+            .stdout,
+    )
+    .error("Problem capturing apt-cache command output")?;
+
+    let phased_regex = regex!(r#".*\(phased (\d+)%\).*"#);
+    Ok(match phased_regex.captures(&output) {
+        Some(matches) => &matches[1] != "100",
+        None => false,
+    })
 }
