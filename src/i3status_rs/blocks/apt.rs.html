@@ -192,6 +192,45 @@
 <a href="#192" id="192">192</a>
 <a href="#193" id="193">193</a>
 <a href="#194" id="194">194</a>
+<a href="#195" id="195">195</a>
+<a href="#196" id="196">196</a>
+<a href="#197" id="197">197</a>
+<a href="#198" id="198">198</a>
+<a href="#199" id="199">199</a>
+<a href="#200" id="200">200</a>
+<a href="#201" id="201">201</a>
+<a href="#202" id="202">202</a>
+<a href="#203" id="203">203</a>
+<a href="#204" id="204">204</a>
+<a href="#205" id="205">205</a>
+<a href="#206" id="206">206</a>
+<a href="#207" id="207">207</a>
+<a href="#208" id="208">208</a>
+<a href="#209" id="209">209</a>
+<a href="#210" id="210">210</a>
+<a href="#211" id="211">211</a>
+<a href="#212" id="212">212</a>
+<a href="#213" id="213">213</a>
+<a href="#214" id="214">214</a>
+<a href="#215" id="215">215</a>
+<a href="#216" id="216">216</a>
+<a href="#217" id="217">217</a>
+<a href="#218" id="218">218</a>
+<a href="#219" id="219">219</a>
+<a href="#220" id="220">220</a>
+<a href="#221" id="221">221</a>
+<a href="#222" id="222">222</a>
+<a href="#223" id="223">223</a>
+<a href="#224" id="224">224</a>
+<a href="#225" id="225">225</a>
+<a href="#226" id="226">226</a>
+<a href="#227" id="227">227</a>
+<a href="#228" id="228">228</a>
+<a href="#229" id="229">229</a>
+<a href="#230" id="230">230</a>
+<a href="#231" id="231">231</a>
+<a href="#232" id="232">232</a>
+<a href="#233" id="233">233</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Pending updates available for your Debian/Ubuntu based system
 //!
 //! Behind the scenes this uses `apt`, and in order to run it without root privileges i3status-rust will create its own package database in `/tmp/i3rs-apt/` which may take up several MB or more. If you have a custom apt config then this block may not work as expected - in that case please open an issue.
@@ -208,6 +247,7 @@
 //! `format_up_to_date` | Same as `format`, but for when no updates are available. | `&quot; $icon $count.eng(w:1) &quot;`
 //! `warning_updates_regex` | Display block as warning if updates matching regex are available. | `None`
 //! `critical_updates_regex` | Display block as critical if updates matching regex are available. | `None`
+//! `ignore_phased_updates` | Doesn&#39;t include potentially held back phased updates in the count. | `false`
 //!
 //! Placeholder | Value                       | Type   | Unit
 //! ------------|-----------------------------|--------|------
@@ -260,6 +300,7 @@
     format_up_to_date: FormatConfig,
     warning_updates_regex: <span class="prelude-ty">Option</span>&lt;String&gt;,
     critical_updates_regex: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    ignore_phased_updates: bool,
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
@@ -315,7 +356,12 @@
 
     <span class="kw">loop </span>{
         <span class="kw">let </span>updates = get_updates_list(config_file.to_str().unwrap()).<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">let </span>count = get_update_count(<span class="kw-2">&amp;</span>updates);
+        <span class="kw">let </span>count = get_update_count(
+            config_file.to_str().unwrap(),
+            config.ignore_phased_updates,
+            <span class="kw-2">&amp;</span>updates,
+        )
+        .<span class="kw">await</span><span class="question-mark">?</span>;
 
         widget.set_format(<span class="kw">match </span>count {
             <span class="number">0 </span>=&gt; format_up_to_date.clone(),
@@ -376,15 +422,47 @@
     String::from_utf8(stdout).error(<span class="string">&quot;apt produced non-UTF8 output&quot;</span>)
 }
 
-<span class="kw">fn </span>get_update_count(updates: <span class="kw-2">&amp;</span>str) -&gt; usize {
-    updates
-        .lines()
-        .filter(|line| line.contains(<span class="string">&quot;[upgradable&quot;</span>))
-        .count()
+<span class="kw">async fn </span>get_update_count(
+    config_path: <span class="kw-2">&amp;</span>str,
+    ignore_phased_updates: bool,
+    updates: <span class="kw-2">&amp;</span>str,
+) -&gt; <span class="prelude-ty">Result</span>&lt;usize&gt; {
+    <span class="kw">let </span><span class="kw-2">mut </span>cnt = <span class="number">0</span>;
+
+    <span class="kw">for </span>update_line <span class="kw">in </span>updates.lines().filter(|line| line.contains(<span class="string">&quot;[upgradable&quot;</span>)) {
+        <span class="kw">if </span>!ignore_phased_updates || !is_phased_update(config_path, update_line).<span class="kw">await</span><span class="question-mark">? </span>{
+            cnt += <span class="number">1</span>;
+        }
+    }
+
+    <span class="prelude-val">Ok</span>(cnt)
 }
 
 <span class="kw">fn </span>has_matching_update(updates: <span class="kw-2">&amp;</span>str, regex: <span class="kw-2">&amp;</span>Regex) -&gt; bool {
     updates.lines().any(|line| regex.is_match(line))
+}
+
+<span class="kw">async fn </span>is_phased_update(config_path: <span class="kw-2">&amp;</span>str, package_line: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;bool&gt; {
+    <span class="kw">let </span>package_name_regex = <span class="macro">regex!</span>(<span class="string">r#&quot;(.*)/.*&quot;#</span>);
+    <span class="kw">let </span>package_name = <span class="kw-2">&amp;</span>package_name_regex
+        .captures(package_line)
+        .error(<span class="string">&quot;Couldn&#39;t find package name&quot;</span>)<span class="question-mark">?</span>[<span class="number">1</span>];
+
+    <span class="kw">let </span>output = String::from_utf8(
+        Command::new(<span class="string">&quot;apt-cache&quot;</span>)
+            .args([<span class="string">&quot;-c&quot;</span>, config_path, <span class="string">&quot;policy&quot;</span>, package_name])
+            .output()
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Problem running apt-cache command&quot;</span>)<span class="question-mark">?
+            </span>.stdout,
+    )
+    .error(<span class="string">&quot;Problem capturing apt-cache command output&quot;</span>)<span class="question-mark">?</span>;
+
+    <span class="kw">let </span>phased_regex = <span class="macro">regex!</span>(<span class="string">r#&quot;.*\(phased (\d+)%\).*&quot;#</span>);
+    <span class="prelude-val">Ok</span>(<span class="kw">match </span>phased_regex.captures(<span class="kw-2">&amp;</span>output) {
+        <span class="prelude-val">Some</span>(matches) =&gt; <span class="kw-2">&amp;</span>matches[<span class="number">1</span>] != <span class="string">&quot;100&quot;</span>,
+        <span class="prelude-val">None </span>=&gt; <span class="bool-val">false</span>,
+    })
 }
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.67.0 (fc594f156 2023-01-24)" data-search-js="search-444266647c4dba98.js" data-settings-js="settings-bebeae96e00e4617.js" data-settings-css="settings-af96d9e2fc13e081.css" ></div></body></html>
