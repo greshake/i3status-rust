@@ -525,9 +525,6 @@
 <a href="#525" id="525">525</a>
 <a href="#526" id="526">526</a>
 <a href="#527" id="527">527</a>
-<a href="#528" id="528">528</a>
-<a href="#529" id="529">529</a>
-<a href="#530" id="530">530</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The current song title and artist
 //!
 //! Also provides buttons for play/pause, previous and next.
@@ -872,11 +869,8 @@
                                     player.prev().<span class="kw">await</span><span class="question-mark">?</span>;
                                 }
                                 <span class="string">&quot;next_player&quot; </span>=&gt; {
-                                    <span class="kw">if </span>i + <span class="number">1 </span>&lt; players.len() {
-                                        cur_player = <span class="prelude-val">Some</span>(i + <span class="number">1</span>);
-                                    } <span class="kw">else </span>{
-                                        cur_player = <span class="prelude-val">Some</span>(<span class="number">0</span>);
-                                    }
+                                    cur_player = <span class="prelude-val">Some</span>((i + <span class="number">1</span>) % players.len());
+                                    <span class="kw">break</span>;
                                 }
                                 <span class="string">&quot;seek_forward&quot; </span>=&gt; {
                                     player.seek(config.seek_step).<span class="kw">await</span><span class="question-mark">?</span>;
