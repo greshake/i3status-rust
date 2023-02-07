@@ -104,16 +104,18 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
     let apt_config = format!(
         "Dir::State \"{}\";\n
-             Dir::State::lists \"lists\";\n
-             Dir::Cache \"{}\";\n
-             Dir::Cache::srcpkgcache \"srcpkgcache.bin\";\n
-             Dir::Cache::pkgcache \"pkgcache.bin\";",
+         Dir::State::lists \"lists\";\n
+         Dir::Cache \"{}\";\n
+         Dir::Cache::srcpkgcache \"srcpkgcache.bin\";\n
+         Dir::Cache::pkgcache \"pkgcache.bin\";",
         cache_dir.display(),
         cache_dir.display(),
     );
 
     let mut config_file = cache_dir;
     config_file.push("apt.conf");
+    let config_file = config_file.to_str().unwrap();
+
     let mut file = File::create(&config_file)
         .await
         .error("Failed to create config file")?;
@@ -122,13 +124,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         .error("Failed to write to config file")?;
 
     loop {
-        let updates = get_updates_list(config_file.to_str().unwrap()).await?;
-        let count = get_update_count(
-            config_file.to_str().unwrap(),
-            config.ignore_phased_updates,
-            &updates,
-        )
-        .await?;
+        let updates = get_updates_list(config_file).await?;
+        let count = get_update_count(config_file, config.ignore_phased_updates, &updates).await?;
 
         widget.set_format(match count {
             0 => format_up_to_date.clone(),
