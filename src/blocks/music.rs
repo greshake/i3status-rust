@@ -342,11 +342,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                                     player.prev().await?;
                                 }
                                 "next_player" => {
-                                    if i + 1 < players.len() {
-                                        cur_player = Some(i + 1);
-                                    } else {
-                                        cur_player = Some(0);
-                                    }
+                                    cur_player = Some((i + 1) % players.len());
+                                    break;
                                 }
                                 "seek_forward" => {
                                     player.seek(config.seek_step).await?;
