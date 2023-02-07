@@ -32,7 +32,7 @@
 //! - Extend functionality: start / stop watson using this block
 
 use chrono::{offset::Local, DateTime};
-use dirs_next::config_dir;
+use dirs::config_dir;
 use inotify::{Inotify, WatchMask};
 use serde::de::Deserializer;
 use std::path::PathBuf;

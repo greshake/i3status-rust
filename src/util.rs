@@ -2,7 +2,7 @@ use std::fs::File;
 use std::io::{self, BufReader, Read};
 use std::path::{Path, PathBuf};
 
-use dirs_next::{config_dir, data_dir};
+use dirs::{config_dir, data_dir};
 use serde::de::DeserializeOwned;
 use tokio::io::AsyncReadExt;
 use tokio::process::Command;
