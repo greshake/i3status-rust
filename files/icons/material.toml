@@ -1,41 +1,36 @@
 # Material Design icons by Google
 # https://github.com/google/material-design-icons/blob/master/font/MaterialIcons-Regular.codepoints
-backlight_empty = "\ue1ad" # brightness_low
-backlight_full = "\ue1ac" # brightness_high
-backlight_1 = "\ue3a6" # brightness_1
-backlight_2 = "\ue3a6" # brightness_1
-backlight_3 = "\ue3a7" # brightness_2
-backlight_4 = "\ue3a7" # brightness_2
-backlight_5 = "\ue3a8" # brightness_3
-backlight_6 = "\ue3a8" # brightness_3
-backlight_7 = "\ue3a9" # brightness_4
-backlight_8 = "\ue3a9" # brightness_4
-backlight_9 = "\ue3aa" # brightness_5
-backlight_10 = "\ue3aa" # brightness_5
-backlight_11 = "\ue3ab" # brightness_6
-backlight_12 = "\ue3ab" # brightness_6
-backlight_13 = "\ue3c8" # brightness_7
+backlight = [
+    "\ue1ad", # brightness_low
+    "\ue3a6", # brightness_1
+    "\ue3a7", # brightness_2
+    "\ue3a8", # brightness_3
+    "\ue3a9", # brightness_4
+    "\ue3aa", # brightness_5
+    "\ue3ab", # brightness_6
+    "\ue3c8", # brightness_7
+    "\ue1ac", # brightness_high
+]
 bat_charging = "\ue3ac" # battery_charging_full
-bat_discharging = "\ue19c" # battery_alert
 bat_not_available = "\ue1a6" # battery_unknown
-bat_10 = "\ue19c" # battery_alert
-bat_20 = "\ue1a5" # battery_std
-bat_30 = "\ue1a5" # battery_std
-bat_40 = "\ue1a5" # battery_std
-bat_50 = "\ue1a5" # battery_std
-bat_60 = "\ue1a5" # battery_std
-bat_70 = "\ue1a5" # battery_std
-bat_80 = "\ue1a5" # battery_std
-bat_90 = "\ue1a5" # battery_std
-bat_full = "\ue1a4" # battery_full
+bat = [
+    "\ue19c", # battery_alert
+    "\ue1a5", # battery_std
+    "\ue1a5", # battery_std
+    "\ue1a5", # battery_std
+    "\ue1a5", # battery_std
+    "\ue1a5", # battery_std
+    "\ue1a5", # battery_std
+    "\ue1a5", # battery_std
+    "\ue1a5", # battery_std
+    "\ue1a4", # battery_full
+]
 bell = "\ue7f4" # notifications
 bell-slash = "\ue7f8" # notifications_paused
 bluetooth = "\ue1a7" # bluetooth
 calendar = "\ue935" # calendar_today | TODO: broken?
 cogs = "\ue8b8" # settings
-cpu_low = "\ue640" # network_check
-cpu_med = "\ue640" # network_check
-cpu_high = "\ue640" # network_check
+cpu = "\ue640" # network_check
 cpu_boost_on = "\ue837" # radio_button_on
 cpu_boost_off = "\ue836" # radio_button_off
 disk_drive = "\ue1db" # storage
@@ -81,13 +76,17 @@ toggle_on = "\ue837" # radio_button_on
 unknown = "\ueb8b" # question_mark | TODO: broken?
 update = "\ue8d7" # system_update_alt
 uptime = "\ue425" # timer
-volume_empty = "\ue04e" # volume_mute
-volume_full = "\ue050" # volume_up
-volume_half = "\ue04d" # volume_down
+volume = [
+    "\ue04e", # volume_mute
+    "\ue04d", # volume_down
+    "\ue050", # volume_up
+]
 volume_muted = "\ue04f" # volume_off
-microphone_full = "\ue029" # mic
-microphone_half = "\ue029" # mic
-microphone_empty = "\ue02a" # mic_none
+microphone = [
+    "\ue02a", # mic_none
+    "\ue029", # mic
+    "\ue029", # mic
+]
 microphone_muted = "\ue02b" # mic_off
 weather_clouds = "\ue42d" # wb_cloudy
 weather_default = "\ue42d" # wb_cloudy

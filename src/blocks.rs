@@ -233,7 +233,13 @@ impl CommonApi {
 
     pub fn get_icon(&self, icon: &str) -> Result<String> {
         self.shared_config
-            .get_icon(icon)
+            .get_icon(icon, None)
+            .or_error(|| format!("Icon '{icon}' not found"))
+    }
+
+    pub fn get_icon_in_progression(&self, icon: &str, value: f64) -> Result<String> {
+        self.shared_config
+            .get_icon(icon, Some(value))
             .or_error(|| format!("Icon '{icon}' not found"))
     }
 

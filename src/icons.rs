@@ -5,36 +5,27 @@ use std::collections::HashMap;
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(try_from = "IconsConfigRaw")]
-pub struct Icons(pub HashMap<String, String>);
+pub struct Icons(pub HashMap<String, Icon>);
+
+#[derive(Deserialize, Debug, Clone)]
+#[serde(untagged)]
+pub enum Icon {
+    Single(String),
+    Progression(Vec<String>),
+}
+
+impl From<&'static str> for Icon {
+    fn from(value: &'static str) -> Self {
+        Self::Single(value.into())
+    }
+}
 
 impl Default for Icons {
     fn default() -> Self {
         // "none" icon set
         Self(map! {
-            "backlight_empty" => "BRIGHT",
-            "backlight_full" => "BRIGHT",
-            "backlight_1" =>  "BRIGHT",
-            "backlight_2" =>  "BRIGHT",
-            "backlight_3" =>  "BRIGHT",
-            "backlight_4" =>  "BRIGHT",
-            "backlight_5" =>  "BRIGHT",
-            "backlight_6" =>  "BRIGHT",
-            "backlight_7" =>  "BRIGHT",
-            "backlight_8" =>  "BRIGHT",
-            "backlight_9" =>  "BRIGHT",
-            "backlight_10" => "BRIGHT",
-            "backlight_11" => "BRIGHT",
-            "backlight_12" => "BRIGHT",
-            "backlight_13" => "BRIGHT",
-            "bat_10" => "BAT",
-            "bat_20" => "BAT",
-            "bat_30" => "BAT",
-            "bat_40" => "BAT",
-            "bat_50" => "BAT",
-            "bat_60" => "BAT",
-            "bat_70" => "BAT",
-            "bat_80" => "BAT",
-            "bat_90" => "BAT",
+            "backlight" => "BRIGHT",
+            "bat" => "BAT",
             "bat_charging" => "CHG",
             "bat_discharging" => "DCG",
             "bat_empty" => "EMP",
@@ -83,6 +74,7 @@ impl Default for Icons {
             "pomodoro_stopped" => "STOPPED",
             "resolution" => "RES",
             "tasks" => "TSK",
+            "tea" => "TEA",
             "thermometer" => "TEMP",
             "time" => "TIME",
             "toggle_off" => "OFF",
@@ -90,14 +82,8 @@ impl Default for Icons {
             "unknown" => "??",
             "update" => "UPD",
             "uptime" => "UP",
-            "volume_empty" => "VOL",
-            "volume_full" => "VOL",
-            "volume_half" => "VOL",
-            "volume_muted" => "VOL MUTED",
-            "microphone_empty" => "MIC ",
-            "microphone_full" => "MIC",
-            "microphone_half" => "MIC",
-            "microphone_muted" => "MIC MUTED",
+            "volume" => "VOL",
+            "microphone" => "MIC",
             "weather_clouds" => "CLOUDY",
             "weather_default" => "WEATHER",
             "weather_rain" => "RAIN",
@@ -120,8 +106,20 @@ impl Icons {
         }
     }
 
-    pub fn apply_overrides(&mut self, overrides: HashMap<String, String>) {
+    pub fn apply_overrides(&mut self, overrides: HashMap<String, Icon>) {
         self.0.extend(overrides);
+    }
+
+    pub fn get(&self, icon: &'_ str, value: Option<f64>) -> Option<&str> {
+        match (self.0.get(icon)?, value) {
+            (Icon::Single(icon), _) => Some(icon),
+            (Icon::Progression(prog), _) if prog.is_empty() => None,
+            (Icon::Progression(prog), None) => Some(prog.last().unwrap()),
+            (Icon::Progression(prog), Some(value)) => {
+                let index = ((value * prog.len() as f64) as usize).clamp(0, prog.len() - 1);
+                Some(prog[index].as_str())
+            }
+        }
     }
 }
 
@@ -129,7 +127,7 @@ impl Icons {
 #[serde(deny_unknown_fields, default)]
 struct IconsConfigRaw {
     icons: Option<String>,
-    overrides: Option<HashMap<String, String>>,
+    overrides: Option<HashMap<String, Icon>>,
 }
 
 impl TryFrom<IconsConfigRaw> for Icons {

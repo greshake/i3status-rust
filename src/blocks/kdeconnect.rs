@@ -39,17 +39,8 @@
 //! ```
 //!
 //! # Icons Used
-//! - `bat_charging`,
-//! - `bat_10`,
-//! - `bat_20`,
-//! - `bat_30`,
-//! - `bat_40`,
-//! - `bat_50`,
-//! - `bat_60`,
-//! - `bat_70`,
-//! - `bat_80`,
-//! - `bat_90`,
-//! - `bat_full`,
+//! - `bat` (as a progression)
+//! - `bat_charging` (as a progression)
 //! - `notification`
 //! - `phone`
 //! - `phone_disconnected`
@@ -58,7 +49,6 @@ use tokio::sync::mpsc;
 use zbus::dbus_proxy;
 
 use super::prelude::*;
-use crate::util::battery_level_icon;
 
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(default)]
@@ -121,7 +111,10 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     values.insert("bat_charge".into(), Value::percents(level));
                     values.insert(
                         "bat_icon".into(),
-                        Value::icon(api.get_icon(battery_level_icon(level, charging))?),
+                        Value::icon(api.get_icon_in_progression(
+                            if charging { "bat_charging" } else { "bat" },
+                            level as f64 / 100.0,
+                        )?),
                     );
                     if battery_state {
                         widget.state = if charging {

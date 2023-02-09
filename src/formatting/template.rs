@@ -113,7 +113,7 @@ impl TokenList {
                 }
                 Token::Icon { name } => {
                     let icon = config
-                        .get_icon(name)
+                        .get_icon(name, None)
                         .or_format_error(|| format!("Icon '{name}' not found"))?;
                     if cur.metadata.is_default() {
                         cur.text.push_str(&icon);

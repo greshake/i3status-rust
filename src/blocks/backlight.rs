@@ -42,21 +42,7 @@
 //! ```
 //!
 //! # Icons Used
-//! - `backlight_empty` (when brightness between 0 and 6%)
-//! - `backlight_1` (when brightness between 7 and 13%)
-//! - `backlight_2` (when brightness between 14 and 20%)
-//! - `backlight_3` (when brightness between 21 and 26%)
-//! - `backlight_4` (when brightness between 27 and 33%)
-//! - `backlight_5` (when brightness between 34 and 40%)
-//! - `backlight_6` (when brightness between 41 and 46%)
-//! - `backlight_7` (when brightness between 47 and 53%)
-//! - `backlight_8` (when brightness between 54 and 60%)
-//! - `backlight_9` (when brightness between 61 and 67%)
-//! - `backlight_10` (when brightness between 68 and 73%)
-//! - `backlight_11` (when brightness between 74 and 80%)
-//! - `backlight_12` (when brightness between 81 and 87%)
-//! - `backlight_13` (when brightness between 88 and 93%)
-//! - `backlight_full` (when brightness above 94%)
+//! - `backlight` (as a progression)
 
 use std::cmp::max;
 use std::ops::Range;
@@ -95,25 +81,6 @@ const FILE_BRIGHTNESS_AMD: &str = "brightness";
 
 /// Range of valid values for `root_scaling`
 const ROOT_SCALDING_RANGE: Range<f64> = 0.1..10.;
-
-/// Ordered list of icons used to display lighting progress
-const BACKLIGHT_ICONS: &[&str] = &[
-    "backlight_empty",
-    "backlight_1",
-    "backlight_2",
-    "backlight_3",
-    "backlight_4",
-    "backlight_5",
-    "backlight_6",
-    "backlight_7",
-    "backlight_8",
-    "backlight_9",
-    "backlight_10",
-    "backlight_11",
-    "backlight_12",
-    "backlight_13",
-    "backlight_full",
-];
 
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(default)]
@@ -164,13 +131,14 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
     loop {
         let brightness = device.brightness().await?;
-        let mut icon_index = (usize::from(brightness) * BACKLIGHT_ICONS.len()) / 101;
+
+        let mut icon_value = brightness as f64 / 100.0;
         if config.invert_icons {
-            icon_index = BACKLIGHT_ICONS.len() - icon_index - 1;
+            icon_value = 1.0 - icon_value;
         }
 
         widget.set_values(map! {
-            "icon" => Value::icon(api.get_icon(BACKLIGHT_ICONS[icon_index])?),
+            "icon" => Value::icon(api.get_icon_in_progression("backlight", icon_value)?),
             "brightness" => Value::percents(brightness)
         });
         api.set_widget(&widget).await?;

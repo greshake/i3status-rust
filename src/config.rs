@@ -7,7 +7,7 @@ use crate::blocks::BlockConfig;
 use crate::click::ClickHandler;
 use crate::errors::*;
 use crate::formatting::config::Config as FormatConfig;
-use crate::icons::Icons;
+use crate::icons::{Icon, Icons};
 use crate::themes::{Theme, ThemeOverrides, ThemeUserConfig};
 
 #[derive(Deserialize, Debug, SmartDefault)]
@@ -42,11 +42,14 @@ pub struct SharedConfig {
 }
 
 impl SharedConfig {
-    pub fn get_icon(&self, icon: &str) -> Option<String> {
+    pub fn get_icon(&self, icon: &str, value: Option<f64>) -> Option<String> {
         if icon.is_empty() {
             Some(String::new())
         } else {
-            Some(self.icons_format.replace("{icon}", self.icons.0.get(icon)?))
+            Some(
+                self.icons_format
+                    .replace("{icon}", self.icons.get(icon, value)?),
+            )
         }
     }
 }
@@ -66,7 +69,7 @@ pub struct CommonBlockConfig {
     pub signal: Option<i32>,
     pub icons_format: Option<String>,
     pub theme_overrides: Option<ThemeOverrides>,
-    pub icons_overrides: Option<HashMap<String, String>>,
+    pub icons_overrides: Option<HashMap<String, Icon>>,
     pub merge_with_next: bool,
 
     #[default(5)]

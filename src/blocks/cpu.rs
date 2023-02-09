@@ -33,9 +33,7 @@
 //! ```
 //!
 //! # Icons Used
-//! - `cpu_low`
-//! - `cpu_med`
-//! - `cpu_high`
+//! - `cpu` (as a progression)
 //! - `cpu_boost_on`
 //! - `cpu_boost_off`
 
@@ -109,14 +107,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             false => boost_icon_off.clone(),
         });
 
-        let icon = match utilization_avg {
-            x if x <= 0.33 => "cpu_low",
-            x if x <= 0.67 => "cpu_med",
-            _ => "cpu_high",
-        };
-
         let mut values = map!(
-            "icon" => Value::icon(api.get_icon(icon)?),
+            "icon" => Value::icon(api.get_icon_in_progression("cpu", utilization_avg)?),
             "barchart" => Value::text(barchart),
             "frequency" => Value::hertz(freq_avg),
             "utilization" => Value::percents(utilization_avg * 100.),
