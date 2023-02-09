@@ -336,7 +336,12 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     let args = msg.args().unwrap();
                     match (args.old_owner.as_ref(), args.new_owner.as_ref()) {
                         (None, Some(new)) => if player_matches(args.name.as_str(), &prefered_players, &exclude_regex) {
-                            players.push(Player::new(&dbus_conn, args.name.to_owned().into(), new.to_owned().into()).await?);
+                            match Player::new(&dbus_conn, args.name.to_owned().into(), new.to_owned().into()).await {
+                                Ok(player) => players.push(player),
+                                Err(e) => {
+                                    debug!("{e}");
+                                },
+                            }
                         }
                         (Some(old), None) => {
                             if let Some(pos) = players.iter().position(|p| &*p.owner == old) {
@@ -365,7 +370,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                         // We must have shifted to a player we wanted to skip (on the interface_name_exclude list).
                         // Let's shift again
                         if let Err(e) = playerctrld_proxy.shift().await{
-                            debug!("{}", e);
+                            debug!("{e}");
                         }
                     }
                     break;
@@ -388,7 +393,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                                 "next_player" => {
                                     cur_player = Some((i + 1) % players.len());
                                     if let Err(e) = playerctrld_proxy.shift().await{
-                                        debug!("{}", e);
+                                        debug!("{e}");
                                     }
                                     break;
                                 }
@@ -424,7 +429,12 @@ async fn get_players(
     for name in names {
         if player_matches(name.as_str(), prefered_players, exclude_regex) {
             let owner = proxy.get_name_owner(name.as_ref()).await.unwrap();
-            players.push(Player::new(dbus_conn, name, owner).await?);
+            match Player::new(dbus_conn, name, owner).await {
+                Ok(player) => players.push(player),
+                Err(e) => {
+                    debug!("{e}");
+                }
+            }
         }
     }
     Ok(players)
