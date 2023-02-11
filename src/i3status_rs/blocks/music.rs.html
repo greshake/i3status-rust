@@ -606,7 +606,7 @@
 //! `player` | Name(s) of the music player(s) MPRIS interface. This can be either a music player name or an array of music player names. Run &lt;code&gt;busctl --user list &amp;vert; grep &quot;org.mpris.MediaPlayer2.&quot; &amp;vert; cut -d&#39; &#39; -f1&lt;/code&gt; and the name is the part after &quot;org.mpris.MediaPlayer2.&quot;. | `None`
 //! `interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore. | `[&quot;playerctld&quot;]`
 //! `separator` | String to insert between artist and title. | `&quot; - &quot;`
-//! `seek_step` | Number of microseconds to seek forward/backward when scrolling on the bar. | `1000`
+//! `seek_step_secs` | Positive number of seconds to seek forward/backward when scrolling on the bar. Does not need to be an integer. | `1`
 //!
 //! Note: All placeholders exctpt `icon` can be absent. See the examples below to learn how to handle this.
 //!
@@ -705,8 +705,8 @@
     interface_name_exclude: Vec&lt;String&gt;,
     <span class="attr">#[default(<span class="string">&quot; - &quot;</span>.into())]
     </span>separator: String,
-    <span class="attr">#[default(<span class="number">1_000</span>)]
-    </span>seek_step: i64,
+    <span class="attr">#[default(<span class="number">1</span>.into())]
+    </span>seek_step_secs: Seconds&lt;<span class="bool-val">false</span>&gt;,
 }
 
 <span class="attr">#[derive(Deserialize, Debug, Clone, SmartDefault)]
@@ -982,10 +982,10 @@
                                     <span class="kw">break</span>;
                                 }
                                 <span class="string">&quot;seek_forward&quot; </span>=&gt; {
-                                    player.seek(config.seek_step).<span class="kw">await</span><span class="question-mark">?</span>;
+                                    player.seek(config.seek_step_secs.<span class="number">0</span>.as_micros() <span class="kw">as </span>i64).<span class="kw">await</span><span class="question-mark">?</span>;
                                 }
                                 <span class="string">&quot;seek_backward&quot; </span>=&gt; {
-                                    player.seek(-config.seek_step).<span class="kw">await</span><span class="question-mark">?</span>;
+                                    player.seek(-(config.seek_step_secs.<span class="number">0</span>.as_micros() <span class="kw">as </span>i64)).<span class="kw">await</span><span class="question-mark">?</span>;
                                 }
                                 <span class="kw">_ </span>=&gt; (),
                             }

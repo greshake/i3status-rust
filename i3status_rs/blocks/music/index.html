@@ -15,7 +15,7 @@ setting.</p>
 <tr><td><code>player</code></td><td>Name(s) of the music player(s) MPRIS interface. This can be either a music player name or an array of music player names. Run <code>busctl –user list | grep “org.mpris.MediaPlayer2.” | cut -d’ ’ -f1</code> and the name is the part after “org.mpris.MediaPlayer2.”.</td><td><code>None</code></td></tr>
 <tr><td><code>interface_name_exclude</code></td><td>A list of regex patterns for player MPRIS interface names to ignore.</td><td><code>[&quot;playerctld&quot;]</code></td></tr>
 <tr><td><code>separator</code></td><td>String to insert between artist and title.</td><td><code>&quot; - &quot;</code></td></tr>
-<tr><td><code>seek_step</code></td><td>Number of microseconds to seek forward/backward when scrolling on the bar.</td><td><code>1000</code></td></tr>
+<tr><td><code>seek_step_secs</code></td><td>Positive number of seconds to seek forward/backward when scrolling on the bar. Does not need to be an integer.</td><td><code>1</code></td></tr>
 </tbody></table>
 </div>
 <p>Note: All placeholders exctpt <code>icon</code> can be absent. See the examples below to learn how to handle this.</p>

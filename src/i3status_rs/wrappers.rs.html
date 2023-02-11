@@ -125,15 +125,15 @@
 <span class="kw">use </span>std::time::Duration;
 
 <span class="attr">#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-</span><span class="kw">pub struct </span>Seconds(<span class="kw">pub </span>Duration);
+</span><span class="kw">pub struct </span>Seconds&lt;<span class="kw">const </span>ALLOW_ONCE: bool = <span class="bool-val">true</span>&gt;(<span class="kw">pub </span>Duration);
 
-<span class="kw">impl </span>From&lt;u64&gt; <span class="kw">for </span>Seconds {
+<span class="kw">impl</span>&lt;<span class="kw">const </span>ALLOW_ONCE: bool&gt; From&lt;u64&gt; <span class="kw">for </span>Seconds&lt;ALLOW_ONCE&gt; {
     <span class="kw">fn </span>from(v: u64) -&gt; <span class="self">Self </span>{
         <span class="self">Self</span>::new(v)
     }
 }
 
-<span class="kw">impl </span>Seconds {
+<span class="kw">impl</span>&lt;<span class="kw">const </span>ALLOW_ONCE: bool&gt; Seconds&lt;ALLOW_ONCE&gt; {
     <span class="kw">pub fn </span>new(value: u64) -&gt; <span class="self">Self </span>{
         <span class="self">Self</span>(Duration::from_secs(value))
     }
@@ -149,15 +149,15 @@
     }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;de</span>&gt; Deserialize&lt;<span class="lifetime">&#39;de</span>&gt; <span class="kw">for </span>Seconds {
+<span class="kw">impl</span>&lt;<span class="lifetime">&#39;de</span>, <span class="kw">const </span>ALLOW_ONCE: bool&gt; Deserialize&lt;<span class="lifetime">&#39;de</span>&gt; <span class="kw">for </span>Seconds&lt;ALLOW_ONCE&gt; {
     <span class="kw">fn </span>deserialize&lt;D&gt;(deserializer: D) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, D::Error&gt;
     <span class="kw">where
         </span>D: Deserializer&lt;<span class="lifetime">&#39;de</span>&gt;,
     {
-        <span class="kw">struct </span>SecondsVisitor;
+        <span class="kw">struct </span>SecondsVisitor&lt;<span class="kw">const </span>ALLOW_ONCE: bool&gt;;
 
-        <span class="kw">impl</span>&lt;<span class="lifetime">&#39;de</span>&gt; de::Visitor&lt;<span class="lifetime">&#39;de</span>&gt; <span class="kw">for </span>SecondsVisitor {
-            <span class="kw">type </span>Value = Seconds;
+        <span class="kw">impl</span>&lt;<span class="lifetime">&#39;de</span>, <span class="kw">const </span>ALLOW_ONCE: bool&gt; de::Visitor&lt;<span class="lifetime">&#39;de</span>&gt; <span class="kw">for </span>SecondsVisitor&lt;ALLOW_ONCE&gt; {
+            <span class="kw">type </span>Value = Seconds&lt;ALLOW_ONCE&gt;;
 
             <span class="kw">fn </span>expecting(<span class="kw-2">&amp;</span><span class="self">self</span>, formatter: <span class="kw-2">&amp;mut </span>std::fmt::Formatter) -&gt; std::fmt::Result {
                 formatter.write_str(<span class="string">&quot;\&quot;once\&quot;, i64 or f64&quot;</span>)
@@ -167,7 +167,7 @@
             <span class="kw">where
                 </span>E: de::Error,
             {
-                <span class="kw">if </span>v == <span class="string">&quot;once&quot; </span>{
+                <span class="kw">if </span>ALLOW_ONCE &amp;&amp; v == <span class="string">&quot;once&quot; </span>{
                     <span class="prelude-val">Ok</span>(Seconds(Duration::from_secs(<span class="number">60 </span>* <span class="number">60 </span>* <span class="number">24 </span>* <span class="number">365</span>)))
                 } <span class="kw">else </span>{
                     <span class="prelude-val">Err</span>(E::custom(<span class="macro">format!</span>(<span class="string">&quot;&#39;{v}&#39; is not a valid duration&quot;</span>)))
