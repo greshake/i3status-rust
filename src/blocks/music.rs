@@ -22,7 +22,7 @@
 //! `player` | Name(s) of the music player(s) MPRIS interface. This can be either a music player name or an array of music player names. Run <code>busctl --user list &vert; grep "org.mpris.MediaPlayer2." &vert; cut -d' ' -f1</code> and the name is the part after "org.mpris.MediaPlayer2.". | `None`
 //! `interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore. | `["playerctld"]`
 //! `separator` | String to insert between artist and title. | `" - "`
-//! `seek_step` | Number of microseconds to seek forward/backward when scrolling on the bar. | `1000`
+//! `seek_step_secs` | Positive number of seconds to seek forward/backward when scrolling on the bar. Does not need to be an integer. | `1`
 //!
 //! Note: All placeholders exctpt `icon` can be absent. See the examples below to learn how to handle this.
 //!
@@ -121,8 +121,8 @@ pub struct Config {
     interface_name_exclude: Vec<String>,
     #[default(" - ".into())]
     separator: String,
-    #[default(1_000)]
-    seek_step: i64,
+    #[default(1.into())]
+    seek_step_secs: Seconds<false>,
 }
 
 #[derive(Deserialize, Debug, Clone, SmartDefault)]
@@ -398,10 +398,10 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                                     break;
                                 }
                                 "seek_forward" => {
-                                    player.seek(config.seek_step).await?;
+                                    player.seek(config.seek_step_secs.0.as_micros() as i64).await?;
                                 }
                                 "seek_backward" => {
-                                    player.seek(-config.seek_step).await?;
+                                    player.seek(-(config.seek_step_secs.0.as_micros() as i64)).await?;
                                 }
                                 _ => (),
                             }
