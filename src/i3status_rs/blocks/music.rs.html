@@ -525,6 +525,63 @@
 <a href="#525" id="525">525</a>
 <a href="#526" id="526">526</a>
 <a href="#527" id="527">527</a>
+<a href="#528" id="528">528</a>
+<a href="#529" id="529">529</a>
+<a href="#530" id="530">530</a>
+<a href="#531" id="531">531</a>
+<a href="#532" id="532">532</a>
+<a href="#533" id="533">533</a>
+<a href="#534" id="534">534</a>
+<a href="#535" id="535">535</a>
+<a href="#536" id="536">536</a>
+<a href="#537" id="537">537</a>
+<a href="#538" id="538">538</a>
+<a href="#539" id="539">539</a>
+<a href="#540" id="540">540</a>
+<a href="#541" id="541">541</a>
+<a href="#542" id="542">542</a>
+<a href="#543" id="543">543</a>
+<a href="#544" id="544">544</a>
+<a href="#545" id="545">545</a>
+<a href="#546" id="546">546</a>
+<a href="#547" id="547">547</a>
+<a href="#548" id="548">548</a>
+<a href="#549" id="549">549</a>
+<a href="#550" id="550">550</a>
+<a href="#551" id="551">551</a>
+<a href="#552" id="552">552</a>
+<a href="#553" id="553">553</a>
+<a href="#554" id="554">554</a>
+<a href="#555" id="555">555</a>
+<a href="#556" id="556">556</a>
+<a href="#557" id="557">557</a>
+<a href="#558" id="558">558</a>
+<a href="#559" id="559">559</a>
+<a href="#560" id="560">560</a>
+<a href="#561" id="561">561</a>
+<a href="#562" id="562">562</a>
+<a href="#563" id="563">563</a>
+<a href="#564" id="564">564</a>
+<a href="#565" id="565">565</a>
+<a href="#566" id="566">566</a>
+<a href="#567" id="567">567</a>
+<a href="#568" id="568">568</a>
+<a href="#569" id="569">569</a>
+<a href="#570" id="570">570</a>
+<a href="#571" id="571">571</a>
+<a href="#572" id="572">572</a>
+<a href="#573" id="573">573</a>
+<a href="#574" id="574">574</a>
+<a href="#575" id="575">575</a>
+<a href="#576" id="576">576</a>
+<a href="#577" id="577">577</a>
+<a href="#578" id="578">578</a>
+<a href="#579" id="579">579</a>
+<a href="#580" id="580">580</a>
+<a href="#581" id="581">581</a>
+<a href="#582" id="582">582</a>
+<a href="#583" id="583">583</a>
+<a href="#584" id="584">584</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The current song title and artist
 //!
 //! Also provides buttons for play/pause, previous and next.
@@ -547,7 +604,7 @@
 //! ----|--------|--------
 //! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot; $icon {$combo.str(max_w:25,rot_interval:0.5) $play &amp;vert;}&quot;&lt;/code&gt;
 //! `player` | Name(s) of the music player(s) MPRIS interface. This can be either a music player name or an array of music player names. Run &lt;code&gt;busctl --user list &amp;vert; grep &quot;org.mpris.MediaPlayer2.&quot; &amp;vert; cut -d&#39; &#39; -f1&lt;/code&gt; and the name is the part after &quot;org.mpris.MediaPlayer2.&quot;. | `None`
-//! `interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore. | `[]`
+//! `interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore. | `[&quot;playerctld&quot;]`
 //! `separator` | String to insert between artist and title. | `&quot; - &quot;`
 //! `seek_step` | Number of microseconds to seek forward/backward when scrolling on the bar. | `1000`
 //!
@@ -631,6 +688,7 @@
 <span class="kw">use </span>zbus::{MatchRule, MessageStream};
 
 <span class="kw">mod </span>zbus_mpris;
+<span class="kw">mod </span>zbus_playerctld;
 
 <span class="macro">make_log_macro!</span>(debug, <span class="string">&quot;music&quot;</span>);
 
@@ -643,6 +701,7 @@
 </span><span class="kw">pub struct </span>Config {
     format: FormatConfig,
     player: PlayerName,
+    <span class="attr">#[default(<span class="macro">vec!</span>[<span class="string">&quot;playerctld&quot;</span>.into()]</span>)]
     interface_name_exclude: Vec&lt;String&gt;,
     <span class="attr">#[default(<span class="string">&quot; - &quot;</span>.into())]
     </span>separator: String,
@@ -697,12 +756,33 @@
         .collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;<span class="kw">_</span>&gt;, <span class="kw">_</span>&gt;&gt;()
         .error(<span class="string">&quot;Invalid regex&quot;</span>)<span class="question-mark">?</span>;
 
+    <span class="kw">let </span>playerctrld_proxy = zbus_playerctld::PlayerctldProxy::new(<span class="kw-2">&amp;</span>dbus_conn)
+        .<span class="kw">await
+        </span>.error(<span class="string">&quot;Failed to create PlayerctldProxy&quot;</span>)<span class="question-mark">?</span>;
+
     <span class="kw">let </span><span class="kw-2">mut </span>players = get_players(<span class="kw-2">&amp;</span>dbus_conn, <span class="kw-2">&amp;</span>prefered_players, <span class="kw-2">&amp;</span>exclude_regex).<span class="kw">await</span><span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>cur_player = <span class="prelude-val">None</span>;
-    <span class="kw">for </span>(i, player) <span class="kw">in </span>players.iter().enumerate() {
-        cur_player = <span class="prelude-val">Some</span>(i);
-        <span class="kw">if </span>player.status == <span class="prelude-val">Some</span>(PlaybackStatus::Playing) {
-            <span class="kw">break</span>;
+    <span class="kw">if let </span><span class="prelude-val">Ok</span>(playerctrld_players) = playerctrld_proxy.player_names().<span class="kw">await </span>{
+        <span class="comment">// If we can get the list of players from playerctld then we should
+        // take the first matching player (this is the most recently active player)
+        </span><span class="kw">for </span>playerctrld_player <span class="kw">in </span>playerctrld_players {
+            <span class="kw">if let </span><span class="prelude-val">Some</span>(pos) = players
+                .iter()
+                .position(|p| p.bus_name.as_str() == playerctrld_player)
+            {
+                cur_player = <span class="prelude-val">Some</span>(pos);
+                <span class="kw">break</span>;
+            }
+        }
+    } <span class="kw">else </span>{
+        <span class="comment">// If we couldn&#39;t get the players from playerctld then fall back to walking over
+        // the players and select the first one found playing something, or the last one
+        // in the list (the most recently opened)
+        </span><span class="kw">for </span>(i, player) <span class="kw">in </span>players.iter().enumerate() {
+            cur_player = <span class="prelude-val">Some</span>(i);
+            <span class="kw">if </span>player.status == <span class="prelude-val">Some</span>(PlaybackStatus::Playing) {
+                <span class="kw">break</span>;
+            }
         }
     }
 
@@ -733,6 +813,11 @@
     )
     .<span class="kw">await
     </span>.error(<span class="string">&quot;Failed to add match rule&quot;</span>)<span class="question-mark">?</span>;
+
+    <span class="kw">let </span><span class="kw-2">mut </span>active_player_change_end_stream = playerctrld_proxy
+        .receive_active_player_change_end()
+        .<span class="kw">await
+        </span>.error(<span class="string">&quot;Failed to create ActivePlayerChangeEndStream&quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">loop </span>{
         <span class="macro">debug!</span>(<span class="string">&quot;available players:&quot;</span>);
@@ -808,7 +893,7 @@
                     <span class="kw">let </span>args = msg.args().unwrap();
                     <span class="kw">let </span>header = msg.header().unwrap();
                     <span class="kw">let </span>sender = header.sender().unwrap().unwrap();
-                    <span class="kw">if let </span><span class="prelude-val">Some</span>(player) = players.iter_mut().find(|p| <span class="kw-2">&amp;*</span>p.owner == sender) {
+                    <span class="kw">if let </span><span class="prelude-val">Some</span>((pos, player)) = players.iter_mut().enumerate().find(|p| <span class="kw-2">&amp;*</span>p.<span class="number">1</span>.owner == sender) {
                         <span class="kw">let </span>props = args.changed_properties;
                         <span class="kw">if let </span><span class="prelude-val">Some</span>(status) = props.get(<span class="string">&quot;PlaybackStatus&quot;</span>) {
                             <span class="kw">let </span>status: <span class="kw-2">&amp;</span>str = status.downcast_ref().unwrap();
@@ -817,12 +902,14 @@
                         <span class="kw">if let </span><span class="prelude-val">Some</span>(metadata) = props.get(<span class="string">&quot;Metadata&quot;</span>) {
                             player.metadata =
                                 zbus_mpris::PlayerMetadata::try_from(metadata.to_owned()).unwrap();
-
-                            <span class="kw">if </span>player.metadata.title.is_some()
-                                || player.metadata.artist.is_some()
-                                || player.metadata.url.is_some() {
-                                    cur_player = players.iter().position(|p| <span class="kw-2">&amp;*</span>p.owner == sender);
-                            }
+                        }
+                        <span class="kw">if </span>player.status == <span class="prelude-val">Some</span>(PlaybackStatus::Playing)
+                        &amp;&amp; (
+                            player.metadata.title.is_some()
+                            || player.metadata.artist.is_some()
+                            || player.metadata.url.is_some()
+                        ) {
+                            cur_player = <span class="prelude-val">Some</span>(pos);
                         }
                         <span class="kw">break</span>;
                     }
@@ -833,7 +920,12 @@
                     <span class="kw">let </span>args = msg.args().unwrap();
                     <span class="kw">match </span>(args.old_owner.as_ref(), args.new_owner.as_ref()) {
                         (<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(new)) =&gt; <span class="kw">if </span>player_matches(args.name.as_str(), <span class="kw-2">&amp;</span>prefered_players, <span class="kw-2">&amp;</span>exclude_regex) {
-                            players.push(Player::new(<span class="kw-2">&amp;</span>dbus_conn, args.name.to_owned().into(), new.to_owned().into()).<span class="kw">await</span><span class="question-mark">?</span>);
+                            <span class="kw">match </span>Player::new(<span class="kw-2">&amp;</span>dbus_conn, args.name.to_owned().into(), new.to_owned().into()).<span class="kw">await </span>{
+                                <span class="prelude-val">Ok</span>(player) =&gt; players.push(player),
+                                <span class="prelude-val">Err</span>(e) =&gt; {
+                                    <span class="macro">debug!</span>(<span class="string">&quot;{e}&quot;</span>);
+                                },
+                            }
                         }
                         (<span class="prelude-val">Some</span>(old), <span class="prelude-val">None</span>) =&gt; {
                             <span class="kw">if let </span><span class="prelude-val">Some</span>(pos) = players.iter().position(|p| <span class="kw-2">&amp;*</span>p.owner == old) {
@@ -850,6 +942,20 @@
                             }
                         }
                         <span class="kw">_ </span>=&gt; (),
+                    }
+                    <span class="kw">break</span>;
+                }
+                <span class="prelude-val">Some</span>(msg)  = active_player_change_end_stream.next() =&gt; {
+                    <span class="kw">let </span>args = msg.args().unwrap();
+                    <span class="kw">if let </span><span class="prelude-val">Some</span>(pos) = players.iter().position(|p| p.bus_name == args.name){
+                        cur_player = <span class="prelude-val">Some</span>(pos);
+                    }
+                    <span class="kw">else</span>{
+                        <span class="comment">// We must have shifted to a player we wanted to skip (on the interface_name_exclude list).
+                        // Let&#39;s shift again
+                        </span><span class="kw">if let </span><span class="prelude-val">Err</span>(e) = playerctrld_proxy.shift().<span class="kw">await</span>{
+                            <span class="macro">debug!</span>(<span class="string">&quot;{e}&quot;</span>);
+                        }
                     }
                     <span class="kw">break</span>;
                 }
@@ -870,6 +976,9 @@
                                 }
                                 <span class="string">&quot;next_player&quot; </span>=&gt; {
                                     cur_player = <span class="prelude-val">Some</span>((i + <span class="number">1</span>) % players.len());
+                                    <span class="kw">if let </span><span class="prelude-val">Err</span>(e) = playerctrld_proxy.shift().<span class="kw">await</span>{
+                                        <span class="macro">debug!</span>(<span class="string">&quot;{e}&quot;</span>);
+                                    }
                                     <span class="kw">break</span>;
                                 }
                                 <span class="string">&quot;seek_forward&quot; </span>=&gt; {
@@ -904,7 +1013,12 @@
     <span class="kw">for </span>name <span class="kw">in </span>names {
         <span class="kw">if </span>player_matches(name.as_str(), prefered_players, exclude_regex) {
             <span class="kw">let </span>owner = proxy.get_name_owner(name.as_ref()).<span class="kw">await</span>.unwrap();
-            players.push(Player::new(dbus_conn, name, owner).<span class="kw">await</span><span class="question-mark">?</span>);
+            <span class="kw">match </span>Player::new(dbus_conn, name, owner).<span class="kw">await </span>{
+                <span class="prelude-val">Ok</span>(player) =&gt; players.push(player),
+                <span class="prelude-val">Err</span>(e) =&gt; {
+                    <span class="macro">debug!</span>(<span class="string">&quot;{e}&quot;</span>);
+                }
+            }
         }
     }
     <span class="prelude-val">Ok</span>(players)
