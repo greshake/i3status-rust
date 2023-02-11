@@ -158,7 +158,7 @@ impl fmt::Display for Error {
         match self.block {
             Some(block) => {
                 match self.kind {
-                    ErrorKind::Config | ErrorKind::Format => f.write_str("Configuration errror")?,
+                    ErrorKind::Config | ErrorKind::Format => f.write_str("Configuration error")?,
                     ErrorKind::Other => f.write_str("Error")?,
                 }
 
