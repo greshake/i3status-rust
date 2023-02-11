@@ -212,8 +212,8 @@ is complete, all calls to <code>next()</code> return <code>None</code>.</p>
     <span class="macro">assert_eq!</span>(<span class="kw-2">&amp;</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>], <span class="kw-2">&amp;</span>values[..]);
 }</code></pre></div>
 <p>Using the same future in multiple <code>select!</code> expressions can be done by passing
-a reference to the future. Doing so requires the future to be <a href="https://doc.rust-lang.org/1.67.0/core/marker/trait.Unpin.html"><code>Unpin</code></a>. A
-future can be made <a href="https://doc.rust-lang.org/1.67.0/core/marker/trait.Unpin.html"><code>Unpin</code></a> by either using <a href="https://doc.rust-lang.org/1.67.0/alloc/boxed/struct.Box.html#method.pin"><code>Box::pin</code></a> or stack pinning.</p>
+a reference to the future. Doing so requires the future to be <a href="https://doc.rust-lang.org/1.67.1/core/marker/trait.Unpin.html"><code>Unpin</code></a>. A
+future can be made <a href="https://doc.rust-lang.org/1.67.1/core/marker/trait.Unpin.html"><code>Unpin</code></a> by either using <a href="https://doc.rust-lang.org/1.67.1/alloc/boxed/struct.Box.html#method.pin"><code>Box::pin</code></a> or stack pinning.</p>
 <p>Here, a stream is consumed for at most 1 second.</p>
 
 <div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>tokio_stream::{<span class="self">self </span><span class="kw">as </span>stream, StreamExt};
@@ -370,4 +370,4 @@ run uninterrupted despite the sleep having elapsed.</p>
         }
     }
 }</code></pre></div>
-</div></details></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.67.0 (fc594f156 2023-01-24)" data-search-js="search-444266647c4dba98.js" data-settings-js="settings-bebeae96e00e4617.js" data-settings-css="settings-af96d9e2fc13e081.css" ></div></body></html>
+</div></details></section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.67.1 (d5a82bbd2 2023-02-07)" data-search-js="search-444266647c4dba98.js" data-settings-js="settings-bebeae96e00e4617.js" data-settings-css="settings-af96d9e2fc13e081.css" ></div></body></html>

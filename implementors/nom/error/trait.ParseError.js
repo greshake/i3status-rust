@@ -1,3 +1,3 @@
 (function() {var implementors = {
-"i3status_rs":[["impl&lt;'a&gt; ParseError&lt;&amp;'a <a class=\"primitive\" href=\"https://doc.rust-lang.org/1.67.0/std/primitive.str.html\">str</a>&gt; for <a class=\"enum\" href=\"i3status_rs/formatting/parse/enum.PError.html\" title=\"enum i3status_rs::formatting::parse::PError\">PError</a>&lt;'a&gt;"]]
+"i3status_rs":[["impl&lt;'a&gt; ParseError&lt;&amp;'a <a class=\"primitive\" href=\"https://doc.rust-lang.org/1.67.1/std/primitive.str.html\">str</a>&gt; for <a class=\"enum\" href=\"i3status_rs/formatting/parse/enum.PError.html\" title=\"enum i3status_rs::formatting::parse::PError\">PError</a>&lt;'a&gt;"]]
 };if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
