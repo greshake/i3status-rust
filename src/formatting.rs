@@ -1,7 +1,7 @@
 //! # Formatting system
 //! Many blocks have a `format` configuration option, which allows to heavily customize the block's
 //! appearance. In short, each block with `format` option provides a set of values, which are
-//! displayed according to `format`. `format`'s value is just a text with embeded variables.
+//! displayed according to `format`. `format`'s value is just a text with embedded variables.
 //! Similarly to PHP and shell, variable name must start with a `$`:
 //! `this is a variable: -> $var <-`.
 //!
@@ -47,7 +47,7 @@
 //! `unit` or `u`   | some values have a [unit](unit::Unit), and it is possible to convert them by setting this option | N/A
 //! `hide_unit`     | hide the unit symbol                                                                             | `false`
 //! `unit_space`    | have a whitespace before unit symbol                                                             | `false`
-//! `prefix` or `p` | specifiy this argument if you want to set the minimal [SI prefix](prefix::Prefix)                | N/A
+//! `prefix` or `p` | specify this argument if you want to set the minimal [SI prefix](prefix::Prefix)                | N/A
 //! `hide_prefix`   | hide the prefix symbol                                                                           | `false`
 //! `prefix_space`  | have a whitespace before prefix symbol                                                           | `false`
 //! `force_prefix`  | force the prefix value instead of setting a "minimal prefix"                                     | `false`

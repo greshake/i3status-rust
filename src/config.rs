@@ -19,7 +19,7 @@ pub struct Config {
     /// Set to `true` to invert mouse wheel direction
     pub invert_scrolling: bool,
 
-    /// The maximum delay (ms) between two clicks that are considered as doulble click
+    /// The maximum delay (ms) between two clicks that are considered as double click
     pub double_click_delay: u64,
 
     #[default(" {$short_error_message|X} ".parse().unwrap())]

@@ -15,7 +15,7 @@ use crate::errors::*;
 /// - Then try XDG_DATA_HOME (e.g. `~/.local/share/`)
 /// - Then try `/usr/share/`
 ///
-/// Automaticaly append an extension if not presented.
+/// Automatically append an extension if not presented.
 pub fn find_file(file: &str, subdir: Option<&str>, extension: Option<&str>) -> Option<PathBuf> {
     // Set (or update) the extension
     let mut file = PathBuf::from(file);

@@ -48,7 +48,7 @@ macro_rules! impl_into_f64 {
 }
 impl_into_f64!(f64, f32, i64, u64, i32, u32, i16, u16, i8, u8, usize, isize);
 
-/// Constuctors
+/// Constructors
 impl Value {
     pub fn new(val: ValueInner) -> Self {
         Self {

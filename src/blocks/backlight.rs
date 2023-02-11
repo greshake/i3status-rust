@@ -176,7 +176,7 @@ async fn read_brightness_raw(device_file: &Path) -> Result<u64> {
     let val = match read_file(device_file).await {
         Ok(v) => Ok(v),
         Err(_) => {
-            // HACK: Try to read file a scond time if the first fails. For some reason, when using `ddcci`
+            // HACK: Try to read file a second time if the first fails. For some reason, when using `ddcci`
             // the first read fails with "Error 74: Bad Message".
             debug!("First read of brightness file failed, retrying");
             read_file(device_file).await

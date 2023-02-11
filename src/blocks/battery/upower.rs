@@ -30,7 +30,7 @@ impl DeviceConnection {
             let mut res = None;
             for path in UPowerProxy::new(dbus_conn)
                 .await
-                .error("Failed to create UPwerProxy")?
+                .error("Failed to create UPowerProxy")?
                 .enumerate_devices()
                 .await
                 .error("Failed to retrieve UPower devices")?

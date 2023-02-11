@@ -11,7 +11,7 @@
 //! `warning` | A value which will trigger warning block state | `20.0`
 //! `alert` | A value which will trigger critical block state | `10.0`
 //! `info_type` | Determines which information will affect the block state. Possible values are `"available"`, `"free"` and `"used"` | `"available"`
-//! `alert_unit` | The unit of `alert` and `warning` options. If not set, percents are uesd. Possible values are `"B"`, `"KB"`, `"MB"`, `"GB"` and `"TB"` | `None`
+//! `alert_unit` | The unit of `alert` and `warning` options. If not set, percents are used. Possible values are `"B"`, `"KB"`, `"MB"`, `"GB"` and `"TB"` | `None`
 //!
 //! Placeholder  | Value                                                              | Type   | Unit
 //! -------------|--------------------------------------------------------------------|--------|-------

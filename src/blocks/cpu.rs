@@ -201,11 +201,11 @@ impl CpuTime {
         let idle = u64::from_str(s.next()?).ok()?;
         let iowait = u64::from_str(s.next()?).ok()?;
         let irq = u64::from_str(s.next()?).ok()?;
-        let softirq = u64::from_str(s.next()?).ok()?;
+        let soft_irq = u64::from_str(s.next()?).ok()?;
 
         Some(Self {
             idle: idle + iowait,
-            non_idle: user + nice + system + irq + softirq,
+            non_idle: user + nice + system + irq + soft_irq,
         })
     }
 

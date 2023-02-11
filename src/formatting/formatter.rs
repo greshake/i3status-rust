@@ -82,7 +82,7 @@ pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
                         );
                     }
                     other => {
-                        return Err(Error::new(format!("Unknown argumnt for 'str': '{other}'")));
+                        return Err(Error::new(format!("Unknown argument for 'str': '{other}'")));
                     }
                 }
             }
@@ -107,7 +107,7 @@ pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
             #[allow(clippy::never_loop)]
             for arg in args {
                 return Err(Error::new(format!(
-                    "Unknown argumnt for 'pango-str': '{}'",
+                    "Unknown argument for 'pango-str': '{}'",
                     arg.key
                 )));
             }
@@ -312,7 +312,7 @@ impl EngFixConfig {
                 }
                 other => {
                     return Err(Error::new(format!(
-                        "Unknown argumnt for 'fix'/'eng': '{other}'"
+                        "Unknown argument for 'fix'/'eng': '{other}'"
                     )));
                 }
             }

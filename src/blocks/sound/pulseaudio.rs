@@ -255,7 +255,7 @@ impl Client {
             .spawn(move || {
                 let mut connection = new_connection(send_result2);
 
-                // subcribe for events
+                // subscribe for events
                 connection
                     .context
                     .set_subscribe_callback(Some(Box::new(Client::subscribe_callback)));
