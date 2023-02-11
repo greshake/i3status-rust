@@ -23,22 +23,25 @@
 //! `interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore. | `["playerctld"]`
 //! `separator` | String to insert between artist and title. | `" - "`
 //! `seek_step_secs` | Positive number of seconds to seek forward/backward when scrolling on the bar. Does not need to be an integer. | `1`
+//! `volume_step` | The percent volume level is increased/decreased for the selected audio device when scrolling. Capped automatically at 50. | `5`
 //!
-//! Note: All placeholders exctpt `icon` can be absent. See the examples below to learn how to handle this.
+//! Note: All placeholders except `icon` can be absent. See the examples below to learn how to handle this.
 //!
-//! Placeholder | Value          | Type
-//! ------------|----------------|------
-//! `icon`      | A static icon  | Icon
-//! `artist`    | Current artist | Text
-//! `title`     | Current title  | Text
-//! `url`       | Current song url | Text
-//! `combo`     | Resolves to "`$artist[sep]$title"`, `"$artist"`, `"$title"`, or `"$url"` depending on what information is available. `[sep]` is set by `separator` option. | Text
-//! `player`    | Name of the current player (taken from the last part of its MPRIS bus name) | Text
-//! `avail`     | Total number of players available to switch between | Number
-//! `cur`       | Total number of players available to switch between | Number
-//! `play`      | Play/Pause button | Clickable icon
-//! `next`      | Next button | Clickable icon
-//! `prev`      | Previous button | Clickable icon
+//! Placeholder   | Value          | Type
+//! --------------|----------------|------
+//! `icon`        | A static icon  | Icon
+//! `artist`      | Current artist | Text
+//! `title`       | Current title  | Text
+//! `url`         | Current song url | Text
+//! `combo`       | Resolves to "`$artist[sep]$title"`, `"$artist"`, `"$title"`, or `"$url"` depending on what information is available. `[sep]` is set by `separator` option. | Text
+//! `player`      | Name of the current player (taken from the last part of its MPRIS bus name) | Text
+//! `avail`       | Total number of players available to switch between | Number
+//! `cur`         | Total number of players available to switch between | Number
+//! `play`        | Play/Pause button | Clickable icon
+//! `next`        | Next button | Clickable icon
+//! `prev`        | Previous button | Clickable icon
+//! `volume_icon` | Icon based on volume              | Icon
+//! `volume`      | Current volume. Missing if muted. | Number
 //!
 //! Action          | Default button
 //! ----------------|------------------
@@ -48,6 +51,8 @@
 //! `next_player`   | Right
 //! `seek_forward`  | Wheel Up
 //! `seek_backward` | Wheel Down
+//! `volume_up`     | -
+//! `volume_down`   | -
 //!
 //! # Examples
 //!
@@ -89,16 +94,40 @@
 //! action = "play_pause"
 //! ```
 //!
+//! Scroll to change the player volume, use the forward and back buttons to seek:
+//!
+//! ```toml
+//! [[block]]
+//! block = "music"
+//! format = " $icon $volume_icon $combo $play $next| "
+//! seek_step_secs = 10
+//! [[block.click]]
+//! button = "up"
+//! action = "volume_up"
+//! [[block.click]]
+//! button = "down"
+//! action = "volume_down"
+//! [[block.click]]
+//! button = "forward"
+//! action = "seek_forward"
+//! [[block.click]]
+//! button = "back"
+//! action = "seek_backward"
+//! ```
+//!
 //! # Icons Used
 //! - `music`
 //! - `music_next`
 //! - `music_play`
 //! - `music_prev`
+//! - `volume_muted`
+//! - `volume` (as a progression)
 //!
 //! [MediaPlayer2 Interface]: https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html
 
 use super::prelude::*;
 use regex::Regex;
+use tokio::try_join;
 use zbus::fdo::{DBusProxy, NameOwnerChanged, PropertiesChanged};
 use zbus::names::{OwnedBusName, OwnedUniqueName};
 use zbus::{MatchRule, MessageStream};
@@ -123,6 +152,8 @@ pub struct Config {
     separator: String,
     #[default(1.into())]
     seek_step_secs: Seconds<false>,
+    #[default(5.0)]
+    volume_step: f64,
 }
 
 #[derive(Deserialize, Debug, Clone, SmartDefault)]
@@ -150,6 +181,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             .format
             .with_default(" $icon {$combo.str(max_w:25,rot_interval:0.5) $play |}")?,
     );
+
+    let volume_step = config.volume_step.clamp(0.0, 50.0) / 100.0;
 
     let new_btn = |icon: &str, instance: &'static str, api: &mut CommonApi| -> Result<Value> {
         Ok(Value::icon(api.get_icon(icon)?).with_instance(instance))
@@ -290,6 +323,11 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     }
                     _ => (),
                 }
+                values.insert(
+                    "volume_icon".into(),
+                    Value::icon(api.get_icon_in_progression("volume", player.volume)?),
+                );
+                values.insert("volume".into(), Value::percents(player.volume * 100.0));
                 widget.set_values(values);
                 widget.state = state;
                 api.set_widget(&widget).await?;
@@ -318,6 +356,9 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                         if let Some(metadata) = props.get("Metadata") {
                             player.metadata =
                                 zbus_mpris::PlayerMetadata::try_from(metadata.to_owned()).unwrap();
+                        }
+                        if let Some(volume) = props.get("Volume") {
+                            player.volume = *volume.downcast_ref().unwrap();
                         }
                         if player.status == Some(PlaybackStatus::Playing)
                         && (
@@ -403,6 +444,12 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                                 "seek_backward" => {
                                     player.seek(-(config.seek_step_secs.0.as_micros() as i64)).await?;
                                 }
+                                "volume_up" => {
+                                    player.set_volume(volume_step).await?;
+                                }
+                                "volume_down" => {
+                                    player.set_volume(-volume_step).await?;
+                                }
                                 _ => (),
                             }
                         }
@@ -447,6 +494,7 @@ struct Player {
     bus_name: OwnedBusName,
     player_proxy: zbus_mpris::PlayerProxy<'static>,
     metadata: zbus_mpris::PlayerMetadata,
+    volume: f64,
 }
 
 impl Player {
@@ -461,14 +509,9 @@ impl Player {
             .build()
             .await
             .error("failed to open player proxy")?;
-        let metadata = proxy
-            .metadata()
-            .await
-            .error("failed to obtain player metadata")?;
-        let status = proxy
-            .playback_status()
-            .await
-            .error("failed to obtain player status")?;
+        let (metadata, status, volume) =
+            try_join!(proxy.metadata(), proxy.playback_status(), proxy.volume())
+                .error("failed to obtain player information")?;
 
         Ok(Self {
             status: PlaybackStatus::from_str(&status),
@@ -476,6 +519,7 @@ impl Player {
             bus_name,
             player_proxy: proxy,
             metadata,
+            volume,
         })
     }
 
@@ -504,6 +548,13 @@ impl Player {
             }
             other => dbg!(other).error("seek() failed"),
         }
+    }
+
+    async fn set_volume(&self, step_size: f64) -> Result<()> {
+        self.player_proxy
+            .set_volume(self.volume + step_size)
+            .await
+            .error("set_volume() failed")
     }
 }
 
