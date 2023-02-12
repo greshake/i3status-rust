@@ -31,29 +31,22 @@ use chrono::Utc;
 use chrono_tz::Tz;
 
 use super::prelude::*;
-use crate::formatting::config::DummyConfig;
 
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(default)]
 pub struct Config {
-    format: DummyConfig,
+    format: FormatConfig,
     #[default(1.into())]
     interval: Seconds,
     timezone: Option<Tz>,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
-    let mut widget = Widget::new();
-
-    let format = config
-        .format
-        .full
-        .as_deref()
-        .unwrap_or(" $icon $timestamp.datetime() ");
-
-    let format_short = config.format.short.as_deref().unwrap_or_default();
-
-    widget.set_format(FormatConfig::default().with_defaults(format, format_short)?);
+    let mut widget = Widget::new().with_format(
+        config
+            .format
+            .with_default(" $icon $timestamp.datetime() ")?,
+    );
 
     let timezone = config.timezone;
 
