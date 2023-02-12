@@ -4,14 +4,14 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | Format string. See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. | `" $icon %a %d/%m %R "`
+//! `format` | Format string. See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. | `" $icon $timestamp.datetime() "`
 //! `interval` | Update interval in seconds | `10`
 //! `timezone` | A timezone specifier (e.g. "Europe/Lisbon") | Local timezone
-//! `locale` | Locale to apply when formatting the time | System locale
 //!
-//! Placeholder   | Value                                       | Type   | Unit
-//! --------------|---------------------------------------------|--------|-----
-//! `icon`        | A static icon                               | Icon   | -
+//! Placeholder   | Value                                       | Type     | Unit
+//! --------------|---------------------------------------------|----------|-----
+//! `icon`        | A static icon                               | Icon     | -
+//! `timestamp`   | The current time                            | Datetime | -
 //!
 //! # Example
 //!
@@ -19,17 +19,15 @@
 //! [[block]]
 //! block = "time"
 //! interval = 60
-//! locale = "fr_BE"
 //! [block.format]
-//! full = " $icon %d/%m %R "
-//! short = " $icon %R "
+//! full = " $icon $timestamp.datetime(f:'%a %Y-%m-%d %R %Z', l:fr_BE) "
+//! short = " $icon $timestamp.datetime(f:%R) "
 //! ```
 //!
 //! # Icons Used
 //! - `time`
 
-use chrono::offset::{Local, Utc};
-use chrono::Locale;
+use chrono::Utc;
 use chrono_tz::Tz;
 
 use super::prelude::*;
@@ -42,7 +40,6 @@ pub struct Config {
     #[default(1.into())]
     interval: Seconds,
     timezone: Option<Tz>,
-    locale: Option<String>,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
@@ -52,14 +49,13 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         .format
         .full
         .as_deref()
-        .unwrap_or(" $icon %a %d/%m %R ");
-    let format_short = config.format.short.as_deref();
+        .unwrap_or(" $icon $timestamp.datetime() ");
+
+    let format_short = config.format.short.as_deref().unwrap_or_default();
+
+    widget.set_format(FormatConfig::default().with_defaults(format, format_short)?);
 
     let timezone = config.timezone;
-    let locale = match config.locale.as_deref() {
-        Some(locale) => Some(locale.try_into().ok().error("invalid locale")?),
-        None => None,
-    };
 
     let mut timer = config.interval.timer();
 
@@ -70,13 +66,10 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             unsafe { tzset() };
         }
 
-        let full_time = get_time(format, timezone, locale);
-        let short_time = format_short
-            .map(|f| get_time(f, timezone, locale))
-            .unwrap_or_else(|| "".into());
-
-        widget.set_format(FormatConfig::default().with_defaults(&full_time, &short_time)?);
-        widget.set_values(map!("icon" => Value::icon(api.get_icon("time")?)));
+        widget.set_values(map!(
+            "icon" => Value::icon(api.get_icon("time")?),
+            "timestamp" => Value::datetime(Utc::now(), timezone)
+        ));
 
         api.set_widget(&widget).await?;
 
@@ -84,22 +77,6 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             _ = timer.tick() => (),
             _ = api.wait_for_update_request() => (),
         }
-    }
-}
-
-fn get_time(format: &str, timezone: Option<Tz>, locale: Option<Locale>) -> String {
-    match locale {
-        Some(locale) => match timezone {
-            Some(tz) => Utc::now()
-                .with_timezone(&tz)
-                .format_localized(format, locale)
-                .to_string(),
-            None => Local::now().format_localized(format, locale).to_string(),
-        },
-        None => match timezone {
-            Some(tz) => Utc::now().with_timezone(&tz).format(format).to_string(),
-            None => Local::now().format(format).to_string(),
-        },
     }
 }
 

@@ -59,6 +59,13 @@
 //!
 //! No arguments.
 //!
+//! ## `datetime` - Display datetime
+//!
+//! Argument               | Description                                                                                               |Default value
+//! -----------------------|-----------------------------------------------------------------------------------------------------------|-------------
+//! `format` or `f`        | [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. | `'%a %d/%m %R'`
+//! `locale` or `l`        | Locale to apply when formatting the time                                                                  | System locale
+//!
 //! # Handling missing placeholders and incorrect types
 //!
 //! Some blocks allow missing placeholders, for example [bluetooth](crate::blocks::bluetooth)'s

@@ -1,3 +1,7 @@
+use chrono::format::{Item, StrftimeItems};
+use chrono::Local;
+use once_cell::sync::Lazy;
+
 use std::fmt::Debug;
 use std::iter::repeat;
 use std::time::{Duration, Instant};
@@ -18,6 +22,8 @@ const DEFAULT_BAR_MAX_VAL: f64 = 100.0;
 
 const DEFAULT_NUMBER_WIDTH: usize = 2;
 
+const DEFAULT_DATETIME_FORMAT: &str = "%a %d/%m %R";
+
 pub const DEFAULT_STRING_FORMATTER: StrFormatter = StrFormatter {
     min_width: DEFAULT_STR_MIN_WIDTH,
     max_width: DEFAULT_STR_MAX_WIDTH,
@@ -36,6 +42,9 @@ pub const DEFAULT_NUMBER_FORMATTER: EngFormatter = EngFormatter(EngFixConfig {
     prefix_hidden: false,
     prefix_forced: false,
 });
+
+pub static DEFAULT_DATETIME_FORMATTER: Lazy<DatetimeFormatter> =
+    Lazy::new(|| DatetimeFormatter::new(DEFAULT_DATETIME_FORMAT, None).unwrap());
 
 pub const DEFAULT_FLAG_FORMATTER: FlagFormatter = FlagFormatter;
 
@@ -112,7 +121,7 @@ pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
                         max_value = arg.val.parse().error("Max value must be a number")?;
                     }
                     other => {
-                        return Err(Error::new(format!("Unknown argumnt for 'bar': '{other}'")));
+                        return Err(Error::new(format!("Unknown argument for 'bar': '{other}'")));
                     }
                 }
             }
@@ -120,6 +129,30 @@ pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
         }
         "eng" => Ok(Box::new(EngFormatter(EngFixConfig::from_args(args)?))),
         "fix" => Ok(Box::new(FixFormatter(EngFixConfig::from_args(args)?))),
+        "datetime" => {
+            let mut format = None;
+            let mut locale = None;
+            for arg in args {
+                match arg.key {
+                    "format" | "f" => {
+                        format = Some(arg.val);
+                    }
+                    "locale" | "l" => {
+                        locale = Some(arg.val);
+                    }
+                    other => {
+                        return Err(Error::new(format!(
+                            "Unknown argument for 'datetime': '{other}'"
+                        )));
+                    }
+                }
+            }
+
+            Ok(Box::new(DatetimeFormatter::new(
+                format.unwrap_or(DEFAULT_DATETIME_FORMAT),
+                locale,
+            )?))
+        }
         _ => Err(Error::new(format!("Unknown formatter: '{name}'"))),
     }
 }
@@ -163,6 +196,9 @@ impl Formatter for StrFormatter {
             Value::Number { .. } => Err(Error::new_format(
                 "A number cannot be formatted with 'str' formatter",
             )),
+            Value::Datetime(..) => Err(Error::new_format(
+                "A datetime cannot be formatted with 'str' formatter",
+            )),
             Value::Flag => Err(Error::new_format(
                 "A flag cannot be formatted with 'str' formatter",
             )),
@@ -183,6 +219,9 @@ impl Formatter for PangoStrFormatter {
             Value::Text(x) | Value::Icon(x) => Ok(x.clone()), // No escaping
             Value::Number { .. } => Err(Error::new_format(
                 "A number cannot be formatted with 'str' formatter",
+            )),
+            Value::Datetime(..) => Err(Error::new_format(
+                "A datetime cannot be formatted with 'str' formatter",
             )),
             Value::Flag => Err(Error::new_format(
                 "A flag cannot be formatted with 'str' formatter",
@@ -219,6 +258,9 @@ impl Formatter for BarFormatter {
             )),
             Value::Icon(_) => Err(Error::new_format(
                 "An icon cannot be formatted with 'bar' formatter",
+            )),
+            Value::Datetime(..) => Err(Error::new_format(
+                "A datetime cannot be formatted with 'bar' formatter",
             )),
             Value::Flag => Err(Error::new_format(
                 "A flag cannot be formatted with 'bar' formatter",
@@ -367,6 +409,9 @@ impl Formatter for EngFormatter {
             Value::Icon(_) => Err(Error::new_format(
                 "An icon cannot be formatted with 'eng' formatter",
             )),
+            Value::Datetime(..) => Err(Error::new_format(
+                "A datetime cannot be formatted with 'eng' formatter",
+            )),
             Value::Flag => Err(Error::new_format(
                 "A flag cannot be formatted with 'eng' formatter",
             )),
@@ -392,6 +437,71 @@ impl Formatter for FixFormatter {
             Value::Icon(_) => Err(Error::new_format(
                 "An icon cannot be formatted with 'fix' formatter",
             )),
+            Value::Datetime(..) => Err(Error::new_format(
+                "A datetime cannot be formatted with 'fix' formatter",
+            )),
+            Value::Flag => Err(Error::new_format(
+                "A flag cannot be formatted with 'fix' formatter",
+            )),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct DatetimeFormatter {
+    items: Vec<Item<'static>>,
+}
+
+fn make_static_item(item: Item<'_>) -> Item<'static> {
+    match item {
+        Item::Literal(str) => Item::OwnedLiteral(str.into()),
+        Item::OwnedLiteral(boxed) => Item::OwnedLiteral(boxed),
+        Item::Space(str) => Item::OwnedSpace(str.into()),
+        Item::OwnedSpace(boxed) => Item::OwnedSpace(boxed),
+        Item::Numeric(numeric, pad) => Item::Numeric(numeric, pad),
+        Item::Fixed(fixed) => Item::Fixed(fixed),
+        Item::Error => Item::Error,
+    }
+}
+
+impl DatetimeFormatter {
+    fn new(format: &str, locale: Option<&str>) -> Result<Self> {
+        let items = match locale {
+            Some(locale) => {
+                let locale = locale.try_into().ok().error("invalid locale")?;
+                StrftimeItems::new_with_locale(format, locale)
+            }
+            None => StrftimeItems::new(format),
+        }
+        .map(make_static_item)
+        .collect();
+
+        Ok(Self { items })
+    }
+}
+
+impl Formatter for DatetimeFormatter {
+    fn format(&self, val: &Value) -> Result<String> {
+        match val {
+            Value::Datetime(datetime, timezone) => Ok(match timezone {
+                Some(tz) => datetime
+                    .with_timezone(tz)
+                    .format_with_items(self.items.iter())
+                    .to_string(),
+                None => datetime
+                    .with_timezone(&Local)
+                    .format_with_items(self.items.iter())
+                    .to_string(),
+            }),
+            Value::Text(_) => Err(Error::new_format(
+                "Text cannot be formatted with 'fix' formatter",
+            )),
+            Value::Number { .. } => Err(Error::new_format(
+                "Number cannot be formatted with 'fix' formatter",
+            )),
+            Value::Icon(_) => Err(Error::new_format(
+                "An icon cannot be formatted with 'fix' formatter",
+            )),
             Value::Flag => Err(Error::new_format(
                 "A flag cannot be formatted with 'fix' formatter",
             )),
@@ -405,7 +515,9 @@ pub struct FlagFormatter;
 impl Formatter for FlagFormatter {
     fn format(&self, val: &Value) -> Result<String> {
         match val {
-            Value::Number { .. } | Value::Text(_) | Value::Icon(_) => unreachable!(),
+            Value::Number { .. } | Value::Text(_) | Value::Icon(_) | Value::Datetime(..) => {
+                unreachable!()
+            }
             Value::Flag => Ok(String::new()),
         }
     }

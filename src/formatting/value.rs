@@ -1,6 +1,8 @@
 use super::formatter;
 use super::unit::Unit;
 use super::Metadata;
+use chrono::{DateTime, Utc};
+use chrono_tz::Tz;
 
 #[derive(Debug, Clone)]
 pub struct Value {
@@ -13,6 +15,7 @@ pub enum ValueInner {
     Text(String),
     Icon(String),
     Number { val: f64, unit: Unit },
+    Datetime(DateTime<Utc>, Option<Tz>),
     Flag,
 }
 
@@ -44,6 +47,10 @@ impl Value {
 
     pub fn flag() -> Self {
         Self::new(ValueInner::Flag)
+    }
+
+    pub fn datetime(datetime: DateTime<Utc>, tz: Option<Tz>) -> Self {
+        Self::new(ValueInner::Datetime(datetime, tz))
     }
 
     pub fn icon(icon: String) -> Self {
@@ -108,6 +115,7 @@ impl Value {
         match &self.inner {
             ValueInner::Text(_) | ValueInner::Icon(_) => &formatter::DEFAULT_STRING_FORMATTER,
             ValueInner::Number { .. } => &formatter::DEFAULT_NUMBER_FORMATTER,
+            ValueInner::Datetime { .. } => &*formatter::DEFAULT_DATETIME_FORMATTER,
             ValueInner::Flag => &formatter::DEFAULT_FLAG_FORMATTER,
         }
     }
