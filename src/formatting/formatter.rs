@@ -193,15 +193,10 @@ impl Formatter for StrFormatter {
                 })
             }
             Value::Icon(icon) => Ok(icon.clone()), // No escaping
-            Value::Number { .. } => Err(Error::new_format(
-                "A number cannot be formatted with 'str' formatter",
-            )),
-            Value::Datetime(..) => Err(Error::new_format(
-                "A datetime cannot be formatted with 'str' formatter",
-            )),
-            Value::Flag => Err(Error::new_format(
-                "A flag cannot be formatted with 'str' formatter",
-            )),
+            other => Err(Error::new_format(format!(
+                "{} cannot be formatted with 'str' formatter",
+                other.type_name(),
+            ))),
         }
     }
 
@@ -217,15 +212,10 @@ impl Formatter for PangoStrFormatter {
     fn format(&self, val: &Value) -> Result<String> {
         match val {
             Value::Text(x) | Value::Icon(x) => Ok(x.clone()), // No escaping
-            Value::Number { .. } => Err(Error::new_format(
-                "A number cannot be formatted with 'str' formatter",
-            )),
-            Value::Datetime(..) => Err(Error::new_format(
-                "A datetime cannot be formatted with 'str' formatter",
-            )),
-            Value::Flag => Err(Error::new_format(
-                "A flag cannot be formatted with 'str' formatter",
-            )),
+            other => Err(Error::new_format(format!(
+                "{} cannot be formatted with 'str' formatter",
+                other.type_name(),
+            ))),
         }
     }
 }
@@ -253,18 +243,10 @@ impl Formatter for BarFormatter {
                     })
                     .collect())
             }
-            Value::Text(_) => Err(Error::new_format(
-                "Text cannot be formatted with 'bar' formatter",
-            )),
-            Value::Icon(_) => Err(Error::new_format(
-                "An icon cannot be formatted with 'bar' formatter",
-            )),
-            Value::Datetime(..) => Err(Error::new_format(
-                "A datetime cannot be formatted with 'bar' formatter",
-            )),
-            Value::Flag => Err(Error::new_format(
-                "A flag cannot be formatted with 'bar' formatter",
-            )),
+            other => Err(Error::new_format(format!(
+                "{} cannot be formatted with 'bar' formatter",
+                other.type_name(),
+            ))),
         }
     }
 }
@@ -403,18 +385,10 @@ impl Formatter for EngFormatter {
 
                 Ok(retval)
             }
-            Value::Text(_) => Err(Error::new_format(
-                "Text cannot be formatted with 'eng' formatter",
-            )),
-            Value::Icon(_) => Err(Error::new_format(
-                "An icon cannot be formatted with 'eng' formatter",
-            )),
-            Value::Datetime(..) => Err(Error::new_format(
-                "A datetime cannot be formatted with 'eng' formatter",
-            )),
-            Value::Flag => Err(Error::new_format(
-                "A flag cannot be formatted with 'eng' formatter",
-            )),
+            other => Err(Error::new_format(format!(
+                "{} cannot be formatted with 'eng' formatter",
+                other.type_name(),
+            ))),
         }
     }
 }
@@ -431,18 +405,10 @@ impl Formatter for FixFormatter {
                 // unit,
                 // icon,
             } => Err(Error::new_format("'fix' formatter is not implemented yet")),
-            Value::Text(_) => Err(Error::new_format(
-                "Text cannot be formatted with 'fix' formatter",
-            )),
-            Value::Icon(_) => Err(Error::new_format(
-                "An icon cannot be formatted with 'fix' formatter",
-            )),
-            Value::Datetime(..) => Err(Error::new_format(
-                "A datetime cannot be formatted with 'fix' formatter",
-            )),
-            Value::Flag => Err(Error::new_format(
-                "A flag cannot be formatted with 'fix' formatter",
-            )),
+            other => Err(Error::new_format(format!(
+                "{} cannot be formatted with 'fix' formatter",
+                other.type_name(),
+            )))
         }
     }
 }
@@ -493,18 +459,10 @@ impl Formatter for DatetimeFormatter {
                     .format_with_items(self.items.iter())
                     .to_string(),
             }),
-            Value::Text(_) => Err(Error::new_format(
-                "Text cannot be formatted with 'fix' formatter",
-            )),
-            Value::Number { .. } => Err(Error::new_format(
-                "Number cannot be formatted with 'fix' formatter",
-            )),
-            Value::Icon(_) => Err(Error::new_format(
-                "An icon cannot be formatted with 'fix' formatter",
-            )),
-            Value::Flag => Err(Error::new_format(
-                "A flag cannot be formatted with 'fix' formatter",
-            )),
+            other => Err(Error::new_format(format!(
+                "{} cannot be formatted with 'datetime' formatter",
+                other.type_name(),
+            ))),
         }
     }
 }
@@ -515,10 +473,10 @@ pub struct FlagFormatter;
 impl Formatter for FlagFormatter {
     fn format(&self, val: &Value) -> Result<String> {
         match val {
-            Value::Number { .. } | Value::Text(_) | Value::Icon(_) | Value::Datetime(..) => {
+            Value::Flag => Ok(String::new()),
+            _ => {
                 unreachable!()
             }
-            Value::Flag => Ok(String::new()),
         }
     }
 }

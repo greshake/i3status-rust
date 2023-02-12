@@ -19,6 +19,18 @@ pub enum ValueInner {
     Flag,
 }
 
+impl ValueInner {
+    pub fn type_name(&self) -> &'static str {
+        match self {
+            ValueInner::Text(..) => "Text",
+            ValueInner::Icon(..) => "Icon",
+            ValueInner::Number { .. } => "Number",
+            ValueInner::Datetime(..) => "Datetime",
+            ValueInner::Flag => "Flag",
+        }
+    }
+}
+
 pub trait IntoF64 {
     fn into_f64(self) -> f64;
 }
