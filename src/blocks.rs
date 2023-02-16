@@ -88,6 +88,7 @@ define_blocks!(
     memory,
     music,
     net,
+    nordvpn,
     notify,
     #[cfg(feature = "notmuch")]
     notmuch,
