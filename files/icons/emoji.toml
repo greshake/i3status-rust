@@ -1,0 +1,86 @@
+backlight = [
+    "🌕",
+    "🌔",
+    "🌓",
+    "🌒",
+    "🌑",
+]
+bat_charging = "🔌"
+bat = [
+    "🪫",
+    "🔋",
+]
+bat_not_available = "🪫"
+bell = "🔔"
+bell-slash = "🔕"
+bluetooth = "🔵🦷"
+calendar = "📅"
+cogs = "⚙️"
+cpu = "🤖"
+cpu_boost_off = "🐢"
+cpu_boost_on = "🐇"
+disk_drive = "💽"
+docker = "🚢"
+github = "🐙🐱"
+gpu = "🖥️"
+headphones = "🎧"
+joystick = "🎮"
+keyboard = "⌨️"
+mail = "📨"
+memory_mem = "💭"
+memory_swap = "💽"
+mouse = "🖱️"
+music = "🎵"
+music_next = "⏭️"
+music_pause = "⏸️"
+music_play = "▶️"
+music_prev = "⏮️"
+net_bridge = "🌉"
+net_cellular = "📶"
+net_down = "⬇️"
+net_loopback = "➰🔙"
+net_modem = "☎️"
+net_up = "⬆️"
+net_vpn = "🔒"
+net_wired = "🌐"
+net_wireless = "🛜"
+notification = "🔔"
+phone = "📱"
+phone_disconnected = "📵"
+ping = "🏓"
+pomodoro = "🍅"
+pomodoro_break = "☕"
+pomodoro_paused = "⏸️"
+pomodoro_started = "▶️"
+pomodoro_stopped = "⏹️"
+resolution = "🔳"
+tasks = "✅"
+tea = "☕"
+thermometer = "🌡️"
+time = "🕑"
+toggle_off = "🔴"
+toggle_on = "🟢"
+unknown = "❓"
+update = "⬆️"
+uptime = "🕑"
+volume = [
+    "🔈",
+    "🔉",
+    "🔊",
+]
+volume_muted = "🔇"
+microphone = "🎤🟢"
+microphone_muted = "🎤🔴"
+weather_clouds = "☁️"
+weather_clouds_night = "☁️"
+weather_default = "☁️"
+weather_fog = "🌁"
+weather_fog_night = "🌁"
+weather_moon = "🌜"
+weather_rain = "🌧️"
+weather_rain_night = "🌧️"
+weather_snow = "🌨️"
+weather_sun = "🌞"
+weather_thunder = "🌩️"
+weather_thunder_night = "🌩️"
+xrandr = "🖥️"
