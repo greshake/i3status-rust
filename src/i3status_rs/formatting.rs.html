@@ -172,6 +172,13 @@
 <a href="#172" id="172">172</a>
 <a href="#173" id="173">173</a>
 <a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
+<a href="#180" id="180">180</a>
+<a href="#181" id="181">181</a>
 </pre><pre class="rust"><code><span class="doccomment">//! # Formatting system
 //!
 //! Many blocks have a `format` configuration option, which allows to heavily customize the block&#39;s
@@ -232,6 +239,13 @@
 //! ## `pango-str` - Just display the text without pango markup escaping
 //!
 //! No arguments.
+//!
+//! ## `datetime` - Display datetime
+//!
+//! Argument               | Description                                                                                               |Default value
+//! -----------------------|-----------------------------------------------------------------------------------------------------------|-------------
+//! `format` or `f`        | [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. | `&#39;%a %d/%m %R&#39;`
+//! `locale` or `l`        | Locale to apply when formatting the time                                                                  | System locale
 //!
 //! # Handling missing placeholders and incorrect types
 //!

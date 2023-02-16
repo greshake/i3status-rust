@@ -80,50 +80,20 @@
 <a href="#80" id="80">80</a>
 <a href="#81" id="81">81</a>
 <a href="#82" id="82">82</a>
-<a href="#83" id="83">83</a>
-<a href="#84" id="84">84</a>
-<a href="#85" id="85">85</a>
-<a href="#86" id="86">86</a>
-<a href="#87" id="87">87</a>
-<a href="#88" id="88">88</a>
-<a href="#89" id="89">89</a>
-<a href="#90" id="90">90</a>
-<a href="#91" id="91">91</a>
-<a href="#92" id="92">92</a>
-<a href="#93" id="93">93</a>
-<a href="#94" id="94">94</a>
-<a href="#95" id="95">95</a>
-<a href="#96" id="96">96</a>
-<a href="#97" id="97">97</a>
-<a href="#98" id="98">98</a>
-<a href="#99" id="99">99</a>
-<a href="#100" id="100">100</a>
-<a href="#101" id="101">101</a>
-<a href="#102" id="102">102</a>
-<a href="#103" id="103">103</a>
-<a href="#104" id="104">104</a>
-<a href="#105" id="105">105</a>
-<a href="#106" id="106">106</a>
-<a href="#107" id="107">107</a>
-<a href="#108" id="108">108</a>
-<a href="#109" id="109">109</a>
-<a href="#110" id="110">110</a>
-<a href="#111" id="111">111</a>
-<a href="#112" id="112">112</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The current time.
 //!
 //! # Configuration
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | Format string. See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. | `&quot; $icon %a %d/%m %R &quot;`
+//! `format` | Format string. See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. | `&quot; $icon $timestamp.datetime() &quot;`
 //! `interval` | Update interval in seconds | `10`
 //! `timezone` | A timezone specifier (e.g. &quot;Europe/Lisbon&quot;) | Local timezone
-//! `locale` | Locale to apply when formatting the time | System locale
 //!
-//! Placeholder   | Value                                       | Type   | Unit
-//! --------------|---------------------------------------------|--------|-----
-//! `icon`        | A static icon                               | Icon   | -
+//! Placeholder   | Value                                       | Type     | Unit
+//! --------------|---------------------------------------------|----------|-----
+//! `icon`        | A static icon                               | Icon     | -
+//! `timestamp`   | The current time                            | Datetime | -
 //!
 //! # Example
 //!
@@ -131,47 +101,36 @@
 //! [[block]]
 //! block = &quot;time&quot;
 //! interval = 60
-//! locale = &quot;fr_BE&quot;
 //! [block.format]
-//! full = &quot; $icon %d/%m %R &quot;
-//! short = &quot; $icon %R &quot;
+//! full = &quot; $icon $timestamp.datetime(f:&#39;%a %Y-%m-%d %R %Z&#39;, l:fr_BE) &quot;
+//! short = &quot; $icon $timestamp.datetime(f:%R) &quot;
 //! ```
 //!
 //! # Icons Used
 //! - `time`
 
-</span><span class="kw">use </span>chrono::offset::{Local, Utc};
-<span class="kw">use </span>chrono::Locale;
+</span><span class="kw">use </span>chrono::Utc;
 <span class="kw">use </span>chrono_tz::Tz;
 
 <span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
-<span class="kw">use </span><span class="kw">crate</span>::formatting::config::DummyConfig;
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(default)]
 </span><span class="kw">pub struct </span>Config {
-    format: DummyConfig,
+    format: FormatConfig,
     <span class="attr">#[default(<span class="number">1</span>.into())]
     </span>interval: Seconds,
     timezone: <span class="prelude-ty">Option</span>&lt;Tz&gt;,
-    locale: <span class="prelude-ty">Option</span>&lt;String&gt;,
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new();
-
-    <span class="kw">let </span>format = config
-        .format
-        .full
-        .as_deref()
-        .unwrap_or(<span class="string">&quot; $icon %a %d/%m %R &quot;</span>);
-    <span class="kw">let </span>format_short = config.format.short.as_deref();
+    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(
+        config
+            .format
+            .with_default(<span class="string">&quot; $icon $timestamp.datetime() &quot;</span>)<span class="question-mark">?</span>,
+    );
 
     <span class="kw">let </span>timezone = config.timezone;
-    <span class="kw">let </span>locale = <span class="kw">match </span>config.locale.as_deref() {
-        <span class="prelude-val">Some</span>(locale) =&gt; <span class="prelude-val">Some</span>(locale.try_into().ok().error(<span class="string">&quot;invalid locale&quot;</span>)<span class="question-mark">?</span>),
-        <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
-    };
 
     <span class="kw">let </span><span class="kw-2">mut </span>timer = config.interval.timer();
 
@@ -182,13 +141,10 @@
             </span><span class="kw">unsafe </span>{ tzset() };
         }
 
-        <span class="kw">let </span>full_time = get_time(format, timezone, locale);
-        <span class="kw">let </span>short_time = format_short
-            .map(|f| get_time(f, timezone, locale))
-            .unwrap_or_else(|| <span class="string">&quot;&quot;</span>.into());
-
-        widget.set_format(FormatConfig::default().with_defaults(<span class="kw-2">&amp;</span>full_time, <span class="kw-2">&amp;</span>short_time)<span class="question-mark">?</span>);
-        widget.set_values(<span class="macro">map!</span>(<span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;time&quot;</span>)<span class="question-mark">?</span>)));
+        widget.set_values(<span class="macro">map!</span>(
+            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;time&quot;</span>)<span class="question-mark">?</span>),
+            <span class="string">&quot;timestamp&quot; </span>=&gt; Value::datetime(Utc::now(), timezone)
+        ));
 
         api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
@@ -196,22 +152,6 @@
             <span class="kw">_ </span>= timer.tick() =&gt; (),
             <span class="kw">_ </span>= api.wait_for_update_request() =&gt; (),
         }
-    }
-}
-
-<span class="kw">fn </span>get_time(format: <span class="kw-2">&amp;</span>str, timezone: <span class="prelude-ty">Option</span>&lt;Tz&gt;, locale: <span class="prelude-ty">Option</span>&lt;Locale&gt;) -&gt; String {
-    <span class="kw">match </span>locale {
-        <span class="prelude-val">Some</span>(locale) =&gt; <span class="kw">match </span>timezone {
-            <span class="prelude-val">Some</span>(tz) =&gt; Utc::now()
-                .with_timezone(<span class="kw-2">&amp;</span>tz)
-                .format_localized(format, locale)
-                .to_string(),
-            <span class="prelude-val">None </span>=&gt; Local::now().format_localized(format, locale).to_string(),
-        },
-        <span class="prelude-val">None </span>=&gt; <span class="kw">match </span>timezone {
-            <span class="prelude-val">Some</span>(tz) =&gt; Utc::now().with_timezone(<span class="kw-2">&amp;</span>tz).format(format).to_string(),
-            <span class="prelude-val">None </span>=&gt; Local::now().format(format).to_string(),
-        },
     }
 }
 

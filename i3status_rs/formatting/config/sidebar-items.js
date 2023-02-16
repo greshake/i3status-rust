@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["Config",""],["DummyConfig",""]]};
+window.SIDEBAR_ITEMS = {"struct":[["Config",""]]};
