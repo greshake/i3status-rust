@@ -350,9 +350,10 @@ impl Client {
     }
 
     fn send_update_event() {
-        for tx in &*EVENT_LISTENER.lock().unwrap() {
-            tx.blocking_send(()).unwrap();
-        }
+        EVENT_LISTENER
+            .lock()
+            .unwrap()
+            .retain(|tx| tx.blocking_send(()).is_ok());
     }
 }
 
