@@ -566,7 +566,7 @@
 
 <span class="attr">#[cfg(feature = <span class="string">&quot;pulseaudio&quot;</span>)]
 </span><span class="kw">impl </span>DeviceKind {
-    <span class="kw">pub fn </span>default_name(<span class="self">self</span>) -&gt; String {
+    <span class="kw">pub fn </span>default_name(<span class="self">self</span>) -&gt; Cow&lt;<span class="lifetime">&#39;static</span>, str&gt; {
         <span class="kw">match </span><span class="self">self </span>{
             <span class="self">Self</span>::Sink =&gt; pulseaudio::DEFAULT_SINK.lock().unwrap().clone(),
             <span class="self">Self</span>::Source =&gt; pulseaudio::DEFAULT_SOURCE.lock().unwrap().clone(),

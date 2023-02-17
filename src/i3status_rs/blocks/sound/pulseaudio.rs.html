@@ -480,6 +480,7 @@
 <a href="#480" id="480">480</a>
 <a href="#481" id="481">481</a>
 <a href="#482" id="482">482</a>
+<a href="#483" id="483">483</a>
 </pre><pre class="rust"><code><span class="kw">use </span>libpulse_binding::callbacks::ListResult;
 <span class="kw">use </span>libpulse_binding::context::{
     introspect::ServerInfo, introspect::SinkInfo, introspect::SourceInfo, subscribe::Facility,
@@ -501,14 +502,14 @@
 <span class="kw">use super</span>::{DeviceKind, SoundDevice};
 
 <span class="kw">static </span>CLIENT: Lazy&lt;<span class="prelude-ty">Result</span>&lt;Client&gt;&gt; = Lazy::new(Client::new);
-<span class="kw">static </span>EVENT_LISTENER: Lazy&lt;Mutex&lt;Vec&lt;tokio::sync::mpsc::Sender&lt;()&gt;&gt;&gt;&gt; = Lazy::new(default);
+<span class="kw">static </span>EVENT_LISTENER: Mutex&lt;Vec&lt;tokio::sync::mpsc::Sender&lt;()&gt;&gt;&gt; = Mutex::new(Vec::new());
 <span class="kw">static </span>DEVICES: Lazy&lt;Mutex&lt;HashMap&lt;(DeviceKind, String), VolInfo&gt;&gt;&gt; = Lazy::new(default);
 
 <span class="comment">// Default device names
-</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">static </span>DEFAULT_SOURCE: Lazy&lt;Mutex&lt;String&gt;&gt; =
-    Lazy::new(|| Mutex::new(<span class="string">&quot;@DEFAULT_SOURCE@&quot;</span>.into()));
-<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">static </span>DEFAULT_SINK: Lazy&lt;Mutex&lt;String&gt;&gt; =
-    Lazy::new(|| Mutex::new(<span class="string">&quot;@DEFAULT_SINK@&quot;</span>.into()));
+</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">static </span>DEFAULT_SOURCE: Mutex&lt;Cow&lt;<span class="lifetime">&#39;static</span>, str&gt;&gt; =
+    Mutex::new(Cow::Borrowed(<span class="string">&quot;@DEFAULT_SOURCE@&quot;</span>));
+<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">static </span>DEFAULT_SINK: Mutex&lt;Cow&lt;<span class="lifetime">&#39;static</span>, str&gt;&gt; =
+    Mutex::new(Cow::Borrowed(<span class="string">&quot;@DEFAULT_SINK@&quot;</span>));
 
 <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct </span>Device {
     name: <span class="prelude-ty">Option</span>&lt;String&gt;,
@@ -770,11 +771,11 @@
 
     <span class="kw">fn </span>server_info_callback(server_info: <span class="kw-2">&amp;</span>ServerInfo) {
         <span class="kw">if let </span><span class="prelude-val">Some</span>(default_sink) = server_info.default_sink_name.as_ref() {
-            <span class="kw-2">*</span>DEFAULT_SINK.lock().unwrap() = default_sink.to_string();
+            <span class="kw-2">*</span>DEFAULT_SINK.lock().unwrap() = default_sink.to_string().into();
         }
 
         <span class="kw">if let </span><span class="prelude-val">Some</span>(default_source) = server_info.default_source_name.as_ref() {
-            <span class="kw-2">*</span>DEFAULT_SOURCE.lock().unwrap() = default_source.to_string();
+            <span class="kw-2">*</span>DEFAULT_SOURCE.lock().unwrap() = default_source.to_string().into();
         }
 
         Client::send_update_event();
@@ -832,9 +833,10 @@
     }
 
     <span class="kw">fn </span>send_update_event() {
-        <span class="kw">for </span>tx <span class="kw">in </span><span class="kw-2">&amp;*</span>EVENT_LISTENER.lock().unwrap() {
-            tx.blocking_send(()).unwrap();
-        }
+        EVENT_LISTENER
+            .lock()
+            .unwrap()
+            .retain(|tx| tx.blocking_send(()).is_ok());
     }
 }
 
@@ -865,7 +867,7 @@
     <span class="kw">fn </span>name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String {
         <span class="self">self</span>.name
             .clone()
-            .unwrap_or_else(|| <span class="self">self</span>.device_kind.default_name())
+            .unwrap_or_else(|| <span class="self">self</span>.device_kind.default_name().into())
     }
 
     <span class="kw">fn </span>volume(<span class="kw-2">&amp;mut </span><span class="self">self</span>, volume: ChannelVolumes) {
