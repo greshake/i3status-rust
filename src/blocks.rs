@@ -274,6 +274,16 @@ impl CommonApi {
             .or_error(|| format!("Icon '{icon}' not found"))
     }
 
+    pub fn get_icon_in_progression_bound(
+        &self,
+        icon: &str,
+        value: f64,
+        low: f64,
+        high: f64,
+    ) -> Result<String> {
+        self.get_icon_in_progression(icon, (value.clamp(low, high) - low) / (high - low))
+    }
+
     /// Repeatedly call provided async function until it succeeds.
     ///
     /// This function will call `f` in a loop. If it succeeds, the result will be returned.
