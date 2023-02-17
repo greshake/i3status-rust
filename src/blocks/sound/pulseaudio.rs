@@ -19,14 +19,14 @@ use super::super::prelude::*;
 use super::{DeviceKind, SoundDevice};
 
 static CLIENT: Lazy<Result<Client>> = Lazy::new(Client::new);
-static EVENT_LISTENER: Lazy<Mutex<Vec<tokio::sync::mpsc::Sender<()>>>> = Lazy::new(default);
+static EVENT_LISTENER: Mutex<Vec<tokio::sync::mpsc::Sender<()>>> = Mutex::new(Vec::new());
 static DEVICES: Lazy<Mutex<HashMap<(DeviceKind, String), VolInfo>>> = Lazy::new(default);
 
 // Default device names
-pub(super) static DEFAULT_SOURCE: Lazy<Mutex<String>> =
-    Lazy::new(|| Mutex::new("@DEFAULT_SOURCE@".into()));
-pub(super) static DEFAULT_SINK: Lazy<Mutex<String>> =
-    Lazy::new(|| Mutex::new("@DEFAULT_SINK@".into()));
+pub(super) static DEFAULT_SOURCE: Mutex<Cow<'static, str>> =
+    Mutex::new(Cow::Borrowed("@DEFAULT_SOURCE@"));
+pub(super) static DEFAULT_SINK: Mutex<Cow<'static, str>> =
+    Mutex::new(Cow::Borrowed("@DEFAULT_SINK@"));
 
 pub(super) struct Device {
     name: Option<String>,
@@ -288,11 +288,11 @@ impl Client {
 
     fn server_info_callback(server_info: &ServerInfo) {
         if let Some(default_sink) = server_info.default_sink_name.as_ref() {
-            *DEFAULT_SINK.lock().unwrap() = default_sink.to_string();
+            *DEFAULT_SINK.lock().unwrap() = default_sink.to_string().into();
         }
 
         if let Some(default_source) = server_info.default_source_name.as_ref() {
-            *DEFAULT_SOURCE.lock().unwrap() = default_source.to_string();
+            *DEFAULT_SOURCE.lock().unwrap() = default_source.to_string().into();
         }
 
         Client::send_update_event();
@@ -384,7 +384,7 @@ impl Device {
     fn name(&self) -> String {
         self.name
             .clone()
-            .unwrap_or_else(|| self.device_kind.default_name())
+            .unwrap_or_else(|| self.device_kind.default_name().into())
     }
 
     fn volume(&mut self, volume: ChannelVolumes) {

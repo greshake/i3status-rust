@@ -271,7 +271,7 @@ enum DeviceKind {
 
 #[cfg(feature = "pulseaudio")]
 impl DeviceKind {
-    pub fn default_name(self) -> String {
+    pub fn default_name(self) -> Cow<'static, str> {
         match self {
             Self::Sink => pulseaudio::DEFAULT_SINK.lock().unwrap().clone(),
             Self::Source => pulseaudio::DEFAULT_SOURCE.lock().unwrap().clone(),
