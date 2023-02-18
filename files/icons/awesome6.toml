@@ -20,7 +20,6 @@ bell-slash = "\uf1f6"
 bluetooth = "\uf294"
 calendar = "\uf073"
 cogs = "\uf085"
-
 cpu = [ # fa-gauge-{min,max} are not free
     "\uf624", # fa-gauge
     "\uf624", # fa-gauge (2 times so that the gauge will go high at 66% which looks appropriate for the icon fa-gauge-high)
