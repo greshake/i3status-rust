@@ -72,14 +72,10 @@
 //!
 //! #  Icons Used
 //!
-//! - `microphone_muted`
-//! - `microphone_empty` (1 to 20%)
-//! - `microphone_half` (21 to 70%)
-//! - `microphone_full` (over 71%)
-//! - `volume_muted`
-//! - `volume_empty` (1 to 20%)
-//! - `volume_half` (21 to 70%)
-//! - `volume_full` (over 71%)
+//! - `microphone_muted` (as a progression)
+//! - `microphone` (as a progression)
+//! - `volume_muted` (as a progression)
+//! - `volume` (as a progression)
 //! - `headphones`
 
 mod alsa;
@@ -119,7 +115,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let device_kind = config.device_kind;
     let step_width = config.step_width.clamp(0, 50) as i32;
 
-    let icon = |volume: u32, device: &dyn SoundDevice| -> String {
+    let icon = |muted: bool, device: &dyn SoundDevice| -> &'static str {
         if config.headphones_indicator && device_kind == DeviceKind::Sink {
             let headphones = match device.form_factor() {
                 // form_factor's possible values are listed at:
@@ -136,23 +132,20 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                 _ => false,
             };
             if headphones {
-                return "headphones".into();
+                return "headphones";
             }
         }
-
-        format!(
-            "{}_{}",
+        if muted {
+            match device_kind {
+                DeviceKind::Source => "microphone_muted",
+                DeviceKind::Sink => "volume_muted",
+            }
+        } else {
             match device_kind {
                 DeviceKind::Source => "microphone",
                 DeviceKind::Sink => "volume",
-            },
-            match volume {
-                0 => "muted",
-                1..=20 => "empty",
-                21..=70 => "half",
-                _ => "full",
             }
-        )
+        }
     };
 
     type DeviceType = Box<dyn SoundDevice>;
@@ -189,6 +182,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     loop {
         device.get_info().await?;
         let volume = device.volume();
+        let muted = device.muted();
 
         let mut output_name = device.output_name();
         if let Some(m) = &config.mappings {
@@ -205,22 +199,15 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             "volume" => Value::percents(volume),
             "output_name" => Value::text(output_name),
             "output_description" => Value::text(output_description),
+            "icon" => Value::icon(api.get_icon_in_progression(icon(muted, &*device), volume as f64 / 100.0)?),
         };
 
-        if device.muted() {
-            values.insert(
-                "icon".into(),
-                Value::icon(api.get_icon(&icon(0, &*device))?),
-            );
+        if muted {
             widget.state = State::Warning;
             if !config.show_volume_when_muted {
                 values.remove("volume");
             }
         } else {
-            values.insert(
-                "icon".into(),
-                Value::icon(api.get_icon(&icon(volume, &*device))?),
-            );
             widget.state = State::Idle;
         }
 

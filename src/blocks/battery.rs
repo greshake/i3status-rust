@@ -56,25 +56,15 @@
 //! ```
 //!
 //! # Icons Used
-//! - `bat_charging`
+//! - `bat` (as a progression)
+//! - `bat_charging` (as a progression)
 //! - `bat_not_available`
-//! - `bat_10`
-//! - `bat_20`
-//! - `bat_30`
-//! - `bat_40`
-//! - `bat_50`
-//! - `bat_60`
-//! - `bat_70`
-//! - `bat_80`
-//! - `bat_90`
-//! - `bat_full`
 
 use regex::Regex;
 use std::convert::Infallible;
 use std::str::FromStr;
 
 use super::prelude::*;
-use crate::util::battery_level_icon;
 
 mod apc_ups;
 mod sysfs;
@@ -169,13 +159,18 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     )
                 });
 
-                let (icon, state) = match (info.status, info.capacity) {
-                    (BatteryStatus::Empty, _) => (battery_level_icon(0, false), State::Critical),
+                let (icon_name, icon_value, state) = match (info.status, info.capacity) {
+                    (BatteryStatus::Empty, _) => ("bat", 0.0, State::Critical),
                     (BatteryStatus::Full | BatteryStatus::NotCharging, _) => {
-                        (battery_level_icon(100, false), State::Idle)
+                        ("bat", 1.0, State::Idle)
                     }
                     (status, capacity) => (
-                        battery_level_icon(capacity as u8, status == BatteryStatus::Charging),
+                        if status == BatteryStatus::Charging {
+                            "bat_charging"
+                        } else {
+                            "bat"
+                        },
+                        capacity / 100.0,
                         if status == BatteryStatus::Charging {
                             State::Good
                         } else if capacity <= config.critical {
@@ -191,7 +186,11 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                         },
                     ),
                 };
-                values.insert("icon".into(), Value::icon(api.get_icon(icon)?));
+
+                values.insert(
+                    "icon".into(),
+                    Value::icon(api.get_icon_in_progression(icon_name, icon_value)?),
+                );
 
                 widget.set_values(values);
                 widget.state = state;

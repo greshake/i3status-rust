@@ -1,40 +1,26 @@
 # FontAwesome 6: https://fontawesome.com/v6/search?m=free
-backlight_empty = "\U0001f315"
-backlight_full = "\U0001f311"
-backlight_1 = "\U0001f314"
-backlight_2 = "\U0001f314"
-backlight_3 = "\U0001f314"
-backlight_4 = "\U0001f314"
-backlight_5 = "\U0001f313"
-backlight_6 = "\U0001f313"
-backlight_7 = "\U0001f313"
-backlight_8 = "\U0001f313"
-backlight_9 = "\U0001f313"
-backlight_10 = "\U0001f312"
-backlight_11 = "\U0001f312"
-backlight_12 = "\U0001f312"
-backlight_13 = "\U0001f312"
+backlight = [
+    "\U0001f315",
+    "\U0001f314",
+    "\U0001f313",
+    "\U0001f312",
+    "\U0001f311",
+]
 bat_charging = "\uf1e6"
-bat_discharging = "\uf242"
 bat_not_available = "\uf244"
-bat_10 = "\uf244"
-bat_20 = "\uf243"
-bat_30 = "\uf243"
-bat_40 = "\uf243"
-bat_50 = "\uf242"
-bat_60 = "\uf242"
-bat_70 = "\uf241"
-bat_80 = "\uf241"
-bat_90 = "\uf241"
-bat_full = "\uf240"
+bat = [
+    "\uf244",
+    "\uf243",
+    "\uf242",
+    "\uf241",
+    "\uf240",
+]
 bell = "\uf0f3"
 bell-slash = "\uf1f6"
 bluetooth = "\uf294"
 calendar = "\uf073"
 cogs = "\uf085"
-cpu_low = "\uf624" # fa-gauge (fa-gauge-{min,max} are not free)
-cpu_med = "\uf624" # fa-gauge
-cpu_high = "\uf624" # fa-gauge
+cpu = "\uf624" # fa-gauge (fa-gauge-{min,max} are not free)
 cpu_boost_on = "\uf205"
 cpu_boost_off = "\uf204"
 disk_drive = "\uf0a0"
@@ -80,13 +66,13 @@ toggle_on = "\uf205"
 unknown = "\uf128"
 update = "\uf062"
 uptime = "\uf2f2"
-volume_empty = "\uf026"
-volume_full = "\uf028"
-volume_half = "\uf027"
+volume = [
+    "\uf026",
+    "\uf027",
+    "\uf028",
+]
 volume_muted = "\uf6a9"
-microphone_full = "\uf3c9"
-microphone_half = "\uf3c9"
-microphone_empty = "\uf3c9"
+microphone = "\uf3c9"
 microphone_muted = "\uf539"
 weather_clouds = "\uf0c2"
 weather_default = "\uf0c2"        # Cloud symbol as default

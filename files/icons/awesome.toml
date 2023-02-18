@@ -1,40 +1,26 @@
 # FontAwesome 4: https://fontawesome.com/v4.7.0/cheatsheet/
-backlight_empty = "\U0001f315"
-backlight_full = "\U0001f311"
-backlight_1 = "\U0001f314"
-backlight_2 = "\U0001f314"
-backlight_3 = "\U0001f314"
-backlight_4 = "\U0001f314"
-backlight_5 = "\U0001f313"
-backlight_6 = "\U0001f313"
-backlight_7 = "\U0001f313"
-backlight_8 = "\U0001f313"
-backlight_9 = "\U0001f313"
-backlight_10 = "\U0001f312"
-backlight_11 = "\U0001f312"
-backlight_12 = "\U0001f312"
-backlight_13 = "\U0001f312"
+backlight = [
+    "\U0001f315",
+    "\U0001f314",
+    "\U0001f313",
+    "\U0001f312",
+    "\U0001f311",
+]
 bat_charging = "\uf1e6" # fa-plug
-bat_discharging = "\uf242" # fa-battery-half
-bat_10 = "\uf244" # fa-battery-empty
-bat_20 = "\uf243" # fa-battery-quarter
-bat_30 = "\uf243" # fa-battery-quarter
-bat_40 = "\uf243" # fa-battery-quarter
-bat_50 = "\uf242" # fa-battery-half
-bat_60 = "\uf242" # fa-battery-half
-bat_70 = "\uf241" # fa-battery-three-quarters
-bat_80 = "\uf241" # fa-battery-three-quarters
-bat_90 = "\uf241" # fa-battery-three-quarters
-bat_full = "\uf240" # fa-battery-full
+bat = [
+    "\uf244", # fa-battery-empty
+    "\uf243", # fa-battery-quarter
+    "\uf242", # fa-battery-half
+    "\uf241", # fa-battery-three-quarters
+    "\uf240", # fa-battery-full
+]
 bat_not_available = "\uf244" # fa-battery-empty
 bell = "\uf0f3" # fa-bell
 bell-slash = "\uf1f7" # fa-bell-slash-o
 bluetooth = "\uf294" # fa-bluetooth-b
 calendar = "\uf073" # fa-calendar
 cogs = "\uf085" # fa-cogs
-cpu_low = "\uf0e4" # fa-dashboard
-cpu_med = "\uf0e4" # fa-dashboard
-cpu_high = "\uf0e4" # fa-dashboard
+cpu = "\uf0e4" # fa-dashboard
 cpu_boost_off = "\uf204" # fa-toggle-off
 cpu_boost_on = "\uf205" # fa-toggle-on
 disk_drive = "\uf0a0" # fa-hdd-o
@@ -80,13 +66,13 @@ toggle_on = "\uf205" # fa-toggle-on
 unknown = "\uf128" # fa-question
 update = "\uf062" # fa-arrow-up
 uptime = "\uf017" # fa-clock-o
-volume_empty = "\uf026" # fa-volume-off
-volume_full = "\uf028" # fa-volume-up
-volume_half = "\uf027" # fa-volume-down
+volume = [
+    "\uf026", # fa-volume-off
+    "\uf027", # fa-volume-down
+    "\uf028", # fa-volume-up
+]
 volume_muted = "\uf026 \uf00d"
-microphone_empty = "\uf130" # fa-microphone
-microphone_full = "\uf130" # fa-microphone
-microphone_half = "\uf130" # fa-microphone
+microphone = "\uf130" # fa-microphone
 microphone_muted = "\uf131" # fa-microphone-slash
 weather_clouds = "\uf0c2" # fa-cloud
 weather_default = "\uf0c2" # fa-cloud

@@ -4,42 +4,47 @@
 # Note: aviod using icons in the range 0xf500-0xfd46,
 # as they will cause the block to render backwards
 # until https://github.com/ryanoasis/nerd-fonts/issues/365 is fixed
-backlight_empty = "\ue38d" # nf-weather-moon_new
-backlight_full = "\ue39b" # nf-weather-moon_full
-backlight_1 = "\ue3d4" # nf-weather-moon_alt_waxing_gibbous_6
-backlight_2 = "\ue3d3" # nf-weather-moon_alt_waxing_gibbous_5
-backlight_3 = "\ue3d2" # nf-weather-moon_alt_waxing_gibbous_4
-backlight_4 = "\ue3d1" # nf-weather-moon_alt_waxing_gibbous_3
-backlight_5 = "\ue3d0" # nf-weather-moon_alt_waxing_gibbous_2
-backlight_6 = "\ue3cf" # nf-weather-moon_alt_waxing_gibbous_1
-backlight_7 = "\ue3ce" # nf-weather-moon_alt_first_quarter
-backlight_8 = "\ue3cd" # nf-weather-moon_alt_waxing_crescent_6
-backlight_9 = "\ue3cc" # nf-weather-moon_alt_waxing_crescent_5
-backlight_10 = "\ue3cb" # nf-weather-moon_alt_waxing_crescent_4
-backlight_11 = "\ue3ca" # nf-weather-moon_alt_waxing_crescent_3
-backlight_12 = "\ue3c9" # nf-weather-moon_alt_waxing_crescent_2
-backlight_13 = "\ue3c8" # nf-weather-moon_alt_waxing_crescent_1
+backlight = [
+    "\ue38d", # nf-weather-moon_new
+    "\ue3d4", # nf-weather-moon_alt_waxing_gibbous_6
+    "\ue3d3", # nf-weather-moon_alt_waxing_gibbous_5
+    "\ue3d2", # nf-weather-moon_alt_waxing_gibbous_4
+    "\ue3d1", # nf-weather-moon_alt_waxing_gibbous_3
+    "\ue3d0", # nf-weather-moon_alt_waxing_gibbous_2
+    "\ue3cf", # nf-weather-moon_alt_waxing_gibbous_1
+    "\ue3ce", # nf-weather-moon_alt_first_quarter
+    "\ue3cd", # nf-weather-moon_alt_waxing_crescent_6
+    "\ue3cc", # nf-weather-moon_alt_waxing_crescent_5
+    "\ue3cb", # nf-weather-moon_alt_waxing_crescent_4
+    "\ue3ca", # nf-weather-moon_alt_waxing_crescent_3
+    "\ue3c9", # nf-weather-moon_alt_waxing_crescent_2
+    "\ue3c8", # nf-weather-moon_alt_waxing_crescent_1
+    "\ue39b", # nf-weather-moon_full
+]
 bat_charging = "\uf583" # nf-mdi-battery_charging
-bat_discharging = "\uf57d" # nf-mdi-battery_50
 bat_not_available = "\uf590" # nf-mdi-battery_unknown
-bat_10 = "\uf579" # nf-mdi-battery_10
-bat_20 = "\uf57a"# nf-mdi-battery_20
-bat_30 = "\uf57b"# nf-mdi-battery_30
-bat_40 = "\uf57c"# nf-mdi-battery_40
-bat_50 = "\uf57d" # nf-mdi-battery_50
-bat_60 = "\uf57e" # nf-mdi-battery_60
-bat_70 = "\uf57f" # nf-mdi-battery_70
-bat_80 = "\uf580" # nf-mdi-battery_80
-bat_90 = "\uf581" # nf-mdi-battery_90
-bat_full = "\uf578" # nf-mdi-battery
+bat = [
+    "\uf579", # nf-mdi-battery_10
+    "\uf57a", # nf-mdi-battery_20
+    "\uf57b", # nf-mdi-battery_30
+    "\uf57c", # nf-mdi-battery_40
+    "\uf57d", # nf-mdi-battery_50
+    "\uf57e", # nf-mdi-battery_60
+    "\uf57f", # nf-mdi-battery_70
+    "\uf580", # nf-mdi-battery_80
+    "\uf581", # nf-mdi-battery_90
+    "\uf578", # nf-mdi-battery
+]
 bell = "\uf599" # nf-mdi-bell
 bell-slash = "\uf59a" # nf-mdi-bell_off
 bluetooth = "\uf5ae" # nf-mdi-bluetooth
 calendar = "\uf5ec" # nf-mdi-calendar
 cogs = "\uf992" # nf-mdi-settings
-cpu_low = "\U000F0F86" # nf-md-speedometer_slow
-cpu_med = "\U000F0F85" # nf-md-speedometer_medium
-cpu_high = "\U000F04C5" # nf-md-speedometer
+cpu = [
+	"\U000F0F86", # nf-md-speedometer_slow
+	"\U000F0F85", # nf-md-speedometer_medium
+	"\U000F04C5", # nf-md-speedometer
+]
 cpu_boost_on = "\ufa20"
 cpu_boost_off = "\ufa21"
 disk_drive = "\uf7c9" # nf-mdi-harddisk
@@ -85,14 +90,18 @@ toggle_on = "\ufa20" # nf-mdi-toggle_switch
 unknown = "\uf685" # nf-mdi-comment_question_outline | TODO: Make default?
 update = "\uf8d4" # nf-mdi-package_up
 uptime = "\uf652" # nf-mdi-clock_in
-volume_empty = "\ufa7e" # nf-mdi-volume_low
-volume_full = "\ufa7d" # nf-mdi-volume_high
-volume_half = "\ufa7f" # nf-mdi-volume_medium
 volume_muted = "\uf466" # nf-mdi-volume_mute
-microphone_full = "\uf86b" # nf-mdi-microphone
-microphone_half = "\uf86b" # nf-mdi-microphone
-microphone_empty = "\uf86d" # nf-mdi-microphone_outline
+volume = [
+    "\ufa7e", # nf-mdi-volume_low
+    "\ufa7f", # nf-mdi-volume_medium
+    "\ufa7d", # nf-mdi-volume_high
+]
 microphone_muted = "\uf86c" # nf-mdi-microphone_off
+microphone = [
+	"\uf86d", # nf-mdi-microphone_outline
+    "\uf86b", # nf-mdi-microphone
+    "\uf86b", # nf-mdi-microphone
+]
 weather_clouds = "\ufa8f" # nf-mdi-weather_cloudy
 weather_default = "\ufa8f" # Cloud symbol as default
 weather_rain = "\ufa95" # nf-mdi-weather_pouring
