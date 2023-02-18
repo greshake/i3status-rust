@@ -66,7 +66,7 @@
 //!
 //! Action        | Default button
 //! --------------|---------------
-//! `toggle_mute` | Rigth
+//! `toggle_mute` | Right
 //! `volume_up`   | Wheel Up
 //! `volume_down` | Wheel Down
 //!
