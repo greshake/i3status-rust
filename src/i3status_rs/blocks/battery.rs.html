@@ -284,7 +284,6 @@
 <a href="#284" id="284">284</a>
 <a href="#285" id="285">285</a>
 <a href="#286" id="286">286</a>
-<a href="#287" id="287">287</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Information about the internal power supply
 //!
 //! This block can display the current battery state (Full, Charging or Discharging), percentage
@@ -343,25 +342,15 @@
 //! ```
 //!
 //! # Icons Used
-//! - `bat_charging`
+//! - `bat` (as a progression)
+//! - `bat_charging` (as a progression)
 //! - `bat_not_available`
-//! - `bat_10`
-//! - `bat_20`
-//! - `bat_30`
-//! - `bat_40`
-//! - `bat_50`
-//! - `bat_60`
-//! - `bat_70`
-//! - `bat_80`
-//! - `bat_90`
-//! - `bat_full`
 
 </span><span class="kw">use </span>regex::Regex;
 <span class="kw">use </span>std::convert::Infallible;
 <span class="kw">use </span>std::str::FromStr;
 
 <span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
-<span class="kw">use </span><span class="kw">crate</span>::util::battery_level_icon;
 
 <span class="kw">mod </span>apc_ups;
 <span class="kw">mod </span>sysfs;
@@ -456,13 +445,18 @@
                     )
                 });
 
-                <span class="kw">let </span>(icon, state) = <span class="kw">match </span>(info.status, info.capacity) {
-                    (BatteryStatus::Empty, <span class="kw">_</span>) =&gt; (battery_level_icon(<span class="number">0</span>, <span class="bool-val">false</span>), State::Critical),
+                <span class="kw">let </span>(icon_name, icon_value, state) = <span class="kw">match </span>(info.status, info.capacity) {
+                    (BatteryStatus::Empty, <span class="kw">_</span>) =&gt; (<span class="string">&quot;bat&quot;</span>, <span class="number">0.0</span>, State::Critical),
                     (BatteryStatus::Full | BatteryStatus::NotCharging, <span class="kw">_</span>) =&gt; {
-                        (battery_level_icon(<span class="number">100</span>, <span class="bool-val">false</span>), State::Idle)
+                        (<span class="string">&quot;bat&quot;</span>, <span class="number">1.0</span>, State::Idle)
                     }
                     (status, capacity) =&gt; (
-                        battery_level_icon(capacity <span class="kw">as </span>u8, status == BatteryStatus::Charging),
+                        <span class="kw">if </span>status == BatteryStatus::Charging {
+                            <span class="string">&quot;bat_charging&quot;
+                        </span>} <span class="kw">else </span>{
+                            <span class="string">&quot;bat&quot;
+                        </span>},
+                        capacity / <span class="number">100.0</span>,
                         <span class="kw">if </span>status == BatteryStatus::Charging {
                             State::Good
                         } <span class="kw">else if </span>capacity &lt;= config.critical {
@@ -478,7 +472,11 @@
                         },
                     ),
                 };
-                values.insert(<span class="string">&quot;icon&quot;</span>.into(), Value::icon(api.get_icon(icon)<span class="question-mark">?</span>));
+
+                values.insert(
+                    <span class="string">&quot;icon&quot;</span>.into(),
+                    Value::icon(api.get_icon_in_progression(icon_name, icon_value)<span class="question-mark">?</span>),
+                );
 
                 widget.set_values(values);
                 widget.state = state;

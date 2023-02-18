@@ -306,7 +306,7 @@
                 }
                 Token::Icon { name } =&gt; {
                     <span class="kw">let </span>icon = config
-                        .get_icon(name)
+                        .get_icon(name, <span class="prelude-val">None</span>)
                         .or_format_error(|| <span class="macro">format!</span>(<span class="string">&quot;Icon &#39;{name}&#39; not found&quot;</span>))<span class="question-mark">?</span>;
                     <span class="kw">if </span>cur.metadata.is_default() {
                         cur.text.push_str(<span class="kw-2">&amp;</span>icon);

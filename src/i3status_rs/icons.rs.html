@@ -143,8 +143,6 @@
 <a href="#143" id="143">143</a>
 <a href="#144" id="144">144</a>
 <a href="#145" id="145">145</a>
-<a href="#146" id="146">146</a>
-<a href="#147" id="147">147</a>
 </pre><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::errors::<span class="kw-2">*</span>;
 <span class="kw">use </span><span class="kw">crate</span>::util;
 <span class="kw">use </span>serde::Deserialize;
@@ -152,36 +150,27 @@
 
 <span class="attr">#[derive(Deserialize, Debug, Clone)]
 #[serde(try_from = <span class="string">&quot;IconsConfigRaw&quot;</span>)]
-</span><span class="kw">pub struct </span>Icons(<span class="kw">pub </span>HashMap&lt;String, String&gt;);
+</span><span class="kw">pub struct </span>Icons(<span class="kw">pub </span>HashMap&lt;String, Icon&gt;);
+
+<span class="attr">#[derive(Deserialize, Debug, Clone)]
+#[serde(untagged)]
+</span><span class="kw">pub enum </span>Icon {
+    Single(String),
+    Progression(Vec&lt;String&gt;),
+}
+
+<span class="kw">impl </span>From&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt; <span class="kw">for </span>Icon {
+    <span class="kw">fn </span>from(value: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str) -&gt; <span class="self">Self </span>{
+        <span class="self">Self</span>::Single(value.into())
+    }
+}
 
 <span class="kw">impl </span>Default <span class="kw">for </span>Icons {
     <span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
         <span class="comment">// &quot;none&quot; icon set
         </span><span class="self">Self</span>(<span class="macro">map! </span>{
-            <span class="string">&quot;backlight_empty&quot; </span>=&gt; <span class="string">&quot;BRIGHT&quot;</span>,
-            <span class="string">&quot;backlight_full&quot; </span>=&gt; <span class="string">&quot;BRIGHT&quot;</span>,
-            <span class="string">&quot;backlight_1&quot; </span>=&gt;  <span class="string">&quot;BRIGHT&quot;</span>,
-            <span class="string">&quot;backlight_2&quot; </span>=&gt;  <span class="string">&quot;BRIGHT&quot;</span>,
-            <span class="string">&quot;backlight_3&quot; </span>=&gt;  <span class="string">&quot;BRIGHT&quot;</span>,
-            <span class="string">&quot;backlight_4&quot; </span>=&gt;  <span class="string">&quot;BRIGHT&quot;</span>,
-            <span class="string">&quot;backlight_5&quot; </span>=&gt;  <span class="string">&quot;BRIGHT&quot;</span>,
-            <span class="string">&quot;backlight_6&quot; </span>=&gt;  <span class="string">&quot;BRIGHT&quot;</span>,
-            <span class="string">&quot;backlight_7&quot; </span>=&gt;  <span class="string">&quot;BRIGHT&quot;</span>,
-            <span class="string">&quot;backlight_8&quot; </span>=&gt;  <span class="string">&quot;BRIGHT&quot;</span>,
-            <span class="string">&quot;backlight_9&quot; </span>=&gt;  <span class="string">&quot;BRIGHT&quot;</span>,
-            <span class="string">&quot;backlight_10&quot; </span>=&gt; <span class="string">&quot;BRIGHT&quot;</span>,
-            <span class="string">&quot;backlight_11&quot; </span>=&gt; <span class="string">&quot;BRIGHT&quot;</span>,
-            <span class="string">&quot;backlight_12&quot; </span>=&gt; <span class="string">&quot;BRIGHT&quot;</span>,
-            <span class="string">&quot;backlight_13&quot; </span>=&gt; <span class="string">&quot;BRIGHT&quot;</span>,
-            <span class="string">&quot;bat_10&quot; </span>=&gt; <span class="string">&quot;BAT&quot;</span>,
-            <span class="string">&quot;bat_20&quot; </span>=&gt; <span class="string">&quot;BAT&quot;</span>,
-            <span class="string">&quot;bat_30&quot; </span>=&gt; <span class="string">&quot;BAT&quot;</span>,
-            <span class="string">&quot;bat_40&quot; </span>=&gt; <span class="string">&quot;BAT&quot;</span>,
-            <span class="string">&quot;bat_50&quot; </span>=&gt; <span class="string">&quot;BAT&quot;</span>,
-            <span class="string">&quot;bat_60&quot; </span>=&gt; <span class="string">&quot;BAT&quot;</span>,
-            <span class="string">&quot;bat_70&quot; </span>=&gt; <span class="string">&quot;BAT&quot;</span>,
-            <span class="string">&quot;bat_80&quot; </span>=&gt; <span class="string">&quot;BAT&quot;</span>,
-            <span class="string">&quot;bat_90&quot; </span>=&gt; <span class="string">&quot;BAT&quot;</span>,
+            <span class="string">&quot;backlight&quot; </span>=&gt; <span class="string">&quot;BRIGHT&quot;</span>,
+            <span class="string">&quot;bat&quot; </span>=&gt; <span class="string">&quot;BAT&quot;</span>,
             <span class="string">&quot;bat_charging&quot; </span>=&gt; <span class="string">&quot;CHG&quot;</span>,
             <span class="string">&quot;bat_discharging&quot; </span>=&gt; <span class="string">&quot;DCG&quot;</span>,
             <span class="string">&quot;bat_empty&quot; </span>=&gt; <span class="string">&quot;EMP&quot;</span>,
@@ -230,6 +219,7 @@
             <span class="string">&quot;pomodoro_stopped&quot; </span>=&gt; <span class="string">&quot;STOPPED&quot;</span>,
             <span class="string">&quot;resolution&quot; </span>=&gt; <span class="string">&quot;RES&quot;</span>,
             <span class="string">&quot;tasks&quot; </span>=&gt; <span class="string">&quot;TSK&quot;</span>,
+            <span class="string">&quot;tea&quot; </span>=&gt; <span class="string">&quot;TEA&quot;</span>,
             <span class="string">&quot;thermometer&quot; </span>=&gt; <span class="string">&quot;TEMP&quot;</span>,
             <span class="string">&quot;time&quot; </span>=&gt; <span class="string">&quot;TIME&quot;</span>,
             <span class="string">&quot;toggle_off&quot; </span>=&gt; <span class="string">&quot;OFF&quot;</span>,
@@ -237,14 +227,8 @@
             <span class="string">&quot;unknown&quot; </span>=&gt; <span class="string">&quot;??&quot;</span>,
             <span class="string">&quot;update&quot; </span>=&gt; <span class="string">&quot;UPD&quot;</span>,
             <span class="string">&quot;uptime&quot; </span>=&gt; <span class="string">&quot;UP&quot;</span>,
-            <span class="string">&quot;volume_empty&quot; </span>=&gt; <span class="string">&quot;VOL&quot;</span>,
-            <span class="string">&quot;volume_full&quot; </span>=&gt; <span class="string">&quot;VOL&quot;</span>,
-            <span class="string">&quot;volume_half&quot; </span>=&gt; <span class="string">&quot;VOL&quot;</span>,
-            <span class="string">&quot;volume_muted&quot; </span>=&gt; <span class="string">&quot;VOL MUTED&quot;</span>,
-            <span class="string">&quot;microphone_empty&quot; </span>=&gt; <span class="string">&quot;MIC &quot;</span>,
-            <span class="string">&quot;microphone_full&quot; </span>=&gt; <span class="string">&quot;MIC&quot;</span>,
-            <span class="string">&quot;microphone_half&quot; </span>=&gt; <span class="string">&quot;MIC&quot;</span>,
-            <span class="string">&quot;microphone_muted&quot; </span>=&gt; <span class="string">&quot;MIC MUTED&quot;</span>,
+            <span class="string">&quot;volume&quot; </span>=&gt; <span class="string">&quot;VOL&quot;</span>,
+            <span class="string">&quot;microphone&quot; </span>=&gt; <span class="string">&quot;MIC&quot;</span>,
             <span class="string">&quot;weather_clouds&quot; </span>=&gt; <span class="string">&quot;CLOUDY&quot;</span>,
             <span class="string">&quot;weather_default&quot; </span>=&gt; <span class="string">&quot;WEATHER&quot;</span>,
             <span class="string">&quot;weather_rain&quot; </span>=&gt; <span class="string">&quot;RAIN&quot;</span>,
@@ -267,8 +251,20 @@
         }
     }
 
-    <span class="kw">pub fn </span>apply_overrides(<span class="kw-2">&amp;mut </span><span class="self">self</span>, overrides: HashMap&lt;String, String&gt;) {
+    <span class="kw">pub fn </span>apply_overrides(<span class="kw-2">&amp;mut </span><span class="self">self</span>, overrides: HashMap&lt;String, Icon&gt;) {
         <span class="self">self</span>.<span class="number">0</span>.extend(overrides);
+    }
+
+    <span class="kw">pub fn </span>get(<span class="kw-2">&amp;</span><span class="self">self</span>, icon: <span class="kw-2">&amp;</span><span class="lifetime">&#39;_ </span>str, value: <span class="prelude-ty">Option</span>&lt;f64&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt; {
+        <span class="kw">match </span>(<span class="self">self</span>.<span class="number">0</span>.get(icon)<span class="question-mark">?</span>, value) {
+            (Icon::Single(icon), <span class="kw">_</span>) =&gt; <span class="prelude-val">Some</span>(icon),
+            (Icon::Progression(prog), <span class="kw">_</span>) <span class="kw">if </span>prog.is_empty() =&gt; <span class="prelude-val">None</span>,
+            (Icon::Progression(prog), <span class="prelude-val">None</span>) =&gt; <span class="prelude-val">Some</span>(prog.last().unwrap()),
+            (Icon::Progression(prog), <span class="prelude-val">Some</span>(value)) =&gt; {
+                <span class="kw">let </span>index = ((value * prog.len() <span class="kw">as </span>f64) <span class="kw">as </span>usize).clamp(<span class="number">0</span>, prog.len() - <span class="number">1</span>);
+                <span class="prelude-val">Some</span>(prog[index].as_str())
+            }
+        }
     }
 }
 
@@ -276,7 +272,7 @@
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">struct </span>IconsConfigRaw {
     icons: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    overrides: <span class="prelude-ty">Option</span>&lt;HashMap&lt;String, String&gt;&gt;,
+    overrides: <span class="prelude-ty">Option</span>&lt;HashMap&lt;String, Icon&gt;&gt;,
 }
 
 <span class="kw">impl </span>TryFrom&lt;IconsConfigRaw&gt; <span class="kw">for </span>Icons {

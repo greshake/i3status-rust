@@ -280,19 +280,6 @@
 <a href="#280" id="280">280</a>
 <a href="#281" id="281">281</a>
 <a href="#282" id="282">282</a>
-<a href="#283" id="283">283</a>
-<a href="#284" id="284">284</a>
-<a href="#285" id="285">285</a>
-<a href="#286" id="286">286</a>
-<a href="#287" id="287">287</a>
-<a href="#288" id="288">288</a>
-<a href="#289" id="289">289</a>
-<a href="#290" id="290">290</a>
-<a href="#291" id="291">291</a>
-<a href="#292" id="292">292</a>
-<a href="#293" id="293">293</a>
-<a href="#294" id="294">294</a>
-<a href="#295" id="295">295</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Volume level
 //!
 //! This block displays the volume level (according to PulseAudio or ALSA). Right click to toggle mute, scroll to adjust volume.
@@ -367,14 +354,10 @@
 //!
 //! #  Icons Used
 //!
-//! - `microphone_muted`
-//! - `microphone_empty` (1 to 20%)
-//! - `microphone_half` (21 to 70%)
-//! - `microphone_full` (over 71%)
-//! - `volume_muted`
-//! - `volume_empty` (1 to 20%)
-//! - `volume_half` (21 to 70%)
-//! - `volume_full` (over 71%)
+//! - `microphone_muted` (as a progression)
+//! - `microphone` (as a progression)
+//! - `volume_muted` (as a progression)
+//! - `volume` (as a progression)
 //! - `headphones`
 
 </span><span class="kw">mod </span>alsa;
@@ -414,7 +397,7 @@
     <span class="kw">let </span>device_kind = config.device_kind;
     <span class="kw">let </span>step_width = config.step_width.clamp(<span class="number">0</span>, <span class="number">50</span>) <span class="kw">as </span>i32;
 
-    <span class="kw">let </span>icon = |volume: u32, device: <span class="kw-2">&amp;</span><span class="kw">dyn </span>SoundDevice| -&gt; String {
+    <span class="kw">let </span>icon = |muted: bool, device: <span class="kw-2">&amp;</span><span class="kw">dyn </span>SoundDevice| -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str {
         <span class="kw">if </span>config.headphones_indicator &amp;&amp; device_kind == DeviceKind::Sink {
             <span class="kw">let </span>headphones = <span class="kw">match </span>device.form_factor() {
                 <span class="comment">// form_factor&#39;s possible values are listed at:
@@ -431,23 +414,20 @@
                 </span><span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
             };
             <span class="kw">if </span>headphones {
-                <span class="kw">return </span><span class="string">&quot;headphones&quot;</span>.into();
+                <span class="kw">return </span><span class="string">&quot;headphones&quot;</span>;
             }
         }
-
-        <span class="macro">format!</span>(
-            <span class="string">&quot;{}_{}&quot;</span>,
+        <span class="kw">if </span>muted {
+            <span class="kw">match </span>device_kind {
+                DeviceKind::Source =&gt; <span class="string">&quot;microphone_muted&quot;</span>,
+                DeviceKind::Sink =&gt; <span class="string">&quot;volume_muted&quot;</span>,
+            }
+        } <span class="kw">else </span>{
             <span class="kw">match </span>device_kind {
                 DeviceKind::Source =&gt; <span class="string">&quot;microphone&quot;</span>,
                 DeviceKind::Sink =&gt; <span class="string">&quot;volume&quot;</span>,
-            },
-            <span class="kw">match </span>volume {
-                <span class="number">0 </span>=&gt; <span class="string">&quot;muted&quot;</span>,
-                <span class="number">1</span>..=<span class="number">20 </span>=&gt; <span class="string">&quot;empty&quot;</span>,
-                <span class="number">21</span>..=<span class="number">70 </span>=&gt; <span class="string">&quot;half&quot;</span>,
-                <span class="kw">_ </span>=&gt; <span class="string">&quot;full&quot;</span>,
             }
-        )
+        }
     };
 
     <span class="kw">type </span>DeviceType = Box&lt;<span class="kw">dyn </span>SoundDevice&gt;;
@@ -484,6 +464,7 @@
     <span class="kw">loop </span>{
         device.get_info().<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">let </span>volume = device.volume();
+        <span class="kw">let </span>muted = device.muted();
 
         <span class="kw">let </span><span class="kw-2">mut </span>output_name = device.output_name();
         <span class="kw">if let </span><span class="prelude-val">Some</span>(m) = <span class="kw-2">&amp;</span>config.mappings {
@@ -500,22 +481,15 @@
             <span class="string">&quot;volume&quot; </span>=&gt; Value::percents(volume),
             <span class="string">&quot;output_name&quot; </span>=&gt; Value::text(output_name),
             <span class="string">&quot;output_description&quot; </span>=&gt; Value::text(output_description),
+            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon_in_progression(icon(muted, <span class="kw-2">&amp;*</span>device), volume <span class="kw">as </span>f64 / <span class="number">100.0</span>)<span class="question-mark">?</span>),
         };
 
-        <span class="kw">if </span>device.muted() {
-            values.insert(
-                <span class="string">&quot;icon&quot;</span>.into(),
-                Value::icon(api.get_icon(<span class="kw-2">&amp;</span>icon(<span class="number">0</span>, <span class="kw-2">&amp;*</span>device))<span class="question-mark">?</span>),
-            );
+        <span class="kw">if </span>muted {
             widget.state = State::Warning;
             <span class="kw">if </span>!config.show_volume_when_muted {
                 values.remove(<span class="string">&quot;volume&quot;</span>);
             }
         } <span class="kw">else </span>{
-            values.insert(
-                <span class="string">&quot;icon&quot;</span>.into(),
-                Value::icon(api.get_icon(<span class="kw-2">&amp;</span>icon(volume, <span class="kw-2">&amp;*</span>device))<span class="question-mark">?</span>),
-            );
             widget.state = State::Idle;
         }
 
