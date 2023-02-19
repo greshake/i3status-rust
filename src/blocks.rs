@@ -66,6 +66,7 @@ macro_rules! define_blocks {
 }
 
 define_blocks!(
+    amd_gpu,
     apt,
     backlight,
     battery,
