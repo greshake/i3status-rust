@@ -1,5 +1,6 @@
+use tokio::try_join;
 use zbus::fdo::{PropertiesChangedStream, PropertiesProxy};
-use zbus::{zvariant, Connection, MatchRule, MessageStream};
+use zbus::{zvariant, Connection};
 use zvariant::{ObjectPath, Structure, Value};
 
 use super::{BatteryDevice, BatteryInfo, BatteryStatus, DeviceName};
@@ -14,7 +15,7 @@ struct DeviceConnection {
 
 impl DeviceConnection {
     async fn new(dbus_conn: &Connection, device: &DeviceName) -> Result<Option<Self>> {
-        let device_connection_info = if device.exact() == Some("DisplayDevice") {
+        let device_conn_info = if device.exact() == Some("DisplayDevice") {
             let path: ObjectPath = "/org/freedesktop/UPower/devices/DisplayDevice"
                 .try_into()
                 .unwrap();
@@ -59,7 +60,7 @@ impl DeviceConnection {
             res
         };
 
-        Ok(match device_connection_info {
+        Ok(match device_conn_info {
             Some((device_path, device_proxy)) => {
                 let changes = PropertiesProxy::builder(dbus_conn)
                     .destination("org.freedesktop.UPower")
@@ -86,48 +87,30 @@ pub(super) struct Device {
     dbus_conn: Connection,
     device: DeviceName,
     device_conn: Option<DeviceConnection>,
-    device_added_stream: MessageStream,
-    device_removed_stream: MessageStream,
+    device_added_stream: DeviceAddedStream<'static>,
+    device_removed_stream: DeviceRemovedStream<'static>,
 }
 
 impl Device {
     pub(super) async fn new(device: DeviceName) -> Result<Self> {
         let dbus_conn = new_system_dbus_connection().await?;
 
-        let device_connection = DeviceConnection::new(&dbus_conn, &device).await?;
+        let device_conn = DeviceConnection::new(&dbus_conn, &device).await?;
 
-        let device_added_stream = MessageStream::for_match_rule(
-            MatchRule::builder()
-                .msg_type(zbus::MessageType::Signal)
-                .interface("org.freedesktop.UPower")
-                .and_then(|x| x.path("/org/freedesktop/UPower"))
-                .and_then(|x| x.member("DeviceAdded"))
-                .unwrap()
-                .build(),
-            &dbus_conn,
-            None,
-        )
-        .await
-        .error("Failed to add match rule")?;
+        let upower_proxy = UPowerProxy::new(&dbus_conn)
+            .await
+            .error("Could not create UPowerProxy")?;
 
-        let device_removed_stream = MessageStream::for_match_rule(
-            MatchRule::builder()
-                .msg_type(zbus::MessageType::Signal)
-                .interface("org.freedesktop.UPower")
-                .and_then(|x| x.path("/org/freedesktop/UPower"))
-                .and_then(|x| x.member("DeviceRemoved"))
-                .unwrap()
-                .build(),
-            &dbus_conn,
-            None,
-        )
-        .await
-        .error("Failed to add match rule")?;
+        let (device_added_stream, device_removed_stream) = try_join! {
+            upower_proxy.receive_device_added(),
+            upower_proxy.receive_device_removed()
+        }
+        .error("Could not create signal stream")?;
 
         Ok(Self {
             dbus_conn,
             device,
-            device_conn: device_connection,
+            device_conn,
             device_added_stream,
             device_removed_stream,
         })
@@ -139,71 +122,53 @@ impl BatteryDevice for Device {
     async fn get_info(&mut self) -> Result<Option<BatteryInfo>> {
         match &self.device_conn {
             None => Ok(None),
-            Some(device_connection) => {
-                let capacity = device_connection
-                    .device_proxy
-                    .percentage()
-                    .await
-                    .error("Failed to get capacity")?;
+            Some(device_conn) => {
+                match try_join! {
+                    device_conn.device_proxy.percentage(),
+                    device_conn.device_proxy.energy_rate(),
+                    device_conn.device_proxy.state(),
+                    device_conn.device_proxy.time_to_full(),
+                    device_conn.device_proxy.time_to_empty(),
+                } {
+                    Err(_) => Ok(None),
+                    Ok((capacity, power, state, time_to_full, time_to_empty)) => {
+                        let status = match state {
+                            1 => BatteryStatus::Charging,
+                            2 | 6 => BatteryStatus::Discharging,
+                            3 => BatteryStatus::Empty,
+                            4 => BatteryStatus::Full,
+                            5 => BatteryStatus::NotCharging,
+                            _ => BatteryStatus::Unknown,
+                        };
 
-                let power = device_connection
-                    .device_proxy
-                    .energy_rate()
-                    .await
-                    .error("Failed to get power")?;
+                        let time_remaining = match status {
+                            BatteryStatus::Charging => Some(time_to_full as f64),
+                            BatteryStatus::Discharging => Some(time_to_empty as f64),
+                            _ => None,
+                        };
 
-                let status = match device_connection
-                    .device_proxy
-                    .state()
-                    .await
-                    .error("Failed to get status")?
-                {
-                    1 => BatteryStatus::Charging,
-                    2 | 6 => BatteryStatus::Discharging,
-                    3 => BatteryStatus::Empty,
-                    4 => BatteryStatus::Full,
-                    5 => BatteryStatus::NotCharging,
-                    _ => BatteryStatus::Unknown,
-                };
-
-                let time_remaining = match status {
-                    BatteryStatus::Charging => Some(
-                        device_connection
-                            .device_proxy
-                            .time_to_full()
-                            .await
-                            .error("Failed to get time to full")? as f64,
-                    ),
-                    BatteryStatus::Discharging => Some(
-                        device_connection
-                            .device_proxy
-                            .time_to_empty()
-                            .await
-                            .error("Failed to get time to empty")? as f64,
-                    ),
-                    _ => None,
-                };
-
-                Ok(Some(BatteryInfo {
-                    status,
-                    capacity,
-                    power: Some(power),
-                    time_remaining,
-                }))
+                        Ok(Some(BatteryInfo {
+                            status,
+                            capacity,
+                            power: Some(power),
+                            time_remaining,
+                        }))
+                    }
+                }
             }
         }
     }
 
     async fn wait_for_change(&mut self) -> Result<()> {
         match &mut self.device_conn {
-            Some(device_connection) => {
+            Some(device_conn) => {
                 select! {
-                    _ = device_connection.changes.next() => {},
-                    Some(msg)= self.device_removed_stream.next() => {
-                         let msg =  msg.unwrap();
+                    _ = device_conn.changes.next() => {},
+                    _ = self.device_added_stream.next() => {},
+                    Some(msg) = self.device_removed_stream.next() => {
                         let body:  Structure = msg.body().unwrap();
                         let fields = body.fields();
-                        if fields[0]==Value::ObjectPath(device_connection.device_path.clone()){
+                        if fields[0]==Value::ObjectPath(device_conn.device_path.clone()){
                             self.device_conn = None;
                         }
 
@@ -211,17 +176,15 @@ impl BatteryDevice for Device {
                 }
             }
             None => {
-                if let Some(msg) = self.device_added_stream.next().await {
-                    let msg = msg.unwrap();
-                    let body: Structure = msg.body().unwrap();
-                    let fields = body.fields();
-                    if let Some(device_connection) =
-                        DeviceConnection::new(&self.dbus_conn, &self.device).await?
-                    {
-                        if fields[0] == Value::ObjectPath(device_connection.device_path.clone()) {
-                            self.device_conn = Some(device_connection);
+                select! {
+                    _ = self.device_removed_stream.next() => {},
+                    _ = self.device_added_stream.next() => {
+                        if let Some(device_conn) =
+                            DeviceConnection::new(&self.dbus_conn, &self.device).await?
+                        {
+                            self.device_conn = Some(device_conn);
                         }
-                    }
+                    },
                 }
             }
         }
