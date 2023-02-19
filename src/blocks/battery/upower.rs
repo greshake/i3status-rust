@@ -1,14 +1,18 @@
 use zbus::fdo::{PropertiesChangedStream, PropertiesProxy};
-use zbus::zvariant;
-use zvariant::ObjectPath;
+use zbus::{zvariant, MatchRule, MessageStream};
+use zvariant::{ObjectPath, Structure, Value};
 
 use super::{BatteryDevice, BatteryInfo, BatteryStatus, DeviceName};
 use crate::blocks::prelude::*;
 use crate::util::new_system_dbus_connection;
 
 pub(super) struct Device {
+    device_path: ObjectPath<'static>,
     device_proxy: DeviceProxy<'static>,
     changes: PropertiesChangedStream<'static>,
+    device_added_stream: MessageStream,
+    device_removed_stream: MessageStream,
+    missing: bool,
 }
 
 impl Device {
@@ -66,7 +70,7 @@ impl Device {
 
         let changes = PropertiesProxy::builder(&dbus_conn)
             .destination("org.freedesktop.UPower")
-            .and_then(|x| x.path(device_path))
+            .and_then(|x| x.path(device_path.clone()))
             .unwrap()
             .build()
             .await
@@ -75,9 +79,41 @@ impl Device {
             .await
             .error("Failed to create PropertiesChangedStream")?;
 
+        let device_added_stream = MessageStream::for_match_rule(
+            MatchRule::builder()
+                .msg_type(zbus::MessageType::Signal)
+                .interface("org.freedesktop.UPower")
+                .and_then(|x| x.path("/org/freedesktop/UPower"))
+                .and_then(|x| x.member("DeviceAdded"))
+                .unwrap()
+                .build(),
+            &dbus_conn,
+            None,
+        )
+        .await
+        .error("Failed to add match rule")?;
+
+        let device_removed_stream = MessageStream::for_match_rule(
+            MatchRule::builder()
+                .msg_type(zbus::MessageType::Signal)
+                .interface("org.freedesktop.UPower")
+                .and_then(|x| x.path("/org/freedesktop/UPower"))
+                .and_then(|x| x.member("DeviceRemoved"))
+                .unwrap()
+                .build(),
+            &dbus_conn,
+            None,
+        )
+        .await
+        .error("Failed to add match rule")?;
+
         Ok(Self {
+            device_path,
             device_proxy,
             changes,
+            device_added_stream,
+            device_removed_stream,
+            missing: false,
         })
     }
 }
@@ -85,6 +121,9 @@ impl Device {
 #[async_trait]
 impl BatteryDevice for Device {
     async fn get_info(&mut self) -> Result<Option<BatteryInfo>> {
+        if self.missing {
+            return Ok(None);
+        }
         let capacity = self
             .device_proxy
             .percentage()
@@ -136,7 +175,25 @@ impl BatteryDevice for Device {
     }
 
     async fn wait_for_change(&mut self) -> Result<()> {
-        self.changes.next().await;
+        select! {
+            _ = self.changes.next() => {},
+            Some(msg) = self.device_added_stream.next() => {
+                let msg =  msg.unwrap();
+                let body:  Structure = msg.body().unwrap();
+                let fields = body.fields();
+                if fields[0]==Value::ObjectPath(self.device_path.clone()){
+                    self.missing = false;
+                }
+            },
+            Some(msg)= self.device_removed_stream.next() => {
+                 let msg =  msg.unwrap();
+                let body:  Structure = msg.body().unwrap();
+                let fields = body.fields();
+                if fields[0]==Value::ObjectPath(self.device_path.clone()){
+                    self.missing = true;
+                }
+            },
+        }
         Ok(())
     }
 }
