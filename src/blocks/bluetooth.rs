@@ -41,7 +41,7 @@
 //! ```
 //!
 //! # Icons Used
-//! - `headphones` for bluetooth devices identifying as "audio-card" or "audio-headset"
+//! - `headphones` for bluetooth devices identifying as "audio-card", "audio-headset" or "audio-headphones"
 //! - `joystick` for bluetooth devices identifying as "input-gaming"
 //! - `keyboard` for bluetooth devices identifying as "input-keyboard"
 //! - `mouse` for bluetooth devices identifying as "input-mouse"
@@ -269,7 +269,7 @@ impl DeviceMonitor {
         Some(DeviceInfo {
             connected,
             icon: match icon.as_str() {
-                "audio-card" | "audio-headset" => "headphones",
+                "audio-card" | "audio-headset" | "audio-headphones" => "headphones",
                 "input-gaming" => "joystick",
                 "input-keyboard" => "keyboard",
                 "input-mouse" => "mouse",
