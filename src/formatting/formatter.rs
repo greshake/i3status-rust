@@ -70,6 +70,10 @@ pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
                     "max_width" | "max_w" => {
                         max_width = arg.val.parse().error("Width must be a positive integer")?;
                     }
+                    "width" | "w" => {
+                        min_width = arg.val.parse().error("Width must be a positive integer")?;
+                        max_width = min_width;
+                    }
                     "rot_interval" => {
                         rot_interval = Some(
                             arg.val
