@@ -440,7 +440,7 @@
 //! ```
 //!
 //! # Icons Used
-//! - `headphones` for bluetooth devices identifying as &quot;audio-card&quot; or &quot;audio-headset&quot;
+//! - `headphones` for bluetooth devices identifying as &quot;audio-card&quot;, &quot;audio-headset&quot; or &quot;audio-headphones&quot;
 //! - `joystick` for bluetooth devices identifying as &quot;input-gaming&quot;
 //! - `keyboard` for bluetooth devices identifying as &quot;input-keyboard&quot;
 //! - `mouse` for bluetooth devices identifying as &quot;input-mouse&quot;
@@ -668,7 +668,7 @@
         <span class="prelude-val">Some</span>(DeviceInfo {
             connected,
             icon: <span class="kw">match </span>icon.as_str() {
-                <span class="string">&quot;audio-card&quot; </span>| <span class="string">&quot;audio-headset&quot; </span>=&gt; <span class="string">&quot;headphones&quot;</span>,
+                <span class="string">&quot;audio-card&quot; </span>| <span class="string">&quot;audio-headset&quot; </span>| <span class="string">&quot;audio-headphones&quot; </span>=&gt; <span class="string">&quot;headphones&quot;</span>,
                 <span class="string">&quot;input-gaming&quot; </span>=&gt; <span class="string">&quot;joystick&quot;</span>,
                 <span class="string">&quot;input-keyboard&quot; </span>=&gt; <span class="string">&quot;keyboard&quot;</span>,
                 <span class="string">&quot;input-mouse&quot; </span>=&gt; <span class="string">&quot;mouse&quot;</span>,
