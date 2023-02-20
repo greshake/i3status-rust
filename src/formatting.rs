@@ -38,7 +38,6 @@
 //! Note: width just changes the values of both min_width and max_width to be the same. Use width
 //! if you want the values to be the same, or the other two otherwise. Don't mix width with
 //! min_width or max_width.
-/
 //!
 //! ## `eng` - Format numbers using engineering notation
 //!
