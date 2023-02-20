@@ -380,7 +380,7 @@
         <span class="kw">match </span><span class="self">self</span>.block {
             <span class="prelude-val">Some</span>(block) =&gt; {
                 <span class="kw">match </span><span class="self">self</span>.kind {
-                    ErrorKind::Config | ErrorKind::Format =&gt; f.write_str(<span class="string">&quot;Configuration errror&quot;</span>)<span class="question-mark">?</span>,
+                    ErrorKind::Config | ErrorKind::Format =&gt; f.write_str(<span class="string">&quot;Configuration error&quot;</span>)<span class="question-mark">?</span>,
                     ErrorKind::Other =&gt; f.write_str(<span class="string">&quot;Error&quot;</span>)<span class="question-mark">?</span>,
                 }
 
