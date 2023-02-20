@@ -71,6 +71,14 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         Driver::WlrToplevelManagement => Box::new(WlrToplevelManagement::new().await?),
     };
 
+                    widget.set_values(map! {
+                        "title" => Value::text("".to_string()),
+                        "marks" => Value::text("".to_string()),
+                        "visible_marks" => Value::text("".to_string())
+                    });
+
+    api.set_widget(&widget).await?;
+
     loop {
         select! {
             _ = api.event() => (),
