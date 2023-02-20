@@ -95,6 +95,7 @@ define_blocks!(
     pacman,
     pomodoro,
     rofication,
+    service_status,
     sound,
     speedtest,
     keyboard_layout,
