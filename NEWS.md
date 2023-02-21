@@ -1,3 +1,9 @@
+# i3status-rust 0.30.1
+
+### Bug Fixes and Improvements
+
+* Fix build on 32-bit systems.
+
 # i3status-rust 0.30.0
 
 This is a major release in which the core has been rewritten to be asynchronous, and the formatting system has also been overhauled.
