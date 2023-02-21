@@ -26,7 +26,6 @@ https://raw.githubusercontent.com/greshake/i3status-rust/v0.30.0/examples/config
   block = "cpu"
   format = " $icon $utilization "
 
-
 - Top-level `theme` and `icons` config options have been removed. For example,
   ```toml
   theme = "solarized-dark"
@@ -53,7 +52,23 @@ https://raw.githubusercontent.com/greshake/i3status-rust/v0.30.0/examples/config
   [icons]
   icons = "/path/to/my/custom_iconset.toml"
   ```
+- Font Awesome v4 must now be specified via `awesome4`, and `awesome` has been removed.
 
+- Icons `backlight_{empty,full,1,2,...,13}`, `bat_{10,20,...,90,full}`, `cpu_{low,med,high}`, `volume_{empty,half,full}`, `microphone_{empty,half,full}` have been removed as singular icons, and instead implemented as an array. If you used to override any of these icons, override `backlight`, `cpu`, `volume` and `microphone` instead. These icons now accept a list of values, for example 
+```toml
+cpu_low = "\U000F0F86" # nf-md-speedometer_slow
+cpu_med = "\U000F0F85" # nf-md-speedometer_medium
+cpu_high = "\U000F04C5" # nf-md-speedometer
+```
+becomes
+
+```toml
+cpu = [
+	"\U000F0F86", # nf-md-speedometer_slow
+	"\U000F0F85", # nf-md-speedometer_medium
+	"\U000F04C5", # nf-md-speedometer
+]
+```
 
 - `scrolling` option has been renamed to `invert_scrolling` and now accepts `true` or `false`.
 
