@@ -88,8 +88,10 @@ This is a major release which rewrites the core code to be asynchronous.
   ```
 - `networkmanager` block has been removed (could be revisited in the future), so `net` block should be used instead.
   Note there is no equivalent to `interface_name_exclude` in `net` as it only shows one interface at a time.
-  Example of a `networkmanager` config ported to `net`:
-  v0.22:
+  
+  Example of a `networkmanager` config ported to `net`:  
+  
+  v0.22:  
   ```toml
   [[block]]
   block = "networkmanager"
