@@ -98,6 +98,7 @@ battery | requires device name from `/sys/class/power_supply` even when using UP
 battery | `hide_missing` option is replaced with `missing_format`. You can set `missing_format = ""` to maintain the behavior
 battery | `hide_full` option is removed. You can set `full_format = ""` to maintain the behavior
 bluetooth | `hide_disconnected` option is replaced with `disconnected_format`. You can set `disconnected_format = ""` to hide the block
+keyboard_layout | `xkbswitch` driver is removed pending re-implementation (see #1512)
 kdeconnect | now only supports kdeconnect v20.11.80 and newer (December 2020 and newer)
 custom_dbus | `name` has been renamed to `path` and the DBus object is now at `rs.i3status`/`rs.i3status.custom` rather than `i3.status.rs`
 focused_window | `autohide` is removed. You can format to `" $title.str(w:21) \| Missing "` to display the block when title is missing
@@ -105,6 +106,7 @@ focused_window | `max_width` has been removed, and can instead be implemented vi
 memory | `clickable`, `display_type`, `format_mem` and `format_swap` are removed and now you can use `format` and `format_alt` to maintain the behavior
 music | `smart_trim` has been removed
 net |`hide_missing` and `hide_inactive` are removed. You can set `missing_format = ""`
+net | formatting for `graph_down` and `graph_up` is not yet implemented (see #1555)
 notmuch | `name` option is removed and now you can use `format` to set it
 temperature | `collapsed` option is removed and now you can use `format_alt = " $icon "` to maintain the behavior
 time | `locale` option is removed and now you can use `format` to set it, e.g. `format = " $icon $timestamp.datetime(f:'%d/%m %R', l:fr_BE) "`
@@ -154,11 +156,15 @@ toggle | `text` option is removed and now you can use `format` to set it
 - When blocks error they no longer take down the entire bar. Instead, they now enter error mode: "X" will be shown and on left click the full error message will be shown in the bar.
 - `apt` block has new `ignore_phased_updates` option. (#1717)
 - `battery` now supports `empty_threshold` to specify below which percentage the battery is considered empty, and `empty_format` to use a custom format when the battery is empty.
+- `battery` now supports `not_charging_format` config option. (#1685)
 - `custom_dbus` block can now be used more than once in your config.
 - `custom` block has new config option `persistent` which runs a command in the background and updates the block text for each received output line.
 - `focused_window` block now supports most wlroots-based compositors.
 - `music` block now supports controlling and displaying the volume for individual players (#1722)
 - `music` block now has `interface_name_exclude` and improved `playerctld` support (#1710)
+- `net` block now supports regex for `device` (#1601)
+- `notify` block now has support for SwayNotificationCenter via `driver = "swaync"` (#1662)
+- `weather` block now supports using met.no as an info source (#1577)
 - More blocks now support `format` option (custom, custom_dbus, hueshift, maildir, notmuch, pomodoro, time, uptime)
 - Some blocks now have debug logs which can be enabled like so: `RUST_LOG=block=debug i3status-rs` where "block" is the block name.
 
