@@ -27,6 +27,8 @@ https://raw.githubusercontent.com/greshake/i3status-rust/v0.30.0/examples/config
   [[block]]
   block = "cpu"
   format = " $icon $utilization "
+  
+- Icons can now be referenced by name within `format` strings, e.g. `format = " Hello ^icon_ping "` will use the icon `ping` from the icon set that is currently in use.
 
 - Top-level `theme` and `icons` config options have been removed. For example,
   ```toml
