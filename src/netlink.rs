@@ -157,8 +157,10 @@ impl WifiInfo {
                 .clamp(0., 100.)
         }
 
-        let mut socket =
-            neli_wifi::AsyncSocket::connect().error("Failed to open nl80211 socket")?;
+        // Ignore connection error because `nl80211` might not be enabled on the system.
+        let Ok(mut socket) = neli_wifi::AsyncSocket::connect()
+        else { return Ok(None) };
+
         let interfaces = socket
             .get_interfaces_info()
             .await
