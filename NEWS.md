@@ -157,6 +157,7 @@ toggle | `text` option is removed and now you can use `format` to set it
 - `focused_window` block now supports most wlroots-based compositors.
 - `battery` now supports `empty_threshold` to specify below which percentage the battery is considered empty, and `empty_format` to use a custom format when the battery is empty.
 - More blocks now support `format` option (custom, custom_dbus, hueshift, maildir, notmuch, pomodoro, time, uptime)
+- Some blocks now have debug logs which can be enabled like so: `RUST_LOG=block=debug i3status-rs` where "block" is the block name.
 
 ### Dependencies that are no longer required
 
