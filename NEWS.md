@@ -5,8 +5,10 @@ This is a major release in which the core had been rewritten to be asynchronous,
 Block documentation was moved from `docs/blocks.md` to: https://greshake.github.io/i3status-rust/i3status_rs/blocks/index.html
 Formatter documentation is available here: https://greshake.github.io/i3status-rust/i3status_rs/formatting/index.html
 
-Breaking changes are listed below, however you may also want to compare the example config between v0.22 and v0.30 to get a general idea of changes made to the configuration file:
+Breaking changes are listed below, however you may also want to compare the example config between v0.22 and v0.30 to get a general idea of changes made to the configuration format:
+
 https://raw.githubusercontent.com/greshake/i3status-rust/v0.22.0/examples/config.toml
+
 https://raw.githubusercontent.com/greshake/i3status-rust/v0.30.0/examples/config.toml
 
 ### General / top-level breaking changes
@@ -54,21 +56,21 @@ https://raw.githubusercontent.com/greshake/i3status-rust/v0.30.0/examples/config
   ```
 - Font Awesome v4 must now be specified via `awesome4`, and `awesome` has been removed.
 
-- Icons `backlight_{empty,full,1,2,...,13}`, `bat_{10,20,...,90,full}`, `cpu_{low,med,high}`, `volume_{empty,half,full}`, `microphone_{empty,half,full}` have been removed as singular icons, and instead implemented as an array. If you used to override any of these icons, override `backlight`, `cpu`, `volume` and `microphone` instead. These icons now accept a list of values, for example 
-```toml
-cpu_low = "\U000F0F86" # nf-md-speedometer_slow
-cpu_med = "\U000F0F85" # nf-md-speedometer_medium
-cpu_high = "\U000F04C5" # nf-md-speedometer
-```
-becomes
+- Icons `backlight_{empty,full,1,2,...,13}`, `bat_{10,20,...,90,full}`, `cpu_{low,med,high}`, `volume_{empty,half,full}`, `microphone_{empty,half,full}` have been removed as singular icons, and instead implemented as an array. If you used to override any of these icons, override `backlight`, `cpu`, `volume` and `microphone` instead. For example,
+	```toml
+	cpu_low = "\U000F0F86" # nf-md-speedometer_slow
+	cpu_med = "\U000F0F85" # nf-md-speedometer_medium
+	cpu_high = "\U000F04C5" # nf-md-speedometer
+	```
+	becomes
 
-```toml
-cpu = [
-	"\U000F0F86", # nf-md-speedometer_slow
-	"\U000F0F85", # nf-md-speedometer_medium
-	"\U000F04C5", # nf-md-speedometer
-]
-```
+	```toml
+	cpu = [
+		"\U000F0F86", # nf-md-speedometer_slow
+		"\U000F0F85", # nf-md-speedometer_medium
+		"\U000F04C5", # nf-md-speedometer
+	]
+	```
 
 - `scrolling` option has been renamed to `invert_scrolling` and now accepts `true` or `false`.
 
@@ -104,10 +106,10 @@ focused_window | `max_width` has been removed, and can instead be implemented vi
 memory | `clickable`, `display_type`, `format_mem` and `format_swap` are removed and now you can use `format` and `format_alt` to maintain the behavior | -
 music | `smart_trim` has been removed | -
 net |`hide_missing` and `hide_inactive` are removed. You can set `missing_format = ""` | -
-notmuch | `name` option is removed and now you can use `format` to set the name | -
-pomodoro | interactive configuration ?? | -
+notmuch | `name` option is removed and now you can use `format` to set it | -
 temperature | `collapsed` option is removed and now you can use `format_alt = " $icon "` to maintain the behavior | -
-toggle | `text` option is removed and now you can use `format` to set the text | -
+time | `locale` option is removed and now you can use `format` to set it | ```format = " $icon $timestamp.datetime(f:'%d/%m %R', l:fr_BE) "```
+toggle | `text` option is removed and now you can use `format` to set it | -
 
 ### Removed blocks
 
