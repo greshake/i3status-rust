@@ -158,6 +158,7 @@ toggle | `text` option is removed and now you can use `format` to set it
 - `custom` block has new config option `persistent` which runs a command in the background and updates the block text for each received output line.
 - `focused_window` block now supports most wlroots-based compositors.
 - `music` block now supports controlling and displaying the volume for individual players
+- `music` block now has `interface_name_exclude` and improved `playerctld` support
 - More blocks now support `format` option (custom, custom_dbus, hueshift, maildir, notmuch, pomodoro, time, uptime)
 - Some blocks now have debug logs which can be enabled like so: `RUST_LOG=block=debug i3status-rs` where "block" is the block name.
 
