@@ -52,8 +52,6 @@ New:
   #TODO
   ```
 - `kdeconnect` block only supports kdeconnect v20.11.80 and newer (December 2020 and newer)
-- `battery` now defaults `full_threshold` to `95` as often batteries never fully charge
-- `battery` requires device name from `/sys/class/power_supply` even when using UPower driver (previously it used the name from the output of `upower --enumerate`
 - `custom_dbus`: `name` has been renamed to `path` and the DBus object is now at `rs.i3status`/`rs.i3status.custom` rather than `i3.status.rs`
 - `focused_window` block config option `max_width` has been removed, and can instead be implemented via the new formatter, e.g. `max_width = 15; format = "{title}"` would now just be `format = "$title.str(15)"`
 - `music` block config option `smart_trim` has been removed
@@ -100,7 +98,11 @@ New:
   block = "cpu"
   format = " $icon $utilization "
   ```
+  
+  
 
+- `battery` now defaults `full_threshold` to `95` as often batteries never fully charge
+- `battery` requires device name from `/sys/class/power_supply` even when using UPower driver (previously it used the name from the output of `upower --enumerate`
 - **battery**: `hide_missing` option is replaced with `missing_format`. You can set `missing_format = ""` to maintain the behavior
 - **battery**: `hide_full` option is removed. You can set `full_format = ""` to maintain the behavior
 - **bluetooth**: hide_disconnected option is replaced with `disconnected_format`. You can set `disconnected_format = ""` to hide the block
