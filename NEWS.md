@@ -97,7 +97,7 @@ battery | `full_threshold` now defaults to `95` as often batteries never fully c
 battery | requires device name from `/sys/class/power_supply` even when using UPower driver (previously it used the name from the output of `upower --enumerate`) | -
 battery | `hide_missing` option is replaced with `missing_format`. You can set `missing_format = ""` to maintain the behavior | -
 battery | `hide_full` option is removed. You can set `full_format = ""` to maintain the behavior | - 
-bluetooth | hide_disconnected option is replaced with `disconnected_format`. You can set `disconnected_format = ""` to hide the block | -
+bluetooth | `hide_disconnected` option is replaced with `disconnected_format`. You can set `disconnected_format = ""` to hide the block | -
 kdeconnect | now only supports kdeconnect v20.11.80 and newer (December 2020 and newer) | -
 custom_dbus | `name` has been renamed to `path` and the DBus object is now at `rs.i3status`/`rs.i3status.custom` rather than `i3.status.rs` | - 
 focused_window | `autohide` is removed. You can format to `" $title.str(w:21) \| Missing "` to display the block when title is missing | -
