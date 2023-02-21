@@ -13,22 +13,8 @@ https://raw.githubusercontent.com/greshake/i3status-rust/v0.30.0/examples/config
 
 - Placeholders in `format` strings are now denoted by a dollar sign rather than enclosed in brackets. For example, `format = "{percentage}"` would now be `format = "$percentage"`.
 
-- Top-level `theme` and `icons` config options have been removed. For example,
-  ```toml
-  theme = "solarized-dark"
-  icons = "awesome"
-  ```
-  needs to be changed to:
-  ```toml
-  [theme]
-  theme = "solarized-dark"
-  [icons]
-  icons = "awesome"
-  ```
-- `theme` and `icons`: `name` and `file` options have been merged into `theme`/`icons`. See above for an example.
-
-- Major icons and whitespace change. Icons are now part of `format` option as a placeholder in blocks where format is customizable.
-  If you've modified `format` and would like to keep the same behaviour (icon, whitespace) you need to update the value. For example,
+- Icons are now part of the `format` string option as a placeholder in blocks where format is customisable.
+  If you have modified `format` and would like to keep the same behaviour (icon, whitespace) you need to update the value. For example,
   ```toml
   [[block]]
   block = "cpu"
@@ -39,6 +25,35 @@ https://raw.githubusercontent.com/greshake/i3status-rust/v0.30.0/examples/config
   [[block]]
   block = "cpu"
   format = " $icon $utilization "
+
+
+- Top-level `theme` and `icons` config options have been removed. For example,
+  ```toml
+  theme = "solarized-dark"
+  icons = "awesome5"
+  ```
+  needs to be changed to:
+  ```toml
+  [theme]
+  theme = "solarized-dark"
+  [icons]
+  icons = "awesome5"
+  ```
+  Additionally, the `name` and `file` options have been merged into `theme`/`icons`. For example,
+  ```toml
+  [theme]
+  name = "awesome5"
+  [icons]
+  file = "/path/to/my/custom_iconset.toml"
+  ```
+  needs to be changed to:
+  ```toml
+  [theme]
+  theme = "awesome5"
+  [icons]
+  icons = "/path/to/my/custom_iconset.toml"
+  ```
+
 
 - `scrolling` option has been renamed to `invert_scrolling` and now accepts `true` or `false`.
 
