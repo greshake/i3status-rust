@@ -161,6 +161,10 @@
 <a href="#161" id="161">161</a>
 <a href="#162" id="162">162</a>
 <a href="#163" id="163">163</a>
+<a href="#164" id="164">164</a>
+<a href="#165" id="165">165</a>
+<a href="#166" id="166">166</a>
+<a href="#167" id="167">167</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The number of tasks from the taskwarrior list
 //!
 //! Clicking the right mouse button on the icon cycles the view of the block through the user&#39;s filters.
@@ -172,9 +176,10 @@
 //! `interval` | Update interval in seconds | `600` (10min)
 //! `warning_threshold` | The threshold of pending (or started) tasks when the block turns into a warning state | `10`
 //! `critical_threshold` | The threshold of pending (or started) tasks when the block turns into a critical state | `20`
-//! `hide_when_zero` | Whethere to hide the block when the number of tasks is zero | `false`
 //! `filters` | A list of tables with the keys `name` and `filter`. `filter` specifies the criteria that must be met for a task to be counted towards this filter. | ```[{name = &quot;pending&quot;, filter = &quot;-COMPLETED -DELETED&quot;}]```
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $done\|$count.eng(w:1) &quot;`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $count.eng(w:1) &quot;`
+//! `format_singular` | Same as `format` but for when exactly one task is pending. | `&quot; $icon $count.eng(w:1) &quot;`
+//! `format_everything_done` | Same as `format` but for when all tasks are completed. | `&quot; $icon $count.eng(w:1) &quot;`
 //! `data_location`| Directory in which taskwarrior stores its data files. Supports path expansions e.g. `~`. | `&quot;~/.task&quot;`
 //!
 //! Placeholder   | Value                                       | Type   | Unit
@@ -182,8 +187,6 @@
 //! `icon`        | A static icon                               | Icon   | -
 //! `count`       | The number of tasks matching current filter | Number | -
 //! `filter_name` | The name of current filter                  | Text   | -
-//! `done`        | Present only if `count` is zero             | Flag   | -
-//! `single`      | Present only if `count` is one              | Flag   | -
 //!
 //! Action        | Default button
 //! --------------|---------------
@@ -191,14 +194,15 @@
 //!
 //! # Example
 //!
-//! In this example, block will display &quot;All done&quot; if `count` is zero, &quot;One task&quot; if `count` is one
-//! and &quot;Tasks: N&quot; if there are more than one task.
+//! In this example, block will be hidden if `count` is zero.
 //!
 //! ```toml
 //! [[block]]
 //! block = &quot;taskwarrior&quot;
 //! interval = 60
-//! format = &quot; $icon $done{All done}|$single{One task}|Tasks: $count.eng(w:1) &quot;
+//! format = &quot; $icon count.eng(w:1) tasks &quot;
+//! format_singular = &quot; $icon 1 task &quot;
+//! format_everything_done = &quot;&quot;
 //! warning_threshold = 10
 //! critical_threshold = 20
 //! [[block.filters]]
@@ -222,9 +226,10 @@
     interval: Seconds,
     warning_threshold: u32,
     critical_threshold: u32,
-    hide_when_zero: bool,
     filters: Vec&lt;Filter&gt;,
     format: FormatConfig,
+    format_singular: FormatConfig,
+    format_everything_done: FormatConfig,
     data_location: ShellString,
 }
 
@@ -234,12 +239,13 @@
             interval: Seconds::new(<span class="number">600</span>),
             warning_threshold: <span class="number">10</span>,
             critical_threshold: <span class="number">20</span>,
-            hide_when_zero: <span class="bool-val">false</span>,
             filters: <span class="macro">vec!</span>[Filter {
                 name: <span class="string">&quot;pending&quot;</span>.into(),
                 filter: <span class="string">&quot;-COMPLETED -DELETED&quot;</span>.into(),
             }],
             format: default(),
+            format_singular: default(),
+            format_everything_done: default(),
             data_location: ShellString::new(<span class="string">&quot;~/.task&quot;</span>),
         }
     }
@@ -249,11 +255,15 @@
     api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Right, <span class="prelude-val">None</span>, <span class="string">&quot;next_filter&quot;</span>)])
         .<span class="kw">await</span><span class="question-mark">?</span>;
 
-    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(
-        config
-            .format
-            .with_default(<span class="string">&quot; $icon $done|$count.eng(w:1) &quot;</span>)<span class="question-mark">?</span>,
-    );
+    <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $count.eng(w:1) &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>format_singular = config
+        .format_singular
+        .with_default(<span class="string">&quot; $icon $count.eng(w:1) &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>format_everything_done = config
+        .format_everything_done
+        .with_default(<span class="string">&quot; $icon $count.eng(w:1) &quot;</span>)<span class="question-mark">?</span>;
+
+    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new();
 
     <span class="kw">let </span><span class="kw-2">mut </span>filters = config.filters.iter().cycle();
     <span class="kw">let </span><span class="kw-2">mut </span>filter = filters.next().error(<span class="string">&quot;`filters` is empty&quot;</span>)<span class="question-mark">?</span>;
@@ -269,27 +279,25 @@
     <span class="kw">loop </span>{
         <span class="kw">let </span>number_of_tasks = get_number_of_tasks(<span class="kw-2">&amp;</span>filter.filter).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="kw">if </span>number_of_tasks != <span class="number">0 </span>|| !config.hide_when_zero {
-            widget.set_values(<span class="macro">map! </span>{
-                <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;tasks&quot;</span>)<span class="question-mark">?</span>),
-                <span class="string">&quot;count&quot; </span>=&gt; Value::number(number_of_tasks),
-                <span class="string">&quot;filter_name&quot; </span>=&gt; Value::text(filter.name.clone()),
-                [<span class="kw">if </span>number_of_tasks == <span class="number">0</span>] <span class="string">&quot;done&quot; </span>=&gt; Value::flag(),
-                [<span class="kw">if </span>number_of_tasks == <span class="number">1</span>] <span class="string">&quot;single&quot; </span>=&gt; Value::flag(),
-            });
+        widget.set_format(<span class="kw">match </span>number_of_tasks {
+            <span class="number">0 </span>=&gt; format_everything_done.clone(),
+            <span class="number">1 </span>=&gt; format_singular.clone(),
+            <span class="kw">_ </span>=&gt; format.clone(),
+        });
 
-            widget.state = <span class="kw">if </span>number_of_tasks &gt;= config.critical_threshold {
-                State::Critical
-            } <span class="kw">else if </span>number_of_tasks &gt;= config.warning_threshold {
-                State::Warning
-            } <span class="kw">else </span>{
-                State::Idle
-            };
+        widget.set_values(<span class="macro">map! </span>{
+            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;tasks&quot;</span>)<span class="question-mark">?</span>),
+            <span class="string">&quot;count&quot; </span>=&gt; Value::number(number_of_tasks),
+            <span class="string">&quot;filter_name&quot; </span>=&gt; Value::text(filter.name.clone()),
+        });
 
-            api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
-        } <span class="kw">else </span>{
-            api.hide().<span class="kw">await</span><span class="question-mark">?</span>;
-        }
+        widget.state = <span class="kw">match </span>number_of_tasks {
+            x <span class="kw">if </span>x &gt;= config.critical_threshold =&gt; State::Critical,
+            x <span class="kw">if </span>x &gt;= config.warning_threshold =&gt; State::Warning,
+            <span class="kw">_ </span>=&gt; State::Idle,
+        };
+
+        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="macro">select! </span>{
             <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt;(),
