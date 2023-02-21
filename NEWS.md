@@ -183,6 +183,7 @@ toggle | `text` option is removed and now you can use `format` to set it
 - `weather` block now supports using met.no as an info source (#1577)
 - More blocks now support `format` option (custom, custom_dbus, hueshift, maildir, notmuch, pomodoro, time, uptime)
 - Some blocks now have debug logs which can be enabled like so: `RUST_LOG=block=debug i3status-rs` where "block" is the block name.
+- Default click actions for blocks can now be remapped (#1686)
 
 ### Dependencies that are no longer required
 
