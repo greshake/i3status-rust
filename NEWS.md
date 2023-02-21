@@ -9,9 +9,9 @@ Breaking changes are listed below, however you may also want to compare the exam
 https://raw.githubusercontent.com/greshake/i3status-rust/v0.22.0/examples/config.toml
 https://raw.githubusercontent.com/greshake/i3status-rust/v0.30.0/examples/config.toml
 
-### Breaking changes
+### General / top-level breaking changes
 
-- Formatting system has been overhauled, introducing some breaking changes. For example, previously you might have had `format = "{percentage}"`, but placeholders are now denoted with a dollar sign rather then enclosed in brackets: `format = "$percentage"`.
+- Placeholders in `format` strings are now denoted by a dollar sign rather than enclosed in brackets. For example, `format = "{percentage}"` would now be `format = "$percentage"`.
 
 - Top-level `theme` and `icons` config options have been removed. For example,
   ```toml
@@ -28,8 +28,7 @@ https://raw.githubusercontent.com/greshake/i3status-rust/v0.30.0/examples/config
 - `theme` and `icons`: `name` and `file` options have been merged into `theme`/`icons`. See above for an example.
 
 - Major icons and whitespace change. Icons are now part of `format` option as a placeholder in blocks where format is customizable.
-  If you've modified `format` and would like to keep the same behaviour (icon, whitespace)
-  you need to update the value. For example,
+  If you've modified `format` and would like to keep the same behaviour (icon, whitespace) you need to update the value. For example,
   ```toml
   [[block]]
   block = "cpu"
@@ -42,6 +41,7 @@ https://raw.githubusercontent.com/greshake/i3status-rust/v0.30.0/examples/config
   format = " $icon $utilization "
 
 - `scrolling` option has been renamed to `invert_scrolling` and now accepts `true` or `false`.
+
 - `on_click` is now implemented as `[[block.click]]`. For example,
   ```toml
   [[block]]
@@ -57,8 +57,7 @@ https://raw.githubusercontent.com/greshake/i3status-rust/v0.30.0/examples/config
   cmd = "random_command"
   ```
 
-
-### Block specific changes
+### Block specific breaking changes
 
 Block | Changes | Example
 ----|-----------|--------
