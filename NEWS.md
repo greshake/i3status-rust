@@ -90,25 +90,25 @@ https://raw.githubusercontent.com/greshake/i3status-rust/v0.30.0/examples/config
 
 ### Block specific breaking changes
 
-Block | Changes | Example
-----|-----------|--------
-apt, dnf, pacman | `hide_when_uptodate` option is removed and now you can use `format_up_to_date = ""` to hide the block | -
-battery | `full_threshold` now defaults to `95` as often batteries never fully charge | -
-battery | requires device name from `/sys/class/power_supply` even when using UPower driver (previously it used the name from the output of `upower --enumerate`) | -
-battery | `hide_missing` option is replaced with `missing_format`. You can set `missing_format = ""` to maintain the behavior | -
-battery | `hide_full` option is removed. You can set `full_format = ""` to maintain the behavior | - 
-bluetooth | `hide_disconnected` option is replaced with `disconnected_format`. You can set `disconnected_format = ""` to hide the block | -
-kdeconnect | now only supports kdeconnect v20.11.80 and newer (December 2020 and newer) | -
-custom_dbus | `name` has been renamed to `path` and the DBus object is now at `rs.i3status`/`rs.i3status.custom` rather than `i3.status.rs` | - 
-focused_window | `autohide` is removed. You can format to `" $title.str(w:21) \| Missing "` to display the block when title is missing | -
-focused_window | `max_width` has been removed, and can instead be implemented via the new formatter | `max_width = 15; format = "{title}"` is now `format = "$title.str(max_w:15)"`
-memory | `clickable`, `display_type`, `format_mem` and `format_swap` are removed and now you can use `format` and `format_alt` to maintain the behavior | -
-music | `smart_trim` has been removed | -
-net |`hide_missing` and `hide_inactive` are removed. You can set `missing_format = ""` | -
-notmuch | `name` option is removed and now you can use `format` to set it | -
-temperature | `collapsed` option is removed and now you can use `format_alt = " $icon "` to maintain the behavior | -
-time | `locale` option is removed and now you can use `format` to set it | ```format = " $icon $timestamp.datetime(f:'%d/%m %R', l:fr_BE) "```
-toggle | `text` option is removed and now you can use `format` to set it | -
+Block | Changes
+----|-----------
+apt, dnf, pacman | `hide_when_uptodate` option is removed and now you can use `format_up_to_date = ""` to hide the block
+battery | `full_threshold` now defaults to `95` as often batteries never fully charge
+battery | requires device name from `/sys/class/power_supply` even when using UPower driver (previously it used the name from the output of `upower --enumerate`)
+battery | `hide_missing` option is replaced with `missing_format`. You can set `missing_format = ""` to maintain the behavior
+battery | `hide_full` option is removed. You can set `full_format = ""` to maintain the behavior
+bluetooth | `hide_disconnected` option is replaced with `disconnected_format`. You can set `disconnected_format = ""` to hide the block
+kdeconnect | now only supports kdeconnect v20.11.80 and newer (December 2020 and newer)
+custom_dbus | `name` has been renamed to `path` and the DBus object is now at `rs.i3status`/`rs.i3status.custom` rather than `i3.status.rs`
+focused_window | `autohide` is removed. You can format to `" $title.str(w:21) \| Missing "` to display the block when title is missing
+focused_window | `max_width` has been removed, and can instead be implemented via the new formatter. For example `max_width = 15; format = "{title}"` is now `format = "$title.str(max_w:15)"`
+memory | `clickable`, `display_type`, `format_mem` and `format_swap` are removed and now you can use `format` and `format_alt` to maintain the behavior
+music | `smart_trim` has been removed
+net |`hide_missing` and `hide_inactive` are removed. You can set `missing_format = ""`
+notmuch | `name` option is removed and now you can use `format` to set it
+temperature | `collapsed` option is removed and now you can use `format_alt = " $icon "` to maintain the behavior
+time | `locale` option is removed and now you can use `format` to set it, e.g. `format = " $icon $timestamp.datetime(f:'%d/%m %R', l:fr_BE) "`
+toggle | `text` option is removed and now you can use `format` to set it
 
 ### Removed blocks
 
