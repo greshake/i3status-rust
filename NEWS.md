@@ -92,29 +92,30 @@ This is a major release which rewrites the core code to be asynchronous.
   Note there is no equivalent to `interface_name_exclude` in `net` as it only shows one interface at a time.
   Example of a `networkmanager` config ported to `net`:
 
-Old:
-  ```toml
-  [[block]]
-block = "networkmanager"
-on_click = "alacritty -e nmtui"
-interface_name_include = ['br\-[0-9a-f]{12}', 'docker\d+']
-```
+    Old:
+      ```toml
+      [[block]]
+    block = "networkmanager"
+    on_click = "alacritty -e nmtui"
+    interface_name_include = ['br\-[0-9a-f]{12}', 'docker\d+']
+    ```
 
-New:  
-  ```toml
-  [[block]]
-  block = "net"
-  device = 'br\-[0-9a-f]{12}'
-  [[block.click]]
-  button = "left"
-  cmd = "alacritty -e nmtui"
- 
-  [[block]]
-  block = "net"
-  device = 'docker\d+'
-  [[block.click]]
-  button = "left"
-  cmd = "alacritty -e nmtui"
+    New:  
+      ```toml
+      [[block]]
+      block = "net"
+      device = 'br\-[0-9a-f]{12}'
+      [[block.click]]
+      button = "left"
+      cmd = "alacritty -e nmtui"
+
+      [[block]]
+      block = "net"
+      device = 'docker\d+'
+      [[block.click]]
+      button = "left"
+      cmd = "alacritty -e nmtui"
+      ```
 
 ### New features and bugfixes
 - When blocks error they no longer take down the entire bar. Instead, they now enter error mode: "X" will be shown and on left click the full error message will be shown in the bar.
