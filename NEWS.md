@@ -152,13 +152,13 @@ toggle | `text` option is removed and now you can use `format` to set it
 - New `service_status` block: monitor the state of a (systemd) service.
 - New `tea_timer` block: a simple timer.
 - When blocks error they no longer take down the entire bar. Instead, they now enter error mode: "X" will be shown and on left click the full error message will be shown in the bar.
-- `apt` block has new `ignore_phased_updates` option.
+- `apt` block has new `ignore_phased_updates` option. (#1717)
 - `battery` now supports `empty_threshold` to specify below which percentage the battery is considered empty, and `empty_format` to use a custom format when the battery is empty.
 - `custom_dbus` block can now be used more than once in your config.
 - `custom` block has new config option `persistent` which runs a command in the background and updates the block text for each received output line.
 - `focused_window` block now supports most wlroots-based compositors.
-- `music` block now supports controlling and displaying the volume for individual players
-- `music` block now has `interface_name_exclude` and improved `playerctld` support
+- `music` block now supports controlling and displaying the volume for individual players (#1722)
+- `music` block now has `interface_name_exclude` and improved `playerctld` support (#1710)
 - More blocks now support `format` option (custom, custom_dbus, hueshift, maildir, notmuch, pomodoro, time, uptime)
 - Some blocks now have debug logs which can be enabled like so: `RUST_LOG=block=debug i3status-rs` where "block" is the block name.
 
