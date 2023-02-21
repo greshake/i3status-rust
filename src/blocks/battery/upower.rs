@@ -1,7 +1,7 @@
 use tokio::try_join;
 use zbus::fdo::{PropertiesChangedStream, PropertiesProxy};
 use zbus::{zvariant, Connection};
-use zvariant::{ObjectPath, Structure, Value};
+use zvariant::ObjectPath;
 
 use super::{BatteryDevice, BatteryInfo, BatteryStatus, DeviceName};
 use crate::blocks::prelude::*;
@@ -161,32 +161,34 @@ impl BatteryDevice for Device {
 
     async fn wait_for_change(&mut self) -> Result<()> {
         match &mut self.device_conn {
-            Some(device_conn) => {
+            Some(device_conn) => loop {
                 select! {
-                    _ = device_conn.changes.next() => {},
                     _ = self.device_added_stream.next() => {},
+                    _ = device_conn.changes.next() => {
+                        break;
+                    },
                     Some(msg) = self.device_removed_stream.next() => {
-                        let body:  Structure = msg.body().unwrap();
-                        let fields = body.fields();
-                        if fields[0]==Value::ObjectPath(device_conn.device_path.clone()){
+                        let args = msg.args().unwrap();
+                        if args.device().as_ref() == device_conn.device_path {
                             self.device_conn = None;
+                            break;
                         }
-
                     },
                 }
-            }
-            None => {
+            },
+            None => loop {
                 select! {
                     _ = self.device_removed_stream.next() => {},
                     _ = self.device_added_stream.next() => {
                         if let Some(device_conn) =
-                            DeviceConnection::new(&self.dbus_conn, &self.device).await?
+                        DeviceConnection::new(&self.dbus_conn, &self.device).await?
                         {
                             self.device_conn = Some(device_conn);
+                            break;
                         }
                     },
                 }
-            }
+            },
         }
 
         Ok(())
