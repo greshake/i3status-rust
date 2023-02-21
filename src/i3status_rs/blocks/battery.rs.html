@@ -293,7 +293,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `device` | sysfs/UPower: The device in `/sys/class/power_supply/` to read from (can also be &quot;DisplayDevice&quot; for UPower). apc_ups: IPv4Address:port or hostname:port | Any battery device
+//! `device` | sysfs/UPower: The device in `/sys/class/power_supply/` to read from (can also be &quot;DisplayDevice&quot; for UPower). apc_ups: IPv4Address:port or hostname:port | sysfs: the first battery device found in /sys/class/power_supply, with &quot;BATx&quot; or &quot;CMBx&quot; entries taking precedence. apc_ups: &quot;localhost:3551&quot;. upower: `DisplayDevice`
 //! `driver` | One of `&quot;sysfs&quot;`, `&quot;apc_ups&quot;`, or `&quot;upower&quot;` | `&quot;sysfs&quot;`
 //! `interval` | Update interval, in seconds. Only relevant for `driver = &quot;sysfs&quot;` \|\| &quot;apc_ups&quot;`. | `10`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $percentage &quot;`

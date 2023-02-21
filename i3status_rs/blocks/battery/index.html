@@ -2,7 +2,7 @@
 <p>This block can display the current battery state (Full, Charging or Discharging), percentage
 charged and estimate time until (dis)charged for an internal power supply.</p>
 <h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Default</th></tr></thead><tbody>
-<tr><td><code>device</code></td><td>sysfs/UPower: The device in <code>/sys/class/power_supply/</code> to read from (can also be “DisplayDevice” for UPower). apc_ups: IPv4Address:port or hostname:port</td><td>Any battery device</td></tr>
+<tr><td><code>device</code></td><td>sysfs/UPower: The device in <code>/sys/class/power_supply/</code> to read from (can also be “DisplayDevice” for UPower). apc_ups: IPv4Address:port or hostname:port</td><td>sysfs: the first battery device found in /sys/class/power_supply, with “BATx” or “CMBx” entries taking precedence. apc_ups: “localhost:3551”. upower: <code>DisplayDevice</code></td></tr>
 <tr><td><code>driver</code></td><td>One of <code>&quot;sysfs&quot;</code>, <code>&quot;apc_ups&quot;</code>, or <code>&quot;upower&quot;</code></td><td><code>&quot;sysfs&quot;</code></td></tr>
 <tr><td><code>interval</code></td><td>Update interval, in seconds. Only relevant for <code>driver = &quot;sysfs&quot;</code> || “apc_ups”`.</td><td><code>10</code></td></tr>
 <tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td><code>&quot; $icon $percentage &quot;</code></td></tr>
