@@ -397,6 +397,10 @@
 <a href="#397" id="397">397</a>
 <a href="#398" id="398">398</a>
 <a href="#399" id="399">399</a>
+<a href="#400" id="400">400</a>
+<a href="#401" id="401">401</a>
+<a href="#402" id="402">402</a>
+<a href="#403" id="403">403</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Monitor Bluetooth device
 //!
 //! This block displays the connectivity of a given Bluetooth device and the battery level if this
@@ -406,6 +410,10 @@
 //! relevant icon. Otherwise, fall back on the generic Bluetooth symbol.
 //!
 //! Right-clicking the block will attempt to connect (or disconnect) the device.
+//!
+//! Note: battery level information is not reported for some devices. [Enabling experimental
+//! features of `bluez`](https://wiki.archlinux.org/title/bluetooth#Enabling_experimental_features)
+//! may fix it.
 //!
 //! # Configuration
 //!
