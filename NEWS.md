@@ -1,4 +1,4 @@
-# i3status-rust 0.30.0 [unreleased]
+# i3status-rust 0.30.0
 
 Block documentation was moved from `docs/blocks.md` to: https://greshake.github.io/i3status-rust/i3status_rs/blocks/index.html
 Formatter documentation is available here: https://greshake.github.io/i3status-rust/i3status_rs/formatting/index.html
@@ -38,18 +38,6 @@ This is a major release which rewrites the core code to be asynchronous.
   format = " $icon $utilization "
 
 - `scrolling` option has been renamed to `invert_scrolling` and now accepts `true` or `false`.
-
-- `taskwarrior` block config options `format_singular` and `format_everything_done` have been removed, and instead implemented via the new formatter. Example:
-  ```toml
-  [[block]]
-  block = "taskwarrior"
-  #TODO
-  ```
-- `kdeconnect` block only supports kdeconnect v20.11.80 and newer (December 2020 and newer)
-- `custom_dbus`: `name` has been renamed to `path` and the DBus object is now at `rs.i3status`/`rs.i3status.custom` rather than `i3.status.rs`
-- `focused_window` block config option `max_width` has been removed, and can instead be implemented via the new formatter, e.g. `max_width = 15; format = "{title}"` would now just be `format = "$title.str(15)"`
-- `music` block config option `smart_trim` has been removed
-- `pomodoro` interactive configuration ??
 - `on_click` is now implemented as `[[block.click]]`. For example,
   ```toml
   [[block]]
@@ -65,13 +53,23 @@ This is a major release which rewrites the core code to be asynchronous.
   cmd = "random_command"
   ```
 
-  ```
-  
-- `battery` now defaults `full_threshold` to `95` as often batteries never fully charge
-- `battery` requires device name from `/sys/class/power_supply` even when using UPower driver (previously it used the name from the output of `upower --enumerate`
-- **battery**: `hide_missing` option is replaced with `missing_format`. You can set `missing_format = ""` to maintain the behavior
-- **battery**: `hide_full` option is removed. You can set `full_format = ""` to maintain the behavior
-- **bluetooth**: hide_disconnected option is replaced with `disconnected_format`. You can set `disconnected_format = ""` to hide the block
+
+### Block specific changes
+
+Block | Changes | Example
+----|-----------|--------
+`taskwarrior` | `format_singular` and `format_everything_done` have been removed, and instead implemented via the new formatter. | Example:
+`kdeconnect` | now only supports kdeconnect v20.11.80 and newer (December 2020 and newer) | -
+`custom_dbus` | `name` has been renamed to `path` and the DBus object is now at `rs.i3status`/`rs.i3status.custom` rather than `i3.status.rs` | - 
+`focused_window`| `max_width` has been removed, and can instead be implemented via the new formatter | `max_width = 15; format = "{title}"` would now just be `format = "$title.str(15)"`
+`music` | `smart_trim` has been removed | -
+`pomodoro` | interactive configuration ?? | -
+`battery` | - `full_threshold` now defaults to `95` as often batteries never fully charge
+- requires device name from `/sys/class/power_supply` even when using UPower driver (previously it used the name from the output of `upower --enumerate`)
+- `hide_missing` option is replaced with `missing_format`. You can set `missing_format = ""` to maintain the behavior
+- `hide_full` option is removed. You can set `full_format = ""` to maintain the behavior | - 
+bluetooth | hide_disconnected option is replaced with `disconnected_format`. You can set `disconnected_format = ""` to hide the block | -
+
 - **focused_window**: `autohide` is removed. You can format to `" $title.str(0,21) | Missing "` to display the block when title is missing
 - **net**: `hide_missing` and `hide_inactive` are removed. You can set `missing_format = ""`
 - **toggle**: `text` option is removed and now you can use `format` to set the text
