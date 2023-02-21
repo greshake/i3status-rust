@@ -57,20 +57,19 @@ https://raw.githubusercontent.com/greshake/i3status-rust/v0.30.0/examples/config
 - Font Awesome v4 must now be specified via `awesome4`, and `awesome` has been removed.
 
 - Icons `backlight_{empty,full,1,2,...,13}`, `bat_{10,20,...,90,full}`, `cpu_{low,med,high}`, `volume_{empty,half,full}`, `microphone_{empty,half,full}` have been removed as singular icons, and instead implemented as an array. If you used to override any of these icons, override `backlight`, `cpu`, `volume` and `microphone` instead. For example,
-	```toml
-	cpu_low = "\U000F0F86" # nf-md-speedometer_slow
-	cpu_med = "\U000F0F85" # nf-md-speedometer_medium
-	cpu_high = "\U000F04C5" # nf-md-speedometer
-	```
-	becomes
-
-	```toml
-	cpu = [
-		"\U000F0F86", # nf-md-speedometer_slow
-		"\U000F0F85", # nf-md-speedometer_medium
-		"\U000F04C5", # nf-md-speedometer
-	]
-	```
+  ```toml
+  cpu_low = "\U000F0F86" # nf-md-speedometer_slow
+  cpu_med = "\U000F0F85" # nf-md-speedometer_medium
+  cpu_high = "\U000F04C5" # nf-md-speedometer
+  ```
+  becomes
+  ```toml
+  cpu = [
+      "\U000F0F86", # nf-md-speedometer_slow
+      "\U000F0F85", # nf-md-speedometer_medium
+      "\U000F04C5", # nf-md-speedometer
+  ]
+  ```
 
 - `scrolling` option has been renamed to `invert_scrolling` and now accepts `true` or `false`.
 
@@ -101,8 +100,8 @@ battery | `hide_full` option is removed. You can set `full_format = ""` to maint
 bluetooth | hide_disconnected option is replaced with `disconnected_format`. You can set `disconnected_format = ""` to hide the block | -
 kdeconnect | now only supports kdeconnect v20.11.80 and newer (December 2020 and newer) | -
 custom_dbus | `name` has been renamed to `path` and the DBus object is now at `rs.i3status`/`rs.i3status.custom` rather than `i3.status.rs` | - 
-focused_window | `autohide` is removed. You can format to `" $title.str(0,21) \| Missing "` to display the block when title is missing | -
-focused_window | `max_width` has been removed, and can instead be implemented via the new formatter | `max_width = 15; format = "{title}"` is now `format = "$title.str(15)"`
+focused_window | `autohide` is removed. You can format to `" $title.str(w:21) \| Missing "` to display the block when title is missing | -
+focused_window | `max_width` has been removed, and can instead be implemented via the new formatter | `max_width = 15; format = "{title}"` is now `format = "$title.str(max_w:15)"`
 memory | `clickable`, `display_type`, `format_mem` and `format_swap` are removed and now you can use `format` and `format_alt` to maintain the behavior | -
 music | `smart_trim` has been removed | -
 net |`hide_missing` and `hide_inactive` are removed. You can set `missing_format = ""` | -
