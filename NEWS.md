@@ -72,6 +72,20 @@ https://raw.githubusercontent.com/greshake/i3status-rust/v0.30.0/examples/config
       "\U000F04C5", # nf-md-speedometer
   ]
   ```
+- when using theme overrides, you can now reference other colours by name which allows you to avoid redefining the same colour twice, for example:
+  ```toml
+  [[block]]
+  block = "sound"
+  driver = "pulseaudio"
+  device = "@DEFAULT_SOURCE@"
+  device_kind = "source"
+  [block.theme_overrides]
+  # switch idle and warning around in order to get warning when mic is *not* muted
+  idle_fg = { link = "warning_fg" }
+  idle_bg = { link = "warning_bg" }
+  warning_fg = { link = "idle_fg" }
+  warning_bg = { link = "idle_bg" }
+  ```
 
 - `scrolling` option has been renamed to `invert_scrolling` and now accepts `true` or `false`.
 
