@@ -74,8 +74,8 @@ net |`hide_missing` and `hide_inactive` are removed. You can set `missing_format
 toggle | `text` option is removed and now you can use `format` to set the text | -
 notmuch | `name` option is removed and now you can use `format` to set the name | -
 apt, dnf, pacman | `hide_when_uptodate` option is removed and now you can use `format_up_to_date = ""` to hide the block | -
-temperature** | `collapsed` option is removed and now you can use `format_alt = " $icon "` to maintain the behavior | -
-memory | clickable`, `display_type`, `format_mem` and `format_swap` are removed and now you can use `format` and `format_alt` to maintain the behavior | -
+temperature | `collapsed` option is removed and now you can use `format_alt = " $icon "` to maintain the behavior | -
+memory | `clickable`, `display_type`, `format_mem` and `format_swap` are removed and now you can use `format` and `format_alt` to maintain the behavior | -
 
 ### Removed blocks
 
