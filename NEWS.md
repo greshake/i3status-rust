@@ -116,7 +116,7 @@ toggle | `text` option is removed and now you can use `format` to set it
   ```toml
   [[block]]
   block = "custom"
-  #TODO
+  command = "ibus engine"
   ```
 - `networkmanager` block has been removed (could be revisited in the future), so `net` block should be used instead.
   Note there is no equivalent to `interface_name_exclude` in `net` as it only shows one interface at a time.
