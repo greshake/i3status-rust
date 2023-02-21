@@ -73,7 +73,6 @@ music | `smart_trim` has been removed | -
 net |`hide_missing` and `hide_inactive` are removed. You can set `missing_format = ""` | -
 notmuch | `name` option is removed and now you can use `format` to set the name | -
 pomodoro | interactive configuration ?? | -
-taskwarrior | `format_singular` and `format_everything_done` have been removed, and instead implemented via the new formatter. | Example:
 temperature | `collapsed` option is removed and now you can use `format_alt = " $icon "` to maintain the behavior | -
 toggle | `text` option is removed and now you can use `format` to set the text | -
 

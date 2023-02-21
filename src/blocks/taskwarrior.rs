@@ -9,9 +9,10 @@
 //! `interval` | Update interval in seconds | `600` (10min)
 //! `warning_threshold` | The threshold of pending (or started) tasks when the block turns into a warning state | `10`
 //! `critical_threshold` | The threshold of pending (or started) tasks when the block turns into a critical state | `20`
-//! `hide_when_zero` | Whethere to hide the block when the number of tasks is zero | `false`
 //! `filters` | A list of tables with the keys `name` and `filter`. `filter` specifies the criteria that must be met for a task to be counted towards this filter. | ```[{name = "pending", filter = "-COMPLETED -DELETED"}]```
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $done\|$count.eng(w:1) "`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $count.eng(w:1) "`
+//! `format_singular` | Same as `format` but for when exactly one task is pending. | `" $icon $count.eng(w:1) "`
+//! `format_everything_done` | Same as `format` but for when all tasks are completed. | `" $icon $count.eng(w:1) "`
 //! `data_location`| Directory in which taskwarrior stores its data files. Supports path expansions e.g. `~`. | `"~/.task"`
 //!
 //! Placeholder   | Value                                       | Type   | Unit
@@ -19,8 +20,6 @@
 //! `icon`        | A static icon                               | Icon   | -
 //! `count`       | The number of tasks matching current filter | Number | -
 //! `filter_name` | The name of current filter                  | Text   | -
-//! `done`        | Present only if `count` is zero             | Flag   | -
-//! `single`      | Present only if `count` is one              | Flag   | -
 //!
 //! Action        | Default button
 //! --------------|---------------
@@ -28,14 +27,15 @@
 //!
 //! # Example
 //!
-//! In this example, block will display "All done" if `count` is zero, "One task" if `count` is one
-//! and "Tasks: N" if there are more than one task.
+//! In this example, block will be hidden if `count` is zero.
 //!
 //! ```toml
 //! [[block]]
 //! block = "taskwarrior"
 //! interval = 60
-//! format = " $icon $done{All done}|$single{One task}|Tasks: $count.eng(w:1) "
+//! format = " $icon count.eng(w:1) tasks "
+//! format_singular = " $icon 1 task "
+//! format_everything_done = ""
 //! warning_threshold = 10
 //! critical_threshold = 20
 //! [[block.filters]]
@@ -59,9 +59,10 @@ pub struct Config {
     interval: Seconds,
     warning_threshold: u32,
     critical_threshold: u32,
-    hide_when_zero: bool,
     filters: Vec<Filter>,
     format: FormatConfig,
+    format_singular: FormatConfig,
+    format_everything_done: FormatConfig,
     data_location: ShellString,
 }
 
@@ -71,12 +72,13 @@ impl Default for Config {
             interval: Seconds::new(600),
             warning_threshold: 10,
             critical_threshold: 20,
-            hide_when_zero: false,
             filters: vec![Filter {
                 name: "pending".into(),
                 filter: "-COMPLETED -DELETED".into(),
             }],
             format: default(),
+            format_singular: default(),
+            format_everything_done: default(),
             data_location: ShellString::new("~/.task"),
         }
     }
@@ -86,11 +88,15 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     api.set_default_actions(&[(MouseButton::Right, None, "next_filter")])
         .await?;
 
-    let mut widget = Widget::new().with_format(
-        config
-            .format
-            .with_default(" $icon $done|$count.eng(w:1) ")?,
-    );
+    let format = config.format.with_default(" $icon $count.eng(w:1) ")?;
+    let format_singular = config
+        .format_singular
+        .with_default(" $icon $count.eng(w:1) ")?;
+    let format_everything_done = config
+        .format_everything_done
+        .with_default(" $icon $count.eng(w:1) ")?;
+
+    let mut widget = Widget::new();
 
     let mut filters = config.filters.iter().cycle();
     let mut filter = filters.next().error("`filters` is empty")?;
@@ -106,27 +112,25 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     loop {
         let number_of_tasks = get_number_of_tasks(&filter.filter).await?;
 
-        if number_of_tasks != 0 || !config.hide_when_zero {
-            widget.set_values(map! {
-                "icon" => Value::icon(api.get_icon("tasks")?),
-                "count" => Value::number(number_of_tasks),
-                "filter_name" => Value::text(filter.name.clone()),
-                [if number_of_tasks == 0] "done" => Value::flag(),
-                [if number_of_tasks == 1] "single" => Value::flag(),
-            });
+        widget.set_format(match number_of_tasks {
+            0 => format_everything_done.clone(),
+            1 => format_singular.clone(),
+            _ => format.clone(),
+        });
 
-            widget.state = if number_of_tasks >= config.critical_threshold {
-                State::Critical
-            } else if number_of_tasks >= config.warning_threshold {
-                State::Warning
-            } else {
-                State::Idle
-            };
+        widget.set_values(map! {
+            "icon" => Value::icon(api.get_icon("tasks")?),
+            "count" => Value::number(number_of_tasks),
+            "filter_name" => Value::text(filter.name.clone()),
+        });
 
-            api.set_widget(&widget).await?;
-        } else {
-            api.hide().await?;
-        }
+        widget.state = match number_of_tasks {
+            x if x >= config.critical_threshold => State::Critical,
+            x if x >= config.warning_threshold => State::Warning,
+            _ => State::Idle,
+        };
+
+        api.set_widget(&widget).await?;
 
         select! {
             _ = sleep(config.interval.0) =>(),
