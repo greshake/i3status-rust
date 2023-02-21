@@ -149,4 +149,4 @@ We welcome new contributors! Take a gander at [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## License
 
-This project is licensed under the GPLv3. See the [LICENSE.md](LICENSE.md) file for details.
+This project is licensed under the GPLv3. See the [LICENSE](LICENSE) file for details.
