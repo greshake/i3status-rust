@@ -193,44 +193,98 @@
 <a href="#193" id="193">193</a>
 <a href="#194" id="194">194</a>
 <a href="#195" id="195">195</a>
-</pre><pre class="rust"><code><span class="kw">use </span>zbus::fdo::{PropertiesChangedStream, PropertiesProxy};
-<span class="kw">use </span>zbus::zvariant;
+<a href="#196" id="196">196</a>
+<a href="#197" id="197">197</a>
+<a href="#198" id="198">198</a>
+<a href="#199" id="199">199</a>
+<a href="#200" id="200">200</a>
+<a href="#201" id="201">201</a>
+<a href="#202" id="202">202</a>
+<a href="#203" id="203">203</a>
+<a href="#204" id="204">204</a>
+<a href="#205" id="205">205</a>
+<a href="#206" id="206">206</a>
+<a href="#207" id="207">207</a>
+<a href="#208" id="208">208</a>
+<a href="#209" id="209">209</a>
+<a href="#210" id="210">210</a>
+<a href="#211" id="211">211</a>
+<a href="#212" id="212">212</a>
+<a href="#213" id="213">213</a>
+<a href="#214" id="214">214</a>
+<a href="#215" id="215">215</a>
+<a href="#216" id="216">216</a>
+<a href="#217" id="217">217</a>
+<a href="#218" id="218">218</a>
+<a href="#219" id="219">219</a>
+<a href="#220" id="220">220</a>
+<a href="#221" id="221">221</a>
+<a href="#222" id="222">222</a>
+<a href="#223" id="223">223</a>
+<a href="#224" id="224">224</a>
+<a href="#225" id="225">225</a>
+<a href="#226" id="226">226</a>
+<a href="#227" id="227">227</a>
+<a href="#228" id="228">228</a>
+<a href="#229" id="229">229</a>
+<a href="#230" id="230">230</a>
+<a href="#231" id="231">231</a>
+<a href="#232" id="232">232</a>
+<a href="#233" id="233">233</a>
+<a href="#234" id="234">234</a>
+<a href="#235" id="235">235</a>
+<a href="#236" id="236">236</a>
+<a href="#237" id="237">237</a>
+<a href="#238" id="238">238</a>
+<a href="#239" id="239">239</a>
+<a href="#240" id="240">240</a>
+<a href="#241" id="241">241</a>
+<a href="#242" id="242">242</a>
+<a href="#243" id="243">243</a>
+<a href="#244" id="244">244</a>
+<a href="#245" id="245">245</a>
+<a href="#246" id="246">246</a>
+<a href="#247" id="247">247</a>
+<a href="#248" id="248">248</a>
+<a href="#249" id="249">249</a>
+</pre><pre class="rust"><code><span class="kw">use </span>tokio::try_join;
+<span class="kw">use </span>zbus::fdo::{PropertiesChangedStream, PropertiesProxy};
+<span class="kw">use </span>zbus::{zvariant, Connection};
 <span class="kw">use </span>zvariant::ObjectPath;
 
 <span class="kw">use super</span>::{BatteryDevice, BatteryInfo, BatteryStatus, DeviceName};
 <span class="kw">use </span><span class="kw">crate</span>::blocks::prelude::<span class="kw-2">*</span>;
 <span class="kw">use </span><span class="kw">crate</span>::util::new_system_dbus_connection;
 
-<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct </span>Device {
+<span class="kw">struct </span>DeviceConnection {
+    device_path: ObjectPath&lt;<span class="lifetime">&#39;static</span>&gt;,
     device_proxy: DeviceProxy&lt;<span class="lifetime">&#39;static</span>&gt;,
     changes: PropertiesChangedStream&lt;<span class="lifetime">&#39;static</span>&gt;,
 }
 
-<span class="kw">impl </span>Device {
-    <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">async fn </span>new(device: DeviceName) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
-        <span class="kw">let </span>dbus_conn = new_system_dbus_connection().<span class="kw">await</span><span class="question-mark">?</span>;
-
-        <span class="kw">let </span>(device_path, device_proxy) = <span class="kw">if </span>device.exact() == <span class="prelude-val">Some</span>(<span class="string">&quot;DisplayDevice&quot;</span>) {
+<span class="kw">impl </span>DeviceConnection {
+    <span class="kw">async fn </span>new(dbus_conn: <span class="kw-2">&amp;</span>Connection, device: <span class="kw-2">&amp;</span>DeviceName) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>&gt;&gt; {
+        <span class="kw">let </span>device_conn_info = <span class="kw">if </span>device.exact() == <span class="prelude-val">Some</span>(<span class="string">&quot;DisplayDevice&quot;</span>) {
             <span class="kw">let </span>path: ObjectPath = <span class="string">&quot;/org/freedesktop/UPower/devices/DisplayDevice&quot;
                 </span>.try_into()
                 .unwrap();
-            <span class="kw">let </span>proxy = DeviceProxy::builder(<span class="kw-2">&amp;</span>dbus_conn)
+            <span class="kw">let </span>proxy = DeviceProxy::builder(dbus_conn)
                 .path(path.clone())
                 .unwrap()
                 .build()
                 .<span class="kw">await
                 </span>.error(<span class="string">&quot;Failed to create DeviceProxy&quot;</span>)<span class="question-mark">?</span>;
-            (path, proxy)
+            <span class="prelude-val">Some</span>((path, proxy))
         } <span class="kw">else </span>{
             <span class="kw">let </span><span class="kw-2">mut </span>res = <span class="prelude-val">None</span>;
-            <span class="kw">for </span>path <span class="kw">in </span>UPowerProxy::new(<span class="kw-2">&amp;</span>dbus_conn)
+            <span class="kw">for </span>path <span class="kw">in </span>UPowerProxy::new(dbus_conn)
                 .<span class="kw">await
                 </span>.error(<span class="string">&quot;Failed to create UPwerProxy&quot;</span>)<span class="question-mark">?
                 </span>.enumerate_devices()
                 .<span class="kw">await
                 </span>.error(<span class="string">&quot;Failed to retrieve UPower devices&quot;</span>)<span class="question-mark">?
             </span>{
-                <span class="kw">let </span>proxy = DeviceProxy::builder(<span class="kw-2">&amp;</span>dbus_conn)
+                <span class="kw">let </span>proxy = DeviceProxy::builder(dbus_conn)
                     .path(path.clone())
                     .unwrap()
                     .build()
@@ -252,27 +306,62 @@
                     <span class="kw">break</span>;
                 }
             }
-            <span class="kw">match </span>res {
-                <span class="prelude-val">Some</span>(res) =&gt; res,
-                <span class="comment">// FIXME
-                </span><span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="string">&quot;UPower device could not be found&quot;</span>)),
-            }
+            res
         };
 
-        <span class="kw">let </span>changes = PropertiesProxy::builder(<span class="kw-2">&amp;</span>dbus_conn)
-            .destination(<span class="string">&quot;org.freedesktop.UPower&quot;</span>)
-            .and_then(|x| x.path(device_path))
-            .unwrap()
-            .build()
+        <span class="prelude-val">Ok</span>(<span class="kw">match </span>device_conn_info {
+            <span class="prelude-val">Some</span>((device_path, device_proxy)) =&gt; {
+                <span class="kw">let </span>changes = PropertiesProxy::builder(dbus_conn)
+                    .destination(<span class="string">&quot;org.freedesktop.UPower&quot;</span>)
+                    .and_then(|x| x.path(device_path.clone()))
+                    .unwrap()
+                    .build()
+                    .<span class="kw">await
+                    </span>.error(<span class="string">&quot;Failed to create PropertiesProxy&quot;</span>)<span class="question-mark">?
+                    </span>.receive_properties_changed()
+                    .<span class="kw">await
+                    </span>.error(<span class="string">&quot;Failed to create PropertiesChangedStream&quot;</span>)<span class="question-mark">?</span>;
+                <span class="prelude-val">Some</span>(DeviceConnection {
+                    device_path,
+                    device_proxy,
+                    changes,
+                })
+            }
+            <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
+        })
+    }
+}
+
+<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct </span>Device {
+    dbus_conn: Connection,
+    device: DeviceName,
+    device_conn: <span class="prelude-ty">Option</span>&lt;DeviceConnection&gt;,
+    device_added_stream: DeviceAddedStream&lt;<span class="lifetime">&#39;static</span>&gt;,
+    device_removed_stream: DeviceRemovedStream&lt;<span class="lifetime">&#39;static</span>&gt;,
+}
+
+<span class="kw">impl </span>Device {
+    <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">async fn </span>new(device: DeviceName) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
+        <span class="kw">let </span>dbus_conn = new_system_dbus_connection().<span class="kw">await</span><span class="question-mark">?</span>;
+
+        <span class="kw">let </span>device_conn = DeviceConnection::new(<span class="kw-2">&amp;</span>dbus_conn, <span class="kw-2">&amp;</span>device).<span class="kw">await</span><span class="question-mark">?</span>;
+
+        <span class="kw">let </span>upower_proxy = UPowerProxy::new(<span class="kw-2">&amp;</span>dbus_conn)
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to create PropertiesProxy&quot;</span>)<span class="question-mark">?
-            </span>.receive_properties_changed()
-            .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to create PropertiesChangedStream&quot;</span>)<span class="question-mark">?</span>;
+            </span>.error(<span class="string">&quot;Could not create UPowerProxy&quot;</span>)<span class="question-mark">?</span>;
+
+        <span class="kw">let </span>(device_added_stream, device_removed_stream) = <span class="macro">try_join! </span>{
+            upower_proxy.receive_device_added(),
+            upower_proxy.receive_device_removed()
+        }
+        .error(<span class="string">&quot;Could not create signal stream&quot;</span>)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
-            device_proxy,
-            changes,
+            dbus_conn,
+            device,
+            device_conn,
+            device_added_stream,
+            device_removed_stream,
         })
     }
 }
@@ -280,58 +369,77 @@
 <span class="attr">#[async_trait]
 </span><span class="kw">impl </span>BatteryDevice <span class="kw">for </span>Device {
     <span class="kw">async fn </span>get_info(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;BatteryInfo&gt;&gt; {
-        <span class="kw">let </span>capacity = <span class="self">self
-            </span>.device_proxy
-            .percentage()
-            .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to get capacity&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.device_conn {
+            <span class="prelude-val">None </span>=&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+            <span class="prelude-val">Some</span>(device_conn) =&gt; {
+                <span class="kw">match </span><span class="macro">try_join! </span>{
+                    device_conn.device_proxy.percentage(),
+                    device_conn.device_proxy.energy_rate(),
+                    device_conn.device_proxy.state(),
+                    device_conn.device_proxy.time_to_full(),
+                    device_conn.device_proxy.time_to_empty(),
+                } {
+                    <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+                    <span class="prelude-val">Ok</span>((capacity, power, state, time_to_full, time_to_empty)) =&gt; {
+                        <span class="kw">let </span>status = <span class="kw">match </span>state {
+                            <span class="number">1 </span>=&gt; BatteryStatus::Charging,
+                            <span class="number">2 </span>| <span class="number">6 </span>=&gt; BatteryStatus::Discharging,
+                            <span class="number">3 </span>=&gt; BatteryStatus::Empty,
+                            <span class="number">4 </span>=&gt; BatteryStatus::Full,
+                            <span class="number">5 </span>=&gt; BatteryStatus::NotCharging,
+                            <span class="kw">_ </span>=&gt; BatteryStatus::Unknown,
+                        };
 
-        <span class="kw">let </span>power = <span class="self">self
-            </span>.device_proxy
-            .energy_rate()
-            .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to get power&quot;</span>)<span class="question-mark">?</span>;
+                        <span class="kw">let </span>time_remaining = <span class="kw">match </span>status {
+                            BatteryStatus::Charging =&gt; <span class="prelude-val">Some</span>(time_to_full <span class="kw">as </span>f64),
+                            BatteryStatus::Discharging =&gt; <span class="prelude-val">Some</span>(time_to_empty <span class="kw">as </span>f64),
+                            <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
+                        };
 
-        <span class="kw">let </span>status = <span class="kw">match </span><span class="self">self
-            </span>.device_proxy
-            .state()
-            .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to get status&quot;</span>)<span class="question-mark">?
-        </span>{
-            <span class="number">1 </span>=&gt; BatteryStatus::Charging,
-            <span class="number">2 </span>| <span class="number">6 </span>=&gt; BatteryStatus::Discharging,
-            <span class="number">3 </span>=&gt; BatteryStatus::Empty,
-            <span class="number">4 </span>=&gt; BatteryStatus::Full,
-            <span class="number">5 </span>=&gt; BatteryStatus::NotCharging,
-            <span class="kw">_ </span>=&gt; BatteryStatus::Unknown,
-        };
-
-        <span class="kw">let </span>time_remaining = <span class="kw">match </span>status {
-            BatteryStatus::Charging =&gt; <span class="prelude-val">Some</span>(
-                <span class="self">self</span>.device_proxy
-                    .time_to_full()
-                    .<span class="kw">await
-                    </span>.error(<span class="string">&quot;Failed to get time to full&quot;</span>)<span class="question-mark">? </span><span class="kw">as </span>f64,
-            ),
-            BatteryStatus::Discharging =&gt; <span class="prelude-val">Some</span>(
-                <span class="self">self</span>.device_proxy
-                    .time_to_empty()
-                    .<span class="kw">await
-                    </span>.error(<span class="string">&quot;Failed to get time to empty&quot;</span>)<span class="question-mark">? </span><span class="kw">as </span>f64,
-            ),
-            <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
-        };
-
-        <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(BatteryInfo {
-            status,
-            capacity,
-            power: <span class="prelude-val">Some</span>(power),
-            time_remaining,
-        }))
+                        <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(BatteryInfo {
+                            status,
+                            capacity,
+                            power: <span class="prelude-val">Some</span>(power),
+                            time_remaining,
+                        }))
+                    }
+                }
+            }
+        }
     }
 
     <span class="kw">async fn </span>wait_for_change(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-        <span class="self">self</span>.changes.next().<span class="kw">await</span>;
+        <span class="kw">match </span><span class="kw-2">&amp;mut </span><span class="self">self</span>.device_conn {
+            <span class="prelude-val">Some</span>(device_conn) =&gt; <span class="kw">loop </span>{
+                <span class="macro">select! </span>{
+                    <span class="kw">_ </span>= <span class="self">self</span>.device_added_stream.next() =&gt; {},
+                    <span class="kw">_ </span>= device_conn.changes.next() =&gt; {
+                        <span class="kw">break</span>;
+                    },
+                    <span class="prelude-val">Some</span>(msg) = <span class="self">self</span>.device_removed_stream.next() =&gt; {
+                        <span class="kw">let </span>args = msg.args().unwrap();
+                        <span class="kw">if </span>args.device().as_ref() == device_conn.device_path {
+                            <span class="self">self</span>.device_conn = <span class="prelude-val">None</span>;
+                            <span class="kw">break</span>;
+                        }
+                    },
+                }
+            },
+            <span class="prelude-val">None </span>=&gt; <span class="kw">loop </span>{
+                <span class="macro">select! </span>{
+                    <span class="kw">_ </span>= <span class="self">self</span>.device_removed_stream.next() =&gt; {},
+                    <span class="kw">_ </span>= <span class="self">self</span>.device_added_stream.next() =&gt; {
+                        <span class="kw">if let </span><span class="prelude-val">Some</span>(device_conn) =
+                        DeviceConnection::new(<span class="kw-2">&amp;</span><span class="self">self</span>.dbus_conn, <span class="kw-2">&amp;</span><span class="self">self</span>.device).<span class="kw">await</span><span class="question-mark">?
+                        </span>{
+                            <span class="self">self</span>.device_conn = <span class="prelude-val">Some</span>(device_conn);
+                            <span class="kw">break</span>;
+                        }
+                    },
+                }
+            },
+        }
+
         <span class="prelude-val">Ok</span>(())
     }
 }
