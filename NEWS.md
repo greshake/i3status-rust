@@ -9,33 +9,6 @@ This is a major release which rewrites the core code to be asynchronous.
 
 - Formatting system has been overhauled, introducing some breaking changes. For example, previously you might have had `format = "{percentage}"`, but placeholders are now denoted with a dollar sign rather then enclosed in brackets: `format = "$percentage"`.
 
-- `scrolling` option has been renamed to `invert_scrolling` and now accepts `true` or `false`.
-
-- `taskwarrior` block config options `format_singular` and `format_everything_done` have been removed, and instead implemented via the new formatter. Example:
-  ```toml
-  [[block]]
-  block = "taskwarrior"
-  #TODO
-  ```
-- `kdeconnect` block only supports kdeconnect v20.11.80 and newer (December 2020 and newer)
-- `custom_dbus`: `name` has been renamed to `path` and the DBus object is now at `rs.i3status`/`rs.i3status.custom` rather than `i3.status.rs`
-- `focused_window` block config option `max_width` has been removed, and can instead be implemented via the new formatter, e.g. `max_width = 15; format = "{title}"` would now just be `format = "$title.str(15)"`
-- `music` block config option `smart_trim` has been removed
-- `pomodoro` interactive configuration ??
-- `on_click` is now implemented as `[[block.click]]`. For example,
-  ```toml
-  [[block]]
-  block = "pacman"
-  on_click = "random_command"
-  ```
-  needs to be changed to:
-  ```toml
-  [[block]]
-  block = "pacman"
-  [[block.click]]
-  button = "left"
-  cmd = "random_command"
-  ```
 - Top-level `theme` and `icons` config options have been removed. For example,
   ```toml
   theme = "solarized-dark"
@@ -63,6 +36,35 @@ This is a major release which rewrites the core code to be asynchronous.
   [[block]]
   block = "cpu"
   format = " $icon $utilization "
+
+- `scrolling` option has been renamed to `invert_scrolling` and now accepts `true` or `false`.
+
+- `taskwarrior` block config options `format_singular` and `format_everything_done` have been removed, and instead implemented via the new formatter. Example:
+  ```toml
+  [[block]]
+  block = "taskwarrior"
+  #TODO
+  ```
+- `kdeconnect` block only supports kdeconnect v20.11.80 and newer (December 2020 and newer)
+- `custom_dbus`: `name` has been renamed to `path` and the DBus object is now at `rs.i3status`/`rs.i3status.custom` rather than `i3.status.rs`
+- `focused_window` block config option `max_width` has been removed, and can instead be implemented via the new formatter, e.g. `max_width = 15; format = "{title}"` would now just be `format = "$title.str(15)"`
+- `music` block config option `smart_trim` has been removed
+- `pomodoro` interactive configuration ??
+- `on_click` is now implemented as `[[block.click]]`. For example,
+  ```toml
+  [[block]]
+  block = "pacman"
+  on_click = "random_command"
+  ```
+  needs to be changed to:
+  ```toml
+  [[block]]
+  block = "pacman"
+  [[block.click]]
+  button = "left"
+  cmd = "random_command"
+  ```
+
   ```
   
 - `battery` now defaults `full_threshold` to `95` as often batteries never fully charge
