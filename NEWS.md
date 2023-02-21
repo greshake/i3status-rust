@@ -1,6 +1,6 @@
 # i3status-rust 0.30.0
 
-This is a major release in which the core had been rewritten to be asynchronous, and has the formatting system has been overhauled.
+This is a major release in which the core has been rewritten to be asynchronous, and the formatting system has also been overhauled.
 
 Block documentation was moved from `docs/blocks.md` to: https://greshake.github.io/i3status-rust/i3status_rs/blocks/index.html
 Formatter documentation is available here: https://greshake.github.io/i3status-rust/i3status_rs/formatting/index.html
