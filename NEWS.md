@@ -152,6 +152,7 @@ toggle | `text` option is removed and now you can use `format` to set it
 - New `service_status` block: monitor the state of a (systemd) service.
 - New `tea_timer` block: a simple timer.
 - When blocks error they no longer take down the entire bar. Instead, they now enter error mode: "X" will be shown and on left click the full error message will be shown in the bar.
+- `apt` block has new `ignore_phased_updates` option
 - `custom_dbus` block can now be used more than once in your config.
 - `custom` block has new config option `persistent` which runs a command in the background and updates the block text for each received output line.
 - `focused_window` block now supports most wlroots-based compositors.
