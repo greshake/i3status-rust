@@ -65,8 +65,6 @@ This is a major release which rewrites the core code to be asynchronous.
   format = " $icon $utilization "
   ```
   
-  
-
 - `battery` now defaults `full_threshold` to `95` as often batteries never fully charge
 - `battery` requires device name from `/sys/class/power_supply` even when using UPower driver (previously it used the name from the output of `upower --enumerate`
 - **battery**: `hide_missing` option is replaced with `missing_format`. You can set `missing_format = ""` to maintain the behavior
@@ -91,31 +89,30 @@ This is a major release which rewrites the core code to be asynchronous.
 - `networkmanager` block has been removed (could be revisited in the future), so `net` block should be used instead.
   Note there is no equivalent to `interface_name_exclude` in `net` as it only shows one interface at a time.
   Example of a `networkmanager` config ported to `net`:
+  v0.22:
+  ```toml
+  [[block]]
+  block = "networkmanager"
+  on_click = "alacritty -e nmtui"
+  interface_name_include = ['br\-[0-9a-f]{12}', 'docker\d+']
+  ```
+  
+  v0.30:  
+  ```toml
+  [[block]]
+  block = "net"
+  device = 'br\-[0-9a-f]{12}'
+  [[block.click]]
+  button = "left"
+  cmd = "alacritty -e nmtui"
 
-    Old:
-      ```toml
-      [[block]]
-    block = "networkmanager"
-    on_click = "alacritty -e nmtui"
-    interface_name_include = ['br\-[0-9a-f]{12}', 'docker\d+']
-    ```
-
-    New:  
-      ```toml
-      [[block]]
-      block = "net"
-      device = 'br\-[0-9a-f]{12}'
-      [[block.click]]
-      button = "left"
-      cmd = "alacritty -e nmtui"
-
-      [[block]]
-      block = "net"
-      device = 'docker\d+'
-      [[block.click]]
-      button = "left"
-      cmd = "alacritty -e nmtui"
-      ```
+  [[block]]
+  block = "net"
+  device = 'docker\d+'
+  [[block.click]]
+  button = "left"
+  cmd = "alacritty -e nmtui"
+  ```
 
 ### New features and bugfixes
 - When blocks error they no longer take down the entire bar. Instead, they now enter error mode: "X" will be shown and on left click the full error message will be shown in the bar.
