@@ -8,6 +8,10 @@
 //!
 //! Right-clicking the block will attempt to connect (or disconnect) the device.
 //!
+//! Note: battery level information is not reported for some devices. [Enabling experimental
+//! features of `bluez`](https://wiki.archlinux.org/title/bluetooth#Enabling_experimental_features)
+//! may fix it.
+//!
 //! # Configuration
 //!
 //! Key | Values | Default
