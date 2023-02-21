@@ -11,7 +11,6 @@ This is a major release which rewrites the core code to be asynchronous.
 
 - `scrolling` option has been renamed to `invert_scrolling` and now accepts `true` or `false`.
 
-  ```
 - `taskwarrior` block config options `format_singular` and `format_everything_done` have been removed, and instead implemented via the new formatter. Example:
   ```toml
   [[block]]
