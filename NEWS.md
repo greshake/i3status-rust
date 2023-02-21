@@ -1,11 +1,15 @@
 # i3status-rust 0.30.0
 
+This is a major release in which the core had been rewritten to be asynchronous, and has the formatting system has been overhauled.
+
 Block documentation was moved from `docs/blocks.md` to: https://greshake.github.io/i3status-rust/i3status_rs/blocks/index.html
 Formatter documentation is available here: https://greshake.github.io/i3status-rust/i3status_rs/formatting/index.html
 
-### Breaking changes
+Breaking changes are listed below, however you may also want to compare the example config between v0.22 and v0.30 to get a general idea of changes made to the configuration file:
+https://raw.githubusercontent.com/greshake/i3status-rust/v0.22.0/examples/config.toml
+https://raw.githubusercontent.com/greshake/i3status-rust/v0.30.0/examples/config.toml
 
-This is a major release which rewrites the core code to be asynchronous.
+### Breaking changes
 
 - Formatting system has been overhauled, introducing some breaking changes. For example, previously you might have had `format = "{percentage}"`, but placeholders are now denoted with a dollar sign rather then enclosed in brackets: `format = "$percentage"`.
 
