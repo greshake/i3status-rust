@@ -7,7 +7,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `device` | The device in `/sys/class/power_supply/` to read from (this applies even when using UPower driver). When using UPower, this can also be `"DisplayDevice"`. Regular expressions can be used. | Any battery device
+//! `device` | sysfs/UPower: The device in `/sys/class/power_supply/` to read from (can also be "DisplayDevice" for UPower). apc_ups: IPv4Address:port or hostname:port | Any battery device
 //! `driver` | One of `"sysfs"`, `"apc_ups"`, or `"upower"` | `"sysfs"`
 //! `interval` | Update interval, in seconds. Only relevant for `driver = "sysfs"` \|\| "apc_ups"`. | `10`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $percentage "`
