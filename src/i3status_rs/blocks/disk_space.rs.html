@@ -188,6 +188,12 @@
 <a href="#188" id="188">188</a>
 <a href="#189" id="189">189</a>
 <a href="#190" id="190">190</a>
+<a href="#191" id="191">191</a>
+<a href="#192" id="192">192</a>
+<a href="#193" id="193">193</a>
+<a href="#194" id="194">194</a>
+<a href="#195" id="195">195</a>
+<a href="#196" id="196">196</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Disk usage statistics
 //!
 //! # Configuration
@@ -304,10 +310,16 @@
     <span class="kw">loop </span>{
         <span class="kw">let </span>statvfs = statvfs(<span class="kw-2">&amp;*</span>path).error(<span class="string">&quot;failed to retrieve statvfs&quot;</span>)<span class="question-mark">?</span>;
 
-        <span class="kw">let </span>total = statvfs.blocks() * statvfs.fragment_size();
-        <span class="kw">let </span>used = (statvfs.blocks() - statvfs.blocks_free()) * statvfs.fragment_size();
-        <span class="kw">let </span>available = statvfs.blocks_available() * statvfs.block_size();
-        <span class="kw">let </span>free = statvfs.blocks_free() * statvfs.block_size();
+        <span class="comment">// Casting to be compatible with 32-bit systems
+        </span><span class="attr">#[allow(clippy::unnecessary_cast)]
+        </span><span class="kw">let </span>(total, used, available, free) = {
+            <span class="kw">let </span>total = (statvfs.blocks() <span class="kw">as </span>u64) * (statvfs.fragment_size() <span class="kw">as </span>u64);
+            <span class="kw">let </span>used = ((statvfs.blocks() <span class="kw">as </span>u64) - (statvfs.blocks_free() <span class="kw">as </span>u64))
+                * (statvfs.fragment_size() <span class="kw">as </span>u64);
+            <span class="kw">let </span>available = (statvfs.blocks_available() <span class="kw">as </span>u64) * (statvfs.block_size() <span class="kw">as </span>u64);
+            <span class="kw">let </span>free = (statvfs.blocks_free() <span class="kw">as </span>u64) * (statvfs.block_size() <span class="kw">as </span>u64);
+            (total, used, available, free)
+        };
 
         <span class="kw">let </span>result = <span class="kw">match </span>config.info_type {
             InfoType::Available =&gt; available,
