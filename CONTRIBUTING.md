@@ -76,5 +76,5 @@ issues or reviewing pull requests -- please feel free to reach out to us.
 ## License
 
 This project is licensed under the terms of the GPLv3, and any contribution you
-make will be understood to be the same. See the [LICENSE.md](LICENSE.md) file
+make will be understood to be the same. See the [LICENSE](LICENSE) file
 for details on these terms.
