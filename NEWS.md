@@ -1,3 +1,10 @@
+# i3status-rust 0.30.2
+
+### Bug Fixes and Improvements
+
+* Net: do not fail if `nl80211` is not available.
+* Music: make player volume optional (fixes Firefox support).
+
 # i3status-rust 0.30.1
 
 ### Bug Fixes and Improvements

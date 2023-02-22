@@ -2631,7 +2631,7 @@ T}@T{
 A string to customise the output of this block.
 See below for available placeholders.
 T}@T{
-\f[V]\[dq] $icon $1m \[dq]\f[R]
+\f[V]\[dq] $icon $1m.eng(w:4) \[dq]\f[R]
 T}
 T{
 \f[V]interval\f[R]
@@ -2719,7 +2719,7 @@ T}
 \f[C]
 [[block]]
 block = \[dq]load\[dq]
-format = \[dq] $icon 1min avg: $1m \[dq]
+format = \[dq] $icon 1min avg: $1m.eng(w:4) \[dq]
 interval = 1
 \f[R]
 .fi
@@ -3399,7 +3399,8 @@ T}
 T{
 \f[V]volume_icon\f[R]
 T}@T{
-Icon based on volume
+Icon based on volume.
+Missing if unsupported.
 T}@T{
 Icon
 T}
@@ -3407,7 +3408,7 @@ T{
 \f[V]volume\f[R]
 T}@T{
 Current volume.
-Missing if muted.
+Missing if muted or unsupported.
 T}@T{
 Number
 T}
