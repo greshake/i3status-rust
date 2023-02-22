@@ -409,7 +409,9 @@ async fn ipv6(sock: &mut NlSocket, ifa_index: i32) -> Result<Option<Ipv6Addr>> {
     {
         None => Ok(None),
         Some(payload) => {
-            let payload: &[u8; 16] = payload.as_ref().try_into().unwrap();
+            let payload = payload.as_ref();
+            assert_eq!(payload.len(), 16);
+            let payload: &[u8; 16] = payload.try_into().unwrap();
             Ok(Some(Ipv6Addr::from(*payload)))
         }
     }
