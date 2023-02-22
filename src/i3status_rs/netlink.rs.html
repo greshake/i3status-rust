@@ -414,6 +414,8 @@
 <a href="#414" id="414">414</a>
 <a href="#415" id="415">415</a>
 <a href="#416" id="416">416</a>
+<a href="#417" id="417">417</a>
+<a href="#418" id="418">418</a>
 </pre><pre class="rust"><code><span class="kw">use </span>neli::attr::Attribute;
 <span class="kw">use </span>neli::consts::{nl::<span class="kw-2">*</span>, rtnl::<span class="kw-2">*</span>, socket::<span class="kw-2">*</span>};
 <span class="kw">use </span>neli::nl::{NlPayload, Nlmsghdr};
@@ -825,7 +827,9 @@
     </span>{
         <span class="prelude-val">None </span>=&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
         <span class="prelude-val">Some</span>(payload) =&gt; {
-            <span class="kw">let </span>payload: <span class="kw-2">&amp;</span>[u8; <span class="number">16</span>] = payload.as_ref().try_into().unwrap();
+            <span class="kw">let </span>payload = payload.as_ref();
+            <span class="macro">assert_eq!</span>(payload.len(), <span class="number">16</span>);
+            <span class="kw">let </span>payload: <span class="kw-2">&amp;</span>[u8; <span class="number">16</span>] = payload.try_into().unwrap();
             <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(Ipv6Addr::from(<span class="kw-2">*</span>payload)))
         }
     }
