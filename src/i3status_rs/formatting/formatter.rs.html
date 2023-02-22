@@ -484,8 +484,19 @@
 <a href="#484" id="484">484</a>
 <a href="#485" id="485">485</a>
 <a href="#486" id="486">486</a>
+<a href="#487" id="487">487</a>
+<a href="#488" id="488">488</a>
+<a href="#489" id="489">489</a>
+<a href="#490" id="490">490</a>
+<a href="#491" id="491">491</a>
+<a href="#492" id="492">492</a>
+<a href="#493" id="493">493</a>
+<a href="#494" id="494">494</a>
+<a href="#495" id="495">495</a>
+<a href="#496" id="496">496</a>
+<a href="#497" id="497">497</a>
 </pre><pre class="rust"><code><span class="kw">use </span>chrono::format::{Item, StrftimeItems};
-<span class="kw">use </span>chrono::Local;
+<span class="kw">use </span>chrono::{Local, Locale};
 <span class="kw">use </span>once_cell::sync::Lazy;
 
 <span class="kw">use </span>std::fmt::Debug;
@@ -906,6 +917,7 @@
 <span class="attr">#[derive(Debug)]
 </span><span class="kw">pub struct </span>DatetimeFormatter {
     items: Vec&lt;Item&lt;<span class="lifetime">&#39;static</span>&gt;&gt;,
+    locale: <span class="prelude-ty">Option</span>&lt;Locale&gt;,
 }
 
 <span class="kw">fn </span>make_static_item(item: Item&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; Item&lt;<span class="lifetime">&#39;static</span>&gt; {
@@ -922,33 +934,43 @@
 
 <span class="kw">impl </span>DatetimeFormatter {
     <span class="kw">fn </span>new(format: <span class="kw-2">&amp;</span>str, locale: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
-        <span class="kw">let </span>items = <span class="kw">match </span>locale {
+        <span class="kw">let </span>(items, locale) = <span class="kw">match </span>locale {
             <span class="prelude-val">Some</span>(locale) =&gt; {
                 <span class="kw">let </span>locale = locale.try_into().ok().error(<span class="string">&quot;invalid locale&quot;</span>)<span class="question-mark">?</span>;
-                StrftimeItems::new_with_locale(format, locale)
+                (StrftimeItems::new_with_locale(format, locale), <span class="prelude-val">Some</span>(locale))
             }
-            <span class="prelude-val">None </span>=&gt; StrftimeItems::new(format),
-        }
-        .map(make_static_item)
-        .collect();
+            <span class="prelude-val">None </span>=&gt; (StrftimeItems::new(format), <span class="prelude-val">None</span>),
+        };
 
-        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{ items })
+        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
+            items: items.map(make_static_item).collect(),
+            locale,
+        })
     }
 }
 
 <span class="kw">impl </span>Formatter <span class="kw">for </span>DatetimeFormatter {
     <span class="kw">fn </span>format(<span class="kw-2">&amp;</span><span class="self">self</span>, val: <span class="kw-2">&amp;</span>Value) -&gt; <span class="prelude-ty">Result</span>&lt;String&gt; {
         <span class="kw">match </span>val {
-            Value::Datetime(datetime, timezone) =&gt; <span class="prelude-val">Ok</span>(<span class="kw">match </span>timezone {
-                <span class="prelude-val">Some</span>(tz) =&gt; datetime
-                    .with_timezone(tz)
-                    .format_with_items(<span class="self">self</span>.items.iter())
-                    .to_string(),
-                <span class="prelude-val">None </span>=&gt; datetime
-                    .with_timezone(<span class="kw-2">&amp;</span>Local)
-                    .format_with_items(<span class="self">self</span>.items.iter())
-                    .to_string(),
-            }),
+            Value::Datetime(datetime, timezone) =&gt; <span class="prelude-val">Ok</span>(<span class="kw">match </span><span class="self">self</span>.locale {
+                <span class="prelude-val">Some</span>(locale) =&gt; <span class="kw">match </span>timezone {
+                    <span class="prelude-val">Some</span>(tz) =&gt; datetime
+                        .with_timezone(tz)
+                        .format_localized_with_items(<span class="self">self</span>.items.iter(), locale),
+                    <span class="prelude-val">None </span>=&gt; datetime
+                        .with_timezone(<span class="kw-2">&amp;</span>Local)
+                        .format_localized_with_items(<span class="self">self</span>.items.iter(), locale),
+                },
+                <span class="prelude-val">None </span>=&gt; <span class="kw">match </span>timezone {
+                    <span class="prelude-val">Some</span>(tz) =&gt; datetime
+                        .with_timezone(tz)
+                        .format_with_items(<span class="self">self</span>.items.iter()),
+                    <span class="prelude-val">None </span>=&gt; datetime
+                        .with_timezone(<span class="kw-2">&amp;</span>Local)
+                        .format_with_items(<span class="self">self</span>.items.iter()),
+                },
+            }
+            .to_string()),
             other =&gt; <span class="prelude-val">Err</span>(Error::new_format(<span class="macro">format!</span>(
                 <span class="string">&quot;{} cannot be formatted with &#39;datetime&#39; formatter&quot;</span>,
                 other.type_name(),
