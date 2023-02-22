@@ -726,7 +726,7 @@
 //! interface_name_exclude = [&quot;.*kdeconnect.*&quot;, &quot;mpd&quot;]
 //! ```
 //!
-//! Click anywhere to paly/pause:
+//! Click anywhere to play/pause:
 //!
 //! ```toml
 //! [[block]]
@@ -835,7 +835,7 @@
         <span class="string">&quot;prev&quot; </span>=&gt; new_btn(<span class="string">&quot;music_prev&quot;</span>, PREV_BTN, <span class="kw-2">&amp;mut </span>api)<span class="question-mark">?</span>,
     };
 
-    <span class="kw">let </span>prefered_players = <span class="kw">match </span>config.player {
+    <span class="kw">let </span>preferred_players = <span class="kw">match </span>config.player {
         PlayerName::Single(name) =&gt; <span class="macro">vec!</span>[name],
         PlayerName::Multiple(names) =&gt; names,
     };
@@ -850,7 +850,7 @@
         .<span class="kw">await
         </span>.error(<span class="string">&quot;Failed to create PlayerctldProxy&quot;</span>)<span class="question-mark">?</span>;
 
-    <span class="kw">let </span><span class="kw-2">mut </span>players = get_players(<span class="kw-2">&amp;</span>dbus_conn, <span class="kw-2">&amp;</span>prefered_players, <span class="kw-2">&amp;</span>exclude_regex).<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>players = get_players(<span class="kw-2">&amp;</span>dbus_conn, <span class="kw-2">&amp;</span>preferred_players, <span class="kw-2">&amp;</span>exclude_regex).<span class="kw">await</span><span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>cur_player = <span class="prelude-val">None</span>;
     <span class="kw">if let </span><span class="prelude-val">Ok</span>(playerctrld_players) = playerctrld_proxy.player_names().<span class="kw">await </span>{
         <span class="comment">// If we can get the list of players from playerctld then we should
@@ -1019,7 +1019,7 @@
                     <span class="kw">let </span>msg = NameOwnerChanged::from_message(msg).unwrap();
                     <span class="kw">let </span>args = msg.args().unwrap();
                     <span class="kw">match </span>(args.old_owner.as_ref(), args.new_owner.as_ref()) {
-                        (<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(new)) =&gt; <span class="kw">if </span>player_matches(args.name.as_str(), <span class="kw-2">&amp;</span>prefered_players, <span class="kw-2">&amp;</span>exclude_regex) {
+                        (<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(new)) =&gt; <span class="kw">if </span>player_matches(args.name.as_str(), <span class="kw-2">&amp;</span>preferred_players, <span class="kw-2">&amp;</span>exclude_regex) {
                             <span class="kw">match </span>Player::new(<span class="kw-2">&amp;</span>dbus_conn, args.name.to_owned().into(), new.to_owned().into()).<span class="kw">await </span>{
                                 <span class="prelude-val">Ok</span>(player) =&gt; players.push(player),
                                 <span class="prelude-val">Err</span>(e) =&gt; {
@@ -1105,7 +1105,7 @@
 
 <span class="kw">async fn </span>get_players(
     dbus_conn: <span class="kw-2">&amp;</span>zbus::Connection,
-    prefered_players: <span class="kw-2">&amp;</span>[String],
+    preferred_players: <span class="kw-2">&amp;</span>[String],
     exclude_regex: <span class="kw-2">&amp;</span>[Regex],
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;Player&gt;&gt; {
     <span class="kw">let </span>proxy = DBusProxy::new(dbus_conn)
@@ -1117,7 +1117,7 @@
         </span>.error(<span class="string">&quot;failed to list dbus names&quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>players = Vec::new();
     <span class="kw">for </span>name <span class="kw">in </span>names {
-        <span class="kw">if </span>player_matches(name.as_str(), prefered_players, exclude_regex) {
+        <span class="kw">if </span>player_matches(name.as_str(), preferred_players, exclude_regex) {
             <span class="kw">let </span>owner = proxy.get_name_owner(name.as_ref()).<span class="kw">await</span>.unwrap();
             <span class="kw">match </span>Player::new(dbus_conn, name, owner).<span class="kw">await </span>{
                 <span class="prelude-val">Ok</span>(player) =&gt; players.push(player),
@@ -1232,14 +1232,14 @@
         .then(|| <span class="kw-2">&amp;</span>full_name[NAME_PREFIX.len()..])
 }
 
-<span class="kw">fn </span>player_matches(full_name: <span class="kw-2">&amp;</span>str, prefered_players: <span class="kw-2">&amp;</span>[String], exclude_regex: <span class="kw-2">&amp;</span>[Regex]) -&gt; bool {
+<span class="kw">fn </span>player_matches(full_name: <span class="kw-2">&amp;</span>str, preferred_players: <span class="kw-2">&amp;</span>[String], exclude_regex: <span class="kw-2">&amp;</span>[Regex]) -&gt; bool {
     <span class="kw">let </span>name = <span class="kw">match </span>extract_player_name(full_name) {
         <span class="prelude-val">Some</span>(name) =&gt; name,
         <span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="bool-val">false</span>,
     };
 
     exclude_regex.iter().all(|r| !r.is_match(name))
-        &amp;&amp; (prefered_players.is_empty() || prefered_players.iter().any(|p| name.starts_with(<span class="kw-2">&amp;**</span>p)))
+        &amp;&amp; (preferred_players.is_empty() || preferred_players.iter().any(|p| name.starts_with(<span class="kw-2">&amp;**</span>p)))
 }
 
 <span class="attr">#[cfg(test)]
