@@ -84,7 +84,7 @@
 //! interface_name_exclude = [".*kdeconnect.*", "mpd"]
 //! ```
 //!
-//! Click anywhere to paly/pause:
+//! Click anywhere to play/pause:
 //!
 //! ```toml
 //! [[block]]
@@ -94,7 +94,7 @@
 //! action = "play_pause"
 //! ```
 //!
-//! Scroll to change the player volume, use the forward and back buttons to seek:
+//! Scroll to change the player volume, use the forward and backward buttons to seek:
 //!
 //! ```toml
 //! [[block]]
@@ -193,7 +193,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         "prev" => new_btn("music_prev", PREV_BTN, &mut api)?,
     };
 
-    let prefered_players = match config.player {
+    let preferred_players = match config.player {
         PlayerName::Single(name) => vec![name],
         PlayerName::Multiple(names) => names,
     };
@@ -208,7 +208,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         .await
         .error("Failed to create PlayerctldProxy")?;
 
-    let mut players = get_players(&dbus_conn, &prefered_players, &exclude_regex).await?;
+    let mut players = get_players(&dbus_conn, &preferred_players, &exclude_regex).await?;
     let mut cur_player = None;
     if let Ok(playerctrld_players) = playerctrld_proxy.player_names().await {
         // If we can get the list of players from playerctld then we should
@@ -377,7 +377,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     let msg = NameOwnerChanged::from_message(msg).unwrap();
                     let args = msg.args().unwrap();
                     match (args.old_owner.as_ref(), args.new_owner.as_ref()) {
-                        (None, Some(new)) => if player_matches(args.name.as_str(), &prefered_players, &exclude_regex) {
+                        (None, Some(new)) => if player_matches(args.name.as_str(), &preferred_players, &exclude_regex) {
                             match Player::new(&dbus_conn, args.name.to_owned().into(), new.to_owned().into()).await {
                                 Ok(player) => players.push(player),
                                 Err(e) => {
@@ -463,7 +463,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
 async fn get_players(
     dbus_conn: &zbus::Connection,
-    prefered_players: &[String],
+    preferred_players: &[String],
     exclude_regex: &[Regex],
 ) -> Result<Vec<Player>> {
     let proxy = DBusProxy::new(dbus_conn)
@@ -475,7 +475,7 @@ async fn get_players(
         .error("failed to list dbus names")?;
     let mut players = Vec::new();
     for name in names {
-        if player_matches(name.as_str(), prefered_players, exclude_regex) {
+        if player_matches(name.as_str(), preferred_players, exclude_regex) {
             let owner = proxy.get_name_owner(name.as_ref()).await.unwrap();
             match Player::new(dbus_conn, name, owner).await {
                 Ok(player) => players.push(player),
@@ -590,14 +590,14 @@ fn extract_player_name(full_name: &str) -> Option<&str> {
         .then(|| &full_name[NAME_PREFIX.len()..])
 }
 
-fn player_matches(full_name: &str, prefered_players: &[String], exclude_regex: &[Regex]) -> bool {
+fn player_matches(full_name: &str, preferred_players: &[String], exclude_regex: &[Regex]) -> bool {
     let name = match extract_player_name(full_name) {
         Some(name) => name,
         None => return false,
     };
 
     exclude_regex.iter().all(|r| !r.is_match(name))
-        && (prefered_players.is_empty() || prefered_players.iter().any(|p| name.starts_with(&**p)))
+        && (preferred_players.is_empty() || preferred_players.iter().any(|p| name.starts_with(&**p)))
 }
 
 #[cfg(test)]
