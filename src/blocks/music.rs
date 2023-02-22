@@ -94,7 +94,7 @@
 //! action = "play_pause"
 //! ```
 //!
-//! Scroll to change the player volume, use the forward and backward buttons to seek:
+//! Scroll to change the player volume, use the forward and back buttons to seek:
 //!
 //! ```toml
 //! [[block]]
