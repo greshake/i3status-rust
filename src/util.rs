@@ -1,3 +1,4 @@
+use std::env::current_exe;
 use std::fs::File;
 use std::io::{self, BufReader, Read};
 use std::path::{Path, PathBuf};
@@ -26,6 +27,20 @@ pub fn find_file(file: &str, subdir: Option<&str>, extension: Option<&str>) -> O
     // Try full path
     if file.exists() {
         return Some(file);
+    }
+
+    // Developer testing live? Check project path
+    if let Ok(exe_path) = current_exe() {
+        if let Some(parent) = exe_path.parent() {
+            let mut path = parent.join("..").join("..").join("files");
+            if let Some(subdir) = subdir {
+                path.push(subdir);
+            }
+            path.push(&file);
+            if path.exists() {
+                return Some(path);
+            }
+        }
     }
 
     // Try XDG_CONFIG_HOME (e.g. `~/.config`)
