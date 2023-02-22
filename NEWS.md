@@ -4,6 +4,7 @@
 
 * Net: do not fail if `nl80211` is not available.
 * Music: make player volume optional (fixes Firefox support).
+* Time: actually apply configured locale.
 
 # i3status-rust 0.30.1
 
