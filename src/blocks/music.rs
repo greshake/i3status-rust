@@ -40,8 +40,8 @@
 //! `play`        | Play/Pause button | Clickable icon
 //! `next`        | Next button | Clickable icon
 //! `prev`        | Previous button | Clickable icon
-//! `volume_icon` | Icon based on volume              | Icon
-//! `volume`      | Current volume. Missing if muted. | Number
+//! `volume_icon` | Icon based on volume. Missing if unsupported.    | Icon
+//! `volume`      | Current volume. Missing if muted or unsupported. | Number
 //!
 //! Action          | Default button
 //! ----------------|------------------
@@ -127,7 +127,6 @@
 
 use super::prelude::*;
 use regex::Regex;
-use tokio::try_join;
 use zbus::fdo::{DBusProxy, NameOwnerChanged, PropertiesChanged};
 use zbus::names::{OwnedBusName, OwnedUniqueName};
 use zbus::{MatchRule, MessageStream};
@@ -323,11 +322,13 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     }
                     _ => (),
                 }
-                values.insert(
-                    "volume_icon".into(),
-                    Value::icon(api.get_icon_in_progression("volume", player.volume)?),
-                );
-                values.insert("volume".into(), Value::percents(player.volume * 100.0));
+                if let Some(volume) = player.volume {
+                    values.insert(
+                        "volume_icon".into(),
+                        Value::icon(api.get_icon_in_progression("volume", volume)?),
+                    );
+                    values.insert("volume".into(), Value::percents(volume * 100.0));
+                }
                 widget.set_values(values);
                 widget.state = state;
                 api.set_widget(&widget).await?;
@@ -358,7 +359,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                                 zbus_mpris::PlayerMetadata::try_from(metadata.to_owned()).unwrap();
                         }
                         if let Some(volume) = props.get("Volume") {
-                            player.volume = *volume.downcast_ref().unwrap();
+                            player.volume = Some(*volume.downcast_ref().unwrap());
                         }
                         if player.status == Some(PlaybackStatus::Playing)
                         && (
@@ -494,7 +495,7 @@ struct Player {
     bus_name: OwnedBusName,
     player_proxy: zbus_mpris::PlayerProxy<'static>,
     metadata: zbus_mpris::PlayerMetadata,
-    volume: f64,
+    volume: Option<f64>,
 }
 
 impl Player {
@@ -509,9 +510,12 @@ impl Player {
             .build()
             .await
             .error("failed to open player proxy")?;
+
         let (metadata, status, volume) =
-            try_join!(proxy.metadata(), proxy.playback_status(), proxy.volume())
-                .error("failed to obtain player information")?;
+            tokio::join!(proxy.metadata(), proxy.playback_status(), proxy.volume());
+
+        let metadata = metadata.error("failed to obtain player metadata")?;
+        let status = status.error("failed to obtain player status")?;
 
         Ok(Self {
             status: PlaybackStatus::from_str(&status),
@@ -519,7 +523,7 @@ impl Player {
             bus_name,
             player_proxy: proxy,
             metadata,
-            volume,
+            volume: volume.ok(),
         })
     }
 
@@ -551,10 +555,13 @@ impl Player {
     }
 
     async fn set_volume(&self, step_size: f64) -> Result<()> {
-        self.player_proxy
-            .set_volume(self.volume + step_size)
-            .await
-            .error("set_volume() failed")
+        if let Some(volume) = self.volume {
+            self.player_proxy
+                .set_volume(volume + step_size)
+                .await
+                .error("set_volume() failed")?;
+        }
+        Ok(())
     }
 }
 
