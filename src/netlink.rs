@@ -251,7 +251,8 @@ macro_rules! recv_until_done {
                 if msg.nl_type == libc::NLMSG_DONE as u16 {
                     break 'recv;
                 }
-                if let NlPayload::Payload($payload) = msg.nl_payload {
+                #[allow(unused_mut)]
+                if let NlPayload::Payload(mut $payload) = msg.nl_payload {
                     $($code)*
                 }
             }
@@ -379,8 +380,12 @@ async fn ip_payload(
         if msg.ifa_index != ifa_index {
             continue;
         }
-        if let Some(rtattr) = msg.rtattrs.into_iter().find(|a| a.rta_type == Ifa::Address) {
-            payload = Some(rtattr.rta_payload);
+        if payload.is_none() {
+            if let Some(rtattr) = msg.rtattrs.iter_mut().find(|a| a.rta_type == Ifa::Local) {
+                payload = Some(std::mem::take(&mut rtattr.rta_payload));
+            } else if let Some(rtattr) = msg.rtattrs.into_iter().find(|a| a.rta_type == Ifa::Address) {
+                payload = Some(rtattr.rta_payload);
+            }
         }
     });
 
