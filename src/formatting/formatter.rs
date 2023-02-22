@@ -1,5 +1,5 @@
 use chrono::format::{Item, StrftimeItems};
-use chrono::Local;
+use chrono::{Local, Locale};
 use once_cell::sync::Lazy;
 
 use std::fmt::Debug;
@@ -420,6 +420,7 @@ impl Formatter for FixFormatter {
 #[derive(Debug)]
 pub struct DatetimeFormatter {
     items: Vec<Item<'static>>,
+    locale: Option<Locale>,
 }
 
 fn make_static_item(item: Item<'_>) -> Item<'static> {
@@ -436,33 +437,43 @@ fn make_static_item(item: Item<'_>) -> Item<'static> {
 
 impl DatetimeFormatter {
     fn new(format: &str, locale: Option<&str>) -> Result<Self> {
-        let items = match locale {
+        let (items, locale) = match locale {
             Some(locale) => {
                 let locale = locale.try_into().ok().error("invalid locale")?;
-                StrftimeItems::new_with_locale(format, locale)
+                (StrftimeItems::new_with_locale(format, locale), Some(locale))
             }
-            None => StrftimeItems::new(format),
-        }
-        .map(make_static_item)
-        .collect();
+            None => (StrftimeItems::new(format), None),
+        };
 
-        Ok(Self { items })
+        Ok(Self {
+            items: items.map(make_static_item).collect(),
+            locale,
+        })
     }
 }
 
 impl Formatter for DatetimeFormatter {
     fn format(&self, val: &Value) -> Result<String> {
         match val {
-            Value::Datetime(datetime, timezone) => Ok(match timezone {
-                Some(tz) => datetime
-                    .with_timezone(tz)
-                    .format_with_items(self.items.iter())
-                    .to_string(),
-                None => datetime
-                    .with_timezone(&Local)
-                    .format_with_items(self.items.iter())
-                    .to_string(),
-            }),
+            Value::Datetime(datetime, timezone) => Ok(match self.locale {
+                Some(locale) => match timezone {
+                    Some(tz) => datetime
+                        .with_timezone(tz)
+                        .format_localized_with_items(self.items.iter(), locale),
+                    None => datetime
+                        .with_timezone(&Local)
+                        .format_localized_with_items(self.items.iter(), locale),
+                },
+                None => match timezone {
+                    Some(tz) => datetime
+                        .with_timezone(tz)
+                        .format_with_items(self.items.iter()),
+                    None => datetime
+                        .with_timezone(&Local)
+                        .format_with_items(self.items.iter()),
+                },
+            }
+            .to_string()),
             other => Err(Error::new_format(format!(
                 "{} cannot be formatted with 'datetime' formatter",
                 other.type_name(),
