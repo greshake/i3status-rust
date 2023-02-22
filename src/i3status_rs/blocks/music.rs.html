@@ -633,6 +633,13 @@
 <a href="#633" id="633">633</a>
 <a href="#634" id="634">634</a>
 <a href="#635" id="635">635</a>
+<a href="#636" id="636">636</a>
+<a href="#637" id="637">637</a>
+<a href="#638" id="638">638</a>
+<a href="#639" id="639">639</a>
+<a href="#640" id="640">640</a>
+<a href="#641" id="641">641</a>
+<a href="#642" id="642">642</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The current song title and artist
 //!
 //! Also provides buttons for play/pause, previous and next.
@@ -675,8 +682,8 @@
 //! `play`        | Play/Pause button | Clickable icon
 //! `next`        | Next button | Clickable icon
 //! `prev`        | Previous button | Clickable icon
-//! `volume_icon` | Icon based on volume              | Icon
-//! `volume`      | Current volume. Missing if muted. | Number
+//! `volume_icon` | Icon based on volume. Missing if unsupported.    | Icon
+//! `volume`      | Current volume. Missing if muted or unsupported. | Number
 //!
 //! Action          | Default button
 //! ----------------|------------------
@@ -762,7 +769,6 @@
 
 </span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
 <span class="kw">use </span>regex::Regex;
-<span class="kw">use </span>tokio::try_join;
 <span class="kw">use </span>zbus::fdo::{DBusProxy, NameOwnerChanged, PropertiesChanged};
 <span class="kw">use </span>zbus::names::{OwnedBusName, OwnedUniqueName};
 <span class="kw">use </span>zbus::{MatchRule, MessageStream};
@@ -958,11 +964,13 @@
                     }
                     <span class="kw">_ </span>=&gt; (),
                 }
-                values.insert(
-                    <span class="string">&quot;volume_icon&quot;</span>.into(),
-                    Value::icon(api.get_icon_in_progression(<span class="string">&quot;volume&quot;</span>, player.volume)<span class="question-mark">?</span>),
-                );
-                values.insert(<span class="string">&quot;volume&quot;</span>.into(), Value::percents(player.volume * <span class="number">100.0</span>));
+                <span class="kw">if let </span><span class="prelude-val">Some</span>(volume) = player.volume {
+                    values.insert(
+                        <span class="string">&quot;volume_icon&quot;</span>.into(),
+                        Value::icon(api.get_icon_in_progression(<span class="string">&quot;volume&quot;</span>, volume)<span class="question-mark">?</span>),
+                    );
+                    values.insert(<span class="string">&quot;volume&quot;</span>.into(), Value::percents(volume * <span class="number">100.0</span>));
+                }
                 widget.set_values(values);
                 widget.state = state;
                 api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
@@ -993,7 +1001,7 @@
                                 zbus_mpris::PlayerMetadata::try_from(metadata.to_owned()).unwrap();
                         }
                         <span class="kw">if let </span><span class="prelude-val">Some</span>(volume) = props.get(<span class="string">&quot;Volume&quot;</span>) {
-                            player.volume = <span class="kw-2">*</span>volume.downcast_ref().unwrap();
+                            player.volume = <span class="prelude-val">Some</span>(<span class="kw-2">*</span>volume.downcast_ref().unwrap());
                         }
                         <span class="kw">if </span>player.status == <span class="prelude-val">Some</span>(PlaybackStatus::Playing)
                         &amp;&amp; (
@@ -1129,7 +1137,7 @@
     bus_name: OwnedBusName,
     player_proxy: zbus_mpris::PlayerProxy&lt;<span class="lifetime">&#39;static</span>&gt;,
     metadata: zbus_mpris::PlayerMetadata,
-    volume: f64,
+    volume: <span class="prelude-ty">Option</span>&lt;f64&gt;,
 }
 
 <span class="kw">impl </span>Player {
@@ -1144,9 +1152,12 @@
             </span>.build()
             .<span class="kw">await
             </span>.error(<span class="string">&quot;failed to open player proxy&quot;</span>)<span class="question-mark">?</span>;
+
         <span class="kw">let </span>(metadata, status, volume) =
-            <span class="macro">try_join!</span>(proxy.metadata(), proxy.playback_status(), proxy.volume())
-                .error(<span class="string">&quot;failed to obtain player information&quot;</span>)<span class="question-mark">?</span>;
+            <span class="macro">tokio::join!</span>(proxy.metadata(), proxy.playback_status(), proxy.volume());
+
+        <span class="kw">let </span>metadata = metadata.error(<span class="string">&quot;failed to obtain player metadata&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>status = status.error(<span class="string">&quot;failed to obtain player status&quot;</span>)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
             status: PlaybackStatus::from_str(<span class="kw-2">&amp;</span>status),
@@ -1154,7 +1165,7 @@
             bus_name,
             player_proxy: proxy,
             metadata,
-            volume,
+            volume: volume.ok(),
         })
     }
 
@@ -1186,10 +1197,13 @@
     }
 
     <span class="kw">async fn </span>set_volume(<span class="kw-2">&amp;</span><span class="self">self</span>, step_size: f64) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-        <span class="self">self</span>.player_proxy
-            .set_volume(<span class="self">self</span>.volume + step_size)
-            .<span class="kw">await
-            </span>.error(<span class="string">&quot;set_volume() failed&quot;</span>)
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(volume) = <span class="self">self</span>.volume {
+            <span class="self">self</span>.player_proxy
+                .set_volume(volume + step_size)
+                .<span class="kw">await
+                </span>.error(<span class="string">&quot;set_volume() failed&quot;</span>)<span class="question-mark">?</span>;
+        }
+        <span class="prelude-val">Ok</span>(())
     }
 }
 
