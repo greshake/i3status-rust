@@ -416,6 +416,11 @@
 <a href="#416" id="416">416</a>
 <a href="#417" id="417">417</a>
 <a href="#418" id="418">418</a>
+<a href="#419" id="419">419</a>
+<a href="#420" id="420">420</a>
+<a href="#421" id="421">421</a>
+<a href="#422" id="422">422</a>
+<a href="#423" id="423">423</a>
 </pre><pre class="rust"><code><span class="kw">use </span>neli::attr::Attribute;
 <span class="kw">use </span>neli::consts::{nl::<span class="kw-2">*</span>, rtnl::<span class="kw-2">*</span>, socket::<span class="kw-2">*</span>};
 <span class="kw">use </span>neli::nl::{NlPayload, Nlmsghdr};
@@ -669,7 +674,8 @@
                 <span class="kw">if </span>msg.nl_type == libc::NLMSG_DONE <span class="kw">as </span>u16 {
                     <span class="kw">break </span><span class="lifetime">&#39;recv</span>;
                 }
-                <span class="kw">if let </span>NlPayload::Payload(<span class="macro-nonterminal">$payload</span>) = msg.nl_payload {
+                <span class="attr">#[allow(unused_mut)]
+                </span><span class="kw">if let </span>NlPayload::Payload(<span class="kw-2">mut </span><span class="macro-nonterminal">$payload</span>) = msg.nl_payload {
                     $(<span class="macro-nonterminal">$code</span>)*
                 }
             }
@@ -797,8 +803,12 @@
         <span class="kw">if </span>msg.ifa_index != ifa_index {
             <span class="kw">continue</span>;
         }
-        <span class="kw">if let </span><span class="prelude-val">Some</span>(rtattr) = msg.rtattrs.into_iter().find(|a| a.rta_type == Ifa::Address) {
-            payload = <span class="prelude-val">Some</span>(rtattr.rta_payload);
+        <span class="kw">if </span>payload.is_none() {
+            <span class="kw">if let </span><span class="prelude-val">Some</span>(rtattr) = msg.rtattrs.iter_mut().find(|a| a.rta_type == Ifa::Local) {
+                payload = <span class="prelude-val">Some</span>(std::mem::take(<span class="kw-2">&amp;mut </span>rtattr.rta_payload));
+            } <span class="kw">else if let </span><span class="prelude-val">Some</span>(rtattr) = msg.rtattrs.into_iter().find(|a| a.rta_type == Ifa::Address) {
+                payload = <span class="prelude-val">Some</span>(rtattr.rta_payload);
+            }
         }
     });
 
