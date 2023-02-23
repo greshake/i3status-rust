@@ -1,3 +1,11 @@
+# i3status-rust 0.30.3 [unreleased]
+
+### Bug Fixes and Improvements
+
+* Net: display more relevant IP addresses.
+* Net: fix panic on systems width IPv6 disabled.
+* Setting a click handler without `action = "..."` will disable the default block action.
+
 # i3status-rust 0.30.2
 
 ### Bug Fixes and Improvements
