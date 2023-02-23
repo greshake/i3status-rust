@@ -117,7 +117,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             "barchart" => Value::text(barchart),
             "frequency" => Value::hertz(freq_avg),
             "utilization" => Value::percents(utilization_avg * 100.),
-            "max_frequency" => Value::hertz(freqs.iter().copied().max_by(f64::total_cmp).unwrap()),
+            "max_frequency" => Value::hertz(freqs.iter().copied().max_by(f64::total_cmp).unwrap_or_default()),
         );
         boost.map(|b| values.insert("boost".into(), Value::icon(b)));
         for (i, freq) in freqs.iter().enumerate() {
