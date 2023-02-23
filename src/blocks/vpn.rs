@@ -18,6 +18,10 @@
 //! `country`   | Country currently connected to                            | Text   | -
 //! `flag`      | Country specific flag (depends on a font supporting them) | Text   | -
 //!
+//! Action    | Default button | Description
+//! ----------|----------------|-----------------------------------
+//! `toggle`  | Left           | toggles the vpn network connection
+//!
 //! # Drivers
 //!
 //! ## nordvpn
@@ -35,8 +39,8 @@
 //! interval = 10
 //! format_connected = "VPN: $icon "
 //! format_disconnected = "VPN: $icon "
-//! state_connected = "info"
-//! state_diconnected = "idle"
+//! state_connected = "good"
+//! state_diconnected = "warning"
 //! ```
 //!
 //! Possible values for `state_connected` and `state_diconnected`:
@@ -44,6 +48,7 @@
 //! ```
 //! warning
 //! critical
+//! good
 //! info
 //! idle
 //! ```
@@ -286,6 +291,7 @@ impl FromStr for State {
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         match s {
             "info" => Ok(State::Info),
+            "good" => Ok(State::Good),
             "warning" => Ok(State::Warning),
             "critical" => Ok(State::Critical),
             _ => Ok(State::Idle),
