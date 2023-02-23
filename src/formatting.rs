@@ -1,8 +1,7 @@
 //! # Formatting system
-//!
 //! Many blocks have a `format` configuration option, which allows to heavily customize the block's
 //! appearance. In short, each block with `format` option provides a set of values, which are
-//! displayed according to `format`. `format`'s value is just a text with embeded variables.
+//! displayed according to `format`. `format`'s value is just a text with embedded variables.
 //! Similarly to PHP and shell, variable name must start with a `$`:
 //! `this is a variable: -> $var <-`.
 //!
@@ -33,7 +32,12 @@
 //! -----------------------|---------------------------------------------------|-------------
 //! `min_width` or `min_w` | if text is shorter it will be padded using spaces | `0`
 //! `max_width` or `max_w` | if text is longer it will be truncated            | Infinity
+//! `width` or `w`         | Text will be exactly this length by padding or truncating as needed | N/A
 //! `rot_interval`         | if text is longer than `max_width` it will be rotated every `rot_interval` seconds | `0.5`
+//!
+//! Note: width just changes the values of both min_width and max_width to be the same. Use width
+//! if you want the values to be the same, or the other two otherwise. Don't mix width with
+//! min_width or max_width.
 //!
 //! ## `eng` - Format numbers using engineering notation
 //!
@@ -43,7 +47,7 @@
 //! `unit` or `u`   | some values have a [unit](unit::Unit), and it is possible to convert them by setting this option | N/A
 //! `hide_unit`     | hide the unit symbol                                                                             | `false`
 //! `unit_space`    | have a whitespace before unit symbol                                                             | `false`
-//! `prefix` or `p` | specifiy this argument if you want to set the minimal [SI prefix](prefix::Prefix)                | N/A
+//! `prefix` or `p` | specify this argument if you want to set the minimal [SI prefix](prefix::Prefix)                | N/A
 //! `hide_prefix`   | hide the prefix symbol                                                                           | `false`
 //! `prefix_space`  | have a whitespace before prefix symbol                                                           | `false`
 //! `force_prefix`  | force the prefix value instead of setting a "minimal prefix"                                     | `false`
@@ -58,6 +62,13 @@
 //! ## `pango-str` - Just display the text without pango markup escaping
 //!
 //! No arguments.
+//!
+//! ## `datetime` - Display datetime
+//!
+//! Argument               | Description                                                                                               |Default value
+//! -----------------------|-----------------------------------------------------------------------------------------------------------|-------------
+//! `format` or `f`        | [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. | `'%a %d/%m %R'`
+//! `locale` or `l`        | Locale to apply when formatting the time                                                                  | System locale
 //!
 //! # Handling missing placeholders and incorrect types
 //!

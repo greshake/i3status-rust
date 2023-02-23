@@ -20,25 +20,28 @@
 //! ----|--------|--------
 //! `format` | A string to customise the output of this block. See below for available placeholders. | <code>" $icon {$combo.str(max_w:25,rot_interval:0.5) $play &vert;}"</code>
 //! `player` | Name(s) of the music player(s) MPRIS interface. This can be either a music player name or an array of music player names. Run <code>busctl --user list &vert; grep "org.mpris.MediaPlayer2." &vert; cut -d' ' -f1</code> and the name is the part after "org.mpris.MediaPlayer2.". | `None`
-//! `interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore. | `[]`
+//! `interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore. | `["playerctld"]`
 //! `separator` | String to insert between artist and title. | `" - "`
-//! `seek_step` | Number of microseconds to seek forward/backward when scrolling on the bar. | `1000`
+//! `seek_step_secs` | Positive number of seconds to seek forward/backward when scrolling on the bar. Does not need to be an integer. | `1`
+//! `volume_step` | The percent volume level is increased/decreased for the selected audio device when scrolling. Capped automatically at 50. | `5`
 //!
-//! Note: All placeholders exctpt `icon` can be absent. See the examples below to learn how to handle this.
+//! Note: All placeholders except `icon` can be absent. See the examples below to learn how to handle this.
 //!
-//! Placeholder | Value          | Type
-//! ------------|----------------|------
-//! `icon`      | A static icon  | Icon
-//! `artist`    | Current artist | Text
-//! `title`     | Current title  | Text
-//! `url`       | Current song url | Text
-//! `combo`     | Resolves to "`$artist[sep]$title"`, `"$artist"`, `"$title"`, or `"$url"` depending on what information is available. `[sep]` is set by `separator` option. | Text
-//! `player`    | Name of the current player (taken from the last part of its MPRIS bus name) | Text
-//! `avail`     | Total number of players available to switch between | Number
-//! `cur`       | Total number of players available to switch between | Number
-//! `play`      | Play/Pause button | Clickable icon
-//! `next`      | Next button | Clickable icon
-//! `prev`      | Previous button | Clickable icon
+//! Placeholder   | Value          | Type
+//! --------------|----------------|------
+//! `icon`        | A static icon  | Icon
+//! `artist`      | Current artist | Text
+//! `title`       | Current title  | Text
+//! `url`         | Current song url | Text
+//! `combo`       | Resolves to "`$artist[sep]$title"`, `"$artist"`, `"$title"`, or `"$url"` depending on what information is available. `[sep]` is set by `separator` option. | Text
+//! `player`      | Name of the current player (taken from the last part of its MPRIS bus name) | Text
+//! `avail`       | Total number of players available to switch between | Number
+//! `cur`         | Total number of players available to switch between | Number
+//! `play`        | Play/Pause button | Clickable icon
+//! `next`        | Next button | Clickable icon
+//! `prev`        | Previous button | Clickable icon
+//! `volume_icon` | Icon based on volume. Missing if unsupported.    | Icon
+//! `volume`      | Current volume. Missing if muted or unsupported. | Number
 //!
 //! Action          | Default button
 //! ----------------|------------------
@@ -48,6 +51,8 @@
 //! `next_player`   | Right
 //! `seek_forward`  | Wheel Up
 //! `seek_backward` | Wheel Down
+//! `volume_up`     | -
+//! `volume_down`   | -
 //!
 //! # Examples
 //!
@@ -79,7 +84,7 @@
 //! interface_name_exclude = [".*kdeconnect.*", "mpd"]
 //! ```
 //!
-//! Click anywhere to paly/pause:
+//! Click anywhere to play/pause:
 //!
 //! ```toml
 //! [[block]]
@@ -89,11 +94,34 @@
 //! action = "play_pause"
 //! ```
 //!
+//! Scroll to change the player volume, use the forward and back buttons to seek:
+//!
+//! ```toml
+//! [[block]]
+//! block = "music"
+//! format = " $icon $volume_icon $combo $play $next| "
+//! seek_step_secs = 10
+//! [[block.click]]
+//! button = "up"
+//! action = "volume_up"
+//! [[block.click]]
+//! button = "down"
+//! action = "volume_down"
+//! [[block.click]]
+//! button = "forward"
+//! action = "seek_forward"
+//! [[block.click]]
+//! button = "back"
+//! action = "seek_backward"
+//! ```
+//!
 //! # Icons Used
 //! - `music`
 //! - `music_next`
 //! - `music_play`
 //! - `music_prev`
+//! - `volume_muted`
+//! - `volume` (as a progression)
 //!
 //! [MediaPlayer2 Interface]: https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html
 
@@ -104,6 +132,7 @@ use zbus::names::{OwnedBusName, OwnedUniqueName};
 use zbus::{MatchRule, MessageStream};
 
 mod zbus_mpris;
+mod zbus_playerctld;
 
 make_log_macro!(debug, "music");
 
@@ -116,11 +145,14 @@ const PREV_BTN: &str = "prev_btn";
 pub struct Config {
     format: FormatConfig,
     player: PlayerName,
+    #[default(vec!["playerctld".into()])]
     interface_name_exclude: Vec<String>,
     #[default(" - ".into())]
     separator: String,
-    #[default(1_000)]
-    seek_step: i64,
+    #[default(1.into())]
+    seek_step_secs: Seconds<false>,
+    #[default(5.0)]
+    volume_step: f64,
 }
 
 #[derive(Deserialize, Debug, Clone, SmartDefault)]
@@ -149,6 +181,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             .with_default(" $icon {$combo.str(max_w:25,rot_interval:0.5) $play |}")?,
     );
 
+    let volume_step = config.volume_step.clamp(0.0, 50.0) / 100.0;
+
     let new_btn = |icon: &str, instance: &'static str, api: &mut CommonApi| -> Result<Value> {
         Ok(Value::icon(api.get_icon(icon)?).with_instance(instance))
     };
@@ -159,7 +193,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         "prev" => new_btn("music_prev", PREV_BTN, &mut api)?,
     };
 
-    let prefered_players = match config.player {
+    let preferred_players = match config.player {
         PlayerName::Single(name) => vec![name],
         PlayerName::Multiple(names) => names,
     };
@@ -170,12 +204,33 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         .collect::<Result<Vec<_>, _>>()
         .error("Invalid regex")?;
 
-    let mut players = get_players(&dbus_conn, &prefered_players, &exclude_regex).await?;
+    let playerctld_proxy = zbus_playerctld::PlayerctldProxy::new(&dbus_conn)
+        .await
+        .error("Failed to create PlayerctldProxy")?;
+
+    let mut players = get_players(&dbus_conn, &preferred_players, &exclude_regex).await?;
     let mut cur_player = None;
-    for (i, player) in players.iter().enumerate() {
-        cur_player = Some(i);
-        if player.status == Some(PlaybackStatus::Playing) {
-            break;
+    if let Ok(playerctld_players) = playerctld_proxy.player_names().await {
+        // If we can get the list of players from playerctld then we should
+        // take the first matching player (this is the most recently active player)
+        for playerctld_player in playerctld_players {
+            if let Some(pos) = players
+                .iter()
+                .position(|p| p.bus_name.as_str() == playerctld_player)
+            {
+                cur_player = Some(pos);
+                break;
+            }
+        }
+    } else {
+        // If we couldn't get the players from playerctld then fall back to walking over
+        // the players and select the first one found playing something, or the last one
+        // in the list (the most recently opened)
+        for (i, player) in players.iter().enumerate() {
+            cur_player = Some(i);
+            if player.status == Some(PlaybackStatus::Playing) {
+                break;
+            }
         }
     }
 
@@ -206,6 +261,11 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     )
     .await
     .error("Failed to add match rule")?;
+
+    let mut active_player_change_end_stream = playerctld_proxy
+        .receive_active_player_change_end()
+        .await
+        .error("Failed to create ActivePlayerChangeEndStream")?;
 
     loop {
         debug!("available players:");
@@ -262,6 +322,13 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     }
                     _ => (),
                 }
+                if let Some(volume) = player.volume {
+                    values.insert(
+                        "volume_icon".into(),
+                        Value::icon(api.get_icon_in_progression("volume", volume)?),
+                    );
+                    values.insert("volume".into(), Value::percents(volume * 100.0));
+                }
                 widget.set_values(values);
                 widget.state = state;
                 api.set_widget(&widget).await?;
@@ -281,7 +348,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     let args = msg.args().unwrap();
                     let header = msg.header().unwrap();
                     let sender = header.sender().unwrap().unwrap();
-                    if let Some(player) = players.iter_mut().find(|p| &*p.owner == sender) {
+                    if let Some((pos, player)) = players.iter_mut().enumerate().find(|p| &*p.1.owner == sender) {
                         let props = args.changed_properties;
                         if let Some(status) = props.get("PlaybackStatus") {
                             let status: &str = status.downcast_ref().unwrap();
@@ -290,12 +357,17 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                         if let Some(metadata) = props.get("Metadata") {
                             player.metadata =
                                 zbus_mpris::PlayerMetadata::try_from(metadata.to_owned()).unwrap();
-
-                            if player.metadata.title.is_some()
-                                || player.metadata.artist.is_some()
-                                || player.metadata.url.is_some() {
-                                    cur_player = players.iter().position(|p| &*p.owner == sender);
-                            }
+                        }
+                        if let Some(volume) = props.get("Volume") {
+                            player.volume = Some(*volume.downcast_ref().unwrap());
+                        }
+                        if player.status == Some(PlaybackStatus::Playing)
+                        && (
+                            player.metadata.title.is_some()
+                            || player.metadata.artist.is_some()
+                            || player.metadata.url.is_some()
+                        ) {
+                            cur_player = Some(pos);
                         }
                         break;
                     }
@@ -305,8 +377,13 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     let msg = NameOwnerChanged::from_message(msg).unwrap();
                     let args = msg.args().unwrap();
                     match (args.old_owner.as_ref(), args.new_owner.as_ref()) {
-                        (None, Some(new)) => if player_matches(args.name.as_str(), &prefered_players, &exclude_regex) {
-                            players.push(Player::new(&dbus_conn, args.name.to_owned().into(), new.to_owned().into()).await?);
+                        (None, Some(new)) => if player_matches(args.name.as_str(), &preferred_players, &exclude_regex) {
+                            match Player::new(&dbus_conn, args.name.to_owned().into(), new.to_owned().into()).await {
+                                Ok(player) => players.push(player),
+                                Err(e) => {
+                                    debug!("{e}");
+                                },
+                            }
                         }
                         (Some(old), None) => {
                             if let Some(pos) = players.iter().position(|p| &*p.owner == old) {
@@ -323,6 +400,20 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                             }
                         }
                         _ => (),
+                    }
+                    break;
+                }
+                Some(msg)  = active_player_change_end_stream.next() => {
+                    let args = msg.args().unwrap();
+                    if let Some(pos) = players.iter().position(|p| p.bus_name == args.name){
+                        cur_player = Some(pos);
+                    }
+                    else{
+                        // We must have shifted to a player we wanted to skip (on the interface_name_exclude list).
+                        // Let's shift again
+                        if let Err(e) = playerctld_proxy.shift().await{
+                            debug!("{e}");
+                        }
                     }
                     break;
                 }
@@ -343,13 +434,22 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                                 }
                                 "next_player" => {
                                     cur_player = Some((i + 1) % players.len());
+                                    if let Err(e) = playerctld_proxy.shift().await{
+                                        debug!("{e}");
+                                    }
                                     break;
                                 }
                                 "seek_forward" => {
-                                    player.seek(config.seek_step).await?;
+                                    player.seek(config.seek_step_secs.0.as_micros() as i64).await?;
                                 }
                                 "seek_backward" => {
-                                    player.seek(-config.seek_step).await?;
+                                    player.seek(-(config.seek_step_secs.0.as_micros() as i64)).await?;
+                                }
+                                "volume_up" => {
+                                    player.set_volume(volume_step).await?;
+                                }
+                                "volume_down" => {
+                                    player.set_volume(-volume_step).await?;
                                 }
                                 _ => (),
                             }
@@ -363,7 +463,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
 async fn get_players(
     dbus_conn: &zbus::Connection,
-    prefered_players: &[String],
+    preferred_players: &[String],
     exclude_regex: &[Regex],
 ) -> Result<Vec<Player>> {
     let proxy = DBusProxy::new(dbus_conn)
@@ -375,9 +475,14 @@ async fn get_players(
         .error("failed to list dbus names")?;
     let mut players = Vec::new();
     for name in names {
-        if player_matches(name.as_str(), prefered_players, exclude_regex) {
+        if player_matches(name.as_str(), preferred_players, exclude_regex) {
             let owner = proxy.get_name_owner(name.as_ref()).await.unwrap();
-            players.push(Player::new(dbus_conn, name, owner).await?);
+            match Player::new(dbus_conn, name, owner).await {
+                Ok(player) => players.push(player),
+                Err(e) => {
+                    debug!("{e}");
+                }
+            }
         }
     }
     Ok(players)
@@ -390,6 +495,7 @@ struct Player {
     bus_name: OwnedBusName,
     player_proxy: zbus_mpris::PlayerProxy<'static>,
     metadata: zbus_mpris::PlayerMetadata,
+    volume: Option<f64>,
 }
 
 impl Player {
@@ -404,14 +510,12 @@ impl Player {
             .build()
             .await
             .error("failed to open player proxy")?;
-        let metadata = proxy
-            .metadata()
-            .await
-            .error("failed to obtain player metadata")?;
-        let status = proxy
-            .playback_status()
-            .await
-            .error("failed to obtain player status")?;
+
+        let (metadata, status, volume) =
+            tokio::join!(proxy.metadata(), proxy.playback_status(), proxy.volume());
+
+        let metadata = metadata.error("failed to obtain player metadata")?;
+        let status = status.error("failed to obtain player status")?;
 
         Ok(Self {
             status: PlaybackStatus::from_str(&status),
@@ -419,6 +523,7 @@ impl Player {
             bus_name,
             player_proxy: proxy,
             metadata,
+            volume: volume.ok(),
         })
     }
 
@@ -448,6 +553,16 @@ impl Player {
             other => dbg!(other).error("seek() failed"),
         }
     }
+
+    async fn set_volume(&self, step_size: f64) -> Result<()> {
+        if let Some(volume) = self.volume {
+            self.player_proxy
+                .set_volume(volume + step_size)
+                .await
+                .error("set_volume() failed")?;
+        }
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -475,14 +590,15 @@ fn extract_player_name(full_name: &str) -> Option<&str> {
         .then(|| &full_name[NAME_PREFIX.len()..])
 }
 
-fn player_matches(full_name: &str, prefered_players: &[String], exclude_regex: &[Regex]) -> bool {
+fn player_matches(full_name: &str, preferred_players: &[String], exclude_regex: &[Regex]) -> bool {
     let name = match extract_player_name(full_name) {
         Some(name) => name,
         None => return false,
     };
 
     exclude_regex.iter().all(|r| !r.is_match(name))
-        && (prefered_players.is_empty() || prefered_players.iter().any(|p| name.starts_with(&**p)))
+        && (preferred_players.is_empty()
+            || preferred_players.iter().any(|p| name.starts_with(&**p)))
 }
 
 #[cfg(test)]

@@ -181,7 +181,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
     // Choose the shell in this priority:
     // 1) `shell` config option
-    // 2) `SHELL` environment varialble
+    // 2) `SHELL` environment variable
     // 3) `"sh"`
     let shell = config
         .shell

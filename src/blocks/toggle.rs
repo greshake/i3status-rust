@@ -76,9 +76,6 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let icon_on = config.icon_on.unwrap_or_else(|| "toggle_on".into());
     let icon_off = config.icon_off.unwrap_or_else(|| "toggle_off".into());
 
-    // Choose the shell in this priority:
-    // 1) `SHELL` environment varialble
-    // 2) `"sh"`
     let shell = env::var("SHELL").unwrap_or_else(|_| "sh".to_string());
 
     loop {

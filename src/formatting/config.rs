@@ -12,12 +12,6 @@ pub struct Config {
     pub short: Option<Arc<FormatTemplate>>,
 }
 
-#[derive(Debug, Default)]
-pub struct DummyConfig {
-    pub full: Option<String>,
-    pub short: Option<String>,
-}
-
 impl Config {
     pub fn with_default(self, default_full: &str) -> Result<Format> {
         self.with_defaults(default_full, "")
@@ -143,67 +137,6 @@ impl<'de> Deserialize<'de> for Config {
                     }
                 }
                 Ok(Config { full, short })
-            }
-        }
-
-        deserializer.deserialize_any(FormatTemplateVisitor)
-    }
-}
-
-impl<'de> Deserialize<'de> for DummyConfig {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        #[derive(Deserialize)]
-        #[serde(field_identifier, rename_all = "lowercase")]
-        enum Field {
-            Full,
-            Short,
-        }
-
-        struct FormatTemplateVisitor;
-
-        impl<'de> Visitor<'de> for FormatTemplateVisitor {
-            type Value = DummyConfig;
-
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("format structure")
-            }
-
-            fn visit_str<E>(self, full: &str) -> Result<Self::Value, E>
-            where
-                E: de::Error,
-            {
-                Ok(DummyConfig {
-                    full: Some(full.into()),
-                    short: None,
-                })
-            }
-
-            fn visit_map<V>(self, mut map: V) -> Result<Self::Value, V::Error>
-            where
-                V: MapAccess<'de>,
-            {
-                let mut full: Option<String> = None;
-                let mut short: Option<String> = None;
-                while let Some(key) = map.next_key()? {
-                    match key {
-                        Field::Full => {
-                            if full.is_some() {
-                                return Err(de::Error::duplicate_field("full"));
-                            }
-                            full = Some(map.next_value::<String>()?);
-                        }
-                        Field::Short => {
-                            if short.is_some() {
-                                return Err(de::Error::duplicate_field("short"));
-                            }
-                            short = Some(map.next_value::<String>()?);
-                        }
-                    }
-                }
-                Ok(DummyConfig { full, short })
             }
         }
 

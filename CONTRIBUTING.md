@@ -70,13 +70,11 @@ to do this is by running `cargo fmt`.
 
 ## Maintainership
 
-i3status-rust is currently maintained by Kai Greshake and Aaron Jacobs, neither
-of whom have unlimited time to devote to the project. If you are interested in
-taking on a more active community role -- e.g. triaging issues or reviewing pull
-requests -- please feel free to reach out to us.
+If you are interested intaking on a more active community role -- e.g. triaging 
+issues or reviewing pull requests -- please feel free to reach out to us.
 
 ## License
 
 This project is licensed under the terms of the GPLv3, and any contribution you
-make will be understood to be the same. See the [LICENSE.md](LICENSE.md) file
+make will be understood to be the same. See the [LICENSE](LICENSE) file
 for details on these terms.

@@ -1,6 +1,7 @@
 #![warn(clippy::match_same_arms)]
 #![warn(clippy::semicolon_if_nothing_returned)]
 #![warn(clippy::unnecessary_wraps)]
+#![allow(clippy::extra_unused_type_parameters)]
 
 #[macro_use]
 mod util;
@@ -408,15 +409,22 @@ impl BarState {
                     BlockState::Normal { .. } => {
                         let post_actions = block.click_handler.handle(&event).await.in_block(block_type, event.id)?;
                         if let Some(sender) = &block.event_sender {
-                            if let Some(action) = post_actions.action {
-                                let _ = sender.send(BlockEvent::Action(Cow::Owned(action))).await;
-                            } else if let Some((_, _, action)) = block.default_actions
-                                .iter()
-                                .find(|(btn, widget, _)| *btn == event.button && *widget == event.instance.as_deref()) {
-                                let _ = sender.send(BlockEvent::Action(Cow::Borrowed(action))).await;
-                            }
-                            if post_actions.update {
-                                let _ = sender.send(BlockEvent::UpdateRequest).await;
+                            match post_actions {
+                                Some(post_actions) => {
+                                    if let Some(action) = post_actions.action {
+                                        let _ = sender.send(BlockEvent::Action(Cow::Owned(action))).await;
+                                    }
+                                    if post_actions.update {
+                                        let _ = sender.send(BlockEvent::UpdateRequest).await;
+                                    }
+                                }
+                                None => {
+                                    if let Some((_, _, action)) = block.default_actions
+                                        .iter()
+                                        .find(|(btn, widget, _)| *btn == event.button && *widget == event.instance.as_deref()) {
+                                        let _ = sender.send(BlockEvent::Action(Cow::Borrowed(action))).await;
+                                    }
+                                }
                             }
                         }
                     }

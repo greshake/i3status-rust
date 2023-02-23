@@ -15,7 +15,7 @@ use crate::errors::*;
 /// - Then try XDG_DATA_HOME (e.g. `~/.local/share/`)
 /// - Then try `/usr/share/`
 ///
-/// Automaticaly append an extension if not presented.
+/// Automatically append an extension if not presented.
 pub fn find_file(file: &str, subdir: Option<&str>, extension: Option<&str>) -> Option<PathBuf> {
     // Set (or update) the extension
     let mut file = PathBuf::from(file);
@@ -75,23 +75,6 @@ pub async fn new_system_dbus_connection() -> Result<zbus::Connection> {
     zbus::Connection::system()
         .await
         .error("Failed to open DBus system connection")
-}
-
-pub fn battery_level_icon(level: u8, charging: bool) -> &'static str {
-    match (level, charging) {
-        // TODO: use different charging icons
-        (_, true) => "bat_charging",
-        (0..=10, _) => "bat_10",
-        (11..=20, _) => "bat_20",
-        (21..=30, _) => "bat_30",
-        (31..=40, _) => "bat_40",
-        (41..=50, _) => "bat_50",
-        (51..=60, _) => "bat_60",
-        (61..=70, _) => "bat_70",
-        (71..=80, _) => "bat_80",
-        (81..=90, _) => "bat_90",
-        _ => "bat_full",
-    }
 }
 
 pub fn deserialize_toml_file<T, P>(path: P) -> Result<T>

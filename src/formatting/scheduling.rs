@@ -90,13 +90,13 @@ mod tests {
         // 200 x         x         x         x         x         x
         // 300 x              x              x              x
         // 500 x                        x                        x
-        let inntervals = &[200, 300, 500];
-        assert_eq!(single_block_next_update(inntervals, 0, 0), 200);
-        assert_eq!(single_block_next_update(inntervals, 50, 0), 150);
-        assert_eq!(single_block_next_update(inntervals, 210, 50), 0);
-        assert_eq!(single_block_next_update(inntervals, 290, 210), 10);
-        assert_eq!(single_block_next_update(inntervals, 300, 290), 0);
-        assert_eq!(single_block_next_update(inntervals, 300, 300), 100);
-        assert_eq!(single_block_next_update(inntervals, 800, 300), 0);
+        let intervals = &[200, 300, 500];
+        assert_eq!(single_block_next_update(intervals, 0, 0), 200);
+        assert_eq!(single_block_next_update(intervals, 50, 0), 150);
+        assert_eq!(single_block_next_update(intervals, 210, 50), 0);
+        assert_eq!(single_block_next_update(intervals, 290, 210), 10);
+        assert_eq!(single_block_next_update(intervals, 300, 290), 0);
+        assert_eq!(single_block_next_update(intervals, 300, 300), 100);
+        assert_eq!(single_block_next_update(intervals, 800, 300), 0);
     }
 }

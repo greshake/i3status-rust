@@ -1,4 +1,4 @@
-//! A block controled by the DBus
+//! A block controlled by the DBus
 //!
 //! This block creates a new DBus object in `rs.i3status` service. This object implements
 //! `rs.i3status.custom` interface which allows you to set block's icon, text and state.

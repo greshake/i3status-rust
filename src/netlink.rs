@@ -157,8 +157,10 @@ impl WifiInfo {
                 .clamp(0., 100.)
         }
 
-        let mut socket =
-            neli_wifi::AsyncSocket::connect().error("Failed to open nl80211 socket")?;
+        // Ignore connection error because `nl80211` might not be enabled on the system.
+        let Ok(mut socket) = neli_wifi::AsyncSocket::connect()
+        else { return Ok(None) };
+
         let interfaces = socket
             .get_interfaces_info()
             .await
@@ -349,11 +351,11 @@ async fn get_default_interface(
     Ok(default_index)
 }
 
-async fn ip_payload(
+async fn ip_payload<const BYTES: usize>(
     sock: &mut NlSocket,
     ifa_family: RtAddrFamily,
     ifa_index: i32,
-) -> Result<Option<neli::types::Buffer>, Box<dyn StdError + Send + Sync + 'static>> {
+) -> Result<Option<[u8; BYTES]>, Box<dyn StdError + Send + Sync + 'static>> {
     sock.send(&Nlmsghdr::new(
         None,
         Rtm::Getaddr,
@@ -374,11 +376,18 @@ async fn ip_payload(
     let mut payload = None;
 
     recv_until_done!(sock, msg: Ifaddrmsg => {
-        if msg.ifa_index != ifa_index {
+        if msg.ifa_index != ifa_index || payload.is_some() {
             continue;
         }
-        if let Some(rtattr) = msg.rtattrs.into_iter().find(|a| a.rta_type == Ifa::Address) {
-            payload = Some(rtattr.rta_payload);
+
+        let attr_handle = msg.rtattrs.get_attr_handle();
+
+        let Some(attr) = attr_handle.get_attribute(Ifa::Local)
+            .or_else(|| attr_handle.get_attribute(Ifa::Address))
+        else { continue };
+
+        if let Ok(p) = attr.rta_payload.as_ref().try_into() {
+            payload = Some(p);
         }
     });
 
@@ -386,29 +395,17 @@ async fn ip_payload(
 }
 
 async fn ipv4(sock: &mut NlSocket, ifa_index: i32) -> Result<Option<Ipv4Addr>> {
-    match ip_payload(sock, RtAddrFamily::Inet, ifa_index)
+    Ok(ip_payload(sock, RtAddrFamily::Inet, ifa_index)
         .await
         .map_err(BoxErrorWrapper)
         .error("Failed to get IP address")?
-    {
-        None => Ok(None),
-        Some(payload) => {
-            let payload: &[u8; 4] = payload.as_ref().try_into().unwrap();
-            Ok(Some(Ipv4Addr::from(*payload)))
-        }
-    }
+        .map(Ipv4Addr::from))
 }
 
 async fn ipv6(sock: &mut NlSocket, ifa_index: i32) -> Result<Option<Ipv6Addr>> {
-    match ip_payload(sock, RtAddrFamily::Inet6, ifa_index)
+    Ok(ip_payload(sock, RtAddrFamily::Inet6, ifa_index)
         .await
         .map_err(BoxErrorWrapper)
         .error("Failed to get IPv6 address")?
-    {
-        None => Ok(None),
-        Some(payload) => {
-            let payload: &[u8; 16] = payload.as_ref().try_into().unwrap();
-            Ok(Some(Ipv6Addr::from(*payload)))
-        }
-    }
+        .map(Ipv6Addr::from))
 }

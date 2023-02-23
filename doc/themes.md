@@ -4,7 +4,7 @@ To use a theme or icon set other than the default, add them to your configuratio
 [theme]
 theme = "solarized-dark"
 [icons]
-icons = "awesome"
+icons = "awesome6"
 ```
 Both the theme and icon set can be loaded from a separate file. 
 ```toml
@@ -61,7 +61,7 @@ Note: screenshots were generated using [this config](https://github.com/greshake
 # Available icon sets
 
 * `none` (default. Uses text labels instead of icons)
-* `awesome` (Font Awesome 4.x)
+* `awesome4` (Font Awesome 4.x)
 * `awesome5` (Font Awesome 5.x)
 * `awesome6` (Font Awesome 6.x)
 * `material`
@@ -87,7 +87,7 @@ warning_fg = { link = "good_fg" }
 warning_bg = { link = "good_bg" }
 
 [icons]
-icons = "awesome"
+icons = "awesome6"
 [icons.overrides]
 bat = " | | "
 bat_full = " |X| "
@@ -100,7 +100,7 @@ For example:
 ```toml
 [[block]]
 block = "cpu"
-icons_format = "{icon}" # Remove spaces aroud icons for this block.
+icons_format = "{icon}"
 [block.theme_overrides]
 idle_bg = "#123456"
 idle_fg = "#abcdef"
@@ -140,58 +140,4 @@ These can be directly set to a string containing the desired unicode codepoint(s
 
 You can find the codepoints in the documentation of the icon font you're using.
 
-Feel free to take a look at the provided icon mappings for reference.
-
-* `backlight_empty`
-* `backlight_full`
-* `backlight_1`
-* `backlight_2`
-* `backlight_3`
-* `backlight_4`
-* `backlight_5`
-* `backlight_6`
-* `backlight_7`
-* `backlight_8`
-* `backlight_9`
-* `backlight_10`
-* `backlight_11`
-* `backlight_12`
-* `backlight_13`
-* `bat_charging`
-* `bat_discharging`
-* `bat_full`
-* `bat`
-* `cogs`
-* `cpu`
-* `gpu`
-* `disk_drive`
-* `mail`
-* `memory_mem`
-* `memory_swap`
-* `music_next`
-* `music_pause`
-* `music_play`
-* `music_prev`
-* `music`
-* `net_down`
-* `net_up`
-* `net_wired`
-* `net_wireless`
-* `ping`
-* `thermometer`
-* `time`
-* `toggle_off`
-* `toggle_on`
-* `update`
-* `uptime`
-* `volume_empty`
-* `volume_full`
-* `volume_half`
-* `volume_muted`
-* `weather_clouds`
-* `weather_default`
-* `weather_rain`
-* `weather_snow`
-* `weather_sun`
-* `weather_thunder`
-* `xrandr`
+Refer to individual block's documentation for a list of used icons or [provided icon sets](https://github.com/greshake/i3status-rust/tree/master/files/icons) for a complete list of icons.

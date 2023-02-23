@@ -7,8 +7,7 @@ use crate::errors::{Result, ResultExt};
 use crate::protocol::i3bar_event::I3BarEvent;
 use crate::subprocess::{spawn_shell, spawn_shell_sync};
 
-/// Can be one of `left`, `middle`, `right`, `wheel_up`, `wheel_down`, `forward`, `back`, or
-/// `double_left`.
+/// Can be one of `left`, `middle`, `right`, `up`, `down`, `forward`, `back` or `double_left`.
 ///
 /// Note that in order for double clicks to be registered, you have to set `double_click_delay` to a
 /// non-zero value. `200` might be a good choice. Note that enabling this functionality will
@@ -36,35 +35,26 @@ pub struct PostActions {
 pub struct ClickHandler(Vec<ClickConfigEntry>);
 
 impl ClickHandler {
-    pub async fn handle(&self, event: &I3BarEvent) -> Result<PostActions> {
-        Ok(
-            match self
-                .0
-                .iter()
-                .find(|e| e.button == event.button && e.widget == event.instance)
-            {
-                Some(entry) => {
-                    if let Some(cmd) = &entry.cmd {
-                        if entry.sync {
-                            spawn_shell_sync(cmd).await
-                        } else {
-                            spawn_shell(cmd)
-                        }
-                        .or_error(|| {
-                            format!("'{:?}' button handler: Failed to run '{cmd}", event.button)
-                        })?;
-                    }
-                    PostActions {
-                        action: entry.action.clone(),
-                        update: entry.update,
-                    }
-                }
-                None => PostActions {
-                    action: None,
-                    update: false,
-                },
-            },
-        )
+    pub async fn handle(&self, event: &I3BarEvent) -> Result<Option<PostActions>> {
+        let Some(entry) = self
+            .0
+            .iter()
+            .find(|e| e.button == event.button && e.widget == event.instance)
+        else { return Ok(None) };
+
+        if let Some(cmd) = &entry.cmd {
+            if entry.sync {
+                spawn_shell_sync(cmd).await
+            } else {
+                spawn_shell(cmd)
+            }
+            .or_error(|| format!("'{:?}' button handler: Failed to run '{cmd}", event.button))?;
+        }
+
+        Ok(Some(PostActions {
+            action: entry.action.clone(),
+            update: entry.update,
+        }))
     }
 }
 

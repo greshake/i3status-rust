@@ -1,6 +1,6 @@
 //! The number of pending notifications in rofication-daemon
 //!
-//! A different color is used is there are critical notications.
+//! A different color is used if there are critical notifications.
 //!
 //! # Configuration
 //!
@@ -81,23 +81,22 @@ async fn rofication_status(socket_path: &str) -> Result<(usize, usize)> {
 
     // Request count
     stream
-        .write_all(b"num")
+        .write_all(b"num:\n")
         .await
         .error("Failed to write to socket")?;
 
-    let mut responce = String::new();
+    let mut response = String::new();
     stream
-        .read_to_string(&mut responce)
+        .read_to_string(&mut response)
         .await
         .error("Failed to read from socket")?;
 
-    // Response must be two integers: regular and critical, separated eihter by a comma or a \n
-    let (num, crit) = responce
+    // Response must be two integers: regular and critical, separated either by a comma or a \n
+    let (num, crit) = response
         .split_once(|x| x == ',' || x == '\n')
-        .error("Incorrect responce")?;
-
+        .error("Incorrect response")?;
     Ok((
-        num.parse().error("Incorrect responce")?,
-        crit.parse().error("Incorrect responce")?,
+        num.parse().error("Incorrect response")?,
+        crit.parse().error("Incorrect response")?,
     ))
 }

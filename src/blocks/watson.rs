@@ -90,7 +90,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         let state = read_to_string(&state_path)
             .await
             .error("Failed to read state file")?;
-        let state = serde_json::from_str(&state).error("Fnable to deserialize state")?;
+        let state = serde_json::from_str(&state).error("Unable to deserialize state")?;
         match state {
             state @ WatsonState::Active { .. } => {
                 widget.state = State::Good;
@@ -124,7 +124,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             select! {
                 _ = timer.tick() => break,
                 Some(update) = state_updates.next() => {
-                    let update = update.error("Bad inoify update")?;
+                    let update = update.error("Bad inotify update")?;
                     if update.name.map(|x| state_file == x).unwrap_or(false) {
                         break;
                     }

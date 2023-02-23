@@ -11,7 +11,7 @@
 //! `warning` | A value which will trigger warning block state | `20.0`
 //! `alert` | A value which will trigger critical block state | `10.0`
 //! `info_type` | Determines which information will affect the block state. Possible values are `"available"`, `"free"` and `"used"` | `"available"`
-//! `alert_unit` | The unit of `alert` and `warning` options. If not set, percents are uesd. Possible values are `"B"`, `"KB"`, `"MB"`, `"GB"` and `"TB"` | `None`
+//! `alert_unit` | The unit of `alert` and `warning` options. If not set, percents are used. Possible values are `"B"`, `"KB"`, `"MB"`, `"GB"` and `"TB"` | `None`
 //!
 //! Placeholder  | Value                                                              | Type   | Unit
 //! -------------|--------------------------------------------------------------------|--------|-------
@@ -114,10 +114,16 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     loop {
         let statvfs = statvfs(&*path).error("failed to retrieve statvfs")?;
 
-        let total = statvfs.blocks() * statvfs.fragment_size();
-        let used = (statvfs.blocks() - statvfs.blocks_free()) * statvfs.fragment_size();
-        let available = statvfs.blocks_available() * statvfs.block_size();
-        let free = statvfs.blocks_free() * statvfs.block_size();
+        // Casting to be compatible with 32-bit systems
+        #[allow(clippy::unnecessary_cast)]
+        let (total, used, available, free) = {
+            let total = (statvfs.blocks() as u64) * (statvfs.fragment_size() as u64);
+            let used = ((statvfs.blocks() as u64) - (statvfs.blocks_free() as u64))
+                * (statvfs.fragment_size() as u64);
+            let available = (statvfs.blocks_available() as u64) * (statvfs.block_size() as u64);
+            let free = (statvfs.blocks_free() as u64) * (statvfs.block_size() as u64);
+            (total, used, available, free)
+        };
 
         let result = match config.info_type {
             InfoType::Available => available,

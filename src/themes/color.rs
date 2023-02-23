@@ -208,7 +208,7 @@ impl FromStr for Color {
         } else if color == "auto" {
             Color::Auto
         } else if color.starts_with("hsv:") {
-            let err_msg = || format!("'{color}' is not a vaild HSVA color");
+            let err_msg = || format!("'{color}' is not a valid HSVA color");
             let color = color.split_at(4).1;
             let mut components = color.split(':').map(|x| x.parse::<f64>().or_error(err_msg));
             let h = components.next().or_error(err_msg)??;
@@ -217,7 +217,7 @@ impl FromStr for Color {
             let a = components.next().unwrap_or(Ok(100.))?;
             Color::Hsva(Hsva::new(h, s / 100., v / 100., (a / 100. * 255.) as u8))
         } else {
-            let err_msg = || format!("'{color}' is not a vaild RGBA color");
+            let err_msg = || format!("'{color}' is not a valid RGBA color");
             let rgb = color.get(1..7).or_error(err_msg)?;
             let a = color.get(7..9).unwrap_or("FF");
             Color::Rgba(Rgba::from_hex(

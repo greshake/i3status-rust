@@ -1,6 +1,6 @@
 use nom::{
     branch::alt,
-    bytes::complete::{escaped_transform, tag, take_while, take_while1},
+    bytes::complete::{escaped_transform, is_not, tag, take_while, take_while1},
     character::complete::{anychar, char},
     combinator::{cut, eof, map, not, opt},
     multi::{many0, separated_list0},
@@ -81,8 +81,13 @@ fn alphanum1(i: &str) -> IResult<&str, &str, PError> {
     take_while1(|x: char| x.is_alphanumeric() || x == '_' || x == '-')(i)
 }
 
+//val
+//'val ue'
 fn arg1(i: &str) -> IResult<&str, &str, PError> {
-    take_while1(|x: char| x.is_alphanumeric() || x == '_' || x == '-' || x == '.')(i)
+    alt((
+        take_while1(|x: char| x.is_alphanumeric() || x == '_' || x == '-' || x == '.' || x == '%'),
+        preceded(char('\''), cut(terminated(is_not("\'"), char('\'')))),
+    ))(i)
 }
 
 // `key:val`
@@ -204,6 +209,16 @@ mod tests {
                 Arg {
                     key: "key",
                     val: "val"
+                }
+            ))
+        );
+        assert_eq!(
+            parse_arg("key:'val ue',"),
+            Ok((
+                ",",
+                Arg {
+                    key: "key",
+                    val: "val ue"
                 }
             ))
         );

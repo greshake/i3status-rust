@@ -4,15 +4,15 @@ use std::borrow::Cow;
 use std::time::Duration;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Seconds(pub Duration);
+pub struct Seconds<const ALLOW_ONCE: bool = true>(pub Duration);
 
-impl From<u64> for Seconds {
+impl<const ALLOW_ONCE: bool> From<u64> for Seconds<ALLOW_ONCE> {
     fn from(v: u64) -> Self {
         Self::new(v)
     }
 }
 
-impl Seconds {
+impl<const ALLOW_ONCE: bool> Seconds<ALLOW_ONCE> {
     pub fn new(value: u64) -> Self {
         Self(Duration::from_secs(value))
     }
@@ -28,15 +28,15 @@ impl Seconds {
     }
 }
 
-impl<'de> Deserialize<'de> for Seconds {
+impl<'de, const ALLOW_ONCE: bool> Deserialize<'de> for Seconds<ALLOW_ONCE> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
-        struct SecondsVisitor;
+        struct SecondsVisitor<const ALLOW_ONCE: bool>;
 
-        impl<'de> de::Visitor<'de> for SecondsVisitor {
-            type Value = Seconds;
+        impl<'de, const ALLOW_ONCE: bool> de::Visitor<'de> for SecondsVisitor<ALLOW_ONCE> {
+            type Value = Seconds<ALLOW_ONCE>;
 
             fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
                 formatter.write_str("\"once\", i64 or f64")
@@ -46,7 +46,7 @@ impl<'de> Deserialize<'de> for Seconds {
             where
                 E: de::Error,
             {
-                if v == "once" {
+                if ALLOW_ONCE && v == "once" {
                     Ok(Seconds(Duration::from_secs(60 * 60 * 24 * 365)))
                 } else {
                     Err(E::custom(format!("'{v}' is not a valid duration")))

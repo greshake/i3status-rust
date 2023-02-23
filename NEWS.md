@@ -1,62 +1,117 @@
-# i3status-rust 0.30.0 [unreleased]
+# i3status-rust 0.30.3
+
+### Bug Fixes and Improvements
+
+* Net: display more relevant IP addresses.
+* Net: fix panic on systems with IPv6 disabled.
+* Pomodoro: fix a bug which made the block unusable.
+* Setting a click handler without `action = "..."` will disable the default block action.
+
+# i3status-rust 0.30.2
+
+### Bug Fixes and Improvements
+
+* Net: do not fail if `nl80211` is not available.
+* Music: make player volume optional (fixes Firefox support).
+* Time: actually apply configured locale.
+
+# i3status-rust 0.30.1
+
+### Bug Fixes and Improvements
+
+* Fix build on 32-bit systems.
+
+# i3status-rust 0.30.0
+
+This is a major release in which the core has been rewritten to be asynchronous, and the formatting system has also been overhauled.
 
 Block documentation was moved from `docs/blocks.md` to: https://greshake.github.io/i3status-rust/i3status_rs/blocks/index.html
 Formatter documentation is available here: https://greshake.github.io/i3status-rust/i3status_rs/formatting/index.html
 
-### Breaking changes
+Breaking changes are listed below, however you may also want to compare the example config between v0.22 and v0.30 to get a general idea of changes made to the configuration format:
 
-This is a major release which rewrites the core code to be asynchronous.
+https://raw.githubusercontent.com/greshake/i3status-rust/v0.22.0/examples/config.toml
 
-- Formatting system has been overhauled, introducing some breaking changes. For example, previously you might have had `format = "{percentage}"`, but placeholders are now denoted with a dollar sign rather then enclosed in brackets: `format = "$percentage"`.
+https://raw.githubusercontent.com/greshake/i3status-rust/v0.30.0/examples/config.toml
+
+### General / top-level breaking changes
+
+- Placeholders in `format` strings are now denoted by a dollar sign rather than enclosed in brackets. For example, `format = "{percentage}"` would now be `format = "$percentage"`.
+
+- Icons are now part of the `format` string option as a placeholder in blocks where format is customisable.
+  If you have modified `format` and would like to keep the same behaviour (icon, whitespace) you need to update the value. For example,
+  ```toml
+  [[block]]
+  block = "cpu"
+  format = "{utilization}"
+  ```
+  needs to be changed to:
+  ```toml
+  [[block]]
+  block = "cpu"
+  format = " $icon $utilization "
+  
+- Icons can now be referenced by name within `format` strings, e.g. `format = " Hello ^icon_ping "` will use the icon `ping` from the icon set that is currently in use.
+
+- Top-level `theme` and `icons` config options have been removed. For example,
+  ```toml
+  theme = "solarized-dark"
+  icons = "awesome5"
+  ```
+  needs to be changed to:
+  ```toml
+  [theme]
+  theme = "solarized-dark"
+  [icons]
+  icons = "awesome5"
+  ```
+  Additionally, the `name` and `file` options have been merged into `theme`/`icons`. For example,
+  ```toml
+  [theme]
+  name = "awesome5"
+  [icons]
+  file = "/path/to/my/custom_iconset.toml"
+  ```
+  needs to be changed to:
+  ```toml
+  [theme]
+  theme = "awesome5"
+  [icons]
+  icons = "/path/to/my/custom_iconset.toml"
+  ```
+- Font Awesome v4 must now be specified via `awesome4`, and `awesome` has been removed.
+
+- Icons `backlight_{empty,full,1,2,...,13}`, `bat_{10,20,...,90,full}`, `cpu_{low,med,high}`, `volume_{empty,half,full}`, `microphone_{empty,half,full}` have been removed as singular icons, and instead implemented as an array. If you used to override any of these icons, override `backlight`, `cpu`, `volume` and `microphone` instead. For example,
+  ```toml
+  cpu_low = "\U000F0F86" # nf-md-speedometer_slow
+  cpu_med = "\U000F0F85" # nf-md-speedometer_medium
+  cpu_high = "\U000F04C5" # nf-md-speedometer
+  ```
+  becomes
+  ```toml
+  cpu = [
+      "\U000F0F86", # nf-md-speedometer_slow
+      "\U000F0F85", # nf-md-speedometer_medium
+      "\U000F04C5", # nf-md-speedometer
+  ]
+  ```
+- when using theme overrides, you can now reference other colours by name which allows you to avoid redefining the same colour twice, for example:
+  ```toml
+  [[block]]
+  block = "sound"
+  driver = "pulseaudio"
+  device = "@DEFAULT_SOURCE@"
+  device_kind = "source"
+  [block.theme_overrides]
+  # switch idle and warning around in order to get warning when mic is *not* muted
+  idle_fg = { link = "warning_fg" }
+  idle_bg = { link = "warning_bg" }
+  warning_fg = { link = "idle_fg" }
+  warning_bg = { link = "idle_bg" }
+  ```
 
 - `scrolling` option has been renamed to `invert_scrolling` and now accepts `true` or `false`.
 
-- `ibus` block has been removed. Suggested example replacement:
-  ```toml
-  [[block]]
-  block = "custom"
-  #TODO
-  ```
-- `networkmanager` block has been removed (could be revisited in the future), so `net` block should be used instead.
-  Note there is no equivalent to `interface_name_exclude` in `net` as it only shows one interface at a time.
-  Example of a `networkmanager` config ported to `net`:
-
-Old:
-  ```toml
-  [[block]]
-block = "networkmanager"
-on_click = "alacritty -e nmtui"
-interface_name_include = ['br\-[0-9a-f]{12}', 'docker\d+']
-```
-
-New:  
-  ```toml
-  [[block]]
-  block = "net"
-  device = 'br\-[0-9a-f]{12}'
-  [[block.click]]
-  button = "left"
-  cmd = "alacritty -e nmtui"
- 
-  [[block]]
-  block = "net"
-  device = 'docker\d+'
-  [[block.click]]
-  button = "left"
-  cmd = "alacritty -e nmtui"
-  ```
-- `taskwarrior` block config options `format_singular` and `format_everything_done` have been removed, and instead implemented via the new formatter. Example:
-  ```toml
-  [[block]]
-  block = "taskwarrior"
-  #TODO
-  ```
-- `kdeconnect` block only supports kdeconnect v20.11.80 and newer (December 2020 and newer)
-- `battery` now defaults `full_threshold` to `95` as often batteries never fully charge
-- `custom_dbus`: `name` has been renamed to `path` and the DBus object is now at `rs.i3status`/`rs.i3status.custom` rather than `i3.status.rs`
-- `focused_window` block config option `max_width` has been removed, and can instead be implemented via the new formatter, e.g. `max_width = 15; format = "{title}"` would now just be `format = "$title.str(15)"`
-- `music` block config option `smart_trim` has been removed
-- `pomodoro` interactive configuration ??
 - `on_click` is now implemented as `[[block.click]]`. For example,
   ```toml
   [[block]]
@@ -71,53 +126,87 @@ New:
   button = "left"
   cmd = "random_command"
   ```
-- Top-level `theme` and `icons` config options have been removed. For example,
-  ```toml
-  theme = "solarized-dark"
-  icons = "awesome"
-  ```
-  needs to be changed to:
-  ```toml
-  [theme]
-  theme = "solarized-dark"
-  [icons]
-  icons = "awesome"
-  ```
-- `theme` and `icons`: `name` and `file` options have been merged into `theme`/`icons`. See above for an example.
 
-- Major icons and whitespace change. Icons are now part of `format` option as a placeholder in blocks where format is customizable.
-  If you've modified `format` and would like to keep the same behaviour (icon, whitespace)
-  you need to update the value. For example,
+### Block specific breaking changes
+
+Block | Changes
+----|-----------
+apt, dnf, pacman | `hide_when_uptodate` option is removed and now you can use `format_up_to_date = ""` to hide the block
+battery | `full_threshold` now defaults to `95` as often batteries never fully charge
+battery | requires device name from `/sys/class/power_supply` even when using UPower driver (previously it used the name from the output of `upower --enumerate`)
+battery | `hide_missing` option is replaced with `missing_format`. You can set `missing_format = ""` to maintain the behavior
+battery | `hide_full` option is removed. You can set `full_format = ""` to maintain the behavior
+bluetooth | `hide_disconnected` option is replaced with `disconnected_format`. You can set `disconnected_format = ""` to hide the block
+keyboard_layout | `xkbswitch` driver is removed pending re-implementation (see #1512)
+kdeconnect | now only supports kdeconnect v20.11.80 and newer (December 2020 and newer)
+custom_dbus | `name` has been renamed to `path` and the DBus object is now at `rs.i3status`/`rs.i3status.custom` rather than `i3.status.rs`
+focused_window | `autohide` is removed. You can format to `" $title.str(w:21) \| Missing "` to display the block when title is missing
+focused_window | `max_width` has been removed, and can instead be implemented via the new formatter. For example `max_width = 15; format = "{title}"` is now `format = "$title.str(max_w:15)"`
+memory | `clickable`, `display_type`, `format_mem` and `format_swap` are removed and now you can use `format` and `format_alt` to maintain the behavior
+music | `smart_trim` has been removed
+net |`hide_missing` and `hide_inactive` are removed. You can set `missing_format = ""`
+net | formatting for `graph_down` and `graph_up` is not yet implemented (see #1555)
+notmuch | `name` option is removed and now you can use `format` to set it
+temperature | `collapsed` option is removed and now you can use `format_alt = " $icon "` to maintain the behavior
+time | `locale` option is removed and now you can use `format` to set it, e.g. `format = " $icon $timestamp.datetime(f:'%d/%m %R', l:fr_BE) "`
+toggle | `text` option is removed and now you can use `format` to set it
+
+### Removed blocks
+
+- `ibus` block has been removed. Suggested example replacement:
   ```toml
   [[block]]
-  block = "cpu"
-  format = "{utilization}"
+  block = "custom"
+  command = "ibus engine"
   ```
-  needs to be changed to:
+- `networkmanager` block has been removed (could be revisited in the future), so `net` block should be used instead.
+  Note there is no equivalent to `interface_name_exclude` in `net` as it only shows one interface at a time.
+  
+  Example of a `networkmanager` config ported to `net`:  
+  
+  v0.22:  
   ```toml
   [[block]]
-  block = "cpu"
-  format = " $icon $utilization "
+  block = "networkmanager"
+  on_click = "alacritty -e nmtui"
+  interface_name_include = ['br\-[0-9a-f]{12}', 'docker\d+']
   ```
+  
+  v0.30:  
+  ```toml
+  [[block]]
+  block = "net"
+  device = 'br\-[0-9a-f]{12}'
+  [[block.click]]
+  button = "left"
+  cmd = "alacritty -e nmtui"
 
-- **battery**: `hide_missing` option is replaced with `missing_format`. You can set `missing_format = ""` to maintain the behavior
-- **battery**: `hide_full` option is removed. You can set `full_format = ""` to maintain the behavior
-- **bluetooth**: hide_disconnected option is replaced with `disconnected_format`. You can set `disconnected_format = ""` to hide the block
-- **focused_window**: `autohide` is removed. You can format to `" $title.str(0,21) | Missing "` to display the block when title is missing
-- **net**: `hide_missing` and `hide_inactive` are removed. You can set `missing_format = ""`
-- **toggle**: `text` option is removed and now you can use `format` to set the text
-- **notmuch**: `name` option is removed and now you can use `format` to set the name
-- **{apt, dnf, pacman}**: `hide_when_uptodate` option is removed and now you can use `format_up_to_date = ""` to hide the block
-- **temperature**: `collapsed` option is removed and now you can use `format_alt = " $icon "` to maintain the behavior
-- **memory**: `clickable`, `display_type`, `format_mem` and `format_swap` are removed and now you can use `format` and `format_alt` to maintain the behavior
+  [[block]]
+  block = "net"
+  device = 'docker\d+'
+  [[block.click]]
+  button = "left"
+  cmd = "alacritty -e nmtui"
+  ```
 
 ### New features and bugfixes
+- New `service_status` block: monitor the state of a (systemd) service.
+- New `tea_timer` block: a simple timer.
 - When blocks error they no longer take down the entire bar. Instead, they now enter error mode: "X" will be shown and on left click the full error message will be shown in the bar.
-- `custom_dbus` block can now be used more than once in your config
-- `custom` block has new config option `"persistent"` which runs a command in the background and updates the block text for each received output line.
-- `focused_window` block now supports the river window manager if ristate (https://gitlab.com/snakedye/ristate) is installed
-- `battery` now supports `empty_threshold` to specify below which percentage the battery is considered empty, and `empty_format` to use a custom format when the battery is empty
-- more blocks now support `format` option (custom, custom_dbus, hueshift, maildir, notmuch, pomodoro, time, uptime)
+- `apt` block has new `ignore_phased_updates` option. (#1717)
+- `battery` now supports `empty_threshold` to specify below which percentage the battery is considered empty, and `empty_format` to use a custom format when the battery is empty.
+- `battery` now supports `not_charging_format` config option. (#1685)
+- `custom_dbus` block can now be used more than once in your config.
+- `custom` block has new config option `persistent` which runs a command in the background and updates the block text for each received output line.
+- `focused_window` block now supports most wlroots-based compositors.
+- `music` block now supports controlling and displaying the volume for individual players (#1722)
+- `music` block now has `interface_name_exclude` and improved `playerctld` support (#1710)
+- `net` block now supports regex for `device` (#1601)
+- `notify` block now has support for SwayNotificationCenter via `driver = "swaync"` (#1662)
+- `weather` block now supports using met.no as an info source (#1577)
+- More blocks now support `format` option (custom, custom_dbus, hueshift, maildir, notmuch, pomodoro, time, uptime)
+- Some blocks now have debug logs which can be enabled like so: `RUST_LOG=block=debug i3status-rs` where "block" is the block name.
+- Default click actions for blocks can now be remapped (#1686)
 
 ### Dependencies that are no longer required
 

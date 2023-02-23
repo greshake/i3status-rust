@@ -14,7 +14,7 @@ Install from one of the packages below:
 
 * For NixOS, you can also use [Home Manager](https://github.com/nix-community/home-manager): `programs.i3status-rust.enable = true` [see available options](https://nix-community.github.io/home-manager/options.html#opt-programs.i3status-rust.enable)
 
-Otherwise refer to [manual install](https://github.com/greshake/i3status-rust/blob/master/doc/dev.md) docs
+Otherwise refer to [manual install](https://github.com/greshake/i3status-rust/blob/master/doc/manual_install.md) docs
 
 ## Configuration
 
@@ -69,7 +69,7 @@ Per block click configuration `[[block.click]]`:
 
 Key | Description | Default
 ----|-------------|----------
-`button` | `left`, `right`, etc. For more info see [here](https://greshake.github.io/i3status-rust/i3status_rs/click/enum.MouseButton.html). | -
+`button` | `left`, `middle`, `right`, `up`, `down`, `forward`, `back` or [`double_left`](https://greshake.github.io/i3status-rust/i3status_rs/click/enum.MouseButton.html). | -
 `widget` | To which part of the block this entry applies | None
 `cmd` | Command to run when mouse button event is detected. | None
 `action` | Which block action to trigger | None
@@ -78,7 +78,7 @@ Key | Description | Default
 
 ### Further documentation:
 
-Documentation | Latest release (v0.22) | Git master (v0.30)
+Documentation | Previous release (v0.22) | Latest release / master (v0.30)
 --------------|------------------------|--------------------
 Blocks        | [click](https://github.com/greshake/i3status-rust/blob/v0.22.0/doc/blocks.md) | [click](https://greshake.github.io/i3status-rust/i3status_rs/blocks/index.html)
 Formatting    | [click](https://github.com/greshake/i3status-rust/blob/v0.22.0/doc/blocks.md#formatting) | [click](https://greshake.github.io/i3status-rust/i3status_rs/formatting/index.html)
@@ -149,4 +149,4 @@ We welcome new contributors! Take a gander at [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## License
 
-This project is licensed under the GPLv3. See the [LICENSE.md](LICENSE.md) file for details.
+This project is licensed under the GPLv3. See the [LICENSE](LICENSE) file for details.
