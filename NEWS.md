@@ -137,13 +137,16 @@ battery | requires device name from `/sys/class/power_supply` even when using UP
 battery | `hide_missing` option is replaced with `missing_format`. You can set `missing_format = ""` to maintain the behavior
 battery | `hide_full` option is removed. You can set `full_format = ""` to maintain the behavior
 bluetooth | `hide_disconnected` option is replaced with `disconnected_format`. You can set `disconnected_format = ""` to hide the block
+cpu | The custom `info`, `warning` and `critical` thresholds have been removed
 custom_dbus | `name` has been renamed to `path` and the DBus object is now at `rs.i3status`/`rs.i3status.custom` rather than `i3.status.rs`
+disk_space | `alias` has been removed in favour of using `format`
 focused_window | `autohide` is removed. You can format to `" $title.str(w:21) \| Missing "` to display the block when title is missing
 focused_window | `max_width` has been removed, and can instead be implemented via the new formatter. For example `max_width = 15; format = "{title}"` is now `format = "$title.str(max_w:15)"`
 kdeconnect | now only supports kdeconnect v20.11.80 and newer (December 2020 and newer)
 keyboard_layout | `xkbswitch` driver is removed pending re-implementation (see #1512)
 memory | `clickable`, `display_type`, `format_mem` and `format_swap` are removed and now you can use `format` and `format_alt` to maintain the behavior
-music | `smart_trim` has been removed
+music | `smart_trim`, `max_width` and `marquee` have been removed. All these settings are now configured inside the format string.
+music | `buttons` has been removed and is now configured via the new `[[block.click]]` syntax. New analogue `format` placeholders (`$play`/`$next`/`$prev`) have been added
 net |`hide_missing` and `hide_inactive` are removed. You can set `missing_format = ""`
 net | formatting for `graph_down` and `graph_up` is not yet implemented (see #1555)
 notmuch | `name` option is removed and now you can use `format` to set it
