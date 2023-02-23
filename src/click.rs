@@ -7,8 +7,7 @@ use crate::errors::{Result, ResultExt};
 use crate::protocol::i3bar_event::I3BarEvent;
 use crate::subprocess::{spawn_shell, spawn_shell_sync};
 
-/// Can be one of `left`, `middle`, `right`, `wheel_up`, `wheel_down`, `forward`, `back`, or
-/// `double_left`.
+/// Can be one of `left`, `middle`, `right`, `up`, `down`, `forward`, `back` or `double_left`.
 ///
 /// Note that in order for double clicks to be registered, you have to set `double_click_delay` to a
 /// non-zero value. `200` might be a good choice. Note that enabling this functionality will
