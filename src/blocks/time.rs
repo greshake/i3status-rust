@@ -13,6 +13,10 @@
 //! `icon`        | A static icon                               | Icon     | -
 //! `timestamp`   | The current time                            | Datetime | -
 //!
+//! Action   | Default button
+//! ---------|---------------
+//! `next_timezone` | Left
+//!
 //! # Example
 //!
 //! ```toml
@@ -38,17 +42,39 @@ pub struct Config {
     format: FormatConfig,
     #[default(1.into())]
     interval: Seconds,
-    timezone: Option<Tz>,
+    timezone: Option<Timezone>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+#[serde(untagged)]
+pub enum Timezone {
+    Timezone(Tz),
+    Timezones(Vec<Tz>),
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+    // "next_timezone" changes the current displayed timezone to the timezone next in the list.
+    api.set_default_actions(&[(MouseButton::Left, None, "next_timezone")]).await?;
+
     let mut widget = Widget::new().with_format(
         config
             .format
             .with_default(" $icon $timestamp.datetime() ")?,
     );
 
-    let timezone = config.timezone;
+    let timezones = match config.timezone {
+        Some(tzs) => {
+            match tzs {
+                Timezone::Timezone(tz) => vec![tz] ,
+                Timezone::Timezones(tzs) => tzs
+            }
+        } ,
+        None => Vec::new() 
+    };
+
+    let mut timezone_iter = timezones.iter().cycle();
+
+    let mut timezone = timezone_iter.next();
 
     let mut timer = config.interval.timer();
 
@@ -61,14 +87,21 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
         widget.set_values(map!(
             "icon" => Value::icon(api.get_icon("time")?),
-            "timestamp" => Value::datetime(Utc::now(), timezone)
+            "timestamp" => Value::datetime(Utc::now(), timezone.copied())
         ));
 
         api.set_widget(&widget).await?;
 
         tokio::select! {
             _ = timer.tick() => (),
-            _ = api.wait_for_update_request() => (),
+            event = api.event() => {
+                match event {
+                    Action(e) => if e == "next_timezone" {
+                       timezone = timezone_iter.next(); 
+                    },
+                    UpdateRequest => {} 
+                }
+            },
         }
     }
 }
