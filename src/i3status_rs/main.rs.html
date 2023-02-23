@@ -512,6 +512,13 @@
 <a href="#512" id="512">512</a>
 <a href="#513" id="513">513</a>
 <a href="#514" id="514">514</a>
+<a href="#515" id="515">515</a>
+<a href="#516" id="516">516</a>
+<a href="#517" id="517">517</a>
+<a href="#518" id="518">518</a>
+<a href="#519" id="519">519</a>
+<a href="#520" id="520">520</a>
+<a href="#521" id="521">521</a>
 </pre><pre class="rust"><code><span class="attr">#![warn(clippy::match_same_arms)]
 #![warn(clippy::semicolon_if_nothing_returned)]
 #![warn(clippy::unnecessary_wraps)]
@@ -923,15 +930,22 @@
                     BlockState::Normal { .. } =&gt; {
                         <span class="kw">let </span>post_actions = block.click_handler.handle(<span class="kw-2">&amp;</span>event).<span class="kw">await</span>.in_block(block_type, event.id)<span class="question-mark">?</span>;
                         <span class="kw">if let </span><span class="prelude-val">Some</span>(sender) = <span class="kw-2">&amp;</span>block.event_sender {
-                            <span class="kw">if let </span><span class="prelude-val">Some</span>(action) = post_actions.action {
-                                <span class="kw">let _ </span>= sender.send(BlockEvent::Action(Cow::Owned(action))).<span class="kw">await</span>;
-                            } <span class="kw">else if let </span><span class="prelude-val">Some</span>((<span class="kw">_</span>, <span class="kw">_</span>, action)) = block.default_actions
-                                .iter()
-                                .find(|(btn, widget, <span class="kw">_</span>)| <span class="kw-2">*</span>btn == event.button &amp;&amp; <span class="kw-2">*</span>widget == event.instance.as_deref()) {
-                                <span class="kw">let _ </span>= sender.send(BlockEvent::Action(Cow::Borrowed(action))).<span class="kw">await</span>;
-                            }
-                            <span class="kw">if </span>post_actions.update {
-                                <span class="kw">let _ </span>= sender.send(BlockEvent::UpdateRequest).<span class="kw">await</span>;
+                            <span class="kw">match </span>post_actions {
+                                <span class="prelude-val">Some</span>(post_actions) =&gt; {
+                                    <span class="kw">if let </span><span class="prelude-val">Some</span>(action) = post_actions.action {
+                                        <span class="kw">let _ </span>= sender.send(BlockEvent::Action(Cow::Owned(action))).<span class="kw">await</span>;
+                                    }
+                                    <span class="kw">if </span>post_actions.update {
+                                        <span class="kw">let _ </span>= sender.send(BlockEvent::UpdateRequest).<span class="kw">await</span>;
+                                    }
+                                }
+                                <span class="prelude-val">None </span>=&gt; {
+                                    <span class="kw">if let </span><span class="prelude-val">Some</span>((<span class="kw">_</span>, <span class="kw">_</span>, action)) = block.default_actions
+                                        .iter()
+                                        .find(|(btn, widget, <span class="kw">_</span>)| <span class="kw-2">*</span>btn == event.button &amp;&amp; <span class="kw-2">*</span>widget == event.instance.as_deref()) {
+                                        <span class="kw">let _ </span>= sender.send(BlockEvent::Action(Cow::Borrowed(action))).<span class="kw">await</span>;
+                                    }
+                                }
                             }
                         }
                     }

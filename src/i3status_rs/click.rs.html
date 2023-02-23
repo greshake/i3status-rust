@@ -146,16 +146,6 @@
 <a href="#146" id="146">146</a>
 <a href="#147" id="147">147</a>
 <a href="#148" id="148">148</a>
-<a href="#149" id="149">149</a>
-<a href="#150" id="150">150</a>
-<a href="#151" id="151">151</a>
-<a href="#152" id="152">152</a>
-<a href="#153" id="153">153</a>
-<a href="#154" id="154">154</a>
-<a href="#155" id="155">155</a>
-<a href="#156" id="156">156</a>
-<a href="#157" id="157">157</a>
-<a href="#158" id="158">158</a>
 </pre><pre class="rust"><code><span class="kw">use </span>std::fmt;
 
 <span class="kw">use </span>serde::de::{<span class="self">self</span>, Deserializer, Visitor};
@@ -165,8 +155,7 @@
 <span class="kw">use </span><span class="kw">crate</span>::protocol::i3bar_event::I3BarEvent;
 <span class="kw">use </span><span class="kw">crate</span>::subprocess::{spawn_shell, spawn_shell_sync};
 
-<span class="doccomment">/// Can be one of `left`, `middle`, `right`, `wheel_up`, `wheel_down`, `forward`, `back`, or
-/// `double_left`.
+<span class="doccomment">/// Can be one of `left`, `middle`, `right`, `up`, `down`, `forward`, `back` or `double_left`.
 ///
 /// Note that in order for double clicks to be registered, you have to set `double_click_delay` to a
 /// non-zero value. `200` might be a good choice. Note that enabling this functionality will
@@ -194,35 +183,26 @@
 </span><span class="kw">pub struct </span>ClickHandler(Vec&lt;ClickConfigEntry&gt;);
 
 <span class="kw">impl </span>ClickHandler {
-    <span class="kw">pub async fn </span>handle(<span class="kw-2">&amp;</span><span class="self">self</span>, event: <span class="kw-2">&amp;</span>I3BarEvent) -&gt; <span class="prelude-ty">Result</span>&lt;PostActions&gt; {
-        <span class="prelude-val">Ok</span>(
-            <span class="kw">match </span><span class="self">self
-                </span>.<span class="number">0
-                </span>.iter()
-                .find(|e| e.button == event.button &amp;&amp; e.widget == event.instance)
-            {
-                <span class="prelude-val">Some</span>(entry) =&gt; {
-                    <span class="kw">if let </span><span class="prelude-val">Some</span>(cmd) = <span class="kw-2">&amp;</span>entry.cmd {
-                        <span class="kw">if </span>entry.sync {
-                            spawn_shell_sync(cmd).<span class="kw">await
-                        </span>} <span class="kw">else </span>{
-                            spawn_shell(cmd)
-                        }
-                        .or_error(|| {
-                            <span class="macro">format!</span>(<span class="string">&quot;&#39;{:?}&#39; button handler: Failed to run &#39;{cmd}&quot;</span>, event.button)
-                        })<span class="question-mark">?</span>;
-                    }
-                    PostActions {
-                        action: entry.action.clone(),
-                        update: entry.update,
-                    }
-                }
-                <span class="prelude-val">None </span>=&gt; PostActions {
-                    action: <span class="prelude-val">None</span>,
-                    update: <span class="bool-val">false</span>,
-                },
-            },
-        )
+    <span class="kw">pub async fn </span>handle(<span class="kw-2">&amp;</span><span class="self">self</span>, event: <span class="kw-2">&amp;</span>I3BarEvent) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;PostActions&gt;&gt; {
+        <span class="kw">let </span><span class="prelude-val">Some</span>(entry) = <span class="self">self
+            </span>.<span class="number">0
+            </span>.iter()
+            .find(|e| e.button == event.button &amp;&amp; e.widget == event.instance)
+        <span class="kw">else </span>{ <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>) };
+
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(cmd) = <span class="kw-2">&amp;</span>entry.cmd {
+            <span class="kw">if </span>entry.sync {
+                spawn_shell_sync(cmd).<span class="kw">await
+            </span>} <span class="kw">else </span>{
+                spawn_shell(cmd)
+            }
+            .or_error(|| <span class="macro">format!</span>(<span class="string">&quot;&#39;{:?}&#39; button handler: Failed to run &#39;{cmd}&quot;</span>, event.button))<span class="question-mark">?</span>;
+        }
+
+        <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(PostActions {
+            action: entry.action.clone(),
+            update: entry.update,
+        }))
     }
 }
 
