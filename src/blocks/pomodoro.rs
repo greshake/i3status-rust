@@ -230,7 +230,16 @@ impl Block {
     }
 }
 
-pub async fn run(block_config: Config, api: CommonApi) -> Result<()> {
+pub async fn run(block_config: Config, mut api: CommonApi) -> Result<()> {
+    api.set_default_actions(&[
+        (MouseButton::Left, None, "_left"),
+        (MouseButton::Middle, None, "_middle"),
+        (MouseButton::Right, None, "_right"),
+        (MouseButton::WheelUp, None, "_up"),
+        (MouseButton::WheelDown, None, "_down"),
+    ])
+    .await?;
+
     let format = FormatConfig::default().with_default(" $icon{ $message|} ")?;
     let widget = Widget::new().with_format(format);
 
