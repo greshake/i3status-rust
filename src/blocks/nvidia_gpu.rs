@@ -88,7 +88,7 @@ pub struct Config {
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     api.set_default_actions(&[
-        (MouseButton::Left, Some(MEM_BTN), "toggle_mem_totoal"),
+        (MouseButton::Left, Some(MEM_BTN), "toggle_mem_total"),
         (MouseButton::Left, Some(FAN_BTN), "toggle_fan_controlled"),
         (MouseButton::WheelUp, Some(FAN_BTN), "fan_speed_up"),
         (MouseButton::WheelDown, Some(FAN_BTN), "fan_speed_down"),

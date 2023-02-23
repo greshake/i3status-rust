@@ -39,7 +39,7 @@
 //!
 //! Note that at the moment, only [`wl_gammarelay`](https://github.com/jeremija/wl-gammarelay) and
 //! [`wl_gammarelay_rs`](https://github.com/MaxVerevkin/wl-gammarelay-rs)
-//! subscribe to the events and update the bar when the temperature is modified extenrally. Also,
+//! subscribe to the events and update the bar when the temperature is modified externally. Also,
 //! these are the only drivers at the moment that work under Wayland without flickering.
 //!
 //! # Example

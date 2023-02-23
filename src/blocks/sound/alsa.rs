@@ -48,7 +48,7 @@ impl SoundDevice for Device {
     }
 
     fn output_description(&self) -> Option<String> {
-        // TODO Does Alsa has something similar like descripitons in Pulse?
+        // TODO Does Alsa has something similar like descriptions in Pulse?
         None
     }
 

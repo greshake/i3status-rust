@@ -204,19 +204,19 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         .collect::<Result<Vec<_>, _>>()
         .error("Invalid regex")?;
 
-    let playerctrld_proxy = zbus_playerctld::PlayerctldProxy::new(&dbus_conn)
+    let playerctld_proxy = zbus_playerctld::PlayerctldProxy::new(&dbus_conn)
         .await
         .error("Failed to create PlayerctldProxy")?;
 
     let mut players = get_players(&dbus_conn, &preferred_players, &exclude_regex).await?;
     let mut cur_player = None;
-    if let Ok(playerctrld_players) = playerctrld_proxy.player_names().await {
+    if let Ok(playerctld_players) = playerctld_proxy.player_names().await {
         // If we can get the list of players from playerctld then we should
         // take the first matching player (this is the most recently active player)
-        for playerctrld_player in playerctrld_players {
+        for playerctld_player in playerctld_players {
             if let Some(pos) = players
                 .iter()
-                .position(|p| p.bus_name.as_str() == playerctrld_player)
+                .position(|p| p.bus_name.as_str() == playerctld_player)
             {
                 cur_player = Some(pos);
                 break;
@@ -262,7 +262,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     .await
     .error("Failed to add match rule")?;
 
-    let mut active_player_change_end_stream = playerctrld_proxy
+    let mut active_player_change_end_stream = playerctld_proxy
         .receive_active_player_change_end()
         .await
         .error("Failed to create ActivePlayerChangeEndStream")?;
@@ -411,7 +411,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     else{
                         // We must have shifted to a player we wanted to skip (on the interface_name_exclude list).
                         // Let's shift again
-                        if let Err(e) = playerctrld_proxy.shift().await{
+                        if let Err(e) = playerctld_proxy.shift().await{
                             debug!("{e}");
                         }
                     }
@@ -434,7 +434,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                                 }
                                 "next_player" => {
                                     cur_player = Some((i + 1) % players.len());
-                                    if let Err(e) = playerctrld_proxy.shift().await{
+                                    if let Err(e) = playerctld_proxy.shift().await{
                                         debug!("{e}");
                                     }
                                     break;
@@ -597,7 +597,8 @@ fn player_matches(full_name: &str, preferred_players: &[String], exclude_regex: 
     };
 
     exclude_regex.iter().all(|r| !r.is_match(name))
-        && (preferred_players.is_empty() || preferred_players.iter().any(|p| name.starts_with(&**p)))
+        && (preferred_players.is_empty()
+            || preferred_players.iter().any(|p| name.starts_with(&**p)))
 }
 
 #[cfg(test)]

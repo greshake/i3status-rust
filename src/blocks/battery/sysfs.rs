@@ -134,7 +134,7 @@ impl Device {
 
     async fn device_available(path: &Path) -> bool {
         // If `scope` is `Device`, then this is HID, in which case we don't have to check the
-        // `present` property, because the existance of the device direcory implies that the device
+        // `present` property, because the existence of the device direcory implies that the device
         // is available
         Self::read_prop::<String>(path, "scope").await.as_deref() == Some("Device")
             || Self::read_prop::<u8>(path, "present").await == Some(1)

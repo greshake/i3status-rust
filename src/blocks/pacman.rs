@@ -84,7 +84,7 @@
 //! format = " $icon $pacman updates available "
 //! format_singular = " $icon $pacman update available "
 //! format_up_to_date = " $icon system up to date "
-//! # If a linux update is availble, but no ZFS package, it won't be possible to
+//! # If a linux update is available, but no ZFS package, it won't be possible to
 //! # actually perform a system upgrade, so we show a warning.
 //! warning_updates_regex = "(linux|linux-lts|linux-zen)"
 //! # If ZFS is available, we know that we can and should do an upgrade, so we show

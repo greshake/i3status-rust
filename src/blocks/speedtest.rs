@@ -67,7 +67,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             .error("failed to run 'speedtest-cli'")?
             .stdout;
         let output =
-            std::str::from_utf8(&output).error("'speedtest-cli' produced non-UTF8 outupt")?;
+            std::str::from_utf8(&output).error("'speedtest-cli' produced non-UTF8 output")?;
         let output: SpeedtestCliOutput =
             serde_json::from_str(output).error("'speedtest-cli' produced wrong JSON")?;
 
