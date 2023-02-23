@@ -102,7 +102,7 @@
 <a href="#102" id="102">102</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The number of pending notifications in rofication-daemon
 //!
-//! A different color is used is there are critical notications.
+//! A different color is used is there are critical notifications.
 //!
 //! # Configuration
 //!
@@ -193,7 +193,7 @@
         .<span class="kw">await
         </span>.error(<span class="string">&quot;Failed to read from socket&quot;</span>)<span class="question-mark">?</span>;
 
-    <span class="comment">// Response must be two integers: regular and critical, separated eihter by a comma or a \n
+    <span class="comment">// Response must be two integers: regular and critical, separated either by a comma or a \n
     </span><span class="kw">let </span>(num, crit) = response
         .split_once(|x| x == <span class="string">&#39;,&#39; </span>|| x == <span class="string">&#39;\n&#39;</span>)
         .error(<span class="string">&quot;Incorrect response&quot;</span>)<span class="question-mark">?</span>;

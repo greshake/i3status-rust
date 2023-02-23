@@ -640,6 +640,7 @@
 <a href="#640" id="640">640</a>
 <a href="#641" id="641">641</a>
 <a href="#642" id="642">642</a>
+<a href="#643" id="643">643</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The current song title and artist
 //!
 //! Also provides buttons for play/pause, previous and next.
@@ -846,19 +847,19 @@
         .collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;<span class="kw">_</span>&gt;, <span class="kw">_</span>&gt;&gt;()
         .error(<span class="string">&quot;Invalid regex&quot;</span>)<span class="question-mark">?</span>;
 
-    <span class="kw">let </span>playerctrld_proxy = zbus_playerctld::PlayerctldProxy::new(<span class="kw-2">&amp;</span>dbus_conn)
+    <span class="kw">let </span>playerctld_proxy = zbus_playerctld::PlayerctldProxy::new(<span class="kw-2">&amp;</span>dbus_conn)
         .<span class="kw">await
         </span>.error(<span class="string">&quot;Failed to create PlayerctldProxy&quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>players = get_players(<span class="kw-2">&amp;</span>dbus_conn, <span class="kw-2">&amp;</span>preferred_players, <span class="kw-2">&amp;</span>exclude_regex).<span class="kw">await</span><span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>cur_player = <span class="prelude-val">None</span>;
-    <span class="kw">if let </span><span class="prelude-val">Ok</span>(playerctrld_players) = playerctrld_proxy.player_names().<span class="kw">await </span>{
+    <span class="kw">if let </span><span class="prelude-val">Ok</span>(playerctld_players) = playerctld_proxy.player_names().<span class="kw">await </span>{
         <span class="comment">// If we can get the list of players from playerctld then we should
         // take the first matching player (this is the most recently active player)
-        </span><span class="kw">for </span>playerctrld_player <span class="kw">in </span>playerctrld_players {
+        </span><span class="kw">for </span>playerctld_player <span class="kw">in </span>playerctld_players {
             <span class="kw">if let </span><span class="prelude-val">Some</span>(pos) = players
                 .iter()
-                .position(|p| p.bus_name.as_str() == playerctrld_player)
+                .position(|p| p.bus_name.as_str() == playerctld_player)
             {
                 cur_player = <span class="prelude-val">Some</span>(pos);
                 <span class="kw">break</span>;
@@ -904,7 +905,7 @@
     .<span class="kw">await
     </span>.error(<span class="string">&quot;Failed to add match rule&quot;</span>)<span class="question-mark">?</span>;
 
-    <span class="kw">let </span><span class="kw-2">mut </span>active_player_change_end_stream = playerctrld_proxy
+    <span class="kw">let </span><span class="kw-2">mut </span>active_player_change_end_stream = playerctld_proxy
         .receive_active_player_change_end()
         .<span class="kw">await
         </span>.error(<span class="string">&quot;Failed to create ActivePlayerChangeEndStream&quot;</span>)<span class="question-mark">?</span>;
@@ -1053,7 +1054,7 @@
                     <span class="kw">else</span>{
                         <span class="comment">// We must have shifted to a player we wanted to skip (on the interface_name_exclude list).
                         // Let&#39;s shift again
-                        </span><span class="kw">if let </span><span class="prelude-val">Err</span>(e) = playerctrld_proxy.shift().<span class="kw">await</span>{
+                        </span><span class="kw">if let </span><span class="prelude-val">Err</span>(e) = playerctld_proxy.shift().<span class="kw">await</span>{
                             <span class="macro">debug!</span>(<span class="string">&quot;{e}&quot;</span>);
                         }
                     }
@@ -1076,7 +1077,7 @@
                                 }
                                 <span class="string">&quot;next_player&quot; </span>=&gt; {
                                     cur_player = <span class="prelude-val">Some</span>((i + <span class="number">1</span>) % players.len());
-                                    <span class="kw">if let </span><span class="prelude-val">Err</span>(e) = playerctrld_proxy.shift().<span class="kw">await</span>{
+                                    <span class="kw">if let </span><span class="prelude-val">Err</span>(e) = playerctld_proxy.shift().<span class="kw">await</span>{
                                         <span class="macro">debug!</span>(<span class="string">&quot;{e}&quot;</span>);
                                     }
                                     <span class="kw">break</span>;
@@ -1239,7 +1240,8 @@
     };
 
     exclude_regex.iter().all(|r| !r.is_match(name))
-        &amp;&amp; (preferred_players.is_empty() || preferred_players.iter().any(|p| name.starts_with(<span class="kw-2">&amp;**</span>p)))
+        &amp;&amp; (preferred_players.is_empty()
+            || preferred_players.iter().any(|p| name.starts_with(<span class="kw-2">&amp;**</span>p)))
 }
 
 <span class="attr">#[cfg(test)]

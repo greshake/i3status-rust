@@ -441,7 +441,7 @@
     <span class="kw">let </span>val = <span class="kw">match </span>read_file(device_file).<span class="kw">await </span>{
         <span class="prelude-val">Ok</span>(v) =&gt; <span class="prelude-val">Ok</span>(v),
         <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; {
-            <span class="comment">// HACK: Try to read file a scond time if the first fails. For some reason, when using `ddcci`
+            <span class="comment">// HACK: Try to read file a second time if the first fails. For some reason, when using `ddcci`
             // the first read fails with &quot;Error 74: Bad Message&quot;.
             </span><span class="macro">debug!</span>(<span class="string">&quot;First read of brightness file failed, retrying&quot;</span>);
             read_file(device_file).<span class="kw">await

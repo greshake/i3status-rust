@@ -192,14 +192,14 @@
         // 200 x         x         x         x         x         x
         // 300 x              x              x              x
         // 500 x                        x                        x
-        </span><span class="kw">let </span>inntervals = <span class="kw-2">&amp;</span>[<span class="number">200</span>, <span class="number">300</span>, <span class="number">500</span>];
-        <span class="macro">assert_eq!</span>(single_block_next_update(inntervals, <span class="number">0</span>, <span class="number">0</span>), <span class="number">200</span>);
-        <span class="macro">assert_eq!</span>(single_block_next_update(inntervals, <span class="number">50</span>, <span class="number">0</span>), <span class="number">150</span>);
-        <span class="macro">assert_eq!</span>(single_block_next_update(inntervals, <span class="number">210</span>, <span class="number">50</span>), <span class="number">0</span>);
-        <span class="macro">assert_eq!</span>(single_block_next_update(inntervals, <span class="number">290</span>, <span class="number">210</span>), <span class="number">10</span>);
-        <span class="macro">assert_eq!</span>(single_block_next_update(inntervals, <span class="number">300</span>, <span class="number">290</span>), <span class="number">0</span>);
-        <span class="macro">assert_eq!</span>(single_block_next_update(inntervals, <span class="number">300</span>, <span class="number">300</span>), <span class="number">100</span>);
-        <span class="macro">assert_eq!</span>(single_block_next_update(inntervals, <span class="number">800</span>, <span class="number">300</span>), <span class="number">0</span>);
+        </span><span class="kw">let </span>intervals = <span class="kw-2">&amp;</span>[<span class="number">200</span>, <span class="number">300</span>, <span class="number">500</span>];
+        <span class="macro">assert_eq!</span>(single_block_next_update(intervals, <span class="number">0</span>, <span class="number">0</span>), <span class="number">200</span>);
+        <span class="macro">assert_eq!</span>(single_block_next_update(intervals, <span class="number">50</span>, <span class="number">0</span>), <span class="number">150</span>);
+        <span class="macro">assert_eq!</span>(single_block_next_update(intervals, <span class="number">210</span>, <span class="number">50</span>), <span class="number">0</span>);
+        <span class="macro">assert_eq!</span>(single_block_next_update(intervals, <span class="number">290</span>, <span class="number">210</span>), <span class="number">10</span>);
+        <span class="macro">assert_eq!</span>(single_block_next_update(intervals, <span class="number">300</span>, <span class="number">290</span>), <span class="number">0</span>);
+        <span class="macro">assert_eq!</span>(single_block_next_update(intervals, <span class="number">300</span>, <span class="number">300</span>), <span class="number">100</span>);
+        <span class="macro">assert_eq!</span>(single_block_next_update(intervals, <span class="number">800</span>, <span class="number">300</span>), <span class="number">0</span>);
     }
 }
 </code></pre></div>

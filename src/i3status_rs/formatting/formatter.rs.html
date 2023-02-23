@@ -579,7 +579,7 @@
                         );
                     }
                     other =&gt; {
-                        <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">&quot;Unknown argumnt for &#39;str&#39;: &#39;{other}&#39;&quot;</span>)));
+                        <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">&quot;Unknown argument for &#39;str&#39;: &#39;{other}&#39;&quot;</span>)));
                     }
                 }
             }
@@ -604,7 +604,7 @@
             <span class="attr">#[allow(clippy::never_loop)]
             </span><span class="kw">for </span>arg <span class="kw">in </span>args {
                 <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(
-                    <span class="string">&quot;Unknown argumnt for &#39;pango-str&#39;: &#39;{}&#39;&quot;</span>,
+                    <span class="string">&quot;Unknown argument for &#39;pango-str&#39;: &#39;{}&#39;&quot;</span>,
                     arg.key
                 )));
             }
@@ -809,7 +809,7 @@
                 }
                 other =&gt; {
                     <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(
-                        <span class="string">&quot;Unknown argumnt for &#39;fix&#39;/&#39;eng&#39;: &#39;{other}&#39;&quot;
+                        <span class="string">&quot;Unknown argument for &#39;fix&#39;/&#39;eng&#39;: &#39;{other}&#39;&quot;
                     </span>)));
                 }
             }

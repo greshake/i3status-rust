@@ -279,7 +279,7 @@
             <span class="kw">let </span><span class="kw-2">mut </span>res = <span class="prelude-val">None</span>;
             <span class="kw">for </span>path <span class="kw">in </span>UPowerProxy::new(dbus_conn)
                 .<span class="kw">await
-                </span>.error(<span class="string">&quot;Failed to create UPwerProxy&quot;</span>)<span class="question-mark">?
+                </span>.error(<span class="string">&quot;Failed to create UPowerProxy&quot;</span>)<span class="question-mark">?
                 </span>.enumerate_devices()
                 .<span class="kw">await
                 </span>.error(<span class="string">&quot;Failed to retrieve UPower devices&quot;</span>)<span class="question-mark">?

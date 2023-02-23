@@ -478,7 +478,7 @@
         } <span class="kw">else if </span>color == <span class="string">&quot;auto&quot; </span>{
             Color::Auto
         } <span class="kw">else if </span>color.starts_with(<span class="string">&quot;hsv:&quot;</span>) {
-            <span class="kw">let </span>err_msg = || <span class="macro">format!</span>(<span class="string">&quot;&#39;{color}&#39; is not a vaild HSVA color&quot;</span>);
+            <span class="kw">let </span>err_msg = || <span class="macro">format!</span>(<span class="string">&quot;&#39;{color}&#39; is not a valid HSVA color&quot;</span>);
             <span class="kw">let </span>color = color.split_at(<span class="number">4</span>).<span class="number">1</span>;
             <span class="kw">let </span><span class="kw-2">mut </span>components = color.split(<span class="string">&#39;:&#39;</span>).map(|x| x.parse::&lt;f64&gt;().or_error(err_msg));
             <span class="kw">let </span>h = components.next().or_error(err_msg)<span class="question-mark">??</span>;
@@ -487,7 +487,7 @@
             <span class="kw">let </span>a = components.next().unwrap_or(<span class="prelude-val">Ok</span>(<span class="number">100.</span>))<span class="question-mark">?</span>;
             Color::Hsva(Hsva::new(h, s / <span class="number">100.</span>, v / <span class="number">100.</span>, (a / <span class="number">100. </span>* <span class="number">255.</span>) <span class="kw">as </span>u8))
         } <span class="kw">else </span>{
-            <span class="kw">let </span>err_msg = || <span class="macro">format!</span>(<span class="string">&quot;&#39;{color}&#39; is not a vaild RGBA color&quot;</span>);
+            <span class="kw">let </span>err_msg = || <span class="macro">format!</span>(<span class="string">&quot;&#39;{color}&#39; is not a valid RGBA color&quot;</span>);
             <span class="kw">let </span>rgb = color.get(<span class="number">1</span>..<span class="number">7</span>).or_error(err_msg)<span class="question-mark">?</span>;
             <span class="kw">let </span>a = color.get(<span class="number">7</span>..<span class="number">9</span>).unwrap_or(<span class="string">&quot;FF&quot;</span>);
             Color::Rgba(Rgba::from_hex(

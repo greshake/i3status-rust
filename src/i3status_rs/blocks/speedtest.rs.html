@@ -163,7 +163,7 @@
             </span>.error(<span class="string">&quot;failed to run &#39;speedtest-cli&#39;&quot;</span>)<span class="question-mark">?
             </span>.stdout;
         <span class="kw">let </span>output =
-            std::str::from_utf8(<span class="kw-2">&amp;</span>output).error(<span class="string">&quot;&#39;speedtest-cli&#39; produced non-UTF8 outupt&quot;</span>)<span class="question-mark">?</span>;
+            std::str::from_utf8(<span class="kw-2">&amp;</span>output).error(<span class="string">&quot;&#39;speedtest-cli&#39; produced non-UTF8 output&quot;</span>)<span class="question-mark">?</span>;
         <span class="kw">let </span>output: SpeedtestCliOutput =
             serde_json::from_str(output).error(<span class="string">&quot;&#39;speedtest-cli&#39; produced wrong JSON&quot;</span>)<span class="question-mark">?</span>;
 

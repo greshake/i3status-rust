@@ -396,7 +396,7 @@
 
     <span class="kw">async fn </span>device_available(path: <span class="kw-2">&amp;</span>Path) -&gt; bool {
         <span class="comment">// If `scope` is `Device`, then this is HID, in which case we don&#39;t have to check the
-        // `present` property, because the existance of the device direcory implies that the device
+        // `present` property, because the existence of the device direcory implies that the device
         // is available
         </span><span class="self">Self</span>::read_prop::&lt;String&gt;(path, <span class="string">&quot;scope&quot;</span>).<span class="kw">await</span>.as_deref() == <span class="prelude-val">Some</span>(<span class="string">&quot;Device&quot;</span>)
             || <span class="self">Self</span>::read_prop::&lt;u8&gt;(path, <span class="string">&quot;present&quot;</span>).<span class="kw">await </span>== <span class="prelude-val">Some</span>(<span class="number">1</span>)

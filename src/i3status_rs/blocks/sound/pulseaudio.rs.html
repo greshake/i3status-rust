@@ -738,7 +738,7 @@
             .spawn(<span class="kw">move </span>|| {
                 <span class="kw">let </span><span class="kw-2">mut </span>connection = new_connection(send_result2);
 
-                <span class="comment">// subcribe for events
+                <span class="comment">// subscribe for events
                 </span>connection
                     .context
                     .set_subscribe_callback(<span class="prelude-val">Some</span>(Box::new(Client::subscribe_callback)));

@@ -265,7 +265,7 @@
 /// - Then try XDG_DATA_HOME (e.g. `~/.local/share/`)
 /// - Then try `/usr/share/`
 ///
-/// Automaticaly append an extension if not presented.
+/// Automatically append an extension if not presented.
 </span><span class="kw">pub fn </span>find_file(file: <span class="kw-2">&amp;</span>str, subdir: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt;, extension: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;PathBuf&gt; {
     <span class="comment">// Set (or update) the extension
     </span><span class="kw">let </span><span class="kw-2">mut </span>file = PathBuf::from(file);
