@@ -88,7 +88,6 @@ define_blocks!(
     memory,
     music,
     net,
-    nordvpn,
     notify,
     #[cfg(feature = "notmuch")]
     notmuch,
@@ -106,6 +105,7 @@ define_blocks!(
     tea_timer,
     toggle,
     uptime,
+    vpn,
     watson,
     weather,
     xrandr,
