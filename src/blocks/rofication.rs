@@ -1,6 +1,6 @@
 //! The number of pending notifications in rofication-daemon
 //!
-//! A different color is used is there are critical notifications.
+//! A different color is used if there are critical notifications.
 //!
 //! # Configuration
 //!

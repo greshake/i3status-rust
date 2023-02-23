@@ -1,9 +1,10 @@
-# i3status-rust 0.30.3 [unreleased]
+# i3status-rust 0.30.3
 
 ### Bug Fixes and Improvements
 
 * Net: display more relevant IP addresses.
 * Net: fix panic on systems with IPv6 disabled.
+* Pomodoro: fix a bug which made the block unusable.
 * Setting a click handler without `action = "..."` will disable the default block action.
 
 # i3status-rust 0.30.2
