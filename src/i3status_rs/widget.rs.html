@@ -149,6 +149,11 @@
 <a href="#149" id="149">149</a>
 <a href="#150" id="150">150</a>
 <a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
 </pre><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::config::SharedConfig;
 <span class="kw">use </span><span class="kw">crate</span>::errors::<span class="kw-2">*</span>;
 <span class="kw">use </span><span class="kw">crate</span>::formatting::{Format, Fragment, Values};
@@ -272,11 +277,16 @@
 </span><span class="attr">#[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq, SmartDefault)]
 </span><span class="kw">pub enum </span>State {
     <span class="attr">#[default]
+    #[serde(alias = <span class="string">&quot;idle&quot;</span>)]
     </span>Idle,
-    Info,
-    Good,
-    Warning,
-    Critical,
+    <span class="attr">#[serde(alias = <span class="string">&quot;info&quot;</span>)]
+    </span>Info,
+    <span class="attr">#[serde(alias = <span class="string">&quot;good&quot;</span>)]
+    </span>Good,
+    <span class="attr">#[serde(alias = <span class="string">&quot;warning&quot;</span>)]
+    </span>Warning,
+    <span class="attr">#[serde(alias = <span class="string">&quot;critical&quot;</span>)]
+    </span>Critical,
 }
 
 <span class="doccomment">/// The source of text for widget
