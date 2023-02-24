@@ -409,6 +409,10 @@
 <a href="#409" id="409">409</a>
 <a href="#410" id="410">410</a>
 <a href="#411" id="411">411</a>
+<a href="#412" id="412">412</a>
+<a href="#413" id="413">413</a>
+<a href="#414" id="414">414</a>
+<a href="#415" id="415">415</a>
 </pre><pre class="rust"><code><span class="kw">use </span>neli::attr::Attribute;
 <span class="kw">use </span>neli::consts::{nl::<span class="kw-2">*</span>, rtnl::<span class="kw-2">*</span>, socket::<span class="kw-2">*</span>};
 <span class="kw">use </span>neli::nl::{NlPayload, Nlmsghdr};
@@ -479,25 +483,25 @@
         )
         .error(<span class="string">&quot;Socket error&quot;</span>)<span class="question-mark">?</span>;
 
-        <span class="kw">let </span>ifaces = get_interfaces(<span class="kw-2">&amp;mut </span>sock)
+        <span class="kw">let </span><span class="kw-2">mut </span>ifaces = get_interfaces(<span class="kw-2">&amp;mut </span>sock, iface_re)
             .<span class="kw">await
             </span>.map_err(BoxErrorWrapper)
             .error(<span class="string">&quot;Failed to fetch interfaces&quot;</span>)<span class="question-mark">?</span>;
 
-        <span class="kw">let </span>iface = <span class="kw">match </span>iface_re {
-            <span class="prelude-val">Some</span>(re) =&gt; ifaces.into_iter().find(|i| re.is_match(<span class="kw-2">&amp;</span>i.name)),
-            <span class="prelude-val">None </span>=&gt; {
-                <span class="kw">let </span>default_iface = get_default_interface(<span class="kw-2">&amp;mut </span>sock)
-                    .<span class="kw">await
-                    </span>.map_err(BoxErrorWrapper)
-                    .error(<span class="string">&quot;Failed to get default interface&quot;</span>)<span class="question-mark">?</span>;
-                ifaces.into_iter().find(|i| i.index == default_iface)
-            }
-        };
+        <span class="kw">let </span>default_iface = get_default_interface(<span class="kw-2">&amp;mut </span>sock)
+            .<span class="kw">await
+            </span>.map_err(BoxErrorWrapper)
+            .error(<span class="string">&quot;Failed to get default interface&quot;</span>)<span class="question-mark">?</span>;
 
-        <span class="kw">let </span>iface = <span class="kw">match </span>iface {
-            <span class="prelude-val">Some</span>(iface) =&gt; iface,
-            <span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+        <span class="kw">let </span>iface_position = ifaces
+            .iter()
+            .position(|i| i.index == default_iface)
+            .unwrap_or(<span class="number">0</span>);
+
+        <span class="kw">let </span>iface = <span class="kw">if </span>iface_position &lt; ifaces.len() {
+            ifaces.swap_remove(iface_position)
+        } <span class="kw">else </span>{
+            <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
         };
 
         <span class="kw">let </span>wifi_info = WifiInfo::new(iface.index).<span class="kw">await</span><span class="question-mark">?</span>;
@@ -672,6 +676,7 @@
 
 <span class="kw">async fn </span>get_interfaces(
     sock: <span class="kw-2">&amp;mut </span>NlSocket,
+    filter: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Regex&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;Interface&gt;, Box&lt;<span class="kw">dyn </span>StdError + Send + Sync + <span class="lifetime">&#39;static</span>&gt;&gt; {
     sock.send(<span class="kw-2">&amp;</span>Nlmsghdr::new(
         <span class="prelude-val">None</span>,
@@ -704,12 +709,15 @@
                 <span class="kw">_ </span>=&gt; (),
             }
         }
-        interfaces.push(Interface {
-            index: msg.ifi_index,
-            is_up,
-            name: name.unwrap(),
-            stats,
-        });
+        <span class="kw">let </span>name: String = name.unwrap();
+        <span class="kw">if </span>filter.map_or(<span class="bool-val">true</span>, |f| f.is_match(<span class="kw-2">&amp;</span>name)) {
+            interfaces.push(Interface {
+                index: msg.ifi_index,
+                is_up,
+                name,
+                stats,
+            });
+        }
     });
 
     <span class="prelude-val">Ok</span>(interfaces)
