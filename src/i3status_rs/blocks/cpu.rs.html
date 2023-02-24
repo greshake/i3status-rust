@@ -265,16 +265,16 @@
 //! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
 //! `interval` | Update interval in seconds | `5`
 //!
-//! Placeholder      | Value                                                          | Type   | Unit
-//! -----------------|----------------------------------------------------------------|--------|---------------
-//! `icon`           | An icon                                                        | Icon   | -
-//! `utilization`    | Average CPU utilization                                        | Number | %
-//! `utilization&lt;N&gt;` | Utilization of Nth logical CPU                                 | Number | %
-//! `barchart`       | Utilization of all logical CPUs presented as a barchart        | Text   | -
-//! `frequency`      | Average CPU frequency                                          | Number | Hz
-//! `frequency&lt;N&gt;`   | Frequency of Nth logical CPU                                   | Number | Hz
-//! `max_frequency`  | Max frequency of all logical CPUs                              | Number | Hz
-//! `boost`          | CPU turbo boost status (may be absent if CPU is not supported) | Text   | -
+//! Placeholder      | Value                                                                | Type   | Unit
+//! -----------------|----------------------------------------------------------------------|--------|---------------
+//! `icon`           | An icon                                                              | Icon   | -
+//! `utilization`    | Average CPU utilization                                              | Number | %
+//! `utilization&lt;N&gt;` | Utilization of Nth logical CPU                                       | Number | %
+//! `barchart`       | Utilization of all logical CPUs presented as a barchart              | Text   | -
+//! `frequency`      | Average CPU frequency (may be absent if CPU is not supported)        | Number | Hz
+//! `frequency&lt;N&gt;`   | Frequency of Nth logical CPU (may be absent if CPU is not supported) | Number | Hz
+//! `max_frequency`  | Max frequency of all logical CPUs                                    | Number | Hz
+//! `boost`          | CPU turbo boost status (may be absent if CPU is not supported)       | Text   | -
 //!
 //! Action          | Description                               | Default button
 //! ----------------|-------------------------------------------|---------------
@@ -372,9 +372,9 @@
         <span class="kw">let </span><span class="kw-2">mut </span>values = <span class="macro">map!</span>(
             <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon_in_progression(<span class="string">&quot;cpu&quot;</span>, utilization_avg)<span class="question-mark">?</span>),
             <span class="string">&quot;barchart&quot; </span>=&gt; Value::text(barchart),
-            <span class="string">&quot;frequency&quot; </span>=&gt; Value::hertz(freq_avg),
+            [<span class="kw">if </span>!freqs.is_empty()] <span class="string">&quot;frequency&quot; </span>=&gt; Value::hertz(freq_avg),
             <span class="string">&quot;utilization&quot; </span>=&gt; Value::percents(utilization_avg * <span class="number">100.</span>),
-            <span class="string">&quot;max_frequency&quot; </span>=&gt; Value::hertz(freqs.iter().copied().max_by(f64::total_cmp).unwrap()),
+            [<span class="kw">if </span>!freqs.is_empty()] <span class="string">&quot;max_frequency&quot; </span>=&gt; Value::hertz(freqs.iter().copied().max_by(f64::total_cmp).unwrap()),
         );
         boost.map(|b| values.insert(<span class="string">&quot;boost&quot;</span>.into(), Value::icon(b)));
         <span class="kw">for </span>(i, freq) <span class="kw">in </span>freqs.iter().enumerate() {
