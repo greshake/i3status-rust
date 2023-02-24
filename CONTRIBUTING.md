@@ -68,6 +68,11 @@ targeted as possible. Use `git rebase` if you need to do this after the fact.
 Please format your code with `rustfmt` before submitting a PR.  The easiest way
 to do this is by running `cargo fmt`.
 
+You can use [pre-commit](https://pre-commit.com/) locally to run several checks
+including looking for spelling errors and making sure that `cargo fmt` has been
+run. These same checks will be run as a github action, but it can save time to
+just run them locally.
+
 ## Maintainership
 
 If you are interested in taking on a more active community role -- e.g. triaging 
