@@ -84,7 +84,7 @@
 //!
 //! # How to use flags
 //!
-//! Some blocks provide flags, which can be used to change the format based on some critera. For
+//! Some blocks provide flags, which can be used to change the format based on some criteria. For
 //! example, [taskwarrior](crate::blocks::taskwarrior) defines `done` if the count is zero. In
 //! general, flags are used in this way:
 //!
@@ -161,7 +161,7 @@ impl From<String> for Fragment {
 }
 
 impl Fragment {
-    pub fn formated_text(&self) -> String {
+    pub fn formatted_text(&self) -> String {
         match (self.metadata.italic, self.metadata.underline) {
             (true, true) => format!("<i><u>{}</u></i>", self.text),
             (false, true) => format!("<u>{}</u>", self.text),

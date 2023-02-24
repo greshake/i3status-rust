@@ -110,7 +110,7 @@ impl<'de> Deserialize<'de> for MouseButton {
                     "down" => WheelDown,
                     "forward" => Forward,
                     "back" => Back,
-                    // Experemental
+                    // Experimental
                     "double_left" => DoubleLeft,
                     _ => Unknown,
                 })
