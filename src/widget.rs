@@ -121,10 +121,15 @@ impl Widget {
 #[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq, SmartDefault)]
 pub enum State {
     #[default]
+    #[serde(alias = "idle")]
     Idle,
+    #[serde(alias = "info")]
     Info,
+    #[serde(alias = "good")]
     Good,
+    #[serde(alias = "warning")]
     Warning,
+    #[serde(alias = "critical")]
     Critical,
 }
 
