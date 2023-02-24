@@ -21,6 +21,8 @@
 //! `cycle` | The brightnesses to cycle through on each click | `[minimum, maximum]`
 //! `root_scaling` | Scaling exponent reciprocal (ie. root) | `1.0`
 //! `invert_icons` | Invert icons' ordering, useful if you have colorful emoji | `false`
+//! `ddcci_sleep_multiplier` | [See ddcutil documentation](https://www.ddcutil.com/performance_options/#option-sleep-multiplier) | `1.0`
+//! `ddcci_max_tries_write_read` | The maximum number of times to attempt writing to  or reading from a ddcci monitor | `10`
 //!
 //! Placeholder  | Value                                     | Type   | Unit
 //! -------------|-------------------------------------------|--------|---------------
@@ -118,6 +120,10 @@ pub struct Config {
     #[default(1.0)]
     root_scaling: f64,
     invert_icons: bool,
+    #[default(1.0)]
+    ddcci_sleep_multiplier: f64,
+    #[default(10)]
+    ddcci_max_tries_write_read: u8,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
@@ -137,8 +143,23 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         .cycle();
 
     let device = match &config.device {
-        None => BacklightDevice::default(config.root_scaling).await?,
-        Some(path) => BacklightDevice::from_device(path, config.root_scaling).await?,
+        None => {
+            BacklightDevice::default(
+                config.root_scaling,
+                config.ddcci_sleep_multiplier,
+                config.ddcci_max_tries_write_read,
+            )
+            .await?
+        }
+        Some(path) => {
+            BacklightDevice::from_device(
+                path,
+                config.root_scaling,
+                config.ddcci_sleep_multiplier,
+                config.ddcci_max_tries_write_read,
+            )
+            .await?
+        }
     };
 
     // Watch for brightness changes
@@ -193,14 +214,31 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 }
 
 /// Read a brightness value from the given path.
-async fn read_brightness_raw(device_file: &Path) -> Result<u64> {
+async fn read_brightness_raw(
+    device_file: &Path,
+    ddcci_sleep_multiplier: f64,
+    ddcci_max_tries_write_read: u8,
+) -> Result<u64> {
     let val = match read_file(device_file).await {
         Ok(v) => Ok(v),
         Err(_) => {
-            // HACK: Try to read file a second time if the first fails. For some reason, when using `ddcci`
-            // the first read fails with "Error 74: Bad Message".
-            debug!("First read of brightness file failed, retrying");
-            read_file(device_file).await
+            for i in 1..ddcci_max_tries_write_read {
+                debug!("retry {i} reading brightness");
+                // See https://glenwing.github.io/docs/VESA-DDCCI-1.1.pdf
+                // Section 4.3 for timing explanation
+                sleep(Duration::from_millis(
+                    (40.0 * ddcci_sleep_multiplier).round() as u64,
+                ))
+                .await;
+                if let Ok(val) = read_file(device_file).await {
+                    return val
+                        .parse()
+                        .error("Failed to read value from brightness file");
+                }
+            }
+            Err(Error::new(
+                "Failed to read brightness file, check your ddcci settings",
+            ))
         }
     };
     val.error("Failed to read brightness file")?
@@ -216,10 +254,17 @@ struct BacklightDevice {
     max_brightness: u64,
     root_scaling: f64,
     dbus_proxy: SessionProxy<'static>,
+    ddcci_sleep_multiplier: f64,
+    ddcci_max_tries_write_read: u8,
 }
 
 impl BacklightDevice {
-    async fn new(device_path: PathBuf, root_scaling: f64) -> Result<Self> {
+    async fn new(
+        device_path: PathBuf,
+        root_scaling: f64,
+        ddcci_sleep_multiplier: f64,
+        ddcci_max_tries_write_read: u8,
+    ) -> Result<Self> {
         let dbus_conn = new_system_dbus_connection().await?;
         Ok(Self {
             read_brightness_file: device_path.join({
@@ -234,17 +279,28 @@ impl BacklightDevice {
                 .file_name()
                 .map(|x| x.to_str().unwrap().into())
                 .error("Malformed device path")?,
-            max_brightness: read_brightness_raw(&device_path.join(FILE_MAX_BRIGHTNESS)).await?,
+            max_brightness: read_brightness_raw(
+                &device_path.join(FILE_MAX_BRIGHTNESS),
+                ddcci_sleep_multiplier,
+                ddcci_max_tries_write_read,
+            )
+            .await?,
             root_scaling: root_scaling.clamp(ROOT_SCALDING_RANGE.start, ROOT_SCALDING_RANGE.end),
             dbus_proxy: SessionProxy::new(&dbus_conn)
                 .await
                 .error("failed to create SessionProxy")?,
+            ddcci_sleep_multiplier,
+            ddcci_max_tries_write_read,
         })
     }
 
     /// Use the default backlight device, i.e. the first one found in the
     /// `/sys/class/backlight` directory.
-    async fn default(root_scaling: f64) -> Result<Self> {
+    async fn default(
+        root_scaling: f64,
+        ddcci_sleep_multiplier: f64,
+        ddcci_max_tries_write_read: u8,
+    ) -> Result<Self> {
         let device = read_dir(DEVICES_PATH)
             .await
             .error("Failed to read backlight device directory")?
@@ -252,18 +308,40 @@ impl BacklightDevice {
             .await
             .error("No backlight devices found")?
             .error("Failed to read default device file")?;
-        Self::new(device.path(), root_scaling).await
+        Self::new(
+            device.path(),
+            root_scaling,
+            ddcci_sleep_multiplier,
+            ddcci_max_tries_write_read,
+        )
+        .await
     }
 
     /// Use the backlight device `device`. Returns an error if a directory for
     /// that device is not found.
-    async fn from_device(device: &str, root_scaling: f64) -> Result<Self> {
-        Self::new(Path::new(DEVICES_PATH).join(device), root_scaling).await
+    async fn from_device(
+        device: &str,
+        root_scaling: f64,
+        ddcci_sleep_multiplier: f64,
+        ddcci_max_tries_write_read: u8,
+    ) -> Result<Self> {
+        Self::new(
+            Path::new(DEVICES_PATH).join(device),
+            root_scaling,
+            ddcci_sleep_multiplier,
+            ddcci_max_tries_write_read,
+        )
+        .await
     }
 
     /// Query the brightness value for this backlight device, as a percent.
     async fn brightness(&self) -> Result<u8> {
-        let raw = read_brightness_raw(&self.read_brightness_file).await?;
+        let raw = read_brightness_raw(
+            &self.read_brightness_file,
+            self.ddcci_sleep_multiplier,
+            self.ddcci_max_tries_write_read,
+        )
+        .await?;
 
         let brightness_ratio =
             (raw as f64 / self.max_brightness as f64).powf(self.root_scaling.recip());
