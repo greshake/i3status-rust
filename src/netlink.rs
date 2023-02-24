@@ -68,25 +68,25 @@ impl NetDevice {
         )
         .error("Socket error")?;
 
-        let ifaces = get_interfaces(&mut sock)
+        let mut ifaces = get_interfaces(&mut sock, iface_re)
             .await
             .map_err(BoxErrorWrapper)
             .error("Failed to fetch interfaces")?;
 
-        let iface = match iface_re {
-            Some(re) => ifaces.into_iter().find(|i| re.is_match(&i.name)),
-            None => {
-                let default_iface = get_default_interface(&mut sock)
-                    .await
-                    .map_err(BoxErrorWrapper)
-                    .error("Failed to get default interface")?;
-                ifaces.into_iter().find(|i| i.index == default_iface)
-            }
-        };
+        let default_iface = get_default_interface(&mut sock)
+            .await
+            .map_err(BoxErrorWrapper)
+            .error("Failed to get default interface")?;
 
-        let iface = match iface {
-            Some(iface) => iface,
-            None => return Ok(None),
+        let iface_position = ifaces
+            .iter()
+            .position(|i| i.index == default_iface)
+            .unwrap_or(0);
+
+        let iface = if iface_position < ifaces.len() {
+            ifaces.swap_remove(iface_position)
+        } else {
+            return Ok(None);
         };
 
         let wifi_info = WifiInfo::new(iface.index).await?;
@@ -261,6 +261,7 @@ macro_rules! recv_until_done {
 
 async fn get_interfaces(
     sock: &mut NlSocket,
+    filter: Option<&Regex>,
 ) -> Result<Vec<Interface>, Box<dyn StdError + Send + Sync + 'static>> {
     sock.send(&Nlmsghdr::new(
         None,
@@ -293,12 +294,15 @@ async fn get_interfaces(
                 _ => (),
             }
         }
-        interfaces.push(Interface {
-            index: msg.ifi_index,
-            is_up,
-            name: name.unwrap(),
-            stats,
-        });
+        let name: String = name.unwrap();
+        if filter.map_or(true, |f| f.is_match(&name)) {
+            interfaces.push(Interface {
+                index: msg.ifi_index,
+                is_up,
+                name,
+                stats,
+            });
+        }
     });
 
     Ok(interfaces)
