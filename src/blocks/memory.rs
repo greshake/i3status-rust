@@ -116,12 +116,16 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         } as f64
             * 1024.;
 
+        // TODO: While zfs_arc_cache can be considered "available" memory,
+        // it can only free a maximum of (zfs_arc_cache - zfs_arc_min) amount.
+        // So we need to grab the info for zfs_arc_min as well, but cannot find it in arcstats...
+        // see https://github.com/htop-dev/htop/pull/1003
+        let zfs_arc_cache = mem_state.zfs_arc_cache as f64;
+        let mem_avail = mem_avail + zfs_arc_cache;
+
         let pagecache = mem_state.pagecache as f64 * 1024.;
         let reclaimable = mem_state.s_reclaimable as f64 * 1024.;
         let shmem = mem_state.shmem as f64 * 1024.;
-
-        // TODO: see https://github.com/htop-dev/htop/pull/1003
-        let zfs_arc_cache = mem_state.zfs_arc_cache as f64;
 
         // See https://lore.kernel.org/lkml/1455827801-13082-1-git-send-email-hannes@cmpxchg.org/
         let cached = pagecache + reclaimable - shmem + zfs_arc_cache;
