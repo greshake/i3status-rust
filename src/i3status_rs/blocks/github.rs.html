@@ -357,7 +357,7 @@
             <span class="string">&quot;https://api.github.com/notifications?per_page=100&amp;page={page}&quot;</span>,
         ))
         .header(<span class="string">&quot;Authorization&quot;</span>, <span class="macro">format!</span>(<span class="string">&quot;token {token}&quot;</span>));
-    <span class="kw">let </span>responce = request
+    <span class="kw">let </span>response = request
         .send()
         .<span class="kw">await
         </span>.error(<span class="string">&quot;Failed to send request&quot;</span>)<span class="question-mark">?
@@ -365,7 +365,7 @@
         .<span class="kw">await
         </span>.error(<span class="string">&quot;Failed to get JSON&quot;</span>)<span class="question-mark">?</span>;
 
-    <span class="kw">match </span>responce {
+    <span class="kw">match </span>response {
         Response::Notifications(n) =&gt; <span class="prelude-val">Ok</span>(n),
         Response::ErrorMessage { message } =&gt; <span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">&quot;API error: {message}&quot;</span>))),
     }

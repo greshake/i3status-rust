@@ -997,7 +997,7 @@
                         <span class="kw">let </span>block = <span class="kw-2">&amp;mut </span><span class="self">self</span>.blocks[id].<span class="number">0</span>;
 
                         <span class="kw">if </span><span class="macro">matches!</span>(block.state, BlockState::Error { .. }) {
-                            <span class="comment">// This should never happen. If this code runs, it cound mean that we
+                            <span class="comment">// This should never happen. If this code runs, it could mean that we
                             // got an error while trying to display and error. We better stop here.
                             </span><span class="kw">return </span><span class="prelude-val">Err</span>(error);
                         }

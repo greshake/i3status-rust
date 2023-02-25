@@ -128,7 +128,7 @@
 
     futures::stream::unfold(lines, <span class="kw">move </span>|<span class="kw-2">mut </span>lines| <span class="kw">async move </span>{
         <span class="kw">loop </span>{
-            <span class="comment">// Take only the valid JSON object betweem curly braces (cut off leading bracket, commas and whitespace)
+            <span class="comment">// Take only the valid JSON object between curly braces (cut off leading bracket, commas and whitespace)
             </span><span class="kw">let </span>line = lines.next_line().<span class="kw">await</span>.ok().flatten()<span class="question-mark">?</span>;
             <span class="kw">let </span>line = line.trim_start_matches(|c| c != <span class="string">&#39;{&#39;</span>);
             <span class="kw">let </span>line = line.trim_end_matches(|c| c != <span class="string">&#39;}&#39;</span>);

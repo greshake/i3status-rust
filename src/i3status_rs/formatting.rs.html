@@ -269,7 +269,7 @@
 //!
 //! # How to use flags
 //!
-//! Some blocks provide flags, which can be used to change the format based on some critera. For
+//! Some blocks provide flags, which can be used to change the format based on some criteria. For
 //! example, [taskwarrior](crate::blocks::taskwarrior) defines `done` if the count is zero. In
 //! general, flags are used in this way:
 //!
@@ -346,7 +346,7 @@
 }
 
 <span class="kw">impl </span>Fragment {
-    <span class="kw">pub fn </span>formated_text(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String {
+    <span class="kw">pub fn </span>formatted_text(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String {
         <span class="kw">match </span>(<span class="self">self</span>.metadata.italic, <span class="self">self</span>.metadata.underline) {
             (<span class="bool-val">true</span>, <span class="bool-val">true</span>) =&gt; <span class="macro">format!</span>(<span class="string">&quot;&lt;i&gt;&lt;u&gt;{}&lt;/u&gt;&lt;/i&gt;&quot;</span>, <span class="self">self</span>.text),
             (<span class="bool-val">false</span>, <span class="bool-val">true</span>) =&gt; <span class="macro">format!</span>(<span class="string">&quot;&lt;u&gt;{}&lt;/u&gt;&quot;</span>, <span class="self">self</span>.text),

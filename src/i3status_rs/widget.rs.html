@@ -252,7 +252,7 @@
 
         parts.extend(full.into_iter().map(|w| {
             <span class="kw">let </span><span class="kw-2">mut </span>data = template.clone();
-            data.full_text = w.formated_text();
+            data.full_text = w.formatted_text();
             <span class="kw">if let </span><span class="prelude-val">Some</span>(i) = <span class="kw-2">&amp;</span>w.metadata.instance {
                 data.instance.push_str(i);
             }
@@ -262,7 +262,7 @@
         template.full_text = <span class="string">&quot;&lt;span/&gt;&quot;</span>.into();
         parts.extend(short.into_iter().map(|w| {
             <span class="kw">let </span><span class="kw-2">mut </span>data = template.clone();
-            data.short_text = w.formated_text();
+            data.short_text = w.formatted_text();
             <span class="kw">if let </span><span class="prelude-val">Some</span>(i) = <span class="kw-2">&amp;</span>w.metadata.instance {
                 data.instance.push_str(i);
             }
