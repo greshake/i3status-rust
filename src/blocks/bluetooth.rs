@@ -83,18 +83,21 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         match monitor.get_device_info().await {
             // Available
             Some(device) => {
-                let mut values = map! {
+                let values = map! {
                     "icon" => Value::icon(api.get_icon(device.icon)?),
                     "name" => Value::text(device.name),
-                    "available" => Value::flag()
+                    "available" => Value::flag(),
+                    [if let Some(p) = device.battery_percentage] "percentage" => Value::percents(p),
                 };
-                if let Some(p) = device.battery_percentage {
-                    values.insert("percentage".into(), Value::percents(p));
-                }
                 if device.connected {
                     debug!("Showing device as connected");
-                    widget.state = State::Good;
                     widget.set_format(format.clone());
+                    widget.state = match device.battery_percentage {
+                        Some(0..=15) => State::Critical,
+                        Some(16..=30) => State::Warning,
+                        Some(31..=60) => State::Info,
+                        _ => State::Good,
+                    };
                 } else {
                     debug!("Showing device as disconnected");
                     widget.set_format(disconnected_format.clone());
