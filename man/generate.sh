@@ -2,6 +2,11 @@
 
 set -eo pipefail
 
+if ! pandoc --version | grep -q "pandoc 3" -; then
+    echo "Please make sure you are have pandoc version 3"
+    exit 1
+fi
+
 if [ -z $1 ]; then
     OUT=man/i3status-rs.1
 else
