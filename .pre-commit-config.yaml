@@ -51,3 +51,9 @@ repos:
       types: [rust]
       pass_filenames: false
       args: ["--all-features", "--"]
+    - id: gen-manpage
+      name: gen-manpage
+      description: Update manpages
+      language: system
+      entry: man/generate.sh
+      pass_filenames: false

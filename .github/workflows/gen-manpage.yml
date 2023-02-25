@@ -1,0 +1,21 @@
+name: gen-manpage
+
+on:  
+  push:
+    tags:
+      - 'v*'
+jobs:
+  gen-manpage:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Get required packages
+      run: sudo apt-get install libsensors-dev libssl-dev libpulse-dev libnotmuch-dev
+    - name: Get pandoc #The version available in apt-get is so old you won't get the same output as you would locally
+      run: curl -OL https://github.com/jgm/pandoc/releases/download/3.1/pandoc-3.1-1-amd64.deb && sudo apt install ./pandoc-3.1-1-amd64.deb 
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.10' 
+    - uses: pre-commit/action@v3.0.0
+      with:
+        extra_args: gen-manpage --all-files
