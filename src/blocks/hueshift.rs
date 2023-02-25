@@ -113,7 +113,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             } else if has_command("wlsunset").await? {
                 HueShifter::Wlsunset
             } else {
-                return Err(Error::new("Cound not detect driver program"));
+                return Err(Error::new("Could not detect driver program"));
             }
         }
     };

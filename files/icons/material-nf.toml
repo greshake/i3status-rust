@@ -1,7 +1,7 @@
 # Material from NerdFont
 # https://www.nerdfonts.com/cheat-sheet
 #
-# Note: aviod using icons in the range 0xf500-0xfd46,
+# Note: avoid using icons in the range 0xf500-0xfd46,
 # as they will cause the block to render backwards
 # until https://github.com/ryanoasis/nerd-fonts/issues/365 is fixed
 backlight = [

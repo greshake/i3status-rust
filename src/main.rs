@@ -476,7 +476,7 @@ impl BarState {
                         let block = &mut self.blocks[id].0;
 
                         if matches!(block.state, BlockState::Error { .. }) {
-                            // This should never happen. If this code runs, it cound mean that we
+                            // This should never happen. If this code runs, it could mean that we
                             // got an error while trying to display and error. We better stop here.
                             return Err(error);
                         }

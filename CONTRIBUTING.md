@@ -70,7 +70,7 @@ to do this is by running `cargo fmt`.
 
 ## Maintainership
 
-If you are interested intaking on a more active community role -- e.g. triaging 
+If you are interested in taking on a more active community role -- e.g. triaging 
 issues or reviewing pull requests -- please feel free to reach out to us.
 
 ## License
