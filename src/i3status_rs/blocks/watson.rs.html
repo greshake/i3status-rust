@@ -318,7 +318,7 @@
         <span class="kw">let </span>state = read_to_string(<span class="kw-2">&amp;</span>state_path)
             .<span class="kw">await
             </span>.error(<span class="string">&quot;Failed to read state file&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">let </span>state = serde_json::from_str(<span class="kw-2">&amp;</span>state).error(<span class="string">&quot;Unable to deserialize state&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>state = serde_json::from_str(<span class="kw-2">&amp;</span>state).unwrap_or(WatsonState::Idle {});
         <span class="kw">match </span>state {
             state @ WatsonState::Active { .. } =&gt; {
                 widget.state = State::Good;
