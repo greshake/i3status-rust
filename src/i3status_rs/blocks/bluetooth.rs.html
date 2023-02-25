@@ -401,6 +401,9 @@
 <a href="#401" id="401">401</a>
 <a href="#402" id="402">402</a>
 <a href="#403" id="403">403</a>
+<a href="#404" id="404">404</a>
+<a href="#405" id="405">405</a>
+<a href="#406" id="406">406</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Monitor Bluetooth device
 //!
 //! This block displays the connectivity of a given Bluetooth device and the battery level if this
@@ -486,18 +489,21 @@
         <span class="kw">match </span>monitor.get_device_info().<span class="kw">await </span>{
             <span class="comment">// Available
             </span><span class="prelude-val">Some</span>(device) =&gt; {
-                <span class="kw">let </span><span class="kw-2">mut </span>values = <span class="macro">map! </span>{
+                <span class="kw">let </span>values = <span class="macro">map! </span>{
                     <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(device.icon)<span class="question-mark">?</span>),
                     <span class="string">&quot;name&quot; </span>=&gt; Value::text(device.name),
-                    <span class="string">&quot;available&quot; </span>=&gt; Value::flag()
+                    <span class="string">&quot;available&quot; </span>=&gt; Value::flag(),
+                    [<span class="kw">if let </span><span class="prelude-val">Some</span>(p) = device.battery_percentage] <span class="string">&quot;percentage&quot; </span>=&gt; Value::percents(p),
                 };
-                <span class="kw">if let </span><span class="prelude-val">Some</span>(p) = device.battery_percentage {
-                    values.insert(<span class="string">&quot;percentage&quot;</span>.into(), Value::percents(p));
-                }
                 <span class="kw">if </span>device.connected {
                     <span class="macro">debug!</span>(<span class="string">&quot;Showing device as connected&quot;</span>);
-                    widget.state = State::Good;
                     widget.set_format(format.clone());
+                    widget.state = <span class="kw">match </span>device.battery_percentage {
+                        <span class="prelude-val">Some</span>(<span class="number">0</span>..=<span class="number">15</span>) =&gt; State::Critical,
+                        <span class="prelude-val">Some</span>(<span class="number">16</span>..=<span class="number">30</span>) =&gt; State::Warning,
+                        <span class="prelude-val">Some</span>(<span class="number">31</span>..=<span class="number">60</span>) =&gt; State::Info,
+                        <span class="kw">_ </span>=&gt; State::Good,
+                    };
                 } <span class="kw">else </span>{
                     <span class="macro">debug!</span>(<span class="string">&quot;Showing device as disconnected&quot;</span>);
                     widget.set_format(disconnected_format.clone());
