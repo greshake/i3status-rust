@@ -286,6 +286,10 @@
 <a href="#286" id="286">286</a>
 <a href="#287" id="287">287</a>
 <a href="#288" id="288">288</a>
+<a href="#289" id="289">289</a>
+<a href="#290" id="290">290</a>
+<a href="#291" id="291">291</a>
+<a href="#292" id="292">292</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Memory and swap usage
 //!
 //! # Configuration
@@ -404,12 +408,16 @@
         } <span class="kw">as </span>f64
             * <span class="number">1024.</span>;
 
+        <span class="comment">// TODO: While zfs_arc_cache can be considered &quot;available&quot; memory,
+        // it can only free a maximum of (zfs_arc_cache - zfs_arc_min) amount.
+        // So we need to grab the info for zfs_arc_min as well, but cannot find it in arcstats...
+        // see https://github.com/htop-dev/htop/pull/1003
+        </span><span class="kw">let </span>zfs_arc_cache = mem_state.zfs_arc_cache <span class="kw">as </span>f64;
+        <span class="kw">let </span>mem_avail = mem_avail + zfs_arc_cache;
+
         <span class="kw">let </span>pagecache = mem_state.pagecache <span class="kw">as </span>f64 * <span class="number">1024.</span>;
         <span class="kw">let </span>reclaimable = mem_state.s_reclaimable <span class="kw">as </span>f64 * <span class="number">1024.</span>;
         <span class="kw">let </span>shmem = mem_state.shmem <span class="kw">as </span>f64 * <span class="number">1024.</span>;
-
-        <span class="comment">// TODO: see https://github.com/htop-dev/htop/pull/1003
-        </span><span class="kw">let </span>zfs_arc_cache = mem_state.zfs_arc_cache <span class="kw">as </span>f64;
 
         <span class="comment">// See https://lore.kernel.org/lkml/1455827801-13082-1-git-send-email-hannes@cmpxchg.org/
         </span><span class="kw">let </span>cached = pagecache + reclaimable - shmem + zfs_arc_cache;
