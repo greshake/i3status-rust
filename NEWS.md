@@ -1,3 +1,16 @@
+# i3status-rust 0.30.4 [unreleased]
+
+### New Blocks and Features
+
+* Time: timezone can now be set to a list of values. Click on the block to cycle between timezones.
+
+### Bug Fixes and Improvements
+
+* Net: prefer the default device when multiple devices match the regex.
+* Cpu: fix panic on systems which do not report CPU frequency.
+* Bluetooth: change block color based on battery level.
+* Memory: consider ZFS arc cache as available memory.
+
 # i3status-rust 0.30.3
 
 ### Bug Fixes and Improvements
