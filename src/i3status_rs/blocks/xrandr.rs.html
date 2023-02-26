@@ -246,7 +246,7 @@
 //!
 //! # Used Icons
 //! - `xrandr`
-//! - `backlight_full`
+//! - `backlight`
 //! - `resolution`
 
 </span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
@@ -293,7 +293,7 @@
                     <span class="string">&quot;display&quot; </span>=&gt; Value::text(mon.name.clone()),
                     <span class="string">&quot;brightness&quot; </span>=&gt; Value::percents(mon.brightness),
                     <span class="comment">//TODO: change `brightness_icon` based on `brightness`
-                    </span><span class="string">&quot;brightness_icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;backlight_full&quot;</span>)<span class="question-mark">?</span>),
+                    </span><span class="string">&quot;brightness_icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;backlight&quot;</span>)<span class="question-mark">?</span>),
                     <span class="string">&quot;resolution&quot; </span>=&gt; Value::text(mon.resolution.clone()),
                     <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;xrandr&quot;</span>)<span class="question-mark">?</span>),
                     <span class="string">&quot;res_icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;resolution&quot;</span>)<span class="question-mark">?</span>),
