@@ -119,11 +119,9 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         // While zfs_arc_cache can be considered "available" memory,
         // it can only free a maximum of (zfs_arc_cache - zfs_arc_min) amount.
         // see https://github.com/htop-dev/htop/pull/1003
-        let zfs_shrinkable_size = if mem_state.zfs_arc_cache > mem_state.zfs_arc_min {
-            mem_state.zfs_arc_cache - mem_state.zfs_arc_min
-        } else {
-            0
-        } as f64;
+        let zfs_shrinkable_size = mem_state
+            .zfs_arc_cache
+            .saturating_sub(mem_state.zfs_arc_min) as f64;
         let mem_avail = mem_avail + zfs_shrinkable_size;
 
         let pagecache = mem_state.pagecache as f64 * 1024.;
