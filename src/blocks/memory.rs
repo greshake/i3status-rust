@@ -120,15 +120,19 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         // it can only free a maximum of (zfs_arc_cache - zfs_arc_min) amount.
         // So we need to grab the info for zfs_arc_min as well, but cannot find it in arcstats...
         // see https://github.com/htop-dev/htop/pull/1003
-        let zfs_arc_cache = mem_state.zfs_arc_cache as f64;
-        let mem_avail = mem_avail + zfs_arc_cache;
+        let zfs_shrinkable_size = if mem_state.zfs_arc_cache > mem_state.zfs_arc_min {
+            mem_state.zfs_arc_cache - mem_state.zfs_arc_min
+        } else {
+            0
+        } as f64;
+        let mem_avail = mem_avail + zfs_shrinkable_size;
 
         let pagecache = mem_state.pagecache as f64 * 1024.;
         let reclaimable = mem_state.s_reclaimable as f64 * 1024.;
         let shmem = mem_state.shmem as f64 * 1024.;
 
         // See https://lore.kernel.org/lkml/1455827801-13082-1-git-send-email-hannes@cmpxchg.org/
-        let cached = pagecache + reclaimable - shmem + zfs_arc_cache;
+        let cached = pagecache + reclaimable - shmem + zfs_shrinkable_size;
 
         let buffers = mem_state.buffers as f64 * 1024.;
 
@@ -141,7 +145,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         };
 
         // account for ZFS ARC cache
-        let mem_used = mem_used - zfs_arc_cache;
+        let mem_used = mem_used - zfs_shrinkable_size;
 
         let swap_total = mem_state.swap_total as f64 * 1024.;
         let swap_free = mem_state.swap_free as f64 * 1024.;
@@ -226,6 +230,7 @@ struct Memstate {
     swap_free: u64,
     swap_cached: u64,
     zfs_arc_cache: u64,
+    zfs_arc_min: u64,
 }
 
 impl Memstate {
@@ -278,13 +283,18 @@ impl Memstate {
             line.clear();
         }
 
-        // Read ZFS arc cache size to add to total cache size
+        // For ZFS
         if let Ok(arcstats) = read_file("/proc/spl/kstat/zfs/arcstats").await {
             let size_re = regex!(r"size\s+\d+\s+(\d+)");
             let size = &size_re
                 .captures(&arcstats)
                 .error("failed to find zfs_arc_cache size")?[1];
             mem_state.zfs_arc_cache = size.parse().error("failed to parse zfs_arc_cache size")?;
+            let c_min_re = regex!(r"c_min\s+\d+\s+(\d+)");
+            let c_min = &c_min_re
+                .captures(&arcstats)
+                .error("failed to find zfs_arc_min size")?[1];
+            mem_state.zfs_arc_min = c_min.parse().error("failed to parse zfs_arc_min size")?;
         }
 
         Ok(mem_state)
