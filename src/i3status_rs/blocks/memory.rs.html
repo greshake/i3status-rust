@@ -297,8 +297,6 @@
 <a href="#297" id="297">297</a>
 <a href="#298" id="298">298</a>
 <a href="#299" id="299">299</a>
-<a href="#300" id="300">300</a>
-<a href="#301" id="301">301</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Memory and swap usage
 //!
 //! # Configuration
@@ -420,11 +418,9 @@
         <span class="comment">// While zfs_arc_cache can be considered &quot;available&quot; memory,
         // it can only free a maximum of (zfs_arc_cache - zfs_arc_min) amount.
         // see https://github.com/htop-dev/htop/pull/1003
-        </span><span class="kw">let </span>zfs_shrinkable_size = <span class="kw">if </span>mem_state.zfs_arc_cache &gt; mem_state.zfs_arc_min {
-            mem_state.zfs_arc_cache - mem_state.zfs_arc_min
-        } <span class="kw">else </span>{
-            <span class="number">0
-        </span>} <span class="kw">as </span>f64;
+        </span><span class="kw">let </span>zfs_shrinkable_size = mem_state
+            .zfs_arc_cache
+            .saturating_sub(mem_state.zfs_arc_min) <span class="kw">as </span>f64;
         <span class="kw">let </span>mem_avail = mem_avail + zfs_shrinkable_size;
 
         <span class="kw">let </span>pagecache = mem_state.pagecache <span class="kw">as </span>f64 * <span class="number">1024.</span>;
