@@ -37,7 +37,7 @@
 //!
 //! # Used Icons
 //! - `xrandr`
-//! - `backlight_full`
+//! - `backlight`
 //! - `resolution`
 
 use super::prelude::*;
@@ -84,7 +84,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     "display" => Value::text(mon.name.clone()),
                     "brightness" => Value::percents(mon.brightness),
                     //TODO: change `brightness_icon` based on `brightness`
-                    "brightness_icon" => Value::icon(api.get_icon("backlight_full")?),
+                    "brightness_icon" => Value::icon(api.get_icon("backlight")?),
                     "resolution" => Value::text(mon.resolution.clone()),
                     "icon" => Value::icon(api.get_icon("xrandr")?),
                     "res_icon" => Value::icon(api.get_icon("resolution")?),
