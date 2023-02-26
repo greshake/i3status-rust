@@ -290,6 +290,16 @@
 <a href="#290" id="290">290</a>
 <a href="#291" id="291">291</a>
 <a href="#292" id="292">292</a>
+<a href="#293" id="293">293</a>
+<a href="#294" id="294">294</a>
+<a href="#295" id="295">295</a>
+<a href="#296" id="296">296</a>
+<a href="#297" id="297">297</a>
+<a href="#298" id="298">298</a>
+<a href="#299" id="299">299</a>
+<a href="#300" id="300">300</a>
+<a href="#301" id="301">301</a>
+<a href="#302" id="302">302</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Memory and swap usage
 //!
 //! # Configuration
@@ -412,15 +422,19 @@
         // it can only free a maximum of (zfs_arc_cache - zfs_arc_min) amount.
         // So we need to grab the info for zfs_arc_min as well, but cannot find it in arcstats...
         // see https://github.com/htop-dev/htop/pull/1003
-        </span><span class="kw">let </span>zfs_arc_cache = mem_state.zfs_arc_cache <span class="kw">as </span>f64;
-        <span class="kw">let </span>mem_avail = mem_avail + zfs_arc_cache;
+        </span><span class="kw">let </span>zfs_shrinkable_size = <span class="kw">if </span>mem_state.zfs_arc_cache &gt; mem_state.zfs_arc_min {
+            mem_state.zfs_arc_cache - mem_state.zfs_arc_min
+        } <span class="kw">else </span>{
+            <span class="number">0
+        </span>} <span class="kw">as </span>f64;
+        <span class="kw">let </span>mem_avail = mem_avail + zfs_shrinkable_size;
 
         <span class="kw">let </span>pagecache = mem_state.pagecache <span class="kw">as </span>f64 * <span class="number">1024.</span>;
         <span class="kw">let </span>reclaimable = mem_state.s_reclaimable <span class="kw">as </span>f64 * <span class="number">1024.</span>;
         <span class="kw">let </span>shmem = mem_state.shmem <span class="kw">as </span>f64 * <span class="number">1024.</span>;
 
         <span class="comment">// See https://lore.kernel.org/lkml/1455827801-13082-1-git-send-email-hannes@cmpxchg.org/
-        </span><span class="kw">let </span>cached = pagecache + reclaimable - shmem + zfs_arc_cache;
+        </span><span class="kw">let </span>cached = pagecache + reclaimable - shmem + zfs_shrinkable_size;
 
         <span class="kw">let </span>buffers = mem_state.buffers <span class="kw">as </span>f64 * <span class="number">1024.</span>;
 
@@ -433,7 +447,7 @@
         };
 
         <span class="comment">// account for ZFS ARC cache
-        </span><span class="kw">let </span>mem_used = mem_used - zfs_arc_cache;
+        </span><span class="kw">let </span>mem_used = mem_used - zfs_shrinkable_size;
 
         <span class="kw">let </span>swap_total = mem_state.swap_total <span class="kw">as </span>f64 * <span class="number">1024.</span>;
         <span class="kw">let </span>swap_free = mem_state.swap_free <span class="kw">as </span>f64 * <span class="number">1024.</span>;
@@ -518,6 +532,7 @@
     swap_free: u64,
     swap_cached: u64,
     zfs_arc_cache: u64,
+    zfs_arc_min: u64,
 }
 
 <span class="kw">impl </span>Memstate {
@@ -570,13 +585,18 @@
             line.clear();
         }
 
-        <span class="comment">// Read ZFS arc cache size to add to total cache size
+        <span class="comment">// For ZFS
         </span><span class="kw">if let </span><span class="prelude-val">Ok</span>(arcstats) = read_file(<span class="string">&quot;/proc/spl/kstat/zfs/arcstats&quot;</span>).<span class="kw">await </span>{
             <span class="kw">let </span>size_re = <span class="macro">regex!</span>(<span class="string">r&quot;size\s+\d+\s+(\d+)&quot;</span>);
             <span class="kw">let </span>size = <span class="kw-2">&amp;</span>size_re
                 .captures(<span class="kw-2">&amp;</span>arcstats)
                 .error(<span class="string">&quot;failed to find zfs_arc_cache size&quot;</span>)<span class="question-mark">?</span>[<span class="number">1</span>];
             mem_state.zfs_arc_cache = size.parse().error(<span class="string">&quot;failed to parse zfs_arc_cache size&quot;</span>)<span class="question-mark">?</span>;
+            <span class="kw">let </span>c_min_re = <span class="macro">regex!</span>(<span class="string">r&quot;c_min\s+\d+\s+(\d+)&quot;</span>);
+            <span class="kw">let </span>c_min = <span class="kw-2">&amp;</span>c_min_re
+                .captures(<span class="kw-2">&amp;</span>arcstats)
+                .error(<span class="string">&quot;failed to find zfs_arc_min size&quot;</span>)<span class="question-mark">?</span>[<span class="number">1</span>];
+            mem_state.zfs_arc_min = c_min.parse().error(<span class="string">&quot;failed to parse zfs_arc_min size&quot;</span>)<span class="question-mark">?</span>;
         }
 
         <span class="prelude-val">Ok</span>(mem_state)
