@@ -116,9 +116,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         } as f64
             * 1024.;
 
-        // TODO: While zfs_arc_cache can be considered "available" memory,
+        // While zfs_arc_cache can be considered "available" memory,
         // it can only free a maximum of (zfs_arc_cache - zfs_arc_min) amount.
-        // So we need to grab the info for zfs_arc_min as well, but cannot find it in arcstats...
         // see https://github.com/htop-dev/htop/pull/1003
         let zfs_shrinkable_size = if mem_state.zfs_arc_cache > mem_state.zfs_arc_min {
             mem_state.zfs_arc_cache - mem_state.zfs_arc_min
