@@ -130,7 +130,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         .error("Failed to create event stream")?;
 
     loop {
-        let brightness = device.brightness().await?;
+        let brightness = api.recoverable(|| device.brightness()).await?;
 
         let mut icon_value = brightness as f64 / 100.0;
         if config.invert_icons {
