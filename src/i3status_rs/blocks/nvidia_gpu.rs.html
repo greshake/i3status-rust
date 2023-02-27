@@ -494,7 +494,7 @@
                             .next()
                             .error(<span class="macro">concat!</span>(<span class="string">&quot;missing property: &quot;</span>, <span class="macro">stringify!</span>(<span class="macro-nonterminal">$part</span>)))<span class="question-mark">?
                             </span>.parse::&lt;<span class="macro-nonterminal">$t</span>&gt;()
-                            .error(<span class="macro">concat!</span>(<span class="string">&quot;bad property: &quot;</span>, <span class="macro">stringify!</span>(<span class="macro-nonterminal">$part</span>)))<span class="question-mark">?</span>;
+                            .unwrap_or_default();
                         $(<span class="kw">let </span><span class="macro-nonterminal">$part </span>= <span class="macro-nonterminal">$part </span>* <span class="macro-nonterminal">$mul</span>;)<span class="question-mark">?
                         </span><span class="macro-nonterminal">$part
                     </span>},
