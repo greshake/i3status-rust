@@ -70,7 +70,7 @@ struct CliArgs {
     #[clap(long = "never-pause")]
     never_pause: bool,
     /// Do not send the init sequence
-    #[clap(long = "no-init")]
+    #[clap(hide = true, long = "no-init")]
     no_init: bool,
     /// The maximum number of blocking threads spawned by tokio
     #[clap(long = "threads", short = 'j', default_value = "2")]
