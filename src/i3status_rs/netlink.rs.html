@@ -413,6 +413,26 @@
 <a href="#413" id="413">413</a>
 <a href="#414" id="414">414</a>
 <a href="#415" id="415">415</a>
+<a href="#416" id="416">416</a>
+<a href="#417" id="417">417</a>
+<a href="#418" id="418">418</a>
+<a href="#419" id="419">419</a>
+<a href="#420" id="420">420</a>
+<a href="#421" id="421">421</a>
+<a href="#422" id="422">422</a>
+<a href="#423" id="423">423</a>
+<a href="#424" id="424">424</a>
+<a href="#425" id="425">425</a>
+<a href="#426" id="426">426</a>
+<a href="#427" id="427">427</a>
+<a href="#428" id="428">428</a>
+<a href="#429" id="429">429</a>
+<a href="#430" id="430">430</a>
+<a href="#431" id="431">431</a>
+<a href="#432" id="432">432</a>
+<a href="#433" id="433">433</a>
+<a href="#434" id="434">434</a>
+<a href="#435" id="435">435</a>
 </pre><pre class="rust"><code><span class="kw">use </span>neli::attr::Attribute;
 <span class="kw">use </span>neli::consts::{nl::<span class="kw-2">*</span>, rtnl::<span class="kw-2">*</span>, socket::<span class="kw-2">*</span>};
 <span class="kw">use </span>neli::nl::{NlPayload, Nlmsghdr};
@@ -572,6 +592,16 @@
                 .clamp(<span class="number">0.</span>, <span class="number">100.</span>)
         }
 
+        <span class="kw">fn </span>ssid_from_bss_info_elements(bytes: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt; {
+            <span class="kw">if </span>bytes.len() &lt;= <span class="number">3 </span>{
+                <span class="kw">return </span><span class="prelude-val">None</span>;
+            }
+            <span class="kw">let </span>bytes = <span class="kw-2">&amp;</span>bytes[<span class="number">2</span>..];
+            <span class="kw">let </span>soh_i = bytes.iter().position(|b| <span class="kw-2">*</span>b == <span class="number">1</span>)<span class="question-mark">?</span>;
+            <span class="kw">let </span>(ssid, _rest) = bytes.split_at(soh_i);
+            <span class="prelude-val">Some</span>(String::from_utf8_lossy(ssid).into_owned())
+        }
+
         <span class="comment">// Ignore connection error because `nl80211` might not be enabled on the system.
         </span><span class="kw">let </span><span class="prelude-val">Ok</span>(<span class="kw-2">mut </span>socket) = neli_wifi::AsyncSocket::connect()
         <span class="kw">else </span>{ <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>) };
@@ -580,32 +610,42 @@
             .get_interfaces_info()
             .<span class="kw">await
             </span>.error(<span class="string">&quot;Failed to get nl80211 interfaces&quot;</span>)<span class="question-mark">?</span>;
+
         <span class="kw">for </span>interface <span class="kw">in </span>interfaces {
             <span class="kw">if let </span><span class="prelude-val">Some</span>(index) = interface.index {
                 <span class="kw">if </span>index != if_index {
                     <span class="kw">continue</span>;
                 }
-                <span class="kw">if let </span><span class="prelude-val">Ok</span>(ap) = socket.get_station_info(index).<span class="kw">await </span>{
-                    <span class="kw">let </span>raw_signal = <span class="kw">match </span>ap.signal {
-                        <span class="prelude-val">Some</span>(signal) =&gt; <span class="prelude-val">Some</span>(signal),
-                        <span class="prelude-val">None </span>=&gt; socket
-                            .get_bss_info(index)
-                            .<span class="kw">await
-                            </span>.ok()
-                            .and_then(|bss| bss.signal)
-                            .map(|s| (s / <span class="number">100</span>) <span class="kw">as </span>i8),
-                    };
-                    <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="self">Self </span>{
-                        ssid: interface
-                            .ssid
-                            .map(String::from_utf8)
-                            .transpose()
-                            .error(<span class="string">&quot;SSID is not valid UTF8&quot;</span>)<span class="question-mark">?</span>, <span class="comment">// ssid: Some(String::from_utf8(ssid).error(&quot;SSID is not valid UTF8&quot;)?),
-                        </span>frequency: interface.frequency.map(|f| f <span class="kw">as </span>f64 * <span class="number">1e6</span>),
-                        signal: raw_signal.map(|s| signal_percents(s <span class="kw">as </span>f64)),
-                        bitrate: ap.tx_bitrate.map(|b| b <span class="kw">as </span>f64 * <span class="number">1e5</span>), <span class="comment">// 100kbit/s -&gt; bit/s
-                    </span>}));
-                }
+
+                <span class="kw">let </span><span class="prelude-val">Ok</span>(ap) = socket.get_station_info(index).<span class="kw">await
+                else </span>{ <span class="kw">continue </span>};
+
+                <span class="kw">let </span>bss = socket.get_bss_info(index).<span class="kw">await</span>.ok();
+
+                <span class="kw">let </span>raw_signal = <span class="kw">match </span>ap.signal {
+                    <span class="prelude-val">Some</span>(signal) =&gt; <span class="prelude-val">Some</span>(signal),
+                    <span class="prelude-val">None </span>=&gt; bss
+                        .as_ref()
+                        .and_then(|bss| bss.signal)
+                        .map(|s| (s / <span class="number">100</span>) <span class="kw">as </span>i8),
+                };
+
+                <span class="kw">let </span>ssid = interface
+                    .ssid
+                    .as_deref()
+                    .map(|ssid| String::from_utf8_lossy(ssid).into_owned())
+                    .or_else(|| {
+                        bss.as_ref()
+                            .and_then(|bss| bss.information_elements.as_deref())
+                            .and_then(ssid_from_bss_info_elements)
+                    });
+
+                <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="self">Self </span>{
+                    ssid,
+                    frequency: interface.frequency.map(|f| f <span class="kw">as </span>f64 * <span class="number">1e6</span>),
+                    signal: raw_signal.map(|s| signal_percents(s <span class="kw">as </span>f64)),
+                    bitrate: ap.tx_bitrate.map(|b| b <span class="kw">as </span>f64 * <span class="number">1e5</span>), <span class="comment">// 100kbit/s -&gt; bit/s
+                </span>}));
             }
         }
         <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
