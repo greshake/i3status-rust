@@ -226,7 +226,7 @@ impl FromStr for GpuInfo {
                             .next()
                             .error(concat!("missing property: ", stringify!($part)))?
                             .parse::<$t>()
-                            .error(concat!("bad property: ", stringify!($part)))?;
+                            .unwrap_or_default();
                         $(let $part = $part * $mul;)?
                         $part
                     },
