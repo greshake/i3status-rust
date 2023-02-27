@@ -29,7 +29,7 @@ libpulse-binding = { version = "2.0", default-features = false, optional = true 
 log = "0.4"
 maildir = { version = "0.6", optional = true }
 neli = { version = "0.6", features = ["async"] }
-neli-wifi = { version = "0.4", features = ["async"] }
+neli-wifi = { version = "0.4.1", features = ["async"] }
 nix = "0.26"
 nom = "7.1.2"
 notmuch = { version = "0.8", optional = true }

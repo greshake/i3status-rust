@@ -157,6 +157,16 @@ impl WifiInfo {
                 .clamp(0., 100.)
         }
 
+        fn ssid_from_bss_info_elements(bytes: &[u8]) -> Option<String> {
+            if bytes.len() <= 3 {
+                return None;
+            }
+            let bytes = &bytes[2..];
+            let soh_i = bytes.iter().position(|b| *b == 1)?;
+            let (ssid, _rest) = bytes.split_at(soh_i);
+            Some(String::from_utf8_lossy(ssid).into_owned())
+        }
+
         // Ignore connection error because `nl80211` might not be enabled on the system.
         let Ok(mut socket) = neli_wifi::AsyncSocket::connect()
         else { return Ok(None) };
@@ -165,32 +175,42 @@ impl WifiInfo {
             .get_interfaces_info()
             .await
             .error("Failed to get nl80211 interfaces")?;
+
         for interface in interfaces {
             if let Some(index) = interface.index {
                 if index != if_index {
                     continue;
                 }
-                if let Ok(ap) = socket.get_station_info(index).await {
-                    let raw_signal = match ap.signal {
-                        Some(signal) => Some(signal),
-                        None => socket
-                            .get_bss_info(index)
-                            .await
-                            .ok()
-                            .and_then(|bss| bss.signal)
-                            .map(|s| (s / 100) as i8),
-                    };
-                    return Ok(Some(Self {
-                        ssid: interface
-                            .ssid
-                            .map(String::from_utf8)
-                            .transpose()
-                            .error("SSID is not valid UTF8")?, // ssid: Some(String::from_utf8(ssid).error("SSID is not valid UTF8")?),
-                        frequency: interface.frequency.map(|f| f as f64 * 1e6),
-                        signal: raw_signal.map(|s| signal_percents(s as f64)),
-                        bitrate: ap.tx_bitrate.map(|b| b as f64 * 1e5), // 100kbit/s -> bit/s
-                    }));
-                }
+
+                let Ok(ap) = socket.get_station_info(index).await
+                else { continue };
+
+                let bss = socket.get_bss_info(index).await.ok();
+
+                let raw_signal = match ap.signal {
+                    Some(signal) => Some(signal),
+                    None => bss
+                        .as_ref()
+                        .and_then(|bss| bss.signal)
+                        .map(|s| (s / 100) as i8),
+                };
+
+                let ssid = interface
+                    .ssid
+                    .as_deref()
+                    .map(|ssid| String::from_utf8_lossy(ssid).into_owned())
+                    .or_else(|| {
+                        bss.as_ref()
+                            .and_then(|bss| bss.information_elements.as_deref())
+                            .and_then(ssid_from_bss_info_elements)
+                    });
+
+                return Ok(Some(Self {
+                    ssid,
+                    frequency: interface.frequency.map(|f| f as f64 * 1e6),
+                    signal: raw_signal.map(|s| signal_percents(s as f64)),
+                    bitrate: ap.tx_bitrate.map(|b| b as f64 * 1e5), // 100kbit/s -> bit/s
+                }));
             }
         }
         Ok(None)
