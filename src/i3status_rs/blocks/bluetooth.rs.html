@@ -404,6 +404,20 @@
 <a href="#404" id="404">404</a>
 <a href="#405" id="405">405</a>
 <a href="#406" id="406">406</a>
+<a href="#407" id="407">407</a>
+<a href="#408" id="408">408</a>
+<a href="#409" id="409">409</a>
+<a href="#410" id="410">410</a>
+<a href="#411" id="411">411</a>
+<a href="#412" id="412">412</a>
+<a href="#413" id="413">413</a>
+<a href="#414" id="414">414</a>
+<a href="#415" id="415">415</a>
+<a href="#416" id="416">416</a>
+<a href="#417" id="417">417</a>
+<a href="#418" id="418">418</a>
+<a href="#419" id="419">419</a>
+<a href="#420" id="420">420</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Monitor Bluetooth device
 //!
 //! This block displays the connectivity of a given Bluetooth device and the battery level if this
@@ -621,6 +635,12 @@
                     .<span class="kw">await
                     </span>.error(<span class="string">&quot;Failed to receive updates&quot;</span>)<span class="question-mark">?</span>;
 
+                <span class="kw">let </span><span class="kw-2">mut </span>interface_added = <span class="self">self
+                    </span>.manager_proxy
+                    .receive_interfaces_added()
+                    .<span class="kw">await
+                    </span>.error(<span class="string">&quot;Failed to monitor interfaces&quot;</span>)<span class="question-mark">?</span>;
+
                 <span class="kw">let </span><span class="kw-2">mut </span>interface_removed = <span class="self">self
                     </span>.manager_proxy
                     .receive_interfaces_removed()
@@ -643,6 +663,13 @@
                             }).<span class="kw">await</span>;
                             <span class="macro">debug!</span>(<span class="string">&quot;Got update for device&quot;</span>);
                             <span class="kw">return </span><span class="prelude-val">Ok</span>(());
+                        }
+                        <span class="prelude-val">Some</span>(event) = interface_added.next() =&gt; {
+                            <span class="kw">let </span>args = event.args().error(<span class="string">&quot;Failed to get the args&quot;</span>)<span class="question-mark">?</span>;
+                            <span class="kw">if </span>args.object_path() == device.device.path() {
+                                <span class="macro">debug!</span>(<span class="string">&quot;Interfaces added: {:?}&quot;</span>, args.interfaces_and_properties().keys());
+                                <span class="kw">return </span><span class="prelude-val">Ok</span>(());
+                            }
                         }
                         <span class="prelude-val">Some</span>(event) = interface_removed.next() =&gt; {
                             <span class="kw">let </span>args = event.args().error(<span class="string">&quot;Failed to get the args&quot;</span>)<span class="question-mark">?</span>;
@@ -777,6 +804,7 @@
                     .<span class="kw">await
                     </span>.error(<span class="string">&quot;Failed to create Device1Proxy&quot;</span>)<span class="question-mark">?</span>,
                 battery: Battery1Proxy::builder(manager_proxy.connection())
+                    .cache_properties(zbus::CacheProperties::No)
                     .path(path)
                     .unwrap()
                     .build()
