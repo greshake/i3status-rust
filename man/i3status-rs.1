@@ -210,7 +210,8 @@ it works under both X11 and Wayland.
 The block uses \f[V]inotify\f[R] to listen for changes in the
 device\[cq]s brightness directly, so there is no need to set an update
 interval.
-This block uses DBus to set brightness level using the mouse wheel.
+This block uses DBus to set brightness level using the mouse wheel, but
+will fallback to sysfs if \f[V]systemd-logind\f[R] is not used.
 .SS Root scaling
 .PP
 Some devices expose raw values that are best handled with nonlinear
@@ -365,6 +366,26 @@ block = \[dq]backlight\[dq]
 device = \[dq]intel_backlight\[dq]
 \f[R]
 .fi
+.SS D-Bus Fallback
+.PP
+If you don\[cq]t use \f[V]systemd-logind\f[R] i3status-rust will attempt
+to set the brightness using sysfs.
+In order to do this you\[cq]ll need to have write permission.
+You can do this by writing a \f[V]udev\f[R] rule for your system.
+.PP
+First, check that your user is a member of the \[lq]video\[rq] group
+using the \f[V]groups\f[R] command.
+Then add a rule in the \f[V]/etc/udev/rules.d/\f[R] directory containing
+the following, for example in \f[V]backlight.rules\f[R]:
+.IP
+.nf
+\f[C]
+ACTION==\[dq]add\[dq], SUBSYSTEM==\[dq]backlight\[dq], GROUP=\[dq]video\[dq], MODE=\[dq]0664\[dq]
+\f[R]
+.fi
+.PP
+This will allow the video group to modify all backlight devices.
+You will also need to restart for this rule to take effect.
 .SS Icons Used
 .IP \[bu] 2
 \f[V]backlight\f[R] (as a progression)
