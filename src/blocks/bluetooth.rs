@@ -215,6 +215,12 @@ impl DeviceMonitor {
                     .await
                     .error("Failed to receive updates")?;
 
+                let mut interface_added = self
+                    .manager_proxy
+                    .receive_interfaces_added()
+                    .await
+                    .error("Failed to monitor interfaces")?;
+
                 let mut interface_removed = self
                     .manager_proxy
                     .receive_interfaces_removed()
@@ -237,6 +243,13 @@ impl DeviceMonitor {
                             }).await;
                             debug!("Got update for device");
                             return Ok(());
+                        }
+                        Some(event) = interface_added.next() => {
+                            let args = event.args().error("Failed to get the args")?;
+                            if args.object_path() == device.device.path() {
+                                debug!("Interfaces added: {:?}", args.interfaces_and_properties().keys());
+                                return Ok(());
+                            }
                         }
                         Some(event) = interface_removed.next() => {
                             let args = event.args().error("Failed to get the args")?;
@@ -371,6 +384,7 @@ impl Device {
                     .await
                     .error("Failed to create Device1Proxy")?,
                 battery: Battery1Proxy::builder(manager_proxy.connection())
+                    .cache_properties(zbus::CacheProperties::No)
                     .path(path)
                     .unwrap()
                     .build()
