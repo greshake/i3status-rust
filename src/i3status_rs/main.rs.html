@@ -591,7 +591,7 @@
     </span><span class="attr">#[clap(long = <span class="string">&quot;never-pause&quot;</span>)]
     </span>never_pause: bool,
     <span class="doccomment">/// Do not send the init sequence
-    </span><span class="attr">#[clap(long = <span class="string">&quot;no-init&quot;</span>)]
+    </span><span class="attr">#[clap(hide = <span class="bool-val">true</span>, long = <span class="string">&quot;no-init&quot;</span>)]
     </span>no_init: bool,
     <span class="doccomment">/// The maximum number of blocking threads spawned by tokio
     </span><span class="attr">#[clap(long = <span class="string">&quot;threads&quot;</span>, short = <span class="string">&#39;j&#39;</span>, default_value = <span class="string">&quot;2&quot;</span>)]
