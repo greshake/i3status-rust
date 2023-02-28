@@ -1,5 +1,3 @@
-use std::fs::File;
-use std::io::{self, BufReader, Read};
 use std::path::{Path, PathBuf};
 
 use dirs::{config_dir, data_dir};
@@ -92,16 +90,21 @@ where
     P: AsRef<Path>,
 {
     let path = path.as_ref();
-    let mut contents = String::new();
-    let file = File::open(path).or_error(|| format!("Failed to open file: {}", path.display()))?;
-    BufReader::new(file)
-        .read_to_string(&mut contents)
+
+    let contents = std::fs::read_to_string(path)
         .or_error(|| format!("Failed to read file: {}", path.display()))?;
+
     toml::from_str(&contents).map_err(|err| {
         #[allow(deprecated)]
         let location_msg = err
-            .line_col()
-            .map(|(line, _col)| format!(" at line {}", line + 1))
+            .span()
+            .map(|span| {
+                let line = 1 + contents.as_bytes()[..(span.start)]
+                    .iter()
+                    .filter(|b| **b == b'\n')
+                    .count();
+                format!(" at line {line}")
+            })
             .unwrap_or_default();
         Error::new(format!(
             "Failed to deserialize TOML file {}{}: {}",
@@ -112,7 +115,7 @@ where
     })
 }
 
-pub async fn read_file(path: impl AsRef<Path>) -> io::Result<String> {
+pub async fn read_file(path: impl AsRef<Path>) -> std::io::Result<String> {
     let mut file = tokio::fs::File::open(path).await?;
     let mut content = String::new();
     file.read_to_string(&mut content).await?;
