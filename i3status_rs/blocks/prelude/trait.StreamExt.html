@@ -767,8 +767,7 @@ buffered before they’re yielded from the returned stream. If underlying
 stream returns <code>Poll::Pending</code>, and collected chunk is not empty, it will
 be immediately returned.</p>
 <p>If the underlying stream ended and only a partial vector was created,
-it’ll be returned. Additionally if an error happens from the underlying
-stream then the currently buffered items will be yielded.</p>
+it will be returned.</p>
 <p>This method is only available when the <code>std</code> or <code>alloc</code> feature of this
 library is activated, and it is activated by default.</p>
 <h5 id="panics-3"><a href="#panics-3">Panics</a></h5>

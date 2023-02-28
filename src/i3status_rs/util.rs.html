@@ -257,9 +257,10 @@
 <a href="#257" id="257">257</a>
 <a href="#258" id="258">258</a>
 <a href="#259" id="259">259</a>
-</pre><pre class="rust"><code><span class="kw">use </span>std::fs::File;
-<span class="kw">use </span>std::io::{<span class="self">self</span>, BufReader, Read};
-<span class="kw">use </span>std::path::{Path, PathBuf};
+<a href="#260" id="260">260</a>
+<a href="#261" id="261">261</a>
+<a href="#262" id="262">262</a>
+</pre><pre class="rust"><code><span class="kw">use </span>std::path::{Path, PathBuf};
 
 <span class="kw">use </span>dirs::{config_dir, data_dir};
 <span class="kw">use </span>serde::de::DeserializeOwned;
@@ -351,16 +352,21 @@
     P: AsRef&lt;Path&gt;,
 {
     <span class="kw">let </span>path = path.as_ref();
-    <span class="kw">let </span><span class="kw-2">mut </span>contents = String::new();
-    <span class="kw">let </span>file = File::open(path).or_error(|| <span class="macro">format!</span>(<span class="string">&quot;Failed to open file: {}&quot;</span>, path.display()))<span class="question-mark">?</span>;
-    BufReader::new(file)
-        .read_to_string(<span class="kw-2">&amp;mut </span>contents)
+
+    <span class="kw">let </span>contents = std::fs::read_to_string(path)
         .or_error(|| <span class="macro">format!</span>(<span class="string">&quot;Failed to read file: {}&quot;</span>, path.display()))<span class="question-mark">?</span>;
+
     toml::from_str(<span class="kw-2">&amp;</span>contents).map_err(|err| {
         <span class="attr">#[allow(deprecated)]
         </span><span class="kw">let </span>location_msg = err
-            .line_col()
-            .map(|(line, _col)| <span class="macro">format!</span>(<span class="string">&quot; at line {}&quot;</span>, line + <span class="number">1</span>))
+            .span()
+            .map(|span| {
+                <span class="kw">let </span>line = <span class="number">1 </span>+ contents.as_bytes()[..(span.start)]
+                    .iter()
+                    .filter(|b| <span class="kw-2">**</span>b == <span class="string">b&#39;\n&#39;</span>)
+                    .count();
+                <span class="macro">format!</span>(<span class="string">&quot; at line {line}&quot;</span>)
+            })
             .unwrap_or_default();
         Error::new(<span class="macro">format!</span>(
             <span class="string">&quot;Failed to deserialize TOML file {}{}: {}&quot;</span>,
@@ -371,7 +377,7 @@
     })
 }
 
-<span class="kw">pub async fn </span>read_file(path: <span class="kw">impl </span>AsRef&lt;Path&gt;) -&gt; io::Result&lt;String&gt; {
+<span class="kw">pub async fn </span>read_file(path: <span class="kw">impl </span>AsRef&lt;Path&gt;) -&gt; std::io::Result&lt;String&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>file = tokio::fs::File::open(path).<span class="kw">await</span><span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>content = String::new();
     file.read_to_string(<span class="kw-2">&amp;mut </span>content).<span class="kw">await</span><span class="question-mark">?</span>;
