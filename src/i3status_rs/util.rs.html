@@ -248,6 +248,15 @@
 <a href="#248" id="248">248</a>
 <a href="#249" id="249">249</a>
 <a href="#250" id="250">250</a>
+<a href="#251" id="251">251</a>
+<a href="#252" id="252">252</a>
+<a href="#253" id="253">253</a>
+<a href="#254" id="254">254</a>
+<a href="#255" id="255">255</a>
+<a href="#256" id="256">256</a>
+<a href="#257" id="257">257</a>
+<a href="#258" id="258">258</a>
+<a href="#259" id="259">259</a>
 </pre><pre class="rust"><code><span class="kw">use </span>std::fs::File;
 <span class="kw">use </span>std::io::{<span class="self">self</span>, BufReader, Read};
 <span class="kw">use </span>std::path::{Path, PathBuf};
@@ -267,14 +276,8 @@
 ///
 /// Automatically append an extension if not presented.
 </span><span class="kw">pub fn </span>find_file(file: <span class="kw-2">&amp;</span>str, subdir: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt;, extension: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;PathBuf&gt; {
-    <span class="comment">// Set (or update) the extension
-    </span><span class="kw">let </span><span class="kw-2">mut </span>file = PathBuf::from(file);
-    <span class="kw">if let </span><span class="prelude-val">Some</span>(extension) = extension {
-        file.set_extension(extension);
-    }
-
-    <span class="comment">// Try full path
-    </span><span class="kw">if </span>file.exists() {
+    <span class="kw">let </span>file = PathBuf::from(file);
+    <span class="kw">if </span>file.exists() {
         <span class="kw">return </span><span class="prelude-val">Some</span>(file);
     }
 
@@ -285,8 +288,8 @@
             xdg_config.push(subdir);
         }
         xdg_config.push(<span class="kw-2">&amp;</span>file);
-        <span class="kw">if </span>xdg_config.exists() {
-            <span class="kw">return </span><span class="prelude-val">Some</span>(xdg_config);
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(file) = exists_with_opt_extension(<span class="kw-2">&amp;</span>xdg_config, extension) {
+            <span class="kw">return </span><span class="prelude-val">Some</span>(file);
         }
     }
 
@@ -297,8 +300,8 @@
             xdg_data.push(subdir);
         }
         xdg_data.push(<span class="kw-2">&amp;</span>file);
-        <span class="kw">if </span>xdg_data.exists() {
-            <span class="kw">return </span><span class="prelude-val">Some</span>(xdg_data);
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(file) = exists_with_opt_extension(<span class="kw-2">&amp;</span>xdg_data, extension) {
+            <span class="kw">return </span><span class="prelude-val">Some</span>(file);
         }
     }
 
@@ -308,10 +311,25 @@
         usr_share_path.push(subdir);
     }
     usr_share_path.push(<span class="kw-2">&amp;</span>file);
-    <span class="kw">if </span>usr_share_path.exists() {
-        <span class="kw">return </span><span class="prelude-val">Some</span>(usr_share_path);
+    <span class="kw">if let </span><span class="prelude-val">Some</span>(file) = exists_with_opt_extension(<span class="kw-2">&amp;</span>usr_share_path, extension) {
+        <span class="kw">return </span><span class="prelude-val">Some</span>(file);
     }
 
+    <span class="prelude-val">None
+</span>}
+
+<span class="kw">fn </span>exists_with_opt_extension(file: <span class="kw-2">&amp;</span>Path, extension: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;PathBuf&gt; {
+    <span class="kw">if </span>file.exists() {
+        <span class="kw">return </span><span class="prelude-val">Some</span>(file.into());
+    }
+    <span class="comment">// If file has no extension, test with given extension
+    </span><span class="kw">if let </span>(<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(extension)) = (file.extension(), extension) {
+        <span class="kw">let </span>file = file.with_extension(extension);
+        <span class="comment">// Check again with extension added
+        </span><span class="kw">if </span>file.exists() {
+            <span class="kw">return </span><span class="prelude-val">Some</span>(file);
+        }
+    }
     <span class="prelude-val">None
 </span>}
 
