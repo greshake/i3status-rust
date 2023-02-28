@@ -92,12 +92,10 @@ where
 
                 rendered_blocks.push(separator);
             }
-        } else {
-            if !merge_with_next {
-                // Re-add native separator on last widget for native theme
-                segments.last_mut().unwrap().separator = None;
-                segments.last_mut().unwrap().separator_block_width = None;
-            }
+        } else if !merge_with_next {
+            // Re-add native separator on last widget for native theme
+            segments.last_mut().unwrap().separator = None;
+            segments.last_mut().unwrap().separator_block_width = None;
         }
 
         rendered_blocks.extend(segments);
