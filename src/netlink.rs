@@ -157,14 +157,19 @@ impl WifiInfo {
                 .clamp(0., 100.)
         }
 
-        fn ssid_from_bss_info_elements(bytes: &[u8]) -> Option<String> {
-            if bytes.len() <= 3 {
-                return None;
+        fn ssid_from_bss_info_elements(mut bytes: &[u8]) -> Option<String> {
+            while bytes.len() > 2 && bytes[0] != 0 {
+                bytes = &bytes[(bytes[1] as usize + 2)..];
             }
-            let bytes = &bytes[2..];
-            let soh_i = bytes.iter().position(|b| *b == 1)?;
-            let (ssid, _rest) = bytes.split_at(soh_i);
-            Some(String::from_utf8_lossy(ssid).into_owned())
+
+            if bytes.len() < 2 || bytes.len() < bytes[1] as usize + 2 {
+                return None;
+            };
+
+            let ssid_len = bytes[1] as usize;
+            let raw_ssid = &bytes[2..][..ssid_len];
+
+            Some(String::from_utf8_lossy(raw_ssid).into_owned())
         }
 
         // Ignore connection error because `nl80211` might not be enabled on the system.
