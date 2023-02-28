@@ -376,9 +376,6 @@
 <a href="#376" id="376">376</a>
 <a href="#377" id="377">377</a>
 <a href="#378" id="378">378</a>
-<a href="#379" id="379">379</a>
-<a href="#380" id="380">380</a>
-<a href="#381" id="381">381</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The brightness of a backlight device
 //!
 //! This block reads brightness information directly from the filesystem, so it works under both
@@ -601,8 +598,8 @@
     ddcci_max_tries_write_read: u8,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;u64&gt; {
     <span class="kw">let </span>val = <span class="kw">match </span>read_file(device_file).<span class="kw">await </span>{
-        <span class="prelude-val">Ok</span>(v) =&gt; <span class="prelude-val">Ok</span>(v),
-        <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; {
+        <span class="prelude-val">Ok</span>(v) =&gt; v,
+        <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="lifetime">&#39;blk</span>: {
             <span class="kw">for </span>i <span class="kw">in </span><span class="number">1</span>..ddcci_max_tries_write_read {
                 <span class="macro">debug!</span>(<span class="string">&quot;retry {i} reading brightness&quot;</span>);
                 <span class="comment">// See https://glenwing.github.io/docs/VESA-DDCCI-1.1.pdf
@@ -612,18 +609,15 @@
                 ))
                 .<span class="kw">await</span>;
                 <span class="kw">if let </span><span class="prelude-val">Ok</span>(val) = read_file(device_file).<span class="kw">await </span>{
-                    <span class="kw">return </span>val
-                        .parse()
-                        .error(<span class="string">&quot;Failed to read value from brightness file&quot;</span>);
+                    <span class="kw">break </span><span class="lifetime">&#39;blk </span>val;
                 }
             }
-            <span class="prelude-val">Err</span>(Error::new(
+            <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(
                 <span class="string">&quot;Failed to read brightness file, check your ddcci settings&quot;</span>,
-            ))
+            ));
         }
     };
-    val.error(<span class="string">&quot;Failed to read brightness file&quot;</span>)<span class="question-mark">?
-        </span>.parse()
+    val.parse()
         .error(<span class="string">&quot;Failed to read value from brightness file&quot;</span>)
 }
 
