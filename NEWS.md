@@ -10,6 +10,10 @@
 * Cpu: fix panic on systems which do not report CPU frequency.
 * Bluetooth: change block color based on battery level.
 * Memory: consider ZFS arc cache as available memory.
+* Backlight: reconnect after monitor sleeps.
+* Nvidia GPU: display unavailable stats as zeros instead of failing.
+* Bluetooth: correctly display battery level even if it is not available instantly.
+* Net: get SSID from `NL80211_BSS_INFORMATION_ELEMENTS` (makes SSID available on Linux kernel 5.19 and newer).
 
 # i3status-rust 0.30.3
 
