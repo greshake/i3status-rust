@@ -301,6 +301,84 @@
 <a href="#301" id="301">301</a>
 <a href="#302" id="302">302</a>
 <a href="#303" id="303">303</a>
+<a href="#304" id="304">304</a>
+<a href="#305" id="305">305</a>
+<a href="#306" id="306">306</a>
+<a href="#307" id="307">307</a>
+<a href="#308" id="308">308</a>
+<a href="#309" id="309">309</a>
+<a href="#310" id="310">310</a>
+<a href="#311" id="311">311</a>
+<a href="#312" id="312">312</a>
+<a href="#313" id="313">313</a>
+<a href="#314" id="314">314</a>
+<a href="#315" id="315">315</a>
+<a href="#316" id="316">316</a>
+<a href="#317" id="317">317</a>
+<a href="#318" id="318">318</a>
+<a href="#319" id="319">319</a>
+<a href="#320" id="320">320</a>
+<a href="#321" id="321">321</a>
+<a href="#322" id="322">322</a>
+<a href="#323" id="323">323</a>
+<a href="#324" id="324">324</a>
+<a href="#325" id="325">325</a>
+<a href="#326" id="326">326</a>
+<a href="#327" id="327">327</a>
+<a href="#328" id="328">328</a>
+<a href="#329" id="329">329</a>
+<a href="#330" id="330">330</a>
+<a href="#331" id="331">331</a>
+<a href="#332" id="332">332</a>
+<a href="#333" id="333">333</a>
+<a href="#334" id="334">334</a>
+<a href="#335" id="335">335</a>
+<a href="#336" id="336">336</a>
+<a href="#337" id="337">337</a>
+<a href="#338" id="338">338</a>
+<a href="#339" id="339">339</a>
+<a href="#340" id="340">340</a>
+<a href="#341" id="341">341</a>
+<a href="#342" id="342">342</a>
+<a href="#343" id="343">343</a>
+<a href="#344" id="344">344</a>
+<a href="#345" id="345">345</a>
+<a href="#346" id="346">346</a>
+<a href="#347" id="347">347</a>
+<a href="#348" id="348">348</a>
+<a href="#349" id="349">349</a>
+<a href="#350" id="350">350</a>
+<a href="#351" id="351">351</a>
+<a href="#352" id="352">352</a>
+<a href="#353" id="353">353</a>
+<a href="#354" id="354">354</a>
+<a href="#355" id="355">355</a>
+<a href="#356" id="356">356</a>
+<a href="#357" id="357">357</a>
+<a href="#358" id="358">358</a>
+<a href="#359" id="359">359</a>
+<a href="#360" id="360">360</a>
+<a href="#361" id="361">361</a>
+<a href="#362" id="362">362</a>
+<a href="#363" id="363">363</a>
+<a href="#364" id="364">364</a>
+<a href="#365" id="365">365</a>
+<a href="#366" id="366">366</a>
+<a href="#367" id="367">367</a>
+<a href="#368" id="368">368</a>
+<a href="#369" id="369">369</a>
+<a href="#370" id="370">370</a>
+<a href="#371" id="371">371</a>
+<a href="#372" id="372">372</a>
+<a href="#373" id="373">373</a>
+<a href="#374" id="374">374</a>
+<a href="#375" id="375">375</a>
+<a href="#376" id="376">376</a>
+<a href="#377" id="377">377</a>
+<a href="#378" id="378">378</a>
+<a href="#379" id="379">379</a>
+<a href="#380" id="380">380</a>
+<a href="#381" id="381">381</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The brightness of a backlight device
 //!
 //! This block reads brightness information directly from the filesystem, so it works under both
@@ -324,6 +402,8 @@
 //! `cycle` | The brightnesses to cycle through on each click | `[minimum, maximum]`
 //! `root_scaling` | Scaling exponent reciprocal (ie. root) | `1.0`
 //! `invert_icons` | Invert icons&#39; ordering, useful if you have colorful emoji | `false`
+//! `ddcci_sleep_multiplier` | [See ddcutil documentation](https://www.ddcutil.com/performance_options/#option-sleep-multiplier) | `1.0`
+//! `ddcci_max_tries_write_read` | The maximum number of times to attempt writing to  or reading from a ddcci monitor | `10`
 //!
 //! Placeholder  | Value                                     | Type   | Unit
 //! -------------|-------------------------------------------|--------|---------------
@@ -421,6 +501,10 @@
     <span class="attr">#[default(<span class="number">1.0</span>)]
     </span>root_scaling: f64,
     invert_icons: bool,
+    <span class="attr">#[default(<span class="number">1.0</span>)]
+    </span>ddcci_sleep_multiplier: f64,
+    <span class="attr">#[default(<span class="number">10</span>)]
+    </span>ddcci_max_tries_write_read: u8,
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
@@ -440,8 +524,23 @@
         .cycle();
 
     <span class="kw">let </span>device = <span class="kw">match </span><span class="kw-2">&amp;</span>config.device {
-        <span class="prelude-val">None </span>=&gt; BacklightDevice::default(config.root_scaling).<span class="kw">await</span><span class="question-mark">?</span>,
-        <span class="prelude-val">Some</span>(path) =&gt; BacklightDevice::from_device(path, config.root_scaling).<span class="kw">await</span><span class="question-mark">?</span>,
+        <span class="prelude-val">None </span>=&gt; {
+            BacklightDevice::default(
+                config.root_scaling,
+                config.ddcci_sleep_multiplier,
+                config.ddcci_max_tries_write_read,
+            )
+            .<span class="kw">await</span><span class="question-mark">?
+        </span>}
+        <span class="prelude-val">Some</span>(path) =&gt; {
+            BacklightDevice::from_device(
+                path,
+                config.root_scaling,
+                config.ddcci_sleep_multiplier,
+                config.ddcci_max_tries_write_read,
+            )
+            .<span class="kw">await</span><span class="question-mark">?
+        </span>}
     };
 
     <span class="comment">// Watch for brightness changes
@@ -496,15 +595,32 @@
 }
 
 <span class="doccomment">/// Read a brightness value from the given path.
-</span><span class="kw">async fn </span>read_brightness_raw(device_file: <span class="kw-2">&amp;</span>Path) -&gt; <span class="prelude-ty">Result</span>&lt;u64&gt; {
+</span><span class="kw">async fn </span>read_brightness_raw(
+    device_file: <span class="kw-2">&amp;</span>Path,
+    ddcci_sleep_multiplier: f64,
+    ddcci_max_tries_write_read: u8,
+) -&gt; <span class="prelude-ty">Result</span>&lt;u64&gt; {
     <span class="kw">let </span>val = <span class="kw">match </span>read_file(device_file).<span class="kw">await </span>{
         <span class="prelude-val">Ok</span>(v) =&gt; <span class="prelude-val">Ok</span>(v),
         <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; {
-            <span class="comment">// HACK: Try to read file a second time if the first fails. For some reason, when using `ddcci`
-            // the first read fails with &quot;Error 74: Bad Message&quot;.
-            </span><span class="macro">debug!</span>(<span class="string">&quot;First read of brightness file failed, retrying&quot;</span>);
-            read_file(device_file).<span class="kw">await
-        </span>}
+            <span class="kw">for </span>i <span class="kw">in </span><span class="number">1</span>..ddcci_max_tries_write_read {
+                <span class="macro">debug!</span>(<span class="string">&quot;retry {i} reading brightness&quot;</span>);
+                <span class="comment">// See https://glenwing.github.io/docs/VESA-DDCCI-1.1.pdf
+                // Section 4.3 for timing explanation
+                </span>sleep(Duration::from_millis(
+                    (<span class="number">40.0 </span>* ddcci_sleep_multiplier).round() <span class="kw">as </span>u64,
+                ))
+                .<span class="kw">await</span>;
+                <span class="kw">if let </span><span class="prelude-val">Ok</span>(val) = read_file(device_file).<span class="kw">await </span>{
+                    <span class="kw">return </span>val
+                        .parse()
+                        .error(<span class="string">&quot;Failed to read value from brightness file&quot;</span>);
+                }
+            }
+            <span class="prelude-val">Err</span>(Error::new(
+                <span class="string">&quot;Failed to read brightness file, check your ddcci settings&quot;</span>,
+            ))
+        }
     };
     val.error(<span class="string">&quot;Failed to read brightness file&quot;</span>)<span class="question-mark">?
         </span>.parse()
@@ -519,10 +635,17 @@
     max_brightness: u64,
     root_scaling: f64,
     dbus_proxy: SessionProxy&lt;<span class="lifetime">&#39;static</span>&gt;,
+    ddcci_sleep_multiplier: f64,
+    ddcci_max_tries_write_read: u8,
 }
 
 <span class="kw">impl </span>BacklightDevice {
-    <span class="kw">async fn </span>new(device_path: PathBuf, root_scaling: f64) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
+    <span class="kw">async fn </span>new(
+        device_path: PathBuf,
+        root_scaling: f64,
+        ddcci_sleep_multiplier: f64,
+        ddcci_max_tries_write_read: u8,
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
         <span class="kw">let </span>dbus_conn = new_system_dbus_connection().<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
             read_brightness_file: device_path.join({
@@ -537,17 +660,28 @@
                 .file_name()
                 .map(|x| x.to_str().unwrap().into())
                 .error(<span class="string">&quot;Malformed device path&quot;</span>)<span class="question-mark">?</span>,
-            max_brightness: read_brightness_raw(<span class="kw-2">&amp;</span>device_path.join(FILE_MAX_BRIGHTNESS)).<span class="kw">await</span><span class="question-mark">?</span>,
+            max_brightness: read_brightness_raw(
+                <span class="kw-2">&amp;</span>device_path.join(FILE_MAX_BRIGHTNESS),
+                ddcci_sleep_multiplier,
+                ddcci_max_tries_write_read,
+            )
+            .<span class="kw">await</span><span class="question-mark">?</span>,
             root_scaling: root_scaling.clamp(ROOT_SCALDING_RANGE.start, ROOT_SCALDING_RANGE.end),
             dbus_proxy: SessionProxy::new(<span class="kw-2">&amp;</span>dbus_conn)
                 .<span class="kw">await
                 </span>.error(<span class="string">&quot;failed to create SessionProxy&quot;</span>)<span class="question-mark">?</span>,
+            ddcci_sleep_multiplier,
+            ddcci_max_tries_write_read,
         })
     }
 
     <span class="doccomment">/// Use the default backlight device, i.e. the first one found in the
     /// `/sys/class/backlight` directory.
-    </span><span class="kw">async fn </span>default(root_scaling: f64) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
+    </span><span class="kw">async fn </span>default(
+        root_scaling: f64,
+        ddcci_sleep_multiplier: f64,
+        ddcci_max_tries_write_read: u8,
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
         <span class="kw">let </span>device = read_dir(DEVICES_PATH)
             .<span class="kw">await
             </span>.error(<span class="string">&quot;Failed to read backlight device directory&quot;</span>)<span class="question-mark">?
@@ -555,18 +689,40 @@
             .<span class="kw">await
             </span>.error(<span class="string">&quot;No backlight devices found&quot;</span>)<span class="question-mark">?
             </span>.error(<span class="string">&quot;Failed to read default device file&quot;</span>)<span class="question-mark">?</span>;
-        <span class="self">Self</span>::new(device.path(), root_scaling).<span class="kw">await
+        <span class="self">Self</span>::new(
+            device.path(),
+            root_scaling,
+            ddcci_sleep_multiplier,
+            ddcci_max_tries_write_read,
+        )
+        .<span class="kw">await
     </span>}
 
     <span class="doccomment">/// Use the backlight device `device`. Returns an error if a directory for
     /// that device is not found.
-    </span><span class="kw">async fn </span>from_device(device: <span class="kw-2">&amp;</span>str, root_scaling: f64) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
-        <span class="self">Self</span>::new(Path::new(DEVICES_PATH).join(device), root_scaling).<span class="kw">await
+    </span><span class="kw">async fn </span>from_device(
+        device: <span class="kw-2">&amp;</span>str,
+        root_scaling: f64,
+        ddcci_sleep_multiplier: f64,
+        ddcci_max_tries_write_read: u8,
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
+        <span class="self">Self</span>::new(
+            Path::new(DEVICES_PATH).join(device),
+            root_scaling,
+            ddcci_sleep_multiplier,
+            ddcci_max_tries_write_read,
+        )
+        .<span class="kw">await
     </span>}
 
     <span class="doccomment">/// Query the brightness value for this backlight device, as a percent.
     </span><span class="kw">async fn </span>brightness(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;u8&gt; {
-        <span class="kw">let </span>raw = read_brightness_raw(<span class="kw-2">&amp;</span><span class="self">self</span>.read_brightness_file).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let </span>raw = read_brightness_raw(
+            <span class="kw-2">&amp;</span><span class="self">self</span>.read_brightness_file,
+            <span class="self">self</span>.ddcci_sleep_multiplier,
+            <span class="self">self</span>.ddcci_max_tries_write_read,
+        )
+        .<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="kw">let </span>brightness_ratio =
             (raw <span class="kw">as </span>f64 / <span class="self">self</span>.max_brightness <span class="kw">as </span>f64).powf(<span class="self">self</span>.root_scaling.recip());
