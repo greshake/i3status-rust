@@ -433,6 +433,11 @@
 <a href="#433" id="433">433</a>
 <a href="#434" id="434">434</a>
 <a href="#435" id="435">435</a>
+<a href="#436" id="436">436</a>
+<a href="#437" id="437">437</a>
+<a href="#438" id="438">438</a>
+<a href="#439" id="439">439</a>
+<a href="#440" id="440">440</a>
 </pre><pre class="rust"><code><span class="kw">use </span>neli::attr::Attribute;
 <span class="kw">use </span>neli::consts::{nl::<span class="kw-2">*</span>, rtnl::<span class="kw-2">*</span>, socket::<span class="kw-2">*</span>};
 <span class="kw">use </span>neli::nl::{NlPayload, Nlmsghdr};
@@ -592,14 +597,19 @@
                 .clamp(<span class="number">0.</span>, <span class="number">100.</span>)
         }
 
-        <span class="kw">fn </span>ssid_from_bss_info_elements(bytes: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt; {
-            <span class="kw">if </span>bytes.len() &lt;= <span class="number">3 </span>{
-                <span class="kw">return </span><span class="prelude-val">None</span>;
+        <span class="kw">fn </span>ssid_from_bss_info_elements(<span class="kw-2">mut </span>bytes: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt; {
+            <span class="kw">while </span>bytes.len() &gt; <span class="number">2 </span>&amp;&amp; bytes[<span class="number">0</span>] != <span class="number">0 </span>{
+                bytes = <span class="kw-2">&amp;</span>bytes[(bytes[<span class="number">1</span>] <span class="kw">as </span>usize + <span class="number">2</span>)..];
             }
-            <span class="kw">let </span>bytes = <span class="kw-2">&amp;</span>bytes[<span class="number">2</span>..];
-            <span class="kw">let </span>soh_i = bytes.iter().position(|b| <span class="kw-2">*</span>b == <span class="number">1</span>)<span class="question-mark">?</span>;
-            <span class="kw">let </span>(ssid, _rest) = bytes.split_at(soh_i);
-            <span class="prelude-val">Some</span>(String::from_utf8_lossy(ssid).into_owned())
+
+            <span class="kw">if </span>bytes.len() &lt; <span class="number">2 </span>|| bytes.len() &lt; bytes[<span class="number">1</span>] <span class="kw">as </span>usize + <span class="number">2 </span>{
+                <span class="kw">return </span><span class="prelude-val">None</span>;
+            };
+
+            <span class="kw">let </span>ssid_len = bytes[<span class="number">1</span>] <span class="kw">as </span>usize;
+            <span class="kw">let </span>raw_ssid = <span class="kw-2">&amp;</span>bytes[<span class="number">2</span>..][..ssid_len];
+
+            <span class="prelude-val">Some</span>(String::from_utf8_lossy(raw_ssid).into_owned())
         }
 
         <span class="comment">// Ignore connection error because `nl80211` might not be enabled on the system.
