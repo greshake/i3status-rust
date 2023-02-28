@@ -3,7 +3,7 @@
 //! This block reads brightness information directly from the filesystem, so it works under both
 //! X11 and Wayland. The block uses `inotify` to listen for changes in the device's brightness
 //! directly, so there is no need to set an update interval. This block uses DBus to set brightness
-//! level using the mouse wheel.
+//! level using the mouse wheel, but will [fallback to sysfs](#d-bus-fallback) if `systemd-logind` is not used.
 //!
 //! # Root scaling
 //!
@@ -41,6 +41,23 @@
 //! device = "intel_backlight"
 //! ```
 //!
+//! # D-Bus Fallback
+//!
+//! If you don't use `systemd-logind` i3status-rust will attempt to set the brightness
+//! using sysfs. In order to do this you'll need to have write permission.
+//! You can do this by writing a `udev` rule for your system.
+//!
+//! First, check that your user is a member of the "video" group using the
+//! `groups` command. Then add a rule in the `/etc/udev/rules.d/` directory
+//! containing the following, for example in `backlight.rules`:
+//!
+//! ```
+//! ACTION=="add", SUBSYSTEM=="backlight", GROUP="video", MODE="0664"
+//! ```
+//!
+//! This will allow the video group to modify all backlight devices. You will
+//! also need to restart for this rule to take effect.
+//!
 //! # Icons Used
 //! - `backlight` (as a progression)
 
@@ -49,7 +66,8 @@ use std::ops::Range;
 use std::path::{Path, PathBuf};
 
 use inotify::{Inotify, WatchMask};
-use tokio::fs::read_dir;
+use tokio::fs::{read_dir, OpenOptions};
+use tokio::io::AsyncWriteExt;
 
 use super::prelude::*;
 use crate::util::read_file;
@@ -78,6 +96,9 @@ const FILE_BRIGHTNESS: &str = "actual_brightness";
 /// [0, max_brightness], so we have to use the 'brightness' file instead.
 /// This may be fixed in the new 5.7 kernel?
 const FILE_BRIGHTNESS_AMD: &str = "brightness";
+
+/// set the requested brightness level
+const FILE_BRIGHTNESS_WRITE: &str = "brightness";
 
 /// Range of valid values for `root_scaling`
 const ROOT_SCALDING_RANGE: Range<f64> = 0.1..10.;
@@ -123,7 +144,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     // Watch for brightness changes
     let mut notify = Inotify::init().error("Failed to start inotify")?;
     notify
-        .add_watch(&device.brightness_file, WatchMask::MODIFY)
+        .add_watch(&device.read_brightness_file, WatchMask::MODIFY)
         .error("Failed to watch brightness file")?;
     let mut file_changes = notify
         .event_stream([0; 1024])
@@ -190,7 +211,8 @@ async fn read_brightness_raw(device_file: &Path) -> Result<u64> {
 /// Represents a physical backlight device whose brightness level can be queried.
 struct BacklightDevice {
     device_name: String,
-    brightness_file: PathBuf,
+    read_brightness_file: PathBuf,
+    write_brightness_file: PathBuf,
     max_brightness: u64,
     root_scaling: f64,
     dbus_proxy: SessionProxy<'static>,
@@ -200,13 +222,14 @@ impl BacklightDevice {
     async fn new(device_path: PathBuf, root_scaling: f64) -> Result<Self> {
         let dbus_conn = new_system_dbus_connection().await?;
         Ok(Self {
-            brightness_file: device_path.join({
+            read_brightness_file: device_path.join({
                 if device_path.ends_with("amdgpu_bl0") {
                     FILE_BRIGHTNESS_AMD
                 } else {
                     FILE_BRIGHTNESS
                 }
             }),
+            write_brightness_file: device_path.join(FILE_BRIGHTNESS_WRITE),
             device_name: device_path
                 .file_name()
                 .map(|x| x.to_str().unwrap().into())
@@ -240,7 +263,7 @@ impl BacklightDevice {
 
     /// Query the brightness value for this backlight device, as a percent.
     async fn brightness(&self) -> Result<u8> {
-        let raw = read_brightness_raw(&self.brightness_file).await?;
+        let raw = read_brightness_raw(&self.read_brightness_file).await?;
 
         let brightness_ratio =
             (raw as f64 / self.max_brightness as f64).powf(self.root_scaling.recip());
@@ -257,9 +280,24 @@ impl BacklightDevice {
         let value = value.clamp(0, 100);
         let ratio = (value as f64 / 100.0).powf(self.root_scaling);
         let raw = max(1, (ratio * (self.max_brightness as f64)).round() as u32);
-        self.dbus_proxy
+        match self
+            .dbus_proxy
             .set_brightness("backlight", &self.device_name, raw)
             .await
-            .error("Failed to send D-Bus message")
+        {
+            Ok(()) => Ok(()),
+            Err(_) => {
+                // Fall back to writing to sysfs brightness file
+                let mut file = OpenOptions::new()
+                    .write(true)
+                    .truncate(true)
+                    .open(&self.write_brightness_file)
+                    .await
+                    .error("Could not open brightness file to write")?;
+                file.write_all(raw.to_string().as_bytes())
+                    .await
+                    .error("Could not write sysfs brightness")
+            }
+        }
     }
 }
