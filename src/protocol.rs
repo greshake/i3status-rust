@@ -36,6 +36,8 @@ where
 
     let mut logical_block_i = 0;
 
+    let mut prev_merge_with_next = false;
+
     for widgets in blocks
         .iter()
         .map(|x| x.borrow())
@@ -62,8 +64,8 @@ where
             alt = !alt;
         }
 
-        if !merge_with_next {
-            if let Separator::Custom(separator) = &config.theme.separator {
+        if let Separator::Custom(separator) = &config.theme.separator {
+            if !prev_merge_with_next {
                 // The first widget's BG is used to get the FG color for the current separator
                 let sep_fg = if config.theme.separator_fg == Color::Auto {
                     segments.first().unwrap().background
@@ -89,7 +91,9 @@ where
                 };
 
                 rendered_blocks.push(separator);
-            } else {
+            }
+        } else {
+            if !merge_with_next {
                 // Re-add native separator on last widget for native theme
                 segments.last_mut().unwrap().separator = None;
                 segments.last_mut().unwrap().separator_block_width = None;
@@ -101,6 +105,8 @@ where
         if !merge_with_next {
             logical_block_i += 1;
         }
+
+        prev_merge_with_next = merge_with_next;
     }
 
     if let Separator::Custom(end_separator) = &config.theme.end_separator {
