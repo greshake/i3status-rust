@@ -438,6 +438,11 @@
 <a href="#438" id="438">438</a>
 <a href="#439" id="439">439</a>
 <a href="#440" id="440">440</a>
+<a href="#441" id="441">441</a>
+<a href="#442" id="442">442</a>
+<a href="#443" id="443">443</a>
+<a href="#444" id="444">444</a>
+<a href="#445" id="445">445</a>
 </pre><pre class="rust"><code><span class="kw">use </span>neli::attr::Attribute;
 <span class="kw">use </span>neli::consts::{nl::<span class="kw-2">*</span>, rtnl::<span class="kw-2">*</span>, socket::<span class="kw-2">*</span>};
 <span class="kw">use </span>neli::nl::{NlPayload, Nlmsghdr};
@@ -630,7 +635,12 @@
                 <span class="kw">let </span><span class="prelude-val">Ok</span>(ap) = socket.get_station_info(index).<span class="kw">await
                 else </span>{ <span class="kw">continue </span>};
 
-                <span class="kw">let </span>bss = socket.get_bss_info(index).<span class="kw">await</span>.ok();
+                <span class="kw">let </span>bss = socket
+                    .get_bss_info(index)
+                    .<span class="kw">await
+                    </span>.unwrap_or_default()
+                    .into_iter()
+                    .find(|bss| bss.status == <span class="prelude-val">Some</span>(<span class="number">1</span>));
 
                 <span class="kw">let </span>raw_signal = <span class="kw">match </span>ap.signal {
                     <span class="prelude-val">Some</span>(signal) =&gt; <span class="prelude-val">Some</span>(signal),
