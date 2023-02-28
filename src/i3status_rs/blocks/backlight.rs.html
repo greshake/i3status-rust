@@ -263,12 +263,50 @@
 <a href="#263" id="263">263</a>
 <a href="#264" id="264">264</a>
 <a href="#265" id="265">265</a>
+<a href="#266" id="266">266</a>
+<a href="#267" id="267">267</a>
+<a href="#268" id="268">268</a>
+<a href="#269" id="269">269</a>
+<a href="#270" id="270">270</a>
+<a href="#271" id="271">271</a>
+<a href="#272" id="272">272</a>
+<a href="#273" id="273">273</a>
+<a href="#274" id="274">274</a>
+<a href="#275" id="275">275</a>
+<a href="#276" id="276">276</a>
+<a href="#277" id="277">277</a>
+<a href="#278" id="278">278</a>
+<a href="#279" id="279">279</a>
+<a href="#280" id="280">280</a>
+<a href="#281" id="281">281</a>
+<a href="#282" id="282">282</a>
+<a href="#283" id="283">283</a>
+<a href="#284" id="284">284</a>
+<a href="#285" id="285">285</a>
+<a href="#286" id="286">286</a>
+<a href="#287" id="287">287</a>
+<a href="#288" id="288">288</a>
+<a href="#289" id="289">289</a>
+<a href="#290" id="290">290</a>
+<a href="#291" id="291">291</a>
+<a href="#292" id="292">292</a>
+<a href="#293" id="293">293</a>
+<a href="#294" id="294">294</a>
+<a href="#295" id="295">295</a>
+<a href="#296" id="296">296</a>
+<a href="#297" id="297">297</a>
+<a href="#298" id="298">298</a>
+<a href="#299" id="299">299</a>
+<a href="#300" id="300">300</a>
+<a href="#301" id="301">301</a>
+<a href="#302" id="302">302</a>
+<a href="#303" id="303">303</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The brightness of a backlight device
 //!
 //! This block reads brightness information directly from the filesystem, so it works under both
 //! X11 and Wayland. The block uses `inotify` to listen for changes in the device&#39;s brightness
 //! directly, so there is no need to set an update interval. This block uses DBus to set brightness
-//! level using the mouse wheel.
+//! level using the mouse wheel, but will [fallback to sysfs](#d-bus-fallback) if `systemd-logind` is not used.
 //!
 //! # Root scaling
 //!
@@ -306,6 +344,23 @@
 //! device = &quot;intel_backlight&quot;
 //! ```
 //!
+//! # D-Bus Fallback
+//!
+//! If you don&#39;t use `systemd-logind` i3status-rust will attempt to set the brightness
+//! using sysfs. In order to do this you&#39;ll need to have write permission.
+//! You can do this by writing a `udev` rule for your system.
+//!
+//! First, check that your user is a member of the &quot;video&quot; group using the
+//! `groups` command. Then add a rule in the `/etc/udev/rules.d/` directory
+//! containing the following, for example in `backlight.rules`:
+//!
+//! ```
+//! ACTION==&quot;add&quot;, SUBSYSTEM==&quot;backlight&quot;, GROUP=&quot;video&quot;, MODE=&quot;0664&quot;
+//! ```
+//!
+//! This will allow the video group to modify all backlight devices. You will
+//! also need to restart for this rule to take effect.
+//!
 //! # Icons Used
 //! - `backlight` (as a progression)
 
@@ -314,7 +369,8 @@
 <span class="kw">use </span>std::path::{Path, PathBuf};
 
 <span class="kw">use </span>inotify::{Inotify, WatchMask};
-<span class="kw">use </span>tokio::fs::read_dir;
+<span class="kw">use </span>tokio::fs::{read_dir, OpenOptions};
+<span class="kw">use </span>tokio::io::AsyncWriteExt;
 
 <span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
 <span class="kw">use </span><span class="kw">crate</span>::util::read_file;
@@ -343,6 +399,9 @@
 /// [0, max_brightness], so we have to use the &#39;brightness&#39; file instead.
 /// This may be fixed in the new 5.7 kernel?
 </span><span class="kw">const </span>FILE_BRIGHTNESS_AMD: <span class="kw-2">&amp;</span>str = <span class="string">&quot;brightness&quot;</span>;
+
+<span class="doccomment">/// set the requested brightness level
+</span><span class="kw">const </span>FILE_BRIGHTNESS_WRITE: <span class="kw-2">&amp;</span>str = <span class="string">&quot;brightness&quot;</span>;
 
 <span class="doccomment">/// Range of valid values for `root_scaling`
 </span><span class="kw">const </span>ROOT_SCALDING_RANGE: Range&lt;f64&gt; = <span class="number">0.1</span>..<span class="number">10.</span>;
@@ -388,7 +447,7 @@
     <span class="comment">// Watch for brightness changes
     </span><span class="kw">let </span><span class="kw-2">mut </span>notify = Inotify::init().error(<span class="string">&quot;Failed to start inotify&quot;</span>)<span class="question-mark">?</span>;
     notify
-        .add_watch(<span class="kw-2">&amp;</span>device.brightness_file, WatchMask::MODIFY)
+        .add_watch(<span class="kw-2">&amp;</span>device.read_brightness_file, WatchMask::MODIFY)
         .error(<span class="string">&quot;Failed to watch brightness file&quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>file_changes = notify
         .event_stream([<span class="number">0</span>; <span class="number">1024</span>])
@@ -455,7 +514,8 @@
 <span class="doccomment">/// Represents a physical backlight device whose brightness level can be queried.
 </span><span class="kw">struct </span>BacklightDevice {
     device_name: String,
-    brightness_file: PathBuf,
+    read_brightness_file: PathBuf,
+    write_brightness_file: PathBuf,
     max_brightness: u64,
     root_scaling: f64,
     dbus_proxy: SessionProxy&lt;<span class="lifetime">&#39;static</span>&gt;,
@@ -465,13 +525,14 @@
     <span class="kw">async fn </span>new(device_path: PathBuf, root_scaling: f64) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
         <span class="kw">let </span>dbus_conn = new_system_dbus_connection().<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
-            brightness_file: device_path.join({
+            read_brightness_file: device_path.join({
                 <span class="kw">if </span>device_path.ends_with(<span class="string">&quot;amdgpu_bl0&quot;</span>) {
                     FILE_BRIGHTNESS_AMD
                 } <span class="kw">else </span>{
                     FILE_BRIGHTNESS
                 }
             }),
+            write_brightness_file: device_path.join(FILE_BRIGHTNESS_WRITE),
             device_name: device_path
                 .file_name()
                 .map(|x| x.to_str().unwrap().into())
@@ -505,7 +566,7 @@
 
     <span class="doccomment">/// Query the brightness value for this backlight device, as a percent.
     </span><span class="kw">async fn </span>brightness(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;u8&gt; {
-        <span class="kw">let </span>raw = read_brightness_raw(<span class="kw-2">&amp;</span><span class="self">self</span>.brightness_file).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let </span>raw = read_brightness_raw(<span class="kw-2">&amp;</span><span class="self">self</span>.read_brightness_file).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="kw">let </span>brightness_ratio =
             (raw <span class="kw">as </span>f64 / <span class="self">self</span>.max_brightness <span class="kw">as </span>f64).powf(<span class="self">self</span>.root_scaling.recip());
@@ -522,10 +583,25 @@
         <span class="kw">let </span>value = value.clamp(<span class="number">0</span>, <span class="number">100</span>);
         <span class="kw">let </span>ratio = (value <span class="kw">as </span>f64 / <span class="number">100.0</span>).powf(<span class="self">self</span>.root_scaling);
         <span class="kw">let </span>raw = max(<span class="number">1</span>, (ratio * (<span class="self">self</span>.max_brightness <span class="kw">as </span>f64)).round() <span class="kw">as </span>u32);
-        <span class="self">self</span>.dbus_proxy
+        <span class="kw">match </span><span class="self">self
+            </span>.dbus_proxy
             .set_brightness(<span class="string">&quot;backlight&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.device_name, raw)
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to send D-Bus message&quot;</span>)
+        </span>{
+            <span class="prelude-val">Ok</span>(()) =&gt; <span class="prelude-val">Ok</span>(()),
+            <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; {
+                <span class="comment">// Fall back to writing to sysfs brightness file
+                </span><span class="kw">let </span><span class="kw-2">mut </span>file = OpenOptions::new()
+                    .write(<span class="bool-val">true</span>)
+                    .truncate(<span class="bool-val">true</span>)
+                    .open(<span class="kw-2">&amp;</span><span class="self">self</span>.write_brightness_file)
+                    .<span class="kw">await
+                    </span>.error(<span class="string">&quot;Could not open brightness file to write&quot;</span>)<span class="question-mark">?</span>;
+                file.write_all(raw.to_string().as_bytes())
+                    .<span class="kw">await
+                    </span>.error(<span class="string">&quot;Could not write sysfs brightness&quot;</span>)
+            }
+        }
     }
 }
 </code></pre></div>
