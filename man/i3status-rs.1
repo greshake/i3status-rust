@@ -742,7 +742,7 @@ T}
 .PP
 .TS
 tab(@);
-lw(11.4n) lw(43.1n) lw(5.4n) lw(10.1n).
+lw(10.8n) lw(44.5n) lw(5.1n) lw(9.5n).
 T{
 Placeholder
 T}@T{
@@ -792,7 +792,7 @@ T}
 T{
 \f[V]frequency\f[R]
 T}@T{
-Average CPU frequency
+Average CPU frequency (may be absent if CPU is not supported)
 T}@T{
 Number
 T}@T{
@@ -801,7 +801,7 @@ T}
 T{
 \f[V]frequency<N>\f[R]
 T}@T{
-Frequency of Nth logical CPU
+Frequency of Nth logical CPU (may be absent if CPU is not supported)
 T}@T{
 Number
 T}@T{
@@ -5772,6 +5772,22 @@ T}@T{
 -
 T}
 .TE
+.PP
+.TS
+tab(@);
+l l.
+T{
+Action
+T}@T{
+Default button
+T}
+_
+T{
+\f[V]next_timezone\f[R]
+T}@T{
+Left
+T}
+.TE
 .SS Example
 .IP
 .nf
@@ -6653,7 +6669,7 @@ format = \[dq] $icon $brightness $resolution \[dq]
 .IP \[bu] 2
 \f[V]xrandr\f[R]
 .IP \[bu] 2
-\f[V]backlight_full\f[R]
+\f[V]backlight\f[R]
 .IP \[bu] 2
 \f[V]resolution\f[R]
 .SH NOTES

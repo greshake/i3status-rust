@@ -1,4 +1,4 @@
-# i3status-rust 0.30.4 [unreleased]
+# i3status-rust 0.30.4
 
 ### New Blocks and Features
 
@@ -14,6 +14,8 @@
 * Nvidia GPU: display unavailable stats as zeros instead of failing.
 * Bluetooth: correctly display battery level even if it is not available instantly.
 * Net: get SSID from `NL80211_BSS_INFORMATION_ELEMENTS` (makes SSID available on Linux kernel 5.19 and newer).
+* Backlight: fallback to sysfs on systems which don't use `systemd-logind`.
+* Do not require config file to have a `.toml` extension.
 
 # i3status-rust 0.30.3
 
