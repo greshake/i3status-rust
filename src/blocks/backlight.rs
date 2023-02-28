@@ -220,8 +220,8 @@ async fn read_brightness_raw(
     ddcci_max_tries_write_read: u8,
 ) -> Result<u64> {
     let val = match read_file(device_file).await {
-        Ok(v) => Ok(v),
-        Err(_) => {
+        Ok(v) => v,
+        Err(_) => 'blk: {
             for i in 1..ddcci_max_tries_write_read {
                 debug!("retry {i} reading brightness");
                 // See https://glenwing.github.io/docs/VESA-DDCCI-1.1.pdf
@@ -231,18 +231,15 @@ async fn read_brightness_raw(
                 ))
                 .await;
                 if let Ok(val) = read_file(device_file).await {
-                    return val
-                        .parse()
-                        .error("Failed to read value from brightness file");
+                    break 'blk val;
                 }
             }
-            Err(Error::new(
+            return Err(Error::new(
                 "Failed to read brightness file, check your ddcci settings",
-            ))
+            ));
         }
     };
-    val.error("Failed to read brightness file")?
-        .parse()
+    val.parse()
         .error("Failed to read value from brightness file")
 }
 
