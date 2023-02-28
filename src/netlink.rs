@@ -190,7 +190,12 @@ impl WifiInfo {
                 let Ok(ap) = socket.get_station_info(index).await
                 else { continue };
 
-                let bss = socket.get_bss_info(index).await.ok();
+                let bss = socket
+                    .get_bss_info(index)
+                    .await
+                    .unwrap_or_default()
+                    .into_iter()
+                    .find(|bss| bss.status == Some(1));
 
                 let raw_signal = match ap.signal {
                     Some(signal) => Some(signal),
