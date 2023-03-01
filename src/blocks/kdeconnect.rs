@@ -84,32 +84,14 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let dbus_conn = new_dbus_connection().await?;
     let id = match config.device_id {
         Some(id) => id,
-        None => api.recoverable(|| any_device_connected(&dbus_conn)).await?,
+        None => api.recoverable(|| any_device_id(&dbus_conn)).await?,
     };
 
     let (tx, mut rx) = mpsc::channel(8);
-    let mut device = Device::new(&dbus_conn, tx, &id).await?;
+    let device = Device::new(&dbus_conn, tx, &id).await?;
 
     loop {
-        let mut connected = device.connected().await;
-
-        if !connected {
-          let id = match any_device_connected(&dbus_conn).await {
-                Ok(id) => id,
-                Err(_) =>{ 
-                    api.hide().await?;
-                    continue;
-                }
-            };
-
-            let (tx_new, rx_new) = mpsc::channel(8);
-
-            rx = rx_new;
-            
-            device = Device::new(&dbus_conn, tx_new, &id).await?;
-
-            connected = device.connected().await;
-        }
+        let connected = device.connected().await;
 
         if connected || !config.hide_disconnected {
             widget.state = State::Idle;
@@ -278,44 +260,16 @@ impl Device {
     }
 }
 
-async fn check_connection(conn: &zbus::Connection, id: &str) -> Result<bool> {
-     let device_path = format!("/modules/kdeconnect/devices/{id}");
-
-     let device_proxy = DeviceDbusProxy::builder(conn)
-            .cache_properties(zbus::CacheProperties::No)
-            .path(device_path)
-            .error("Failed to set device path")?
-            .build()
-            .await
-            .error("Failed to create DeviceDbusProxy")?;
-
-    device_proxy.is_reachable().await.error("Device is not reachable")
-}
-
-async fn any_device_id(conn: &zbus::Connection) -> Result<std::vec::IntoIter<String>> {
-    Ok(DaemonDbusProxy::new(conn)
+async fn any_device_id(conn: &zbus::Connection) -> Result<String> {
+    DaemonDbusProxy::new(conn)
         .await
         .error("Failed to create DaemonDbusProxy")?
         .devices()
         .await
         .error("Failed to get devices")?
-        .into_iter())
-}
-
-async fn any_device_connected(conn: &zbus::Connection) -> Result<String> {
-    match any_device_id(conn).await {
-        Ok(device_ids) => {
-            for id in device_ids {
-                if check_connection(conn, &id).await.unwrap_or(false) {
-                   return Ok(id); 
-                }
-            }
-
-           Err(Error::new("No connected device")) 
-        },
-
-        Err(msg) => Err(msg)
-    }
+        .into_iter()
+        .next()
+        .error("No devices found")
 }
 
 #[dbus_proxy(
