@@ -32,8 +32,7 @@ struct LegendsResult {
     desc_nn: String,
 }
 
-#[derive(Deserialize, Debug, Clone)]
-#[derive(Default)]
+#[derive(Deserialize, Debug, Clone, Default)]
 pub(super) enum ApiLanguage {
     #[serde(rename = "en")]
     #[default]
@@ -43,8 +42,6 @@ pub(super) enum ApiLanguage {
     #[serde(rename = "nb")]
     NorwegianBokmaal,
 }
-
-
 
 #[derive(Deserialize, Debug)]
 struct ForecastResponse {
