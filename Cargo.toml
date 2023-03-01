@@ -26,6 +26,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 [dependencies]
 async-once-cell = "0.4"
 async-trait = "0.1"
+calibright = { version = "0.1", features = ["watch"] }
 crossbeam-channel = "0.5"
 dirs = "4.0"
 env_logger = "0.10"
