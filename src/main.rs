@@ -50,11 +50,21 @@ use widget::{State, Widget};
 pub type BoxedFuture<T> = Pin<Box<dyn Future<Output = T>>>;
 pub type BoxedStream<T> = Pin<Box<dyn Stream<Item = T>>>;
 
+const APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
+const REQWEST_TIMEOUT: Duration = Duration::from_secs(10);
+
 pub static REQWEST_CLIENT: Lazy<reqwest::Client> = Lazy::new(|| {
-    const APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
-    const REQWEST_TIMEOUT: Duration = Duration::from_secs(10);
     reqwest::Client::builder()
         .user_agent(APP_USER_AGENT)
+        .timeout(REQWEST_TIMEOUT)
+        .build()
+        .unwrap()
+});
+
+pub static REQWEST_CLIENT_IPV4: Lazy<reqwest::Client> = Lazy::new(|| {
+    reqwest::Client::builder()
+        .user_agent(APP_USER_AGENT)
+        .local_address(Some(std::net::Ipv4Addr::UNSPECIFIED.into()))
         .timeout(REQWEST_TIMEOUT)
         .build()
         .unwrap()
