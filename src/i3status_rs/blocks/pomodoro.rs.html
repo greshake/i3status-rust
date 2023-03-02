@@ -260,6 +260,9 @@
 <a href="#260" id="260">260</a>
 <a href="#261" id="261">261</a>
 <a href="#262" id="262">262</a>
+<a href="#263" id="263">263</a>
+<a href="#264" id="264">264</a>
+<a href="#265" id="265">265</a>
 </pre><pre class="rust"><code><span class="doccomment">//! A [pomodoro timer](https://en.wikipedia.org/wiki/Pomodoro_Technique)
 //!
 //! # Technique
@@ -502,7 +505,10 @@
     ])
     .<span class="kw">await</span><span class="question-mark">?</span>;
 
-    <span class="kw">let </span>format = FormatConfig::default().with_default(<span class="string">&quot; $icon{ $message|} &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>format = block_config
+        .format
+        .clone()
+        .with_default(<span class="string">&quot; $icon{ $message|} &quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>widget = Widget::new().with_format(format);
 
     <span class="kw">let </span><span class="kw-2">mut </span>block = Block {

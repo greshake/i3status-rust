@@ -151,7 +151,7 @@
 <span class="kw">use </span>std::str::FromStr;
 <span class="kw">use </span>std::sync::Arc;
 
-<span class="attr">#[derive(Debug, Default)]
+<span class="attr">#[derive(Debug, Default, Clone)]
 </span><span class="kw">pub struct </span>Config {
     <span class="kw">pub </span>full: <span class="prelude-ty">Option</span>&lt;Arc&lt;FormatTemplate&gt;&gt;,
     <span class="kw">pub </span>short: <span class="prelude-ty">Option</span>&lt;Arc&lt;FormatTemplate&gt;&gt;,
