@@ -6,7 +6,7 @@ use std::fmt;
 use std::str::FromStr;
 use std::sync::Arc;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Config {
     pub full: Option<Arc<FormatTemplate>>,
     pub short: Option<Arc<FormatTemplate>>,
