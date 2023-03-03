@@ -27,7 +27,7 @@
 //! [[block]]
 //! block = "amd_gpu"
 //! format = " $icon $utilization "
-//! format_alt = " $icon MEM: $vram_used_percests ($vram_used/$vram_total) "
+//! format_alt = " $icon MEM: $vram_used_percents ($vram_used/$vram_total) "
 //! interval = 1
 //! ```
 //!
