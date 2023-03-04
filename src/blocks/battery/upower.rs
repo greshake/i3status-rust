@@ -15,7 +15,7 @@ struct DeviceConnection {
 
 impl DeviceConnection {
     async fn new(dbus_conn: &Connection, device: &DeviceName) -> Result<Option<Self>> {
-        let device_conn_info = if device.exact() == Some("DisplayDevice") {
+        let device_conn_info = if device.exact().map_or(true, |d| d == "DisplayDevice") {
             let path: ObjectPath = "/org/freedesktop/UPower/devices/DisplayDevice"
                 .try_into()
                 .unwrap();
