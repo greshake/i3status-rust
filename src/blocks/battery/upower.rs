@@ -40,9 +40,8 @@ impl DeviceConnection {
                     .build()
                     .await
                     .error("Failed to create DeviceProxy")?;
-                // Verify device type
-                // https://upower.freedesktop.org/docs/Device.html#Device:Type
-                // consider any peripheral, UPS and internal battery
+
+                // Filter by model if needed
                 if let Some(expected_model) = &expected_model {
                     if let Ok(device_model) = proxy.model().await {
                         if !expected_model.eq(&device_model) {
@@ -50,6 +49,10 @@ impl DeviceConnection {
                         }
                     }
                 }
+                // Verify device type
+                // https://upower.freedesktop.org/docs/Device.html#Device:Type
+                // consider any peripheral, UPS and internal battery
+
                 let device_type = proxy.type_().await.error("Failed to get device's type")?;
                 if device_type == 1 {
                     continue;
