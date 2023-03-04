@@ -18,7 +18,7 @@ struct DeviceConnection {
 impl DeviceConnection {
 
     async fn new(dbus_conn: &Connection, device: &DeviceName, expected_model: Option<String>) -> Result<Option<Self>> {
-        let device_proxy = if device.exact().map_or(true, |d| d == "DisplayDevice") {
+        let device_proxy = if device.exact().map_or(true, |d| d == "DisplayDevice") && expected_model.is_none() {
             DeviceProxy::builder(dbus_conn)
                 .path(DISPLAY_DEVICE_PATH)
                 .unwrap()
