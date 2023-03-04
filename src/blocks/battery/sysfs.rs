@@ -57,14 +57,16 @@ impl CapacityLevel {
 pub(super) struct Device {
     dev_name: DeviceName,
     dev_path: Option<PathBuf>,
+    dev_model: Option<String>,
     interval: Interval,
 }
 
 impl Device {
-    pub(super) fn new(dev_name: DeviceName, interval: Seconds) -> Self {
+    pub(super) fn new(dev_name: DeviceName, dev_model: Option<String>, interval: Seconds) -> Self {
         Self {
             dev_name,
             dev_path: None,
+            dev_model,
             interval: interval.timer(),
         }
     }
@@ -99,6 +101,15 @@ impl Device {
                 || !Self::device_available(&path).await
             {
                 continue;
+            }
+
+            // Untested
+            debug!("battery '{}', model={:?}", path.display(), Self::read_prop::<String>(&path, "model_name").await.as_deref() );
+            if let Some(dev_model) = &self.dev_model {
+                if Self::read_prop::<String>(&path, "model_name").await.as_deref() != Some(dev_model.as_str())
+                {
+                    continue;
+                }
             }
 
             debug!(
