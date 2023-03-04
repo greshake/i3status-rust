@@ -21,8 +21,8 @@ where `<file>` can be either a filename or a full path and will be checked in th
 4. Otherwise look for it in `/usr/share/i3status-rust/themes`
 
 Notes:
-- In case with icon sets, the file should be in `icons` subdirectory instead of `themes`.
-- You can omit the `.toml` extension while specifying `file` parameter.
+- In case with icon sets, the file should be in the `icons` subdirectory instead of `themes`.
+- You can omit the `.toml` extension while specifying `file` parameters.
 - All the predefined themes are provided as files, so you use them as examples of how to write your own themes/icon sets.
 
 # Available themes
