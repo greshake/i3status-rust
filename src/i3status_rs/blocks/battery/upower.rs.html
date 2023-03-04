@@ -264,7 +264,7 @@
 
 <span class="kw">impl </span>DeviceConnection {
     <span class="kw">async fn </span>new(dbus_conn: <span class="kw-2">&amp;</span>Connection, device: <span class="kw-2">&amp;</span>DeviceName) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>&gt;&gt; {
-        <span class="kw">let </span>device_conn_info = <span class="kw">if </span>device.exact() == <span class="prelude-val">Some</span>(<span class="string">&quot;DisplayDevice&quot;</span>) {
+        <span class="kw">let </span>device_conn_info = <span class="kw">if </span>device.exact().map_or(<span class="bool-val">true</span>, |d| d == <span class="string">&quot;DisplayDevice&quot;</span>) {
             <span class="kw">let </span>path: ObjectPath = <span class="string">&quot;/org/freedesktop/UPower/devices/DisplayDevice&quot;
                 </span>.try_into()
                 .unwrap();
