@@ -52,7 +52,6 @@ impl DeviceConnection {
                 // Verify device type
                 // https://upower.freedesktop.org/docs/Device.html#Device:Type
                 // consider any peripheral, UPS and internal battery
-
                 let device_type = proxy.type_().await.error("Failed to get device's type")?;
                 if device_type == 1 {
                     continue;
