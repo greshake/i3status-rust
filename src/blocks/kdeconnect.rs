@@ -45,8 +45,7 @@
 //! - `phone`
 //! - `phone_disconnected`
 
-use tokio::sync::mpsc;
-use zbus::dbus_proxy;
+use zbus::{dbus_proxy, SignalStream};
 
 use super::prelude::*;
 
@@ -81,101 +80,195 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         config.bat_critical,
     ) != (0, 0, 0, 0);
 
-    let dbus_conn = new_dbus_connection().await?;
-    let id = match config.device_id {
-        Some(id) => id,
-        None => api.recoverable(|| any_device_id(&dbus_conn)).await?,
+    let mut monitor = match config.device_id {
+        Some(id) => DeviceMonitor::from_id(&id).await?,
+        None => DeviceMonitor::new(),
     };
 
-    let (tx, mut rx) = mpsc::channel(8);
-    let device = Device::new(&dbus_conn, tx, &id).await?;
-
     loop {
-        let connected = device.connected().await;
+        match monitor.get_device_info().await {
+            Some(device) => {
+                if !config.hide_disconnected {
+                    widget.state = State::Idle;
+                }
 
-        if connected || !config.hide_disconnected {
-            widget.state = State::Idle;
+                let mut values = map!();
 
-            let mut values = map!();
+                if let Some(name) = device.name().await {
+                    values.insert("name".into(), Value::text(name));
+                }
 
-            if let Some(name) = device.name().await {
-                values.insert("name".into(), Value::text(name));
-            }
+                if device.connected().await {
+                    values.insert("icon".into(), Value::icon(api.get_icon("phone")?));
+                    values.insert("connected".into(), Value::flag());
 
-            if connected {
-                values.insert("icon".into(), Value::icon(api.get_icon("phone")?));
-                values.insert("connected".into(), Value::flag());
+                    let (level, charging) = device.battery().await;
+                    if let Some(level) = level {
+                        values.insert("bat_charge".into(), Value::percents(level));
+                        values.insert(
+                            "bat_icon".into(),
+                            Value::icon(api.get_icon_in_progression(
+                                if charging { "bat_charging" } else { "bat" },
+                                level as f64 / 100.0,
+                            )?),
+                        );
+                        if battery_state {
+                            widget.state = if charging {
+                                State::Good
+                            } else if level <= config.bat_critical {
+                                State::Critical
+                            } else if level <= config.bat_info {
+                                State::Info
+                            } else if level > config.bat_good {
+                                State::Good
+                            } else {
+                                State::Idle
+                            };
+                        }
+                    }
 
-                let (level, charging) = device.battery().await;
-                if let Some(level) = level {
-                    values.insert("bat_charge".into(), Value::percents(level));
-                    values.insert(
-                        "bat_icon".into(),
-                        Value::icon(api.get_icon_in_progression(
-                            if charging { "bat_charging" } else { "bat" },
-                            level as f64 / 100.0,
-                        )?),
-                    );
-                    if battery_state {
-                        widget.state = if charging {
-                            State::Good
-                        } else if level <= config.bat_critical {
-                            State::Critical
-                        } else if level <= config.bat_info {
-                            State::Info
-                        } else if level > config.bat_good {
-                            State::Good
-                        } else {
+                    let notif_count = device.notifications().await?;
+                    if notif_count > 0 {
+                        values.insert("notif_count".into(), Value::number(notif_count));
+                        values.insert(
+                            "notif_icon".into(),
+                            Value::icon(api.get_icon("notification")?.trim().into()),
+                        );
+                    }
+                    if !battery_state {
+                        widget.state = if notif_count == 0 {
                             State::Idle
+                        } else {
+                            State::Info
                         };
                     }
-                }
-
-                let notif_count = device.notifications().await?;
-                if notif_count > 0 {
-                    values.insert("notif_count".into(), Value::number(notif_count));
+                } else {
                     values.insert(
-                        "notif_icon".into(),
-                        Value::icon(api.get_icon("notification")?.trim().into()),
+                        "icon".into(),
+                        Value::icon(api.get_icon("phone_disconnected")?),
                     );
                 }
-                if !battery_state {
-                    widget.state = if notif_count == 0 {
-                        State::Idle
-                    } else {
-                        State::Info
-                    };
-                }
-            } else {
-                values.insert(
-                    "icon".into(),
-                    Value::icon(api.get_icon("phone_disconnected")?),
-                );
+
+                widget.set_values(values);
+                api.set_widget(&widget).await?;
             }
-
-            widget.set_values(values);
-            api.set_widget(&widget).await?;
-        } else {
-            api.hide().await?;
-        }
-
-        loop {
-            select! {
-                _ = rx.recv() => break,
-                _ = api.event() => (),
+            None => {
+                api.hide().await?;
+                select! {
+                    _ = monitor.wait_for_change() => (),
+                    _ = api.event() => (),
+                }
             }
         }
     }
 }
 
+struct DeviceMonitor {
+    device: Option<Device>,
+}
+
+impl DeviceMonitor {
+    pub fn new() -> Self {
+        Self { device: None }
+    }
+
+    pub async fn from_id(id: &str) -> Result<DeviceMonitor> {
+        let device = device_from_id(id).await?;
+        let monitor = DeviceMonitor {
+            device: Some(device),
+        };
+        Ok(monitor)
+    }
+
+    pub async fn get_device_info(&mut self) -> Option<&Device> {
+        match &self.device {
+            Some(_) => self.device.as_ref(),
+            None => None,
+        }
+    }
+
+    pub async fn wait_for_change(&mut self) -> Option<()> {
+        match &self.device {
+            Some(_) => {
+                let device = &mut self.device.as_mut()?;
+
+                let notification_event = device.notification_stream.next();
+
+                let battery_event = device.battery_stream.next();
+
+                let device_event = device.device_stream.next();
+
+                tokio::select! {
+                    _ = notification_event => {
+                        Some(())
+                    }
+                    _ = battery_event => {
+                        Some(())
+                    }
+                    _ = device_event => {
+                        Some(())
+                    }
+                }
+            }
+            None => match get_new_device().await {
+                Ok(device) => {
+                    self.device = Some(device);
+                    None
+                }
+                Err(_) => None,
+            },
+        }
+    }
+}
+
+async fn get_new_device() -> Result<Device> {
+    let conn = new_dbus_connection().await?;
+
+    let ids = any_device_id(&conn).await?;
+
+    for id in ids {
+        let device_path = format!("/modules/kdeconnect/devices/{id}");
+        let device_proxy = DeviceDbusProxy::builder(&conn)
+            .cache_properties(zbus::CacheProperties::No)
+            .path(device_path)
+            .error("Failed to set device path")?
+            .build()
+            .await
+            .error("Failed to create DeviceDbusProxy")?;
+
+        match device_proxy.is_reachable().await {
+            Ok(res) => {
+                if res {
+                    let device = Device::new(&conn, &id).await?;
+                    return Ok(device);
+                }
+            }
+            Err(_) => continue,
+        }
+    }
+
+    Err(Error::new("Could not connect to any device"))
+}
+
+async fn device_from_id(id: &str) -> Result<Device> {
+    let conn = new_dbus_connection().await?;
+
+    let device = Device::new(&conn, id).await?;
+
+    Ok(device)
+}
+
 struct Device {
+    pub device_stream: SignalStream<'static>,
+    pub battery_stream: refreshedStream<'static>,
+    pub notification_stream: SignalStream<'static>,
     device_proxy: DeviceDbusProxy<'static>,
     battery_proxy: BatteryDbusProxy<'static>,
     notifications_proxy: NotificationsDbusProxy<'static>,
 }
 
 impl Device {
-    async fn new(conn: &zbus::Connection, tx: mpsc::Sender<()>, id: &str) -> Result<Self> {
+    async fn new(conn: &zbus::Connection, id: &str) -> Result<Device> {
         let device_path = format!("/modules/kdeconnect/devices/{id}");
         let battery_path = format!("{device_path}/battery");
         let notifications_path = format!("{device_path}/notifications");
@@ -202,33 +295,26 @@ impl Device {
             .await
             .error("Failed to create BatteryDbusProxy")?;
 
-        let mut s1 = device_proxy
+        let device_stream = device_proxy
             .receive_all_signals()
             .await
             .error("Failed to receive signals")?;
-        let mut s2 = battery_proxy
+        let battery_stream = battery_proxy
             .receive_refreshed()
             .await
             .error("Failed to receive signals")?;
-        let mut s3 = notifications_proxy
+        let notification_stream = notifications_proxy
             .receive_all_signals()
             .await
             .error("Failed to receive signals")?;
-
-        tokio::spawn(async move {
-            loop {
-                tokio::select! {
-                    _ = s1.next() => tx.send(()).await.unwrap(),
-                    _ = s2.next() => tx.send(()).await.unwrap(),
-                    _ = s3.next() => tx.send(()).await.unwrap(),
-                }
-            }
-        });
 
         Ok(Self {
             device_proxy,
             battery_proxy,
             notifications_proxy,
+            device_stream,
+            battery_stream,
+            notification_stream,
         })
     }
 
@@ -260,16 +346,14 @@ impl Device {
     }
 }
 
-async fn any_device_id(conn: &zbus::Connection) -> Result<String> {
-    DaemonDbusProxy::new(conn)
+async fn any_device_id(conn: &zbus::Connection) -> Result<std::vec::IntoIter<String>> {
+    Ok(DaemonDbusProxy::new(conn)
         .await
         .error("Failed to create DaemonDbusProxy")?
         .devices()
         .await
         .error("Failed to get devices")?
-        .into_iter()
-        .next()
-        .error("No devices found")
+        .into_iter())
 }
 
 #[dbus_proxy(
