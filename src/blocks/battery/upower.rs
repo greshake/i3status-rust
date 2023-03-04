@@ -11,21 +11,19 @@ const DISPLAY_DEVICE_PATH: ObjectPath =
     ObjectPath::from_static_str_unchecked("/org/freedesktop/UPower/devices/DisplayDevice");
 
 struct DeviceConnection {
-    device_path: ObjectPath<'static>,
     device_proxy: DeviceProxy<'static>,
     changes: PropertiesChangedStream<'static>,
 }
 
 impl DeviceConnection {
     async fn new(dbus_conn: &Connection, device: &DeviceName) -> Result<Option<Self>> {
-        let device_conn_info = if device.exact().map_or(true, |d| d == "DisplayDevice") {
-            let proxy = DeviceProxy::builder(dbus_conn)
+        let device_proxy = if device.exact().map_or(true, |d| d == "DisplayDevice") {
+            DeviceProxy::builder(dbus_conn)
                 .path(DISPLAY_DEVICE_PATH)
                 .unwrap()
                 .build()
                 .await
-                .error("Failed to create DeviceProxy")?;
-            Some((DISPLAY_DEVICE_PATH, proxy))
+                .error("Failed to create DeviceProxy")?
         } else {
             let mut res = None;
             for path in UPowerProxy::new(dbus_conn)
@@ -36,7 +34,7 @@ impl DeviceConnection {
                 .error("Failed to retrieve UPower devices")?
             {
                 let proxy = DeviceProxy::builder(dbus_conn)
-                    .path(path.clone())
+                    .path(path)
                     .unwrap()
                     .build()
                     .await
@@ -53,33 +51,32 @@ impl DeviceConnection {
                     .await
                     .error("Failed to get device's native path")?;
                 if device.matches(&name) {
-                    res = Some((path.into_inner(), proxy));
+                    res = Some(proxy);
                     break;
                 }
             }
-            res
+            match res {
+                Some(res) => res,
+                None => return Ok(None),
+            }
         };
 
-        Ok(match device_conn_info {
-            Some((device_path, device_proxy)) => {
-                let changes = PropertiesProxy::builder(dbus_conn)
-                    .destination("org.freedesktop.UPower")
-                    .and_then(|x| x.path(device_path.clone()))
-                    .unwrap()
-                    .build()
-                    .await
-                    .error("Failed to create PropertiesProxy")?
-                    .receive_properties_changed()
-                    .await
-                    .error("Failed to create PropertiesChangedStream")?;
-                Some(DeviceConnection {
-                    device_path,
-                    device_proxy,
-                    changes,
-                })
-            }
-            None => None,
-        })
+        let changes = PropertiesProxy::builder(dbus_conn)
+            .destination("org.freedesktop.UPower")
+            .unwrap()
+            .path(device_proxy.path().to_owned())
+            .unwrap()
+            .build()
+            .await
+            .error("Failed to create PropertiesProxy")?
+            .receive_properties_changed()
+            .await
+            .error("Failed to create PropertiesChangedStream")?;
+
+        Ok(Some(DeviceConnection {
+            device_proxy,
+            changes,
+        }))
     }
 }
 
@@ -169,7 +166,7 @@ impl BatteryDevice for Device {
                     },
                     Some(msg) = self.device_removed_stream.next() => {
                         let args = msg.args().unwrap();
-                        if args.device().as_ref() == device_conn.device_path {
+                        if args.device().as_ref() == device_conn.device_proxy.path().as_ref() {
                             self.device_conn = None;
                             break;
                         }
