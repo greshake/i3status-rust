@@ -7,6 +7,9 @@ use super::{BatteryDevice, BatteryInfo, BatteryStatus, DeviceName};
 use crate::blocks::prelude::*;
 use crate::util::new_system_dbus_connection;
 
+const DISPLAY_DEVICE_PATH: ObjectPath =
+    ObjectPath::from_static_str_unchecked("/org/freedesktop/UPower/devices/DisplayDevice");
+
 struct DeviceConnection {
     device_path: ObjectPath<'static>,
     device_proxy: DeviceProxy<'static>,
@@ -16,16 +19,13 @@ struct DeviceConnection {
 impl DeviceConnection {
     async fn new(dbus_conn: &Connection, device: &DeviceName) -> Result<Option<Self>> {
         let device_conn_info = if device.exact().map_or(true, |d| d == "DisplayDevice") {
-            let path: ObjectPath = "/org/freedesktop/UPower/devices/DisplayDevice"
-                .try_into()
-                .unwrap();
             let proxy = DeviceProxy::builder(dbus_conn)
-                .path(path.clone())
+                .path(DISPLAY_DEVICE_PATH)
                 .unwrap()
                 .build()
                 .await
                 .error("Failed to create DeviceProxy")?;
-            Some((path, proxy))
+            Some((DISPLAY_DEVICE_PATH, proxy))
         } else {
             let mut res = None;
             for path in UPowerProxy::new(dbus_conn)
