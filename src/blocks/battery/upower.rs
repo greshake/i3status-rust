@@ -16,60 +16,64 @@ struct DeviceConnection {
 }
 
 impl DeviceConnection {
-
-    async fn new(dbus_conn: &Connection, device: &DeviceName, expected_model: Option<String>) -> Result<Option<Self>> {
-        let device_proxy = if device.exact().map_or(true, |d| d == "DisplayDevice") && expected_model.is_none() {
-            DeviceProxy::builder(dbus_conn)
-                .path(DISPLAY_DEVICE_PATH)
-                .unwrap()
-                .build()
-                .await
-                .error("Failed to create DeviceProxy")?
-        } else {
-            let mut res = None;
-            for path in UPowerProxy::new(dbus_conn)
-                .await
-                .error("Failed to create UPowerProxy")?
-                .enumerate_devices()
-                .await
-                .error("Failed to retrieve UPower devices")?
-            {
-                let proxy = DeviceProxy::builder(dbus_conn)
-                    .path(path)
+    async fn new(
+        dbus_conn: &Connection,
+        device: &DeviceName,
+        expected_model: Option<String>,
+    ) -> Result<Option<Self>> {
+        let device_proxy =
+            if device.exact().map_or(true, |d| d == "DisplayDevice") && expected_model.is_none() {
+                DeviceProxy::builder(dbus_conn)
+                    .path(DISPLAY_DEVICE_PATH)
                     .unwrap()
                     .build()
                     .await
-                    .error("Failed to create DeviceProxy")?;
+                    .error("Failed to create DeviceProxy")?
+            } else {
+                let mut res = None;
+                for path in UPowerProxy::new(dbus_conn)
+                    .await
+                    .error("Failed to create UPowerProxy")?
+                    .enumerate_devices()
+                    .await
+                    .error("Failed to retrieve UPower devices")?
+                {
+                    let proxy = DeviceProxy::builder(dbus_conn)
+                        .path(path)
+                        .unwrap()
+                        .build()
+                        .await
+                        .error("Failed to create DeviceProxy")?;
 
-                // Filter by model if needed
-                if let Some(expected_model) = &expected_model {
-                    if let Ok(device_model) = proxy.model().await {
-                        if !expected_model.eq(&device_model) {
-                            continue;
+                    // Filter by model if needed
+                    if let Some(expected_model) = &expected_model {
+                        if let Ok(device_model) = proxy.model().await {
+                            if !expected_model.eq(&device_model) {
+                                continue;
+                            }
                         }
                     }
+                    // Verify device type
+                    // https://upower.freedesktop.org/docs/Device.html#Device:Type
+                    // consider any peripheral, UPS and internal battery
+                    let device_type = proxy.type_().await.error("Failed to get device's type")?;
+                    if device_type == 1 {
+                        continue;
+                    }
+                    let name = proxy
+                        .native_path()
+                        .await
+                        .error("Failed to get device's native path")?;
+                    if device.matches(&name) {
+                        res = Some(proxy);
+                        break;
+                    }
                 }
-                // Verify device type
-                // https://upower.freedesktop.org/docs/Device.html#Device:Type
-                // consider any peripheral, UPS and internal battery
-                let device_type = proxy.type_().await.error("Failed to get device's type")?;
-                if device_type == 1 {
-                    continue;
+                match res {
+                    Some(res) => res,
+                    None => return Ok(None),
                 }
-                let name = proxy
-                    .native_path()
-                    .await
-                    .error("Failed to get device's native path")?;
-                if device.matches(&name) {
-                    res = Some(proxy);
-                    break;
-                }
-            }
-            match res {
-                Some(res) => res,
-                None => return Ok(None),
-            }
-        };
+            };
 
         let changes = PropertiesProxy::builder(dbus_conn)
             .destination("org.freedesktop.UPower")
