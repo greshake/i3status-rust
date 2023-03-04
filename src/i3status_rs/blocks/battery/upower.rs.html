@@ -256,6 +256,9 @@
 <span class="kw">use </span><span class="kw">crate</span>::blocks::prelude::<span class="kw-2">*</span>;
 <span class="kw">use </span><span class="kw">crate</span>::util::new_system_dbus_connection;
 
+<span class="kw">const </span>DISPLAY_DEVICE_PATH: ObjectPath =
+    ObjectPath::from_static_str_unchecked(<span class="string">&quot;/org/freedesktop/UPower/devices/DisplayDevice&quot;</span>);
+
 <span class="kw">struct </span>DeviceConnection {
     device_path: ObjectPath&lt;<span class="lifetime">&#39;static</span>&gt;,
     device_proxy: DeviceProxy&lt;<span class="lifetime">&#39;static</span>&gt;,
@@ -265,16 +268,13 @@
 <span class="kw">impl </span>DeviceConnection {
     <span class="kw">async fn </span>new(dbus_conn: <span class="kw-2">&amp;</span>Connection, device: <span class="kw-2">&amp;</span>DeviceName) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>&gt;&gt; {
         <span class="kw">let </span>device_conn_info = <span class="kw">if </span>device.exact().map_or(<span class="bool-val">true</span>, |d| d == <span class="string">&quot;DisplayDevice&quot;</span>) {
-            <span class="kw">let </span>path: ObjectPath = <span class="string">&quot;/org/freedesktop/UPower/devices/DisplayDevice&quot;
-                </span>.try_into()
-                .unwrap();
             <span class="kw">let </span>proxy = DeviceProxy::builder(dbus_conn)
-                .path(path.clone())
+                .path(DISPLAY_DEVICE_PATH)
                 .unwrap()
                 .build()
                 .<span class="kw">await
                 </span>.error(<span class="string">&quot;Failed to create DeviceProxy&quot;</span>)<span class="question-mark">?</span>;
-            <span class="prelude-val">Some</span>((path, proxy))
+            <span class="prelude-val">Some</span>((DISPLAY_DEVICE_PATH, proxy))
         } <span class="kw">else </span>{
             <span class="kw">let </span><span class="kw-2">mut </span>res = <span class="prelude-val">None</span>;
             <span class="kw">for </span>path <span class="kw">in </span>UPowerProxy::new(dbus_conn)
