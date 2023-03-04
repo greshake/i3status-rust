@@ -19,7 +19,7 @@ impl DeviceConnection {
     async fn new(
         dbus_conn: &Connection,
         device: &DeviceName,
-        expected_model: Option<String>,
+        expected_model: Option<&str>,
     ) -> Result<Option<Self>> {
         let device_proxy =
             if device.exact().map_or(true, |d| d == "DisplayDevice") && expected_model.is_none() {
@@ -107,7 +107,7 @@ impl Device {
     pub(super) async fn new(device: DeviceName, dev_model: Option<String>) -> Result<Self> {
         let dbus_conn = new_system_dbus_connection().await?;
 
-        let device_conn = DeviceConnection::new(&dbus_conn, &device, dev_model.clone()).await?;
+        let device_conn = DeviceConnection::new(&dbus_conn, &device, dev_model.as_deref()).await?;
 
         let upower_proxy = UPowerProxy::new(&dbus_conn)
             .await
@@ -194,7 +194,7 @@ impl BatteryDevice for Device {
                     _ = self.device_removed_stream.next() => {},
                     _ = self.device_added_stream.next() => {
                         if let Some(device_conn) =
-                        DeviceConnection::new(&self.dbus_conn, &self.device, self.dev_model.clone()).await?
+                        DeviceConnection::new(&self.dbus_conn, &self.device, self.dev_model.as_deref()).await?
                         {
                             self.device_conn = Some(device_conn);
                             break;
