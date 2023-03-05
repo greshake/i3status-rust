@@ -183,13 +183,13 @@ trait Driver {
 }
 
 struct NordVpnDriver {
-    regex_counry_code: Regex,
+    regex_country_code: Regex,
 }
 
 impl NordVpnDriver {
     async fn new() -> NordVpnDriver {
         NordVpnDriver {
-            regex_counry_code: Regex::new("^.*Hostname:\\s+([a-z]{2}).*$").unwrap(),
+            regex_country_code: Regex::new("^.*Hostname:\\s+([a-z]{2}).*$").unwrap(),
         }
     }
 
@@ -242,7 +242,7 @@ impl Driver for NordVpnDriver {
             };
             let country_flag = match line_country_flag {
                 Some(country_line_flag) => self
-                    .regex_counry_code
+                    .regex_country_code
                     .captures_iter(&country_line_flag)
                     .last()
                     .map(|capture| capture[1].to_owned())
