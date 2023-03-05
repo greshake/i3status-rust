@@ -109,9 +109,9 @@ enum BatteryDriver {
     Upower,
 }
 
-#[derive (Clone,Debug)]
+#[derive(Clone, Debug)]
 enum DriverIcon {
-    Upower(String)
+    Upower(String),
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
@@ -168,38 +168,40 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     )
                 });
 
-                // If the driver says that it can't provide a realiable capacity percentage use its recommended icon
-                let (icon_name, icon_value, state) = if info.is_capacity_reliable || info.driver_icon.is_none() {
-                match (info.status, info.capacity) {
-                    (BatteryStatus::Empty, _) => ("bat", 0.0, State::Critical),
-                    (BatteryStatus::Full | BatteryStatus::NotCharging, _) => {
-                        ("bat", 1.0, State::Idle)
-                    }
-                    (status, capacity) => (
-                        if status == BatteryStatus::Charging {
-                            "bat_charging"
-                        } else {
-                            "bat"
-                        },
-                        capacity / 100.0,
-                        if status == BatteryStatus::Charging {
-                            State::Good
-                        } else if capacity <= config.critical {
-                            State::Critical
-                        } else if capacity <= config.warning {
-                            State::Warning
-                        } else if capacity <= config.info {
-                            State::Info
-                        } else if capacity > config.good {
-                            State::Good
-                        } else {
-                            State::Idle
-                        },
-                    ),
-                }} else {
-                    // TODO: icon mapping
-                    ("bat", 0.5, State::Warning)
-                };
+                // If the driver says that it can't provide a reliable capacity percentage use its recommended icon
+                let (icon_name, icon_value, state) =
+                    if info.is_capacity_reliable || info.driver_icon.is_none() {
+                        match (info.status, info.capacity) {
+                            (BatteryStatus::Empty, _) => ("bat", 0.0, State::Critical),
+                            (BatteryStatus::Full | BatteryStatus::NotCharging, _) => {
+                                ("bat", 1.0, State::Idle)
+                            }
+                            (status, capacity) => (
+                                if status == BatteryStatus::Charging {
+                                    "bat_charging"
+                                } else {
+                                    "bat"
+                                },
+                                capacity / 100.0,
+                                if status == BatteryStatus::Charging {
+                                    State::Good
+                                } else if capacity <= config.critical {
+                                    State::Critical
+                                } else if capacity <= config.warning {
+                                    State::Warning
+                                } else if capacity <= config.info {
+                                    State::Info
+                                } else if capacity > config.good {
+                                    State::Good
+                                } else {
+                                    State::Idle
+                                },
+                            ),
+                        }
+                    } else {
+                        // TODO: icon mapping
+                        ("bat", 0.5, State::Warning)
+                    };
 
                 values.insert(
                     "icon".into(),
@@ -274,7 +276,7 @@ struct BatteryInfo {
     /// Is capacity percentage reliable?
     is_capacity_reliable: bool,
     /// Driver recommended icon
-    driver_icon: Option<DriverIcon>
+    driver_icon: Option<DriverIcon>,
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, SmartDefault)]

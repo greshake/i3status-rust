@@ -183,7 +183,7 @@ impl BatteryDevice for Device {
             power,
             time_remaining,
             is_capacity_reliable: true,
-            driver_icon: None
+            driver_icon: None,
         }))
     }
 
