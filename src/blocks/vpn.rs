@@ -40,10 +40,10 @@
 //! format_connected = "VPN: $icon "
 //! format_disconnected = "VPN: $icon "
 //! state_connected = "good"
-//! state_diconnected = "warning"
+//! state_disconnected = "warning"
 //! ```
 //!
-//! Possible values for `state_connected` and `state_diconnected`:
+//! Possible values for `state_connected` and `state_disconnected`:
 //!
 //! ```
 //! Warning
