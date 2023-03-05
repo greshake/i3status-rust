@@ -286,6 +286,8 @@
 <a href="#286" id="286">286</a>
 <a href="#287" id="287">287</a>
 <a href="#288" id="288">288</a>
+<a href="#289" id="289">289</a>
+<a href="#290" id="290">290</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Information about the internal power supply
 //!
 //! This block can display the current battery state (Full, Charging or Discharging), percentage
@@ -407,7 +409,9 @@
 
     <span class="kw">let </span>dev_name = DeviceName::new(config.device)<span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>device: Box&lt;<span class="kw">dyn </span>BatteryDevice + Send + Sync&gt; = <span class="kw">match </span>config.driver {
-        BatteryDriver::Sysfs =&gt; Box::new(sysfs::Device::new(dev_name, config.model, config.interval)),
+        BatteryDriver::Sysfs =&gt; {
+            Box::new(sysfs::Device::new(dev_name, config.model, config.interval))
+        }
         BatteryDriver::ApcUps =&gt; Box::new(apc_ups::Device::new(dev_name, config.interval).<span class="kw">await</span><span class="question-mark">?</span>),
         BatteryDriver::Upower =&gt; Box::new(upower::Device::new(dev_name, config.model).<span class="kw">await</span><span class="question-mark">?</span>),
     };

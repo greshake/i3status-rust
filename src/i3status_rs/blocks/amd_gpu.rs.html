@@ -199,7 +199,7 @@
             <span class="string">&quot;utilization&quot; </span>=&gt; Value::percents(info.utilization_percents),
             <span class="string">&quot;vram_total&quot; </span>=&gt; Value::bytes(info.vram_total_bytes),
             <span class="string">&quot;vram_used&quot; </span>=&gt; Value::bytes(info.vram_used_bytes),
-            <span class="string">&quot;vram_used_percests&quot; </span>=&gt; Value::percents(info.vram_used_bytes / info.vram_total_bytes * <span class="number">100.0</span>),
+            <span class="string">&quot;vram_used_percents&quot; </span>=&gt; Value::percents(info.vram_used_bytes / info.vram_total_bytes * <span class="number">100.0</span>),
         });
 
         widget.state = <span class="kw">match </span>info.utilization_percents {
