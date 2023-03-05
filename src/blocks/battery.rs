@@ -109,9 +109,9 @@ enum BatteryDriver {
     Upower,
 }
 
-#[derive (Clone,Debug,Copy)]
+#[derive (Clone,Debug)]
 enum DriverIcon {
-
+    Upower(String)
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
@@ -168,7 +168,9 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     )
                 });
 
-                let (icon_name, icon_value, state) = match (info.status, info.capacity) {
+                // If the driver says that it can't provide a realiable capacity percentage use its recommended icon
+                let (icon_name, icon_value, state) = if info.is_capacity_reliable || info.driver_icon.is_none() {
+                match (info.status, info.capacity) {
                     (BatteryStatus::Empty, _) => ("bat", 0.0, State::Critical),
                     (BatteryStatus::Full | BatteryStatus::NotCharging, _) => {
                         ("bat", 1.0, State::Idle)
@@ -194,6 +196,9 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                             State::Idle
                         },
                     ),
+                }} else {
+                    // TODO: icon mapping
+                    ("bat", 0.5, State::Warning)
                 };
 
                 values.insert(
@@ -256,7 +261,7 @@ impl DeviceName {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 struct BatteryInfo {
     /// Current status, e.g. "charging", "discharging", etc.
     status: BatteryStatus,
