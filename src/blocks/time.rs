@@ -54,7 +54,8 @@ pub enum Timezone {
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     // "next_timezone" changes the current displayed timezone to the timezone next in the list.
-    api.set_default_actions(&[(MouseButton::Left, None, "next_timezone")]).await?;
+    api.set_default_actions(&[(MouseButton::Left, None, "next_timezone")])
+        .await?;
 
     let mut widget = Widget::new().with_format(
         config
@@ -63,13 +64,11 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     );
 
     let timezones = match config.timezone {
-        Some(tzs) => {
-            match tzs {
-                Timezone::Timezone(tz) => vec![tz] ,
-                Timezone::Timezones(tzs) => tzs
-            }
-        } ,
-        None => Vec::new() 
+        Some(tzs) => match tzs {
+            Timezone::Timezone(tz) => vec![tz],
+            Timezone::Timezones(tzs) => tzs,
+        },
+        None => Vec::new(),
     };
 
     let mut timezone_iter = timezones.iter().cycle();
@@ -97,9 +96,9 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             event = api.event() => {
                 match event {
                     Action(e) => if e == "next_timezone" {
-                       timezone = timezone_iter.next(); 
+                       timezone = timezone_iter.next();
                     },
-                    UpdateRequest => {} 
+                    UpdateRequest => {}
                 }
             },
         }

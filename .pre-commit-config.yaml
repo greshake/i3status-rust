@@ -1,0 +1,53 @@
+---
+# For use with pre-commit.
+# See usage instructions at https://pre-commit.com
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.3.0
+    hooks:
+    - id: check-toml
+      stages: [commit]
+    - id: check-yaml
+      stages: [commit]
+    - id: check-merge-conflict
+      stages: [commit]
+    - id: check-case-conflict
+      stages: [commit]
+    - id: detect-private-key
+      stages: [commit]
+  - repo: https://github.com/crate-ci/committed
+    rev: v1.0.1
+    hooks:
+    - id: committed
+      stages: [commit-msg]
+  # cspell is dictionary based
+  # Dictionary: A confidence rating is given for how close a word is to one in a dictionary
+  - repo: https://github.com/streetsidesoftware/cspell-cli
+    rev: v6.2.0
+    hooks:
+    - id: cspell
+  # typos is corrections based
+  # Corrections: Known misspellings that map to their corresponding dictionary word
+  - repo: https://github.com/crate-ci/typos
+    rev: v1.13.12
+    hooks:
+    - id: typos
+      args: [] # this prevents typos from being autocorrected (so you have a chance to review them)
+  - repo: https://github.com/doublify/pre-commit-rust
+    rev: v1.0
+    hooks:
+    - id: fmt
+      args: ["--check", "--"]
+    - id: clippy
+      args: ["--all-features", "--", "-D", "warnings", "-A", "unknown-lints"]
+  - repo: local
+    hooks:
+    - id: cargo-test
+      name: cargo test
+      description: Run cargo test
+      entry: cargo test
+      language: system
+      types: [rust]
+      pass_filenames: false
+      args: ["--all-features", "--"]
