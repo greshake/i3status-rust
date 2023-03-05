@@ -119,7 +119,9 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
     let dev_name = DeviceName::new(config.device)?;
     let mut device: Box<dyn BatteryDevice + Send + Sync> = match config.driver {
-        BatteryDriver::Sysfs => Box::new(sysfs::Device::new(dev_name, config.model, config.interval)),
+        BatteryDriver::Sysfs => {
+            Box::new(sysfs::Device::new(dev_name, config.model, config.interval))
+        }
         BatteryDriver::ApcUps => Box::new(apc_ups::Device::new(dev_name, config.interval).await?),
         BatteryDriver::Upower => Box::new(upower::Device::new(dev_name, config.model).await?),
     };

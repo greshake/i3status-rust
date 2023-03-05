@@ -70,7 +70,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             "utilization" => Value::percents(info.utilization_percents),
             "vram_total" => Value::bytes(info.vram_total_bytes),
             "vram_used" => Value::bytes(info.vram_used_bytes),
-            "vram_used_percests" => Value::percents(info.vram_used_bytes / info.vram_total_bytes * 100.0),
+            "vram_used_percents" => Value::percents(info.vram_used_bytes / info.vram_total_bytes * 100.0),
         });
 
         widget.state = match info.utilization_percents {

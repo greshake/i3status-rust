@@ -103,11 +103,20 @@ impl Device {
                 continue;
             }
 
-            debug!("battery '{}', model={:?}", path.display(), Self::read_prop::<String>(&path, "model_name").await.as_deref() );
+            debug!(
+                "battery '{}', model={:?}",
+                path.display(),
+                Self::read_prop::<String>(&path, "model_name")
+                    .await
+                    .as_deref()
+            );
             if let Some(dev_model) = &self.dev_model {
-                if Self::read_prop::<String>(&path, "model_name").await.as_deref() != Some(dev_model.as_str())
+                if Self::read_prop::<String>(&path, "model_name")
+                    .await
+                    .as_deref()
+                    != Some(dev_model.as_str())
                 {
-                    debug! ("Skipping based on model.");
+                    debug!("Skipping based on model.");
                     continue;
                 }
             }
