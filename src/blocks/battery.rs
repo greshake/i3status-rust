@@ -109,6 +109,11 @@ enum BatteryDriver {
     Upower,
 }
 
+#[derive (Clone,Debug,Copy)]
+enum DriverIcon {
+
+}
+
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let format = config.format.with_default(" $icon $percentage ")?;
     let format_full = config.full_format.with_default(" $icon ")?;
@@ -261,6 +266,10 @@ struct BatteryInfo {
     power: Option<f64>,
     /// Time in seconds
     time_remaining: Option<f64>,
+    /// Is capacity percentage reliable?
+    is_capacity_reliable: bool,
+    /// Driver recommended icon
+    driver_icon: Option<DriverIcon>
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, SmartDefault)]

@@ -10,6 +10,8 @@ use crate::util::new_system_dbus_connection;
 const DISPLAY_DEVICE_PATH: ObjectPath =
     ObjectPath::from_static_str_unchecked("/org/freedesktop/UPower/devices/DisplayDevice");
 
+const UP_DEVICE_LEVEL_NONE: u32 = 1; // enum UpDeviceLevel https://gitlab.freedesktop.org/upower/upower/-/blob/master/libupower-glib/up-types.h
+
 struct DeviceConnection {
     device_proxy: DeviceProxy<'static>,
     changes: PropertiesChangedStream<'static>,
@@ -142,9 +144,10 @@ impl BatteryDevice for Device {
                     device_conn.device_proxy.state(),
                     device_conn.device_proxy.time_to_full(),
                     device_conn.device_proxy.time_to_empty(),
+                    device_conn.device_proxy.battery_level(),
                 } {
                     Err(_) => Ok(None),
-                    Ok((capacity, power, state, time_to_full, time_to_empty)) => {
+                    Ok((capacity, power, state, time_to_full, time_to_empty, battery_level)) => {
                         let status = match state {
                             1 => BatteryStatus::Charging,
                             2 | 6 => BatteryStatus::Discharging,
@@ -160,11 +163,15 @@ impl BatteryDevice for Device {
                             _ => None,
                         };
 
+                        println! ("Please ignore my level");
                         Ok(Some(BatteryInfo {
                             status,
                             capacity,
                             power: Some(power),
                             time_remaining,
+                            // Upower source code says that the percentage should be ignored unless device level is none
+                            is_capacity_reliable: battery_level == UP_DEVICE_LEVEL_NONE, 
+                            driver_icon: None                            
                         }))
                     }
                 }
@@ -239,6 +246,9 @@ trait Device {
 
     #[dbus_proxy(property)]
     fn time_to_full(&self) -> zbus::Result<i64>;
+
+    #[dbus_proxy(property)]
+    fn battery_level(&self) -> zbus::Result<u32>;
 
     #[dbus_proxy(property, name = "Type")]
     fn type_(&self) -> zbus::Result<u32>;
