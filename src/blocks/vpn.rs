@@ -46,11 +46,11 @@
 //! Possible values for `state_connected` and `state_diconnected`:
 //!
 //! ```
-//! warning
-//! critical
-//! good
-//! info
-//! idle
+//! Warning
+//! Critical
+//! Good
+//! Info
+//! Idle
 //! ```
 //! `Option::None` defaults to `idle`.
 //!
@@ -64,7 +64,6 @@
 //! Flags: They are not icons but unicode glyphs. You will need a font that
 //! includes them. Tested with: <https://www.babelstone.co.uk/Fonts/Flags.html>
 
-use core::str::FromStr;
 use regex::Regex;
 use std::process::Stdio;
 use tokio::process::Command;
@@ -80,28 +79,16 @@ enum DriverType {
     Nordvpn,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(default)]
 pub struct Config {
     driver: DriverType,
+    #[default(10.into())]
     interval: Seconds,
     format_connected: FormatConfig,
     format_disconnected: FormatConfig,
-    state_connected: Option<String>,
-    state_disconnected: Option<String>,
-}
-
-impl Default for Config {
-    fn default() -> Config {
-        Config {
-            driver: DriverType::Nordvpn,
-            interval: 10.into(),
-            format_connected: FormatConfig::from_str(" VPN: $icon ").unwrap(),
-            format_disconnected: FormatConfig::from_str(" VPN: $icon ").unwrap(),
-            state_connected: Option::from(String::from("info")),
-            state_disconnected: Option::from(String::from("idle")),
-        }
-    }
+    state_connected: State,
+    state_disconnected: State,
 }
 
 enum Status {
@@ -160,17 +147,14 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
         ));
 
-        let state_connected = config.state_connected.as_deref().unwrap_or("info");
-        let state_disconnected = config.state_disconnected.as_deref().unwrap_or("idle");
-
         widget.state = match status {
             Status::Connected { .. } => {
                 widget.set_format(format_connected.clone());
-                State::from_str(state_connected).unwrap()
+                config.state_connected
             }
             Status::Disconnected => {
                 widget.set_format(format_disconnected.clone());
-                State::from_str(state_disconnected).unwrap()
+                config.state_disconnected
             }
             Status::Error => {
                 widget.set_format(format_disconnected.clone());
@@ -282,19 +266,5 @@ impl Driver for NordVpnDriver {
             Status::Error => (),
         }
         Ok(())
-    }
-}
-
-impl FromStr for State {
-    type Err = ();
-
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        match s {
-            "info" => Ok(State::Info),
-            "good" => Ok(State::Good),
-            "warning" => Ok(State::Warning),
-            "critical" => Ok(State::Critical),
-            _ => Ok(State::Idle),
-        }
     }
 }
