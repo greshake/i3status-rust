@@ -260,6 +260,17 @@
 <a href="#260" id="260">260</a>
 <a href="#261" id="261">261</a>
 <a href="#262" id="262">262</a>
+<a href="#263" id="263">263</a>
+<a href="#264" id="264">264</a>
+<a href="#265" id="265">265</a>
+<a href="#266" id="266">266</a>
+<a href="#267" id="267">267</a>
+<a href="#268" id="268">268</a>
+<a href="#269" id="269">269</a>
+<a href="#270" id="270">270</a>
+<a href="#271" id="271">271</a>
+<a href="#272" id="272">272</a>
+<a href="#273" id="273">273</a>
 </pre><pre class="rust"><code><span class="kw">use </span>std::convert::Infallible;
 <span class="kw">use </span>std::path::{Path, PathBuf};
 <span class="kw">use </span>std::str::FromStr;
@@ -319,14 +330,16 @@
 </span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct </span>Device {
     dev_name: DeviceName,
     dev_path: <span class="prelude-ty">Option</span>&lt;PathBuf&gt;,
+    dev_model: <span class="prelude-ty">Option</span>&lt;String&gt;,
     interval: Interval,
 }
 
 <span class="kw">impl </span>Device {
-    <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>new(dev_name: DeviceName, interval: Seconds) -&gt; <span class="self">Self </span>{
+    <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>new(dev_name: DeviceName, dev_model: <span class="prelude-ty">Option</span>&lt;String&gt;, interval: Seconds) -&gt; <span class="self">Self </span>{
         <span class="self">Self </span>{
             dev_name,
             dev_path: <span class="prelude-val">None</span>,
+            dev_model,
             interval: interval.timer(),
         }
     }
@@ -361,6 +374,15 @@
                 || !<span class="self">Self</span>::device_available(<span class="kw-2">&amp;</span>path).<span class="kw">await
             </span>{
                 <span class="kw">continue</span>;
+            }
+
+            <span class="macro">debug!</span>(<span class="string">&quot;battery &#39;{}&#39;, model={:?}&quot;</span>, path.display(), <span class="self">Self</span>::read_prop::&lt;String&gt;(<span class="kw-2">&amp;</span>path, <span class="string">&quot;model_name&quot;</span>).<span class="kw">await</span>.as_deref() );
+            <span class="kw">if let </span><span class="prelude-val">Some</span>(dev_model) = <span class="kw-2">&amp;</span><span class="self">self</span>.dev_model {
+                <span class="kw">if </span><span class="self">Self</span>::read_prop::&lt;String&gt;(<span class="kw-2">&amp;</span>path, <span class="string">&quot;model_name&quot;</span>).<span class="kw">await</span>.as_deref() != <span class="prelude-val">Some</span>(dev_model.as_str())
+                {
+                    <span class="macro">debug! </span>(<span class="string">&quot;Skipping based on model.&quot;</span>);
+                    <span class="kw">continue</span>;
+                }
             }
 
             <span class="macro">debug!</span>(

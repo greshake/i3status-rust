@@ -244,6 +244,25 @@
 <a href="#244" id="244">244</a>
 <a href="#245" id="245">245</a>
 <a href="#246" id="246">246</a>
+<a href="#247" id="247">247</a>
+<a href="#248" id="248">248</a>
+<a href="#249" id="249">249</a>
+<a href="#250" id="250">250</a>
+<a href="#251" id="251">251</a>
+<a href="#252" id="252">252</a>
+<a href="#253" id="253">253</a>
+<a href="#254" id="254">254</a>
+<a href="#255" id="255">255</a>
+<a href="#256" id="256">256</a>
+<a href="#257" id="257">257</a>
+<a href="#258" id="258">258</a>
+<a href="#259" id="259">259</a>
+<a href="#260" id="260">260</a>
+<a href="#261" id="261">261</a>
+<a href="#262" id="262">262</a>
+<a href="#263" id="263">263</a>
+<a href="#264" id="264">264</a>
+<a href="#265" id="265">265</a>
 </pre><pre class="rust"><code><span class="kw">use </span>tokio::try_join;
 <span class="kw">use </span>zbus::fdo::{PropertiesChangedStream, PropertiesProxy};
 <span class="kw">use </span>zbus::{zvariant, Connection};
@@ -262,50 +281,64 @@
 }
 
 <span class="kw">impl </span>DeviceConnection {
-    <span class="kw">async fn </span>new(dbus_conn: <span class="kw-2">&amp;</span>Connection, device: <span class="kw-2">&amp;</span>DeviceName) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>&gt;&gt; {
-        <span class="kw">let </span>device_proxy = <span class="kw">if </span>device.exact().map_or(<span class="bool-val">true</span>, |d| d == <span class="string">&quot;DisplayDevice&quot;</span>) {
-            DeviceProxy::builder(dbus_conn)
-                .path(DISPLAY_DEVICE_PATH)
-                .unwrap()
-                .build()
-                .<span class="kw">await
-                </span>.error(<span class="string">&quot;Failed to create DeviceProxy&quot;</span>)<span class="question-mark">?
-        </span>} <span class="kw">else </span>{
-            <span class="kw">let </span><span class="kw-2">mut </span>res = <span class="prelude-val">None</span>;
-            <span class="kw">for </span>path <span class="kw">in </span>UPowerProxy::new(dbus_conn)
-                .<span class="kw">await
-                </span>.error(<span class="string">&quot;Failed to create UPowerProxy&quot;</span>)<span class="question-mark">?
-                </span>.enumerate_devices()
-                .<span class="kw">await
-                </span>.error(<span class="string">&quot;Failed to retrieve UPower devices&quot;</span>)<span class="question-mark">?
-            </span>{
-                <span class="kw">let </span>proxy = DeviceProxy::builder(dbus_conn)
-                    .path(path)
+    <span class="kw">async fn </span>new(
+        dbus_conn: <span class="kw-2">&amp;</span>Connection,
+        device: <span class="kw-2">&amp;</span>DeviceName,
+        expected_model: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt;,
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>&gt;&gt; {
+        <span class="kw">let </span>device_proxy =
+            <span class="kw">if </span>device.exact().map_or(<span class="bool-val">true</span>, |d| d == <span class="string">&quot;DisplayDevice&quot;</span>) &amp;&amp; expected_model.is_none() {
+                DeviceProxy::builder(dbus_conn)
+                    .path(DISPLAY_DEVICE_PATH)
                     .unwrap()
                     .build()
                     .<span class="kw">await
-                    </span>.error(<span class="string">&quot;Failed to create DeviceProxy&quot;</span>)<span class="question-mark">?</span>;
-                <span class="comment">// Verify device type
-                // https://upower.freedesktop.org/docs/Device.html#Device:Type
-                // consider any peripheral, UPS and internal battery
-                </span><span class="kw">let </span>device_type = proxy.type_().<span class="kw">await</span>.error(<span class="string">&quot;Failed to get device&#39;s type&quot;</span>)<span class="question-mark">?</span>;
-                <span class="kw">if </span>device_type == <span class="number">1 </span>{
-                    <span class="kw">continue</span>;
-                }
-                <span class="kw">let </span>name = proxy
-                    .native_path()
+                    </span>.error(<span class="string">&quot;Failed to create DeviceProxy&quot;</span>)<span class="question-mark">?
+            </span>} <span class="kw">else </span>{
+                <span class="kw">let </span><span class="kw-2">mut </span>res = <span class="prelude-val">None</span>;
+                <span class="kw">for </span>path <span class="kw">in </span>UPowerProxy::new(dbus_conn)
                     .<span class="kw">await
-                    </span>.error(<span class="string">&quot;Failed to get device&#39;s native path&quot;</span>)<span class="question-mark">?</span>;
-                <span class="kw">if </span>device.matches(<span class="kw-2">&amp;</span>name) {
-                    res = <span class="prelude-val">Some</span>(proxy);
-                    <span class="kw">break</span>;
+                    </span>.error(<span class="string">&quot;Failed to create UPowerProxy&quot;</span>)<span class="question-mark">?
+                    </span>.enumerate_devices()
+                    .<span class="kw">await
+                    </span>.error(<span class="string">&quot;Failed to retrieve UPower devices&quot;</span>)<span class="question-mark">?
+                </span>{
+                    <span class="kw">let </span>proxy = DeviceProxy::builder(dbus_conn)
+                        .path(path)
+                        .unwrap()
+                        .build()
+                        .<span class="kw">await
+                        </span>.error(<span class="string">&quot;Failed to create DeviceProxy&quot;</span>)<span class="question-mark">?</span>;
+
+                    <span class="comment">// Filter by model if needed
+                    </span><span class="kw">if let </span><span class="prelude-val">Some</span>(expected_model) = <span class="kw-2">&amp;</span>expected_model {
+                        <span class="kw">if let </span><span class="prelude-val">Ok</span>(device_model) = proxy.model().<span class="kw">await </span>{
+                            <span class="kw">if </span>!expected_model.eq(<span class="kw-2">&amp;</span>device_model) {
+                                <span class="kw">continue</span>;
+                            }
+                        }
+                    }
+                    <span class="comment">// Verify device type
+                    // https://upower.freedesktop.org/docs/Device.html#Device:Type
+                    // consider any peripheral, UPS and internal battery
+                    </span><span class="kw">let </span>device_type = proxy.type_().<span class="kw">await</span>.error(<span class="string">&quot;Failed to get device&#39;s type&quot;</span>)<span class="question-mark">?</span>;
+                    <span class="kw">if </span>device_type == <span class="number">1 </span>{
+                        <span class="kw">continue</span>;
+                    }
+                    <span class="kw">let </span>name = proxy
+                        .native_path()
+                        .<span class="kw">await
+                        </span>.error(<span class="string">&quot;Failed to get device&#39;s native path&quot;</span>)<span class="question-mark">?</span>;
+                    <span class="kw">if </span>device.matches(<span class="kw-2">&amp;</span>name) {
+                        res = <span class="prelude-val">Some</span>(proxy);
+                        <span class="kw">break</span>;
+                    }
                 }
-            }
-            <span class="kw">match </span>res {
-                <span class="prelude-val">Some</span>(res) =&gt; res,
-                <span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
-            }
-        };
+                <span class="kw">match </span>res {
+                    <span class="prelude-val">Some</span>(res) =&gt; res,
+                    <span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+                }
+            };
 
         <span class="kw">let </span>changes = PropertiesProxy::builder(dbus_conn)
             .destination(<span class="string">&quot;org.freedesktop.UPower&quot;</span>)
@@ -329,16 +362,17 @@
 <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct </span>Device {
     dbus_conn: Connection,
     device: DeviceName,
+    dev_model: <span class="prelude-ty">Option</span>&lt;String&gt;,
     device_conn: <span class="prelude-ty">Option</span>&lt;DeviceConnection&gt;,
     device_added_stream: DeviceAddedStream&lt;<span class="lifetime">&#39;static</span>&gt;,
     device_removed_stream: DeviceRemovedStream&lt;<span class="lifetime">&#39;static</span>&gt;,
 }
 
 <span class="kw">impl </span>Device {
-    <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">async fn </span>new(device: DeviceName) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
+    <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">async fn </span>new(device: DeviceName, dev_model: <span class="prelude-ty">Option</span>&lt;String&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
         <span class="kw">let </span>dbus_conn = new_system_dbus_connection().<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="kw">let </span>device_conn = DeviceConnection::new(<span class="kw-2">&amp;</span>dbus_conn, <span class="kw-2">&amp;</span>device).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let </span>device_conn = DeviceConnection::new(<span class="kw-2">&amp;</span>dbus_conn, <span class="kw-2">&amp;</span>device, dev_model.as_deref()).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="kw">let </span>upower_proxy = UPowerProxy::new(<span class="kw-2">&amp;</span>dbus_conn)
             .<span class="kw">await
@@ -353,6 +387,7 @@
         <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
             dbus_conn,
             device,
+            dev_model,
             device_conn,
             device_added_stream,
             device_removed_stream,
@@ -424,7 +459,7 @@
                     <span class="kw">_ </span>= <span class="self">self</span>.device_removed_stream.next() =&gt; {},
                     <span class="kw">_ </span>= <span class="self">self</span>.device_added_stream.next() =&gt; {
                         <span class="kw">if let </span><span class="prelude-val">Some</span>(device_conn) =
-                        DeviceConnection::new(<span class="kw-2">&amp;</span><span class="self">self</span>.dbus_conn, <span class="kw-2">&amp;</span><span class="self">self</span>.device).<span class="kw">await</span><span class="question-mark">?
+                        DeviceConnection::new(<span class="kw-2">&amp;</span><span class="self">self</span>.dbus_conn, <span class="kw-2">&amp;</span><span class="self">self</span>.device, <span class="self">self</span>.dev_model.as_deref()).<span class="kw">await</span><span class="question-mark">?
                         </span>{
                             <span class="self">self</span>.device_conn = <span class="prelude-val">Some</span>(device_conn);
                             <span class="kw">break</span>;
@@ -451,6 +486,9 @@
 
     <span class="attr">#[dbus_proxy(property)]
     </span><span class="kw">fn </span>native_path(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;String&gt;;
+
+    <span class="attr">#[dbus_proxy(property)]
+    </span><span class="kw">fn </span>model(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;String&gt;;
 
     <span class="attr">#[dbus_proxy(property)]
     </span><span class="kw">fn </span>online(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;

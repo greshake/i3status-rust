@@ -284,6 +284,8 @@
 <a href="#284" id="284">284</a>
 <a href="#285" id="285">285</a>
 <a href="#286" id="286">286</a>
+<a href="#287" id="287">287</a>
+<a href="#288" id="288">288</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Information about the internal power supply
 //!
 //! This block can display the current battery state (Full, Charging or Discharging), percentage
@@ -295,6 +297,7 @@
 //! ----|--------|--------
 //! `device` | sysfs/UPower: The device in `/sys/class/power_supply/` to read from (can also be &quot;DisplayDevice&quot; for UPower, which is a single logical power source representing all physical power sources. This is for example useful if your system has multiple batteries, in which case the DisplayDevice behaves as if you had a single larger battery.). apc_ups: IPv4Address:port or hostname:port | sysfs: the first battery device found in /sys/class/power_supply, with &quot;BATx&quot; or &quot;CMBx&quot; entries taking precedence. apc_ups: &quot;localhost:3551&quot;. upower: `DisplayDevice`
 //! `driver` | One of `&quot;sysfs&quot;`, `&quot;apc_ups&quot;`, or `&quot;upower&quot;` | `&quot;sysfs&quot;`
+//! `model` | If present, the contents of `/sys/class/power_supply/.../model_name` must match this value. Typical use is to select by model name on devices that change their path. | N/A
 //! `interval` | Update interval, in seconds. Only relevant for `driver = &quot;sysfs&quot;` \|\| &quot;apc_ups&quot;`. | `10`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $percentage &quot;`
 //! `full_format` | Same as `format` but for when the battery is full | `&quot; $icon &quot;`
@@ -363,6 +366,7 @@
 </span><span class="kw">pub struct </span>Config {
     device: <span class="prelude-ty">Option</span>&lt;String&gt;,
     driver: BatteryDriver,
+    model: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="attr">#[default(<span class="number">10</span>.into())]
     </span>interval: Seconds,
     format: FormatConfig,
@@ -403,9 +407,9 @@
 
     <span class="kw">let </span>dev_name = DeviceName::new(config.device)<span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>device: Box&lt;<span class="kw">dyn </span>BatteryDevice + Send + Sync&gt; = <span class="kw">match </span>config.driver {
-        BatteryDriver::Sysfs =&gt; Box::new(sysfs::Device::new(dev_name, config.interval)),
+        BatteryDriver::Sysfs =&gt; Box::new(sysfs::Device::new(dev_name, config.model, config.interval)),
         BatteryDriver::ApcUps =&gt; Box::new(apc_ups::Device::new(dev_name, config.interval).<span class="kw">await</span><span class="question-mark">?</span>),
-        BatteryDriver::Upower =&gt; Box::new(upower::Device::new(dev_name).<span class="kw">await</span><span class="question-mark">?</span>),
+        BatteryDriver::Upower =&gt; Box::new(upower::Device::new(dev_name, config.model).<span class="kw">await</span><span class="question-mark">?</span>),
     };
 
     <span class="kw">loop </span>{
