@@ -110,8 +110,8 @@ enum BatteryDriver {
 }
 
 #[derive(Clone, Debug)]
-enum DriverIcon {
-    Upower(String),
+enum BatteryLevel {
+    Upower(u32),
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
@@ -170,7 +170,21 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
                 // If the driver says that it can't provide a reliable capacity percentage use its recommended icon
                 let (icon_name, icon_value, state) =
-                    if info.is_capacity_reliable || info.driver_icon.is_none() {
+                    if let Some(battery_level) = info.battery_level {
+                        /*  TODO: Mapping
+                        Upower does this:
+                                LOW      => battery-caution
+                                CRITICAL => battery-caution
+                                NORMAL   => low
+                                HIGH     => good
+                                FULL     => full
+
+                            For any other value (including ACTION) they have an assert "not reached".
+                        */
+                        match (info.status, battery_level) {
+                            (_, _) => ("bat", 0.5, State::Warning)
+                        }
+                    } else {
                         match (info.status, info.capacity) {
                             (BatteryStatus::Empty, _) => ("bat", 0.0, State::Critical),
                             (BatteryStatus::Full | BatteryStatus::NotCharging, _) => {
@@ -198,9 +212,6 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                                 },
                             ),
                         }
-                    } else {
-                        // TODO: icon mapping
-                        ("bat", 0.5, State::Warning)
                     };
 
                 values.insert(
@@ -273,10 +284,8 @@ struct BatteryInfo {
     power: Option<f64>,
     /// Time in seconds
     time_remaining: Option<f64>,
-    /// Is capacity percentage reliable?
-    is_capacity_reliable: bool,
-    /// Driver recommended icon
-    driver_icon: Option<DriverIcon>,
+    /// Battery level, to be used when the capacity percent is not reliable
+    battery_level: Option<BatteryLevel>,
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, SmartDefault)]

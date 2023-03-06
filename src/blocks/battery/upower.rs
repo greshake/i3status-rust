@@ -3,14 +3,26 @@ use zbus::fdo::{PropertiesChangedStream, PropertiesProxy};
 use zbus::{zvariant, Connection};
 use zvariant::ObjectPath;
 
-use super::{BatteryDevice, BatteryInfo, BatteryStatus, DeviceName, DriverIcon};
+use super::{BatteryDevice, BatteryInfo, BatteryLevel, BatteryStatus, DeviceName};
 use crate::blocks::prelude::*;
 use crate::util::new_system_dbus_connection;
 
 const DISPLAY_DEVICE_PATH: ObjectPath =
     ObjectPath::from_static_str_unchecked("/org/freedesktop/UPower/devices/DisplayDevice");
 
-const UP_DEVICE_LEVEL_NONE: u32 = 1; // enum UpDeviceLevel https://gitlab.freedesktop.org/upower/upower/-/blob/master/libupower-glib/up-types.h
+// enum UpDeviceLevel https://gitlab.freedesktop.org/upower/upower/-/blob/master/libupower-glib/up-types.h
+enum UpDeviceLevel {
+    _UNKNOWN = 0,
+    _NONE = 1,
+    _DISCHARGING = 2,
+    LOW = 3,
+    _CRITICAL = 4,
+    _ACTION = 5,
+    _NORMAL = 6,
+    _HIGH = 7,
+    FULL = 8,
+    _LAST = 9,
+}
 
 struct DeviceConnection {
     device_proxy: DeviceProxy<'static>,
@@ -145,18 +157,9 @@ impl BatteryDevice for Device {
                     device_conn.device_proxy.time_to_full(),
                     device_conn.device_proxy.time_to_empty(),
                     device_conn.device_proxy.battery_level(),
-                    device_conn.device_proxy.icon_name(),
                 } {
                     Err(_) => Ok(None),
-                    Ok((
-                        capacity,
-                        power,
-                        state,
-                        time_to_full,
-                        time_to_empty,
-                        battery_level,
-                        icon_name,
-                    )) => {
+                    Ok((capacity, power, state, time_to_full, time_to_empty, battery_level)) => {
                         let status = match state {
                             1 => BatteryStatus::Charging,
                             2 | 6 => BatteryStatus::Discharging,
@@ -178,8 +181,13 @@ impl BatteryDevice for Device {
                             power: Some(power),
                             time_remaining,
                             // Upower source code says that the percentage should be ignored unless device level is none
-                            is_capacity_reliable: battery_level == UP_DEVICE_LEVEL_NONE,
-                            driver_icon: Some(DriverIcon::Upower(icon_name)),
+                            battery_level: if battery_level >= UpDeviceLevel::LOW as u32
+                                && battery_level <= UpDeviceLevel::FULL as u32
+                            {
+                                Some(BatteryLevel::Upower(battery_level))
+                            } else {
+                                None
+                            },
                         }))
                     }
                 }
@@ -257,9 +265,6 @@ trait Device {
 
     #[dbus_proxy(property)]
     fn battery_level(&self) -> zbus::Result<u32>;
-
-    #[dbus_proxy(property)]
-    fn icon_name(&self) -> zbus::Result<String>;
 
     #[dbus_proxy(property, name = "Type")]
     fn type_(&self) -> zbus::Result<u32>;
