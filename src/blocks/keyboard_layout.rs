@@ -12,7 +12,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `driver` | One of `"setxkbmap"`, `"localebus"`, `"kbddbus"` or `"sway"`, depending on your system. | `"setxkbmap"`
+//! `driver` | One of `"setxkbmap"`, `"localebus"`, `"kbddbus"`, `"sway"` or "XkbSwitch", depending on your system. | `"setxkbmap"`
 //! `interval` | Update interval, in seconds. Only used by the `"setxkbmap"` driver. | `60`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `" $layout "`
 //! `sway_kb_identifier` | Identifier of the device you want to monitor, as found in the output of `swaymsg -t get_inputs`. | Defaults to first input found
@@ -103,6 +103,7 @@ enum KeyboardLayoutDriver {
     LocaleBus,
     KbddBus,
     Sway,
+    XkbSwitch,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
@@ -113,6 +114,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         KeyboardLayoutDriver::LocaleBus => Box::new(LocaleBus::new().await?),
         KeyboardLayoutDriver::KbddBus => Box::new(KbddBus::new().await?),
         KeyboardLayoutDriver::Sway => Box::new(Sway::new(config.sway_kb_identifier).await?),
+        KeyboardLayoutDriver::XkbSwitch => Box::new(XkbSwitch::new()),
     };
 
     loop {
@@ -154,6 +156,33 @@ struct Info {
 }
 
 struct SetXkbMap(Seconds);
+
+struct XkbSwitch;
+
+impl XkbSwitch {
+    fn new() -> Self {
+        Self
+    }
+}
+
+#[async_trait]
+impl Backend for XkbSwitch {
+    async fn get_info(&mut self) -> Result<Info> {
+        let output = Command::new("xkbswitch").arg("-p").output().await?;
+        let output = String::from_utf8_lossy(&output.stdout);
+
+        let mut parts = output.split(':');
+        let layout = parts.next().unwrap_or_default().trim().to_string();
+        let variant = parts.next().map(|v| v.trim().to_string());
+
+        Ok(Info { layout, variant })
+    }
+
+    async fn wait_for_change(&mut self) -> Result<()> {
+        // This backend doesn't support waiting for changes
+        Ok(())
+    }
+}
 
 #[async_trait]
 impl Backend for SetXkbMap {
