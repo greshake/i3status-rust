@@ -1,3 +1,16 @@
+# i3status-rust 0.30.5 [unreleased]
+
+### New Blocks and Features
+
+* New block `amd_gpu`: display the stats of your AMD GPU.
+* Battery: filter battery selection by model (#1808).
+
+### Bug Fixes and Improvements
+
+* Backlight: improve ddcci interactions (#1770).
+* Battery: fix the default device for UPower driver.
+* `merge_with_next` block option now works with non-native separators.
+
 # i3status-rust 0.30.4
 
 ### New Blocks and Features

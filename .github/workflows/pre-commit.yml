@@ -1,0 +1,33 @@
+name: pre-commit
+
+on: [push, pull_request]
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        hook: [ check-toml,
+                check-yaml,
+                check-merge-conflict,
+                check-case-conflict,
+                detect-private-key,
+                cspell,
+                typos,
+                fmt,
+                clippy,
+                cargo-test,
+              ]
+    steps:
+    - name: Get required packages
+      run: sudo apt-get install libsensors-dev libssl-dev libpulse-dev libnotmuch-dev
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    - uses: pre-commit/action@v3.0.0
+      with:
+        extra_args: ${{ matrix.hook }} --all-files
+
+
