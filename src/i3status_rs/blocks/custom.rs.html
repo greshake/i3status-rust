@@ -276,6 +276,7 @@
 <a href="#276" id="276">276</a>
 <a href="#277" id="277">277</a>
 <a href="#278" id="278">278</a>
+<a href="#279" id="279">279</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The output of a custom shell command
 //!
 //! For further customisation, use the `json` option and have the shell command output valid JSON in the schema below:
@@ -296,7 +297,7 @@
 //! `cycle` | Commands to execute and change when the button is clicked | `None`
 //! `interval` | Update interval in seconds (or &quot;once&quot; to update only once) | `10`
 //! `json` | Use JSON from command output to format the block. If the JSON is not valid, the block will error out. | `false`
-//! `watch_files` | Watch files to trigger update on file modification | `None`
+//! `watch_files` | Watch files to trigger update on file modification. Supports path expansions e.g. `~`. | `None`
 //! `hide_when_empty` | Hides the block when the command output (or json text field) is empty | `false`
 //! `shell` | Specify the shell to use when running commands | `$SHELL` if set, otherwise fallback to `sh`
 //!
@@ -391,7 +392,7 @@
     json: bool,
     hide_when_empty: bool,
     shell: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    watch_files: Vec&lt;String&gt;,
+    watch_files: Vec&lt;ShellString&gt;,
 }
 
 <span class="kw">async fn </span>update_bar(
@@ -445,9 +446,10 @@
         files =&gt; {
             <span class="kw">let </span><span class="kw-2">mut </span>notify = Inotify::init().error(<span class="string">&quot;Failed to start inotify&quot;</span>)<span class="question-mark">?</span>;
             <span class="kw">for </span>file <span class="kw">in </span>files {
+                <span class="kw">let </span>file = file.expand()<span class="question-mark">?</span>;
                 notify
-                    .add_watch(file, WatchMask::MODIFY | WatchMask::CLOSE_WRITE)
-                    .error(<span class="string">&quot;Failed to file&quot;</span>)<span class="question-mark">?</span>;
+                    .add_watch(<span class="kw-2">&amp;*</span>file, WatchMask::MODIFY | WatchMask::CLOSE_WRITE)
+                    .error(<span class="string">&quot;Failed to add file watch&quot;</span>)<span class="question-mark">?</span>;
             }
             Box::pin(
                 notify
