@@ -18,7 +18,7 @@
 //! `cycle` | Commands to execute and change when the button is clicked | `None`
 //! `interval` | Update interval in seconds (or "once" to update only once) | `10`
 //! `json` | Use JSON from command output to format the block. If the JSON is not valid, the block will error out. | `false`
-//! `watch_files` | Watch files to trigger update on file modification | `None`
+//! `watch_files` | Watch files to trigger update on file modification. Supports path expansions e.g. `~`. | `None`
 //! `hide_when_empty` | Hides the block when the command output (or json text field) is empty | `false`
 //! `shell` | Specify the shell to use when running commands | `$SHELL` if set, otherwise fallback to `sh`
 //!
@@ -113,7 +113,7 @@ pub struct Config {
     json: bool,
     hide_when_empty: bool,
     shell: Option<String>,
-    watch_files: Vec<String>,
+    watch_files: Vec<ShellString>,
 }
 
 async fn update_bar(
@@ -167,9 +167,10 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         files => {
             let mut notify = Inotify::init().error("Failed to start inotify")?;
             for file in files {
+                let file = file.expand()?;
                 notify
-                    .add_watch(file, WatchMask::MODIFY | WatchMask::CLOSE_WRITE)
-                    .error("Failed to file")?;
+                    .add_watch(&*file, WatchMask::MODIFY | WatchMask::CLOSE_WRITE)
+                    .error("Failed to add file watch")?;
             }
             Box::pin(
                 notify
