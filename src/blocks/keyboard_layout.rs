@@ -155,8 +155,6 @@ struct Info {
     variant: Option<String>,
 }
 
-struct SetXkbMap(Seconds);
-
 struct XkbSwitch;
 
 impl XkbSwitch {
@@ -183,6 +181,8 @@ impl Backend for XkbSwitch {
         Ok(())
     }
 }
+
+struct SetXkbMap(Seconds);
 
 #[async_trait]
 impl Backend for SetXkbMap {
