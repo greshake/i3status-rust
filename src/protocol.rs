@@ -22,7 +22,7 @@ pub fn print_blocks<B>(blocks: &[B], config: &SharedConfig)
 where
     B: Borrow<RenderedBlock>,
 {
-    let mut last_bg = Color::None;
+    let mut prev_last_bg = Color::None;
     let mut rendered_blocks = vec![];
 
     // The right most block should never be alternated
@@ -75,13 +75,10 @@ where
 
                 // The separator's BG is the last block's last widget's BG
                 let sep_bg = if config.theme.separator_bg == Color::Auto {
-                    last_bg
+                    prev_last_bg
                 } else {
                     config.theme.separator_bg
                 };
-
-                // The last widget's BG is used to get the BG color for the next separator
-                last_bg = segments.last().unwrap().background;
 
                 let separator = I3BarBlock {
                     full_text: separator.clone(),
@@ -98,20 +95,21 @@ where
             segments.last_mut().unwrap().separator_block_width = None;
         }
 
-        rendered_blocks.extend(segments);
-
         if !merge_with_next {
             logical_block_i += 1;
         }
 
         prev_merge_with_next = merge_with_next;
+        prev_last_bg = segments.last().unwrap().background;
+
+        rendered_blocks.extend(segments);
     }
 
     if let Separator::Custom(end_separator) = &config.theme.end_separator {
         rendered_blocks.push(I3BarBlock {
             full_text: end_separator.clone(),
             background: Color::None,
-            color: last_bg,
+            color: prev_last_bg,
             ..Default::default()
         });
     }
