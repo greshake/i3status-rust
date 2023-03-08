@@ -321,7 +321,7 @@
 //! command = &#39;&#39;&#39; cat /sys/class/thermal/thermal_zone0/temp | awk &#39;{printf(&quot;%.1f\n&quot;,$1/1000)}&#39; &#39;&#39;&#39;
 //! ```
 //!
-//! Cycle between &quot;ON&quot; and &quot;OFF&quot;, update every 1 second, run `&lt;command&gt;` when block is clicked:
+//! Cycle between &quot;ON&quot; and &quot;OFF&quot;, update every 1 second, run next cycle command when block is clicked:
 //!
 //! ```toml
 //! [[block]]
@@ -330,7 +330,7 @@
 //! interval = 1
 //! [[block.click]]
 //! button = &quot;left&quot;
-//! cmd = &quot;&lt;command&gt;&quot;
+//! action = &quot;cycle&quot;
 //! ```
 //!
 //! Use JSON output:

@@ -30,14 +30,14 @@
 block = &quot;custom&quot;
 command = &#39;&#39;&#39; cat /sys/class/thermal/thermal_zone0/temp | awk &#39;{printf(&quot;%.1f\n&quot;,$1/1000)}&#39; &#39;&#39;&#39;
 </code></pre></div>
-<p>Cycle between “ON” and “OFF”, update every 1 second, run <code>&lt;command&gt;</code> when block is clicked:</p>
+<p>Cycle between “ON” and “OFF”, update every 1 second, run next cycle command when block is clicked:</p>
 <div class="example-wrap"><pre class="language-toml"><code>[[block]]
 block = &quot;custom&quot;
 cycle = [&quot;echo ON&quot;, &quot;echo OFF&quot;]
 interval = 1
 [[block.click]]
 button = &quot;left&quot;
-cmd = &quot;&lt;command&gt;&quot;
+action = &quot;cycle&quot;
 </code></pre></div>
 <p>Use JSON output:</p>
 <div class="example-wrap"><pre class="language-toml"><code>[[block]]
