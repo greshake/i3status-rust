@@ -116,8 +116,6 @@
 <a href="#116" id="116">116</a>
 <a href="#117" id="117">117</a>
 <a href="#118" id="118">118</a>
-<a href="#119" id="119">119</a>
-<a href="#120" id="120">120</a>
 </pre><pre class="rust"><code><span class="kw">pub mod </span>i3bar_block;
 <span class="kw">pub mod </span>i3bar_event;
 
@@ -142,7 +140,7 @@
 <span class="kw">where
     </span>B: Borrow&lt;RenderedBlock&gt;,
 {
-    <span class="kw">let </span><span class="kw-2">mut </span>last_bg = Color::None;
+    <span class="kw">let </span><span class="kw-2">mut </span>prev_last_bg = Color::None;
     <span class="kw">let </span><span class="kw-2">mut </span>rendered_blocks = <span class="macro">vec!</span>[];
 
     <span class="comment">// The right most block should never be alternated
@@ -195,13 +193,10 @@
 
                 <span class="comment">// The separator&#39;s BG is the last block&#39;s last widget&#39;s BG
                 </span><span class="kw">let </span>sep_bg = <span class="kw">if </span>config.theme.separator_bg == Color::Auto {
-                    last_bg
+                    prev_last_bg
                 } <span class="kw">else </span>{
                     config.theme.separator_bg
                 };
-
-                <span class="comment">// The last widget&#39;s BG is used to get the BG color for the next separator
-                </span>last_bg = segments.last().unwrap().background;
 
                 <span class="kw">let </span>separator = I3BarBlock {
                     full_text: separator.clone(),
@@ -218,20 +213,21 @@
             segments.last_mut().unwrap().separator_block_width = <span class="prelude-val">None</span>;
         }
 
-        rendered_blocks.extend(segments);
-
         <span class="kw">if </span>!merge_with_next {
             logical_block_i += <span class="number">1</span>;
         }
 
         prev_merge_with_next = merge_with_next;
+        prev_last_bg = segments.last().unwrap().background;
+
+        rendered_blocks.extend(segments);
     }
 
     <span class="kw">if let </span>Separator::Custom(end_separator) = <span class="kw-2">&amp;</span>config.theme.end_separator {
         rendered_blocks.push(I3BarBlock {
             full_text: end_separator.clone(),
             background: Color::None,
-            color: last_bg,
+            color: prev_last_bg,
             ..Default::default()
         });
     }
