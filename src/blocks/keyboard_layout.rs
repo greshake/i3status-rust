@@ -177,7 +177,7 @@ impl Backend for XkbSwitch {
     }
 
     async fn wait_for_change(&mut self) -> Result<()> {
-        // This backend doesn't support waiting for changes
+        sleep(self.0 .0).await;
         Ok(())
     }
 }
