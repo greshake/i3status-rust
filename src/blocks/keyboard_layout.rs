@@ -166,14 +166,22 @@ impl XkbSwitch {
 #[async_trait]
 impl Backend for XkbSwitch {
     async fn get_info(&mut self) -> Result<Info> {
-        let output = Command::new("xkbswitch").arg("-p").output().await.context("Failed to execute xkbswitch command")?;
+        let output = Command::new("xkbswitch")
+            .arg("-query")
+            .output()
+            .await
+            .error("Failed to execute xkbswitch command")?;
+            
         let output = String::from_utf8_lossy(&output.stdout);
 
         let mut parts = output.split(':');
         let layout = parts.next().unwrap_or_default().trim().to_string();
         let variant = parts.next().map(|v| v.trim().to_string());
 
-        Ok(Info { layout, variant })
+        Ok(Info { 
+            layout: layout.into(),
+            variant: None,
+        })
     }
 
     async fn wait_for_change(&mut self) -> Result<()> {
