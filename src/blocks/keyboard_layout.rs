@@ -114,7 +114,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         KeyboardLayoutDriver::LocaleBus => Box::new(LocaleBus::new().await?),
         KeyboardLayoutDriver::KbddBus => Box::new(KbddBus::new().await?),
         KeyboardLayoutDriver::Sway => Box::new(Sway::new(config.sway_kb_identifier).await?),
-        KeyboardLayoutDriver::XkbSwitch => Box::new(XkbSwitch(config.interval)),
+        KeyboardLayoutDriver::XkbSwitch => Box::new(XkbSwitch::new()),
     };
 
     loop {
@@ -155,13 +155,7 @@ struct Info {
     variant: Option<String>,
 }
 
-struct XkbSwitch;
-
-impl XkbSwitch {
-    fn new() -> Self {
-        Self
-    }
-}
+struct XkbSwitch(seconds);
 
 #[async_trait]
 impl Backend for XkbSwitch {
@@ -172,12 +166,16 @@ impl Backend for XkbSwitch {
             .await
             .error("Failed to execute xkbswitch command")?;
             
-        let output = String::from_utf8_lossy(&output.stdout);
+        let output = String::from_utf8_lossy(&output.stdout).error("xkbswitch produced a non-UTF8 output")?;
 
-        let mut parts = output.split(':');
-        let layout = parts.next().unwrap_or_default().trim().to_string();
-        let variant = parts.next().map(|v| v.trim().to_string());
-
+        let layout = output
+            .lines()
+            // Find the "layout:    xxxx" entry.
+            .find(|line| line.starts_with("layout"))
+            .error("Could not find the layout entry from xkbswitch")?
+            .split_ascii_whitespace()
+            .last()
+            .er
         Ok(Info { 
             layout: layout.into(),
             variant: None,
