@@ -155,7 +155,7 @@ struct Info {
     variant: Option<String>,
 }
 
-struct XkbSwitch(seconds);
+struct XkbSwitch(Seconds);
 
 #[async_trait]
 impl Backend for XkbSwitch {
