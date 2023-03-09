@@ -166,7 +166,7 @@ impl XkbSwitch {
 #[async_trait]
 impl Backend for XkbSwitch {
     async fn get_info(&mut self) -> Result<Info> {
-        let output = Command::new("xkbswitch").arg("-p").output().await?;
+        let output = Command::new("xkbswitch").arg("-p").output().await.context("Failed to execute xkbswitch command")?;
         let output = String::from_utf8_lossy(&output.stdout);
 
         let mut parts = output.split(':');
