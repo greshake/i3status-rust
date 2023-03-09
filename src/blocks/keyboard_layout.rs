@@ -175,7 +175,7 @@ impl Backend for XkbSwitch {
             .error("Could not find the layout entry from xkbswitch")?
             .split_ascii_whitespace()
             .last()
-            .er
+            .error("Could not read the layout entry from xkbswitch.")?;
         Ok(Info { 
             layout: layout.into(),
             variant: None,
