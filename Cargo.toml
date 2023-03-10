@@ -11,6 +11,9 @@ authors = [
 ]
 edition = "2021"
 
+[workspace]
+members = [".", "xtask"]
+
 [features]
 default = ["pulseaudio"]
 pulseaudio = ["libpulse-binding"]
