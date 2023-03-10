@@ -227,6 +227,15 @@
 <a href="#227" id="227">227</a>
 <a href="#228" id="228">228</a>
 <a href="#229" id="229">229</a>
+<a href="#230" id="230">230</a>
+<a href="#231" id="231">231</a>
+<a href="#232" id="232">232</a>
+<a href="#233" id="233">233</a>
+<a href="#234" id="234">234</a>
+<a href="#235" id="235">235</a>
+<a href="#236" id="236">236</a>
+<a href="#237" id="237">237</a>
+<a href="#238" id="238">238</a>
 </pre><pre class="rust"><code><span class="doccomment">//! External IP address and various information about it
 //!
 //! # Configuration
@@ -236,6 +245,7 @@
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $ip $country_flag &quot;`
 //! `interval` | Interval in seconds for automatic updates | `300`
 //! `with_network_manager` | If &#39;true&#39;, listen for NetworkManager events and update the IP immediately if there was a change | `true`
+//! `use_ipv4` | If &#39;true&#39;, use IPv4 for obtaining all info | `false`
 //!
 //!  Key | Value | Type | Unit
 //! -----|-------|------|------
@@ -303,6 +313,8 @@
     </span>interval: Seconds,
     <span class="attr">#[default(<span class="bool-val">true</span>)]
     </span>with_network_manager: bool,
+    <span class="attr">#[default(<span class="bool-val">false</span>)]
+    </span>use_ipv4: bool,
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
@@ -356,8 +368,14 @@
         Box::pin(futures::stream::empty())
     };
 
+    <span class="kw">let </span>client = <span class="kw">if </span>config.use_ipv4 {
+        <span class="kw-2">&amp;</span>REQWEST_CLIENT_IPV4
+    } <span class="kw">else </span>{
+        <span class="kw-2">&amp;</span>REQWEST_CLIENT
+    };
+
     <span class="kw">loop </span>{
-        <span class="kw">let </span>info = api.recoverable(IPAddressInfo::new).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let </span>info = api.recoverable(|| IPAddressInfo::new(client)).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">let </span><span class="kw-2">mut </span>values = <span class="macro">map! </span>{
             <span class="string">&quot;ip&quot; </span>=&gt; Value::text(info.ip),
             <span class="string">&quot;version&quot; </span>=&gt; Value::text(info.version),
@@ -440,8 +458,8 @@
 }
 
 <span class="kw">impl </span>IPAddressInfo {
-    <span class="kw">async fn </span>new() -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
-        <span class="kw">let </span>info: <span class="self">Self </span>= REQWEST_CLIENT
+    <span class="kw">async fn </span>new(client: <span class="kw-2">&amp;</span>reqwest::Client) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
+        <span class="kw">let </span>info: <span class="self">Self </span>= client
             .get(API_ENDPOINT)
             .send()
             .<span class="kw">await

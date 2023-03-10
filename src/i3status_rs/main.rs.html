@@ -519,6 +519,16 @@
 <a href="#519" id="519">519</a>
 <a href="#520" id="520">520</a>
 <a href="#521" id="521">521</a>
+<a href="#522" id="522">522</a>
+<a href="#523" id="523">523</a>
+<a href="#524" id="524">524</a>
+<a href="#525" id="525">525</a>
+<a href="#526" id="526">526</a>
+<a href="#527" id="527">527</a>
+<a href="#528" id="528">528</a>
+<a href="#529" id="529">529</a>
+<a href="#530" id="530">530</a>
+<a href="#531" id="531">531</a>
 </pre><pre class="rust"><code><span class="attr">#![warn(clippy::match_same_arms)]
 #![warn(clippy::semicolon_if_nothing_returned)]
 #![warn(clippy::unnecessary_wraps)]
@@ -571,11 +581,21 @@
 <span class="kw">pub type </span>BoxedFuture&lt;T&gt; = Pin&lt;Box&lt;<span class="kw">dyn </span>Future&lt;Output = T&gt;&gt;&gt;;
 <span class="kw">pub type </span>BoxedStream&lt;T&gt; = Pin&lt;Box&lt;<span class="kw">dyn </span>Stream&lt;Item = T&gt;&gt;&gt;;
 
+<span class="kw">const </span>APP_USER_AGENT: <span class="kw-2">&amp;</span>str = <span class="macro">concat!</span>(<span class="macro">env!</span>(<span class="string">&quot;CARGO_PKG_NAME&quot;</span>), <span class="string">&quot;/&quot;</span>, <span class="macro">env!</span>(<span class="string">&quot;CARGO_PKG_VERSION&quot;</span>),);
+<span class="kw">const </span>REQWEST_TIMEOUT: Duration = Duration::from_secs(<span class="number">10</span>);
+
 <span class="kw">pub static </span>REQWEST_CLIENT: Lazy&lt;reqwest::Client&gt; = Lazy::new(|| {
-    <span class="kw">const </span>APP_USER_AGENT: <span class="kw-2">&amp;</span>str = <span class="macro">concat!</span>(<span class="macro">env!</span>(<span class="string">&quot;CARGO_PKG_NAME&quot;</span>), <span class="string">&quot;/&quot;</span>, <span class="macro">env!</span>(<span class="string">&quot;CARGO_PKG_VERSION&quot;</span>),);
-    <span class="kw">const </span>REQWEST_TIMEOUT: Duration = Duration::from_secs(<span class="number">10</span>);
     reqwest::Client::builder()
         .user_agent(APP_USER_AGENT)
+        .timeout(REQWEST_TIMEOUT)
+        .build()
+        .unwrap()
+});
+
+<span class="kw">pub static </span>REQWEST_CLIENT_IPV4: Lazy&lt;reqwest::Client&gt; = Lazy::new(|| {
+    reqwest::Client::builder()
+        .user_agent(APP_USER_AGENT)
+        .local_address(<span class="prelude-val">Some</span>(std::net::Ipv4Addr::UNSPECIFIED.into()))
         .timeout(REQWEST_TIMEOUT)
         .build()
         .unwrap()
