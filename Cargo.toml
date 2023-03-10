@@ -45,7 +45,6 @@ tokio-stream = "0.1"
 toml = "0.7"
 chrono = "0.4"
 chrono-tz = "0.5"
-libc = "0.2"
 tera = "1.13"
 zbus = { version = "3.8", default-features = false, features = ["tokio"] }
 wayrs-client = { version = "0.3", features = ["tokio"] }
