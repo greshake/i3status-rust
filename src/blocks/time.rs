@@ -31,9 +31,10 @@
 //! # Icons Used
 //! - `time`
 
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 use chrono_tz::Tz;
-use libc::tzset;
+use tera::Value;
+use libc::{tzset};
 
 use super::prelude::*;
 
@@ -87,7 +88,13 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
         widget.set_values(map!(
             "icon" => Value::icon(api.get_icon("time")?),
-            "timestamp" => Value::datetime(Utc::now(), Some("%a %e{S} %B, %H:%M"), timezone.copied())
+            "timestamp" => {
+        let timezone: Option<Tz> = None; // or parse the timezone from a string
+        let datetime: DateTime<Utc> = Utc::now();
+        let format: Option<&str> = Some("%a %e{S} %B, %H:%M");
+
+        Value::datetime(datetime, timezone, format)
+    }
         ));
 
         api.set_widget(&widget).await?;
