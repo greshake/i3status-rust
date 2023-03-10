@@ -33,6 +33,7 @@
 
 use chrono::Utc;
 use chrono_tz::Tz;
+use libc::tzset;
 
 use super::prelude::*;
 
@@ -86,7 +87,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
         widget.set_values(map!(
             "icon" => Value::icon(api.get_icon("time")?),
-            "timestamp" => Value::datetime_with_format(Utc::now(), Some("%a %e{S} %B, %H:%M"), timezone.copied())
+            "timestamp" => Value::datetime(Utc::now(), Some("%a %e{S} %B, %H:%M"), timezone.copied())
         ));
 
         api.set_widget(&widget).await?;
@@ -104,4 +105,3 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         }
     }
 }
-
