@@ -183,7 +183,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. | &lt;code&gt;&quot;{ $icon&amp;vert;}{ $text.str(pango:true)&amp;vert;} &quot;&lt;/code&gt;
+//! `format` | A string to customise the output of this block. | &lt;code&gt;&quot;{ $icon&amp;vert;}{ $text.pango-str()&amp;vert;} &quot;&lt;/code&gt;
 //!
 //! Placeholder  | Value                                  | Type   | Unit
 //! -------------|-------------------------------------------------------------------|--------|---------------
@@ -294,8 +294,8 @@
     </span>api.event_receiver.close();
 
     <span class="kw">let </span>widget = Widget::new().with_format(config.format.with_defaults(
-        <span class="string">&quot;{ $icon|}{ $text.str(pango:true)|} &quot;</span>,
-        <span class="string">&quot;{ $icon|} $short_text.str(pango:true) |&quot;</span>,
+        <span class="string">&quot;{ $icon|}{ $text.pango-str()|} &quot;</span>,
+        <span class="string">&quot;{ $icon|} $short_text.pango-str() | &quot;</span>,
     )<span class="question-mark">?</span>);
 
     <span class="kw">let </span>dbus_conn = DBUS_CONNECTION
