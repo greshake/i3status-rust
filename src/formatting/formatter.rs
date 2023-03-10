@@ -365,7 +365,7 @@ impl Formatter for EngFormatter {
 
                 let mut retval = match self.0.width as isize - digits {
                     isize::MIN..=0 => format!("{}", val.floor()),
-                    1 => format!(" {}", val.floor() as i64),
+                    1 => format!("{}", val.floor() as i64),
                     rest => format!("{:.*}", rest as usize - 1, val),
                 };
 
