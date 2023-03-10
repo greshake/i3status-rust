@@ -93,7 +93,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         let datetime: DateTime<Utc> = Utc::now();
         let format: Option<&str> = Some("%a %e{S} %B, %H:%M");
 
-        Value::datetime(datetime, timezone, format)
+        Value::datetime(datetime, timezone, Some(format))
     }
         ));
 
