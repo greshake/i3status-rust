@@ -24,8 +24,8 @@
 //! block = "time"
 //! interval = 60
 //! [block.format]
-//! full = " $icon $timestamp.datetime(f:'%a %Y-%m-%d %R %Z', l:fr_BE) "
-//! short = " $icon $timestamp.datetime(f:%R) "
+//! full = " $icon $timestamp.datetime(f:'%a %e{S} %B, %H:%M', l:Europe/Lisbon) "
+//! short = " $icon $timestamp.datetime(f:%R, l:Europe/Lisbon) "
 //! ```
 //!
 //! # Icons Used
@@ -86,7 +86,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
         widget.set_values(map!(
             "icon" => Value::icon(api.get_icon("time")?),
-            "timestamp" => Value::datetime(Utc::now(), timezone.copied())
+            "timestamp" => Value::datetime_with_format(Utc::now(), Some("%a %e{S} %B, %H:%M"), timezone.copied())
         ));
 
         api.set_widget(&widget).await?;
@@ -105,10 +105,3 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     }
 }
 
-extern "C" {
-    /// The tzset function initializes the tzname variable from the value of the TZ environment
-    /// variable. It is not usually necessary for your program to call this function, because it is
-    /// called automatically when you use the other time conversion functions that depend on the
-    /// time zone.
-    fn tzset();
-}
