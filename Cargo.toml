@@ -50,7 +50,7 @@ wayrs-protocols = { version = "0.3", features = ["wlr-foreign-toplevel-managemen
 [dependencies.clap]
 version = "4.0"
 default-features = false
-features = ["std", "derive", "help"]
+features = ["std", "derive", "help", "usage"]
 
 [dependencies.serde]
 version = "1.0"
