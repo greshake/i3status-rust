@@ -4,8 +4,10 @@ use std::path::Path;
 use std::{env, fs, io};
 
 use clap::ArgMatches;
+use clap::CommandFactory;
 
 use anyhow::{Context, Result};
+
 use pandoc::PandocOutput;
 
 enum XTaskSubcommand {
@@ -151,12 +153,20 @@ fn generate_manpage() -> Result<()> {
     };
 
     let mut out = io::BufWriter::new(fs::File::create(&man_out_path)?);
-    out.write_all(fs::read_to_string(man_dir.join("_preface.1"))?.as_bytes())?;
+    let man = clap_mangen::Man::new(i3status_rs::CliArgs::command());
+    man.render_title(&mut out).unwrap();
+    man.render_name_section(&mut out).unwrap();
+    man.render_synopsis_section(&mut out).unwrap();
+    man.render_description_section(&mut out).unwrap();
+    man.render_options_section(&mut out).unwrap();
+
     out.write_all(b".SH BLOCKS\n")?;
     out.write_all(man_blocks.as_bytes())?;
     out.write_all(b".SH THEMES\n")?;
     out.write_all(man_themes.as_bytes())?;
-    out.write_all(fs::read_to_string(man_dir.join("_postface.1"))?.as_bytes())?;
+
+    man.render_version_section(&mut out).unwrap();
+    man.render_authors_section(&mut out).unwrap();
 
     Ok(())
 }

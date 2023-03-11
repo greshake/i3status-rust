@@ -70,34 +70,10 @@ pub static REQWEST_CLIENT_IPV4: Lazy<reqwest::Client> = Lazy::new(|| {
         .unwrap()
 });
 
-#[derive(Debug, Parser)]
-#[clap(author, about, version = env!("VERSION"))]
-struct CliArgs {
-    /// Sets a TOML config file
-    ///
-    /// 1. If full absolute path given, then use it as is: `/home/foo/i3rs-config.toml`
-    ///
-    /// 2. If filename given, e.g. "custom_theme.toml", then first look in `$XDG_CONFIG_HOME/i3status-rust`
-    ///
-    /// 3. Then look for it in `$XDG_DATA_HOME/i3status-rust`
-    ///
-    /// 4. Otherwise look for it in `/usr/share/i3status-rust`
-    #[clap(default_value = "config.toml")]
-    config: String,
-    /// Ignore any attempts by i3 to pause the bar when hidden/fullscreen
-    #[clap(long = "never-pause")]
-    never_pause: bool,
-    /// Do not send the init sequence
-    #[clap(hide = true, long = "no-init")]
-    no_init: bool,
-    /// The maximum number of blocking threads spawned by tokio
-    #[clap(long = "threads", short = 'j', default_value = "2")]
-    blocking_threads: usize,
-}
-
 fn main() {
     env_logger::init();
-    let args = CliArgs::parse();
+
+    let args = i3status_rs::CliArgs::parse();
     let blocking_threads = args.blocking_threads;
 
     if !args.no_init {
