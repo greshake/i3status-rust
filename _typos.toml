@@ -1,0 +1,26 @@
+# With a focus on spell checking source code, most text will be in the form of
+# identifiers that are made up of words conjoined via snake_case, CamelCase,
+# etc. A typo at the word level might not be a typo as part of an identifier, 
+# so identifiers get checked and, if not in a dictionary, will then be split
+#  into words to be checked.
+
+files.extend-exclude = [
+    "target/",
+    "man/*",
+]
+
+# Identifiers are defined using unicode's XID_Continue which includes [a-zA-Z0-9_].
+[default.extend-identifiers]
+hellow554 = "hellow554"
+
+# Words are split from identifiers on case changes as well as breaks in [a-zA-Z]
+# with a special case to handle acronyms. For example, First10HTMLTokens 
+# would be split as first, html, tokens.
+[default.extend-words]
+# ue is used in a test to make sure that 'val ue' was parsed correctly
+ue = "ue"
+# BA is part of a example mac address that is tripping up typos
+BA = "BA"
+# typos thinks this should be "sought"
+seeked = "seeked"
+

@@ -68,25 +68,25 @@ impl NetDevice {
         )
         .error("Socket error")?;
 
-        let ifaces = get_interfaces(&mut sock)
+        let mut ifaces = get_interfaces(&mut sock, iface_re)
             .await
             .map_err(BoxErrorWrapper)
             .error("Failed to fetch interfaces")?;
 
-        let iface = match iface_re {
-            Some(re) => ifaces.into_iter().find(|i| re.is_match(&i.name)),
-            None => {
-                let default_iface = get_default_interface(&mut sock)
-                    .await
-                    .map_err(BoxErrorWrapper)
-                    .error("Failed to get default interface")?;
-                ifaces.into_iter().find(|i| i.index == default_iface)
-            }
-        };
+        let default_iface = get_default_interface(&mut sock)
+            .await
+            .map_err(BoxErrorWrapper)
+            .error("Failed to get default interface")?;
 
-        let iface = match iface {
-            Some(iface) => iface,
-            None => return Ok(None),
+        let iface_position = ifaces
+            .iter()
+            .position(|i| i.index == default_iface)
+            .unwrap_or(0);
+
+        let iface = if iface_position < ifaces.len() {
+            ifaces.swap_remove(iface_position)
+        } else {
+            return Ok(None);
         };
 
         let wifi_info = WifiInfo::new(iface.index).await?;
@@ -157,6 +157,21 @@ impl WifiInfo {
                 .clamp(0., 100.)
         }
 
+        fn ssid_from_bss_info_elements(mut bytes: &[u8]) -> Option<String> {
+            while bytes.len() > 2 && bytes[0] != 0 {
+                bytes = &bytes[(bytes[1] as usize + 2)..];
+            }
+
+            if bytes.len() < 2 || bytes.len() < bytes[1] as usize + 2 {
+                return None;
+            };
+
+            let ssid_len = bytes[1] as usize;
+            let raw_ssid = &bytes[2..][..ssid_len];
+
+            Some(String::from_utf8_lossy(raw_ssid).into_owned())
+        }
+
         // Ignore connection error because `nl80211` might not be enabled on the system.
         let Ok(mut socket) = neli_wifi::AsyncSocket::connect()
         else { return Ok(None) };
@@ -165,32 +180,47 @@ impl WifiInfo {
             .get_interfaces_info()
             .await
             .error("Failed to get nl80211 interfaces")?;
+
         for interface in interfaces {
             if let Some(index) = interface.index {
                 if index != if_index {
                     continue;
                 }
-                if let Ok(ap) = socket.get_station_info(index).await {
-                    let raw_signal = match ap.signal {
-                        Some(signal) => Some(signal),
-                        None => socket
-                            .get_bss_info(index)
-                            .await
-                            .ok()
-                            .and_then(|bss| bss.signal)
-                            .map(|s| (s / 100) as i8),
-                    };
-                    return Ok(Some(Self {
-                        ssid: interface
-                            .ssid
-                            .map(String::from_utf8)
-                            .transpose()
-                            .error("SSID is not valid UTF8")?, // ssid: Some(String::from_utf8(ssid).error("SSID is not valid UTF8")?),
-                        frequency: interface.frequency.map(|f| f as f64 * 1e6),
-                        signal: raw_signal.map(|s| signal_percents(s as f64)),
-                        bitrate: ap.tx_bitrate.map(|b| b as f64 * 1e5), // 100kbit/s -> bit/s
-                    }));
-                }
+
+                let Ok(ap) = socket.get_station_info(index).await
+                else { continue };
+
+                let bss = socket
+                    .get_bss_info(index)
+                    .await
+                    .unwrap_or_default()
+                    .into_iter()
+                    .find(|bss| bss.status == Some(1));
+
+                let raw_signal = match ap.signal {
+                    Some(signal) => Some(signal),
+                    None => bss
+                        .as_ref()
+                        .and_then(|bss| bss.signal)
+                        .map(|s| (s / 100) as i8),
+                };
+
+                let ssid = interface
+                    .ssid
+                    .as_deref()
+                    .map(|ssid| String::from_utf8_lossy(ssid).into_owned())
+                    .or_else(|| {
+                        bss.as_ref()
+                            .and_then(|bss| bss.information_elements.as_deref())
+                            .and_then(ssid_from_bss_info_elements)
+                    });
+
+                return Ok(Some(Self {
+                    ssid,
+                    frequency: interface.frequency.map(|f| f as f64 * 1e6),
+                    signal: raw_signal.map(|s| signal_percents(s as f64)),
+                    bitrate: ap.tx_bitrate.map(|b| b as f64 * 1e5), // 100kbit/s -> bit/s
+                }));
             }
         }
         Ok(None)
@@ -261,6 +291,7 @@ macro_rules! recv_until_done {
 
 async fn get_interfaces(
     sock: &mut NlSocket,
+    filter: Option<&Regex>,
 ) -> Result<Vec<Interface>, Box<dyn StdError + Send + Sync + 'static>> {
     sock.send(&Nlmsghdr::new(
         None,
@@ -293,12 +324,15 @@ async fn get_interfaces(
                 _ => (),
             }
         }
-        interfaces.push(Interface {
-            index: msg.ifi_index,
-            is_up,
-            name: name.unwrap(),
-            stats,
-        });
+        let name: String = name.unwrap();
+        if filter.map_or(true, |f| f.is_match(&name)) {
+            interfaces.push(Interface {
+                index: msg.ifi_index,
+                is_up,
+                name,
+                stats,
+            });
+        }
     });
 
     Ok(interfaces)

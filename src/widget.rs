@@ -96,7 +96,7 @@ impl Widget {
 
         parts.extend(full.into_iter().map(|w| {
             let mut data = template.clone();
-            data.full_text = w.formated_text();
+            data.full_text = w.formatted_text();
             if let Some(i) = &w.metadata.instance {
                 data.instance.push_str(i);
             }
@@ -106,7 +106,7 @@ impl Widget {
         template.full_text = "<span/>".into();
         parts.extend(short.into_iter().map(|w| {
             let mut data = template.clone();
-            data.short_text = w.formated_text();
+            data.short_text = w.formatted_text();
             if let Some(i) = &w.metadata.instance {
                 data.instance.push_str(i);
             }
@@ -121,10 +121,15 @@ impl Widget {
 #[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq, SmartDefault)]
 pub enum State {
     #[default]
+    #[serde(alias = "idle")]
     Idle,
+    #[serde(alias = "info")]
     Info,
+    #[serde(alias = "good")]
     Good,
+    #[serde(alias = "warning")]
     Warning,
+    #[serde(alias = "critical")]
     Critical,
 }
 

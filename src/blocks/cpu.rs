@@ -8,16 +8,16 @@
 //! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
 //! `interval` | Update interval in seconds | `5`
 //!
-//! Placeholder      | Value                                                          | Type   | Unit
-//! -----------------|----------------------------------------------------------------|--------|---------------
-//! `icon`           | An icon                                                        | Icon   | -
-//! `utilization`    | Average CPU utilization                                        | Number | %
-//! `utilization<N>` | Utilization of Nth logical CPU                                 | Number | %
-//! `barchart`       | Utilization of all logical CPUs presented as a barchart        | Text   | -
-//! `frequency`      | Average CPU frequency                                          | Number | Hz
-//! `frequency<N>`   | Frequency of Nth logical CPU                                   | Number | Hz
-//! `max_frequency`  | Max frequency of all logical CPUs                              | Number | Hz
-//! `boost`          | CPU turbo boost status (may be absent if CPU is not supported) | Text   | -
+//! Placeholder      | Value                                                                | Type   | Unit
+//! -----------------|----------------------------------------------------------------------|--------|---------------
+//! `icon`           | An icon                                                              | Icon   | -
+//! `utilization`    | Average CPU utilization                                              | Number | %
+//! `utilization<N>` | Utilization of Nth logical CPU                                       | Number | %
+//! `barchart`       | Utilization of all logical CPUs presented as a barchart              | Text   | -
+//! `frequency`      | Average CPU frequency (may be absent if CPU is not supported)        | Number | Hz
+//! `frequency<N>`   | Frequency of Nth logical CPU (may be absent if CPU is not supported) | Number | Hz
+//! `max_frequency`  | Max frequency of all logical CPUs                                    | Number | Hz
+//! `boost`          | CPU turbo boost status (may be absent if CPU is not supported)       | Text   | -
 //!
 //! Action          | Description                               | Default button
 //! ----------------|-------------------------------------------|---------------
@@ -115,9 +115,9 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         let mut values = map!(
             "icon" => Value::icon(api.get_icon_in_progression("cpu", utilization_avg)?),
             "barchart" => Value::text(barchart),
-            "frequency" => Value::hertz(freq_avg),
+            [if !freqs.is_empty()] "frequency" => Value::hertz(freq_avg),
             "utilization" => Value::percents(utilization_avg * 100.),
-            "max_frequency" => Value::hertz(freqs.iter().copied().max_by(f64::total_cmp).unwrap()),
+            [if !freqs.is_empty()] "max_frequency" => Value::hertz(freqs.iter().copied().max_by(f64::total_cmp).unwrap()),
         );
         boost.map(|b| values.insert("boost".into(), Value::icon(b)));
         for (i, freq) in freqs.iter().enumerate() {
@@ -210,8 +210,12 @@ impl CpuTime {
     }
 
     fn utilization(&self, old: Self) -> f64 {
-        let elapsed = (self.idle + self.non_idle) as f64 - (old.idle + old.non_idle) as f64;
-        ((self.non_idle - old.non_idle) as f64 / elapsed).clamp(0., 1.)
+        let elapsed = (self.idle + self.non_idle).saturating_sub(old.idle + old.non_idle);
+        if elapsed == 0 {
+            0.0
+        } else {
+            ((self.non_idle - old.non_idle) as f64 / elapsed as f64).clamp(0., 1.)
+        }
     }
 }
 

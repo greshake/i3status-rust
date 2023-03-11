@@ -57,14 +57,16 @@ impl CapacityLevel {
 pub(super) struct Device {
     dev_name: DeviceName,
     dev_path: Option<PathBuf>,
+    dev_model: Option<String>,
     interval: Interval,
 }
 
 impl Device {
-    pub(super) fn new(dev_name: DeviceName, interval: Seconds) -> Self {
+    pub(super) fn new(dev_name: DeviceName, dev_model: Option<String>, interval: Seconds) -> Self {
         Self {
             dev_name,
             dev_path: None,
+            dev_model,
             interval: interval.timer(),
         }
     }
@@ -83,11 +85,11 @@ impl Device {
 
         let mut sysfs_dir = read_dir(POWER_SUPPLY_DEVICES_PATH)
             .await
-            .error("failed to read /sys/class/power_supply direcory")?;
+            .error("failed to read /sys/class/power_supply directory")?;
         while let Some(dir) = sysfs_dir
             .next_entry()
             .await
-            .error("failed to read /sys/class/power_supply direcory")?
+            .error("failed to read /sys/class/power_supply directory")?
         {
             let name = dir.file_name();
             let name = name.to_str().error("non UTF-8 battery path")?;
@@ -99,6 +101,24 @@ impl Device {
                 || !Self::device_available(&path).await
             {
                 continue;
+            }
+
+            debug!(
+                "battery '{}', model={:?}",
+                path.display(),
+                Self::read_prop::<String>(&path, "model_name")
+                    .await
+                    .as_deref()
+            );
+            if let Some(dev_model) = &self.dev_model {
+                if Self::read_prop::<String>(&path, "model_name")
+                    .await
+                    .as_deref()
+                    != Some(dev_model.as_str())
+                {
+                    debug!("Skipping based on model.");
+                    continue;
+                }
             }
 
             debug!(
@@ -134,7 +154,7 @@ impl Device {
 
     async fn device_available(path: &Path) -> bool {
         // If `scope` is `Device`, then this is HID, in which case we don't have to check the
-        // `present` property, because the existence of the device direcory implies that the device
+        // `present` property, because the existence of the device directory implies that the device
         // is available
         Self::read_prop::<String>(path, "scope").await.as_deref() == Some("Device")
             || Self::read_prop::<u8>(path, "present").await == Some(1)

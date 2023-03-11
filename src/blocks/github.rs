@@ -171,7 +171,7 @@ async fn get_on_page(token: &str, page: usize) -> Result<Vec<Notification>> {
             "https://api.github.com/notifications?per_page=100&page={page}",
         ))
         .header("Authorization", format!("token {token}"));
-    let responce = request
+    let response = request
         .send()
         .await
         .error("Failed to send request")?
@@ -179,7 +179,7 @@ async fn get_on_page(token: &str, page: usize) -> Result<Vec<Notification>> {
         .await
         .error("Failed to get JSON")?;
 
-    match responce {
+    match response {
         Response::Notifications(n) => Ok(n),
         Response::ErrorMessage { message } => Err(Error::new(format!("API error: {message}"))),
     }

@@ -1,5 +1,3 @@
-use std::fs::File;
-use std::io::{self, BufReader, Read};
 use std::path::{Path, PathBuf};
 
 use dirs::{config_dir, data_dir};
@@ -17,13 +15,7 @@ use crate::errors::*;
 ///
 /// Automatically append an extension if not presented.
 pub fn find_file(file: &str, subdir: Option<&str>, extension: Option<&str>) -> Option<PathBuf> {
-    // Set (or update) the extension
-    let mut file = PathBuf::from(file);
-    if let Some(extension) = extension {
-        file.set_extension(extension);
-    }
-
-    // Try full path
+    let file = PathBuf::from(file);
     if file.exists() {
         return Some(file);
     }
@@ -35,8 +27,8 @@ pub fn find_file(file: &str, subdir: Option<&str>, extension: Option<&str>) -> O
             xdg_config.push(subdir);
         }
         xdg_config.push(&file);
-        if xdg_config.exists() {
-            return Some(xdg_config);
+        if let Some(file) = exists_with_opt_extension(&xdg_config, extension) {
+            return Some(file);
         }
     }
 
@@ -47,8 +39,8 @@ pub fn find_file(file: &str, subdir: Option<&str>, extension: Option<&str>) -> O
             xdg_data.push(subdir);
         }
         xdg_data.push(&file);
-        if xdg_data.exists() {
-            return Some(xdg_data);
+        if let Some(file) = exists_with_opt_extension(&xdg_data, extension) {
+            return Some(file);
         }
     }
 
@@ -58,10 +50,25 @@ pub fn find_file(file: &str, subdir: Option<&str>, extension: Option<&str>) -> O
         usr_share_path.push(subdir);
     }
     usr_share_path.push(&file);
-    if usr_share_path.exists() {
-        return Some(usr_share_path);
+    if let Some(file) = exists_with_opt_extension(&usr_share_path, extension) {
+        return Some(file);
     }
 
+    None
+}
+
+fn exists_with_opt_extension(file: &Path, extension: Option<&str>) -> Option<PathBuf> {
+    if file.exists() {
+        return Some(file.into());
+    }
+    // If file has no extension, test with given extension
+    if let (None, Some(extension)) = (file.extension(), extension) {
+        let file = file.with_extension(extension);
+        // Check again with extension added
+        if file.exists() {
+            return Some(file);
+        }
+    }
     None
 }
 
@@ -83,16 +90,21 @@ where
     P: AsRef<Path>,
 {
     let path = path.as_ref();
-    let mut contents = String::new();
-    let file = File::open(path).or_error(|| format!("Failed to open file: {}", path.display()))?;
-    BufReader::new(file)
-        .read_to_string(&mut contents)
+
+    let contents = std::fs::read_to_string(path)
         .or_error(|| format!("Failed to read file: {}", path.display()))?;
+
     toml::from_str(&contents).map_err(|err| {
         #[allow(deprecated)]
         let location_msg = err
-            .line_col()
-            .map(|(line, _col)| format!(" at line {}", line + 1))
+            .span()
+            .map(|span| {
+                let line = 1 + contents.as_bytes()[..(span.start)]
+                    .iter()
+                    .filter(|b| **b == b'\n')
+                    .count();
+                format!(" at line {line}")
+            })
             .unwrap_or_default();
         Error::new(format!(
             "Failed to deserialize TOML file {}{}: {}",
@@ -103,7 +115,7 @@ where
     })
 }
 
-pub async fn read_file(path: impl AsRef<Path>) -> io::Result<String> {
+pub async fn read_file(path: impl AsRef<Path>) -> std::io::Result<String> {
     let mut file = tokio::fs::File::open(path).await?;
     let mut content = String::new();
     file.read_to_string(&mut content).await?;

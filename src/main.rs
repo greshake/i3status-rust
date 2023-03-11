@@ -50,11 +50,21 @@ use widget::{State, Widget};
 pub type BoxedFuture<T> = Pin<Box<dyn Future<Output = T>>>;
 pub type BoxedStream<T> = Pin<Box<dyn Stream<Item = T>>>;
 
+const APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
+const REQWEST_TIMEOUT: Duration = Duration::from_secs(10);
+
 pub static REQWEST_CLIENT: Lazy<reqwest::Client> = Lazy::new(|| {
-    const APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
-    const REQWEST_TIMEOUT: Duration = Duration::from_secs(10);
     reqwest::Client::builder()
         .user_agent(APP_USER_AGENT)
+        .timeout(REQWEST_TIMEOUT)
+        .build()
+        .unwrap()
+});
+
+pub static REQWEST_CLIENT_IPV4: Lazy<reqwest::Client> = Lazy::new(|| {
+    reqwest::Client::builder()
+        .user_agent(APP_USER_AGENT)
+        .local_address(Some(std::net::Ipv4Addr::UNSPECIFIED.into()))
         .timeout(REQWEST_TIMEOUT)
         .build()
         .unwrap()
@@ -70,7 +80,7 @@ struct CliArgs {
     #[clap(long = "never-pause")]
     never_pause: bool,
     /// Do not send the init sequence
-    #[clap(long = "no-init")]
+    #[clap(hide = true, long = "no-init")]
     no_init: bool,
     /// The maximum number of blocking threads spawned by tokio
     #[clap(long = "threads", short = 'j', default_value = "2")]
@@ -476,7 +486,7 @@ impl BarState {
                         let block = &mut self.blocks[id].0;
 
                         if matches!(block.state, BlockState::Error { .. }) {
-                            // This should never happen. If this code runs, it cound mean that we
+                            // This should never happen. If this code runs, it could mean that we
                             // got an error while trying to display and error. We better stop here.
                             return Err(error);
                         }

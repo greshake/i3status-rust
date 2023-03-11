@@ -7,6 +7,7 @@
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `" $ip $country_flag "`
 //! `interval` | Interval in seconds for automatic updates | `300`
 //! `with_network_manager` | If 'true', listen for NetworkManager events and update the IP immediately if there was a change | `true`
+//! `use_ipv4` | If 'true', use IPv4 for obtaining all info | `false`
 //!
 //!  Key | Value | Type | Unit
 //! -----|-------|------|------
@@ -74,6 +75,8 @@ pub struct Config {
     interval: Seconds,
     #[default(true)]
     with_network_manager: bool,
+    #[default(false)]
+    use_ipv4: bool,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
@@ -127,8 +130,14 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         Box::pin(futures::stream::empty())
     };
 
+    let client = if config.use_ipv4 {
+        &REQWEST_CLIENT_IPV4
+    } else {
+        &REQWEST_CLIENT
+    };
+
     loop {
-        let info = api.recoverable(IPAddressInfo::new).await?;
+        let info = api.recoverable(|| IPAddressInfo::new(client)).await?;
         let mut values = map! {
             "ip" => Value::text(info.ip),
             "version" => Value::text(info.version),
@@ -211,8 +220,8 @@ struct IPAddressInfo {
 }
 
 impl IPAddressInfo {
-    async fn new() -> Result<Self> {
-        let info: Self = REQWEST_CLIENT
+    async fn new(client: &reqwest::Client) -> Result<Self> {
+        let info: Self = client
             .get(API_ENDPOINT)
             .send()
             .await

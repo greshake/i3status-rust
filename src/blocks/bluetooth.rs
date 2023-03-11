@@ -83,18 +83,21 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         match monitor.get_device_info().await {
             // Available
             Some(device) => {
-                let mut values = map! {
+                let values = map! {
                     "icon" => Value::icon(api.get_icon(device.icon)?),
                     "name" => Value::text(device.name),
-                    "available" => Value::flag()
+                    "available" => Value::flag(),
+                    [if let Some(p) = device.battery_percentage] "percentage" => Value::percents(p),
                 };
-                if let Some(p) = device.battery_percentage {
-                    values.insert("percentage".into(), Value::percents(p));
-                }
                 if device.connected {
                     debug!("Showing device as connected");
-                    widget.state = State::Good;
                     widget.set_format(format.clone());
+                    widget.state = match device.battery_percentage {
+                        Some(0..=15) => State::Critical,
+                        Some(16..=30) => State::Warning,
+                        Some(31..=60) => State::Info,
+                        _ => State::Good,
+                    };
                 } else {
                     debug!("Showing device as disconnected");
                     widget.set_format(disconnected_format.clone());
@@ -212,6 +215,12 @@ impl DeviceMonitor {
                     .await
                     .error("Failed to receive updates")?;
 
+                let mut interface_added = self
+                    .manager_proxy
+                    .receive_interfaces_added()
+                    .await
+                    .error("Failed to monitor interfaces")?;
+
                 let mut interface_removed = self
                     .manager_proxy
                     .receive_interfaces_removed()
@@ -234,6 +243,13 @@ impl DeviceMonitor {
                             }).await;
                             debug!("Got update for device");
                             return Ok(());
+                        }
+                        Some(event) = interface_added.next() => {
+                            let args = event.args().error("Failed to get the args")?;
+                            if args.object_path() == device.device.path() {
+                                debug!("Interfaces added: {:?}", args.interfaces_and_properties().keys());
+                                return Ok(());
+                            }
                         }
                         Some(event) = interface_removed.next() => {
                             let args = event.args().error("Failed to get the args")?;
@@ -368,6 +384,7 @@ impl Device {
                     .await
                     .error("Failed to create Device1Proxy")?,
                 battery: Battery1Proxy::builder(manager_proxy.connection())
+                    .cache_properties(zbus::CacheProperties::No)
                     .path(path)
                     .unwrap()
                     .build()

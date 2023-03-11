@@ -1,3 +1,35 @@
+# i3status-rust 0.30.5 [unreleased]
+
+### New Blocks and Features
+
+* New block `amd_gpu`: display the stats of your AMD GPU.
+* Battery: filter battery selection by model (#1808).
+
+### Bug Fixes and Improvements
+
+* Backlight: improve ddcci interactions (#1770).
+* Battery: fix the default device for UPower driver.
+* `merge_with_next` block option now works with non-native separators.
+
+# i3status-rust 0.30.4
+
+### New Blocks and Features
+
+* Time: timezone can now be set to a list of values. Click on the block to cycle between timezones.
+
+### Bug Fixes and Improvements
+
+* Net: prefer the default device when multiple devices match the regex.
+* Cpu: fix panic on systems which do not report CPU frequency.
+* Bluetooth: change block color based on battery level.
+* Memory: consider ZFS arc cache as available memory.
+* Backlight: reconnect after monitor sleeps.
+* Nvidia GPU: display unavailable stats as zeros instead of failing.
+* Bluetooth: correctly display battery level even if it is not available instantly.
+* Net: get SSID from `NL80211_BSS_INFORMATION_ELEMENTS` (makes SSID available on Linux kernel 5.19 and newer).
+* Backlight: fallback to sysfs on systems which don't use `systemd-logind`.
+* Do not require config file to have a `.toml` extension.
+
 # i3status-rust 0.30.3
 
 ### Bug Fixes and Improvements
@@ -137,13 +169,16 @@ battery | requires device name from `/sys/class/power_supply` even when using UP
 battery | `hide_missing` option is replaced with `missing_format`. You can set `missing_format = ""` to maintain the behavior
 battery | `hide_full` option is removed. You can set `full_format = ""` to maintain the behavior
 bluetooth | `hide_disconnected` option is replaced with `disconnected_format`. You can set `disconnected_format = ""` to hide the block
-keyboard_layout | `xkbswitch` driver is removed pending re-implementation (see #1512)
-kdeconnect | now only supports kdeconnect v20.11.80 and newer (December 2020 and newer)
+cpu | The custom `info`, `warning` and `critical` thresholds have been removed
 custom_dbus | `name` has been renamed to `path` and the DBus object is now at `rs.i3status`/`rs.i3status.custom` rather than `i3.status.rs`
+disk_space | `alias` has been removed in favour of using `format`
 focused_window | `autohide` is removed. You can format to `" $title.str(w:21) \| Missing "` to display the block when title is missing
 focused_window | `max_width` has been removed, and can instead be implemented via the new formatter. For example `max_width = 15; format = "{title}"` is now `format = "$title.str(max_w:15)"`
+kdeconnect | now only supports kdeconnect v20.11.80 and newer (December 2020 and newer)
+keyboard_layout | `xkbswitch` driver is removed pending re-implementation (see #1512)
 memory | `clickable`, `display_type`, `format_mem` and `format_swap` are removed and now you can use `format` and `format_alt` to maintain the behavior
-music | `smart_trim` has been removed
+music | `smart_trim`, `max_width` and `marquee` have been removed. All these settings are now configured inside the format string.
+music | `buttons` has been removed and is now configured via the new `[[block.click]]` syntax. New analogue `format` placeholders (`$play`/`$next`/`$prev`) have been added
 net |`hide_missing` and `hide_inactive` are removed. You can set `missing_format = ""`
 net | formatting for `graph_down` and `graph_up` is not yet implemented (see #1555)
 notmuch | `name` option is removed and now you can use `format` to set it
@@ -252,7 +287,7 @@ toggle | `text` option is removed and now you can use `format` to set it
 
 ### New Blocks and Features
 
-* Icons can now be overriden per block with `icons_overrides` (97a66195f16469a4011a1521fb991bbe943196b6)
+* Icons can now be overridden per block with `icons_overrides` (97a66195f16469a4011a1521fb991bbe943196b6)
  
 ### Bug Fixes and Improvements
 
@@ -274,7 +309,7 @@ toggle | `text` option is removed and now you can use `format` to set it
 
 ### New Blocks and Features
 
-* Add `if_command` field to block config to allow conditional enabling of blocks on startup (#1415 by LordMZTE) 
+* Add `if_command` field to block config to allow conditional enabling of blocks on startup (#1415 by @LordMZTE) 
  
 ### Bug Fixes and Improvements
 
@@ -339,7 +374,7 @@ toggle | `text` option is removed and now you can use `format` to set it
 
 ### New Blocks and Features
 
-* Backlight block: new options `minimum`, `maximum`, `cycle` for toggling min/max brightness on click or on scrolll (#1349 by @Vanille-N)
+* Backlight block: new options `minimum`, `maximum`, `cycle` for toggling min/max brightness on click or on scroll (#1349 by @Vanille-N)
 * Focused Window block: add `format` string (#1360 by @cfsmp3)
 
 ### Bug Fixes and Improvements
@@ -371,7 +406,7 @@ toggle | `text` option is removed and now you can use `format` to set it
 ### Bug Fixes and Improvements
 
 * Hueshift block: fix sluggishness by updating widget text on interactions (#1320 by @JohnDowson)
-* Music block: fix long standing issue where block tandomly stops updating (#1327 by jamesmcm)
+* Music block: fix long standing issue where block randomly stops updating (#1327 by @jamesmcm)
 * Nvidia block: fix nvidia block falling behind on lines from nvidia-smi (#1296 by @ZachCook)
  
 
@@ -395,12 +430,12 @@ toggle | `text` option is removed and now you can use `format` to set it
 
 ### Bug Fixes and Improvements
 
-* Net block: fix SSID escape code decoding (#1274 by @GlasOSkar)
-* NetworkManager block: update DBus interface for newer verisons of NM (#1269 by @mailhost)
+* Net block: fix SSID escape code decoding (#1274 by @GladOSkar)
+* NetworkManager block: update DBus interface for newer versions of NM (#1269 by @mailhost)
 * Pomodoro block: fix crash causing by pause icon typo (#1295 by @GladOSkar)
 * Temperature block: fix fallback for users with old versions of `lm-sensors` (#1281 by @freswa)
 * Icons: Fix `material-nf` icons that caused some blocks to render backwards (#1280 by @freswa)
-* Themes: Add ability to unset colors using overrides (#1279 by @GlasOSkar and @MaxVerevkin)
+* Themes: Add ability to unset colors using overrides (#1279 by @GladOSkar and @MaxVerevkin)
 * Themes: Fix alternating tint for the `slick` theme (#1284 by @MaxVerevkin)
 
 If you are manually managing your icon/theme files then you may want to update them now for the above fixes.
@@ -461,8 +496,8 @@ Blocks:
 * Memory block: all old format keys have been removed, refer to the table below for more details.
 * Net block: `use_bits`, `speed_min_unit`, `speed_digits` and `max_ssid_width` configuration options have been removed and require manual intervention to fix your config. `speed_min_unit` is replaced by the [min prefix](doc/blocks.md#min-prefix) formatter. `max_ssid_width` is replaced by the [max width](doc/blocks.md#0max-width) formatter.
 * Net block: partially moved from calling external commands to using the netlink interface, which may not work on BSD systems (#1142 by @MaxVerevkin)
-* Networkmanager block: `max_ssid_width` config option has been removed, but the bevaviour can be restored using the [max width](doc/blocks.md#max-width) formatter. For example, `max_ssid_width = 10` is now achieved with `ap_format = "{ssid^10}"`.
-* Sound block: `max_width` config option has been removed, but the bevaviour can be restored using the [max width](doc/blocks.md#max-width) formatter.
+* Networkmanager block: `max_ssid_width` config option has been removed, but the behaviour can be restored using the [max width](doc/blocks.md#max-width) formatter. For example, `max_ssid_width = 10` is now achieved with `ap_format = "{ssid^10}"`.
+* Sound block: `max_width` config option has been removed, but the behaviour can be restored using the [max width](doc/blocks.md#max-width) formatter.
 * Speedtest block: `bytes`, `speed_min_unit` and `speed_digits` configuration options have been removed in favour of the new `format` string formatter. For example, to replicate `bytes=true; speed_min_unit="M", speed_digits=4` use `format = "{speed_down:4*B;M}{speed_up:4*B;M}"`
 
 Memory block removed format keys:

@@ -25,7 +25,7 @@ fn unprocessed_events_stream(invert_scrolling: bool) -> BoxedStream<I3BarEvent> 
 
     futures::stream::unfold(lines, move |mut lines| async move {
         loop {
-            // Take only the valid JSON object betweem curly braces (cut off leading bracket, commas and whitespace)
+            // Take only the valid JSON object between curly braces (cut off leading bracket, commas and whitespace)
             let line = lines.next_line().await.ok().flatten()?;
             let line = line.trim_start_matches(|c| c != '{');
             let line = line.trim_end_matches(|c| c != '}');

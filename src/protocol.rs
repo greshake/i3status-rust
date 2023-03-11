@@ -22,7 +22,7 @@ pub fn print_blocks<B>(blocks: &[B], config: &SharedConfig)
 where
     B: Borrow<RenderedBlock>,
 {
-    let mut last_bg = Color::None;
+    let mut prev_last_bg = Color::None;
     let mut rendered_blocks = vec![];
 
     // The right most block should never be alternated
@@ -35,6 +35,8 @@ where
         == 0;
 
     let mut logical_block_i = 0;
+
+    let mut prev_merge_with_next = false;
 
     for widgets in blocks
         .iter()
@@ -62,8 +64,8 @@ where
             alt = !alt;
         }
 
-        if !merge_with_next {
-            if let Separator::Custom(separator) = &config.theme.separator {
+        if let Separator::Custom(separator) = &config.theme.separator {
+            if !prev_merge_with_next {
                 // The first widget's BG is used to get the FG color for the current separator
                 let sep_fg = if config.theme.separator_fg == Color::Auto {
                     segments.first().unwrap().background
@@ -73,13 +75,10 @@ where
 
                 // The separator's BG is the last block's last widget's BG
                 let sep_bg = if config.theme.separator_bg == Color::Auto {
-                    last_bg
+                    prev_last_bg
                 } else {
                     config.theme.separator_bg
                 };
-
-                // The last widget's BG is used to get the BG color for the next separator
-                last_bg = segments.last().unwrap().background;
 
                 let separator = I3BarBlock {
                     full_text: separator.clone(),
@@ -89,25 +88,28 @@ where
                 };
 
                 rendered_blocks.push(separator);
-            } else {
-                // Re-add native separator on last widget for native theme
-                segments.last_mut().unwrap().separator = None;
-                segments.last_mut().unwrap().separator_block_width = None;
             }
+        } else if !merge_with_next {
+            // Re-add native separator on last widget for native theme
+            segments.last_mut().unwrap().separator = None;
+            segments.last_mut().unwrap().separator_block_width = None;
         }
-
-        rendered_blocks.extend(segments);
 
         if !merge_with_next {
             logical_block_i += 1;
         }
+
+        prev_merge_with_next = merge_with_next;
+        prev_last_bg = segments.last().unwrap().background;
+
+        rendered_blocks.extend(segments);
     }
 
     if let Separator::Custom(end_separator) = &config.theme.end_separator {
         rendered_blocks.push(I3BarBlock {
             full_text: end_separator.clone(),
             background: Color::None,
-            color: last_bg,
+            color: prev_last_bg,
             ..Default::default()
         });
     }

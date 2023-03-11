@@ -39,7 +39,7 @@ Global variables:
 Key | Description | Default
 ----|-------------|----------
 `icons_format` | A string to customise the appearance of each icon. Can be used to edit icons' spacing or specify a font that will be applied only to icons via pango markup. For example, `" <span font_family='NotoSans Nerd Font'>{icon}</span> "`. | `" {icon} "`
-`invert_scrolling` | Whether to intvert the direction of scrolling, useful for touchpad users. | `false`
+`invert_scrolling` | Whether to invert the direction of scrolling, useful for touchpad users. | `false`
 `error_format` | A string to customise how block errors are displayed. See below for available placeholders. | `"$short_error_message\|X"`
 `error_fullscreen_format` | A string to customise how block errors are displayed when clicked. See below for available placeholders. | `"$full_error_message"`
 
@@ -61,8 +61,8 @@ Key | Description | Default
 `error_format` | Overrides global `error_format` | None
 `error_fullscreen_format` | Overrides global `error_fullscreen_format` | None
 `error_interval` | How long to wait until restarting the block after an error occurred. | `5`
-`[block.theme_overrides]` | Same as top-level config option, but for this block only. Refer to `Themes and Icons` below. | None
-`[block.icons_overrides]` | Same as top-level config option, but for this block only. Refer to `Themes and Icons` below. | None
+`[block.theme_overrides]` | Same as the top-level config option, but for this block only. Refer to `Themes and Icons` below. | None
+`[block.icons_overrides]` | Same as the top-level config option, but for this block only. Refer to `Themes and Icons` below. | None
 `[[block.click]]` | Set or override click action for the block. See below for details. | Block default / None
 
 Per block click configuration `[[block.click]]`:
@@ -71,7 +71,7 @@ Key | Description | Default
 ----|-------------|----------
 `button` | `left`, `middle`, `right`, `up`, `down`, `forward`, `back` or [`double_left`](https://greshake.github.io/i3status-rust/i3status_rs/click/enum.MouseButton.html). | -
 `widget` | To which part of the block this entry applies | None
-`cmd` | Command to run when mouse button event is detected. | None
+`cmd` | Command to run when the mouse button event is detected. | None
 `action` | Which block action to trigger | None
 `sync` | Whether to wait for command to exit or not. | `false`
 `update` | Whether to update the block on click. | `false`

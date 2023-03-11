@@ -16,7 +16,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. | <code>"{ $icon&vert;}{ $text.str(pango:true)&vert;} "</code>
+//! `format` | A string to customise the output of this block. | <code>"{ $icon&vert;}{ $text.pango-str()&vert;} "</code>
 //!
 //! Placeholder  | Value                                  | Type   | Unit
 //! -------------|-------------------------------------------------------------------|--------|---------------
@@ -127,8 +127,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     api.event_receiver.close();
 
     let widget = Widget::new().with_format(config.format.with_defaults(
-        "{ $icon|}{ $text.str(pango:true)|} ",
-        "{ $icon|} $short_text.str(pango:true) |",
+        "{ $icon|}{ $text.pango-str()|} ",
+        "{ $icon|} $short_text.pango-str() | ",
     )?);
 
     let dbus_conn = DBUS_CONNECTION

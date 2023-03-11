@@ -240,7 +240,10 @@ pub async fn run(block_config: Config, mut api: CommonApi) -> Result<()> {
     ])
     .await?;
 
-    let format = FormatConfig::default().with_default(" $icon{ $message|} ")?;
+    let format = block_config
+        .format
+        .clone()
+        .with_default(" $icon{ $message|} ")?;
     let widget = Widget::new().with_format(format);
 
     let mut block = Block {

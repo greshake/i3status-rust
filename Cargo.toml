@@ -4,7 +4,7 @@ description = "A feature-rich and resource-friendly replacement for i3status, wr
 repository = "https://github.com/greshake/i3status-rust/"
 readme = "README.md"
 license = "GPL-3.0-only"
-version = "0.30.3"
+version = "0.30.4"
 authors = [
   "Kai Greshake <development@kai-greshake.de>",
   "Contributors on GitHub (https://github.com/greshake/i3status-rust/graphs/contributors)",
@@ -29,7 +29,7 @@ libpulse-binding = { version = "2.0", default-features = false, optional = true 
 log = "0.4"
 maildir = { version = "0.6", optional = true }
 neli = { version = "0.6", features = ["async"] }
-neli-wifi = { version = "0.4", features = ["async"] }
+neli-wifi = { version = "0.5", features = ["async"] }
 nix = "0.26"
 nom = "7.1.2"
 notmuch = { version = "0.8", optional = true }
@@ -42,7 +42,7 @@ signal-hook = "0.3"
 smart-default = "0.6"
 swayipc-async = "2.0"
 tokio-stream = "0.1"
-toml = "0.6"
+toml = "0.7"
 zbus = { version = "3.8", default-features = false, features = ["tokio"] }
 wayrs-client = { version = "0.3", features = ["tokio"] }
 wayrs-protocols = { version = "0.3", features = ["wlr-foreign-toplevel-management-unstable-v1"] }
@@ -50,7 +50,7 @@ wayrs-protocols = { version = "0.3", features = ["wlr-foreign-toplevel-managemen
 [dependencies.clap]
 version = "4.0"
 default-features = false
-features = ["std", "derive"]
+features = ["std", "derive", "help"]
 
 [dependencies.serde]
 version = "1.0"
