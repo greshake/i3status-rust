@@ -137,7 +137,7 @@ pub async fn has_command(command: &str) -> Result<bool> {
 
 /// # Example
 ///
-/// ```
+/// ```ignore
 /// let opt = Some(1);
 /// let map: HashMap<&'static str, String> = map! {
 ///     "key" => "value",
@@ -145,6 +145,7 @@ pub async fn has_command(command: &str) -> Result<bool> {
 ///     [if let Some(x) = opt] "opt" => x.to_string(),
 /// };
 /// ```
+#[macro_export]
 macro_rules! map {
     ($( $([$($cond_tokens:tt)*])? $key:literal => $value:expr ),* $(,)?) => {{
         #[allow(unused_mut)]
@@ -168,6 +169,8 @@ macro_rules! map {
         }
     }};
 }
+
+pub use map;
 
 macro_rules! regex {
     ($re:literal $(,)?) => {{

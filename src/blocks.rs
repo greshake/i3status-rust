@@ -192,7 +192,7 @@ impl CommonApi {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// tokio::select! {
     ///     _ = timer.tick() => (),
     ///     event = api.event() => match event {
@@ -223,7 +223,7 @@ impl CommonApi {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// tokio::select! {
     ///     _ = timer.tick() => (),
     ///     _ = api.wait_for_update_request() => (),
@@ -253,7 +253,7 @@ impl CommonApi {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// let status = api.recoverable(|| Status::new(&*socket_path)).await?;
     /// ```
     pub async fn recoverable<Fn, Fut, T>(&mut self, mut f: Fn) -> Result<T>

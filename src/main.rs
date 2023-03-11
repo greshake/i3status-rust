@@ -1,74 +1,29 @@
-#![warn(clippy::match_same_arms)]
-#![warn(clippy::semicolon_if_nothing_returned)]
-#![warn(clippy::unnecessary_wraps)]
-#![allow(clippy::extra_unused_type_parameters)]
-
-#[macro_use]
-mod util;
-mod blocks;
-mod click;
-mod config;
-mod errors;
-mod escape;
-mod formatting;
-mod icons;
-mod netlink;
-mod protocol;
-mod signals;
-mod subprocess;
-mod themes;
-mod widget;
-mod wrappers;
-
-use clap::Parser;
-use formatting::value::Value;
-use futures::future::{abortable, FutureExt};
-use futures::stream::futures_unordered::FuturesUnordered;
-use futures::stream::{AbortHandle, Stream, StreamExt};
-use once_cell::sync::Lazy;
-use protocol::i3bar_block::I3BarBlock;
-use protocol::i3bar_event::I3BarEvent;
 use std::borrow::Cow;
-use std::future::Future;
-use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
+
+use futures::future::{abortable, FutureExt};
+use futures::stream::futures_unordered::FuturesUnordered;
+use futures::stream::{AbortHandle, StreamExt};
+
 use tokio::process::Command;
 use tokio::sync::mpsc;
 
-use blocks::{BlockEvent, BlockFuture, CommonApi};
-use click::{ClickHandler, MouseButton};
-use config::SharedConfig;
-use config::{BlockConfigEntry, Config};
-use errors::*;
-use escape::CollectEscaped;
-use formatting::{scheduling, Format};
-use protocol::i3bar_event::events_stream;
-use signals::{signals_stream, Signal};
-use widget::{State, Widget};
+use clap::Parser;
 
-pub type BoxedFuture<T> = Pin<Box<dyn Future<Output = T>>>;
-pub type BoxedStream<T> = Pin<Box<dyn Stream<Item = T>>>;
-
-const APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
-const REQWEST_TIMEOUT: Duration = Duration::from_secs(10);
-
-pub static REQWEST_CLIENT: Lazy<reqwest::Client> = Lazy::new(|| {
-    reqwest::Client::builder()
-        .user_agent(APP_USER_AGENT)
-        .timeout(REQWEST_TIMEOUT)
-        .build()
-        .unwrap()
-});
-
-pub static REQWEST_CLIENT_IPV4: Lazy<reqwest::Client> = Lazy::new(|| {
-    reqwest::Client::builder()
-        .user_agent(APP_USER_AGENT)
-        .local_address(Some(std::net::Ipv4Addr::UNSPECIFIED.into()))
-        .timeout(REQWEST_TIMEOUT)
-        .build()
-        .unwrap()
-});
+use i3status_rs::blocks::{BlockEvent, BlockFuture, CommonApi};
+use i3status_rs::click::{ClickHandler, MouseButton};
+use i3status_rs::config::SharedConfig;
+use i3status_rs::config::{BlockConfigEntry, Config};
+use i3status_rs::errors::*;
+use i3status_rs::escape::CollectEscaped;
+use i3status_rs::formatting::value::Value;
+use i3status_rs::formatting::{scheduling, Format};
+use i3status_rs::protocol::i3bar_event::{events_stream, I3BarEvent};
+use i3status_rs::signals::{signals_stream, Signal};
+use i3status_rs::util::map;
+use i3status_rs::widget::{State, Widget};
+use i3status_rs::*;
 
 fn main() {
     env_logger::init();
@@ -175,26 +130,6 @@ pub enum BlockState {
     None,
     Normal { widget: Widget },
     Error { widget: Widget },
-}
-
-#[derive(Debug)]
-pub struct Request {
-    pub block_id: usize,
-    pub cmd: RequestCmd,
-}
-
-#[derive(Debug)]
-pub enum RequestCmd {
-    SetWidget(Widget),
-    UnsetWidget,
-    SetError(Error),
-    SetDefaultActions(&'static [(MouseButton, Option<&'static str>, &'static str)]),
-}
-
-#[derive(Debug, Clone)]
-pub struct RenderedBlock {
-    segments: Vec<I3BarBlock>,
-    merge_with_next: bool,
 }
 
 struct BarState {
