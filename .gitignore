@@ -8,3 +8,4 @@ target/
 
 .cargo/
 .config/
+myenv/
