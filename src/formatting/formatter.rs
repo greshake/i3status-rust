@@ -3,7 +3,6 @@ use chrono::{Local, Locale};
 use once_cell::sync::Lazy;
 
 use std::fmt::Debug;
-use std::iter::repeat;
 use std::time::{Duration, Instant};
 
 use super::parse::Arg;
@@ -29,6 +28,7 @@ pub const DEFAULT_STRING_FORMATTER: StrFormatter = StrFormatter {
     max_width: DEFAULT_STR_MAX_WIDTH,
     rot_interval_ms: None,
     init_time: None,
+    padding: Some(' '),
 };
 
 // TODO: split those defaults
@@ -81,6 +81,11 @@ pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
                                 .error("Interval must be a positive number")?,
                         );
                     }
+                    "padding" => {
+                        if arg.val.chars().count() != 1 {
+                            return Err(Error::new("Padding must be a single character"));
+                        }
+                    }
                     other => {
                         return Err(Error::new(format!("Unknown argument for 'str': '{other}'")));
                     }
@@ -101,6 +106,7 @@ pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
                 max_width,
                 rot_interval_ms: rot_interval.map(|x| (x * 1e3) as u64),
                 init_time: Some(Instant::now()),
+                padding: Some(' '),
             }))
         }
         "pango-str" => {
@@ -167,6 +173,7 @@ pub struct StrFormatter {
     max_width: usize,
     rot_interval_ms: Option<u64>,
     init_time: Option<Instant>,
+    padding: Option<char>,
 }
 
 impl Formatter for StrFormatter {
@@ -180,18 +187,24 @@ impl Formatter for StrFormatter {
                         let step = (init_time.elapsed().as_millis() as u64 / rot_interval_ms)
                             as usize
                             % width;
-                        let w1 = self.max_width.min(width - step);
+                        let w1 = self.max_width.min(width - step - 1);
+                        let padding = self.padding.unwrap_or(' ');
                         text.chars()
                             .chain(Some('|'))
                             .skip(step)
                             .take(w1)
-                            .chain(text.chars())
-                            .take(self.max_width)
+                            .chain(
+                                std::iter::repeat(padding).take(self.min_width.saturating_sub(w1)),
+                            )
                             .collect_pango_escaped()
                     }
                     _ => text
                         .chars()
-                        .chain(repeat(' ').take(self.min_width.saturating_sub(width)))
+                        .chain(std::iter::repeat(' ').take(self.min_width.saturating_sub(width)))
+                        .chain(
+                            std::iter::repeat(self.padding.unwrap_or(' '))
+                                .take(self.min_width.saturating_sub(width)),
+                        )
                         .take(self.max_width)
                         .collect_pango_escaped(),
                 })
@@ -365,7 +378,7 @@ impl Formatter for EngFormatter {
 
                 let mut retval = match self.0.width as isize - digits {
                     isize::MIN..=0 => format!("{}", val.floor()),
-                    1 => format!(" {}", val.floor() as i64),
+                    1 => format!("{}", val.floor() as i64),
                     rest => format!("{:.*}", rest as usize - 1, val),
                 };
 
