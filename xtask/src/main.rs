@@ -152,7 +152,8 @@ fn generate_manpage() -> Result<()> {
         }
     };
 
-    let mut out = io::BufWriter::new(fs::File::create(&man_out_path)?);
+    fs::create_dir_all(&man_dir).unwrap();
+    let mut out = io::BufWriter::new(fs::File::create(&man_out_path).unwrap());
     let man = clap_mangen::Man::new(i3status_rs::CliArgs::command());
     man.render_title(&mut out).unwrap();
     man.render_name_section(&mut out).unwrap();

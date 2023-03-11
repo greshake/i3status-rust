@@ -5,4 +5,4 @@
 **/*.rs.bk
 
 # Ignore generated manpages
-man/i3status-rs.1
+/man
