@@ -108,20 +108,6 @@ impl Status {
             Status::Error => "net_down",
         }
     }
-
-    fn flag(&self) -> &str {
-        match self {
-            Status::Connected { country_flag, .. } => country_flag.as_str(),
-            _ => "",
-        }
-    }
-
-    fn country(&self) -> &str {
-        match self {
-            Status::Connected { country, .. } => country.as_str(),
-            _ => "",
-        }
-    }
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
@@ -140,12 +126,15 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     loop {
         let status = driver.get_status().await?;
 
-        widget.state = match status {
-            Status::Connected { .. } => {
+        widget.state = match &status {
+            Status::Connected {
+                country,
+                country_flag,
+            } => {
                 widget.set_values(map!(
                         "icon" => Value::icon(api.get_icon(status.icon())?),
-                        "country" => Value::text(status.country().to_string()),
-                        "flag" => Value::text(status.flag().to_string()),
+                        "country" => Value::text(country.to_string()),
+                        "flag" => Value::text(country_flag.to_string()),
 
                 ));
                 widget.set_format(format_connected.clone());
