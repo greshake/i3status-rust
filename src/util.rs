@@ -8,16 +8,17 @@ use tokio::process::Command;
 use crate::errors::*;
 
 /// Tries to find a file in standard locations:
-/// - Fist try to find a file by full path
+/// - Fist try to find a file by full path (only if path is absolute)
 /// - Then try XDG_CONFIG_HOME (e.g. `~/.config`)
 /// - Then try XDG_DATA_HOME (e.g. `~/.local/share/`)
 /// - Then try `/usr/share/`
 ///
 /// Automatically append an extension if not presented.
 pub fn find_file(file: &str, subdir: Option<&str>, extension: Option<&str>) -> Option<PathBuf> {
-    let file = PathBuf::from(file);
-    if file.exists() {
-        return Some(file);
+    let file = Path::new(file);
+
+    if file.is_absolute() && file.exists() {
+        return Some(file.to_path_buf());
     }
 
     // Try XDG_CONFIG_HOME (e.g. `~/.config`)
@@ -26,7 +27,7 @@ pub fn find_file(file: &str, subdir: Option<&str>, extension: Option<&str>) -> O
         if let Some(subdir) = subdir {
             xdg_config.push(subdir);
         }
-        xdg_config.push(&file);
+        xdg_config.push(file);
         if let Some(file) = exists_with_opt_extension(&xdg_config, extension) {
             return Some(file);
         }
@@ -38,7 +39,7 @@ pub fn find_file(file: &str, subdir: Option<&str>, extension: Option<&str>) -> O
         if let Some(subdir) = subdir {
             xdg_data.push(subdir);
         }
-        xdg_data.push(&file);
+        xdg_data.push(file);
         if let Some(file) = exists_with_opt_extension(&xdg_data, extension) {
             return Some(file);
         }
@@ -49,7 +50,7 @@ pub fn find_file(file: &str, subdir: Option<&str>, extension: Option<&str>) -> O
     if let Some(subdir) = subdir {
         usr_share_path.push(subdir);
     }
-    usr_share_path.push(&file);
+    usr_share_path.push(file);
     if let Some(file) = exists_with_opt_extension(&usr_share_path, extension) {
         return Some(file);
     }

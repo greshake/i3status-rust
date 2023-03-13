@@ -74,6 +74,14 @@ pub static REQWEST_CLIENT_IPV4: Lazy<reqwest::Client> = Lazy::new(|| {
 #[clap(author, about, version = env!("VERSION"))]
 struct CliArgs {
     /// Sets a TOML config file
+    ///
+    /// 1. If full absolute path given, then use it as is: `/home/foo/i3rs-config.toml`
+    ///
+    /// 2. If filename given, e.g. "custom_theme.toml", then first look in `$XDG_CONFIG_HOME/i3status-rust`
+    ///
+    /// 3. Then look for it in `$XDG_DATA_HOME/i3status-rust`
+    ///
+    /// 4. Otherwise look for it in `/usr/share/i3status-rust`
     #[clap(default_value = "config.toml")]
     config: String,
     /// Ignore any attempts by i3 to pause the bar when hidden/fullscreen
