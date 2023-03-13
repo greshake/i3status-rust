@@ -529,6 +529,14 @@
 <a href="#529" id="529">529</a>
 <a href="#530" id="530">530</a>
 <a href="#531" id="531">531</a>
+<a href="#532" id="532">532</a>
+<a href="#533" id="533">533</a>
+<a href="#534" id="534">534</a>
+<a href="#535" id="535">535</a>
+<a href="#536" id="536">536</a>
+<a href="#537" id="537">537</a>
+<a href="#538" id="538">538</a>
+<a href="#539" id="539">539</a>
 </pre><pre class="rust"><code><span class="attr">#![warn(clippy::match_same_arms)]
 #![warn(clippy::semicolon_if_nothing_returned)]
 #![warn(clippy::unnecessary_wraps)]
@@ -605,6 +613,14 @@
 #[clap(author, about, version = <span class="macro">env!</span>(<span class="string">&quot;VERSION&quot;</span>))]
 </span><span class="kw">struct </span>CliArgs {
     <span class="doccomment">/// Sets a TOML config file
+    ///
+    /// 1. If full absolute path given, then use it as is: `/home/foo/i3rs-config.toml`
+    ///
+    /// 2. If filename given, e.g. &quot;custom_theme.toml&quot;, then first look in `$XDG_CONFIG_HOME/i3status-rust`
+    ///
+    /// 3. Then look for it in `$XDG_DATA_HOME/i3status-rust`
+    ///
+    /// 4. Otherwise look for it in `/usr/share/i3status-rust`
     </span><span class="attr">#[clap(default_value = <span class="string">&quot;config.toml&quot;</span>)]
     </span>config: String,
     <span class="doccomment">/// Ignore any attempts by i3 to pause the bar when hidden/fullscreen

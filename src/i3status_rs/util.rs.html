@@ -260,6 +260,7 @@
 <a href="#260" id="260">260</a>
 <a href="#261" id="261">261</a>
 <a href="#262" id="262">262</a>
+<a href="#263" id="263">263</a>
 </pre><pre class="rust"><code><span class="kw">use </span>std::path::{Path, PathBuf};
 
 <span class="kw">use </span>dirs::{config_dir, data_dir};
@@ -270,16 +271,17 @@
 <span class="kw">use </span><span class="kw">crate</span>::errors::<span class="kw-2">*</span>;
 
 <span class="doccomment">/// Tries to find a file in standard locations:
-/// - Fist try to find a file by full path
+/// - Fist try to find a file by full path (only if path is absolute)
 /// - Then try XDG_CONFIG_HOME (e.g. `~/.config`)
 /// - Then try XDG_DATA_HOME (e.g. `~/.local/share/`)
 /// - Then try `/usr/share/`
 ///
 /// Automatically append an extension if not presented.
 </span><span class="kw">pub fn </span>find_file(file: <span class="kw-2">&amp;</span>str, subdir: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt;, extension: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt;) -&gt; <span class="prelude-ty">Option</span>&lt;PathBuf&gt; {
-    <span class="kw">let </span>file = PathBuf::from(file);
-    <span class="kw">if </span>file.exists() {
-        <span class="kw">return </span><span class="prelude-val">Some</span>(file);
+    <span class="kw">let </span>file = Path::new(file);
+
+    <span class="kw">if </span>file.is_absolute() &amp;&amp; file.exists() {
+        <span class="kw">return </span><span class="prelude-val">Some</span>(file.to_path_buf());
     }
 
     <span class="comment">// Try XDG_CONFIG_HOME (e.g. `~/.config`)
@@ -288,7 +290,7 @@
         <span class="kw">if let </span><span class="prelude-val">Some</span>(subdir) = subdir {
             xdg_config.push(subdir);
         }
-        xdg_config.push(<span class="kw-2">&amp;</span>file);
+        xdg_config.push(file);
         <span class="kw">if let </span><span class="prelude-val">Some</span>(file) = exists_with_opt_extension(<span class="kw-2">&amp;</span>xdg_config, extension) {
             <span class="kw">return </span><span class="prelude-val">Some</span>(file);
         }
@@ -300,7 +302,7 @@
         <span class="kw">if let </span><span class="prelude-val">Some</span>(subdir) = subdir {
             xdg_data.push(subdir);
         }
-        xdg_data.push(<span class="kw-2">&amp;</span>file);
+        xdg_data.push(file);
         <span class="kw">if let </span><span class="prelude-val">Some</span>(file) = exists_with_opt_extension(<span class="kw-2">&amp;</span>xdg_data, extension) {
             <span class="kw">return </span><span class="prelude-val">Some</span>(file);
         }
@@ -311,7 +313,7 @@
     <span class="kw">if let </span><span class="prelude-val">Some</span>(subdir) = subdir {
         usr_share_path.push(subdir);
     }
-    usr_share_path.push(<span class="kw-2">&amp;</span>file);
+    usr_share_path.push(file);
     <span class="kw">if let </span><span class="prelude-val">Some</span>(file) = exists_with_opt_extension(<span class="kw-2">&amp;</span>usr_share_path, extension) {
         <span class="kw">return </span><span class="prelude-val">Some</span>(file);
     }
