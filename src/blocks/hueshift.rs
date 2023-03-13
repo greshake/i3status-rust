@@ -93,7 +93,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut widget = Widget::new().with_format(config.format.with_default(" $temperature ")?);
 
     // limit too big steps at 500K to avoid too brutal changes
-    let step = config.step.max(500);
+    let step = config.step.min(500);
     let max_temp = config.max_temp.min(10_000);
     let min_temp = config.min_temp.clamp(1_000, max_temp);
 
