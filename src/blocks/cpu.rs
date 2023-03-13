@@ -85,7 +85,6 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
     loop {
         let freqs = read_frequencies().await?;
-        let freq_avg = freqs.iter().sum::<f64>() / (freqs.len() as f64);
 
         // Compute utilizations
         let new_cputime = read_proc_stat().await?;
@@ -106,7 +105,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             barchart.push(BOXCHARS[(7.5 * utilization) as usize]);
         }
 
-        // Read boot state on intel CPUs
+        // Read boost state on intel CPUs
         let boost = boost_status().await.map(|status| match status {
             true => boost_icon_on.clone(),
             false => boost_icon_off.clone(),
@@ -115,8 +114,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         let mut values = map!(
             "icon" => Value::icon(api.get_icon_in_progression("cpu", utilization_avg)?),
             "barchart" => Value::text(barchart),
-            [if !freqs.is_empty()] "frequency" => Value::hertz(freq_avg),
             "utilization" => Value::percents(utilization_avg * 100.),
+            [if !freqs.is_empty()] "frequency" => Value::hertz(freqs.iter().sum::<f64>() / (freqs.len() as f64)),
             [if !freqs.is_empty()] "max_frequency" => Value::hertz(freqs.iter().copied().max_by(f64::total_cmp).unwrap()),
         );
         boost.map(|b| values.insert("boost".into(), Value::icon(b)));
