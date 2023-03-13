@@ -258,7 +258,6 @@
 <a href="#258" id="258">258</a>
 <a href="#259" id="259">259</a>
 <a href="#260" id="260">260</a>
-<a href="#261" id="261">261</a>
 </pre><pre class="rust"><code><span class="doccomment">//! CPU statistics
 //!
 //! # Configuration
@@ -346,7 +345,6 @@
 
     <span class="kw">loop </span>{
         <span class="kw">let </span>freqs = read_frequencies().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">let </span>freq_avg = freqs.iter().sum::&lt;f64&gt;() / (freqs.len() <span class="kw">as </span>f64);
 
         <span class="comment">// Compute utilizations
         </span><span class="kw">let </span>new_cputime = read_proc_stat().<span class="kw">await</span><span class="question-mark">?</span>;
@@ -367,7 +365,7 @@
             barchart.push(BOXCHARS[(<span class="number">7.5 </span>* utilization) <span class="kw">as </span>usize]);
         }
 
-        <span class="comment">// Read boot state on intel CPUs
+        <span class="comment">// Read boost state on intel CPUs
         </span><span class="kw">let </span>boost = boost_status().<span class="kw">await</span>.map(|status| <span class="kw">match </span>status {
             <span class="bool-val">true </span>=&gt; boost_icon_on.clone(),
             <span class="bool-val">false </span>=&gt; boost_icon_off.clone(),
@@ -376,8 +374,8 @@
         <span class="kw">let </span><span class="kw-2">mut </span>values = <span class="macro">map!</span>(
             <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon_in_progression(<span class="string">&quot;cpu&quot;</span>, utilization_avg)<span class="question-mark">?</span>),
             <span class="string">&quot;barchart&quot; </span>=&gt; Value::text(barchart),
-            [<span class="kw">if </span>!freqs.is_empty()] <span class="string">&quot;frequency&quot; </span>=&gt; Value::hertz(freq_avg),
             <span class="string">&quot;utilization&quot; </span>=&gt; Value::percents(utilization_avg * <span class="number">100.</span>),
+            [<span class="kw">if </span>!freqs.is_empty()] <span class="string">&quot;frequency&quot; </span>=&gt; Value::hertz(freqs.iter().sum::&lt;f64&gt;() / (freqs.len() <span class="kw">as </span>f64)),
             [<span class="kw">if </span>!freqs.is_empty()] <span class="string">&quot;max_frequency&quot; </span>=&gt; Value::hertz(freqs.iter().copied().max_by(f64::total_cmp).unwrap()),
         );
         boost.map(|b| values.insert(<span class="string">&quot;boost&quot;</span>.into(), Value::icon(b)));
