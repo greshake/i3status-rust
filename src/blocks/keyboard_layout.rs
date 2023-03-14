@@ -114,7 +114,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         KeyboardLayoutDriver::LocaleBus => Box::new(LocaleBus::new().await?),
         KeyboardLayoutDriver::KbddBus => Box::new(KbddBus::new().await?),
         KeyboardLayoutDriver::Sway => Box::new(Sway::new(config.sway_kb_identifier).await?),
-        KeyboardLayoutDriver::XkbSwitch => Box::new(XkbSwitch::new()),
+        KeyboardLayoutDriver::XkbSwitch => Box::new(XkbSwitch(config.interval)),
     };
 
     loop {
