@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["get_number_of_tasks",""],["run",""]],"struct":[["Config",""],["Filter",""]]};
+window.SIDEBAR_ITEMS = {"fn":[["run",""]],"struct":[["Config",""]]};

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["rofication_status",""],["run",""]],"struct":[["Config",""]]};
+window.SIDEBAR_ITEMS = {"fn":[["run",""]],"struct":[["Config",""]]};

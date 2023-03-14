@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":[["IP_API_URL",""]],"enum":[["UnitSystem",""],["WeatherIcon",""],["WeatherService",""]],"fn":[["australian_apparent_temp","Compute the Australian Apparent Temperature from metric units"],["convert_wind_direction",""],["default_interval",""],["find_ip_location",""],["run",""]],"mod":[["met_no",""],["open_weather_map",""]],"struct":[["Config",""],["Coordinates",""],["WeatherResult",""]],"trait":[["WeatherProvider",""]]};
+window.SIDEBAR_ITEMS = {"fn":[["run",""]],"struct":[["Config",""]]};

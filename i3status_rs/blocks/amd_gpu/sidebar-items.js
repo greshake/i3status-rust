@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["read_gpu_info",""],["read_prop",""],["run",""]],"struct":[["Config",""],["GpuInfo",""]]};
+window.SIDEBAR_ITEMS = {"fn":[["run",""]],"struct":[["Config",""]]};

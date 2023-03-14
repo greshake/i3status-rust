@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["run",""]],"struct":[["Config",""],["SpeedtestCliOutput",""]]};
+window.SIDEBAR_ITEMS = {"fn":[["run",""]],"struct":[["Config",""]]};

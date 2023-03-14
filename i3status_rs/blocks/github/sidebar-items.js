@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["get_on_page",""],["get_stats",""],["run",""]],"struct":[["Config",""],["Notification",""]]};
+window.SIDEBAR_ITEMS = {"fn":[["run",""]],"struct":[["Config",""]]};

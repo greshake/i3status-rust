@@ -261,6 +261,9 @@
 <a href="#261" id="261">261</a>
 <a href="#262" id="262">262</a>
 <a href="#263" id="263">263</a>
+<a href="#264" id="264">264</a>
+<a href="#265" id="265">265</a>
+<a href="#266" id="266">266</a>
 </pre><pre class="rust"><code><span class="kw">use </span>std::path::{Path, PathBuf};
 
 <span class="kw">use </span>dirs::{config_dir, data_dir};
@@ -400,7 +403,7 @@
 
 <span class="doccomment">/// # Example
 ///
-/// ```
+/// ```ignore
 /// let opt = Some(1);
 /// let map: HashMap&lt;&amp;&#39;static str, String&gt; = map! {
 ///     &quot;key&quot; =&gt; &quot;value&quot;,
@@ -408,6 +411,7 @@
 ///     [if let Some(x) = opt] &quot;opt&quot; =&gt; x.to_string(),
 /// };
 /// ```
+</span><span class="attr">#[macro_export]
 </span><span class="macro">macro_rules! </span>map {
     ($( $([$(<span class="macro-nonterminal">$cond_tokens</span>:tt)<span class="kw-2">*</span>])<span class="question-mark">? </span><span class="macro-nonterminal">$key</span>:literal =&gt; <span class="macro-nonterminal">$value</span>:expr ),* $(,)<span class="question-mark">?</span>) =&gt; {{
         <span class="attr">#[allow(unused_mut)]
@@ -431,6 +435,8 @@
         }
     }};
 }
+
+<span class="kw">pub use </span>map;
 
 <span class="macro">macro_rules! </span>regex {
     (<span class="macro-nonterminal">$re</span>:literal $(,)<span class="question-mark">?</span>) =&gt; {{

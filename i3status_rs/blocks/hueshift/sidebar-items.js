@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":[["HueShifter",""]],"fn":[["run",""]],"struct":[["Config",""],["Gammastep",""],["Redshift",""],["Sct",""],["WlGammarelayRs",""],["WlGammarelayRsBusProxy",""],["WlGammarelayRsBusProxyBlocking",""],["Wlsunset",""]],"trait":[["HueShiftDriver",""]]};
+window.SIDEBAR_ITEMS = {"fn":[["run",""]],"struct":[["Config",""],["WlGammarelayRsBusProxy",""],["WlGammarelayRsBusProxyBlocking",""]]};

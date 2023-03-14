@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["get_monitors",""],["run",""]],"macro":[["unwrap_or_break",""]],"struct":[["Config",""],["Monitor",""]]};
+window.SIDEBAR_ITEMS = {"fn":[["run",""]],"struct":[["Config",""]]};

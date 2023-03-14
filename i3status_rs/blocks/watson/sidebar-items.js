@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":[["WatsonState",""]],"fn":[["deserialize_local_timestamp",""],["format_delta_after",""],["format_delta_past",""],["run",""]],"struct":[["Config",""]]};
+window.SIDEBAR_ITEMS = {"fn":[["deserialize_local_timestamp",""],["run",""]],"struct":[["Config",""]]};

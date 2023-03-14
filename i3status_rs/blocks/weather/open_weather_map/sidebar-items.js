@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"constant":[["API_KEY_ENV",""],["CITY_ID_ENV",""],["PLACE_ENV",""],["URL",""]],"fn":[["default_lang",""],["getenv_openweathermap_api_key",""],["getenv_openweathermap_city_id",""],["getenv_openweathermap_place",""]],"struct":[["ApiMain",""],["ApiResponse",""],["ApiWeather",""],["ApiWind",""],["Config",""],["Service",""]]};

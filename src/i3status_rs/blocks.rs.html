@@ -469,7 +469,7 @@
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// tokio::select! {
     ///     _ = timer.tick() =&gt; (),
     ///     event = api.event() =&gt; match event {
@@ -500,7 +500,7 @@
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// tokio::select! {
     ///     _ = timer.tick() =&gt; (),
     ///     _ = api.wait_for_update_request() =&gt; (),
@@ -530,7 +530,7 @@
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```ignore
     /// let status = api.recoverable(|| Status::new(&amp;*socket_path)).await?;
     /// ```
     </span><span class="kw">pub async fn </span>recoverable&lt;Fn, Fut, T&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, <span class="kw-2">mut </span>f: Fn) -&gt; <span class="prelude-ty">Result</span>&lt;T&gt;

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["deserialize_theme_config",""]],"struct":[["BlockConfigEntry",""],["CommonBlockConfig",""],["Config",""],["SharedConfig",""]]};
+window.SIDEBAR_ITEMS = {"struct":[["BlockConfigEntry",""],["CommonBlockConfig",""],["Config",""],["SharedConfig",""]]};
