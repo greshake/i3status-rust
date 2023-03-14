@@ -1,0 +1,12 @@
+[package]
+name = "xtask"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0"
+clap = "4.1"
+clap_mangen = "0.2"
+pandoc = "0.8"
+
+i3status-rs = { path = ".." }

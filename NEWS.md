@@ -11,6 +11,10 @@
 * Battery: fix the default device for UPower driver.
 * `merge_with_next` block option now works with non-native separators.
 
+### Packaging
+
+Manual page is no longer provided in the repo. To generate `man/i3status-rs.1` run `cargo xtask generate-manpage`. See [manual_install.md](https://github.com/greshake/i3status-rust/blob/master/doc/manual_install.md) for more details.
+
 # i3status-rust 0.30.4
 
 ### New Blocks and Features

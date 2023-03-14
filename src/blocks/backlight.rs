@@ -53,7 +53,7 @@
 //! `groups` command. Then add a rule in the `/etc/udev/rules.d/` directory
 //! containing the following, for example in `backlight.rules`:
 //!
-//! ```
+//! ```text
 //! ACTION=="add", SUBSYSTEM=="backlight", GROUP="video", MODE="0664"
 //! ```
 //!

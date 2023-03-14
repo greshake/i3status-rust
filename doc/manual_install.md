@@ -23,4 +23,10 @@ $ cargo install --path . --locked
 $ ./install.sh
 ```
 
-By default, this will install the binary to `~/.cargo/bin/i3status-rs`.
+By default, this will install the binary to `~/.cargo/bin/i3status-rs`, runtime files to `~/.local/share/i3status-rust` and manpage to `~/.local/share/man/man1/i3status-rs.1`
+
+## Packaging
+
+Runtime files from `files` directory are expected to be installed in `/usr/share/i3status-rust` or `$XDG_DATA_HOME/i3status-rust`.
+
+Manual page at `man/i3status-rs.1` can be generated with `cargo xtask generate-manpage`.
