@@ -15,7 +15,7 @@
 * `merge_with_next` block option now works with non-native separators, and also fix color of separators.
 * Hueshift: step now actually maxes at 500 (#1827)
 * Fix `--help` page.
-* conifg,theme,icons: do not look for files relative to the CWD
+* config,theme,icons: do not look for files relative to the CWD
 
 ### Packaging
 
