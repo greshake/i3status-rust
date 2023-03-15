@@ -62,6 +62,7 @@ pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
             let mut min_width = DEFAULT_STR_MIN_WIDTH;
             let mut max_width = DEFAULT_STR_MAX_WIDTH;
             let mut rot_interval = DEFAULT_STR_ROT_INTERVAL;
+            let mut padding = ' ';
             for arg in args {
                 match arg.key {
                     "min_width" | "min_w" => {
@@ -80,6 +81,12 @@ pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
                                 .parse()
                                 .error("Interval must be a positive number")?,
                         );
+                    }
+                    "padding" => {
+                        if arg.val.chars().count() != 1 {
+                            return Err(Error::new("Padding must be a single character"));
+                        }
+                        padding = arg.val.chars().next().unwrap();
                     }
                     other => {
                         return Err(Error::new(format!("Unknown argument for 'str': '{other}'")));
@@ -101,6 +108,7 @@ pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
                 max_width,
                 rot_interval_ms: rot_interval.map(|x| (x * 1e3) as u64),
                 init_time: Some(Instant::now()),
+                padding,
             }))
         }
         "pango-str" => {
@@ -160,13 +168,14 @@ pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
         _ => Err(Error::new(format!("Unknown formatter: '{name}'"))),
     }
 }
-
+//! TODO
 #[derive(Debug)]
 pub struct StrFormatter {
     min_width: usize,
     max_width: usize,
     rot_interval_ms: Option<u64>,
     init_time: Option<Instant>,
+    padding: char,
 }
 
 impl Formatter for StrFormatter {
@@ -187,13 +196,15 @@ impl Formatter for StrFormatter {
                             .take(w1)
                             .chain(text.chars())
                             .take(self.max_width)
+                            .chain(repeat(self.padding).take(self.min_width.saturating_sub(width)))
                             .collect_pango_escaped()
                     }
                     _ => text
                         .chars()
-                        .chain(repeat(' ').take(self.min_width.saturating_sub(width)))
+                        .chain(repeat(self.padding).take(self.min_width.saturating_sub(width)))
                         .take(self.max_width)
                         .collect_pango_escaped(),
+
                 })
             }
             Value::Icon(icon) => Ok(icon.clone()), // No escaping
@@ -365,7 +376,7 @@ impl Formatter for EngFormatter {
 
                 let mut retval = match self.0.width as isize - digits {
                     isize::MIN..=0 => format!("{}", val.floor()),
-                    1 => format!(" {}", val.floor() as i64),
+                    1 => format!("{}", val.floor() as i64),
                     rest => format!("{:.*}", rest as usize - 1, val),
                 };
 
