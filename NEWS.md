@@ -4,12 +4,18 @@
 
 * New block `amd_gpu`: display the stats of your AMD GPU.
 * Battery: filter battery selection by model (#1808).
+* External_ip: allow forcing legacy (v4) IP (#1801).
 
 ### Bug Fixes and Improvements
 
 * Backlight: improve ddcci interactions (#1770).
 * Battery: fix the default device for UPower driver.
-* `merge_with_next` block option now works with non-native separators.
+* Custom: support shell expansions in watch_files.
+* Custom_dbus: fix default format.
+* `merge_with_next` block option now works with non-native separators, and also fix color of separators.
+* Hueshift: step now actually maxes at 500 (#1827)
+* Fix `--help` page.
+* conifg,theme,icons: do not look for files relative to the CWD
 
 ### Packaging
 
