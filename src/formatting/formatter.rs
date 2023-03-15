@@ -291,27 +291,41 @@ impl EngFixConfig {
                     unit = Some(arg.val.parse()?);
                 }
                 "hide_unit" => {
-                    unit_hidden = arg.val.parse().error("hide_unit must be true or false")?;
+                    unit_hidden = arg
+                        .val
+                        .parse()
+                        .ok()
+                        .error("hide_unit must be true or false")?;
                 }
                 "unit_space" => {
-                    unit_has_space = arg.val.parse().error("unit_space must be true or false")?;
+                    unit_has_space = arg
+                        .val
+                        .parse()
+                        .ok()
+                        .error("unit_space must be true or false")?;
                 }
                 "prefix" | "p" => {
                     prefix = Some(arg.val.parse()?);
                 }
                 "hide_prefix" => {
-                    prefix_hidden = arg.val.parse().error("hide_prefix must be true or false")?;
+                    prefix_hidden = arg
+                        .val
+                        .parse()
+                        .ok()
+                        .error("hide_prefix must be true or false")?;
                 }
                 "prefix_space" => {
                     prefix_has_space = arg
                         .val
                         .parse()
+                        .ok()
                         .error("prefix_space must be true or false")?;
                 }
                 "force_prefix" => {
                     prefix_forced = arg
                         .val
                         .parse()
+                        .ok()
                         .error("force_prefix must be true or false")?;
                 }
                 "pad_with" => {
