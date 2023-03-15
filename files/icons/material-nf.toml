@@ -70,7 +70,13 @@ net_modem = "\uf8f1" # nf-mdi-phone
 net_up = "\ufa51" # nf-mdi-upload
 net_vpn = "\ufa81" # nf-mdi-vpn
 net_wired = "\uf6ff" # nf-mdi-ethernet
-net_wireless = "\ufaa8" # nf-mdi-wifi
+net_wireless = [
+	"\U000F092F", # nf-md-wifi_strength_outline
+	"\U000F091F", # nf-md-wifi_strength_1
+	"\U000F0922", # nf-md-wifi_strength_2
+	"\U000F0925", # nf-md-wifi_strength_3
+	"\U000F0928", # nf-md-wifi_strength_4
+]
 notification = "\uf599" # nf-mdi-bell
 phone = "\uf8f1" # nf-mdi-phone
 phone_disconnected = "\ufb57" # nf-mdi-phone_minus
