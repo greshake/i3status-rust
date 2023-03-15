@@ -47,10 +47,11 @@
 //! `unit` or `u`   | some values have a [unit](unit::Unit), and it is possible to convert them by setting this option | N/A
 //! `hide_unit`     | hide the unit symbol                                                                             | `false`
 //! `unit_space`    | have a whitespace before unit symbol                                                             | `false`
-//! `prefix` or `p` | specify this argument if you want to set the minimal [SI prefix](prefix::Prefix)                | N/A
+//! `prefix` or `p` | specify this argument if you want to set the minimal [SI prefix](prefix::Prefix)                 | N/A
 //! `hide_prefix`   | hide the prefix symbol                                                                           | `false`
 //! `prefix_space`  | have a whitespace before prefix symbol                                                           | `false`
 //! `force_prefix`  | force the prefix value instead of setting a "minimal prefix"                                     | `false`
+//! `pad_with`      | the character that is used to pad the number to be `width` long                                  | ` ` (a space)
 //!
 //! ## `bar` - Display numbers as progress bars
 //!

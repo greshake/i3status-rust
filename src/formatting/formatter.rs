@@ -21,6 +21,7 @@ const DEFAULT_BAR_WIDTH: usize = 5;
 const DEFAULT_BAR_MAX_VAL: f64 = 100.0;
 
 const DEFAULT_NUMBER_WIDTH: usize = 2;
+const DEFAULT_NUMBER_PAD_WITH: char = ' ';
 
 const DEFAULT_DATETIME_FORMAT: &str = "%a %d/%m %R";
 
@@ -41,6 +42,7 @@ pub const DEFAULT_NUMBER_FORMATTER: EngFormatter = EngFormatter(EngFixConfig {
     prefix_has_space: false,
     prefix_hidden: false,
     prefix_forced: false,
+    pad_with: DEFAULT_NUMBER_PAD_WITH,
 });
 
 pub static DEFAULT_DATETIME_FORMATTER: Lazy<DatetimeFormatter> =
@@ -265,6 +267,7 @@ struct EngFixConfig {
     prefix_has_space: bool,
     prefix_hidden: bool,
     prefix_forced: bool,
+    pad_with: char,
 }
 
 impl EngFixConfig {
@@ -277,6 +280,7 @@ impl EngFixConfig {
         let mut prefix_has_space = false;
         let mut prefix_hidden = false;
         let mut prefix_forced = false;
+        let mut pad_with = DEFAULT_NUMBER_PAD_WITH;
 
         for arg in args {
             match arg.key {
@@ -310,6 +314,12 @@ impl EngFixConfig {
                         .parse()
                         .error("force_prefix must be true or false")?;
                 }
+                "pad_with" => {
+                    pad_with = arg
+                        .val
+                        .parse()
+                        .error("pad_with must be a single character")?;
+                }
                 other => {
                     return Err(Error::new(format!(
                         "Unknown argument for 'fix'/'eng': '{other}'"
@@ -327,6 +337,7 @@ impl EngFixConfig {
             prefix_has_space,
             prefix_hidden,
             prefix_forced,
+            pad_with,
         })
     }
 }
@@ -365,7 +376,7 @@ impl Formatter for EngFormatter {
 
                 let mut retval = match self.0.width as isize - digits {
                     isize::MIN..=0 => format!("{}", val.floor()),
-                    1 => format!(" {}", val.floor() as i64),
+                    1 => format!("{}{}", self.0.pad_with, val.floor() as i64),
                     rest => format!("{:.*}", rest as usize - 1, val),
                 };
 
