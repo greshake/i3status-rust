@@ -29,4 +29,4 @@ By default, this will install the binary to `~/.cargo/bin/i3status-rs`, runtime 
 
 Runtime files from `files` directory are expected to be installed in `/usr/share/i3status-rust` or `$XDG_DATA_HOME/i3status-rust`.
 
-Manual page at `man/i3status-rs.1` can be generated with `cargo xtask generate-manpage`.
+Manual page at `man/i3status-rs.1` can be generated with `cargo xtask generate-manpage` (`pandoc` binary is required).
