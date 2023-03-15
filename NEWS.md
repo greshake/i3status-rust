@@ -1,3 +1,7 @@
+# i3status-rust 0.30.6 [unreleased]
+
+TBD
+
 # i3status-rust 0.30.5
 
 ### New Blocks and Features
