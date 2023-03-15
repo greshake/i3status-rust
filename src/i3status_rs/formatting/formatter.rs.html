@@ -506,6 +506,20 @@
 <a href="#506" id="506">506</a>
 <a href="#507" id="507">507</a>
 <a href="#508" id="508">508</a>
+<a href="#509" id="509">509</a>
+<a href="#510" id="510">510</a>
+<a href="#511" id="511">511</a>
+<a href="#512" id="512">512</a>
+<a href="#513" id="513">513</a>
+<a href="#514" id="514">514</a>
+<a href="#515" id="515">515</a>
+<a href="#516" id="516">516</a>
+<a href="#517" id="517">517</a>
+<a href="#518" id="518">518</a>
+<a href="#519" id="519">519</a>
+<a href="#520" id="520">520</a>
+<a href="#521" id="521">521</a>
+<a href="#522" id="522">522</a>
 </pre><pre class="rust"><code><span class="kw">use </span>chrono::format::{Item, StrftimeItems};
 <span class="kw">use </span>chrono::{Local, Locale};
 <span class="kw">use </span>once_cell::sync::Lazy;
@@ -799,27 +813,41 @@
                     unit = <span class="prelude-val">Some</span>(arg.val.parse()<span class="question-mark">?</span>);
                 }
                 <span class="string">&quot;hide_unit&quot; </span>=&gt; {
-                    unit_hidden = arg.val.parse().error(<span class="string">&quot;hide_unit must be true or false&quot;</span>)<span class="question-mark">?</span>;
+                    unit_hidden = arg
+                        .val
+                        .parse()
+                        .ok()
+                        .error(<span class="string">&quot;hide_unit must be true or false&quot;</span>)<span class="question-mark">?</span>;
                 }
                 <span class="string">&quot;unit_space&quot; </span>=&gt; {
-                    unit_has_space = arg.val.parse().error(<span class="string">&quot;unit_space must be true or false&quot;</span>)<span class="question-mark">?</span>;
+                    unit_has_space = arg
+                        .val
+                        .parse()
+                        .ok()
+                        .error(<span class="string">&quot;unit_space must be true or false&quot;</span>)<span class="question-mark">?</span>;
                 }
                 <span class="string">&quot;prefix&quot; </span>| <span class="string">&quot;p&quot; </span>=&gt; {
                     prefix = <span class="prelude-val">Some</span>(arg.val.parse()<span class="question-mark">?</span>);
                 }
                 <span class="string">&quot;hide_prefix&quot; </span>=&gt; {
-                    prefix_hidden = arg.val.parse().error(<span class="string">&quot;hide_prefix must be true or false&quot;</span>)<span class="question-mark">?</span>;
+                    prefix_hidden = arg
+                        .val
+                        .parse()
+                        .ok()
+                        .error(<span class="string">&quot;hide_prefix must be true or false&quot;</span>)<span class="question-mark">?</span>;
                 }
                 <span class="string">&quot;prefix_space&quot; </span>=&gt; {
                     prefix_has_space = arg
                         .val
                         .parse()
+                        .ok()
                         .error(<span class="string">&quot;prefix_space must be true or false&quot;</span>)<span class="question-mark">?</span>;
                 }
                 <span class="string">&quot;force_prefix&quot; </span>=&gt; {
                     prefix_forced = arg
                         .val
                         .parse()
+                        .ok()
                         .error(<span class="string">&quot;force_prefix must be true or false&quot;</span>)<span class="question-mark">?</span>;
                 }
                 <span class="string">&quot;pad_with&quot; </span>=&gt; {
