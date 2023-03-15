@@ -3,7 +3,7 @@
 # default icons/themes. If installed via a package manager you do not need to
 # run this script.
 
-XDG_DATA_HOME=${XDG_DATA_HOME:-~/.local/share}
+XDG_DATA_HOME=${XDG_DATA_HOME:-$HOME/.local/share}
 
 # Themes
 mkdir -p $XDG_DATA_HOME/i3status-rust
