@@ -495,6 +495,17 @@
 <a href="#495" id="495">495</a>
 <a href="#496" id="496">496</a>
 <a href="#497" id="497">497</a>
+<a href="#498" id="498">498</a>
+<a href="#499" id="499">499</a>
+<a href="#500" id="500">500</a>
+<a href="#501" id="501">501</a>
+<a href="#502" id="502">502</a>
+<a href="#503" id="503">503</a>
+<a href="#504" id="504">504</a>
+<a href="#505" id="505">505</a>
+<a href="#506" id="506">506</a>
+<a href="#507" id="507">507</a>
+<a href="#508" id="508">508</a>
 </pre><pre class="rust"><code><span class="kw">use </span>chrono::format::{Item, StrftimeItems};
 <span class="kw">use </span>chrono::{Local, Locale};
 <span class="kw">use </span>once_cell::sync::Lazy;
@@ -518,6 +529,7 @@
 <span class="kw">const </span>DEFAULT_BAR_MAX_VAL: f64 = <span class="number">100.0</span>;
 
 <span class="kw">const </span>DEFAULT_NUMBER_WIDTH: usize = <span class="number">2</span>;
+<span class="kw">const </span>DEFAULT_NUMBER_PAD_WITH: char = <span class="string">&#39; &#39;</span>;
 
 <span class="kw">const </span>DEFAULT_DATETIME_FORMAT: <span class="kw-2">&amp;</span>str = <span class="string">&quot;%a %d/%m %R&quot;</span>;
 
@@ -538,6 +550,7 @@
     prefix_has_space: <span class="bool-val">false</span>,
     prefix_hidden: <span class="bool-val">false</span>,
     prefix_forced: <span class="bool-val">false</span>,
+    pad_with: DEFAULT_NUMBER_PAD_WITH,
 });
 
 <span class="kw">pub static </span>DEFAULT_DATETIME_FORMATTER: Lazy&lt;DatetimeFormatter&gt; =
@@ -762,6 +775,7 @@
     prefix_has_space: bool,
     prefix_hidden: bool,
     prefix_forced: bool,
+    pad_with: char,
 }
 
 <span class="kw">impl </span>EngFixConfig {
@@ -774,6 +788,7 @@
         <span class="kw">let </span><span class="kw-2">mut </span>prefix_has_space = <span class="bool-val">false</span>;
         <span class="kw">let </span><span class="kw-2">mut </span>prefix_hidden = <span class="bool-val">false</span>;
         <span class="kw">let </span><span class="kw-2">mut </span>prefix_forced = <span class="bool-val">false</span>;
+        <span class="kw">let </span><span class="kw-2">mut </span>pad_with = DEFAULT_NUMBER_PAD_WITH;
 
         <span class="kw">for </span>arg <span class="kw">in </span>args {
             <span class="kw">match </span>arg.key {
@@ -807,6 +822,12 @@
                         .parse()
                         .error(<span class="string">&quot;force_prefix must be true or false&quot;</span>)<span class="question-mark">?</span>;
                 }
+                <span class="string">&quot;pad_with&quot; </span>=&gt; {
+                    pad_with = arg
+                        .val
+                        .parse()
+                        .error(<span class="string">&quot;pad_with must be a single character&quot;</span>)<span class="question-mark">?</span>;
+                }
                 other =&gt; {
                     <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(
                         <span class="string">&quot;Unknown argument for &#39;fix&#39;/&#39;eng&#39;: &#39;{other}&#39;&quot;
@@ -824,6 +845,7 @@
             prefix_has_space,
             prefix_hidden,
             prefix_forced,
+            pad_with,
         })
     }
 }
@@ -862,7 +884,7 @@
 
                 <span class="kw">let </span><span class="kw-2">mut </span>retval = <span class="kw">match </span><span class="self">self</span>.<span class="number">0</span>.width <span class="kw">as </span>isize - digits {
                     isize::MIN..=<span class="number">0 </span>=&gt; <span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, val.floor()),
-                    <span class="number">1 </span>=&gt; <span class="macro">format!</span>(<span class="string">&quot; {}&quot;</span>, val.floor() <span class="kw">as </span>i64),
+                    <span class="number">1 </span>=&gt; <span class="macro">format!</span>(<span class="string">&quot;{}{}&quot;</span>, <span class="self">self</span>.<span class="number">0</span>.pad_with, val.floor() <span class="kw">as </span>i64),
                     rest =&gt; <span class="macro">format!</span>(<span class="string">&quot;{:.*}&quot;</span>, rest <span class="kw">as </span>usize - <span class="number">1</span>, val),
                 };
 
