@@ -16,19 +16,15 @@
 //! step_width = 3
 //! ```
 //!
-//! ```toml
-//! [[block]]
-//! block = "sound"
-//! format = " $icon $output_description{ $volume|} "
-//! ```
+//! Change the output name shown:
 //!
 //! ```toml
 //! [[block]]
 //! block = "sound"
 //! format = " $icon $output_name{ $volume|} "
 //! [block.mappings]
-//! "alsa_output.usb-Harman_Multimedia_JBL_Pebbles_1.0.0-00.analog-stereo" = "🔈"
-//! "alsa_output.pci-0000_00_1b.0.analog-stereo" = "🎧"
+//! "alsa_output.usb-Harman_Multimedia_JBL_Pebbles_1.0.0-00.analog-stereo" = "Speakers"
+//! "alsa_output.pci-0000_00_1b.0.analog-stereo" = "Headset"
 //! ```
 //!
 //! Since the default value for the `device_kind` key is `sink`,
