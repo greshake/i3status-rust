@@ -276,10 +276,6 @@
 <a href="#276" id="276">276</a>
 <a href="#277" id="277">277</a>
 <a href="#278" id="278">278</a>
-<a href="#279" id="279">279</a>
-<a href="#280" id="280">280</a>
-<a href="#281" id="281">281</a>
-<a href="#282" id="282">282</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Volume level
 //!
 //! This block displays the volume level (according to PulseAudio or ALSA). Right click to toggle mute, scroll to adjust volume.
@@ -298,19 +294,15 @@
 //! step_width = 3
 //! ```
 //!
-//! ```toml
-//! [[block]]
-//! block = &quot;sound&quot;
-//! format = &quot; $icon $output_description{ $volume|} &quot;
-//! ```
+//! Change the output name shown:
 //!
 //! ```toml
 //! [[block]]
 //! block = &quot;sound&quot;
 //! format = &quot; $icon $output_name{ $volume|} &quot;
 //! [block.mappings]
-//! &quot;alsa_output.usb-Harman_Multimedia_JBL_Pebbles_1.0.0-00.analog-stereo&quot; = &quot;🔈&quot;
-//! &quot;alsa_output.pci-0000_00_1b.0.analog-stereo&quot; = &quot;🎧&quot;
+//! &quot;alsa_output.usb-Harman_Multimedia_JBL_Pebbles_1.0.0-00.analog-stereo&quot; = &quot;Speakers&quot;
+//! &quot;alsa_output.pci-0000_00_1b.0.analog-stereo&quot; = &quot;Headset&quot;
 //! ```
 //!
 //! Since the default value for the `device_kind` key is `sink`,
