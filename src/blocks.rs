@@ -19,10 +19,11 @@ use crate::{Request, RequestCmd};
 
 macro_rules! define_blocks {
     {
-        $( $(#[cfg($attr: meta)])? $block: ident $(,)? )*
+        $( $(#[cfg(feature = $feat: literal)])? $block: ident $(,)? )*
     } => {
         $(
-            $(#[cfg($attr)])?
+            $(#[cfg(feature = $feat)])?
+            $(#[cfg_attr(docsrs, doc(cfg(feature = $feat)))])?
             pub mod $block;
         )*
 
@@ -31,7 +32,7 @@ macro_rules! define_blocks {
         #[serde(deny_unknown_fields)]
         pub enum BlockConfig {
             $(
-                $(#[cfg($attr)])?
+                $(#[cfg(feature = $feat)])?
                 #[allow(non_camel_case_types)]
                 $block {
                     #[serde(flatten)]
@@ -44,7 +45,7 @@ macro_rules! define_blocks {
             pub fn name(&self) -> &'static str {
                 match self {
                     $(
-                        $(#[cfg($attr)])?
+                        $(#[cfg(feature = $feat)])?
                         Self::$block { .. } => stringify!($block),
                     )*
                 }
@@ -54,7 +55,7 @@ macro_rules! define_blocks {
                 let id = api.id;
                 match self {
                     $(
-                        $(#[cfg($attr)])?
+                        $(#[cfg(feature = $feat)])?
                         Self::$block { config } => {
                             $block::run(config, api).map(move |e| e.in_block(stringify!($block), id)).boxed_local()
                         }

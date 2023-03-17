@@ -36,6 +36,7 @@ words:
   - dbus
   - ddcci
   - ddcutil
+  - docsrs
   - dmenu
   - dunst
   - execvp

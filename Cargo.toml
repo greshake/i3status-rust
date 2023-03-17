@@ -19,6 +19,10 @@ default = ["pulseaudio"]
 pulseaudio = ["libpulse-binding"]
 debug_borders = []                # Make widgets' borders visible
 
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
 [dependencies]
 async-once-cell = "0.4"
 async-trait = "0.1"
