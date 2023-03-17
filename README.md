@@ -76,13 +76,19 @@ Key | Description | Default
 `sync` | Whether to wait for command to exit or not. | `false`
 `update` | Whether to update the block on click. | `false`
 
-### Further documentation:
+### Further documentation
 
-Documentation | Previous release (v0.22) | Latest release / master (v0.30)
---------------|------------------------|--------------------
-Blocks        | [click](https://github.com/greshake/i3status-rust/blob/v0.22.0/doc/blocks.md) | [click](https://greshake.github.io/i3status-rust/i3status_rs/blocks/index.html)
-Formatting    | [click](https://github.com/greshake/i3status-rust/blob/v0.22.0/doc/blocks.md#formatting) | [click](https://greshake.github.io/i3status-rust/i3status_rs/formatting/index.html)
-Themes and Icons | [click](https://github.com/greshake/i3status-rust/blob/v0.22.0/doc/themes.md) | [click](https://github.com/greshake/i3status-rust/blob/master/doc/themes.md)
+#### Latest release
+
+- [Blocks](https://docs.rs/i3status-rs/latest/i3status_rs/blocks/index.html)
+- [Formatting](https://docs.rs/i3status-rs/latest/i3status_rs/formatting/index.html)
+- [Themes and Icons](https://github.com/greshake/i3status-rust/blob/v0.30.5/doc/themes.md)
+
+#### Master
+
+- [Blocks](https://greshake.github.io/i3status-rust/i3status_rs/blocks/index.html)
+- [Formatting](https://greshake.github.io/i3status-rust/i3status_rs/formatting/index.html)
+- [Themes and Icons](https://github.com/greshake/i3status-rust/blob/master/doc/themes.md)
 
 ## Integrate it into i3/sway
 
