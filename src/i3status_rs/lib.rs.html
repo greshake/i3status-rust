@@ -107,10 +107,12 @@
 <a href="#107" id="107">107</a>
 <a href="#108" id="108">108</a>
 <a href="#109" id="109">109</a>
+<a href="#110" id="110">110</a>
 </pre><pre class="rust"><code><span class="attr">#![warn(clippy::match_same_arms)]
 #![warn(clippy::semicolon_if_nothing_returned)]
 #![warn(clippy::unnecessary_wraps)]
 #![allow(clippy::extra_unused_type_parameters)]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 
 #[macro_use]
 </span><span class="kw">pub mod </span>util;

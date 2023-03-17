@@ -275,6 +275,7 @@
 <a href="#275" id="275">275</a>
 <a href="#276" id="276">276</a>
 <a href="#277" id="277">277</a>
+<a href="#278" id="278">278</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The collection of blocks
 
 </span><span class="kw">pub mod </span>prelude;
@@ -296,10 +297,11 @@
 
 <span class="macro">macro_rules! </span>define_blocks {
     {
-        $( $(<span class="attr">#[cfg(<span class="macro-nonterminal">$attr</span>: meta)]</span>)<span class="question-mark">? </span><span class="macro-nonterminal">$block</span>: ident $(,)<span class="question-mark">? </span>)*
+        $( $(<span class="attr">#[cfg(feature = <span class="macro-nonterminal">$feat</span>: literal)]</span>)<span class="question-mark">? </span><span class="macro-nonterminal">$block</span>: ident $(,)<span class="question-mark">? </span>)*
     } =&gt; {
         $(
-            $(<span class="attr">#[cfg(<span class="macro-nonterminal">$attr</span>)]</span>)<span class="question-mark">?
+            $(<span class="attr">#[cfg(feature = <span class="macro-nonterminal">$feat</span>)]</span>)<span class="question-mark">?
+            </span>$(<span class="attr">#[cfg_attr(docsrs, doc(cfg(feature = <span class="macro-nonterminal">$feat</span>)))]</span>)<span class="question-mark">?
             </span><span class="kw">pub mod </span><span class="macro-nonterminal">$block</span>;
         )*
 
@@ -308,7 +310,7 @@
         #[serde(deny_unknown_fields)]
         </span><span class="kw">pub enum </span>BlockConfig {
             $(
-                $(<span class="attr">#[cfg(<span class="macro-nonterminal">$attr</span>)]</span>)<span class="question-mark">?
+                $(<span class="attr">#[cfg(feature = <span class="macro-nonterminal">$feat</span>)]</span>)<span class="question-mark">?
                 </span><span class="attr">#[allow(non_camel_case_types)]
                 </span><span class="macro-nonterminal">$block </span>{
                     <span class="attr">#[serde(flatten)]
@@ -321,7 +323,7 @@
             <span class="kw">pub fn </span>name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str {
                 <span class="kw">match </span><span class="self">self </span>{
                     $(
-                        $(<span class="attr">#[cfg(<span class="macro-nonterminal">$attr</span>)]</span>)<span class="question-mark">?
+                        $(<span class="attr">#[cfg(feature = <span class="macro-nonterminal">$feat</span>)]</span>)<span class="question-mark">?
                         </span><span class="self">Self</span>::<span class="macro-nonterminal">$block </span>{ .. } =&gt; <span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>),
                     )*
                 }
@@ -331,7 +333,7 @@
                 <span class="kw">let </span>id = api.id;
                 <span class="kw">match </span><span class="self">self </span>{
                     $(
-                        $(<span class="attr">#[cfg(<span class="macro-nonterminal">$attr</span>)]</span>)<span class="question-mark">?
+                        $(<span class="attr">#[cfg(feature = <span class="macro-nonterminal">$feat</span>)]</span>)<span class="question-mark">?
                         </span><span class="self">Self</span>::<span class="macro-nonterminal">$block </span>{ config } =&gt; {
                             <span class="macro-nonterminal">$block::run</span>(config, api).map(<span class="kw">move </span>|e| e.in_block(<span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>), id)).boxed_local()
                         }
