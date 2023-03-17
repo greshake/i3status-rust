@@ -264,6 +264,8 @@
 <a href="#264" id="264">264</a>
 <a href="#265" id="265">265</a>
 <a href="#266" id="266">266</a>
+<a href="#267" id="267">267</a>
+<a href="#268" id="268">268</a>
 </pre><pre class="rust"><code><span class="kw">use </span>std::path::{Path, PathBuf};
 
 <span class="kw">use </span>dirs::{config_dir, data_dir};
@@ -511,16 +513,18 @@
 </span><span class="kw">mod </span>tests {
     <span class="kw">use super</span>::<span class="kw-2">*</span>;
 
-    <span class="attr">#[test]
-    </span><span class="kw">fn </span>test_has_command_ok() {
+    <span class="attr">#[tokio::test]
+    </span><span class="kw">async fn </span>test_has_command_ok() {
         <span class="comment">// we assume sh is always available
-        </span><span class="macro">assert!</span>(tokio_test::block_on(has_command(<span class="string">&quot;sh&quot;</span>)).unwrap());
+        </span><span class="macro">assert!</span>(has_command(<span class="string">&quot;sh&quot;</span>).<span class="kw">await</span>.unwrap());
     }
 
-    <span class="attr">#[test]
-    </span><span class="kw">fn </span>test_has_command_err() {
+    <span class="attr">#[tokio::test]
+    </span><span class="kw">async fn </span>test_has_command_err() {
         <span class="comment">// we assume thequickbrownfoxjumpsoverthelazydog command does not exist
-        </span><span class="macro">assert!</span>(!tokio_test::block_on(has_command(<span class="string">&quot;thequickbrownfoxjumpsoverthelazydog&quot;</span>)).unwrap());
+        </span><span class="macro">assert!</span>(!has_command(<span class="string">&quot;thequickbrownfoxjumpsoverthelazydog&quot;</span>)
+            .<span class="kw">await
+            </span>.unwrap());
     }
 
     <span class="attr">#[test]
