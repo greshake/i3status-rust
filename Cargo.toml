@@ -97,10 +97,6 @@ features = ["futures-v0_3"]
 version = "0.11"
 features = ["json"]
 
-# Test async code
-[dev-dependencies]
-tokio-test = "*"
-
 [profile.release]
 lto = "thin"
 strip = true

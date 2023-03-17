@@ -245,16 +245,18 @@ pub fn default<T: Default>() -> T {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_has_command_ok() {
+    #[tokio::test]
+    async fn test_has_command_ok() {
         // we assume sh is always available
-        assert!(tokio_test::block_on(has_command("sh")).unwrap());
+        assert!(has_command("sh").await.unwrap());
     }
 
-    #[test]
-    fn test_has_command_err() {
+    #[tokio::test]
+    async fn test_has_command_err() {
         // we assume thequickbrownfoxjumpsoverthelazydog command does not exist
-        assert!(!tokio_test::block_on(has_command("thequickbrownfoxjumpsoverthelazydog")).unwrap());
+        assert!(!has_command("thequickbrownfoxjumpsoverthelazydog")
+            .await
+            .unwrap());
     }
 
     #[test]
