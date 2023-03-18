@@ -20,6 +20,7 @@
 //! `adapter_mac` | MAC Address of the Bluetooth adapter (in case your device was connected to multiple currently available adapters) | `None`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | <code>" $icon $name{ $percentage&vert;} "</code>
 //! `disconnected_format` | A string to customise the output of this block. See below for available placeholders. | <code>" $icon{ $name&vert;} "</code>
+//! `battery_state` | A mapping from battery percentage to block's [state](State) (color). See example below. | 0..15 -> critical, 16..30 -> warning, 31..60 -> info, 61..100 -> good
 //!
 //! Placeholder    | Value                                                                 | Type   | Unit
 //! ---------------|-----------------------------------------------------------------------|--------|------
@@ -43,6 +44,10 @@
 //! mac = "00:18:09:92:1B:BA"
 //! disconnected_format = ""
 //! format = " $icon "
+//! [block.battery_state]
+//! "0..20" = "critical"
+//! "21..70" = "warning"
+//! "71..100" = "good"
 //! ```
 //!
 //! # Icons Used
@@ -52,8 +57,10 @@
 //! - `mouse` for bluetooth devices identifying as "input-mouse"
 //! - `bluetooth` for all other devices
 
-use super::prelude::*;
 use zbus::fdo::{DBusProxy, ObjectManagerProxy, PropertiesProxy};
+
+use super::prelude::*;
+use crate::wrappers::{ConfigRange, VecMap};
 
 make_log_macro!(debug, "bluetooth");
 
@@ -66,6 +73,8 @@ pub struct Config {
     format: FormatConfig,
     #[serde(default)]
     disconnected_format: FormatConfig,
+    #[serde(default)]
+    battery_state: Option<VecMap<ConfigRange<u8>, State>>,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
@@ -79,6 +88,15 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut widget = Widget::new();
 
     let mut monitor = DeviceMonitor::new(config.mac, config.adapter_mac).await?;
+
+    let battery_states = config.battery_state.map(|vm| vm.0).unwrap_or_else(|| {
+        vec![
+            ((0..=15).into(), State::Critical),
+            ((16..=30).into(), State::Warning),
+            ((31..=60).into(), State::Info),
+            ((61..=100).into(), State::Good),
+        ]
+    });
 
     loop {
         match monitor.get_device_info().await {
@@ -95,12 +113,11 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                 if device.connected {
                     debug!("Showing device as connected");
                     widget.set_format(format.clone());
-                    widget.state = match device.battery_percentage {
-                        Some(0..=15) => State::Critical,
-                        Some(16..=30) => State::Warning,
-                        Some(31..=60) => State::Info,
-                        _ => State::Good,
-                    };
+                    widget.state = battery_states
+                        .iter()
+                        .find(|(r, _)| r.0.contains(&device.battery_percentage.unwrap_or(100)))
+                        .map(|(_, state)| *state)
+                        .unwrap_or(State::Good);
                 } else {
                     debug!("Showing device as disconnected");
                     widget.set_format(disconnected_format.clone());
