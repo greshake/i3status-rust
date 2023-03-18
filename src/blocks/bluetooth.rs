@@ -60,7 +60,7 @@
 use zbus::fdo::{DBusProxy, ObjectManagerProxy, PropertiesProxy};
 
 use super::prelude::*;
-use crate::wrappers::{ConfigRange, VecMap};
+use crate::wrappers::RangeMap;
 
 make_log_macro!(debug, "bluetooth");
 
@@ -74,7 +74,7 @@ pub struct Config {
     #[serde(default)]
     disconnected_format: FormatConfig,
     #[serde(default)]
-    battery_state: Option<VecMap<ConfigRange<u8>, State>>,
+    battery_state: Option<RangeMap<u8, State>>,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
@@ -89,19 +89,22 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
     let mut monitor = DeviceMonitor::new(config.mac, config.adapter_mac).await?;
 
-    let battery_states = config.battery_state.map(|vm| vm.0).unwrap_or_else(|| {
+    let battery_states = config.battery_state.unwrap_or_else(|| {
         vec![
-            ((0..=15).into(), State::Critical),
-            ((16..=30).into(), State::Warning),
-            ((31..=60).into(), State::Info),
-            ((61..=100).into(), State::Good),
+            (0..=15, State::Critical),
+            (16..=30, State::Warning),
+            (31..=60, State::Info),
+            (61..=100, State::Good),
         ]
+        .into()
     });
 
     loop {
         match monitor.get_device_info().await {
             // Available
             Some(device) => {
+                debug!("Device available, info: {device:?}");
+
                 let values = map! {
                     "icon" => Value::icon(api.get_icon(device.icon)?),
                     "name" => Value::text(device.name),
@@ -110,21 +113,19 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     [if let Some(p) = device.battery_percentage]
                         "battery_icon" => Value::icon(api.get_icon_in_progression("bat", p as f64 / 100.0)?),
                 };
+
                 if device.connected {
-                    debug!("Showing device as connected");
                     widget.set_format(format.clone());
                     widget.state = battery_states
-                        .iter()
-                        .find(|(r, _)| r.0.contains(&device.battery_percentage.unwrap_or(100)))
-                        .map(|(_, state)| *state)
+                        .get(&device.battery_percentage.unwrap_or(100))
+                        .copied()
                         .unwrap_or(State::Good);
                 } else {
-                    debug!("Showing device as disconnected");
                     widget.set_format(disconnected_format.clone());
                     widget.state = State::Idle;
                 }
-                widget.set_values(values);
 
+                widget.set_values(values);
                 api.set_widget(&widget).await?;
             }
             // Unavailable
@@ -176,6 +177,7 @@ struct Device {
     battery: Battery1Proxy<'static>,
 }
 
+#[derive(Debug)]
 struct DeviceInfo {
     connected: bool,
     icon: &'static str,

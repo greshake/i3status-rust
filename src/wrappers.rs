@@ -125,67 +125,31 @@ impl ShellString {
     }
 }
 
-/// Deserializes `"24..46"` to Rust's `24..=46`
-#[derive(Debug)]
-pub struct ConfigRange<T>(pub RangeInclusive<T>);
+/// A map with keys being ranges.
+#[derive(Debug, Default)]
+pub struct RangeMap<K, V>(Vec<(RangeInclusive<K>, V)>);
 
-impl<T> From<RangeInclusive<T>> for ConfigRange<T> {
-    fn from(value: RangeInclusive<T>) -> Self {
-        Self(value)
-    }
-}
-
-impl<'de, T> Deserialize<'de> for ConfigRange<T>
-where
-    T: FromStr,
-    T::Err: Display,
-{
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+impl<K, V> RangeMap<K, V> {
+    pub fn get(&self, key: &K) -> Option<&V>
     where
-        D: Deserializer<'de>,
+        K: PartialOrd,
     {
-        struct Visitor<T>(PhantomData<T>);
-
-        impl<'de, T> de::Visitor<'de> for Visitor<T>
-        where
-            T: FromStr,
-            T::Err: Display,
-        {
-            type Value = ConfigRange<T>;
-
-            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-                formatter.write_str("range")
-            }
-
-            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
-            where
-                E: de::Error,
-            {
-                let (start, end) = v.split_once("..").error("invalid range").serde_error()?;
-                let start: T = start.parse().serde_error()?;
-                let end: T = end.parse().serde_error()?;
-                Ok(ConfigRange(start..=end))
-            }
-        }
-
-        deserializer.deserialize_str(Visitor(PhantomData))
+        self.0
+            .iter()
+            .find_map(|(k, v)| k.contains(key).then_some(v))
     }
 }
 
-/// Deserializes a map to a vector
-///
-/// ```toml
-/// a = 1
-/// b = 2
-/// ```
-///
-/// to `vec![("a", 1), ("b", 2)]`
-#[derive(Debug)]
-pub struct VecMap<K, V>(pub Vec<(K, V)>);
+impl<K, V> From<Vec<(RangeInclusive<K>, V)>> for RangeMap<K, V> {
+    fn from(vec: Vec<(RangeInclusive<K>, V)>) -> Self {
+        Self(vec)
+    }
+}
 
-impl<'de, K, V> Deserialize<'de> for VecMap<K, V>
+impl<'de, K, V> Deserialize<'de> for RangeMap<K, V>
 where
-    K: Deserialize<'de>,
+    K: FromStr,
+    K::Err: Display,
     V: Deserialize<'de>,
 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
@@ -196,24 +160,31 @@ where
 
         impl<'de, K, V> de::Visitor<'de> for Visitor<K, V>
         where
-            K: Deserialize<'de>,
+            K: FromStr,
+            K::Err: Display,
             V: Deserialize<'de>,
         {
-            type Value = VecMap<K, V>;
+            type Value = RangeMap<K, V>;
 
             fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-                formatter.write_str("map")
+                formatter.write_str("range map")
             }
 
             fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
             where
                 A: de::MapAccess<'de>,
             {
-                let mut vec = Vec::with_capacity(map.size_hint().unwrap_or(0));
-                while let Some(e) = map.next_entry()? {
-                    vec.push(e);
+                let mut vec = Vec::with_capacity(map.size_hint().unwrap_or(2));
+                while let Some((range, val)) = map.next_entry::<String, V>()? {
+                    let (start, end) = range
+                        .split_once("..")
+                        .error("invalid range")
+                        .serde_error()?;
+                    let start: K = start.parse().serde_error()?;
+                    let end: K = end.parse().serde_error()?;
+                    vec.push((start..=end, val));
                 }
-                Ok(VecMap(vec))
+                Ok(RangeMap(vec))
             }
         }
 
