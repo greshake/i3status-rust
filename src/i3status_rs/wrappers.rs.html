@@ -191,35 +191,6 @@
 <a href="#191" id="191">191</a>
 <a href="#192" id="192">192</a>
 <a href="#193" id="193">193</a>
-<a href="#194" id="194">194</a>
-<a href="#195" id="195">195</a>
-<a href="#196" id="196">196</a>
-<a href="#197" id="197">197</a>
-<a href="#198" id="198">198</a>
-<a href="#199" id="199">199</a>
-<a href="#200" id="200">200</a>
-<a href="#201" id="201">201</a>
-<a href="#202" id="202">202</a>
-<a href="#203" id="203">203</a>
-<a href="#204" id="204">204</a>
-<a href="#205" id="205">205</a>
-<a href="#206" id="206">206</a>
-<a href="#207" id="207">207</a>
-<a href="#208" id="208">208</a>
-<a href="#209" id="209">209</a>
-<a href="#210" id="210">210</a>
-<a href="#211" id="211">211</a>
-<a href="#212" id="212">212</a>
-<a href="#213" id="213">213</a>
-<a href="#214" id="214">214</a>
-<a href="#215" id="215">215</a>
-<a href="#216" id="216">216</a>
-<a href="#217" id="217">217</a>
-<a href="#218" id="218">218</a>
-<a href="#219" id="219">219</a>
-<a href="#220" id="220">220</a>
-<a href="#221" id="221">221</a>
-<a href="#222" id="222">222</a>
 </pre><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::errors::<span class="kw-2">*</span>;
 
 <span class="kw">use </span>serde::de::{<span class="self">self</span>, Deserialize, Deserializer};
@@ -347,67 +318,31 @@
     }
 }
 
-<span class="doccomment">/// Deserializes `&quot;24..46&quot;` to Rust&#39;s `24..=46`
-</span><span class="attr">#[derive(Debug)]
-</span><span class="kw">pub struct </span>ConfigRange&lt;T&gt;(<span class="kw">pub </span>RangeInclusive&lt;T&gt;);
+<span class="doccomment">/// A map with keys being ranges.
+</span><span class="attr">#[derive(Debug, Default)]
+</span><span class="kw">pub struct </span>RangeMap&lt;K, V&gt;(Vec&lt;(RangeInclusive&lt;K&gt;, V)&gt;);
 
-<span class="kw">impl</span>&lt;T&gt; From&lt;RangeInclusive&lt;T&gt;&gt; <span class="kw">for </span>ConfigRange&lt;T&gt; {
-    <span class="kw">fn </span>from(value: RangeInclusive&lt;T&gt;) -&gt; <span class="self">Self </span>{
-        <span class="self">Self</span>(value)
-    }
-}
-
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;de</span>, T&gt; Deserialize&lt;<span class="lifetime">&#39;de</span>&gt; <span class="kw">for </span>ConfigRange&lt;T&gt;
-<span class="kw">where
-    </span>T: FromStr,
-    T::Err: Display,
-{
-    <span class="kw">fn </span>deserialize&lt;D&gt;(deserializer: D) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, D::Error&gt;
+<span class="kw">impl</span>&lt;K, V&gt; RangeMap&lt;K, V&gt; {
+    <span class="kw">pub fn </span>get(<span class="kw-2">&amp;</span><span class="self">self</span>, key: <span class="kw-2">&amp;</span>K) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>V&gt;
     <span class="kw">where
-        </span>D: Deserializer&lt;<span class="lifetime">&#39;de</span>&gt;,
+        </span>K: PartialOrd,
     {
-        <span class="kw">struct </span>Visitor&lt;T&gt;(PhantomData&lt;T&gt;);
-
-        <span class="kw">impl</span>&lt;<span class="lifetime">&#39;de</span>, T&gt; de::Visitor&lt;<span class="lifetime">&#39;de</span>&gt; <span class="kw">for </span>Visitor&lt;T&gt;
-        <span class="kw">where
-            </span>T: FromStr,
-            T::Err: Display,
-        {
-            <span class="kw">type </span>Value = ConfigRange&lt;T&gt;;
-
-            <span class="kw">fn </span>expecting(<span class="kw-2">&amp;</span><span class="self">self</span>, formatter: <span class="kw-2">&amp;mut </span>std::fmt::Formatter) -&gt; std::fmt::Result {
-                formatter.write_str(<span class="string">&quot;range&quot;</span>)
-            }
-
-            <span class="kw">fn </span>visit_str&lt;E&gt;(<span class="self">self</span>, v: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>::Value, E&gt;
-            <span class="kw">where
-                </span>E: de::Error,
-            {
-                <span class="kw">let </span>(start, end) = v.split_once(<span class="string">&quot;..&quot;</span>).error(<span class="string">&quot;invalid range&quot;</span>).serde_error()<span class="question-mark">?</span>;
-                <span class="kw">let </span>start: T = start.parse().serde_error()<span class="question-mark">?</span>;
-                <span class="kw">let </span>end: T = end.parse().serde_error()<span class="question-mark">?</span>;
-                <span class="prelude-val">Ok</span>(ConfigRange(start..=end))
-            }
-        }
-
-        deserializer.deserialize_str(Visitor(PhantomData))
+        <span class="self">self</span>.<span class="number">0
+            </span>.iter()
+            .find_map(|(k, v)| k.contains(key).then_some(v))
     }
 }
 
-<span class="doccomment">/// Deserializes a map to a vector
-///
-/// ```toml
-/// a = 1
-/// b = 2
-/// ```
-///
-/// to `vec![(&quot;a&quot;, 1), (&quot;b&quot;, 2)]`
-</span><span class="attr">#[derive(Debug)]
-</span><span class="kw">pub struct </span>VecMap&lt;K, V&gt;(<span class="kw">pub </span>Vec&lt;(K, V)&gt;);
+<span class="kw">impl</span>&lt;K, V&gt; From&lt;Vec&lt;(RangeInclusive&lt;K&gt;, V)&gt;&gt; <span class="kw">for </span>RangeMap&lt;K, V&gt; {
+    <span class="kw">fn </span>from(vec: Vec&lt;(RangeInclusive&lt;K&gt;, V)&gt;) -&gt; <span class="self">Self </span>{
+        <span class="self">Self</span>(vec)
+    }
+}
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;de</span>, K, V&gt; Deserialize&lt;<span class="lifetime">&#39;de</span>&gt; <span class="kw">for </span>VecMap&lt;K, V&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">&#39;de</span>, K, V&gt; Deserialize&lt;<span class="lifetime">&#39;de</span>&gt; <span class="kw">for </span>RangeMap&lt;K, V&gt;
 <span class="kw">where
-    </span>K: Deserialize&lt;<span class="lifetime">&#39;de</span>&gt;,
+    </span>K: FromStr,
+    K::Err: Display,
     V: Deserialize&lt;<span class="lifetime">&#39;de</span>&gt;,
 {
     <span class="kw">fn </span>deserialize&lt;D&gt;(deserializer: D) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, D::Error&gt;
@@ -418,24 +353,31 @@
 
         <span class="kw">impl</span>&lt;<span class="lifetime">&#39;de</span>, K, V&gt; de::Visitor&lt;<span class="lifetime">&#39;de</span>&gt; <span class="kw">for </span>Visitor&lt;K, V&gt;
         <span class="kw">where
-            </span>K: Deserialize&lt;<span class="lifetime">&#39;de</span>&gt;,
+            </span>K: FromStr,
+            K::Err: Display,
             V: Deserialize&lt;<span class="lifetime">&#39;de</span>&gt;,
         {
-            <span class="kw">type </span>Value = VecMap&lt;K, V&gt;;
+            <span class="kw">type </span>Value = RangeMap&lt;K, V&gt;;
 
             <span class="kw">fn </span>expecting(<span class="kw-2">&amp;</span><span class="self">self</span>, formatter: <span class="kw-2">&amp;mut </span>std::fmt::Formatter) -&gt; std::fmt::Result {
-                formatter.write_str(<span class="string">&quot;map&quot;</span>)
+                formatter.write_str(<span class="string">&quot;range map&quot;</span>)
             }
 
             <span class="kw">fn </span>visit_map&lt;A&gt;(<span class="self">self</span>, <span class="kw-2">mut </span>map: A) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>::Value, A::Error&gt;
             <span class="kw">where
                 </span>A: de::MapAccess&lt;<span class="lifetime">&#39;de</span>&gt;,
             {
-                <span class="kw">let </span><span class="kw-2">mut </span>vec = Vec::with_capacity(map.size_hint().unwrap_or(<span class="number">0</span>));
-                <span class="kw">while let </span><span class="prelude-val">Some</span>(e) = map.next_entry()<span class="question-mark">? </span>{
-                    vec.push(e);
+                <span class="kw">let </span><span class="kw-2">mut </span>vec = Vec::with_capacity(map.size_hint().unwrap_or(<span class="number">2</span>));
+                <span class="kw">while let </span><span class="prelude-val">Some</span>((range, val)) = map.next_entry::&lt;String, V&gt;()<span class="question-mark">? </span>{
+                    <span class="kw">let </span>(start, end) = range
+                        .split_once(<span class="string">&quot;..&quot;</span>)
+                        .error(<span class="string">&quot;invalid range&quot;</span>)
+                        .serde_error()<span class="question-mark">?</span>;
+                    <span class="kw">let </span>start: K = start.parse().serde_error()<span class="question-mark">?</span>;
+                    <span class="kw">let </span>end: K = end.parse().serde_error()<span class="question-mark">?</span>;
+                    vec.push((start..=end, val));
                 }
-                <span class="prelude-val">Ok</span>(VecMap(vec))
+                <span class="prelude-val">Ok</span>(RangeMap(vec))
             }
         }
 

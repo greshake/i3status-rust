@@ -438,6 +438,8 @@
 <a href="#438" id="438">438</a>
 <a href="#439" id="439">439</a>
 <a href="#440" id="440">440</a>
+<a href="#441" id="441">441</a>
+<a href="#442" id="442">442</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Monitor Bluetooth device
 //!
 //! This block displays the connectivity of a given Bluetooth device and the battery level if this
@@ -500,7 +502,7 @@
 </span><span class="kw">use </span>zbus::fdo::{DBusProxy, ObjectManagerProxy, PropertiesProxy};
 
 <span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
-<span class="kw">use </span><span class="kw">crate</span>::wrappers::{ConfigRange, VecMap};
+<span class="kw">use </span><span class="kw">crate</span>::wrappers::RangeMap;
 
 <span class="macro">make_log_macro!</span>(debug, <span class="string">&quot;bluetooth&quot;</span>);
 
@@ -514,7 +516,7 @@
     <span class="attr">#[serde(default)]
     </span>disconnected_format: FormatConfig,
     <span class="attr">#[serde(default)]
-    </span>battery_state: <span class="prelude-ty">Option</span>&lt;VecMap&lt;ConfigRange&lt;u8&gt;, State&gt;&gt;,
+    </span>battery_state: <span class="prelude-ty">Option</span>&lt;RangeMap&lt;u8, State&gt;&gt;,
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
@@ -529,19 +531,22 @@
 
     <span class="kw">let </span><span class="kw-2">mut </span>monitor = DeviceMonitor::new(config.mac, config.adapter_mac).<span class="kw">await</span><span class="question-mark">?</span>;
 
-    <span class="kw">let </span>battery_states = config.battery_state.map(|vm| vm.<span class="number">0</span>).unwrap_or_else(|| {
+    <span class="kw">let </span>battery_states = config.battery_state.unwrap_or_else(|| {
         <span class="macro">vec!</span>[
-            ((<span class="number">0</span>..=<span class="number">15</span>).into(), State::Critical),
-            ((<span class="number">16</span>..=<span class="number">30</span>).into(), State::Warning),
-            ((<span class="number">31</span>..=<span class="number">60</span>).into(), State::Info),
-            ((<span class="number">61</span>..=<span class="number">100</span>).into(), State::Good),
+            (<span class="number">0</span>..=<span class="number">15</span>, State::Critical),
+            (<span class="number">16</span>..=<span class="number">30</span>, State::Warning),
+            (<span class="number">31</span>..=<span class="number">60</span>, State::Info),
+            (<span class="number">61</span>..=<span class="number">100</span>, State::Good),
         ]
+        .into()
     });
 
     <span class="kw">loop </span>{
         <span class="kw">match </span>monitor.get_device_info().<span class="kw">await </span>{
             <span class="comment">// Available
             </span><span class="prelude-val">Some</span>(device) =&gt; {
+                <span class="macro">debug!</span>(<span class="string">&quot;Device available, info: {device:?}&quot;</span>);
+
                 <span class="kw">let </span>values = <span class="macro">map! </span>{
                     <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(device.icon)<span class="question-mark">?</span>),
                     <span class="string">&quot;name&quot; </span>=&gt; Value::text(device.name),
@@ -550,21 +555,19 @@
                     [<span class="kw">if let </span><span class="prelude-val">Some</span>(p) = device.battery_percentage]
                         <span class="string">&quot;battery_icon&quot; </span>=&gt; Value::icon(api.get_icon_in_progression(<span class="string">&quot;bat&quot;</span>, p <span class="kw">as </span>f64 / <span class="number">100.0</span>)<span class="question-mark">?</span>),
                 };
+
                 <span class="kw">if </span>device.connected {
-                    <span class="macro">debug!</span>(<span class="string">&quot;Showing device as connected&quot;</span>);
                     widget.set_format(format.clone());
                     widget.state = battery_states
-                        .iter()
-                        .find(|(r, <span class="kw">_</span>)| r.<span class="number">0</span>.contains(<span class="kw-2">&amp;</span>device.battery_percentage.unwrap_or(<span class="number">100</span>)))
-                        .map(|(<span class="kw">_</span>, state)| <span class="kw-2">*</span>state)
+                        .get(<span class="kw-2">&amp;</span>device.battery_percentage.unwrap_or(<span class="number">100</span>))
+                        .copied()
                         .unwrap_or(State::Good);
                 } <span class="kw">else </span>{
-                    <span class="macro">debug!</span>(<span class="string">&quot;Showing device as disconnected&quot;</span>);
                     widget.set_format(disconnected_format.clone());
                     widget.state = State::Idle;
                 }
-                widget.set_values(values);
 
+                widget.set_values(values);
                 api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
             }
             <span class="comment">// Unavailable
@@ -616,7 +619,8 @@
     battery: Battery1Proxy&lt;<span class="lifetime">&#39;static</span>&gt;,
 }
 
-<span class="kw">struct </span>DeviceInfo {
+<span class="attr">#[derive(Debug)]
+</span><span class="kw">struct </span>DeviceInfo {
     connected: bool,
     icon: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str,
     name: String,
