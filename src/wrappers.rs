@@ -1,6 +1,11 @@
-use crate::errors::{Result, ResultExt};
+use crate::errors::*;
+
 use serde::de::{self, Deserialize, Deserializer};
 use std::borrow::Cow;
+use std::fmt::Display;
+use std::marker::PhantomData;
+use std::ops::RangeInclusive;
+use std::str::FromStr;
 use std::time::Duration;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -117,5 +122,101 @@ impl ShellString {
 
     pub fn expand(&self) -> Result<Cow<str>> {
         shellexpand::full(&self.0).error("Failed to expand string")
+    }
+}
+
+/// Deserializes `"24..46"` to Rust's `24..=46`
+#[derive(Debug)]
+pub struct ConfigRange<T>(pub RangeInclusive<T>);
+
+impl<T> From<RangeInclusive<T>> for ConfigRange<T> {
+    fn from(value: RangeInclusive<T>) -> Self {
+        Self(value)
+    }
+}
+
+impl<'de, T> Deserialize<'de> for ConfigRange<T>
+where
+    T: FromStr,
+    T::Err: Display,
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct Visitor<T>(PhantomData<T>);
+
+        impl<'de, T> de::Visitor<'de> for Visitor<T>
+        where
+            T: FromStr,
+            T::Err: Display,
+        {
+            type Value = ConfigRange<T>;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("range")
+            }
+
+            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                let (start, end) = v.split_once("..").error("invalid range").serde_error()?;
+                let start: T = start.parse().serde_error()?;
+                let end: T = end.parse().serde_error()?;
+                Ok(ConfigRange(start..=end))
+            }
+        }
+
+        deserializer.deserialize_str(Visitor(PhantomData))
+    }
+}
+
+/// Deserializes a map to a vector
+///
+/// ```toml
+/// a = 1
+/// b = 2
+/// ```
+///
+/// to `vec![("a", 1), ("b", 2)]`
+#[derive(Debug)]
+pub struct VecMap<K, V>(pub Vec<(K, V)>);
+
+impl<'de, K, V> Deserialize<'de> for VecMap<K, V>
+where
+    K: Deserialize<'de>,
+    V: Deserialize<'de>,
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct Visitor<K, V>(PhantomData<(K, V)>);
+
+        impl<'de, K, V> de::Visitor<'de> for Visitor<K, V>
+        where
+            K: Deserialize<'de>,
+            V: Deserialize<'de>,
+        {
+            type Value = VecMap<K, V>;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("map")
+            }
+
+            fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+            where
+                A: de::MapAccess<'de>,
+            {
+                let mut vec = Vec::with_capacity(map.size_hint().unwrap_or(0));
+                while let Some(e) = map.next_entry()? {
+                    vec.push(e);
+                }
+                Ok(VecMap(vec))
+            }
+        }
+
+        deserializer.deserialize_map(Visitor(PhantomData))
     }
 }
