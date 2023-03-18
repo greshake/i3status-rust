@@ -1,6 +1,14 @@
 # i3status-rust 0.30.6 [unreleased]
 
-TBD
+### New Blocks and Features
+
+* Padding character of `eng` formatter is now configurable. For example, `$volume.eng(pad_with:0)` will render as `05%` instead of ` 5%`.
+* Bluetooth: added `battery_state` config option which allows to customize block's color in relation to device battery level.
+* Bluetooth: added `$battery_icon` placeholder.
+
+### Bug Fixes and Improvements
+
+* Net: the WiFi icon now reflects the signal strength (`material-nf` icon set only).
 
 # i3status-rust 0.30.5
 
