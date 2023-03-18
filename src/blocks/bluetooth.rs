@@ -21,12 +21,13 @@
 //! `format` | A string to customise the output of this block. See below for available placeholders. | <code>" $icon $name{ $percentage&vert;} "</code>
 //! `disconnected_format` | A string to customise the output of this block. See below for available placeholders. | <code>" $icon{ $name&vert;} "</code>
 //!
-//! Placeholder  | Value                                                                 | Type   | Unit
-//! -------------|-----------------------------------------------------------------------|--------|------
-//! `icon`       | Icon based on what type of device is connected                        | Icon   | -
-//! `name`       | Device's name                                                         | Text   | -
-//! `percentage` | Device's battery level (may be absent if the device is not supported) | Number | %
-//! `available`  | Present if the device is available                                    | Flag   | -
+//! Placeholder    | Value                                                                 | Type   | Unit
+//! ---------------|-----------------------------------------------------------------------|--------|------
+//! `icon`         | Icon based on what type of device is connected                        | Icon   | -
+//! `name`         | Device's name                                                         | Text   | -
+//! `percentage`   | Device's battery level (may be absent if the device is not supported) | Number | %
+//! `battery_icon` | Battery icon (may be absent if the device is not supported)           | Icon   | -
+//! `available`    | Present if the device is available                                    | Flag   | -
 //!
 //! Action   | Default button
 //! ---------|---------------
@@ -88,6 +89,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     "name" => Value::text(device.name),
                     "available" => Value::flag(),
                     [if let Some(p) = device.battery_percentage] "percentage" => Value::percents(p),
+                    [if let Some(p) = device.battery_percentage]
+                        "battery_icon" => Value::icon(api.get_icon_in_progression("bat", p as f64 / 100.0)?),
                 };
                 if device.connected {
                     debug!("Showing device as connected");
