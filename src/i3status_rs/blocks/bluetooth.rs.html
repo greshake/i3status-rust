@@ -421,6 +421,23 @@
 <a href="#421" id="421">421</a>
 <a href="#422" id="422">422</a>
 <a href="#423" id="423">423</a>
+<a href="#424" id="424">424</a>
+<a href="#425" id="425">425</a>
+<a href="#426" id="426">426</a>
+<a href="#427" id="427">427</a>
+<a href="#428" id="428">428</a>
+<a href="#429" id="429">429</a>
+<a href="#430" id="430">430</a>
+<a href="#431" id="431">431</a>
+<a href="#432" id="432">432</a>
+<a href="#433" id="433">433</a>
+<a href="#434" id="434">434</a>
+<a href="#435" id="435">435</a>
+<a href="#436" id="436">436</a>
+<a href="#437" id="437">437</a>
+<a href="#438" id="438">438</a>
+<a href="#439" id="439">439</a>
+<a href="#440" id="440">440</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Monitor Bluetooth device
 //!
 //! This block displays the connectivity of a given Bluetooth device and the battery level if this
@@ -443,6 +460,7 @@
 //! `adapter_mac` | MAC Address of the Bluetooth adapter (in case your device was connected to multiple currently available adapters) | `None`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot; $icon $name{ $percentage&amp;vert;} &quot;&lt;/code&gt;
 //! `disconnected_format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot; $icon{ $name&amp;vert;} &quot;&lt;/code&gt;
+//! `battery_state` | A mapping from battery percentage to block&#39;s [state](State) (color). See example below. | 0..15 -&gt; critical, 16..30 -&gt; warning, 31..60 -&gt; info, 61..100 -&gt; good
 //!
 //! Placeholder    | Value                                                                 | Type   | Unit
 //! ---------------|-----------------------------------------------------------------------|--------|------
@@ -466,6 +484,10 @@
 //! mac = &quot;00:18:09:92:1B:BA&quot;
 //! disconnected_format = &quot;&quot;
 //! format = &quot; $icon &quot;
+//! [block.battery_state]
+//! &quot;0..20&quot; = &quot;critical&quot;
+//! &quot;21..70&quot; = &quot;warning&quot;
+//! &quot;71..100&quot; = &quot;good&quot;
 //! ```
 //!
 //! # Icons Used
@@ -475,8 +497,10 @@
 //! - `mouse` for bluetooth devices identifying as &quot;input-mouse&quot;
 //! - `bluetooth` for all other devices
 
-</span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
-<span class="kw">use </span>zbus::fdo::{DBusProxy, ObjectManagerProxy, PropertiesProxy};
+</span><span class="kw">use </span>zbus::fdo::{DBusProxy, ObjectManagerProxy, PropertiesProxy};
+
+<span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span><span class="kw">crate</span>::wrappers::{ConfigRange, VecMap};
 
 <span class="macro">make_log_macro!</span>(debug, <span class="string">&quot;bluetooth&quot;</span>);
 
@@ -489,6 +513,8 @@
     </span>format: FormatConfig,
     <span class="attr">#[serde(default)]
     </span>disconnected_format: FormatConfig,
+    <span class="attr">#[serde(default)]
+    </span>battery_state: <span class="prelude-ty">Option</span>&lt;VecMap&lt;ConfigRange&lt;u8&gt;, State&gt;&gt;,
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
@@ -502,6 +528,15 @@
     <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new();
 
     <span class="kw">let </span><span class="kw-2">mut </span>monitor = DeviceMonitor::new(config.mac, config.adapter_mac).<span class="kw">await</span><span class="question-mark">?</span>;
+
+    <span class="kw">let </span>battery_states = config.battery_state.map(|vm| vm.<span class="number">0</span>).unwrap_or_else(|| {
+        <span class="macro">vec!</span>[
+            ((<span class="number">0</span>..=<span class="number">15</span>).into(), State::Critical),
+            ((<span class="number">16</span>..=<span class="number">30</span>).into(), State::Warning),
+            ((<span class="number">31</span>..=<span class="number">60</span>).into(), State::Info),
+            ((<span class="number">61</span>..=<span class="number">100</span>).into(), State::Good),
+        ]
+    });
 
     <span class="kw">loop </span>{
         <span class="kw">match </span>monitor.get_device_info().<span class="kw">await </span>{
@@ -518,12 +553,11 @@
                 <span class="kw">if </span>device.connected {
                     <span class="macro">debug!</span>(<span class="string">&quot;Showing device as connected&quot;</span>);
                     widget.set_format(format.clone());
-                    widget.state = <span class="kw">match </span>device.battery_percentage {
-                        <span class="prelude-val">Some</span>(<span class="number">0</span>..=<span class="number">15</span>) =&gt; State::Critical,
-                        <span class="prelude-val">Some</span>(<span class="number">16</span>..=<span class="number">30</span>) =&gt; State::Warning,
-                        <span class="prelude-val">Some</span>(<span class="number">31</span>..=<span class="number">60</span>) =&gt; State::Info,
-                        <span class="kw">_ </span>=&gt; State::Good,
-                    };
+                    widget.state = battery_states
+                        .iter()
+                        .find(|(r, <span class="kw">_</span>)| r.<span class="number">0</span>.contains(<span class="kw-2">&amp;</span>device.battery_percentage.unwrap_or(<span class="number">100</span>)))
+                        .map(|(<span class="kw">_</span>, state)| <span class="kw-2">*</span>state)
+                        .unwrap_or(State::Good);
                 } <span class="kw">else </span>{
                     <span class="macro">debug!</span>(<span class="string">&quot;Showing device as disconnected&quot;</span>);
                     widget.set_format(disconnected_format.clone());

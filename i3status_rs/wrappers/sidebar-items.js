@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["Seconds",""],["ShellString",""]]};
+window.SIDEBAR_ITEMS = {"struct":[["ConfigRange","Deserializes `\"24..46\"` to Rust’s `24..=46`"],["Seconds",""],["ShellString",""],["VecMap","Deserializes a map to a vector"]]};
