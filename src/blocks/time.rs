@@ -55,8 +55,8 @@ pub enum Timezone {
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     api.set_default_actions(&[
-        (MouseButton::WheelDown, None, "next_timezone"),
-        (MouseButton::WheelUp, None, "prev_timezone"),
+        (MouseButton::Left, None, "next_timezone"),
+        (MouseButton::Right, None, "prev_timezone"),
     ])
     .await?;
 
