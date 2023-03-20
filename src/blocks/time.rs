@@ -15,8 +15,8 @@
 //!
 //! Action          | Default button
 //! ----------------|---------------
-//! `next_timezone` | Wheel Down
-//! `prev_timezone` | Wheel Up
+//! `next_timezone` | Left
+//! `prev_timezone` | Right
 //!
 //! # Example
 //!
