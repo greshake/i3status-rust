@@ -231,7 +231,7 @@ async fn read_proc_stat() -> Result<(CpuTime, Vec<CpuTime>)> {
     while file
         .read_line(&mut line)
         .await
-        .error("failed to read /proc/sta")?
+        .error("failed to read /proc/stat")?
         != 0
     {
         // Total time
