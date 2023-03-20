@@ -99,7 +99,6 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         tokio::select! {
             _ = timer.tick() => (),
             event = api.event() => match event {
-                UpdateRequest => (),
                 Action(e) if e == "next_timezone" => {
                     timezone = timezone_iter.next();
                 },
