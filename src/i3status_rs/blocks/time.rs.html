@@ -112,13 +112,19 @@
 <a href="#112" id="112">112</a>
 <a href="#113" id="113">113</a>
 <a href="#114" id="114">114</a>
+<a href="#115" id="115">115</a>
+<a href="#116" id="116">116</a>
+<a href="#117" id="117">117</a>
+<a href="#118" id="118">118</a>
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The current time.
 //!
 //! # Configuration
 //!
-//! Key | Values | Default
-//! ----|--------|--------
-//! `format` | Format string. See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. | `&quot; $icon $timestamp.datetime() &quot;`
+//! Key        | Values | Default
+//! -----------|--------|--------
+//! `format`   | Format string. See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. | `&quot; $icon $timestamp.datetime() &quot;`
 //! `interval` | Update interval in seconds | `10`
 //! `timezone` | A timezone specifier (e.g. &quot;Europe/Lisbon&quot;) | Local timezone
 //!
@@ -127,9 +133,10 @@
 //! `icon`        | A static icon                               | Icon     | -
 //! `timestamp`   | The current time                            | Datetime | -
 //!
-//! Action   | Default button
-//! ---------|---------------
+//! Action          | Default button
+//! ----------------|---------------
 //! `next_timezone` | Left
+//! `prev_timezone` | Right
 //!
 //! # Example
 //!
@@ -167,9 +174,11 @@
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="comment">// &quot;next_timezone&quot; changes the current displayed timezone to the timezone next in the list.
-    </span>api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;next_timezone&quot;</span>)])
-        .<span class="kw">await</span><span class="question-mark">?</span>;
+    api.set_default_actions(<span class="kw-2">&amp;</span>[
+        (MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;next_timezone&quot;</span>),
+        (MouseButton::Right, <span class="prelude-val">None</span>, <span class="string">&quot;prev_timezone&quot;</span>),
+    ])
+    .<span class="kw">await</span><span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(
         config
@@ -184,6 +193,8 @@
         },
         <span class="prelude-val">None </span>=&gt; Vec::new(),
     };
+
+    <span class="kw">let </span>prev_step_length = timezones.len().saturating_sub(<span class="number">2</span>);
 
     <span class="kw">let </span><span class="kw-2">mut </span>timezone_iter = timezones.iter().cycle();
 
@@ -207,14 +218,15 @@
 
         <span class="macro">tokio::select! </span>{
             <span class="kw">_ </span>= timer.tick() =&gt; (),
-            event = api.event() =&gt; {
-                <span class="kw">match </span>event {
-                    Action(e) =&gt; <span class="kw">if </span>e == <span class="string">&quot;next_timezone&quot; </span>{
-                       timezone = timezone_iter.next();
-                    },
-                    UpdateRequest =&gt; {}
-                }
-            },
+            event = api.event() =&gt; <span class="kw">match </span>event {
+                Action(e) <span class="kw">if </span>e == <span class="string">&quot;next_timezone&quot; </span>=&gt; {
+                    timezone = timezone_iter.next();
+                },
+                Action(e) <span class="kw">if </span>e == <span class="string">&quot;prev_timezone&quot; </span>=&gt; {
+                    timezone = timezone_iter.nth(prev_step_length);
+                },
+                <span class="kw">_ </span>=&gt; (),
+            }
         }
     }
 }
