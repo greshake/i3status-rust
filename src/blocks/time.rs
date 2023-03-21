@@ -2,9 +2,9 @@
 //!
 //! # Configuration
 //!
-//! Key | Values | Default
-//! ----|--------|--------
-//! `format` | Format string. See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. | `" $icon $timestamp.datetime() "`
+//! Key        | Values | Default
+//! -----------|--------|--------
+//! `format`   | Format string. See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. | `" $icon $timestamp.datetime() "`
 //! `interval` | Update interval in seconds | `10`
 //! `timezone` | A timezone specifier (e.g. "Europe/Lisbon") | Local timezone
 //!
@@ -13,9 +13,10 @@
 //! `icon`        | A static icon                               | Icon     | -
 //! `timestamp`   | The current time                            | Datetime | -
 //!
-//! Action   | Default button
-//! ---------|---------------
+//! Action          | Default button
+//! ----------------|---------------
 //! `next_timezone` | Left
+//! `prev_timezone` | Right
 //!
 //! # Example
 //!
@@ -53,9 +54,11 @@ pub enum Timezone {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
-    // "next_timezone" changes the current displayed timezone to the timezone next in the list.
-    api.set_default_actions(&[(MouseButton::Left, None, "next_timezone")])
-        .await?;
+    api.set_default_actions(&[
+        (MouseButton::Left, None, "next_timezone"),
+        (MouseButton::Right, None, "prev_timezone"),
+    ])
+    .await?;
 
     let mut widget = Widget::new().with_format(
         config
@@ -70,6 +73,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         },
         None => Vec::new(),
     };
+
+    let prev_step_length = timezones.len().saturating_sub(2);
 
     let mut timezone_iter = timezones.iter().cycle();
 
@@ -93,14 +98,15 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
         tokio::select! {
             _ = timer.tick() => (),
-            event = api.event() => {
-                match event {
-                    Action(e) => if e == "next_timezone" {
-                       timezone = timezone_iter.next();
-                    },
-                    UpdateRequest => {}
-                }
-            },
+            event = api.event() => match event {
+                Action(e) if e == "next_timezone" => {
+                    timezone = timezone_iter.next();
+                },
+                Action(e) if e == "prev_timezone" => {
+                    timezone = timezone_iter.nth(prev_step_length);
+                },
+                _ => (),
+            }
         }
     }
 }
