@@ -5,6 +5,7 @@
 * Padding character of `eng` formatter is now configurable. For example, `$volume.eng(pad_with:0)` will render as `05%` instead of ` 5%`.
 * Bluetooth: added `battery_state` config option which allows to customize block's color in relation to device battery level.
 * Bluetooth: added `$battery_icon` placeholder.
+* Time: Right click on the block to reverse cycle between timezones.
 
 ### Bug Fixes and Improvements
 
