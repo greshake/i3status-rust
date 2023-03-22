@@ -2,14 +2,16 @@
 
 ### New Blocks and Features
 
+* New block: `vpn`: Shows the current connection status for VPN networks. Currently only `nordvpn` is supported (#1725).
 * Padding character of `eng` formatter is now configurable. For example, `$volume.eng(pad_with:0)` will render as `05%` instead of ` 5%`.
-* Bluetooth: added `battery_state` config option which allows to customize block's color in relation to device battery level.
-* Bluetooth: added `$battery_icon` placeholder.
-* Time: Right click on the block to reverse cycle between timezones.
+* Bluetooth: added `battery_state` config option which allows to customize block's color in relation to device battery level (#1836).
+* Bluetooth: added `$battery_icon` placeholder (#1837).
+* Time: Right click on the block to reverse cycle between timezones (#1839).
 
 ### Bug Fixes and Improvements
 
 * Net: the WiFi icon now reflects the signal strength (`material-nf` icon set only).
+* Apt: now works on systems with non-English locales (#1843).
 
 # i3status-rust 0.30.5
 
