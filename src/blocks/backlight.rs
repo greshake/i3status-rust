@@ -15,6 +15,7 @@
 //! ----|--------|--------
 //! `device` | A regex to match against `/sys/class/backlight` devices to read brightness information from (can match 1 or more devices). When there is no `device` specified, this block will display information for all devices found in the `/sys/class/backlight` directory. | Default device
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $brightness "`
+//! `missing_format` | A string to customise the output of this block. No placeholders available | `" no backlight devices "`
 //! `step_width` | The brightness increment to use when scrolling, in percent | `5`
 //! `minimum` | The minimum brightness that can be scrolled down to | `5`
 //! `maximum` | The maximum brightness that can be scrolled up to | `100`
@@ -43,6 +44,14 @@
 //! device = "intel_backlight"
 //! ```
 //!
+//! Hide missing backlight:
+//!
+//! ```toml
+//! [[block]]
+//! block = "backlight"
+//! missing_format = ""
+//! ```
+//!
 //! # calibright
 //!
 //! Additional display brightness calibration can be set in `$XDG_CONFIG_HOME/calibright/config.toml`
@@ -69,7 +78,9 @@
 //! # Icons Used
 //! - `backlight` (as a progression)
 
-use calibright::{CalibrightBuilder, CalibrightConfig, DeviceConfig};
+use std::sync::Arc;
+
+use calibright::{CalibrightBuilder, CalibrightConfig, CalibrightError, DeviceConfig};
 
 use super::prelude::*;
 
@@ -78,6 +89,7 @@ use super::prelude::*;
 pub struct Config {
     device: Option<String>,
     format: FormatConfig,
+    missing_format: FormatConfig,
     #[default(5.0)]
     step_width: f64,
     #[default(5.0)]
@@ -100,7 +112,11 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     ])
     .await?;
 
-    let mut widget = Widget::new().with_format(config.format.with_default(" $icon $brightness ")?);
+    let format = config.format.with_default(" $icon $brightness ")?;
+    let missing_format = config
+        .missing_format
+        .with_default(" no backlight devices ")?;
+    let mut widget = Widget::new();
 
     let mut cycle = config
         .cycle
@@ -140,29 +156,44 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         .error("Failed to init calibright")?;
 
     // This is used to display the error, if there is one
-    let mut block_error: Option<Error> = None;
+    let mut block_error: Option<CalibrightError> = None;
 
     let mut brightness = calibright
         .get_brightness()
         .await
-        .error("Failed to get brightness")
         .map_err(|e| block_error = Some(e))
         .unwrap_or_default();
 
     loop {
-        if let Some(e) = block_error {
-            api.set_error(e).await?;
-        } else {
-            let mut icon_value = brightness;
-            if config.invert_icons {
-                icon_value = 1.0 - icon_value;
+        match block_error {
+            Some(CalibrightError::NoDevices) => {
+                widget.set_format(missing_format.clone());
+                widget.set_values(default());
+                widget.state = State::Critical;
+                api.set_widget(&widget).await?;
             }
-
-            widget.set_values(map! {
-                "icon" => Value::icon(api.get_icon_in_progression("backlight", icon_value)?),
-                "brightness" => Value::percents((brightness * 100.0).round())
-            });
-            api.set_widget(&widget).await?;
+            Some(e) => {
+                api.set_error(Error {
+                    kind: ErrorKind::Other,
+                    message: None,
+                    cause: Some(Arc::new(e)),
+                    block: None,
+                })
+                .await?;
+            }
+            None => {
+                widget.set_format(format.clone());
+                let mut icon_value = brightness;
+                if config.invert_icons {
+                    icon_value = 1.0 - icon_value;
+                }
+                widget.set_values(map! {
+                    "icon" => Value::icon(api.get_icon_in_progression("backlight", icon_value)?),
+                    "brightness" => Value::percents((brightness * 100.0).round())
+                });
+                widget.state = State::Idle;
+                api.set_widget(&widget).await?;
+            }
         }
 
         loop {
@@ -173,7 +204,6 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                         .get_brightness()
                         .await
                         .map(|new_brightness| {brightness = new_brightness;})
-                        .error("Failed to get brightness")
                         .err();
 
                     break;
@@ -185,7 +215,6 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                             block_error = calibright
                                 .set_brightness(brightness)
                                 .await
-                                .error("Failed to set brightness")
                                 .err();
                             break;
 
@@ -196,7 +225,6 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                             block_error = calibright
                                 .set_brightness(brightness)
                                 .await
-                                .error("Failed to set brightness")
                                 .err();
                             break;
                     }
@@ -205,7 +233,6 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                             block_error = calibright
                                 .set_brightness(brightness)
                                 .await
-                                .error("Failed to set brightness")
                                 .err();
                             break;
                     }
