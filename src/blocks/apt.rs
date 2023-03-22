@@ -177,6 +177,7 @@ async fn get_updates_list(config_path: &str) -> Result<String> {
         .await
         .error("Failed to run `apt update`")?;
     let stdout = Command::new("apt")
+        .env("LANG", "C")
         .env("APT_CONFIG", config_path)
         .args(["list", "--upgradable"])
         .output()
