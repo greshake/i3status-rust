@@ -228,6 +228,7 @@
 <a href="#228" id="228">228</a>
 <a href="#229" id="229">229</a>
 <a href="#230" id="230">230</a>
+<a href="#231" id="231">231</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Pending updates available for your Debian/Ubuntu based system
 //!
 //! Behind the scenes this uses `apt`, and in order to run it without root privileges i3status-rust will create its own package database in `/tmp/i3rs-apt/` which may take up several MB or more. If you have a custom apt config then this block may not work as expected - in that case please open an issue.
@@ -407,6 +408,7 @@
         .<span class="kw">await
         </span>.error(<span class="string">&quot;Failed to run `apt update`&quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>stdout = Command::new(<span class="string">&quot;apt&quot;</span>)
+        .env(<span class="string">&quot;LANG&quot;</span>, <span class="string">&quot;C&quot;</span>)
         .env(<span class="string">&quot;APT_CONFIG&quot;</span>, config_path)
         .args([<span class="string">&quot;list&quot;</span>, <span class="string">&quot;--upgradable&quot;</span>])
         .output()
