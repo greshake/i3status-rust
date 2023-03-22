@@ -107,6 +107,7 @@ define_blocks!(
     tea_timer,
     toggle,
     uptime,
+    vpn,
     watson,
     weather,
     xrandr,
