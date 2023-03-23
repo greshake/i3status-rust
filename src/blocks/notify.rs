@@ -209,6 +209,7 @@ trait DunstDbus {
 struct SwayNCDriver {
     proxy: SwayNCDbusProxy<'static>,
     changes: SubscribeStream<'static>,
+    changes_v2: SubscribeV2Stream<'static>,
 }
 
 impl SwayNCDriver {
@@ -222,6 +223,10 @@ impl SwayNCDriver {
                 .receive_subscribe()
                 .await
                 .error("Failed to create SubscribeStream")?,
+            changes_v2: proxy
+                .receive_subscribe_v2()
+                .await
+                .error("Failed to create SubscribeV2Stream")?,
             proxy,
         })
     }
@@ -255,7 +260,10 @@ impl Driver for SwayNCDriver {
     }
 
     async fn wait_for_change(&mut self) -> Result<()> {
-        self.changes.next().await;
+        select! {
+            _ = self.changes.next() => (),
+            _ = self.changes_v2.next() => (),
+        }
         Ok(())
     }
 }
@@ -271,5 +279,13 @@ trait SwayNCDbus {
     fn toggle_visibility(&self) -> zbus::Result<()>;
     fn notification_count(&self) -> zbus::Result<u32>;
     #[dbus_proxy(signal)]
-    fn subscribe(&self, value: bool) -> zbus::Result<()>;
+    fn subscribe(&self, count: u32, dnd: bool, cc_open: bool) -> zbus::Result<()>;
+    #[dbus_proxy(signal)]
+    fn subscribe_v2(
+        &self,
+        count: u32,
+        dnd: bool,
+        cc_open: bool,
+        inhibited: bool,
+    ) -> zbus::Result<()>;
 }
