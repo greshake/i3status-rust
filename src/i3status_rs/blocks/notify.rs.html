@@ -273,6 +273,22 @@
 <a href="#273" id="273">273</a>
 <a href="#274" id="274">274</a>
 <a href="#275" id="275">275</a>
+<a href="#276" id="276">276</a>
+<a href="#277" id="277">277</a>
+<a href="#278" id="278">278</a>
+<a href="#279" id="279">279</a>
+<a href="#280" id="280">280</a>
+<a href="#281" id="281">281</a>
+<a href="#282" id="282">282</a>
+<a href="#283" id="283">283</a>
+<a href="#284" id="284">284</a>
+<a href="#285" id="285">285</a>
+<a href="#286" id="286">286</a>
+<a href="#287" id="287">287</a>
+<a href="#288" id="288">288</a>
+<a href="#289" id="289">289</a>
+<a href="#290" id="290">290</a>
+<a href="#291" id="291">291</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Display and toggle the state of notifications daemon
 //!
 //! Left-clicking on this block will enable/disable notifications.
@@ -484,6 +500,7 @@
 <span class="kw">struct </span>SwayNCDriver {
     proxy: SwayNCDbusProxy&lt;<span class="lifetime">&#39;static</span>&gt;,
     changes: SubscribeStream&lt;<span class="lifetime">&#39;static</span>&gt;,
+    changes_v2: SubscribeV2Stream&lt;<span class="lifetime">&#39;static</span>&gt;,
 }
 
 <span class="kw">impl </span>SwayNCDriver {
@@ -497,6 +514,10 @@
                 .receive_subscribe()
                 .<span class="kw">await
                 </span>.error(<span class="string">&quot;Failed to create SubscribeStream&quot;</span>)<span class="question-mark">?</span>,
+            changes_v2: proxy
+                .receive_subscribe_v2()
+                .<span class="kw">await
+                </span>.error(<span class="string">&quot;Failed to create SubscribeV2Stream&quot;</span>)<span class="question-mark">?</span>,
             proxy,
         })
     }
@@ -530,7 +551,10 @@
     }
 
     <span class="kw">async fn </span>wait_for_change(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-        <span class="self">self</span>.changes.next().<span class="kw">await</span>;
+        <span class="macro">select! </span>{
+            <span class="kw">_ </span>= <span class="self">self</span>.changes.next() =&gt; (),
+            <span class="kw">_ </span>= <span class="self">self</span>.changes_v2.next() =&gt; (),
+        }
         <span class="prelude-val">Ok</span>(())
     }
 }
@@ -546,7 +570,15 @@
     <span class="kw">fn </span>toggle_visibility(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;()&gt;;
     <span class="kw">fn </span>notification_count(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;u32&gt;;
     <span class="attr">#[dbus_proxy(signal)]
-    </span><span class="kw">fn </span>subscribe(<span class="kw-2">&amp;</span><span class="self">self</span>, value: bool) -&gt; zbus::Result&lt;()&gt;;
+    </span><span class="kw">fn </span>subscribe(<span class="kw-2">&amp;</span><span class="self">self</span>, count: u32, dnd: bool, cc_open: bool) -&gt; zbus::Result&lt;()&gt;;
+    <span class="attr">#[dbus_proxy(signal)]
+    </span><span class="kw">fn </span>subscribe_v2(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        count: u32,
+        dnd: bool,
+        cc_open: bool,
+        inhibited: bool,
+    ) -&gt; zbus::Result&lt;()&gt;;
 }
 </code></pre></div>
-</section></main><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.68.0 (2c8cc3432 2023-03-06)" data-search-js="search-98d53477a794af0b.js" data-settings-js="settings-c3c521c753752a1a.js" data-settings-css="settings-08ddfdda51b8ee2e.css" ></div></body></html>
+</section></main><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.68.1 (8460ca823 2023-03-20)" data-search-js="search-98d53477a794af0b.js" data-settings-js="settings-c3c521c753752a1a.js" data-settings-css="settings-08ddfdda51b8ee2e.css" ></div></body></html>
