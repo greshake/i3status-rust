@@ -82,7 +82,7 @@ Key | Description | Default
 
 - [Blocks](https://docs.rs/i3status-rs/latest/i3status_rs/blocks/index.html)
 - [Formatting](https://docs.rs/i3status-rs/latest/i3status_rs/formatting/index.html)
-- [Themes and Icons](https://github.com/greshake/i3status-rust/blob/v0.30.5/doc/themes.md)
+- [Themes and Icons](https://github.com/greshake/i3status-rust/blob/v0.30.6/doc/themes.md)
 
 #### Master
 
