@@ -12,6 +12,7 @@
 
 * Net: the WiFi icon now reflects the signal strength (`material-nf` icon set only).
 * Apt: now works on systems with non-English locales (#1843).
+* Notify: support latest SwayNotificationCenter version.
 
 # i3status-rust 0.30.5
 
