@@ -4,6 +4,7 @@
 - `libssl-dev`
 - `libsensors-dev`
 - `libpulse-dev` (required for `pulseaudio` driver of sound block, compile with `--no-default-features` to opt-out)
+- `libnotmuch-dev` (required for optional `notmuch` block, compile with `--features notmuch` to opt-in)
 
 Compilation is only tested with very recent stable versions of `rustc`. If you use a distro with older Rust packages, consider using [rustup](https://rustup.rs/) to install a newer toolchain.
 
