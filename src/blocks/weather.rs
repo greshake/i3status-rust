@@ -204,7 +204,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     .recoverable(|| provider.get_weather(Some(location)))
                     .await?;
                 widget.set_values(data.into_values(&api)?);
-                api.set_widget(&widget).await?;
+                api.set_widget(widget.clone()).await?;
 
                 select! {
                     _ = sleep(config.interval.0) => (),
@@ -222,7 +222,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                 .recoverable(|| provider.get_weather(Some(location)))
                 .await?;
             widget.set_values(data.into_values(&api)?);
-            api.set_widget(&widget).await?;
+            api.set_widget(widget.clone()).await?;
 
             loop {
                 select! {
@@ -235,7 +235,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                             .recoverable(|| provider.get_weather(Some(location)))
                             .await?;
                         widget.set_values(data.into_values(&api)?);
-                        api.set_widget(&widget).await?;
+                        api.set_widget(widget.clone()).await?;
                     },
                     // On update request autolocate and update the block.
                     _ = api.wait_for_update_request() => {
@@ -245,7 +245,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                             .recoverable(|| provider.get_weather(Some(location)))
                             .await?;
                         widget.set_values(data.into_values(&api)?);
-                        api.set_widget(&widget).await?;
+                        api.set_widget(widget.clone()).await?;
 
                         // both intervals should be reset after a manual sync
                         autolocate_interval.reset();
@@ -258,7 +258,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         loop {
             let data = api.recoverable(|| provider.get_weather(None)).await?;
             widget.set_values(data.into_values(&api)?);
-            api.set_widget(&widget).await?;
+            api.set_widget(widget.clone()).await?;
 
             select! {
                 _ = sleep(config.interval.0) => (),

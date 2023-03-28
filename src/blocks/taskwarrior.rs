@@ -96,8 +96,6 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         .format_everything_done
         .with_default(" $icon $count.eng(w:1) ")?;
 
-    let mut widget = Widget::new();
-
     let mut filters = config.filters.iter().cycle();
     let mut filter = filters.next().error("`filters` is empty")?;
 
@@ -111,6 +109,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
     loop {
         let number_of_tasks = get_number_of_tasks(&filter.filter).await?;
+
+        let mut widget = Widget::new();
 
         widget.set_format(match number_of_tasks {
             0 => format_everything_done.clone(),
@@ -130,7 +130,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             _ => State::Idle,
         };
 
-        api.set_widget(&widget).await?;
+        api.set_widget(widget).await?;
 
         select! {
             _ = sleep(config.interval.0) =>(),

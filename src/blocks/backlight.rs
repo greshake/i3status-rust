@@ -134,7 +134,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     ])
     .await?;
 
-    let mut widget = Widget::new().with_format(config.format.with_default(" $icon $brightness ")?);
+    let format = config.format.with_default(" $icon $brightness ")?;
 
     let mut cycle = config
         .cycle
@@ -172,6 +172,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         .error("Failed to create event stream")?;
 
     loop {
+        let mut widget = Widget::new().with_format(format.clone());
+
         let brightness = api.recoverable(|| device.brightness()).await?;
 
         let mut icon_value = brightness as f64 / 100.0;
@@ -183,7 +185,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             "icon" => Value::icon(api.get_icon_in_progression("backlight", icon_value)?),
             "brightness" => Value::percents(brightness)
         });
-        api.set_widget(&widget).await?;
+        api.set_widget(widget).await?;
 
         loop {
             select! {

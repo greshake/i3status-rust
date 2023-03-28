@@ -44,14 +44,15 @@ pub struct Config {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
-    let mut widget =
-        Widget::new().with_format(config.format.with_default(" $icon $num.eng(w:1) ")?);
+    let format = config.format.with_default(" $icon $num.eng(w:1) ")?;
 
     let path = config.socket_path.expand()?;
     let mut timer = config.interval.timer();
 
     loop {
         let (num, crit) = api.recoverable(|| rofication_status(&path)).await?;
+
+        let mut widget = Widget::new().with_format(format.clone());
 
         widget.set_values(map!(
             "icon" => Value::icon(api.get_icon("bell")?),
@@ -65,7 +66,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         } else {
             State::Idle
         };
-        api.set_widget(&widget).await?;
+
+        api.set_widget(widget).await?;
 
         tokio::select! {
             _ = timer.tick() => (),

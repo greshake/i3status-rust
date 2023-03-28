@@ -51,7 +51,6 @@ struct Item {
 
 struct Block {
     api: CommonApi,
-    widget: Widget,
     text: String,
     items: Vec<Item>,
 }
@@ -62,8 +61,7 @@ impl Block {
     }
 
     async fn set_text(&mut self, text: String) -> Result<()> {
-        self.widget.set_text(text);
-        self.api.set_widget(&self.widget).await
+        self.api.set_widget(Widget::new().with_text(text)).await
     }
 
     async fn wait_for_click(&mut self, button: &str) {
@@ -112,7 +110,6 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     .await?;
 
     let mut block = Block {
-        widget: Widget::new(),
         api,
         text: config.text,
         items: config.items,

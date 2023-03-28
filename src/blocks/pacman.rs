@@ -160,8 +160,6 @@ pub struct Config {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
-    let mut widget = Widget::new();
-
     let format = config.format.with_default(" $icon $pacman.eng(w:1) ")?;
     let format_singular = config
         .format_singular
@@ -275,6 +273,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         };
         values.insert("icon".into(), Value::icon(api.get_icon("update")?));
 
+        let mut widget = Widget::new();
         widget.set_format(match total {
             0 => format_up_to_date.clone(),
             1 => format_singular.clone(),
@@ -293,7 +292,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                 }
             }
         };
-        api.set_widget(&widget).await?;
+        api.set_widget(widget).await?;
 
         select! {
             _ = sleep(config.interval.0) => (),

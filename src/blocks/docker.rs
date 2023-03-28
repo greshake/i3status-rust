@@ -45,13 +45,13 @@ pub struct Config {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
-    let mut widget =
-        Widget::new().with_format(config.format.with_default(" $icon $running.eng(w:1) ")?);
+    let format = config.format.with_default(" $icon $running.eng(w:1) ")?;
     let socket_path = config.socket_path.expand()?;
 
     loop {
         let status = api.recoverable(|| Status::new(&*socket_path)).await?;
 
+        let mut widget = Widget::new().with_format(format.clone());
         widget.set_values(map! {
             "icon" => Value::icon(api.get_icon("docker")?),
             "total" =>   Value::number(status.total),
@@ -60,7 +60,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             "stopped" => Value::number(status.stopped),
             "images" =>  Value::number(status.images),
         });
-        api.set_widget(&widget).await?;
+        api.set_widget(widget).await?;
 
         select! {
             _ = sleep(config.interval.0) => (),

@@ -83,7 +83,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     api.set_default_actions(&[(MouseButton::Left, None, "toggle_paused")])
         .await?;
 
-    let mut widget = Widget::new().with_format(config.format.with_default(" $icon ")?);
+    let format = config.format.with_default(" $icon ")?;
 
     let mut driver: Box<dyn Driver> = match config.driver {
         DriverType::Dunst => Box::new(DunstDriver::new().await?),
@@ -94,6 +94,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         let (is_paused, notification_count) =
             try_join!(driver.is_paused(), driver.notification_count())?;
 
+        let mut widget = Widget::new().with_format(format.clone());
         widget.set_values(map!(
             "icon" => Value::icon(api.get_icon(if is_paused { ICON_OFF } else { ICON_ON })?),
             [if notification_count != 0] "notification_count" => Value::number(notification_count),
@@ -104,7 +105,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         } else {
             State::Info
         };
-        api.set_widget(&widget).await?;
+        api.set_widget(widget).await?;
 
         select! {
             x = driver.wait_for_change() => x?,

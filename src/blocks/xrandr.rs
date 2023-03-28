@@ -63,11 +63,9 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     ])
     .await?;
 
-    let mut widget = Widget::new().with_format(
-        config
-            .format
-            .with_default(" $icon $display $brightness_icon $brightness ")?,
-    );
+    let format = config
+        .format
+        .with_default(" $icon $display $brightness_icon $brightness ")?;
 
     let mut cur_indx = 0;
     let mut timer = config.interval.timer();
@@ -79,8 +77,10 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         }
 
         loop {
-            widget.set_values(if let Some(mon) = monitors.get(cur_indx) {
-                map! {
+            let mut widget = Widget::new().with_format(format.clone());
+
+            if let Some(mon) = monitors.get(cur_indx) {
+                widget.set_values(map! {
                     "display" => Value::text(mon.name.clone()),
                     "brightness" => Value::percents(mon.brightness),
                     //TODO: change `brightness_icon` based on `brightness`
@@ -88,11 +88,9 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     "resolution" => Value::text(mon.resolution.clone()),
                     "icon" => Value::icon(api.get_icon("xrandr")?),
                     "res_icon" => Value::icon(api.get_icon("resolution")?),
-                }
-            } else {
-                default()
-            });
-            api.set_widget(&widget).await?;
+                });
+            }
+            api.set_widget(widget).await?;
 
             select! {
                 _ = timer.tick() => break,

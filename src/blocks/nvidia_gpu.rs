@@ -95,11 +95,9 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     ])
     .await?;
 
-    let mut widget = Widget::new().with_format(
-        config
-            .format
-            .with_default(" $icon $utilization $memory $temperature ")?,
-    );
+    let format = config
+        .format
+        .with_default(" $icon $utilization $memory $temperature ")?;
 
     // Run `nvidia-smi` command
     let mut child = Command::new("nvidia-smi")
@@ -123,6 +121,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut fan_controlled = false;
 
     loop {
+        let mut widget = Widget::new().with_format(format.clone());
+
         widget.state = match info.temperature {
             t if t <= config.idle => State::Idle,
             t if t <= config.good => State::Good,
@@ -142,7 +142,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             "power" => Value::watts(info.power_draw),
         });
 
-        api.set_widget(&widget).await?;
+        api.set_widget(widget).await?;
 
         loop {
             select! {

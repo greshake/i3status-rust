@@ -80,7 +80,7 @@ pub struct Config {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
-    let mut widget = Widget::new().with_format(config.format.with_default(" $ip $country_flag ")?);
+    let format = config.format.with_default(" $ip $country_flag ")?;
 
     type UpdatesStream = Pin<Box<dyn Stream<Item = ()>>>;
     let mut stream: UpdatesStream = if config.with_network_manager {
@@ -170,8 +170,10 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         if info.in_eu {
             values.insert("in_eu".into(), Value::flag());
         }
+
+        let mut widget = Widget::new().with_format(format.clone());
         widget.set_values(values);
-        api.set_widget(&widget).await?;
+        api.set_widget(widget).await?;
 
         select! {
             _ = sleep(config.interval.0) => (),

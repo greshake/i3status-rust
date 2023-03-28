@@ -41,7 +41,7 @@ pub struct Config {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
-    let mut widget = Widget::new().with_format(config.format.with_default(" $icon $text ")?);
+    let format = config.format.with_default(" $icon $text ")?;
 
     loop {
         let uptime = read_to_string("/proc/uptime")
@@ -72,11 +72,12 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             format!("{minutes}m {seconds}s")
         };
 
+        let mut widget = Widget::new().with_format(format.clone());
         widget.set_values(map! {
           "icon" => Value::icon(api.get_icon("uptime")?),
           "text" => Value::text(text)
         });
-        api.set_widget(&widget).await?;
+        api.set_widget(widget).await?;
 
         select! {
             _ = sleep(config.interval.0) => (),

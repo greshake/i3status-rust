@@ -95,6 +95,8 @@
 //! # TODO:
 //! - Use `shellexpand`
 
+use crate::formatting::Format;
+
 use super::prelude::*;
 use inotify::{Inotify, WatchMask};
 use std::process::Stdio;
@@ -121,8 +123,10 @@ async fn update_bar(
     hide_when_empty: bool,
     json: bool,
     api: &mut CommonApi,
-    widget: &mut Widget,
+    format: Format,
 ) -> Result<()> {
+    let mut widget = Widget::new().with_format(format);
+
     let text_empty;
 
     if json {
@@ -154,10 +158,10 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     api.set_default_actions(&[(MouseButton::Left, None, "cycle")])
         .await?;
 
-    let mut widget = Widget::new().with_format(config.format.with_defaults(
+    let format = config.format.with_defaults(
         "{ $icon|} $text.pango-str() ",
         "{ $icon|} $short_text.pango-str() |",
-    )?);
+    )?;
 
     let mut timer = config.interval.timer();
 
@@ -216,7 +220,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             select! {
                 line = reader.next_line() => {
                     let line = line.error("error reading line from child process")?.error("child process exited unexpectedly")?;
-                    update_bar(&line, config.hide_when_empty, config.json, &mut api, &mut widget).await?;
+                    update_bar(&line, config.hide_when_empty, config.json, &mut api, format.clone()).await?;
                 }
                 // events must be polled
                 _ = api.event() => (),
@@ -247,7 +251,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                 config.hide_when_empty,
                 config.json,
                 &mut api,
-                &mut widget,
+                format.clone(),
             )
             .await?;
 

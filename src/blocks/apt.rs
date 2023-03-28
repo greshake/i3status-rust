@@ -71,8 +71,6 @@ pub struct Config {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
-    let mut widget = Widget::new();
-
     let format = config.format.with_default(" $icon $count.eng(w:1) ")?;
     let format_singular = config
         .format_singular
@@ -124,6 +122,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         .error("Failed to write to config file")?;
 
     loop {
+        let mut widget = Widget::new();
         let updates = get_updates_list(config_file).await?;
         let count = get_update_count(config_file, config.ignore_phased_updates, &updates).await?;
 
@@ -156,7 +155,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             }
         };
 
-        api.set_widget(&widget).await?;
+        api.set_widget(widget).await?;
 
         select! {
             _ = sleep(config.interval.0) => (),

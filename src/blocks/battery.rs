@@ -115,7 +115,6 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let format_empty = config.empty_format.with_default(" $icon ")?;
     let format_not_charging = config.not_charging_format.with_default(" $icon ")?;
     let missing_format = config.missing_format.with_default(" $icon ")?;
-    let mut widget = Widget::new();
 
     let dev_name = DeviceName::new(config.device)?;
     let mut device: Box<dyn BatteryDevice + Send + Sync> = match config.driver {
@@ -139,6 +138,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
         match info {
             Some(info) => {
+                let mut widget = Widget::new();
+
                 widget.set_format(match info.status {
                     BatteryStatus::Empty => format_empty.clone(),
                     BatteryStatus::Full => format_full.clone(),
@@ -198,13 +199,14 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
                 widget.set_values(values);
                 widget.state = state;
-                api.set_widget(&widget).await?;
+                api.set_widget(widget).await?;
             }
             None => {
-                widget.set_format(missing_format.clone());
+                let mut widget = Widget::new()
+                    .with_format(missing_format.clone())
+                    .with_state(State::Critical);
                 widget.set_values(map!("icon" => Value::icon(api.get_icon("bat_not_available")?)));
-                widget.state = State::Critical;
-                api.set_widget(&widget).await?;
+                api.set_widget(widget).await?;
             }
         }
 

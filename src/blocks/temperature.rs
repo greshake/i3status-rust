@@ -110,7 +110,6 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         Some(f) => Some(f.with_default("")?),
         None => None,
     };
-    let mut widget = Widget::new().with_format(format.clone());
 
     let good = config
         .good
@@ -181,6 +180,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             .unwrap_or(0.0);
         let avg_temp = temp.iter().sum::<f64>() / temp.len() as f64;
 
+        let mut widget = Widget::new().with_format(format.clone());
+
         widget.state = match max_temp {
             x if x <= good => State::Good,
             x if x <= idle => State::Idle,
@@ -189,31 +190,24 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             _ => State::Critical,
         };
 
-        'outer: loop {
-            widget.set_values(map! {
-                "icon" => Value::icon(api.get_icon("thermometer")?),
-                "average" => Value::degrees(avg_temp),
-                "min" => Value::degrees(min_temp),
-                "max" => Value::degrees(max_temp),
-            });
+        widget.set_values(map! {
+            "icon" => Value::icon(api.get_icon("thermometer")?),
+            "average" => Value::degrees(avg_temp),
+            "min" => Value::degrees(min_temp),
+            "max" => Value::degrees(max_temp),
+        });
 
-            api.set_widget(&widget).await?;
+        api.set_widget(widget).await?;
 
-            loop {
-                select! {
-                    _ = sleep(config.interval.0) => break 'outer,
-                    event = api.event() => match event {
-                        UpdateRequest => break,
-                        Action(a) if a == "toggle_format" => {
-                            if let Some(ref mut format_alt) = format_alt {
-                                std::mem::swap(format_alt, &mut format);
-                                widget.set_format(format.clone());
-                                break;
-                            }
-                        }
-                        _ => (),
+        select! {
+            _ = sleep(config.interval.0) => (),
+            event = api.event() => match event {
+                Action(a) if a == "toggle_format" => {
+                    if let Some(format_alt) = &mut format_alt {
+                        std::mem::swap(format_alt, &mut format);
                     }
                 }
+                _ => (),
             }
         }
     }

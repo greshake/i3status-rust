@@ -114,8 +114,6 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     api.set_default_actions(&[(MouseButton::Left, None, "toggle")])
         .await?;
 
-    let mut widget = Widget::new();
-
     let format_connected = config.format_connected.with_default(" VPN: $icon ")?;
     let format_disconnected = config.format_disconnected.with_default(" VPN: $icon ")?;
 
@@ -125,6 +123,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
     loop {
         let status = driver.get_status().await?;
+
+        let mut widget = Widget::new();
 
         widget.state = match &status {
             Status::Connected {
@@ -156,7 +156,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             }
         };
 
-        api.set_widget(&widget).await?;
+        api.set_widget(widget).await?;
 
         select! {
             _ = sleep(config.interval.0) => (),

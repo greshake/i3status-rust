@@ -105,8 +105,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     ])
     .await?;
 
-    let mut widget =
-        Widget::new().with_format(config.format.with_default(" $icon {$volume.eng(w:2)|} ")?);
+    let format = config.format.with_default(" $icon {$volume.eng(w:2)|} ")?;
 
     let device_kind = config.device_kind;
     let step_width = config.step_width.clamp(0, 50) as i32;
@@ -198,17 +197,17 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             "icon" => Value::icon(api.get_icon_in_progression(icon(muted, &*device), volume as f64 / 100.0)?),
         };
 
+        let mut widget = Widget::new().with_format(format.clone());
+
         if muted {
             widget.state = State::Warning;
             if !config.show_volume_when_muted {
                 values.remove("volume");
             }
-        } else {
-            widget.state = State::Idle;
         }
 
         widget.set_values(values);
-        api.set_widget(&widget).await?;
+        api.set_widget(widget).await?;
 
         loop {
             select! {

@@ -60,11 +60,9 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     ])
     .await?;
 
-    let mut widget = Widget::new().with_format(
-        config
-            .format
-            .with_default(" $icon $timestamp.datetime() ")?,
-    );
+    let format = config
+        .format
+        .with_default(" $icon $timestamp.datetime() ")?;
 
     let timezones = match config.timezone {
         Some(tzs) => match tzs {
@@ -89,12 +87,14 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             unsafe { tzset() };
         }
 
-        widget.set_values(map!(
+        let mut widget = Widget::new().with_format(format.clone());
+
+        widget.set_values(map! {
             "icon" => Value::icon(api.get_icon("time")?),
             "timestamp" => Value::datetime(Utc::now(), timezone.copied())
-        ));
+        });
 
-        api.set_widget(&widget).await?;
+        api.set_widget(widget).await?;
 
         tokio::select! {
             _ = timer.tick() => (),

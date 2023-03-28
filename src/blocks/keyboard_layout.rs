@@ -106,7 +106,7 @@ enum KeyboardLayoutDriver {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
-    let mut widget = Widget::new().with_format(config.format.with_default(" $layout ")?);
+    let format = config.format.with_default(" $layout ")?;
 
     let mut backend: Box<dyn Backend> = match config.driver {
         KeyboardLayoutDriver::SetXkbMap => Box::new(SetXkbMap(config.interval)),
@@ -128,11 +128,12 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             }
         }
 
+        let mut widget = Widget::new().with_format(format.clone());
         widget.set_values(map! {
             "layout" => Value::text(layout),
             "variant" => Value::text(variant),
         });
-        api.set_widget(&widget).await?;
+        api.set_widget(widget).await?;
 
         select! {
             update = backend.wait_for_change() => update?,

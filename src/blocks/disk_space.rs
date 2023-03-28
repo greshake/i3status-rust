@@ -95,8 +95,6 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         None => None,
     };
 
-    let mut widget = Widget::new().with_format(format.clone());
-
     let unit = match config.alert_unit.as_deref() {
         Some("TB") => Some(Prefix::Tera),
         Some("GB") => Some(Prefix::Giga),
@@ -112,6 +110,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut timer = config.interval.timer();
 
     loop {
+        let mut widget = Widget::new().with_format(format.clone());
+
         let statvfs = statvfs(&*path).error("failed to retrieve statvfs")?;
 
         // Casting to be compatible with 32-bit systems
@@ -174,7 +174,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             }
         };
 
-        api.set_widget(&widget).await?;
+        api.set_widget(widget).await?;
 
         loop {
             select! {
@@ -184,7 +184,6 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     Action(a) if a == "toggle_format" => {
                         if let Some(ref mut format_alt) = format_alt {
                             std::mem::swap(format_alt, &mut format);
-                            widget.set_format(format.clone());
                             break;
                         }
                     }
