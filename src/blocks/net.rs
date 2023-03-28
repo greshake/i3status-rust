@@ -105,14 +105,12 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     loop {
         match NetDevice::new(device_re.as_ref()).await? {
             None => {
-                let mut widget = Widget::new().with_format(missing_format.clone());
-                widget.set_values(default());
-                api.set_widget(widget).await?;
+                api.set_widget(Widget::new().with_format(missing_format.clone()))
+                    .await?;
             }
             Some(device) if !device.is_up() => {
-                let mut widget = Widget::new().with_format(missing_format.clone());
-                widget.set_values(default());
-                api.set_widget(widget).await?;
+                api.set_widget(Widget::new().with_format(missing_format.clone()))
+                    .await?;
             }
             Some(device) => {
                 let mut widget = Widget::new().with_format(format.clone());
