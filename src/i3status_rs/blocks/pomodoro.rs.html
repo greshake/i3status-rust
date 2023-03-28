@@ -353,7 +353,7 @@
             values.insert(<span class="string">&quot;message&quot;</span>.into(), Value::text(text));
         }
         <span class="self">self</span>.widget.set_values(values);
-        <span class="self">self</span>.api.set_widget(<span class="kw-2">&amp;</span><span class="self">self</span>.widget).<span class="kw">await
+        <span class="self">self</span>.api.set_widget(<span class="self">self</span>.widget.clone()).<span class="kw">await
     </span>}
 
     <span class="kw">async fn </span>wait_for_click(<span class="kw-2">&amp;mut </span><span class="self">self</span>, button: <span class="kw-2">&amp;</span>str) {

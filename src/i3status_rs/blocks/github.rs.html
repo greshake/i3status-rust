@@ -184,6 +184,7 @@
 <a href="#184" id="184">184</a>
 <a href="#185" id="185">185</a>
 <a href="#186" id="186">186</a>
+<a href="#187" id="187">187</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The number of GitHub notifications
 //!
 //! This block shows the unread notification count for a GitHub account. A GitHub [personal access token](https://github.com/settings/tokens/new) with the &quot;notifications&quot; scope is required, and must be passed using the `I3RS_GITHUB_TOKEN` environment variable or `token` configuration option. Optionally the colour of the block is determined by the highest notification in the following lists from highest to lowest: `critical`,`warning`,`info`,`good`
@@ -261,8 +262,7 @@
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span><span class="kw-2">mut </span>widget =
-        Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon $total.eng(w:1) &quot;</span>)<span class="question-mark">?</span>);
+    <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $total.eng(w:1) &quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>interval = config.interval.timer();
     <span class="kw">let </span>token = config
@@ -271,6 +271,8 @@
         .error(<span class="string">&quot;Github token not found&quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">loop </span>{
+        <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
+
         <span class="kw">let </span>stats = api.recoverable(|| get_stats(<span class="kw-2">&amp;</span>token)).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">if </span>stats.get(<span class="string">&quot;total&quot;</span>).map_or(<span class="bool-val">false</span>, |x| <span class="kw-2">*</span>x &gt; <span class="number">0</span>) || !config.hide_if_total_is_zero {
             <span class="kw">let </span><span class="kw-2">mut </span>state = State::Idle;
@@ -296,7 +298,7 @@
             values.insert(<span class="string">&quot;icon&quot;</span>.into(), Value::icon(api.get_icon(<span class="string">&quot;github&quot;</span>)<span class="question-mark">?</span>));
             widget.set_values(values);
             widget.state = state;
-            api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+            api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
         } <span class="kw">else </span>{
             api.hide().<span class="kw">await</span><span class="question-mark">?</span>;
         }

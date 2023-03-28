@@ -228,7 +228,6 @@
 <a href="#228" id="228">228</a>
 <a href="#229" id="229">229</a>
 <a href="#230" id="230">230</a>
-<a href="#231" id="231">231</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Pending updates available for your Debian/Ubuntu based system
 //!
 //! Behind the scenes this uses `apt`, and in order to run it without root privileges i3status-rust will create its own package database in `/tmp/i3rs-apt/` which may take up several MB or more. If you have a custom apt config then this block may not work as expected - in that case please open an issue.
@@ -302,8 +301,6 @@
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new();
-
     <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $count.eng(w:1) &quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>format_singular = config
         .format_singular
@@ -355,6 +352,7 @@
         </span>.error(<span class="string">&quot;Failed to write to config file&quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">loop </span>{
+        <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new();
         <span class="kw">let </span>updates = get_updates_list(config_file).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">let </span>count = get_update_count(config_file, config.ignore_phased_updates, <span class="kw-2">&amp;</span>updates).<span class="kw">await</span><span class="question-mark">?</span>;
 
@@ -387,7 +385,7 @@
             }
         };
 
-        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="macro">select! </span>{
             <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt; (),

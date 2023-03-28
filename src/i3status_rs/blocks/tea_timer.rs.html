@@ -115,6 +115,7 @@
 <a href="#115" id="115">115</a>
 <a href="#116" id="116">116</a>
 <a href="#117" id="117">117</a>
+<a href="#118" id="118">118</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Timer
 //!
 //! # Configuration
@@ -177,7 +178,6 @@
     <span class="kw">let </span><span class="kw-2">mut </span>timer = interval.timer();
 
     <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon {$minutes:$seconds |}&quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format);
 
     <span class="kw">let </span>increment = Duration::seconds(config.increment.unwrap_or(<span class="number">30</span>));
     <span class="kw">let </span><span class="kw-2">mut </span>timer_end = Utc::now();
@@ -205,6 +205,8 @@
             (<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>)
         };
 
+        <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
+
         widget.set_values(<span class="macro">map!</span>(
             <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;tea&quot;</span>)<span class="question-mark">?</span>),
             [<span class="kw">if </span>is_timer_active] <span class="string">&quot;hours&quot; </span>=&gt; Value::text(<span class="macro">format!</span>(<span class="string">&quot;{hours:02}&quot;</span>)),
@@ -212,7 +214,7 @@
             [<span class="kw">if </span>is_timer_active] <span class="string">&quot;seconds&quot; </span>=&gt; Value::text(<span class="macro">format!</span>(<span class="string">&quot;{seconds:02}&quot;</span>)),
         ));
 
-        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="macro">tokio::select! </span>{
             <span class="kw">_ </span>= timer.tick(), <span class="kw">if </span>is_timer_active =&gt; (),

@@ -527,7 +527,6 @@
     <span class="kw">let </span>disconnected_format = config
         .disconnected_format
         .with_default(<span class="string">&quot; $icon{ $name|} &quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new();
 
     <span class="kw">let </span><span class="kw-2">mut </span>monitor = DeviceMonitor::new(config.mac, config.adapter_mac).<span class="kw">await</span><span class="question-mark">?</span>;
 
@@ -546,6 +545,8 @@
             <span class="comment">// Available
             </span><span class="prelude-val">Some</span>(device) =&gt; {
                 <span class="macro">debug!</span>(<span class="string">&quot;Device available, info: {device:?}&quot;</span>);
+
+                <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new();
 
                 <span class="kw">let </span>values = <span class="macro">map! </span>{
                     <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(device.icon)<span class="question-mark">?</span>),
@@ -568,15 +569,14 @@
                 }
 
                 widget.set_values(values);
-                api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+                api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
             }
             <span class="comment">// Unavailable
             </span><span class="prelude-val">None </span>=&gt; {
                 <span class="macro">debug!</span>(<span class="string">&quot;Showing device as unavailable&quot;</span>);
-                widget.state = State::Idle;
-                widget.set_format(disconnected_format.clone());
+                <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(disconnected_format.clone());
                 widget.set_values(<span class="macro">map!</span>(<span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;bluetooth&quot;</span>)<span class="question-mark">?</span>)));
-                api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+                api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
             }
         }
 

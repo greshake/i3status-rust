@@ -236,6 +236,8 @@
 <a href="#236" id="236">236</a>
 <a href="#237" id="237">237</a>
 <a href="#238" id="238">238</a>
+<a href="#239" id="239">239</a>
+<a href="#240" id="240">240</a>
 </pre><pre class="rust"><code><span class="doccomment">//! External IP address and various information about it
 //!
 //! # Configuration
@@ -318,7 +320,7 @@
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(config.format.with_default(<span class="string">&quot; $ip $country_flag &quot;</span>)<span class="question-mark">?</span>);
+    <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $ip $country_flag &quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">type </span>UpdatesStream = Pin&lt;Box&lt;<span class="kw">dyn </span>Stream&lt;Item = ()&gt;&gt;&gt;;
     <span class="kw">let </span><span class="kw-2">mut </span>stream: UpdatesStream = <span class="kw">if </span>config.with_network_manager {
@@ -408,8 +410,10 @@
         <span class="kw">if </span>info.in_eu {
             values.insert(<span class="string">&quot;in_eu&quot;</span>.into(), Value::flag());
         }
+
+        <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
         widget.set_values(values);
-        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="macro">select! </span>{
             <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt; (),

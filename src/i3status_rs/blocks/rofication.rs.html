@@ -100,6 +100,8 @@
 <a href="#100" id="100">100</a>
 <a href="#101" id="101">101</a>
 <a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a>
+<a href="#104" id="104">104</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The number of pending notifications in rofication-daemon
 //!
 //! A different color is used if there are critical notifications.
@@ -146,14 +148,15 @@
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span><span class="kw-2">mut </span>widget =
-        Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon $num.eng(w:1) &quot;</span>)<span class="question-mark">?</span>);
+    <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $num.eng(w:1) &quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span>path = config.socket_path.expand()<span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>timer = config.interval.timer();
 
     <span class="kw">loop </span>{
         <span class="kw">let </span>(num, crit) = api.recoverable(|| rofication_status(<span class="kw-2">&amp;</span>path)).<span class="kw">await</span><span class="question-mark">?</span>;
+
+        <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
 
         widget.set_values(<span class="macro">map!</span>(
             <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;bell&quot;</span>)<span class="question-mark">?</span>),
@@ -167,7 +170,8 @@
         } <span class="kw">else </span>{
             State::Idle
         };
-        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+
+        api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="macro">tokio::select! </span>{
             <span class="kw">_ </span>= timer.tick() =&gt; (),

@@ -180,11 +180,9 @@
     ])
     .<span class="kw">await</span><span class="question-mark">?</span>;
 
-    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(
-        config
-            .format
-            .with_default(<span class="string">&quot; $icon $timestamp.datetime() &quot;</span>)<span class="question-mark">?</span>,
-    );
+    <span class="kw">let </span>format = config
+        .format
+        .with_default(<span class="string">&quot; $icon $timestamp.datetime() &quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span>timezones = <span class="kw">match </span>config.timezone {
         <span class="prelude-val">Some</span>(tzs) =&gt; <span class="kw">match </span>tzs {
@@ -209,12 +207,14 @@
             </span><span class="kw">unsafe </span>{ tzset() };
         }
 
-        widget.set_values(<span class="macro">map!</span>(
+        <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
+
+        widget.set_values(<span class="macro">map! </span>{
             <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;time&quot;</span>)<span class="question-mark">?</span>),
             <span class="string">&quot;timestamp&quot; </span>=&gt; Value::datetime(Utc::now(), timezone.copied())
-        ));
+        });
 
-        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="macro">tokio::select! </span>{
             <span class="kw">_ </span>= timer.tick() =&gt; (),

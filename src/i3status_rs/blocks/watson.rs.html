@@ -226,6 +226,9 @@
 <a href="#226" id="226">226</a>
 <a href="#227" id="227">227</a>
 <a href="#228" id="228">228</a>
+<a href="#229" id="229">229</a>
+<a href="#230" id="230">230</a>
+<a href="#231" id="231">231</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Watson statistics
 //!
 //! [Watson](http://tailordev.github.io/Watson/) is a simple CLI time tracking application. This block will show the name of your current active project, tags and optionally recorded time. Clicking the widget will toggle the `show_time` variable dynamically.
@@ -282,7 +285,7 @@
     api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;toggle_show_time&quot;</span>)])
         .<span class="kw">await</span><span class="question-mark">?</span>;
 
-    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(config.format.with_default(<span class="string">&quot; $text |&quot;</span>)<span class="question-mark">?</span>);
+    <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $text |&quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>show_time = config.show_time;
 
@@ -319,6 +322,9 @@
             .<span class="kw">await
             </span>.error(<span class="string">&quot;Failed to read state file&quot;</span>)<span class="question-mark">?</span>;
         <span class="kw">let </span>state = serde_json::from_str(<span class="kw-2">&amp;</span>state).unwrap_or(WatsonState::Idle {});
+
+        <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
+
         <span class="kw">match </span>state {
             state @ WatsonState::Active { .. } =&gt; {
                 widget.state = State::Good;
@@ -346,7 +352,7 @@
             }
         }
 
-        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="kw">loop </span>{
             <span class="macro">select! </span>{

@@ -330,8 +330,6 @@
 <a href="#330" id="330">330</a>
 <a href="#331" id="331">331</a>
 <a href="#332" id="332">332</a>
-<a href="#333" id="333">333</a>
-<a href="#334" id="334">334</a>
 </pre><pre class="rust"><code><span class="doccomment">//! [KDEConnect](https://community.kde.org/KDEConnect) indicator
 //!
 //! Display info from the currently connected device in KDEConnect, updated asynchronously.
@@ -402,11 +400,9 @@
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(
-        config
-            .format
-            .with_default(<span class="string">&quot; $icon $name{ $bat_icon $bat_charge|}{ $notif_icon|} &quot;</span>)<span class="question-mark">?</span>,
-    );
+    <span class="kw">let </span>format = config
+        .format
+        .with_default(<span class="string">&quot; $icon $name{ $bat_icon $bat_charge|}{ $notif_icon|} &quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span>battery_state = (
         config.bat_good,
@@ -428,7 +424,7 @@
         <span class="kw">let </span>connected = device.connected().<span class="kw">await</span>;
 
         <span class="kw">if </span>connected || !config.hide_disconnected {
-            widget.state = State::Idle;
+            <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
 
             <span class="kw">let </span><span class="kw-2">mut </span>values = <span class="macro">map!</span>();
 
@@ -488,7 +484,7 @@
             }
 
             widget.set_values(values);
-            api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+            api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
         } <span class="kw">else </span>{
             api.hide().<span class="kw">await</span><span class="question-mark">?</span>;
         }

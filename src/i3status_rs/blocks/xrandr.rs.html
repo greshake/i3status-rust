@@ -205,8 +205,6 @@
 <a href="#205" id="205">205</a>
 <a href="#206" id="206">206</a>
 <a href="#207" id="207">207</a>
-<a href="#208" id="208">208</a>
-<a href="#209" id="209">209</a>
 </pre><pre class="rust"><code><span class="doccomment">//! X11 screen information
 //!
 //! X11 screen information (name, brightness, resolution). With a click you can toggle through your active screens and with wheel up and down you can adjust the selected screens brightness. Regarding brightness control, xrandr changes the brightness of the display using gamma rather than changing the brightness in hardware, so if that is not desirable then consider using the `backlight` block instead.
@@ -272,11 +270,9 @@
     ])
     .<span class="kw">await</span><span class="question-mark">?</span>;
 
-    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(
-        config
-            .format
-            .with_default(<span class="string">&quot; $icon $display $brightness_icon $brightness &quot;</span>)<span class="question-mark">?</span>,
-    );
+    <span class="kw">let </span>format = config
+        .format
+        .with_default(<span class="string">&quot; $icon $display $brightness_icon $brightness &quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>cur_indx = <span class="number">0</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>timer = config.interval.timer();
@@ -288,8 +284,10 @@
         }
 
         <span class="kw">loop </span>{
-            widget.set_values(<span class="kw">if let </span><span class="prelude-val">Some</span>(mon) = monitors.get(cur_indx) {
-                <span class="macro">map! </span>{
+            <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
+
+            <span class="kw">if let </span><span class="prelude-val">Some</span>(mon) = monitors.get(cur_indx) {
+                widget.set_values(<span class="macro">map! </span>{
                     <span class="string">&quot;display&quot; </span>=&gt; Value::text(mon.name.clone()),
                     <span class="string">&quot;brightness&quot; </span>=&gt; Value::percents(mon.brightness),
                     <span class="comment">//TODO: change `brightness_icon` based on `brightness`
@@ -297,11 +295,9 @@
                     <span class="string">&quot;resolution&quot; </span>=&gt; Value::text(mon.resolution.clone()),
                     <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;xrandr&quot;</span>)<span class="question-mark">?</span>),
                     <span class="string">&quot;res_icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;resolution&quot;</span>)<span class="question-mark">?</span>),
-                }
-            } <span class="kw">else </span>{
-                default()
-            });
-            api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+                });
+            }
+            api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
             <span class="macro">select! </span>{
                 <span class="kw">_ </span>= timer.tick() =&gt; <span class="kw">break</span>,

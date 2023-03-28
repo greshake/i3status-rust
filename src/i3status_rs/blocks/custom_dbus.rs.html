@@ -261,7 +261,7 @@
             <span class="prelude-val">Some</span>(icon.to_string())
         };
         <span class="self">self</span>.widget.set_values(block_values(<span class="self">self</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.api)<span class="question-mark">?</span>);
-        <span class="self">self</span>.api.set_widget(<span class="kw-2">&amp;</span><span class="self">self</span>.widget).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="self">self</span>.api.set_widget(<span class="self">self</span>.widget.clone()).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
     }
 
@@ -269,7 +269,7 @@
         <span class="self">self</span>.text = <span class="prelude-val">Some</span>(full);
         <span class="self">self</span>.short_text = <span class="prelude-val">Some</span>(short);
         <span class="self">self</span>.widget.set_values(block_values(<span class="self">self</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.api)<span class="question-mark">?</span>);
-        <span class="self">self</span>.api.set_widget(<span class="kw-2">&amp;</span><span class="self">self</span>.widget).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="self">self</span>.api.set_widget(<span class="self">self</span>.widget.clone()).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
     }
 
@@ -282,7 +282,7 @@
             <span class="string">&quot;critical&quot; </span>=&gt; State::Critical,
             <span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">&quot;&#39;{state}&#39; is not a valid state&quot;</span>)).into()),
         };
-        <span class="self">self</span>.api.set_widget(<span class="kw-2">&amp;</span><span class="self">self</span>.widget).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="self">self</span>.api.set_widget(<span class="self">self</span>.widget.clone()).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
     }
 }

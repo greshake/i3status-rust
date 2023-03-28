@@ -95,6 +95,7 @@
 <a href="#95" id="95">95</a>
 <a href="#96" id="96">96</a>
 <a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
 </pre><pre class="rust"><code><span class="doccomment">//! System load average
 //!
 //! # Configuration
@@ -144,7 +145,7 @@
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon $1m.eng(w:4) &quot;</span>)<span class="question-mark">?</span>);
+    <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $1m.eng(w:4) &quot;</span>)<span class="question-mark">?</span>;
 
     <span class="comment">// borrowed from https://docs.rs/cpuinfo/0.1.1/src/cpuinfo/count/logical.rs.html#4-6
     </span><span class="kw">let </span>logical_cores = util::read_file(<span class="string">&quot;/proc/cpuinfo&quot;</span>)
@@ -172,6 +173,7 @@
             .and_then(|x| x.parse().ok())
             .error(<span class="string">&quot;bad /proc/loadavg file&quot;</span>)<span class="question-mark">?</span>;
 
+        <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
         widget.state = <span class="kw">match </span>m1 / logical_cores <span class="kw">as </span>f64 {
             x <span class="kw">if </span>x &gt; config.critical =&gt; State::Critical,
             x <span class="kw">if </span>x &gt; config.warning =&gt; State::Warning,
@@ -184,7 +186,7 @@
             <span class="string">&quot;5m&quot; </span>=&gt; Value::number(m5),
             <span class="string">&quot;15m&quot; </span>=&gt; Value::number(m15),
         });
-        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="macro">select! </span>{
             <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt; (),

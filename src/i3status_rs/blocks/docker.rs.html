@@ -155,13 +155,13 @@
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span><span class="kw-2">mut </span>widget =
-        Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon $running.eng(w:1) &quot;</span>)<span class="question-mark">?</span>);
+    <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $running.eng(w:1) &quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>socket_path = config.socket_path.expand()<span class="question-mark">?</span>;
 
     <span class="kw">loop </span>{
         <span class="kw">let </span>status = api.recoverable(|| Status::new(<span class="kw-2">&amp;*</span>socket_path)).<span class="kw">await</span><span class="question-mark">?</span>;
 
+        <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
         widget.set_values(<span class="macro">map! </span>{
             <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;docker&quot;</span>)<span class="question-mark">?</span>),
             <span class="string">&quot;total&quot; </span>=&gt;   Value::number(status.total),
@@ -170,7 +170,7 @@
             <span class="string">&quot;stopped&quot; </span>=&gt; Value::number(status.stopped),
             <span class="string">&quot;images&quot; </span>=&gt;  Value::number(status.images),
         });
-        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="macro">select! </span>{
             <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt; (),

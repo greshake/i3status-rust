@@ -99,8 +99,6 @@
 <a href="#99" id="99">99</a>
 <a href="#100" id="100">100</a>
 <a href="#101" id="101">101</a>
-<a href="#102" id="102">102</a>
-<a href="#103" id="103">103</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Currently focused window
 //!
 //! This block displays the title and/or the active marks (when used with `sway`/`i3`) of the currently
@@ -162,8 +160,9 @@
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span><span class="kw-2">mut </span>widget =
-        Widget::new().with_format(config.format.with_default(<span class="string">&quot; $title.str(max_w:21) |&quot;</span>)<span class="question-mark">?</span>);
+    api.event_receiver.close();
+
+    <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $title.str(max_w:21) |&quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>backend: Box&lt;<span class="kw">dyn </span>Backend&gt; = <span class="kw">match </span>config.driver {
         Driver::Auto =&gt; <span class="kw">match </span>SwayIpc::new().<span class="kw">await </span>{
@@ -175,22 +174,19 @@
     };
 
     <span class="kw">loop </span>{
-        <span class="macro">select! </span>{
-            <span class="kw">_ </span>= api.event() =&gt; (),
-            info = backend.get_info() =&gt; {
-                <span class="kw">let </span>Info { title, marks } = info<span class="question-mark">?</span>;
-                <span class="kw">if </span>title.is_empty() {
-                    widget.set_values(default());
-                } <span class="kw">else </span>{
-                    widget.set_values(<span class="macro">map! </span>{
-                        <span class="string">&quot;title&quot; </span>=&gt; Value::text(title.clone()),
-                        <span class="string">&quot;marks&quot; </span>=&gt; Value::text(marks.iter().map(|m| <span class="macro">format!</span>(<span class="string">&quot;[{m}]&quot;</span>)).collect()),
-                        <span class="string">&quot;visible_marks&quot; </span>=&gt; Value::text(marks.iter().filter(|m| !m.starts_with(<span class="string">&#39;_&#39;</span>)).map(|m| <span class="macro">format!</span>(<span class="string">&quot;[{m}]&quot;</span>)).collect()),
-                    });
-                }
-                api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
-            }
+        <span class="kw">let </span>Info { title, marks } = backend.get_info().<span class="kw">await</span><span class="question-mark">?</span>;
+
+        <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
+
+        <span class="kw">if </span>!title.is_empty() {
+            widget.set_values(<span class="macro">map! </span>{
+                <span class="string">&quot;title&quot; </span>=&gt; Value::text(title),
+                <span class="string">&quot;marks&quot; </span>=&gt; Value::text(marks.iter().map(|m| <span class="macro">format!</span>(<span class="string">&quot;[{m}]&quot;</span>)).collect()),
+                <span class="string">&quot;visible_marks&quot; </span>=&gt; Value::text(marks.iter().filter(|m| !m.starts_with(<span class="string">&#39;_&#39;</span>)).map(|m| <span class="macro">format!</span>(<span class="string">&quot;[{m}]&quot;</span>)).collect()),
+            });
         }
+
+        api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
     }
 }
 

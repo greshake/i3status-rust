@@ -250,7 +250,7 @@
                 api.get_icon(<span class="kw">if </span>is_toggled { <span class="kw-2">&amp;</span>icon_on } <span class="kw">else </span>{ <span class="kw-2">&amp;</span>icon_off })<span class="question-mark">?
             </span>)
         ));
-        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(widget.clone()).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="comment">// TODO: try not to duplicate code
         </span><span class="kw">loop </span>{

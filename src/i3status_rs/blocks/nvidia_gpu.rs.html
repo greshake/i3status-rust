@@ -363,11 +363,9 @@
     ])
     .<span class="kw">await</span><span class="question-mark">?</span>;
 
-    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(
-        config
-            .format
-            .with_default(<span class="string">&quot; $icon $utilization $memory $temperature &quot;</span>)<span class="question-mark">?</span>,
-    );
+    <span class="kw">let </span>format = config
+        .format
+        .with_default(<span class="string">&quot; $icon $utilization $memory $temperature &quot;</span>)<span class="question-mark">?</span>;
 
     <span class="comment">// Run `nvidia-smi` command
     </span><span class="kw">let </span><span class="kw-2">mut </span>child = Command::new(<span class="string">&quot;nvidia-smi&quot;</span>)
@@ -391,6 +389,8 @@
     <span class="kw">let </span><span class="kw-2">mut </span>fan_controlled = <span class="bool-val">false</span>;
 
     <span class="kw">loop </span>{
+        <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
+
         widget.state = <span class="kw">match </span>info.temperature {
             t <span class="kw">if </span>t &lt;= config.idle =&gt; State::Idle,
             t <span class="kw">if </span>t &lt;= config.good =&gt; State::Good,
@@ -410,7 +410,7 @@
             <span class="string">&quot;power&quot; </span>=&gt; Value::watts(info.power_draw),
         });
 
-        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="kw">loop </span>{
             <span class="macro">select! </span>{

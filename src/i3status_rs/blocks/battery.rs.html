@@ -288,6 +288,8 @@
 <a href="#288" id="288">288</a>
 <a href="#289" id="289">289</a>
 <a href="#290" id="290">290</a>
+<a href="#291" id="291">291</a>
+<a href="#292" id="292">292</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Information about the internal power supply
 //!
 //! This block can display the current battery state (Full, Charging or Discharging), percentage
@@ -405,7 +407,6 @@
     <span class="kw">let </span>format_empty = config.empty_format.with_default(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>format_not_charging = config.not_charging_format.with_default(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>missing_format = config.missing_format.with_default(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new();
 
     <span class="kw">let </span>dev_name = DeviceName::new(config.device)<span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>device: Box&lt;<span class="kw">dyn </span>BatteryDevice + Send + Sync&gt; = <span class="kw">match </span>config.driver {
@@ -429,6 +430,8 @@
 
         <span class="kw">match </span>info {
             <span class="prelude-val">Some</span>(info) =&gt; {
+                <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new();
+
                 widget.set_format(<span class="kw">match </span>info.status {
                     BatteryStatus::Empty =&gt; format_empty.clone(),
                     BatteryStatus::Full =&gt; format_full.clone(),
@@ -488,13 +491,14 @@
 
                 widget.set_values(values);
                 widget.state = state;
-                api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+                api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
             }
             <span class="prelude-val">None </span>=&gt; {
-                widget.set_format(missing_format.clone());
+                <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new()
+                    .with_format(missing_format.clone())
+                    .with_state(State::Critical);
                 widget.set_values(<span class="macro">map!</span>(<span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;bat_not_available&quot;</span>)<span class="question-mark">?</span>)));
-                widget.state = State::Critical;
-                api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+                api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
             }
         }
 

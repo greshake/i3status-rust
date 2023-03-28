@@ -263,8 +263,6 @@
         .format_everything_done
         .with_default(<span class="string">&quot; $icon $count.eng(w:1) &quot;</span>)<span class="question-mark">?</span>;
 
-    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new();
-
     <span class="kw">let </span><span class="kw-2">mut </span>filters = config.filters.iter().cycle();
     <span class="kw">let </span><span class="kw-2">mut </span>filter = filters.next().error(<span class="string">&quot;`filters` is empty&quot;</span>)<span class="question-mark">?</span>;
 
@@ -278,6 +276,8 @@
 
     <span class="kw">loop </span>{
         <span class="kw">let </span>number_of_tasks = get_number_of_tasks(<span class="kw-2">&amp;</span>filter.filter).<span class="kw">await</span><span class="question-mark">?</span>;
+
+        <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new();
 
         widget.set_format(<span class="kw">match </span>number_of_tasks {
             <span class="number">0 </span>=&gt; format_everything_done.clone(),
@@ -297,7 +297,7 @@
             <span class="kw">_ </span>=&gt; State::Idle,
         };
 
-        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="macro">select! </span>{
             <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt;(),

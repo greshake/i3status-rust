@@ -376,6 +376,8 @@
 <a href="#376" id="376">376</a>
 <a href="#377" id="377">377</a>
 <a href="#378" id="378">378</a>
+<a href="#379" id="379">379</a>
+<a href="#380" id="380">380</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The brightness of a backlight device
 //!
 //! This block reads brightness information directly from the filesystem, so it works under both
@@ -512,7 +514,7 @@
     ])
     .<span class="kw">await</span><span class="question-mark">?</span>;
 
-    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon $brightness &quot;</span>)<span class="question-mark">?</span>);
+    <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $brightness &quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>cycle = config
         .cycle
@@ -550,6 +552,8 @@
         .error(<span class="string">&quot;Failed to create event stream&quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">loop </span>{
+        <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
+
         <span class="kw">let </span>brightness = api.recoverable(|| device.brightness()).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="kw">let </span><span class="kw-2">mut </span>icon_value = brightness <span class="kw">as </span>f64 / <span class="number">100.0</span>;
@@ -561,7 +565,7 @@
             <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon_in_progression(<span class="string">&quot;backlight&quot;</span>, icon_value)<span class="question-mark">?</span>),
             <span class="string">&quot;brightness&quot; </span>=&gt; Value::percents(brightness)
         });
-        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="kw">loop </span>{
             <span class="macro">select! </span>{

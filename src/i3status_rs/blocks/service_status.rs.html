@@ -171,6 +171,8 @@
 <a href="#171" id="171">171</a>
 <a href="#172" id="172">172</a>
 <a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Display the status of a service
 //!
 //! Right now only `systemd` is supported.
@@ -239,7 +241,6 @@
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     api.event_receiver.close();
 
-    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new();
     <span class="kw">let </span>active_format = config.active_format.with_default(<span class="string">&quot; $service active &quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>inactive_format = config.inactive_format.with_default(<span class="string">&quot; $service inactive &quot;</span>)<span class="question-mark">?</span>;
 
@@ -253,6 +254,8 @@
     <span class="kw">loop </span>{
         <span class="kw">let </span>service_active_state = driver.is_active().<span class="kw">await</span><span class="question-mark">?</span>;
 
+        <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new();
+
         <span class="kw">if </span>service_active_state {
             widget.state = active_state;
             widget.set_format(active_format.clone());
@@ -261,10 +264,11 @@
             widget.set_format(inactive_format.clone());
         };
 
-        widget.set_values(<span class="macro">map!</span>(
+        widget.set_values(<span class="macro">map! </span>{
             <span class="string">&quot;service&quot; </span>=&gt;Value::text(config.service.clone()),
-        ));
-        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+        });
+
+        api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
         driver.wait_for_change().<span class="kw">await</span><span class="question-mark">?</span>;
     }

@@ -256,8 +256,6 @@
 <a href="#256" id="256">256</a>
 <a href="#257" id="257">257</a>
 <a href="#258" id="258">258</a>
-<a href="#259" id="259">259</a>
-<a href="#260" id="260">260</a>
 </pre><pre class="rust"><code><span class="doccomment">//! CPU statistics
 //!
 //! # Configuration
@@ -328,8 +326,6 @@
         <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
     };
 
-    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
-
     <span class="kw">let </span>boost_icon_on = api.get_icon(<span class="string">&quot;cpu_boost_on&quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>boost_icon_off = api.get_icon(<span class="string">&quot;cpu_boost_off&quot;</span>)<span class="question-mark">?</span>;
 
@@ -389,6 +385,7 @@
             );
         }
 
+        <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
         widget.set_values(values);
         widget.state = <span class="kw">match </span>utilization_avg {
             x <span class="kw">if </span>x &gt; <span class="number">0.9 </span>=&gt; State::Critical,
@@ -396,7 +393,7 @@
             x <span class="kw">if </span>x &gt; <span class="number">0.3 </span>=&gt; State::Info,
             <span class="kw">_ </span>=&gt; State::Idle,
         };
-        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="kw">loop </span>{
             <span class="macro">select! </span>{
@@ -406,7 +403,6 @@
                     Action(a) <span class="kw">if </span>a == <span class="string">&quot;toggle_format&quot; </span>=&gt; {
                         <span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">ref mut </span>format_alt) = format_alt {
                             std::mem::swap(format_alt, <span class="kw-2">&amp;mut </span>format);
-                            widget.set_format(format.clone());
                             <span class="kw">break</span>;
                         }
                     }

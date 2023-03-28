@@ -289,6 +289,7 @@
 <a href="#289" id="289">289</a>
 <a href="#290" id="290">290</a>
 <a href="#291" id="291">291</a>
+<a href="#292" id="292">292</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Display and toggle the state of notifications daemon
 //!
 //! Left-clicking on this block will enable/disable notifications.
@@ -374,7 +375,7 @@
     api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;toggle_paused&quot;</span>)])
         .<span class="kw">await</span><span class="question-mark">?</span>;
 
-    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>);
+    <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>driver: Box&lt;<span class="kw">dyn </span>Driver&gt; = <span class="kw">match </span>config.driver {
         DriverType::Dunst =&gt; Box::new(DunstDriver::new().<span class="kw">await</span><span class="question-mark">?</span>),
@@ -385,6 +386,7 @@
         <span class="kw">let </span>(is_paused, notification_count) =
             <span class="macro">try_join!</span>(driver.is_paused(), driver.notification_count())<span class="question-mark">?</span>;
 
+        <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
         widget.set_values(<span class="macro">map!</span>(
             <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="kw">if </span>is_paused { ICON_OFF } <span class="kw">else </span>{ ICON_ON })<span class="question-mark">?</span>),
             [<span class="kw">if </span>notification_count != <span class="number">0</span>] <span class="string">&quot;notification_count&quot; </span>=&gt; Value::number(notification_count),
@@ -395,7 +397,7 @@
         } <span class="kw">else </span>{
             State::Info
         };
-        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="macro">select! </span>{
             x = driver.wait_for_change() =&gt; x<span class="question-mark">?</span>,

@@ -557,7 +557,7 @@
                     .recoverable(|| provider.get_weather(<span class="prelude-val">Some</span>(location)))
                     .<span class="kw">await</span><span class="question-mark">?</span>;
                 widget.set_values(data.into_values(<span class="kw-2">&amp;</span>api)<span class="question-mark">?</span>);
-                api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+                api.set_widget(widget.clone()).<span class="kw">await</span><span class="question-mark">?</span>;
 
                 <span class="macro">select! </span>{
                     <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt; (),
@@ -575,7 +575,7 @@
                 .recoverable(|| provider.get_weather(<span class="prelude-val">Some</span>(location)))
                 .<span class="kw">await</span><span class="question-mark">?</span>;
             widget.set_values(data.into_values(<span class="kw-2">&amp;</span>api)<span class="question-mark">?</span>);
-            api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+            api.set_widget(widget.clone()).<span class="kw">await</span><span class="question-mark">?</span>;
 
             <span class="kw">loop </span>{
                 <span class="macro">select! </span>{
@@ -588,7 +588,7 @@
                             .recoverable(|| provider.get_weather(<span class="prelude-val">Some</span>(location)))
                             .<span class="kw">await</span><span class="question-mark">?</span>;
                         widget.set_values(data.into_values(<span class="kw-2">&amp;</span>api)<span class="question-mark">?</span>);
-                        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+                        api.set_widget(widget.clone()).<span class="kw">await</span><span class="question-mark">?</span>;
                     },
                     <span class="comment">// On update request autolocate and update the block.
                     </span><span class="kw">_ </span>= api.wait_for_update_request() =&gt; {
@@ -598,7 +598,7 @@
                             .recoverable(|| provider.get_weather(<span class="prelude-val">Some</span>(location)))
                             .<span class="kw">await</span><span class="question-mark">?</span>;
                         widget.set_values(data.into_values(<span class="kw-2">&amp;</span>api)<span class="question-mark">?</span>);
-                        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+                        api.set_widget(widget.clone()).<span class="kw">await</span><span class="question-mark">?</span>;
 
                         <span class="comment">// both intervals should be reset after a manual sync
                         </span>autolocate_interval.reset();
@@ -611,7 +611,7 @@
         <span class="kw">loop </span>{
             <span class="kw">let </span>data = api.recoverable(|| provider.get_weather(<span class="prelude-val">None</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
             widget.set_values(data.into_values(<span class="kw-2">&amp;</span>api)<span class="question-mark">?</span>);
-            api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+            api.set_widget(widget.clone()).<span class="kw">await</span><span class="question-mark">?</span>;
 
             <span class="macro">select! </span>{
                 <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt; (),

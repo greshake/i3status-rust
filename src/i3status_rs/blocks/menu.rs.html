@@ -128,9 +128,6 @@
 <a href="#128" id="128">128</a>
 <a href="#129" id="129">129</a>
 <a href="#130" id="130">130</a>
-<a href="#131" id="131">131</a>
-<a href="#132" id="132">132</a>
-<a href="#133" id="133">133</a>
 </pre><pre class="rust"><code><span class="doccomment">//! A custom menu
 //!
 //! This block allows you to quickly run a custom shell command. Left-click on this block to
@@ -184,7 +181,6 @@
 
 <span class="kw">struct </span>Block {
     api: CommonApi,
-    widget: Widget,
     text: String,
     items: Vec&lt;Item&gt;,
 }
@@ -195,8 +191,7 @@
     </span>}
 
     <span class="kw">async fn </span>set_text(<span class="kw-2">&amp;mut </span><span class="self">self</span>, text: String) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-        <span class="self">self</span>.widget.set_text(text);
-        <span class="self">self</span>.api.set_widget(<span class="kw-2">&amp;</span><span class="self">self</span>.widget).<span class="kw">await
+        <span class="self">self</span>.api.set_widget(Widget::new().with_text(text)).<span class="kw">await
     </span>}
 
     <span class="kw">async fn </span>wait_for_click(<span class="kw-2">&amp;mut </span><span class="self">self</span>, button: <span class="kw-2">&amp;</span>str) {
@@ -245,7 +240,6 @@
     .<span class="kw">await</span><span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>block = Block {
-        widget: Widget::new(),
         api,
         text: config.text,
         items: config.items,

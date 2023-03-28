@@ -110,6 +110,8 @@
 <a href="#110" id="110">110</a>
 <a href="#111" id="111">111</a>
 <a href="#112" id="112">112</a>
+<a href="#113" id="113">113</a>
+<a href="#114" id="114">114</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Count of notmuch messages
 //!
 //! This block queries a notmuch database and displays the count of messages.
@@ -177,7 +179,7 @@
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon $count &quot;</span>)<span class="question-mark">?</span>);
+    <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $count &quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span>db = config.maildir.expand()<span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>timer = config.interval.timer();
@@ -185,6 +187,8 @@
     <span class="kw">loop </span>{
         <span class="comment">// TODO: spawn_blocking?
         </span><span class="kw">let </span>count = run_query(<span class="kw-2">&amp;</span>db, <span class="kw-2">&amp;</span>config.query).error(<span class="string">&quot;Failed to get count&quot;</span>)<span class="question-mark">?</span>;
+
+        <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
 
         widget.set_values(<span class="macro">map! </span>{
             <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;mail&quot;</span>)<span class="question-mark">?</span>),
@@ -203,7 +207,7 @@
             State::Idle
         };
 
-        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="macro">tokio::select! </span>{
             <span class="kw">_ </span>= timer.tick() =&gt; (),

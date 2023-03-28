@@ -148,10 +148,9 @@
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span><span class="kw-2">mut </span>widget =
-        Widget::new().with_format(config.format.with_default(
-            <span class="string">&quot; ^icon_ping $ping ^icon_net_down $speed_down ^icon_net_up $speed_up &quot;</span>,
-        )<span class="question-mark">?</span>);
+    <span class="kw">let </span>format = config
+        .format
+        .with_default(<span class="string">&quot; ^icon_ping $ping ^icon_net_down $speed_down ^icon_net_up $speed_up &quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>command = Command::new(<span class="string">&quot;speedtest-cli&quot;</span>);
     command.arg(<span class="string">&quot;--json&quot;</span>);
@@ -167,12 +166,13 @@
         <span class="kw">let </span>output: SpeedtestCliOutput =
             serde_json::from_str(output).error(<span class="string">&quot;&#39;speedtest-cli&#39; produced wrong JSON&quot;</span>)<span class="question-mark">?</span>;
 
+        <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
         widget.set_values(<span class="macro">map! </span>{
             <span class="string">&quot;ping&quot; </span>=&gt; Value::seconds(output.ping * <span class="number">1e-3</span>),
             <span class="string">&quot;speed_down&quot; </span>=&gt; Value::bits(output.download),
             <span class="string">&quot;speed_up&quot; </span>=&gt; Value::bits(output.upload),
         });
-        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="macro">select! </span>{
             <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt; (),

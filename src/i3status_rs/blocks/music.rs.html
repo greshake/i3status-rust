@@ -818,11 +818,10 @@
     .<span class="kw">await</span><span class="question-mark">?</span>;
 
     <span class="kw">let </span>dbus_conn = new_dbus_connection().<span class="kw">await</span><span class="question-mark">?</span>;
-    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(
-        config
-            .format
-            .with_default(<span class="string">&quot; $icon {$combo.str(max_w:25,rot_interval:0.5) $play |}&quot;</span>)<span class="question-mark">?</span>,
-    );
+
+    <span class="kw">let </span>format = config
+        .format
+        .with_default(<span class="string">&quot; $icon {$combo.str(max_w:25,rot_interval:0.5) $play |}&quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span>volume_step = config.volume_step.clamp(<span class="number">0.0</span>, <span class="number">50.0</span>) / <span class="number">100.0</span>;
 
@@ -972,14 +971,15 @@
                     );
                     values.insert(<span class="string">&quot;volume&quot;</span>.into(), Value::percents(volume * <span class="number">100.0</span>));
                 }
+                <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
                 widget.set_values(values);
                 widget.state = state;
-                api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+                api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
             }
             <span class="prelude-val">None </span>=&gt; {
+                <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
                 widget.set_values(<span class="macro">map!</span>(<span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;music&quot;</span>)<span class="question-mark">?</span>)));
-                widget.state = State::Idle;
-                api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+                api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
             }
         }
 

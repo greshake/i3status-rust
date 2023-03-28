@@ -412,11 +412,11 @@
 
 <span class="kw">impl </span>CommonApi {
     <span class="doccomment">/// Sends the widget to be displayed.
-    </span><span class="kw">pub async fn </span>set_widget(<span class="kw-2">&amp;</span><span class="self">self</span>, widget: <span class="kw-2">&amp;</span>Widget) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    </span><span class="kw">pub async fn </span>set_widget(<span class="kw-2">&amp;</span><span class="self">self</span>, widget: Widget) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="self">self</span>.request_sender
             .send(Request {
                 block_id: <span class="self">self</span>.id,
-                cmd: RequestCmd::SetWidget(widget.clone()),
+                cmd: RequestCmd::SetWidget(widget),
             })
             .<span class="kw">await
             </span>.error(<span class="string">&quot;Failed to send Request&quot;</span>)

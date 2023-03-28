@@ -393,7 +393,6 @@
 <a href="#393" id="393">393</a>
 <a href="#394" id="394">394</a>
 <a href="#395" id="395">395</a>
-<a href="#396" id="396">396</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Pending updates available on pacman or an AUR helper.
 //!
 //! Requires fakeroot to be installed (only required for pacman).
@@ -556,8 +555,6 @@
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new();
-
     <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $pacman.eng(w:1) &quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>format_singular = config
         .format_singular
@@ -671,6 +668,7 @@
         };
         values.insert(<span class="string">&quot;icon&quot;</span>.into(), Value::icon(api.get_icon(<span class="string">&quot;update&quot;</span>)<span class="question-mark">?</span>));
 
+        <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new();
         widget.set_format(<span class="kw">match </span>total {
             <span class="number">0 </span>=&gt; format_up_to_date.clone(),
             <span class="number">1 </span>=&gt; format_singular.clone(),
@@ -689,7 +687,7 @@
                 }
             }
         };
-        api.set_widget(<span class="kw-2">&amp;</span>widget).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="macro">select! </span>{
             <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt; (),
