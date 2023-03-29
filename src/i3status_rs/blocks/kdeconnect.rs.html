@@ -461,12 +461,12 @@
                     }
                 }
 
-                <span class="kw">let </span>notif_count = device.notifications().<span class="kw">await</span><span class="question-mark">?</span>;
+                <span class="kw">let </span>notif_count = device.notifications().<span class="kw">await</span>.unwrap_or(<span class="number">0</span>);
                 <span class="kw">if </span>notif_count &gt; <span class="number">0 </span>{
                     values.insert(<span class="string">&quot;notif_count&quot;</span>.into(), Value::number(notif_count));
                     values.insert(
                         <span class="string">&quot;notif_icon&quot;</span>.into(),
-                        Value::icon(api.get_icon(<span class="string">&quot;notification&quot;</span>)<span class="question-mark">?</span>.trim().into()),
+                        Value::icon(api.get_icon(<span class="string">&quot;notification&quot;</span>)<span class="question-mark">?</span>),
                     );
                 }
                 <span class="kw">if </span>!battery_state {
@@ -581,12 +581,12 @@
         )
     }
 
-    <span class="kw">async fn </span>notifications(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;usize&gt; {
+    <span class="kw">async fn </span>notifications(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;usize&gt; {
         <span class="self">self</span>.notifications_proxy
             .active_notifications()
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to read notifications&quot;</span>)
-            .map(|n| n.len())
+            </span>.map(|n| n.len())
+            .ok()
     }
 }
 
