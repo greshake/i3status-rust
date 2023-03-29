@@ -129,12 +129,12 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     }
                 }
 
-                let notif_count = device.notifications().await?;
+                let notif_count = device.notifications().await.unwrap_or(0);
                 if notif_count > 0 {
                     values.insert("notif_count".into(), Value::number(notif_count));
                     values.insert(
                         "notif_icon".into(),
-                        Value::icon(api.get_icon("notification")?.trim().into()),
+                        Value::icon(api.get_icon("notification")?),
                     );
                 }
                 if !battery_state {
@@ -249,12 +249,12 @@ impl Device {
         )
     }
 
-    async fn notifications(&self) -> Result<usize> {
+    async fn notifications(&self) -> Option<usize> {
         self.notifications_proxy
             .active_notifications()
             .await
-            .error("Failed to read notifications")
             .map(|n| n.len())
+            .ok()
     }
 }
 
