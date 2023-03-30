@@ -41,7 +41,7 @@ use super::prelude::*;
 #[serde(default)]
 pub struct Config {
     format: FormatConfig,
-    #[default(1.into())]
+    #[default(10.into())]
     interval: Seconds,
     timezone: Option<Timezone>,
 }
