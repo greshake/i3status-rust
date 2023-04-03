@@ -33,6 +33,7 @@
 //! [[block]]
 //! block = "focused_window"
 //! format = " $title.str(0,21) | Missing "
+//! ```
 
 mod sway_ipc;
 mod wlr_toplevel_management;
