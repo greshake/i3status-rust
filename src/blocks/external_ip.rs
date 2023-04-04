@@ -68,7 +68,7 @@ use crate::util::{country_flag_from_iso_code, new_system_dbus_connection};
 const API_ENDPOINT: &str = "https://ipapi.co/json/";
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     format: FormatConfig,
     #[default(300.into())]

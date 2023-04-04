@@ -109,7 +109,7 @@ serde_conv!(
 
 #[serde_as]
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     driver: SoundDriver,
     name: Option<String>,

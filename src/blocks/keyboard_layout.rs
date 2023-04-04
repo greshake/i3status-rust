@@ -85,7 +85,7 @@ use tokio::process::Command;
 use zbus::dbus_proxy;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     format: FormatConfig,
     driver: KeyboardLayoutDriver,

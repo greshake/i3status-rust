@@ -51,7 +51,7 @@ use zbus::dbus_proxy;
 use super::prelude::*;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     device_id: Option<String>,
     format: FormatConfig,

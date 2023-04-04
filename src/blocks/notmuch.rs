@@ -46,7 +46,7 @@
 use super::prelude::*;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     format: FormatConfig,
     #[default(10.into())]

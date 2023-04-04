@@ -54,7 +54,7 @@ use inotify::{Inotify, WatchMask};
 use tokio::process::Command;
 
 #[derive(Deserialize, Debug)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     interval: Seconds,
     warning_threshold: u32,

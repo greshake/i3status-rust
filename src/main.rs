@@ -2,9 +2,9 @@ use std::borrow::Cow;
 use std::sync::Arc;
 use std::time::Duration;
 
-use futures::future::{abortable, FutureExt};
+use futures::future::abortable;
 use futures::stream::futures_unordered::FuturesUnordered;
-use futures::stream::{AbortHandle, StreamExt};
+use futures::stream::{AbortHandle, Abortable, StreamExt};
 
 use tokio::process::Command;
 use tokio::sync::mpsc;
@@ -137,7 +137,7 @@ struct BarState {
 
     blocks: Vec<(Block, &'static str)>,
     fullscreen_block: Option<usize>,
-    running_blocks: FuturesUnordered<BlockFuture>,
+    running_blocks: FuturesUnordered<Abortable<BlockFuture>>,
 
     widget_updates_stream: BoxedStream<Vec<usize>>,
     widget_updates_sender: mpsc::UnboundedSender<(usize, Vec<u64>)>,
@@ -245,11 +245,7 @@ impl BarState {
             state: BlockState::None,
         };
 
-        self.running_blocks
-            .push(Box::pin(block_fut.map(|res| match res {
-                Ok(res) => res,
-                Err(_aborted) => Ok(()),
-            })));
+        self.running_blocks.push(block_fut);
         self.blocks.push((block, block_name));
         self.blocks_render_cache.push(RenderedBlock {
             segments: Vec::new(),
@@ -312,7 +308,10 @@ impl BarState {
         tokio::select! {
             // Handle blocks' errors
             Some(block_result) = self.running_blocks.next() => {
-                block_result
+                match block_result {
+                    Ok(res) => res,
+                    Err(_aborted) => Ok(()),
+                }
             }
             // Receive messages from blocks
             Some(request) = self.request_receiver.recv() => {

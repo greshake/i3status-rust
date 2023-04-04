@@ -85,7 +85,7 @@ use calibright::{CalibrightBuilder, CalibrightConfig, CalibrightError, DeviceCon
 use super::prelude::*;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     device: Option<String>,
     format: FormatConfig,

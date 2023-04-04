@@ -64,7 +64,7 @@ use regex::Regex;
 use std::time::Instant;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     device: Option<String>,
     format: FormatConfig,

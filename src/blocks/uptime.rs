@@ -33,7 +33,7 @@ use super::prelude::*;
 use tokio::fs::read_to_string;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     format: FormatConfig,
     #[default(60.into())]
