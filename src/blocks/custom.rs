@@ -104,7 +104,7 @@ use tokio::io::{self, AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     format: FormatConfig,
     command: Option<String>,

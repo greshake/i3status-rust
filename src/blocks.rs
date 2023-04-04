@@ -31,11 +31,12 @@ pub mod prelude;
 
 use crate::BoxedFuture;
 use futures::future::FutureExt;
-use serde::Deserialize;
+use serde::de::{self, Deserialize};
 use tokio::sync::mpsc;
 
 use std::borrow::Cow;
 use std::future::Future;
+use std::sync::Arc;
 use std::time::Duration;
 
 use crate::click::MouseButton;
@@ -54,18 +55,14 @@ macro_rules! define_blocks {
             pub mod $block;
         )*
 
-        #[derive(Debug, Deserialize)]
-        #[serde(tag = "block")]
-        #[serde(deny_unknown_fields)]
+        #[derive(Debug)]
         pub enum BlockConfig {
             $(
                 $(#[cfg(feature = $feat)])?
                 #[allow(non_camel_case_types)]
-                $block {
-                    #[serde(flatten)]
-                    config: $block::Config,
-                },
+                $block($block::Config),
             )*
+            Err(Option<&'static str>, Error),
         }
 
         impl BlockConfig {
@@ -75,6 +72,8 @@ macro_rules! define_blocks {
                         $(#[cfg(feature = $feat)])?
                         Self::$block { .. } => stringify!($block),
                     )*
+                    Self::Err(Some(name), _err) => name,
+                    Self::Err(None, _err) => "???",
                 }
             }
 
@@ -83,11 +82,71 @@ macro_rules! define_blocks {
                 match self {
                     $(
                         $(#[cfg(feature = $feat)])?
-                        Self::$block { config } => {
-                            $block::run(config, api).map(move |e| e.in_block(stringify!($block), id)).boxed_local()
-                        }
+                        Self::$block(config) => $block::run(config, api).map(move |e| e.in_block(stringify!($block), id)).boxed_local(),
                     )*
+                    Self::Err(name, err) => {
+                        std::future::ready(Err(Error {
+                            kind: ErrorKind::Config,
+                            message: None,
+                            cause: Some(Arc::new(err)),
+                            block: Some((name.unwrap_or("???"), id)),
+                        })).boxed_local()
+                    },
                 }
+            }
+        }
+
+        impl<'de> Deserialize<'de> for BlockConfig {
+            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+            where
+                D: de::Deserializer<'de>,
+            {
+                use de::Error;
+                use de::value::MapAccessDeserializer;
+
+                struct Visitor;
+
+                impl<'de> de::Visitor<'de> for Visitor {
+                    type Value = BlockConfig;
+
+                    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                        formatter.write_str("a block")
+                    }
+
+                    fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+                    where
+                        A: de::MapAccess<'de>
+                    {
+                        let (block_key, block_value) = map.next_entry::<String, String>()?
+                            .ok_or_else(|| A::Error::missing_field("block"))?;
+                        if block_key != "block" {
+                            return Ok(BlockConfig::Err(None, crate::errors::Error::new("first field must be `block`")));
+                        }
+
+                        match &*block_value {
+                            $(
+                                $(#[cfg(feature = $feat)])?
+                                stringify!($block) => match $block::Config::deserialize(MapAccessDeserializer::new(map)) {
+                                    Ok(config) => Ok(BlockConfig::$block(config)),
+                                    Err(err) => Ok(BlockConfig::Err(Some(stringify!($block)), crate::errors::Error::new(err.to_string()))),
+                                }
+                                $(
+                                    #[cfg(not(feature = $feat))]
+                                    stringify!($block) => Ok(BlockConfig::Err(
+                                        Some(stringify!($block)),
+                                        crate::errors::Error::new(format!(
+                                            "this block is behind a feature gate '{}' which must be enabled at compile time",
+                                            $feat,
+                                        )),
+                                    )),
+                                )?
+                            )*
+                            other => Err(A::Error::custom(format!("unknown block '{other}'")))
+                        }
+                    }
+                }
+
+                deserializer.deserialize_map(Visitor)
             }
         }
     };

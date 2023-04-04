@@ -64,7 +64,7 @@ use super::prelude::*;
 use crate::util::read_file;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     format: FormatConfig,
     format_alt: Option<FormatConfig>,

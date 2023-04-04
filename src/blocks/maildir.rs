@@ -40,7 +40,7 @@ use super::prelude::*;
 use maildir::Maildir;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     format: FormatConfig,
     #[default(5.into())]

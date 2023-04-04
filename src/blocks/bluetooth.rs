@@ -65,6 +65,7 @@ use crate::wrappers::RangeMap;
 make_log_macro!(debug, "bluetooth");
 
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Config {
     mac: String,
     #[serde(default)]

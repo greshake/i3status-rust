@@ -80,7 +80,7 @@ enum DriverType {
 }
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     driver: DriverType,
     #[default(10.into())]

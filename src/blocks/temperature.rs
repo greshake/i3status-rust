@@ -66,7 +66,7 @@ const DEFAULT_INFO: f64 = 60.0;
 const DEFAULT_WARN: f64 = 80.0;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     format: FormatConfig,
     format_alt: Option<FormatConfig>,

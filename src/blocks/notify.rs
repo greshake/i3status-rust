@@ -65,7 +65,7 @@ const ICON_ON: &str = "bell";
 const ICON_OFF: &str = "bell-slash";
 
 #[derive(Deserialize, Debug, Default)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     driver: DriverType,
     format: FormatConfig,

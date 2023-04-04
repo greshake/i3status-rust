@@ -46,7 +46,7 @@ use regex::RegexSet;
 use tokio::process::Command;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     #[default(5.into())]
     interval: Seconds,

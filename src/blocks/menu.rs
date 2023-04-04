@@ -35,6 +35,7 @@ use super::prelude::*;
 use crate::subprocess::spawn_shell;
 
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Config {
     text: String,
     items: Vec<Item>,

@@ -53,6 +53,7 @@ use std::env;
 use tokio::process::Command;
 
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Config {
     format: FormatConfig,
     command_on: String,

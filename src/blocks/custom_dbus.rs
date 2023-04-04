@@ -63,6 +63,7 @@ static DBUS_CONNECTION: async_once_cell::OnceCell<Result<zbus::Connection>> =
 const DBUS_NAME: &str = "rs.i3status";
 
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Config {
     #[serde(default)]
     format: FormatConfig,

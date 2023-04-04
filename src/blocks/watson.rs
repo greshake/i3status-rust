@@ -41,7 +41,7 @@ use tokio::fs::read_to_string;
 use super::prelude::*;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     format: FormatConfig,
     state_path: Option<ShellString>,

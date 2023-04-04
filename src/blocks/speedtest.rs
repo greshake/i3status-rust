@@ -44,7 +44,7 @@ use super::prelude::*;
 use tokio::process::Command;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     format: FormatConfig,
     #[default(1800.into())]
