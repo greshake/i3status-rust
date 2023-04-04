@@ -175,7 +175,7 @@ cycle = ["gsettings set org.gnome.desktop.interface gtk-theme Adapta; echo \U000
 interval = "once"
 [[block.click]]
 button = "left"
-on_click = "<command>"
+action = "cycle"
 ```
 
 And if you're feeling adventurous, here's a super sketchy version that also adjusts your `i3status-rs` and `i3bar` color scheme as well. The [`theme-switch.sh`](scripts/theme-switch.sh) script will likely need a lot of adjustments for your system before this works:
