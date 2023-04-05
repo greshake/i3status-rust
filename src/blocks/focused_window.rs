@@ -33,6 +33,7 @@
 //! [[block]]
 //! block = "focused_window"
 //! format = " $title.str(0,21) | Missing "
+//! ```
 
 mod sway_ipc;
 mod wlr_toplevel_management;
@@ -59,8 +60,9 @@ enum Driver {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
-    let mut widget =
-        Widget::new().with_format(config.format.with_default(" $title.str(max_w:21) |")?);
+    api.event_receiver.close();
+
+    let format = config.format.with_default(" $title.str(max_w:21) |")?;
 
     let mut backend: Box<dyn Backend> = match config.driver {
         Driver::Auto => match SwayIpc::new().await {
@@ -72,22 +74,19 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     };
 
     loop {
-        select! {
-            _ = api.event() => (),
-            info = backend.get_info() => {
-                let Info { title, marks } = info?;
-                if title.is_empty() {
-                    widget.set_values(default());
-                } else {
-                    widget.set_values(map! {
-                        "title" => Value::text(title.clone()),
-                        "marks" => Value::text(marks.iter().map(|m| format!("[{m}]")).collect()),
-                        "visible_marks" => Value::text(marks.iter().filter(|m| !m.starts_with('_')).map(|m| format!("[{m}]")).collect()),
-                    });
-                }
-                api.set_widget(&widget).await?;
-            }
+        let Info { title, marks } = backend.get_info().await?;
+
+        let mut widget = Widget::new().with_format(format.clone());
+
+        if !title.is_empty() {
+            widget.set_values(map! {
+                "title" => Value::text(title),
+                "marks" => Value::text(marks.iter().map(|m| format!("[{m}]")).collect()),
+                "visible_marks" => Value::text(marks.iter().filter(|m| !m.starts_with('_')).map(|m| format!("[{m}]")).collect()),
+            });
         }
+
+        api.set_widget(widget).await?;
     }
 }
 

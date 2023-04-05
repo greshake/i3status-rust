@@ -85,7 +85,6 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let disconnected_format = config
         .disconnected_format
         .with_default(" $icon{ $name|} ")?;
-    let mut widget = Widget::new();
 
     let mut monitor = DeviceMonitor::new(config.mac, config.adapter_mac).await?;
 
@@ -104,6 +103,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             // Available
             Some(device) => {
                 debug!("Device available, info: {device:?}");
+
+                let mut widget = Widget::new();
 
                 let values = map! {
                     "icon" => Value::icon(api.get_icon(device.icon)?),
@@ -126,15 +127,14 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                 }
 
                 widget.set_values(values);
-                api.set_widget(&widget).await?;
+                api.set_widget(widget).await?;
             }
             // Unavailable
             None => {
                 debug!("Showing device as unavailable");
-                widget.state = State::Idle;
-                widget.set_format(disconnected_format.clone());
+                let mut widget = Widget::new().with_format(disconnected_format.clone());
                 widget.set_values(map!("icon" => Value::icon(api.get_icon("bluetooth")?)));
-                api.set_widget(&widget).await?;
+                api.set_widget(widget).await?;
             }
         }
 

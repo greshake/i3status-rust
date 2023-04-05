@@ -56,8 +56,6 @@ pub struct Config {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
-    let mut widget = Widget::new();
-
     let format = config.format.with_default(" $icon $count.eng(w:1) ")?;
     let format_singular = config
         .format_singular
@@ -80,6 +78,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         .error("invalid critical updates regex")?;
 
     loop {
+        let mut widget = Widget::new();
+
         let updates = get_updates_list().await?;
         let count = get_update_count(&updates);
 
@@ -112,7 +112,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             }
         };
 
-        api.set_widget(&widget).await?;
+        api.set_widget(widget).await?;
 
         select! {
             _ = sleep(config.interval.0) => (),

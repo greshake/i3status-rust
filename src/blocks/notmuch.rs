@@ -65,7 +65,7 @@ pub struct Config {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
-    let mut widget = Widget::new().with_format(config.format.with_default(" $icon $count ")?);
+    let format = config.format.with_default(" $icon $count ")?;
 
     let db = config.maildir.expand()?;
     let mut timer = config.interval.timer();
@@ -73,6 +73,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     loop {
         // TODO: spawn_blocking?
         let count = run_query(&db, &config.query).error("Failed to get count")?;
+
+        let mut widget = Widget::new().with_format(format.clone());
 
         widget.set_values(map! {
             "icon" => Value::icon(api.get_icon("mail")?),
@@ -91,7 +93,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             State::Idle
         };
 
-        api.set_widget(&widget).await?;
+        api.set_widget(widget).await?;
 
         tokio::select! {
             _ = timer.tick() => (),

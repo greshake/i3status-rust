@@ -60,7 +60,6 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut timer = interval.timer();
 
     let format = config.format.with_default(" $icon {$minutes:$seconds |}")?;
-    let mut widget = Widget::new().with_format(format);
 
     let increment = Duration::seconds(config.increment.unwrap_or(30));
     let mut timer_end = Utc::now();
@@ -88,6 +87,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             (0, 0, 0)
         };
 
+        let mut widget = Widget::new().with_format(format.clone());
+
         widget.set_values(map!(
             "icon" => Value::icon(api.get_icon("tea")?),
             [if is_timer_active] "hours" => Value::text(format!("{hours:02}")),
@@ -95,7 +96,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             [if is_timer_active] "seconds" => Value::text(format!("{seconds:02}")),
         ));
 
-        api.set_widget(&widget).await?;
+        api.set_widget(widget).await?;
 
         tokio::select! {
             _ = timer.tick(), if is_timer_active => (),

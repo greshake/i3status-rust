@@ -54,7 +54,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     api.set_default_actions(&[(MouseButton::Left, None, "toggle_show_time")])
         .await?;
 
-    let mut widget = Widget::new().with_format(config.format.with_default(" $text |")?);
+    let format = config.format.with_default(" $text |")?;
 
     let mut show_time = config.show_time;
 
@@ -91,6 +91,9 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             .await
             .error("Failed to read state file")?;
         let state = serde_json::from_str(&state).unwrap_or(WatsonState::Idle {});
+
+        let mut widget = Widget::new().with_format(format.clone());
+
         match state {
             state @ WatsonState::Active { .. } => {
                 widget.state = State::Good;
@@ -118,7 +121,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             }
         }
 
-        api.set_widget(&widget).await?;
+        api.set_widget(widget).await?;
 
         loop {
             select! {

@@ -10,7 +10,7 @@
 //! `device` | sysfs/UPower: The device in `/sys/class/power_supply/` to read from (can also be "DisplayDevice" for UPower, which is a single logical power source representing all physical power sources. This is for example useful if your system has multiple batteries, in which case the DisplayDevice behaves as if you had a single larger battery.). apc_ups: IPv4Address:port or hostname:port | sysfs: the first battery device found in /sys/class/power_supply, with "BATx" or "CMBx" entries taking precedence. apc_ups: "localhost:3551". upower: `DisplayDevice`
 //! `driver` | One of `"sysfs"`, `"apc_ups"`, or `"upower"` | `"sysfs"`
 //! `model` | If present, the contents of `/sys/class/power_supply/.../model_name` must match this value. Typical use is to select by model name on devices that change their path. | N/A
-//! `interval` | Update interval, in seconds. Only relevant for `driver = "sysfs"` \|\| "apc_ups"`. | `10`
+//! `interval` | Update interval, in seconds. Only relevant for driver = "sysfs" or "apc_ups". | `10`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $percentage "`
 //! `full_format` | Same as `format` but for when the battery is full | `" $icon "`
 //! `empty_format` | Same as `format` but for when the battery is empty | `" $icon "`
@@ -115,7 +115,6 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let format_empty = config.empty_format.with_default(" $icon ")?;
     let format_not_charging = config.not_charging_format.with_default(" $icon ")?;
     let missing_format = config.missing_format.with_default(" $icon ")?;
-    let mut widget = Widget::new();
 
     let dev_name = DeviceName::new(config.device)?;
     let mut device: Box<dyn BatteryDevice + Send + Sync> = match config.driver {
@@ -139,6 +138,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
         match info {
             Some(info) => {
+                let mut widget = Widget::new();
+
                 widget.set_format(match info.status {
                     BatteryStatus::Empty => format_empty.clone(),
                     BatteryStatus::Full => format_full.clone(),
@@ -198,13 +199,14 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
                 widget.set_values(values);
                 widget.state = state;
-                api.set_widget(&widget).await?;
+                api.set_widget(widget).await?;
             }
             None => {
-                widget.set_format(missing_format.clone());
+                let mut widget = Widget::new()
+                    .with_format(missing_format.clone())
+                    .with_state(State::Critical);
                 widget.set_values(map!("icon" => Value::icon(api.get_icon("bat_not_available")?)));
-                widget.state = State::Critical;
-                api.set_widget(&widget).await?;
+                api.set_widget(widget).await?;
             }
         }
 

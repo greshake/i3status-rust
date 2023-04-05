@@ -68,8 +68,6 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         None => None,
     };
 
-    let mut widget = Widget::new().with_format(format.clone());
-
     let boost_icon_on = api.get_icon("cpu_boost_on")?;
     let boost_icon_off = api.get_icon("cpu_boost_off")?;
 
@@ -129,6 +127,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             );
         }
 
+        let mut widget = Widget::new().with_format(format.clone());
         widget.set_values(values);
         widget.state = match utilization_avg {
             x if x > 0.9 => State::Critical,
@@ -136,7 +135,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             x if x > 0.3 => State::Info,
             _ => State::Idle,
         };
-        api.set_widget(&widget).await?;
+        api.set_widget(widget).await?;
 
         loop {
             select! {
@@ -146,7 +145,6 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     Action(a) if a == "toggle_format" => {
                         if let Some(ref mut format_alt) = format_alt {
                             std::mem::swap(format_alt, &mut format);
-                            widget.set_format(format.clone());
                             break;
                         }
                     }

@@ -90,7 +90,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     ])
     .await?;
 
-    let mut widget = Widget::new().with_format(config.format.with_default(" $temperature ")?);
+    let format = config.format.with_default(" $temperature ")?;
 
     // limit too big steps at 500K to avoid too brutal changes
     let step = config.step.min(500);
@@ -130,8 +130,9 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut current_temp = driver.get().await?.unwrap_or(config.current_temp);
 
     loop {
+        let mut widget = Widget::new().with_format(format.clone());
         widget.set_values(map!("temperature" => Value::number(current_temp)));
-        api.set_widget(&widget).await?;
+        api.set_widget(widget).await?;
 
         select! {
             update = driver.receive_update() => {

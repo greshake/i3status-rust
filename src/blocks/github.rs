@@ -75,8 +75,7 @@ pub struct Config {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
-    let mut widget =
-        Widget::new().with_format(config.format.with_default(" $icon $total.eng(w:1) ")?);
+    let format = config.format.with_default(" $icon $total.eng(w:1) ")?;
 
     let mut interval = config.interval.timer();
     let token = config
@@ -85,6 +84,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         .error("Github token not found")?;
 
     loop {
+        let mut widget = Widget::new().with_format(format.clone());
+
         let stats = api.recoverable(|| get_stats(&token)).await?;
         if stats.get("total").map_or(false, |x| *x > 0) || !config.hide_if_total_is_zero {
             let mut state = State::Idle;
@@ -110,7 +111,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             values.insert("icon".into(), Value::icon(api.get_icon("github")?));
             widget.set_values(values);
             widget.state = state;
-            api.set_widget(&widget).await?;
+            api.set_widget(widget).await?;
         } else {
             api.hide().await?;
         }

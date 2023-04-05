@@ -1,15 +1,45 @@
-# i3status-rust 0.30.6 [unreleased]
+# i3status-rust 0.30.7 [unreleased]
+
+### Future Compatibility Notes
+
+* In version 0.31 sound's `mappings_use_regex` will default to `true`.
+* In the future `block = "..."` will be required to be the first field of block configs. For example,
+  ```toml
+  [[block]]
+  block = "time"
+  format = "..."
+  ```
+  will work but
+  ```toml
+  [[block]]
+  format = "..."
+  block = "time"
+  ```
+  will fail.
 
 ### New Blocks and Features
 
+* Sound: add `mappings_use_regex` option which makes the block treat `mappings` as regexps. Defaults to `false`.
+
+### Bug Fixes and Improvements
+
+* Kdeconnect: do not fail if notifications are not available.
+
+# i3status-rust 0.30.6
+
+### New Blocks and Features
+
+* New block: `vpn`: Shows the current connection status for VPN networks. Currently only `nordvpn` is supported (#1725).
 * Padding character of `eng` formatter is now configurable. For example, `$volume.eng(pad_with:0)` will render as `05%` instead of ` 5%`.
-* Bluetooth: added `battery_state` config option which allows to customize block's color in relation to device battery level.
-* Bluetooth: added `$battery_icon` placeholder.
-* Time: Right click on the block to reverse cycle between timezones.
+* Bluetooth: added `battery_state` config option which allows to customize block's color in relation to device battery level (#1836).
+* Bluetooth: added `$battery_icon` placeholder (#1837).
+* Time: Right click on the block to reverse cycle between timezones (#1839).
 
 ### Bug Fixes and Improvements
 
 * Net: the WiFi icon now reflects the signal strength (`material-nf` icon set only).
+* Apt: now works on systems with non-English locales (#1843).
+* Notify: support latest SwayNotificationCenter version.
 
 # i3status-rust 0.30.5
 
@@ -105,6 +135,7 @@ https://raw.githubusercontent.com/greshake/i3status-rust/v0.30.0/examples/config
   [[block]]
   block = "cpu"
   format = " $icon $utilization "
+  ```
   
 - Icons can now be referenced by name within `format` strings, e.g. `format = " Hello ^icon_ping "` will use the icon `ping` from the icon set that is currently in use.
 

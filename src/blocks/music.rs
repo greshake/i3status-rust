@@ -175,11 +175,10 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     .await?;
 
     let dbus_conn = new_dbus_connection().await?;
-    let mut widget = Widget::new().with_format(
-        config
-            .format
-            .with_default(" $icon {$combo.str(max_w:25,rot_interval:0.5) $play |}")?,
-    );
+
+    let format = config
+        .format
+        .with_default(" $icon {$combo.str(max_w:25,rot_interval:0.5) $play |}")?;
 
     let volume_step = config.volume_step.clamp(0.0, 50.0) / 100.0;
 
@@ -329,14 +328,15 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     );
                     values.insert("volume".into(), Value::percents(volume * 100.0));
                 }
+                let mut widget = Widget::new().with_format(format.clone());
                 widget.set_values(values);
                 widget.state = state;
-                api.set_widget(&widget).await?;
+                api.set_widget(widget).await?;
             }
             None => {
+                let mut widget = Widget::new().with_format(format.clone());
                 widget.set_values(map!("icon" => Value::icon(api.get_icon("music")?)));
-                widget.state = State::Idle;
-                api.set_widget(&widget).await?;
+                api.set_widget(widget).await?;
             }
         }
 

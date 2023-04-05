@@ -87,7 +87,6 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         None => None,
     };
 
-    let mut widget = Widget::new().with_format(format.clone());
     let mut timer = config.interval.timer();
 
     let device_re = config
@@ -106,17 +105,15 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     loop {
         match NetDevice::new(device_re.as_ref()).await? {
             None => {
-                widget.set_format(missing_format.clone());
-                widget.set_values(default());
-                api.set_widget(&widget).await?;
+                api.set_widget(Widget::new().with_format(missing_format.clone()))
+                    .await?;
             }
             Some(device) if !device.is_up() => {
-                widget.set_format(missing_format.clone());
-                widget.set_values(default());
-                api.set_widget(&widget).await?;
+                api.set_widget(Widget::new().with_format(missing_format.clone()))
+                    .await?;
             }
             Some(device) => {
-                widget.set_format(format.clone());
+                let mut widget = Widget::new().with_format(format.clone());
 
                 let mut speed_down: f64 = 0.0;
                 let mut speed_up: f64 = 0.0;
@@ -161,7 +158,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     "device" => Value::text(device.iface.name),
                 });
 
-                api.set_widget(&widget).await?;
+                api.set_widget(widget).await?;
             }
         }
 

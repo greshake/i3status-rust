@@ -84,8 +84,6 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     api.set_default_actions(&[(MouseButton::Left, None, "toggle_format")])
         .await?;
 
-    let mut widget = Widget::new();
-
     let mut format = config.format.with_default(
         " $icon $mem_avail.eng(prefix:M)/$mem_total.eng(prefix:M)($mem_total_used_percents.eng(w:2)) ",
     )?;
@@ -149,7 +147,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         let swap_cached = mem_state.swap_cached as f64 * 1024.;
         let swap_used = swap_total - swap_free - swap_cached;
 
-        widget.set_format(format.clone());
+        let mut widget = Widget::new().with_format(format.clone());
         widget.set_values(map! {
             "icon" => Value::icon(api.get_icon("memory_mem")?),
             "icon_swap" => Value::icon(api.get_icon("memory_swap")?),
@@ -193,7 +191,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             State::Idle
         };
 
-        api.set_widget(&widget).await?;
+        api.set_widget(widget).await?;
 
         loop {
             select! {
@@ -203,7 +201,6 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     Action(a) if a == "toggle_format" => {
                         if let Some(ref mut format_alt) = format_alt {
                             std::mem::swap(format_alt, &mut format);
-                            widget.set_format(format.clone());
                             break;
                         }
                     }

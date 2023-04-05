@@ -95,7 +95,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                 api.get_icon(if is_toggled { &icon_on } else { &icon_off })?
             )
         ));
-        api.set_widget(&widget).await?;
+        api.set_widget(widget.clone()).await?;
 
         // TODO: try not to duplicate code
         loop {

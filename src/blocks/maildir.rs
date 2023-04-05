@@ -55,7 +55,7 @@ pub struct Config {
 }
 
 pub async fn run(mut config: Config, mut api: CommonApi) -> Result<()> {
-    let mut widget = Widget::new().with_format(config.format.with_default(" $icon $status ")?);
+    let format = config.format.with_default(" $icon $status ")?;
 
     for inbox in &mut config.inboxes {
         *inbox = shellexpand::full(inbox)
@@ -75,6 +75,8 @@ pub async fn run(mut config: Config, mut api: CommonApi) -> Result<()> {
                 MailType::All => maildir.count_new() + maildir.count_cur(),
             };
         }
+
+        let mut widget = Widget::new().with_format(format.clone());
         widget.state = if newmails >= config.threshold_critical {
             State::Critical
         } else if newmails >= config.threshold_warning {
@@ -86,7 +88,7 @@ pub async fn run(mut config: Config, mut api: CommonApi) -> Result<()> {
             "icon" => Value::icon(api.get_icon("mail")?),
             "status" => Value::number(newmails)
         ));
-        api.set_widget(&widget).await?;
+        api.set_widget(widget).await?;
 
         select! {
             _ = sleep(config.interval.0) => (),

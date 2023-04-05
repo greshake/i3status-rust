@@ -52,10 +52,9 @@ pub struct Config {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
-    let mut widget =
-        Widget::new().with_format(config.format.with_default(
-            " ^icon_ping $ping ^icon_net_down $speed_down ^icon_net_up $speed_up ",
-        )?);
+    let format = config
+        .format
+        .with_default(" ^icon_ping $ping ^icon_net_down $speed_down ^icon_net_up $speed_up ")?;
 
     let mut command = Command::new("speedtest-cli");
     command.arg("--json");
@@ -71,12 +70,13 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         let output: SpeedtestCliOutput =
             serde_json::from_str(output).error("'speedtest-cli' produced wrong JSON")?;
 
+        let mut widget = Widget::new().with_format(format.clone());
         widget.set_values(map! {
             "ping" => Value::seconds(output.ping * 1e-3),
             "speed_down" => Value::bits(output.download),
             "speed_up" => Value::bits(output.upload),
         });
-        api.set_widget(&widget).await?;
+        api.set_widget(widget).await?;
 
         select! {
             _ = sleep(config.interval.0) => (),

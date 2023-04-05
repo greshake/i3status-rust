@@ -68,11 +68,9 @@ pub struct Config {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
-    let mut widget = Widget::new().with_format(
-        config
-            .format
-            .with_default(" $icon $name{ $bat_icon $bat_charge|}{ $notif_icon|} ")?,
-    );
+    let format = config
+        .format
+        .with_default(" $icon $name{ $bat_icon $bat_charge|}{ $notif_icon|} ")?;
 
     let battery_state = (
         config.bat_good,
@@ -94,7 +92,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         let connected = device.connected().await;
 
         if connected || !config.hide_disconnected {
-            widget.state = State::Idle;
+            let mut widget = Widget::new().with_format(format.clone());
 
             let mut values = map!();
 
@@ -131,12 +129,12 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     }
                 }
 
-                let notif_count = device.notifications().await?;
+                let notif_count = device.notifications().await.unwrap_or(0);
                 if notif_count > 0 {
                     values.insert("notif_count".into(), Value::number(notif_count));
                     values.insert(
                         "notif_icon".into(),
-                        Value::icon(api.get_icon("notification")?.trim().into()),
+                        Value::icon(api.get_icon("notification")?),
                     );
                 }
                 if !battery_state {
@@ -154,7 +152,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             }
 
             widget.set_values(values);
-            api.set_widget(&widget).await?;
+            api.set_widget(widget).await?;
         } else {
             api.hide().await?;
         }
@@ -251,12 +249,12 @@ impl Device {
         )
     }
 
-    async fn notifications(&self) -> Result<usize> {
+    async fn notifications(&self) -> Option<usize> {
         self.notifications_proxy
             .active_notifications()
             .await
-            .error("Failed to read notifications")
             .map(|n| n.len())
+            .ok()
     }
 }
 

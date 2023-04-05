@@ -107,6 +107,7 @@ define_blocks!(
     tea_timer,
     toggle,
     uptime,
+    vpn,
     watson,
     weather,
     xrandr,
@@ -132,11 +133,11 @@ pub struct CommonApi {
 
 impl CommonApi {
     /// Sends the widget to be displayed.
-    pub async fn set_widget(&self, widget: &Widget) -> Result<()> {
+    pub async fn set_widget(&self, widget: Widget) -> Result<()> {
         self.request_sender
             .send(Request {
                 block_id: self.id,
-                cmd: RequestCmd::SetWidget(widget.clone()),
+                cmd: RequestCmd::SetWidget(widget),
             })
             .await
             .error("Failed to send Request")

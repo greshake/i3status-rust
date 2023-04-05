@@ -66,7 +66,6 @@ enum DriverType {
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     api.event_receiver.close();
 
-    let mut widget = Widget::new();
     let active_format = config.active_format.with_default(" $service active ")?;
     let inactive_format = config.inactive_format.with_default(" $service inactive ")?;
 
@@ -80,6 +79,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     loop {
         let service_active_state = driver.is_active().await?;
 
+        let mut widget = Widget::new();
+
         if service_active_state {
             widget.state = active_state;
             widget.set_format(active_format.clone());
@@ -88,10 +89,11 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             widget.set_format(inactive_format.clone());
         };
 
-        widget.set_values(map!(
+        widget.set_values(map! {
             "service" =>Value::text(config.service.clone()),
-        ));
-        api.set_widget(&widget).await?;
+        });
+
+        api.set_widget(widget).await?;
 
         driver.wait_for_change().await?;
     }

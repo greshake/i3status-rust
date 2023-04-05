@@ -21,7 +21,7 @@ jobs:
               ]
     steps:
     - name: Get required packages
-      run: sudo apt-get install libsensors-dev libssl-dev libpulse-dev libnotmuch-dev
+      run: sudo apt-get update && sudo apt-get install libsensors-dev libssl-dev libpulse-dev libnotmuch-dev
     - uses: actions/checkout@v3
     - uses: actions/setup-python@v4
       with:

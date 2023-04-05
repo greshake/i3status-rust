@@ -116,7 +116,6 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let missing_format = config
         .missing_format
         .with_default(" no backlight devices ")?;
-    let mut widget = Widget::new();
 
     let mut cycle = config
         .cycle
@@ -167,10 +166,10 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     loop {
         match block_error {
             Some(CalibrightError::NoDevices) => {
-                widget.set_format(missing_format.clone());
-                widget.set_values(default());
-                widget.state = State::Critical;
-                api.set_widget(&widget).await?;
+                let widget = Widget::new()
+                    .with_format(missing_format.clone())
+                    .with_state(State::Critical);
+                api.set_widget(widget).await?;
             }
             Some(e) => {
                 api.set_error(Error {
@@ -182,7 +181,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                 .await?;
             }
             None => {
-                widget.set_format(format.clone());
+                let mut widget = Widget::new().with_format(format.clone());
                 let mut icon_value = brightness;
                 if config.invert_icons {
                     icon_value = 1.0 - icon_value;
@@ -191,8 +190,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     "icon" => Value::icon(api.get_icon_in_progression("backlight", icon_value)?),
                     "brightness" => Value::percents((brightness * 100.0).round())
                 });
-                widget.state = State::Idle;
-                api.set_widget(&widget).await?;
+                api.set_widget(widget).await?;
             }
         }
 

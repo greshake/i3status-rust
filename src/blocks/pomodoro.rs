@@ -88,7 +88,7 @@ impl Block {
             values.insert("message".into(), Value::text(text));
         }
         self.widget.set_values(values);
-        self.api.set_widget(&self.widget).await
+        self.api.set_widget(self.widget.clone()).await
     }
 
     async fn wait_for_click(&mut self, button: &str) {

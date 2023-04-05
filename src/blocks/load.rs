@@ -47,7 +47,7 @@ pub struct Config {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
-    let mut widget = Widget::new().with_format(config.format.with_default(" $icon $1m.eng(w:4) ")?);
+    let format = config.format.with_default(" $icon $1m.eng(w:4) ")?;
 
     // borrowed from https://docs.rs/cpuinfo/0.1.1/src/cpuinfo/count/logical.rs.html#4-6
     let logical_cores = util::read_file("/proc/cpuinfo")
@@ -75,6 +75,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             .and_then(|x| x.parse().ok())
             .error("bad /proc/loadavg file")?;
 
+        let mut widget = Widget::new().with_format(format.clone());
         widget.state = match m1 / logical_cores as f64 {
             x if x > config.critical => State::Critical,
             x if x > config.warning => State::Warning,
@@ -87,7 +88,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             "5m" => Value::number(m5),
             "15m" => Value::number(m15),
         });
-        api.set_widget(&widget).await?;
+        api.set_widget(widget).await?;
 
         select! {
             _ = sleep(config.interval.0) => (),
