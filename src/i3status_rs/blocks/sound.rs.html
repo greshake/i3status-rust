@@ -275,6 +275,49 @@
 <a href="#275" id="275">275</a>
 <a href="#276" id="276">276</a>
 <a href="#277" id="277">277</a>
+<a href="#278" id="278">278</a>
+<a href="#279" id="279">279</a>
+<a href="#280" id="280">280</a>
+<a href="#281" id="281">281</a>
+<a href="#282" id="282">282</a>
+<a href="#283" id="283">283</a>
+<a href="#284" id="284">284</a>
+<a href="#285" id="285">285</a>
+<a href="#286" id="286">286</a>
+<a href="#287" id="287">287</a>
+<a href="#288" id="288">288</a>
+<a href="#289" id="289">289</a>
+<a href="#290" id="290">290</a>
+<a href="#291" id="291">291</a>
+<a href="#292" id="292">292</a>
+<a href="#293" id="293">293</a>
+<a href="#294" id="294">294</a>
+<a href="#295" id="295">295</a>
+<a href="#296" id="296">296</a>
+<a href="#297" id="297">297</a>
+<a href="#298" id="298">298</a>
+<a href="#299" id="299">299</a>
+<a href="#300" id="300">300</a>
+<a href="#301" id="301">301</a>
+<a href="#302" id="302">302</a>
+<a href="#303" id="303">303</a>
+<a href="#304" id="304">304</a>
+<a href="#305" id="305">305</a>
+<a href="#306" id="306">306</a>
+<a href="#307" id="307">307</a>
+<a href="#308" id="308">308</a>
+<a href="#309" id="309">309</a>
+<a href="#310" id="310">310</a>
+<a href="#311" id="311">311</a>
+<a href="#312" id="312">312</a>
+<a href="#313" id="313">313</a>
+<a href="#314" id="314">314</a>
+<a href="#315" id="315">315</a>
+<a href="#316" id="316">316</a>
+<a href="#317" id="317">317</a>
+<a href="#318" id="318">318</a>
+<a href="#319" id="319">319</a>
+<a href="#320" id="320">320</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Volume level
 //!
 //! This block displays the volume level (according to PulseAudio or ALSA). Right click to toggle mute, scroll to adjust volume.
@@ -329,6 +372,7 @@
 //! `show_volume_when_muted` | Show the volume even if it is currently muted. | `false`
 //! `headphones_indicator` | Change icon when headphones are plugged in (pulseaudio only) | `false`
 //! `mappings` | Map `output_name` to custom name. | `None`
+//! `mappings_use_regex` | Let `mappings` match using regex instead of string equality. The replacement will be regex aware and can contain capture groups. | `false`
 //!
 //! Placeholder          | Value                             | Type   | Unit
 //! ---------------------|-----------------------------------|--------|---------------
@@ -356,8 +400,11 @@
 </span><span class="kw">mod </span>pulseaudio;
 
 <span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span>regex::Regex;
+<span class="kw">use </span>serde_with::{serde_as, Map};
 
-<span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
+<span class="attr">#[serde_as]
+#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(default)]
 </span><span class="kw">pub struct </span>Config {
     driver: SoundDriver,
@@ -370,8 +417,15 @@
     format: FormatConfig,
     headphones_indicator: bool,
     show_volume_when_muted: bool,
-    mappings: <span class="prelude-ty">Option</span>&lt;HashMap&lt;String, String&gt;&gt;,
+    <span class="attr">#[serde_as(<span class="kw">as </span>= <span class="string">&quot;Option&lt;Map&lt;_, _&gt;&gt;&quot;</span>)]
+    </span>mappings: <span class="prelude-ty">Option</span>&lt;Vec&lt;(String, String)&gt;&gt;,
+    mappings_use_regex: bool,
     max_vol: <span class="prelude-ty">Option</span>&lt;u32&gt;,
+}
+
+<span class="kw">enum </span>Mappings {
+    Exact(Vec&lt;(String, String)&gt;),
+    Regex(Vec&lt;(Regex, String)&gt;),
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
@@ -451,16 +505,48 @@
         )<span class="question-mark">?</span>),
     };
 
+    <span class="kw">let </span>mappings = <span class="kw">match </span>config.mappings {
+        <span class="prelude-val">Some</span>(m) =&gt; {
+            <span class="kw">if </span>config.mappings_use_regex {
+                <span class="prelude-val">Some</span>(Mappings::Regex(
+                    m.into_iter()
+                        .map(|(key, val)| {
+                            <span class="prelude-val">Ok</span>((
+                                Regex::new(<span class="kw-2">&amp;</span>key)
+                                    .error(<span class="string">&quot;Failed to parse `{key}` in mappings as regex&quot;</span>)<span class="question-mark">?</span>,
+                                val,
+                            ))
+                        })
+                        .collect::&lt;<span class="prelude-ty">Result</span>&lt;<span class="kw">_</span>&gt;&gt;()<span class="question-mark">?</span>,
+                ))
+            } <span class="kw">else </span>{
+                <span class="prelude-val">Some</span>(Mappings::Exact(m))
+            }
+        }
+        <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
+    };
+
     <span class="kw">loop </span>{
         device.get_info().<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">let </span>volume = device.volume();
         <span class="kw">let </span>muted = device.muted();
-
         <span class="kw">let </span><span class="kw-2">mut </span>output_name = device.output_name();
-        <span class="kw">if let </span><span class="prelude-val">Some</span>(m) = <span class="kw-2">&amp;</span>config.mappings {
-            <span class="kw">if let </span><span class="prelude-val">Some</span>(mapped) = m.get(<span class="kw-2">&amp;</span>output_name) {
-                output_name = mapped.clone();
+        <span class="kw">match </span><span class="kw-2">&amp;</span>mappings {
+            <span class="prelude-val">Some</span>(Mappings::Regex(m)) =&gt; {
+                <span class="kw">if let </span><span class="prelude-val">Some</span>((regex, mapped)) =
+                    m.iter().find(|(regex, <span class="kw">_</span>)| regex.is_match(<span class="kw-2">&amp;</span>output_name))
+                {
+                    output_name = regex.replace(<span class="kw-2">&amp;</span>output_name, mapped).into_owned();
+                }
             }
+            <span class="prelude-val">Some</span>(Mappings::Exact(m)) =&gt; {
+                <span class="kw">if let </span><span class="prelude-val">Some</span>((<span class="kw">_</span>, mapped)) =
+                    m.iter().find(|<span class="kw-2">&amp;</span>(exact, <span class="kw">_</span>)| output_name == exact.as_str())
+                {
+                    output_name = mapped.clone();
+                }
+            }
+            <span class="prelude-val">None </span>=&gt; {}
         }
 
         <span class="kw">let </span>output_description = device
