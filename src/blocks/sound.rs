@@ -52,6 +52,7 @@
 //! `show_volume_when_muted` | Show the volume even if it is currently muted. | `false`
 //! `headphones_indicator` | Change icon when headphones are plugged in (pulseaudio only) | `false`
 //! `mappings` | Map `output_name` to custom name. | `None`
+//! `mappings_use_regex` | Let `mappings` match using regex instead of string equality. The replacement will be regex aware and can contain capture groups. | `false`
 //!
 //! Placeholder          | Value                             | Type   | Unit
 //! ---------------------|-----------------------------------|--------|---------------
@@ -79,7 +80,10 @@ mod alsa;
 mod pulseaudio;
 
 use super::prelude::*;
+use regex::Regex;
+use serde_with::{serde_as, Map};
 
+#[serde_as]
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(default)]
 pub struct Config {
@@ -93,8 +97,15 @@ pub struct Config {
     format: FormatConfig,
     headphones_indicator: bool,
     show_volume_when_muted: bool,
-    mappings: Option<HashMap<String, String>>,
+    #[serde_as(as = "Option<Map<_, _>>")]
+    mappings: Option<Vec<(String, String)>>,
+    mappings_use_regex: bool,
     max_vol: Option<u32>,
+}
+
+enum Mappings {
+    Exact(Vec<(String, String)>),
+    Regex(Vec<(Regex, String)>),
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
@@ -174,16 +185,48 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         )?),
     };
 
+    let mappings = match config.mappings {
+        Some(m) => {
+            if config.mappings_use_regex {
+                Some(Mappings::Regex(
+                    m.into_iter()
+                        .map(|(key, val)| {
+                            Ok((
+                                Regex::new(&key)
+                                    .error("Failed to parse `{key}` in mappings as regex")?,
+                                val,
+                            ))
+                        })
+                        .collect::<Result<_>>()?,
+                ))
+            } else {
+                Some(Mappings::Exact(m))
+            }
+        }
+        None => None,
+    };
+
     loop {
         device.get_info().await?;
         let volume = device.volume();
         let muted = device.muted();
-
         let mut output_name = device.output_name();
-        if let Some(m) = &config.mappings {
-            if let Some(mapped) = m.get(&output_name) {
-                output_name = mapped.clone();
+        match &mappings {
+            Some(Mappings::Regex(m)) => {
+                if let Some((regex, mapped)) =
+                    m.iter().find(|(regex, _)| regex.is_match(&output_name))
+                {
+                    output_name = regex.replace(&output_name, mapped).into_owned();
+                }
             }
+            Some(Mappings::Exact(m)) => {
+                if let Some((_, mapped)) =
+                    m.iter().find(|&(exact, _)| output_name == exact.as_str())
+                {
+                    output_name = mapped.clone();
+                }
+            }
+            None => {}
         }
 
         let output_description = device
