@@ -3,7 +3,10 @@
 ### Future Compatibility Notes
 
 * In version 0.31 sound's `mappings_use_regex` will default to `true`.
-* In the future `block = "..."` will be required to be the first field of block configs. For example,
+
+* In the future `block = "..."` will be required to be the first field of block configs. 
+  This will be so that block configuration errors will not break the entire bar.
+  For example,
   ```toml
   [[block]]
   block = "time"
