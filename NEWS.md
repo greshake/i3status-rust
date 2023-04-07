@@ -22,6 +22,8 @@
 
 ### New Blocks and Features
 
+* Backlight: Add regex `device` name matching, and display/control more than one monitor with the same block.
+* Backlight: Add `missing_format` option.
 * Sound: add `mappings_use_regex` option which makes the block treat `mappings` as regexps. Defaults to `false`.
 
 ### Bug Fixes and Improvements
