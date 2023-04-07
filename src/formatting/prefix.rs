@@ -56,7 +56,7 @@ impl Prefix {
     }
 
     pub fn max_available() -> Self {
-        Self::Tera
+        Self::Tebi
     }
 
     pub fn max(self, other: Self) -> Self {
