@@ -1005,7 +1005,7 @@ dependencies = [
 
 [[package]]
 name = "i3status-rs"
-version = "0.30.6"
+version = "0.30.7"
 dependencies = [
  "async-once-cell",
  "async-trait",
