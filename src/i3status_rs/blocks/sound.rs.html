@@ -318,6 +318,32 @@
 <a href="#318" id="318">318</a>
 <a href="#319" id="319">319</a>
 <a href="#320" id="320">320</a>
+<a href="#321" id="321">321</a>
+<a href="#322" id="322">322</a>
+<a href="#323" id="323">323</a>
+<a href="#324" id="324">324</a>
+<a href="#325" id="325">325</a>
+<a href="#326" id="326">326</a>
+<a href="#327" id="327">327</a>
+<a href="#328" id="328">328</a>
+<a href="#329" id="329">329</a>
+<a href="#330" id="330">330</a>
+<a href="#331" id="331">331</a>
+<a href="#332" id="332">332</a>
+<a href="#333" id="333">333</a>
+<a href="#334" id="334">334</a>
+<a href="#335" id="335">335</a>
+<a href="#336" id="336">336</a>
+<a href="#337" id="337">337</a>
+<a href="#338" id="338">338</a>
+<a href="#339" id="339">339</a>
+<a href="#340" id="340">340</a>
+<a href="#341" id="341">341</a>
+<a href="#342" id="342">342</a>
+<a href="#343" id="343">343</a>
+<a href="#344" id="344">344</a>
+<a href="#345" id="345">345</a>
+<a href="#346" id="346">346</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Volume level
 //!
 //! This block displays the volume level (according to PulseAudio or ALSA). Right click to toggle mute, scroll to adjust volume.
@@ -357,6 +383,19 @@
 //! device_kind = &quot;source&quot;
 //! ```
 //!
+//! Display warning in block if microphone if using the wrong port:
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;sound&quot;
+//! driver = &quot;pulseaudio&quot;
+//! device_kind = &quot;source&quot;
+//! format = &quot; $icon { $volume|}$active_port &quot;
+//! [block.mappings]
+//! &quot;alsa_input.pci-0000_00_1f.3.analog-stereo analog-input-rear-mic&quot; = &quot;&quot;
+//! &quot;alsa_input.pci-0000_00_1f.3.analog-stereo analog-input-front-mic&quot; = &quot;ERR!&quot;
+//! ```
+//!
 //! # Configuration
 //!
 //! Key | Values | Default
@@ -371,7 +410,7 @@
 //! `max_vol` | Max volume in percent that can be set via scrolling. Note it can still be set above this value if changed by another application. | `None`
 //! `show_volume_when_muted` | Show the volume even if it is currently muted. | `false`
 //! `headphones_indicator` | Change icon when headphones are plugged in (pulseaudio only) | `false`
-//! `mappings` | Map `output_name` to custom name. | `None`
+//! `mappings` | Map `output_name` and/or `active_port` to a custom name. | `None`
 //! `mappings_use_regex` | Let `mappings` match using regex instead of string equality. The replacement will be regex aware and can contain capture groups. | `false`
 //!
 //! Placeholder          | Value                             | Type   | Unit
@@ -380,6 +419,7 @@
 //! `volume`             | Current volume. Missing if muted. | Number | %
 //! `output_name`        | PulseAudio or ALSA device name    | Text   | -
 //! `output_description` | PulseAudio device description, will fallback to `output_name` if no description is available and will be overwritten by mappings (mappings will still use `output_name`) | Text | -
+//! `active_port`        | Active port, will be `&quot;&quot;` if no information available (Same as information in Ports section of `pactl list cards`) | Text | -
 //!
 //! Action        | Default button
 //! --------------|---------------
@@ -531,6 +571,7 @@
         <span class="kw">let </span>volume = device.volume();
         <span class="kw">let </span>muted = device.muted();
         <span class="kw">let </span><span class="kw-2">mut </span>output_name = device.output_name();
+        <span class="kw">let </span><span class="kw-2">mut </span>active_port = device.active_port().unwrap_or_else(|| <span class="string">&quot;&quot;</span>.into());
         <span class="kw">match </span><span class="kw-2">&amp;</span>mappings {
             <span class="prelude-val">Some</span>(Mappings::Regex(m)) =&gt; {
                 <span class="kw">if let </span><span class="prelude-val">Some</span>((regex, mapped)) =
@@ -538,12 +579,22 @@
                 {
                     output_name = regex.replace(<span class="kw-2">&amp;</span>output_name, mapped).into_owned();
                 }
+                <span class="kw">if let </span><span class="prelude-val">Some</span>((regex, mapped)) =
+                    m.iter().find(|(regex, <span class="kw">_</span>)| regex.is_match(<span class="kw-2">&amp;</span>active_port))
+                {
+                    active_port = regex.replace(<span class="kw-2">&amp;</span>active_port, mapped).into_owned();
+                }
             }
             <span class="prelude-val">Some</span>(Mappings::Exact(m)) =&gt; {
                 <span class="kw">if let </span><span class="prelude-val">Some</span>((<span class="kw">_</span>, mapped)) =
                     m.iter().find(|<span class="kw-2">&amp;</span>(exact, <span class="kw">_</span>)| output_name == exact.as_str())
                 {
                     output_name = mapped.clone();
+                }
+                <span class="kw">if let </span><span class="prelude-val">Some</span>((<span class="kw">_</span>, mapped)) =
+                    m.iter().find(|<span class="kw-2">&amp;</span>(exact, <span class="kw">_</span>)| active_port == exact.as_str())
+                {
+                    active_port = mapped.clone();
                 }
             }
             <span class="prelude-val">None </span>=&gt; {}
@@ -557,6 +608,7 @@
             <span class="string">&quot;volume&quot; </span>=&gt; Value::percents(volume),
             <span class="string">&quot;output_name&quot; </span>=&gt; Value::text(output_name),
             <span class="string">&quot;output_description&quot; </span>=&gt; Value::text(output_description),
+            <span class="string">&quot;active_port&quot; </span>=&gt; Value::text(active_port.to_string()),
             <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon_in_progression(icon(muted, <span class="kw-2">&amp;*</span>device), volume <span class="kw">as </span>f64 / <span class="number">100.0</span>)<span class="question-mark">?</span>),
         };
 
@@ -630,7 +682,7 @@
     <span class="kw">fn </span>muted(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool;
     <span class="kw">fn </span>output_name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String;
     <span class="kw">fn </span>output_description(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt;;
-    <span class="kw">fn </span>active_port(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt;;
+    <span class="kw">fn </span>active_port(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt;;
     <span class="kw">fn </span>form_factor(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt;;
 
     <span class="kw">async fn </span>get_info(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
