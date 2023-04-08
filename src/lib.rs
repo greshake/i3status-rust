@@ -1,7 +1,6 @@
 #![warn(clippy::match_same_arms)]
 #![warn(clippy::semicolon_if_nothing_returned)]
 #![warn(clippy::unnecessary_wraps)]
-#![allow(clippy::extra_unused_type_parameters)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
 #[macro_use]
