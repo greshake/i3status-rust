@@ -37,6 +37,19 @@
 //! device_kind = "source"
 //! ```
 //!
+//! Display warning in block if microphone if using the wrong port:
+//!
+//! ```toml
+//! [[block]]
+//! block = "sound"
+//! driver = "pulseaudio"
+//! device_kind = "source"
+//! format = " $icon { $volume|}$active_port "
+//! [block.mappings]
+//! "alsa_input.pci-0000_00_1f.3.analog-stereo analog-input-rear-mic" = ""
+//! "alsa_input.pci-0000_00_1f.3.analog-stereo analog-input-front-mic" = "ERR!"
+//! ```
+//!
 //! # Configuration
 //!
 //! Key | Values | Default
@@ -51,7 +64,7 @@
 //! `max_vol` | Max volume in percent that can be set via scrolling. Note it can still be set above this value if changed by another application. | `None`
 //! `show_volume_when_muted` | Show the volume even if it is currently muted. | `false`
 //! `headphones_indicator` | Change icon when headphones are plugged in (pulseaudio only) | `false`
-//! `mappings` | Map `output_name` to custom name. | `None`
+//! `mappings` | Map `output_name` and/or `active_port` to a custom name. | `None`
 //! `mappings_use_regex` | Let `mappings` match using regex instead of string equality. The replacement will be regex aware and can contain capture groups. | `false`
 //!
 //! Placeholder          | Value                             | Type   | Unit
@@ -60,6 +73,7 @@
 //! `volume`             | Current volume. Missing if muted. | Number | %
 //! `output_name`        | PulseAudio or ALSA device name    | Text   | -
 //! `output_description` | PulseAudio device description, will fallback to `output_name` if no description is available and will be overwritten by mappings (mappings will still use `output_name`) | Text | -
+//! `active_port`        | Active port, will be `""` if no information available (Same as information in Ports section of `pactl list cards`) | Text | -
 //!
 //! Action        | Default button
 //! --------------|---------------
@@ -211,6 +225,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         let volume = device.volume();
         let muted = device.muted();
         let mut output_name = device.output_name();
+        let mut active_port = device.active_port().unwrap_or_else(|| "".into());
         match &mappings {
             Some(Mappings::Regex(m)) => {
                 if let Some((regex, mapped)) =
@@ -218,12 +233,22 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                 {
                     output_name = regex.replace(&output_name, mapped).into_owned();
                 }
+                if let Some((regex, mapped)) =
+                    m.iter().find(|(regex, _)| regex.is_match(&active_port))
+                {
+                    active_port = regex.replace(&active_port, mapped).into_owned();
+                }
             }
             Some(Mappings::Exact(m)) => {
                 if let Some((_, mapped)) =
                     m.iter().find(|&(exact, _)| output_name == exact.as_str())
                 {
                     output_name = mapped.clone();
+                }
+                if let Some((_, mapped)) =
+                    m.iter().find(|&(exact, _)| active_port == exact.as_str())
+                {
+                    active_port = mapped.clone();
                 }
             }
             None => {}
@@ -237,6 +262,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             "volume" => Value::percents(volume),
             "output_name" => Value::text(output_name),
             "output_description" => Value::text(output_description),
+            "active_port" => Value::text(active_port.to_string()),
             "icon" => Value::icon(api.get_icon_in_progression(icon(muted, &*device), volume as f64 / 100.0)?),
         };
 
@@ -310,7 +336,7 @@ trait SoundDevice {
     fn muted(&self) -> bool;
     fn output_name(&self) -> String;
     fn output_description(&self) -> Option<String>;
-    fn active_port(&self) -> Option<&str>;
+    fn active_port(&self) -> Option<String>;
     fn form_factor(&self) -> Option<&str>;
 
     async fn get_info(&mut self) -> Result<()>;
