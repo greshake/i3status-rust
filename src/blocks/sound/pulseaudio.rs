@@ -411,8 +411,8 @@ impl SoundDevice for Device {
         self.description.clone()
     }
 
-    fn active_port(&self) -> Option<&str> {
-        self.active_port.as_deref()
+    fn active_port(&self) -> Option<String> {
+        self.active_port.clone()
     }
 
     fn form_factor(&self) -> Option<&str> {
