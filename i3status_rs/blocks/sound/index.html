@@ -30,8 +30,8 @@ driver = &quot;pulseaudio&quot;
 device_kind = &quot;source&quot;
 format = &quot; $icon { $volume|}$active_port &quot;
 [block.mappings]
-&quot;alsa_input.pci-0000_00_1f.3.analog-stereo analog-input-rear-mic&quot; = &quot;&quot;
-&quot;alsa_input.pci-0000_00_1f.3.analog-stereo analog-input-front-mic&quot; = &quot;ERR!&quot;
+&quot;analog-input-rear-mic&quot; = &quot;&quot;
+&quot;analog-input-front-mic&quot; = &quot;ERR!&quot;
 </code></pre></div><h2 id="configuration"><a href="#configuration">Configuration</a></h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Default</th></tr></thead><tbody>
 <tr><td><code>driver</code></td><td><code>&quot;auto&quot;</code>, <code>&quot;pulseaudio&quot;</code>, <code>&quot;alsa&quot;</code>.</td><td><code>&quot;auto&quot;</code> (Pulseaudio with ALSA fallback)</td></tr>
 <tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td><code> $icon {$volume.eng(w:2) |}</code></td></tr>
