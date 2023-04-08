@@ -29,6 +29,7 @@
 ### Bug Fixes and Improvements
 
 * Kdeconnect: do not fail if notifications are not available.
+* Fix a panic when formatting a number as tebibytes.
 
 # i3status-rust 0.30.6
 
