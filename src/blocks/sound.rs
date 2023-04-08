@@ -46,8 +46,8 @@
 //! device_kind = "source"
 //! format = " $icon { $volume|}$active_port "
 //! [block.mappings]
-//! "alsa_input.pci-0000_00_1f.3.analog-stereo analog-input-rear-mic" = ""
-//! "alsa_input.pci-0000_00_1f.3.analog-stereo analog-input-front-mic" = "ERR!"
+//! "analog-input-rear-mic" = ""
+//! "analog-input-front-mic" = "ERR!"
 //! ```
 //!
 //! # Configuration
