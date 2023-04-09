@@ -101,6 +101,7 @@ words:
   - pomodoros
   - posix
   - powf
+  - powi
   - recip
   - repr
   - reqwest
