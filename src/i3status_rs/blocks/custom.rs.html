@@ -281,6 +281,15 @@
 <a href="#281" id="281">281</a>
 <a href="#282" id="282">282</a>
 <a href="#283" id="283">283</a>
+<a href="#284" id="284">284</a>
+<a href="#285" id="285">285</a>
+<a href="#286" id="286">286</a>
+<a href="#287" id="287">287</a>
+<a href="#288" id="288">288</a>
+<a href="#289" id="289">289</a>
+<a href="#290" id="290">290</a>
+<a href="#291" id="291">291</a>
+<a href="#292" id="292">292</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The output of a custom shell command
 //!
 //! For further customisation, use the `json` option and have the shell command output valid JSON in the schema below:
@@ -477,6 +486,8 @@
         .unwrap_or_else(|| <span class="string">&quot;sh&quot;</span>.to_string());
 
     <span class="kw">if </span>config.persistent {
+        api.event_receiver.close();
+
         <span class="kw">let </span><span class="kw-2">mut </span>process = Command::new(<span class="kw-2">&amp;</span>shell)
             .args([
                 <span class="string">&quot;-c&quot;</span>,
@@ -486,6 +497,7 @@
                     .error(<span class="string">&quot;&#39;command&#39; must be specified when &#39;persistent&#39; is set&quot;</span>)<span class="question-mark">?</span>,
             ])
             .stdout(Stdio::piped())
+            .stdin(Stdio::null())
             .spawn()
             .error(<span class="string">&quot;failed to run command&quot;</span>)<span class="question-mark">?</span>;
 
@@ -500,14 +512,19 @@
         });
 
         <span class="kw">loop </span>{
-            <span class="macro">select! </span>{
-                line = reader.next_line() =&gt; {
-                    <span class="kw">let </span>line = line.error(<span class="string">&quot;error reading line from child process&quot;</span>)<span class="question-mark">?</span>.error(<span class="string">&quot;child process exited unexpectedly&quot;</span>)<span class="question-mark">?</span>;
-                    update_bar(<span class="kw-2">&amp;</span>line, config.hide_when_empty, config.json, <span class="kw-2">&amp;mut </span>api, format.clone()).<span class="kw">await</span><span class="question-mark">?</span>;
-                }
-                <span class="comment">// events must be polled
-                </span><span class="kw">_ </span>= api.event() =&gt; (),
-            }
+            <span class="kw">let </span>line = reader
+                .next_line()
+                .<span class="kw">await
+                </span>.error(<span class="string">&quot;error reading line from child process&quot;</span>)<span class="question-mark">?
+                </span>.error(<span class="string">&quot;child process exited unexpectedly&quot;</span>)<span class="question-mark">?</span>;
+            update_bar(
+                <span class="kw-2">&amp;</span>line,
+                config.hide_when_empty,
+                config.json,
+                <span class="kw-2">&amp;mut </span>api,
+                format.clone(),
+            )
+            .<span class="kw">await</span><span class="question-mark">?</span>;
         }
     } <span class="kw">else </span>{
         <span class="kw">let </span><span class="kw-2">mut </span>cycle = config
@@ -522,6 +539,7 @@
             <span class="comment">// Run command
             </span><span class="kw">let </span>output = Command::new(<span class="kw-2">&amp;</span>shell)
                 .args([<span class="string">&quot;-c&quot;</span>, <span class="kw-2">&amp;</span>cmd])
+                .stdin(Stdio::null())
                 .output()
                 .<span class="kw">await
                 </span>.error(<span class="string">&quot;failed to run command&quot;</span>)<span class="question-mark">?</span>;
