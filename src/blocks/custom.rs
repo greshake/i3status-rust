@@ -194,6 +194,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         .unwrap_or_else(|| "sh".to_string());
 
     if config.persistent {
+        api.event_receiver.close();
+
         let mut process = Command::new(&shell)
             .args([
                 "-c",
@@ -203,6 +205,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     .error("'command' must be specified when 'persistent' is set")?,
             ])
             .stdout(Stdio::piped())
+            .stdin(Stdio::null())
             .spawn()
             .error("failed to run command")?;
 
@@ -217,14 +220,19 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         });
 
         loop {
-            select! {
-                line = reader.next_line() => {
-                    let line = line.error("error reading line from child process")?.error("child process exited unexpectedly")?;
-                    update_bar(&line, config.hide_when_empty, config.json, &mut api, format.clone()).await?;
-                }
-                // events must be polled
-                _ = api.event() => (),
-            }
+            let line = reader
+                .next_line()
+                .await
+                .error("error reading line from child process")?
+                .error("child process exited unexpectedly")?;
+            update_bar(
+                &line,
+                config.hide_when_empty,
+                config.json,
+                &mut api,
+                format.clone(),
+            )
+            .await?;
         }
     } else {
         let mut cycle = config
@@ -239,6 +247,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             // Run command
             let output = Command::new(&shell)
                 .args(["-c", &cmd])
+                .stdin(Stdio::null())
                 .output()
                 .await
                 .error("failed to run command")?;
