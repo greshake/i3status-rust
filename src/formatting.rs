@@ -33,7 +33,7 @@
 //! `min_width` or `min_w` | if text is shorter it will be padded using spaces | `0`
 //! `max_width` or `max_w` | if text is longer it will be truncated            | Infinity
 //! `width` or `w`         | Text will be exactly this length by padding or truncating as needed | N/A
-//! `rot_interval`         | if text is longer than `max_width` it will be rotated every `rot_interval` seconds | `0.5`
+//! `rot_interval`         | if text is longer than `max_width` it will be rotated every `rot_interval` seconds, if set | None
 //!
 //! Note: width just changes the values of both min_width and max_width to be the same. Use width
 //! if you want the values to be the same, or the other two otherwise. Don't mix width with
