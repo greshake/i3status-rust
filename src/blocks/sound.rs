@@ -6,6 +6,38 @@
 //!
 //! Note that if you are using PulseAudio commands (such as `pactl`) to control your volume, you should select the `"pulseaudio"` (or `"auto"`) driver to see volume changes that exceed 100%.
 //!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `driver` | `"auto"`, `"pulseaudio"`, `"alsa"`. | `"auto"` (Pulseaudio with ALSA fallback)
+//! `format` | A string to customise the output of this block. See below for available placeholders. | <code> $icon {$volume.eng(w:2) &vert;}</code>
+//! `name` | PulseAudio device name, or the ALSA control name as found in the output of `amixer -D yourdevice scontrols`. | PulseAudio: `@DEFAULT_SINK@` / ALSA: `Master`
+//! `device` | ALSA device name, usually in the form "hw:X" or "hw:X,Y" where `X` is the card number and `Y` is the device number as found in the output of `aplay -l`. | `default`
+//! `device_kind` | PulseAudio device kind: `source` or `sink`. | `"sink"`
+//! `natural_mapping` | When using the ALSA driver, display the "mapped volume" as given by `alsamixer`/`amixer -M`, which represents the volume level more naturally with respect for the human ear. | `false`
+//! `step_width` | The percent volume level is increased/decreased for the selected audio device when scrolling. Capped automatically at 50. | `5`
+//! `max_vol` | Max volume in percent that can be set via scrolling. Note it can still be set above this value if changed by another application. | `None`
+//! `show_volume_when_muted` | Show the volume even if it is currently muted. | `false`
+//! `headphones_indicator` | Change icon when headphones are plugged in (pulseaudio only) | `false`
+//! `mappings` | Map `output_name` to a custom name. | `None`
+//! `mappings_use_regex` | Let `mappings` match using regex instead of string equality. The replacement will be regex aware and can contain capture groups. | `false`
+//! `active_port_mappings` | Map `active_port` to a custom name. The replacement will be regex aware and can contain capture groups. | `None`
+//!
+//! Placeholder          | Value                             | Type   | Unit
+//! ---------------------|-----------------------------------|--------|---------------
+//! `icon`               | Icon based on volume              | Icon   | -
+//! `volume`             | Current volume. Missing if muted. | Number | %
+//! `output_name`        | PulseAudio or ALSA device name    | Text   | -
+//! `output_description` | PulseAudio device description, will fallback to `output_name` if no description is available and will be overwritten by mappings (mappings will still use `output_name`) | Text | -
+//! `active_port`        | Active port (same as information in Ports section of `pactl list cards`). Will be absent if not supported by `driver` or if mapped to `""` in `active_port_mappings`. | Text | -
+//!
+//! Action        | Default button
+//! --------------|---------------
+//! `toggle_mute` | Right
+//! `volume_up`   | Wheel Up
+//! `volume_down` | Wheel Down
+//!
 //! # Examples
 //!
 //! Change the default scrolling step width to 3 percent:
@@ -49,38 +81,6 @@
 //! "analog-input-rear-mic" = "" # Mapping to an empty string makes `$active_port` absent
 //! "analog-input-front-mic" = "ERR!"
 //! ```
-//!
-//! # Configuration
-//!
-//! Key | Values | Default
-//! ----|--------|--------
-//! `driver` | `"auto"`, `"pulseaudio"`, `"alsa"`. | `"auto"` (Pulseaudio with ALSA fallback)
-//! `format` | A string to customise the output of this block. See below for available placeholders. | <code> $icon {$volume.eng(w:2) &vert;}</code>
-//! `name` | PulseAudio device name, or the ALSA control name as found in the output of `amixer -D yourdevice scontrols`. | PulseAudio: `@DEFAULT_SINK@` / ALSA: `Master`
-//! `device` | ALSA device name, usually in the form "hw:X" or "hw:X,Y" where `X` is the card number and `Y` is the device number as found in the output of `aplay -l`. | `default`
-//! `device_kind` | PulseAudio device kind: `source` or `sink`. | `"sink"`
-//! `natural_mapping` | When using the ALSA driver, display the "mapped volume" as given by `alsamixer`/`amixer -M`, which represents the volume level more naturally with respect for the human ear. | `false`
-//! `step_width` | The percent volume level is increased/decreased for the selected audio device when scrolling. Capped automatically at 50. | `5`
-//! `max_vol` | Max volume in percent that can be set via scrolling. Note it can still be set above this value if changed by another application. | `None`
-//! `show_volume_when_muted` | Show the volume even if it is currently muted. | `false`
-//! `headphones_indicator` | Change icon when headphones are plugged in (pulseaudio only) | `false`
-//! `mappings` | Map `output_name` to a custom name. | `None`
-//! `mappings_use_regex` | Let `mappings` match using regex instead of string equality. The replacement will be regex aware and can contain capture groups. | `false`
-//! `active_port_mappings` | Map `active_port` to a custom name. The replacement will be regex aware and can contain capture groups. | `None`
-//!
-//! Placeholder          | Value                             | Type   | Unit
-//! ---------------------|-----------------------------------|--------|---------------
-//! `icon`               | Icon based on volume              | Icon   | -
-//! `volume`             | Current volume. Missing if muted. | Number | %
-//! `output_name`        | PulseAudio or ALSA device name    | Text   | -
-//! `output_description` | PulseAudio device description, will fallback to `output_name` if no description is available and will be overwritten by mappings (mappings will still use `output_name`) | Text | -
-//! `active_port`        | Active port (same as information in Ports section of `pactl list cards`). Will be absent if not supported by `driver` or if mapped to `""` in `active_port_mappings`. | Text | -
-//!
-//! Action        | Default button
-//! --------------|---------------
-//! `toggle_mute` | Right
-//! `volume_up`   | Wheel Up
-//! `volume_down` | Wheel Down
 //!
 //! #  Icons Used
 //!
