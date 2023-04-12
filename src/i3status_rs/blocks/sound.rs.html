@@ -344,6 +344,22 @@
 <a href="#344" id="344">344</a>
 <a href="#345" id="345">345</a>
 <a href="#346" id="346">346</a>
+<a href="#347" id="347">347</a>
+<a href="#348" id="348">348</a>
+<a href="#349" id="349">349</a>
+<a href="#350" id="350">350</a>
+<a href="#351" id="351">351</a>
+<a href="#352" id="352">352</a>
+<a href="#353" id="353">353</a>
+<a href="#354" id="354">354</a>
+<a href="#355" id="355">355</a>
+<a href="#356" id="356">356</a>
+<a href="#357" id="357">357</a>
+<a href="#358" id="358">358</a>
+<a href="#359" id="359">359</a>
+<a href="#360" id="360">360</a>
+<a href="#361" id="361">361</a>
+<a href="#362" id="362">362</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Volume level
 //!
 //! This block displays the volume level (according to PulseAudio or ALSA). Right click to toggle mute, scroll to adjust volume.
@@ -351,6 +367,38 @@
 //! Requires a PulseAudio installation or `alsa-utils` for ALSA.
 //!
 //! Note that if you are using PulseAudio commands (such as `pactl`) to control your volume, you should select the `&quot;pulseaudio&quot;` (or `&quot;auto&quot;`) driver to see volume changes that exceed 100%.
+//!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `driver` | `&quot;auto&quot;`, `&quot;pulseaudio&quot;`, `&quot;alsa&quot;`. | `&quot;auto&quot;` (Pulseaudio with ALSA fallback)
+//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt; $icon {$volume.eng(w:2) &amp;vert;}&lt;/code&gt;
+//! `name` | PulseAudio device name, or the ALSA control name as found in the output of `amixer -D yourdevice scontrols`. | PulseAudio: `@DEFAULT_SINK@` / ALSA: `Master`
+//! `device` | ALSA device name, usually in the form &quot;hw:X&quot; or &quot;hw:X,Y&quot; where `X` is the card number and `Y` is the device number as found in the output of `aplay -l`. | `default`
+//! `device_kind` | PulseAudio device kind: `source` or `sink`. | `&quot;sink&quot;`
+//! `natural_mapping` | When using the ALSA driver, display the &quot;mapped volume&quot; as given by `alsamixer`/`amixer -M`, which represents the volume level more naturally with respect for the human ear. | `false`
+//! `step_width` | The percent volume level is increased/decreased for the selected audio device when scrolling. Capped automatically at 50. | `5`
+//! `max_vol` | Max volume in percent that can be set via scrolling. Note it can still be set above this value if changed by another application. | `None`
+//! `show_volume_when_muted` | Show the volume even if it is currently muted. | `false`
+//! `headphones_indicator` | Change icon when headphones are plugged in (pulseaudio only) | `false`
+//! `mappings` | Map `output_name` to a custom name. | `None`
+//! `mappings_use_regex` | Let `mappings` match using regex instead of string equality. The replacement will be regex aware and can contain capture groups. | `false`
+//! `active_port_mappings` | Map `active_port` to a custom name. The replacement will be regex aware and can contain capture groups. | `None`
+//!
+//! Placeholder          | Value                             | Type   | Unit
+//! ---------------------|-----------------------------------|--------|---------------
+//! `icon`               | Icon based on volume              | Icon   | -
+//! `volume`             | Current volume. Missing if muted. | Number | %
+//! `output_name`        | PulseAudio or ALSA device name    | Text   | -
+//! `output_description` | PulseAudio device description, will fallback to `output_name` if no description is available and will be overwritten by mappings (mappings will still use `output_name`) | Text | -
+//! `active_port`        | Active port (same as information in Ports section of `pactl list cards`). Will be absent if not supported by `driver` or if mapped to `&quot;&quot;` in `active_port_mappings`. | Text | -
+//!
+//! Action        | Default button
+//! --------------|---------------
+//! `toggle_mute` | Right
+//! `volume_up`   | Wheel Up
+//! `volume_down` | Wheel Down
 //!
 //! # Examples
 //!
@@ -390,42 +438,11 @@
 //! block = &quot;sound&quot;
 //! driver = &quot;pulseaudio&quot;
 //! device_kind = &quot;source&quot;
-//! format = &quot; $icon { $volume|}$active_port &quot;
-//! [block.mappings]
-//! &quot;analog-input-rear-mic&quot; = &quot;&quot;
+//! format = &quot; $icon { $volume|} {$active_port |}&quot;
+//! [block.active_port_mappings]
+//! &quot;analog-input-rear-mic&quot; = &quot;&quot; # Mapping to an empty string makes `$active_port` absent
 //! &quot;analog-input-front-mic&quot; = &quot;ERR!&quot;
 //! ```
-//!
-//! # Configuration
-//!
-//! Key | Values | Default
-//! ----|--------|--------
-//! `driver` | `&quot;auto&quot;`, `&quot;pulseaudio&quot;`, `&quot;alsa&quot;`. | `&quot;auto&quot;` (Pulseaudio with ALSA fallback)
-//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt; $icon {$volume.eng(w:2) &amp;vert;}&lt;/code&gt;
-//! `name` | PulseAudio device name, or the ALSA control name as found in the output of `amixer -D yourdevice scontrols`. | PulseAudio: `@DEFAULT_SINK@` / ALSA: `Master`
-//! `device` | ALSA device name, usually in the form &quot;hw:X&quot; or &quot;hw:X,Y&quot; where `X` is the card number and `Y` is the device number as found in the output of `aplay -l`. | `default`
-//! `device_kind` | PulseAudio device kind: `source` or `sink`. | `&quot;sink&quot;`
-//! `natural_mapping` | When using the ALSA driver, display the &quot;mapped volume&quot; as given by `alsamixer`/`amixer -M`, which represents the volume level more naturally with respect for the human ear. | `false`
-//! `step_width` | The percent volume level is increased/decreased for the selected audio device when scrolling. Capped automatically at 50. | `5`
-//! `max_vol` | Max volume in percent that can be set via scrolling. Note it can still be set above this value if changed by another application. | `None`
-//! `show_volume_when_muted` | Show the volume even if it is currently muted. | `false`
-//! `headphones_indicator` | Change icon when headphones are plugged in (pulseaudio only) | `false`
-//! `mappings` | Map `output_name` and/or `active_port` to a custom name. | `None`
-//! `mappings_use_regex` | Let `mappings` match using regex instead of string equality. The replacement will be regex aware and can contain capture groups. | `false`
-//!
-//! Placeholder          | Value                             | Type   | Unit
-//! ---------------------|-----------------------------------|--------|---------------
-//! `icon`               | Icon based on volume              | Icon   | -
-//! `volume`             | Current volume. Missing if muted. | Number | %
-//! `output_name`        | PulseAudio or ALSA device name    | Text   | -
-//! `output_description` | PulseAudio device description, will fallback to `output_name` if no description is available and will be overwritten by mappings (mappings will still use `output_name`) | Text | -
-//! `active_port`        | Active port, will be `&quot;&quot;` if no information available (Same as information in Ports section of `pactl list cards`) | Text | -
-//!
-//! Action        | Default button
-//! --------------|---------------
-//! `toggle_mute` | Right
-//! `volume_up`   | Wheel Up
-//! `volume_down` | Wheel Down
 //!
 //! #  Icons Used
 //!
@@ -441,7 +458,16 @@
 
 <span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
 <span class="kw">use </span>regex::Regex;
-<span class="kw">use </span>serde_with::{serde_as, Map};
+<span class="kw">use </span>serde_with::{serde_as, serde_conv, Map};
+
+<span class="comment">// A conversion adapter that is used to convert Regex to String and vice versa
+// when serializing or deserializing using serde.
+</span><span class="macro">serde_conv!</span>(
+    RegexAsString,
+    Regex,
+    |regex: <span class="kw-2">&amp;</span>Regex| regex.as_str().to_string(),
+    |value: String| Regex::new(<span class="kw-2">&amp;</span>value)
+);
 
 <span class="attr">#[serde_as]
 #[derive(Deserialize, Debug, SmartDefault)]
@@ -461,6 +487,8 @@
     </span>mappings: <span class="prelude-ty">Option</span>&lt;Vec&lt;(String, String)&gt;&gt;,
     mappings_use_regex: bool,
     max_vol: <span class="prelude-ty">Option</span>&lt;u32&gt;,
+    <span class="attr">#[serde_as(<span class="kw">as </span>= <span class="string">&quot;Map&lt;RegexAsString, _&gt;&quot;</span>)]
+    </span>active_port_mappings: Vec&lt;(Regex, String)&gt;,
 }
 
 <span class="kw">enum </span>Mappings {
@@ -571,18 +599,13 @@
         <span class="kw">let </span>volume = device.volume();
         <span class="kw">let </span>muted = device.muted();
         <span class="kw">let </span><span class="kw-2">mut </span>output_name = device.output_name();
-        <span class="kw">let </span><span class="kw-2">mut </span>active_port = device.active_port().unwrap_or_else(|| <span class="string">&quot;&quot;</span>.into());
+        <span class="kw">let </span><span class="kw-2">mut </span>active_port = device.active_port();
         <span class="kw">match </span><span class="kw-2">&amp;</span>mappings {
             <span class="prelude-val">Some</span>(Mappings::Regex(m)) =&gt; {
                 <span class="kw">if let </span><span class="prelude-val">Some</span>((regex, mapped)) =
                     m.iter().find(|(regex, <span class="kw">_</span>)| regex.is_match(<span class="kw-2">&amp;</span>output_name))
                 {
                     output_name = regex.replace(<span class="kw-2">&amp;</span>output_name, mapped).into_owned();
-                }
-                <span class="kw">if let </span><span class="prelude-val">Some</span>((regex, mapped)) =
-                    m.iter().find(|(regex, <span class="kw">_</span>)| regex.is_match(<span class="kw-2">&amp;</span>active_port))
-                {
-                    active_port = regex.replace(<span class="kw-2">&amp;</span>active_port, mapped).into_owned();
                 }
             }
             <span class="prelude-val">Some</span>(Mappings::Exact(m)) =&gt; {
@@ -591,13 +614,22 @@
                 {
                     output_name = mapped.clone();
                 }
-                <span class="kw">if let </span><span class="prelude-val">Some</span>((<span class="kw">_</span>, mapped)) =
-                    m.iter().find(|<span class="kw-2">&amp;</span>(exact, <span class="kw">_</span>)| active_port == exact.as_str())
-                {
-                    active_port = mapped.clone();
+            }
+            <span class="prelude-val">None </span>=&gt; (),
+        }
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(ap) = <span class="kw-2">&amp;</span>active_port {
+            <span class="kw">if let </span><span class="prelude-val">Some</span>((regex, mapped)) = config
+                .active_port_mappings
+                .iter()
+                .find(|(regex, <span class="kw">_</span>)| regex.is_match(ap))
+            {
+                <span class="kw">let </span>mapped = regex.replace(ap, mapped);
+                <span class="kw">if </span>mapped.is_empty() {
+                    active_port = <span class="prelude-val">None</span>;
+                } <span class="kw">else </span>{
+                    active_port = <span class="prelude-val">Some</span>(mapped.into_owned());
                 }
             }
-            <span class="prelude-val">None </span>=&gt; {}
         }
 
         <span class="kw">let </span>output_description = device
@@ -605,11 +637,11 @@
             .unwrap_or_else(|| output_name.clone());
 
         <span class="kw">let </span><span class="kw-2">mut </span>values = <span class="macro">map! </span>{
+            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon_in_progression(icon(muted, <span class="kw-2">&amp;*</span>device), volume <span class="kw">as </span>f64 / <span class="number">100.0</span>)<span class="question-mark">?</span>),
             <span class="string">&quot;volume&quot; </span>=&gt; Value::percents(volume),
             <span class="string">&quot;output_name&quot; </span>=&gt; Value::text(output_name),
             <span class="string">&quot;output_description&quot; </span>=&gt; Value::text(output_description),
-            <span class="string">&quot;active_port&quot; </span>=&gt; Value::text(active_port.to_string()),
-            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon_in_progression(icon(muted, <span class="kw-2">&amp;*</span>device), volume <span class="kw">as </span>f64 / <span class="number">100.0</span>)<span class="question-mark">?</span>),
+            [<span class="kw">if let </span><span class="prelude-val">Some</span>(ap) = active_port] <span class="string">&quot;active_port&quot; </span>=&gt; Value::text(ap),
         };
 
         <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
