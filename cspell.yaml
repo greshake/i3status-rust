@@ -30,6 +30,7 @@ words:
   - chrono
   - clippy
   - conn
+  - conv
   - consts
   - COPR
   - dbpath

@@ -44,9 +44,9 @@
 //! block = "sound"
 //! driver = "pulseaudio"
 //! device_kind = "source"
-//! format = " $icon { $volume|}$active_port "
-//! [block.mappings]
-//! "analog-input-rear-mic" = ""
+//! format = " $icon { $volume|} {$active_port |}"
+//! [block.active_port_mappings]
+//! "analog-input-rear-mic" = "" # Mapping to an empty string makes `$active_port` absent
 //! "analog-input-front-mic" = "ERR!"
 //! ```
 //!
@@ -64,8 +64,9 @@
 //! `max_vol` | Max volume in percent that can be set via scrolling. Note it can still be set above this value if changed by another application. | `None`
 //! `show_volume_when_muted` | Show the volume even if it is currently muted. | `false`
 //! `headphones_indicator` | Change icon when headphones are plugged in (pulseaudio only) | `false`
-//! `mappings` | Map `output_name` and/or `active_port` to a custom name. | `None`
+//! `mappings` | Map `output_name` to a custom name. | `None`
 //! `mappings_use_regex` | Let `mappings` match using regex instead of string equality. The replacement will be regex aware and can contain capture groups. | `false`
+//! `active_port_mappings` | Map `active_port` to a custom name. The replacement will be regex aware and can contain capture groups. | `None`
 //!
 //! Placeholder          | Value                             | Type   | Unit
 //! ---------------------|-----------------------------------|--------|---------------
@@ -73,7 +74,7 @@
 //! `volume`             | Current volume. Missing if muted. | Number | %
 //! `output_name`        | PulseAudio or ALSA device name    | Text   | -
 //! `output_description` | PulseAudio device description, will fallback to `output_name` if no description is available and will be overwritten by mappings (mappings will still use `output_name`) | Text | -
-//! `active_port`        | Active port, will be `""` if no information available (Same as information in Ports section of `pactl list cards`) | Text | -
+//! `active_port`        | Active port (same as information in Ports section of `pactl list cards`). Will be absent if not supported by `driver` or if mapped to `""` in `active_port_mappings`. | Text | -
 //!
 //! Action        | Default button
 //! --------------|---------------
@@ -95,7 +96,16 @@ mod pulseaudio;
 
 use super::prelude::*;
 use regex::Regex;
-use serde_with::{serde_as, Map};
+use serde_with::{serde_as, serde_conv, Map};
+
+// A conversion adapter that is used to convert Regex to String and vice versa
+// when serializing or deserializing using serde.
+serde_conv!(
+    RegexAsString,
+    Regex,
+    |regex: &Regex| regex.as_str().to_string(),
+    |value: String| Regex::new(&value)
+);
 
 #[serde_as]
 #[derive(Deserialize, Debug, SmartDefault)]
@@ -115,6 +125,8 @@ pub struct Config {
     mappings: Option<Vec<(String, String)>>,
     mappings_use_regex: bool,
     max_vol: Option<u32>,
+    #[serde_as(as = "Map<RegexAsString, _>")]
+    active_port_mappings: Vec<(Regex, String)>,
 }
 
 enum Mappings {
@@ -225,18 +237,13 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         let volume = device.volume();
         let muted = device.muted();
         let mut output_name = device.output_name();
-        let mut active_port = device.active_port().unwrap_or_else(|| "".into());
+        let mut active_port = device.active_port();
         match &mappings {
             Some(Mappings::Regex(m)) => {
                 if let Some((regex, mapped)) =
                     m.iter().find(|(regex, _)| regex.is_match(&output_name))
                 {
                     output_name = regex.replace(&output_name, mapped).into_owned();
-                }
-                if let Some((regex, mapped)) =
-                    m.iter().find(|(regex, _)| regex.is_match(&active_port))
-                {
-                    active_port = regex.replace(&active_port, mapped).into_owned();
                 }
             }
             Some(Mappings::Exact(m)) => {
@@ -245,13 +252,22 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                 {
                     output_name = mapped.clone();
                 }
-                if let Some((_, mapped)) =
-                    m.iter().find(|&(exact, _)| active_port == exact.as_str())
-                {
-                    active_port = mapped.clone();
+            }
+            None => (),
+        }
+        if let Some(ap) = &active_port {
+            if let Some((regex, mapped)) = config
+                .active_port_mappings
+                .iter()
+                .find(|(regex, _)| regex.is_match(ap))
+            {
+                let mapped = regex.replace(ap, mapped);
+                if mapped.is_empty() {
+                    active_port = None;
+                } else {
+                    active_port = Some(mapped.into_owned());
                 }
             }
-            None => {}
         }
 
         let output_description = device
@@ -259,11 +275,11 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             .unwrap_or_else(|| output_name.clone());
 
         let mut values = map! {
+            "icon" => Value::icon(api.get_icon_in_progression(icon(muted, &*device), volume as f64 / 100.0)?),
             "volume" => Value::percents(volume),
             "output_name" => Value::text(output_name),
             "output_description" => Value::text(output_description),
-            "active_port" => Value::text(active_port.to_string()),
-            "icon" => Value::icon(api.get_icon_in_progression(icon(muted, &*device), volume as f64 / 100.0)?),
+            [if let Some(ap) = active_port] "active_port" => Value::text(ap),
         };
 
         let mut widget = Widget::new().with_format(format.clone());
