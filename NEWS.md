@@ -32,6 +32,7 @@
 * Kdeconnect: do not fail if notifications are not available.
 * Fix a panic when formatting a number as tebibytes.
 * Custom: set `command` stdin to `null`. This prevents custom commands from stealing click events.
+* Fix _some_ rounding errors in `.eng` formatter.
 
 # i3status-rust 0.30.6
 
