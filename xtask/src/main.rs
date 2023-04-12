@@ -126,7 +126,10 @@ fn generate_manpage() -> Result<()> {
         // pandoc -o man/blocks.1 -t man man/blocks.md
         let mut pandoc = pandoc::new();
         pandoc
-            .set_input_format(pandoc::InputFormat::Markdown, vec![])
+            .set_input_format(
+                pandoc::InputFormat::Other("markdown-tex_math_dollars".into()),
+                vec![],
+            )
             .set_input(pandoc::InputKind::Pipe(md_blocks))
             .set_output_format(pandoc::OutputFormat::Man, vec![])
             .set_output(pandoc::OutputKind::Pipe);
