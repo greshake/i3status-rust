@@ -520,6 +520,76 @@
 <a href="#520" id="520">520</a>
 <a href="#521" id="521">521</a>
 <a href="#522" id="522">522</a>
+<a href="#523" id="523">523</a>
+<a href="#524" id="524">524</a>
+<a href="#525" id="525">525</a>
+<a href="#526" id="526">526</a>
+<a href="#527" id="527">527</a>
+<a href="#528" id="528">528</a>
+<a href="#529" id="529">529</a>
+<a href="#530" id="530">530</a>
+<a href="#531" id="531">531</a>
+<a href="#532" id="532">532</a>
+<a href="#533" id="533">533</a>
+<a href="#534" id="534">534</a>
+<a href="#535" id="535">535</a>
+<a href="#536" id="536">536</a>
+<a href="#537" id="537">537</a>
+<a href="#538" id="538">538</a>
+<a href="#539" id="539">539</a>
+<a href="#540" id="540">540</a>
+<a href="#541" id="541">541</a>
+<a href="#542" id="542">542</a>
+<a href="#543" id="543">543</a>
+<a href="#544" id="544">544</a>
+<a href="#545" id="545">545</a>
+<a href="#546" id="546">546</a>
+<a href="#547" id="547">547</a>
+<a href="#548" id="548">548</a>
+<a href="#549" id="549">549</a>
+<a href="#550" id="550">550</a>
+<a href="#551" id="551">551</a>
+<a href="#552" id="552">552</a>
+<a href="#553" id="553">553</a>
+<a href="#554" id="554">554</a>
+<a href="#555" id="555">555</a>
+<a href="#556" id="556">556</a>
+<a href="#557" id="557">557</a>
+<a href="#558" id="558">558</a>
+<a href="#559" id="559">559</a>
+<a href="#560" id="560">560</a>
+<a href="#561" id="561">561</a>
+<a href="#562" id="562">562</a>
+<a href="#563" id="563">563</a>
+<a href="#564" id="564">564</a>
+<a href="#565" id="565">565</a>
+<a href="#566" id="566">566</a>
+<a href="#567" id="567">567</a>
+<a href="#568" id="568">568</a>
+<a href="#569" id="569">569</a>
+<a href="#570" id="570">570</a>
+<a href="#571" id="571">571</a>
+<a href="#572" id="572">572</a>
+<a href="#573" id="573">573</a>
+<a href="#574" id="574">574</a>
+<a href="#575" id="575">575</a>
+<a href="#576" id="576">576</a>
+<a href="#577" id="577">577</a>
+<a href="#578" id="578">578</a>
+<a href="#579" id="579">579</a>
+<a href="#580" id="580">580</a>
+<a href="#581" id="581">581</a>
+<a href="#582" id="582">582</a>
+<a href="#583" id="583">583</a>
+<a href="#584" id="584">584</a>
+<a href="#585" id="585">585</a>
+<a href="#586" id="586">586</a>
+<a href="#587" id="587">587</a>
+<a href="#588" id="588">588</a>
+<a href="#589" id="589">589</a>
+<a href="#590" id="590">590</a>
+<a href="#591" id="591">591</a>
+<a href="#592" id="592">592</a>
 </pre><pre class="rust"><code><span class="kw">use </span>chrono::format::{Item, StrftimeItems};
 <span class="kw">use </span>chrono::{Local, Locale};
 <span class="kw">use </span>once_cell::sync::Lazy;
@@ -885,6 +955,11 @@
     <span class="kw">fn </span>format(<span class="kw-2">&amp;</span><span class="self">self</span>, val: <span class="kw-2">&amp;</span>Value) -&gt; <span class="prelude-ty">Result</span>&lt;String&gt; {
         <span class="kw">match </span>val {
             Value::Number { <span class="kw-2">mut </span>val, <span class="kw-2">mut </span>unit } =&gt; {
+                <span class="kw">let </span>is_negative = val.is_sign_negative();
+                <span class="kw">if </span>is_negative {
+                    val = -val;
+                }
+
                 <span class="kw">if let </span><span class="prelude-val">Some</span>(new_unit) = <span class="self">self</span>.<span class="number">0</span>.unit {
                     val = unit.convert(val, new_unit)<span class="question-mark">?</span>;
                     unit = new_unit;
@@ -905,15 +980,21 @@
                     .clamp(min_prefix, max_prefix);
                 val = prefix.apply(val);
 
-                <span class="kw">let </span><span class="kw-2">mut </span>digits = (val.max(<span class="number">1.</span>).log10().floor() + <span class="number">1.0</span>) <span class="kw">as </span>isize;
-                <span class="kw">if </span>val &lt; <span class="number">0. </span>{
-                    digits += <span class="number">1</span>;
+                <span class="kw">let </span><span class="kw-2">mut </span>digits = (val.max(<span class="number">1.</span>).log10().floor() + <span class="number">1.0</span>) <span class="kw">as </span>i32 + is_negative <span class="kw">as </span>i32;
+
+                <span class="comment">// handle rounding
+                </span><span class="kw">if </span><span class="self">self</span>.<span class="number">0</span>.width <span class="kw">as </span>i32 - digits &gt;= <span class="number">1 </span>{
+                    <span class="kw">let </span>round_up_to = <span class="self">self</span>.<span class="number">0</span>.width <span class="kw">as </span>i32 - digits - <span class="number">1</span>;
+                    <span class="kw">let </span>m = <span class="number">10f64</span>.powi(round_up_to);
+                    val = (val * m).round() / m;
+                    digits = (val.max(<span class="number">1.</span>).log10().floor() + <span class="number">1.0</span>) <span class="kw">as </span>i32 + is_negative <span class="kw">as </span>i32;
                 }
 
-                <span class="kw">let </span><span class="kw-2">mut </span>retval = <span class="kw">match </span><span class="self">self</span>.<span class="number">0</span>.width <span class="kw">as </span>isize - digits {
-                    isize::MIN..=<span class="number">0 </span>=&gt; <span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, val.floor()),
-                    <span class="number">1 </span>=&gt; <span class="macro">format!</span>(<span class="string">&quot;{}{}&quot;</span>, <span class="self">self</span>.<span class="number">0</span>.pad_with, val.floor() <span class="kw">as </span>i64),
-                    rest =&gt; <span class="macro">format!</span>(<span class="string">&quot;{:.*}&quot;</span>, rest <span class="kw">as </span>usize - <span class="number">1</span>, val),
+                <span class="kw">let </span>sign = <span class="kw">if </span>is_negative { <span class="string">&quot;-&quot; </span>} <span class="kw">else </span>{ <span class="string">&quot;&quot; </span>};
+                <span class="kw">let </span><span class="kw-2">mut </span>retval = <span class="kw">match </span><span class="self">self</span>.<span class="number">0</span>.width <span class="kw">as </span>i32 - digits {
+                    i32::MIN..=<span class="number">0 </span>=&gt; <span class="macro">format!</span>(<span class="string">&quot;{sign}{}&quot;</span>, val.floor()),
+                    <span class="number">1 </span>=&gt; <span class="macro">format!</span>(<span class="string">&quot;{}{sign}{}&quot;</span>, <span class="self">self</span>.<span class="number">0</span>.pad_with, val.round() <span class="kw">as </span>i64),
+                    rest =&gt; <span class="macro">format!</span>(<span class="string">&quot;{sign}{val:.*}&quot;</span>, rest <span class="kw">as </span>usize - <span class="number">1</span>),
                 };
 
                 <span class="kw">let </span>display_prefix = !<span class="self">self</span>.<span class="number">0</span>.prefix_hidden
@@ -1040,6 +1121,65 @@
                 <span class="macro">unreachable!</span>()
             }
         }
+    }
+}
+
+<span class="attr">#[cfg(test)]
+</span><span class="kw">mod </span>tests {
+    <span class="kw">use super</span>::<span class="kw-2">*</span>;
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>eng_rounding_and_negatives() {
+        <span class="kw">let </span>fmt = new_formatter(<span class="string">&quot;eng&quot;</span>, <span class="kw-2">&amp;</span>[Arg { key: <span class="string">&quot;w&quot;</span>, val: <span class="string">&quot;3&quot; </span>}]).unwrap();
+
+        <span class="kw">let </span>result = fmt
+            .format(<span class="kw-2">&amp;</span>Value::Number {
+                val: -<span class="number">1.0</span>,
+                unit: Unit::None,
+            })
+            .unwrap();
+        <span class="macro">assert_eq!</span>(result, <span class="string">&quot; -1&quot;</span>);
+
+        <span class="kw">let </span>result = fmt
+            .format(<span class="kw-2">&amp;</span>Value::Number {
+                val: <span class="number">9.9999</span>,
+                unit: Unit::None,
+            })
+            .unwrap();
+        <span class="macro">assert_eq!</span>(result, <span class="string">&quot; 10&quot;</span>);
+
+        <span class="comment">// TODO: This should be &quot; 1KB&quot;
+        </span><span class="kw">let </span>result = fmt
+            .format(<span class="kw-2">&amp;</span>Value::Number {
+                val: <span class="number">999.9</span>,
+                unit: Unit::Bytes,
+            })
+            .unwrap();
+        <span class="macro">assert_eq!</span>(result, <span class="string">&quot;999B&quot;</span>);
+
+        <span class="kw">let </span>result = fmt
+            .format(<span class="kw-2">&amp;</span>Value::Number {
+                val: -<span class="number">9.99</span>,
+                unit: Unit::None,
+            })
+            .unwrap();
+        <span class="macro">assert_eq!</span>(result, <span class="string">&quot;-10&quot;</span>);
+
+        <span class="kw">let </span>result = fmt
+            .format(<span class="kw-2">&amp;</span>Value::Number {
+                val: <span class="number">9.94</span>,
+                unit: Unit::None,
+            })
+            .unwrap();
+        <span class="macro">assert_eq!</span>(result, <span class="string">&quot;9.9&quot;</span>);
+
+        <span class="kw">let </span>result = fmt
+            .format(<span class="kw-2">&amp;</span>Value::Number {
+                val: <span class="number">9.95</span>,
+                unit: Unit::None,
+            })
+            .unwrap();
+        <span class="macro">assert_eq!</span>(result, <span class="string">&quot; 10&quot;</span>);
     }
 }
 </code></pre></div>
