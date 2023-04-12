@@ -1,4 +1,4 @@
-# i3status-rust 0.30.7 [unreleased]
+# i3status-rust 0.30.7
 
 ### Future Compatibility Notes
 
