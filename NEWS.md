@@ -25,6 +25,7 @@
 * Backlight: Add regex `device` name matching, and display/control more than one monitor with the same block.
 * Backlight: Add `missing_format` option.
 * Sound: add `mappings_use_regex` option which makes the block treat `mappings` as regexps. Defaults to `false`.
+* Sound: add `$active_port` placeholder and `active_port_mappings` option.
 
 ### Bug Fixes and Improvements
 
