@@ -363,6 +363,11 @@ impl Formatter for EngFormatter {
     fn format(&self, val: &Value) -> Result<String> {
         match val {
             Value::Number { mut val, mut unit } => {
+                let is_negative = val.is_sign_negative();
+                if is_negative {
+                    val = -val;
+                }
+
                 if let Some(new_unit) = self.0.unit {
                     val = unit.convert(val, new_unit)?;
                     unit = new_unit;
@@ -383,15 +388,21 @@ impl Formatter for EngFormatter {
                     .clamp(min_prefix, max_prefix);
                 val = prefix.apply(val);
 
-                let mut digits = (val.max(1.).log10().floor() + 1.0) as isize;
-                if val < 0. {
-                    digits += 1;
+                let mut digits = (val.max(1.).log10().floor() + 1.0) as i32 + is_negative as i32;
+
+                // handle rounding
+                if self.0.width as i32 - digits >= 1 {
+                    let round_up_to = self.0.width as i32 - digits - 1;
+                    let m = 10f64.powi(round_up_to);
+                    val = (val * m).round() / m;
+                    digits = (val.max(1.).log10().floor() + 1.0) as i32 + is_negative as i32;
                 }
 
-                let mut retval = match self.0.width as isize - digits {
-                    isize::MIN..=0 => format!("{}", val.floor()),
-                    1 => format!("{}{}", self.0.pad_with, val.floor() as i64),
-                    rest => format!("{:.*}", rest as usize - 1, val),
+                let sign = if is_negative { "-" } else { "" };
+                let mut retval = match self.0.width as i32 - digits {
+                    i32::MIN..=0 => format!("{sign}{}", val.floor()),
+                    1 => format!("{}{sign}{}", self.0.pad_with, val.round() as i64),
+                    rest => format!("{sign}{val:.*}", rest as usize - 1),
                 };
 
                 let display_prefix = !self.0.prefix_hidden
@@ -518,5 +529,64 @@ impl Formatter for FlagFormatter {
                 unreachable!()
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn eng_rounding_and_negatives() {
+        let fmt = new_formatter("eng", &[Arg { key: "w", val: "3" }]).unwrap();
+
+        let result = fmt
+            .format(&Value::Number {
+                val: -1.0,
+                unit: Unit::None,
+            })
+            .unwrap();
+        assert_eq!(result, " -1");
+
+        let result = fmt
+            .format(&Value::Number {
+                val: 9.9999,
+                unit: Unit::None,
+            })
+            .unwrap();
+        assert_eq!(result, " 10");
+
+        // TODO: This should be " 1KB"
+        let result = fmt
+            .format(&Value::Number {
+                val: 999.9,
+                unit: Unit::Bytes,
+            })
+            .unwrap();
+        assert_eq!(result, "999B");
+
+        let result = fmt
+            .format(&Value::Number {
+                val: -9.99,
+                unit: Unit::None,
+            })
+            .unwrap();
+        assert_eq!(result, "-10");
+
+        let result = fmt
+            .format(&Value::Number {
+                val: 9.94,
+                unit: Unit::None,
+            })
+            .unwrap();
+        assert_eq!(result, "9.9");
+
+        let result = fmt
+            .format(&Value::Number {
+                val: 9.95,
+                unit: Unit::None,
+            })
+            .unwrap();
+        assert_eq!(result, " 10");
     }
 }
