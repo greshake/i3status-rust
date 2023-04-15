@@ -50,13 +50,13 @@ impl Widget {
     pub fn set_format(&mut self, format: Format) {
         match &mut self.source {
             Source::Format(old, _) => *old = format,
-            _ => self.source = Source::Format(format, None),
+            _ => self.source = Source::Format(format, Default::default()),
         }
     }
 
     pub fn set_values(&mut self, new_values: Values) {
         if let Source::Format(_, values) = &mut self.source {
-            *values = Some(new_values);
+            *values = new_values;
         }
     }
 
@@ -142,15 +142,15 @@ enum Source {
     /// Simple text
     Text(String),
     /// A format template
-    Format(Format, Option<Values>),
+    Format(Format, Values),
 }
 
 impl Source {
     fn render(&self, config: &SharedConfig) -> Result<(Vec<Fragment>, Vec<Fragment>)> {
         match self {
             Self::Text(text) => Ok((vec![text.clone().into()], vec![])),
-            Self::Format(format, Some(values)) => format.render(values, config),
-            Self::None | Self::Format(_, None) => Ok((vec![], vec![])),
+            Self::Format(format, values) => format.render(values, config),
+            Self::None => Ok((vec![], vec![])),
         }
     }
 }
