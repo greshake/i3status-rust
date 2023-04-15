@@ -206,13 +206,13 @@
     <span class="kw">pub fn </span>set_format(<span class="kw-2">&amp;mut </span><span class="self">self</span>, format: Format) {
         <span class="kw">match </span><span class="kw-2">&amp;mut </span><span class="self">self</span>.source {
             Source::Format(old, <span class="kw">_</span>) =&gt; <span class="kw-2">*</span>old = format,
-            <span class="kw">_ </span>=&gt; <span class="self">self</span>.source = Source::Format(format, <span class="prelude-val">None</span>),
+            <span class="kw">_ </span>=&gt; <span class="self">self</span>.source = Source::Format(format, Default::default()),
         }
     }
 
     <span class="kw">pub fn </span>set_values(<span class="kw-2">&amp;mut </span><span class="self">self</span>, new_values: Values) {
         <span class="kw">if let </span>Source::Format(<span class="kw">_</span>, values) = <span class="kw-2">&amp;mut </span><span class="self">self</span>.source {
-            <span class="kw-2">*</span>values = <span class="prelude-val">Some</span>(new_values);
+            <span class="kw-2">*</span>values = new_values;
         }
     }
 
@@ -298,15 +298,15 @@
     <span class="doccomment">/// Simple text
     </span>Text(String),
     <span class="doccomment">/// A format template
-    </span>Format(Format, <span class="prelude-ty">Option</span>&lt;Values&gt;),
+    </span>Format(Format, Values),
 }
 
 <span class="kw">impl </span>Source {
     <span class="kw">fn </span>render(<span class="kw-2">&amp;</span><span class="self">self</span>, config: <span class="kw-2">&amp;</span>SharedConfig) -&gt; <span class="prelude-ty">Result</span>&lt;(Vec&lt;Fragment&gt;, Vec&lt;Fragment&gt;)&gt; {
         <span class="kw">match </span><span class="self">self </span>{
             <span class="self">Self</span>::Text(text) =&gt; <span class="prelude-val">Ok</span>((<span class="macro">vec!</span>[text.clone().into()], <span class="macro">vec!</span>[])),
-            <span class="self">Self</span>::Format(format, <span class="prelude-val">Some</span>(values)) =&gt; format.render(values, config),
-            <span class="self">Self</span>::None | <span class="self">Self</span>::Format(<span class="kw">_</span>, <span class="prelude-val">None</span>) =&gt; <span class="prelude-val">Ok</span>((<span class="macro">vec!</span>[], <span class="macro">vec!</span>[])),
+            <span class="self">Self</span>::Format(format, values) =&gt; format.render(values, config),
+            <span class="self">Self</span>::None =&gt; <span class="prelude-val">Ok</span>((<span class="macro">vec!</span>[], <span class="macro">vec!</span>[])),
         }
     }
 }
