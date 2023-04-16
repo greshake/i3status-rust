@@ -104,5 +104,7 @@ features = ["json"]
 
 [profile.release]
 lto = "thin"
-strip = true
-debug = 1
+
+[profile.release-debug-info]
+inherits = "release"
+debug = true
