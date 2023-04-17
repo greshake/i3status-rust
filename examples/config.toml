@@ -9,10 +9,8 @@ idle_fg = "#abcdef"
 [icons]
 icons = "awesome4"
 [icons.overrides]
-bat = " | | "
-bat_full = " |X| "
-bat_charging = " |^| "
-bat_discharging = " |v| "
+bat = ["|E|", "|_|", "|=|", "|F|"]
+bat_charging = "|^| "
 
 [[block]]
 block = "cpu"
