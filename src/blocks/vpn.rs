@@ -66,6 +66,8 @@
 
 mod nordvpn;
 use nordvpn::NordVpnDriver;
+mod mullvad;
+use mullvad::MullvadDriver;
 
 use super::prelude::*;
 
@@ -74,6 +76,7 @@ use super::prelude::*;
 enum DriverType {
     #[default]
     Nordvpn,
+    Mullvad,
 }
 
 #[derive(Deserialize, Debug, SmartDefault)]
@@ -116,6 +119,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
     let driver: Box<dyn Driver> = match config.driver {
         DriverType::Nordvpn => Box::new(NordVpnDriver::new().await),
+        DriverType::Mullvad => Box::new(MullvadDriver::new().await),
     };
 
     loop {
