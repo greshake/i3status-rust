@@ -38,6 +38,21 @@ impl Config {
         }
     }
 
+    pub fn with_default_format(self, default_format: &Format) -> Format {
+        let full = self.full.unwrap_or_else(|| default_format.full.clone());
+        let short = self.short.unwrap_or_else(|| default_format.short.clone());
+
+        let mut intervals = Vec::new();
+        full.init_intervals(&mut intervals);
+        short.init_intervals(&mut intervals);
+
+        Format {
+            full,
+            short,
+            intervals,
+        }
+    }
+
     pub fn with_defaults(self, default_full: &str, default_short: &str) -> Result<Format> {
         let full = match self.full {
             Some(full) => full,

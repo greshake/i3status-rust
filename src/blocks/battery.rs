@@ -13,6 +13,7 @@
 //! `interval` | Update interval, in seconds. Only relevant for driver = "sysfs" or "apc_ups". | `10`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $percentage "`
 //! `full_format` | Same as `format` but for when the battery is full | `" $icon "`
+//! `charging_format` | Same as `format` but for when the battery is charging | Links to `format`
 //! `empty_format` | Same as `format` but for when the battery is empty | `" $icon "`
 //! `not_charging_format` | Same as `format` but for when the battery is not charging. Defaults to the full battery icon as many batteries report this status when they are full. | `" $icon "`
 //! `missing_format` | Same as `format` if the battery cannot be found. | `" $icon "`
@@ -83,6 +84,7 @@ pub struct Config {
     interval: Seconds,
     format: FormatConfig,
     full_format: FormatConfig,
+    charging_format: FormatConfig,
     empty_format: FormatConfig,
     not_charging_format: FormatConfig,
     missing_format: FormatConfig,
@@ -112,6 +114,7 @@ enum BatteryDriver {
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let format = config.format.with_default(" $icon $percentage ")?;
     let format_full = config.full_format.with_default(" $icon ")?;
+    let charging_format = config.charging_format.with_default_format(&format);
     let format_empty = config.empty_format.with_default(" $icon ")?;
     let format_not_charging = config.not_charging_format.with_default(" $icon ")?;
     let missing_format = config.missing_format.with_default(" $icon ")?;
@@ -143,6 +146,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                 widget.set_format(match info.status {
                     BatteryStatus::Empty => format_empty.clone(),
                     BatteryStatus::Full => format_full.clone(),
+                    BatteryStatus::Charging => charging_format.clone(),
                     BatteryStatus::NotCharging => format_not_charging.clone(),
                     _ => format.clone(),
                 });
