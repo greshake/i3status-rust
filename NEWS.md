@@ -1,3 +1,18 @@
+# i3status-rust 0.31.0 [unreleased]
+
+### New Blocks and Features
+
+* Battery: added `charging_format` config option.
+
+### Bug Fixes and Improvements
+
+* Net: fix `missing_format` option.
+
+### Packaging
+
+* The default release profile no longer strips the binary.
+* Added `release-debug-info` profile.
+
 # i3status-rust 0.30.7
 
 ### Future Compatibility Notes
