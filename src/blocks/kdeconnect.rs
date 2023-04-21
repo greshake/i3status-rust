@@ -22,6 +22,8 @@
 //! `icon`        | Icon based on connection's status                                        | Icon   | -
 //! `bat_icon`    | Battery level indicator (only when connected and if supported)           | Icon   | -
 //! `bat_charge`  | Battery charge level (only when connected and if supported)              | Number | %
+//! `network_icon`| Cell Network indicator (only when connected and if supported)            | Icon   | -
+//! `network`     | Cell Network level (only when connected and if supported)                | Number | %
 //! `notif_icon`  | Only when connected and there are notifications                          | Icon   | -
 //! `notif_count` | Number of notifications on your phone (only when connected and non-zero) | Number | -
 //! `name`        | Name of your device as reported by KDEConnect (if available)             | Text   | -
@@ -34,13 +36,14 @@
 //! ```toml
 //! [[block]]
 //! block = "kdeconnect"
-//! format = " $icon {$bat_icon $bat_charge|}{ $notif_icon|} "
+//! format = " $icon {$bat_icon $bat_charge|}{ $notif_icon|} {$network_icon $network|}"
 //! bat_good = 101
 //! ```
 //!
 //! # Icons Used
 //! - `bat` (as a progression)
 //! - `bat_charging` (as a progression)
+//! - `net_wireless`
 //! - `notification`
 //! - `phone`
 //! - `phone_disconnected`
@@ -49,6 +52,12 @@ use tokio::sync::mpsc;
 use zbus::dbus_proxy;
 
 use super::prelude::*;
+
+
+mod battery;
+mod connectivity_report;
+use battery::BatteryDbusProxy;
+use connectivity_report::ConnectivityDbusProxy;
 
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(default)]
@@ -129,6 +138,25 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     }
                 }
 
+		let network = device.network().await;
+		if let Some(net) = network.0 {
+		    let network_strength = network.1.unwrap_or(0);
+		    values.insert(
+			"network_icon".into(),
+			Value::icon(api.get_icon("net_wireless")?));
+
+		    if network_strength == 0 {
+			widget.state = State::Critical;
+			values.insert(
+			    "network".into(),
+			    Value::text("×".into()));
+		    }else {
+			values.insert(
+			    "network".into(),
+			    Value::text(net.into()));
+		    }
+		}
+
                 let notif_count = device.notifications().await.unwrap_or(0);
                 if notif_count > 0 {
                     values.insert("notif_count".into(), Value::number(notif_count));
@@ -170,6 +198,7 @@ struct Device {
     device_proxy: DeviceDbusProxy<'static>,
     battery_proxy: BatteryDbusProxy<'static>,
     notifications_proxy: NotificationsDbusProxy<'static>,
+    connectivity_proxy: ConnectivityDbusProxy<'static>,
 }
 
 impl Device {
@@ -177,6 +206,7 @@ impl Device {
         let device_path = format!("/modules/kdeconnect/devices/{id}");
         let battery_path = format!("{device_path}/battery");
         let notifications_path = format!("{device_path}/notifications");
+	let connectivity_path = format!("{device_path}/connectivity_report");
 
         let device_proxy = DeviceDbusProxy::builder(conn)
             .cache_properties(zbus::CacheProperties::No)
@@ -199,6 +229,13 @@ impl Device {
             .build()
             .await
             .error("Failed to create BatteryDbusProxy")?;
+        let connectivity_proxy = ConnectivityDbusProxy::builder(conn)
+            .cache_properties(zbus::CacheProperties::No)
+            .path(connectivity_path)
+            .error("Failed to set connectivity path")?
+            .build()
+            .await
+            .error("Failed to create ConnectivityDbusProxy")?;
 
         let mut s1 = device_proxy
             .receive_all_signals()
@@ -212,6 +249,10 @@ impl Device {
             .receive_all_signals()
             .await
             .error("Failed to receive signals")?;
+        let mut s4 =  connectivity_proxy
+            .receive_refreshed()
+            .await
+            .error("Failed to receive signals")?;
 
         tokio::spawn(async move {
             loop {
@@ -219,6 +260,7 @@ impl Device {
                     _ = s1.next() => tx.send(()).await.unwrap(),
                     _ = s2.next() => tx.send(()).await.unwrap(),
                     _ = s3.next() => tx.send(()).await.unwrap(),
+                    _ = s4.next() => tx.send(()).await.unwrap(),
                 }
             }
         });
@@ -227,6 +269,7 @@ impl Device {
             device_proxy,
             battery_proxy,
             notifications_proxy,
+	    connectivity_proxy,
         })
     }
 
@@ -255,6 +298,17 @@ impl Device {
             .await
             .map(|n| n.len())
             .ok()
+    }
+
+    async fn network(&self) -> (Option<String>, Option<i32>) {
+        (self.connectivity_proxy
+            .cellular_network_type()
+            .await
+         .ok(),
+	 self.connectivity_proxy
+            .cellular_network_strength()
+            .await
+            .ok())
     }
 }
 
@@ -298,20 +352,6 @@ trait DeviceDbus {
     fn name_changed_(&self, name: &str) -> zbus::Result<()>;
 }
 
-#[dbus_proxy(
-    interface = "org.kde.kdeconnect.device.battery",
-    default_service = "org.kde.kdeconnect"
-)]
-trait BatteryDbus {
-    #[dbus_proxy(signal, name = "refreshed")]
-    fn refreshed(&self, is_charging: bool, charge: i32) -> zbus::Result<()>;
-
-    #[dbus_proxy(property, name = "charge")]
-    fn charge(&self) -> zbus::Result<i32>;
-
-    #[dbus_proxy(property, name = "isCharging")]
-    fn is_charging(&self) -> zbus::Result<bool>;
-}
 
 #[dbus_proxy(
     interface = "org.kde.kdeconnect.device.notifications",
