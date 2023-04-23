@@ -145,7 +145,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                         Value::icon(api.get_icon("net_wireless")?),
                     );
 
-                    if network_strength == 0 {
+                    if network_strength <= 0 {
                         widget.state = State::Critical;
                         values.insert("network".into(), Value::text("×".into()));
                     } else {
