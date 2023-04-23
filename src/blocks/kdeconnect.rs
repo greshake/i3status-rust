@@ -53,7 +53,6 @@ use zbus::dbus_proxy;
 
 use super::prelude::*;
 
-
 mod battery;
 mod connectivity_report;
 use battery::BatteryDbusProxy;
@@ -138,24 +137,21 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     }
                 }
 
-		let network = device.network().await;
-		if let Some(net) = network.0 {
-		    let network_strength = network.1.unwrap_or(0);
-		    values.insert(
-			"network_icon".into(),
-			Value::icon(api.get_icon("net_wireless")?));
+                let network = device.network().await;
+                if let Some(net) = network.0 {
+                    let network_strength = network.1.unwrap_or(0);
+                    values.insert(
+                        "network_icon".into(),
+                        Value::icon(api.get_icon("net_wireless")?),
+                    );
 
-		    if network_strength == 0 {
-			widget.state = State::Critical;
-			values.insert(
-			    "network".into(),
-			    Value::text("×".into()));
-		    }else {
-			values.insert(
-			    "network".into(),
-			    Value::text(net.into()));
-		    }
-		}
+                    if network_strength == 0 {
+                        widget.state = State::Critical;
+                        values.insert("network".into(), Value::text("×".into()));
+                    } else {
+                        values.insert("network".into(), Value::text(net));
+                    }
+                }
 
                 let notif_count = device.notifications().await.unwrap_or(0);
                 if notif_count > 0 {
@@ -206,7 +202,7 @@ impl Device {
         let device_path = format!("/modules/kdeconnect/devices/{id}");
         let battery_path = format!("{device_path}/battery");
         let notifications_path = format!("{device_path}/notifications");
-	let connectivity_path = format!("{device_path}/connectivity_report");
+        let connectivity_path = format!("{device_path}/connectivity_report");
 
         let device_proxy = DeviceDbusProxy::builder(conn)
             .cache_properties(zbus::CacheProperties::No)
@@ -249,7 +245,7 @@ impl Device {
             .receive_all_signals()
             .await
             .error("Failed to receive signals")?;
-        let mut s4 =  connectivity_proxy
+        let mut s4 = connectivity_proxy
             .receive_refreshed()
             .await
             .error("Failed to receive signals")?;
@@ -269,7 +265,7 @@ impl Device {
             device_proxy,
             battery_proxy,
             notifications_proxy,
-	    connectivity_proxy,
+            connectivity_proxy,
         })
     }
 
@@ -301,14 +297,13 @@ impl Device {
     }
 
     async fn network(&self) -> (Option<String>, Option<i32>) {
-        (self.connectivity_proxy
-            .cellular_network_type()
-            .await
-         .ok(),
-	 self.connectivity_proxy
-            .cellular_network_strength()
-            .await
-            .ok())
+        (
+            self.connectivity_proxy.cellular_network_type().await.ok(),
+            self.connectivity_proxy
+                .cellular_network_strength()
+                .await
+                .ok(),
+        )
     }
 }
 
@@ -351,7 +346,6 @@ trait DeviceDbus {
     #[dbus_proxy(signal, name = "nameChanged")]
     fn name_changed_(&self, name: &str) -> zbus::Result<()>;
 }
-
 
 #[dbus_proxy(
     interface = "org.kde.kdeconnect.device.notifications",
