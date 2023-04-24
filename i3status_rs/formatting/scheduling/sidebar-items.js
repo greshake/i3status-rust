@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["manage_widgets_updates",""]]};
+window.SIDEBAR_ITEMS = {"fn":["manage_widgets_updates"]};

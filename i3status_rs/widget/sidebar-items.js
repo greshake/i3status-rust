@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":[["State","State of the widget. Affects the theming."]],"struct":[["Widget",""]]};
+window.SIDEBAR_ITEMS = {"enum":["State"],"struct":["Widget"]};

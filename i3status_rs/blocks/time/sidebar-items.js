@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":[["Timezone",""]],"fn":[["run",""]],"struct":[["Config",""]]};
+window.SIDEBAR_ITEMS = {"enum":["Timezone"],"fn":["run"],"struct":["Config"]};

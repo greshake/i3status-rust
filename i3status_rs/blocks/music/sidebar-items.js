@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":[["PlayerName",""]],"fn":[["run",""]],"struct":[["Config",""]]};
+window.SIDEBAR_ITEMS = {"enum":["PlayerName"],"fn":["run"],"struct":["Config"]};

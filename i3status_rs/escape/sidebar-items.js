@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"trait":[["CollectEscaped",""]]};
+window.SIDEBAR_ITEMS = {"trait":["CollectEscaped"]};

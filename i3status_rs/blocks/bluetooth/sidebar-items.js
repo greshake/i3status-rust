@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["run",""]],"struct":[["Battery1Proxy",""],["Battery1ProxyBlocking",""],["Config",""],["Device1Proxy",""],["Device1ProxyBlocking",""]]};
+window.SIDEBAR_ITEMS = {"fn":["run"],"struct":["Battery1Proxy","Battery1ProxyBlocking","Config","Device1Proxy","Device1ProxyBlocking"]};

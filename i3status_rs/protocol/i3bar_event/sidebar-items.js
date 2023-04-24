@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["events_stream",""]],"struct":[["I3BarEvent",""]]};
+window.SIDEBAR_ITEMS = {"fn":["events_stream"],"struct":["I3BarEvent"]};

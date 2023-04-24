@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["deserialize_local_timestamp",""],["run",""]],"struct":[["Config",""]]};
+window.SIDEBAR_ITEMS = {"fn":["deserialize_local_timestamp","run"],"struct":["Config"]};

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":[["I3BarBlockAlign",""],["I3BarBlockMinWidth",""]],"struct":[["I3BarBlock","Represent block as described in https://i3wm.org/docs/i3bar-protocol.html"]]};
+window.SIDEBAR_ITEMS = {"enum":["I3BarBlockAlign","I3BarBlockMinWidth"],"struct":["I3BarBlock"]};

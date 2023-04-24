@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":[["color",""],["separator",""]],"struct":[["Theme",""],["ThemeOverrides",""],["ThemeUserConfig",""]]};
+window.SIDEBAR_ITEMS = {"mod":["color","separator"],"struct":["Theme","ThemeOverrides","ThemeUserConfig"]};

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":[["Prefix","SI prefix"]]};
+window.SIDEBAR_ITEMS = {"enum":["Prefix"]};
