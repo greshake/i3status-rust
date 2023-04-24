@@ -6,7 +6,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `driver` | Which vpn should be used . Available drivers are: `"nordvpn"` | `"nordvpn"`
+//! `driver` | Which vpn should be used . Available drivers are: `"nordvpn"` and `"mullvad"` | `"nordvpn"`
 //! `interval` | Update interval in seconds. | `10`
 //! `format_connected` | A string to customise the output in case the network is connected. See below for available placeholders. | `" VPN: $icon "`
 //! `format_disconnected` | A string to customise the output in case the network is disconnected. See below for available placeholders. | `" VPN: $icon "`
@@ -28,6 +28,9 @@
 //! ## nordvpn
 //! Behind the scenes the nordvpn driver uses the `nordvpn` command line binary. In order for this to work
 //! properly the binary should be executable without root privileges.
+//!
+//! ## Mullvad
+//! Behind the scenes the mullvad driver uses the `mullvad` command line binary. In order for this to work properly the binary should be executable and mullvad daemon should be running.
 //!
 //! # Example
 //!
