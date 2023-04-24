@@ -165,6 +165,7 @@
 </span><span class="kw">pub struct </span>Widget {
     <span class="kw">pub </span>state: State,
     source: Source,
+    values: Values,
 }
 
 <span class="kw">impl </span>Widget {
@@ -204,21 +205,16 @@
     }
 
     <span class="kw">pub fn </span>set_format(<span class="kw-2">&amp;mut </span><span class="self">self</span>, format: Format) {
-        <span class="kw">match </span><span class="kw-2">&amp;mut </span><span class="self">self</span>.source {
-            Source::Format(old, <span class="kw">_</span>) =&gt; <span class="kw-2">*</span>old = format,
-            <span class="kw">_ </span>=&gt; <span class="self">self</span>.source = Source::Format(format, Default::default()),
-        }
+        <span class="self">self</span>.source = Source::Format(format);
     }
 
     <span class="kw">pub fn </span>set_values(<span class="kw-2">&amp;mut </span><span class="self">self</span>, new_values: Values) {
-        <span class="kw">if let </span>Source::Format(<span class="kw">_</span>, values) = <span class="kw-2">&amp;mut </span><span class="self">self</span>.source {
-            <span class="kw-2">*</span>values = new_values;
-        }
+        <span class="self">self</span>.values = new_values;
     }
 
     <span class="kw">pub fn </span>intervals(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Vec&lt;u64&gt; {
         <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.source {
-            Source::Format(f, <span class="kw">_</span>) =&gt; f.intervals(),
+            Source::Format(f) =&gt; f.intervals(),
             <span class="kw">_ </span>=&gt; Vec::new(),
         }
     }
@@ -227,7 +223,7 @@
     </span><span class="kw">pub fn </span>get_data(<span class="kw-2">&amp;</span><span class="self">self</span>, shared_config: <span class="kw-2">&amp;</span>SharedConfig, id: usize) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;I3BarBlock&gt;&gt; {
         <span class="comment">// Create a &quot;template&quot; block
         </span><span class="kw">let </span>(key_bg, key_fg) = shared_config.theme.get_colors(<span class="self">self</span>.state);
-        <span class="kw">let </span>(full, short) = <span class="self">self</span>.source.render(shared_config)<span class="question-mark">?</span>;
+        <span class="kw">let </span>(full, short) = <span class="self">self</span>.source.render(shared_config, <span class="kw-2">&amp;</span><span class="self">self</span>.values)<span class="question-mark">?</span>;
         <span class="kw">let </span><span class="kw-2">mut </span>template = I3BarBlock {
             instance: <span class="macro">format!</span>(<span class="string">&quot;{id}:&quot;</span>),
             background: key_bg,
@@ -298,14 +294,18 @@
     <span class="doccomment">/// Simple text
     </span>Text(String),
     <span class="doccomment">/// A format template
-    </span>Format(Format, Values),
+    </span>Format(Format),
 }
 
 <span class="kw">impl </span>Source {
-    <span class="kw">fn </span>render(<span class="kw-2">&amp;</span><span class="self">self</span>, config: <span class="kw-2">&amp;</span>SharedConfig) -&gt; <span class="prelude-ty">Result</span>&lt;(Vec&lt;Fragment&gt;, Vec&lt;Fragment&gt;)&gt; {
+    <span class="kw">fn </span>render(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        config: <span class="kw-2">&amp;</span>SharedConfig,
+        values: <span class="kw-2">&amp;</span>Values,
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;(Vec&lt;Fragment&gt;, Vec&lt;Fragment&gt;)&gt; {
         <span class="kw">match </span><span class="self">self </span>{
             <span class="self">Self</span>::Text(text) =&gt; <span class="prelude-val">Ok</span>((<span class="macro">vec!</span>[text.clone().into()], <span class="macro">vec!</span>[])),
-            <span class="self">Self</span>::Format(format, values) =&gt; format.render(values, config),
+            <span class="self">Self</span>::Format(format) =&gt; format.render(values, config),
             <span class="self">Self</span>::None =&gt; <span class="prelude-val">Ok</span>((<span class="macro">vec!</span>[], <span class="macro">vec!</span>[])),
         }
     }
