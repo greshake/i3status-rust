@@ -14,8 +14,7 @@ pub struct MullvadDriver {
 impl MullvadDriver {
     pub async fn new() -> MullvadDriver {
         MullvadDriver {
-            regex_country_code: Regex::new("Connected to ([a-z]{2}).*, ([A-Z][a-z]*).*\n")
-                .unwrap(),
+            regex_country_code: Regex::new("Connected to ([a-z]{2}).*, ([A-Z][a-z]*).*\n").unwrap(),
         }
     }
 
@@ -52,7 +51,7 @@ impl Driver for MullvadDriver {
                 .regex_country_code
                 .captures_iter(&status)
                 .next()
-                .map(|capture|{
+                .map(|capture| {
                     let country_code = capture[1].to_owned().to_uppercase();
                     let country = capture[2].to_owned();
                     let country_flag = country_flag_from_iso_code(&country_code);

@@ -130,35 +130,36 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
         let mut widget = Widget::new();
 
-        let mut values = map!(
-                "icon" => Value::icon(api.get_icon(status.icon())?),
-
-        );
-        let (format, state) = match &status {
+        widget.state = match &status {
             Status::Connected {
                 country,
                 country_flag,
             } => {
-                values.extend(
-                    map!(
-                            "country" => Value::text(country.to_string()),
-                            "flag" => Value::text(country_flag.to_string()),
+                widget.set_values(map!(
+                        "icon" => Value::icon(api.get_icon(status.icon())?),
+                        "country" => Value::text(country.to_string()),
+                        "flag" => Value::text(country_flag.to_string()),
 
-                    )
-                    .into_iter(),
-                );
-                (format_connected.clone(), config.state_connected)
+                ));
+                widget.set_format(format_connected.clone());
+                config.state_connected
             }
-            Status::Disconnected => (format_disconnected.clone(), config.state_disconnected),
-            Status::Error => {
+            Status::Disconnected => {
+                widget.set_values(map!(
+                        "icon" => Value::icon(api.get_icon(status.icon())?),
+                ));
                 widget.set_format(format_disconnected.clone());
-                (format_disconnected.clone(), State::Critical)
+                config.state_disconnected
+            }
+            Status::Error => {
+                widget.set_values(map!(
+                        "icon" => Value::icon(api.get_icon(status.icon())?),
+                ));
+                widget.set_format(format_disconnected.clone());
+                State::Critical
             }
         };
 
-        widget.state = state;
-        widget.set_format(format);
-        widget.set_values(values);
         api.set_widget(widget).await?;
 
         select! {

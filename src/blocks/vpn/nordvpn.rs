@@ -2,11 +2,10 @@ use regex::Regex;
 use std::process::Stdio;
 use tokio::process::Command;
 
-use crate::util::country_flag_from_iso_code;
 use crate::blocks::prelude::*;
+use crate::util::country_flag_from_iso_code;
 
-use super::{Status,Driver};
-
+use super::{Driver, Status};
 
 pub struct NordVpnDriver {
     regex_country_code: Regex,
