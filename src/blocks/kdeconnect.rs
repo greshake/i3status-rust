@@ -36,7 +36,7 @@
 //! ```toml
 //! [[block]]
 //! block = "kdeconnect"
-//! format = " $icon {$bat_icon $bat_charge|}{ $notif_icon|} {$network_icon $network|}"
+//! format = " $icon {$bat_icon $bat_charge|}{ $notif_icon|}{$network_icon $network |}"
 //! bat_good = 101
 //! ```
 //!
@@ -137,14 +137,19 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     }
                 }
 
-                let network = device.network().await;
-                if let Some(net) = network.0 {
-                    let network_strength = network.1.unwrap_or(0);
+                let (network, network_strength) = device.network().await;
+                if let Some(net) = network {
                     values.insert(
                         "network_icon".into(),
-                        Value::icon(api.get_icon("net_wireless")?),
+                        Value::icon(api.get_icon_in_progression(
+                            "net_wireless",
+                            network_strength.clamp(0, 4) as f64 / 4.0,
+                        )?),
                     );
 
+                    // network strength is 0..=4 from docs of
+                    // kdeconnect/plugins/connectivity-report, and I
+                    // got -1 for disabled SIM (undocumented)
                     if network_strength <= 0 {
                         widget.state = State::Critical;
                         values.insert("network".into(), Value::text("×".into()));
@@ -296,13 +301,13 @@ impl Device {
             .ok()
     }
 
-    async fn network(&self) -> (Option<String>, Option<i32>) {
+    async fn network(&self) -> (Option<String>, i32) {
         (
             self.connectivity_proxy.cellular_network_type().await.ok(),
             self.connectivity_proxy
                 .cellular_network_strength()
                 .await
-                .ok(),
+                .unwrap_or(0),
         )
     }
 }
