@@ -48,12 +48,12 @@ serde_json = "1.0"
 serde_with = "2.2"
 shellexpand = "3.0"
 signal-hook = "0.3"
-smart-default = "0.6"
+smart-default = "0.7"
 swayipc-async = "2.0"
 toml = "0.7"
 zbus = { version = "3.8", default-features = false, features = ["tokio"] }
-wayrs-client = { version = "0.5", features = ["tokio"] }
-wayrs-protocols = { version = "0.5", features = ["wlr-foreign-toplevel-management-unstable-v1"] }
+wayrs-client = { version = "0.10", features = ["tokio"] }
+wayrs-protocols = { version = "0.10", features = ["wlr-foreign-toplevel-management-unstable-v1"] }
 
 [dependencies.clap]
 version = "4.0"

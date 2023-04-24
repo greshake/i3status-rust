@@ -82,6 +82,7 @@ fn toplevel_manager_cb(
             state.error = Some(Error::new("unexpected 'finished' event"));
             conn.break_dispatch_loop();
         }
+        _ => (),
     }
 }
 
