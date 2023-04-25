@@ -31,14 +31,14 @@
 //! - `tasks`
 
 use super::prelude::*;
-use tokio::process::Command;
 use chrono::DateTime;
+use tokio::process::Command;
 
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(default)]
 pub struct Config {
     #[default(30.into())]
-    interval : Seconds,
+    interval: Seconds,
     format: FormatConfig,
 
     info: Option<u64>,
@@ -48,18 +48,10 @@ pub struct Config {
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+    api.set_default_actions(&[(MouseButton::Left, None, "stop_continue")])
+        .await?;
 
-    api.set_default_actions(&[
-        (MouseButton::Left, None, "stop_continue"),
-    ])
-    .await?;
-
-    let widget = Widget::new().with_format(
-        config
-            .format
-            .with_default(" $icon {$elapsed|}")?,
-    );
-
+    let widget = Widget::new().with_format(config.format.with_default(" $icon {$elapsed|}")?);
 
     loop {
         let mut values = map! {
@@ -80,7 +72,6 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     (&config.warning, State::Warning),
                     (&config.good, State::Good),
                     (&config.info, State::Info),
-
                 ] {
                     if let Some(value) = level {
                         if (elapsed.num_minutes() as u64) >= *value {
@@ -92,9 +83,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
                 values.insert("tags".into(), Value::text(tw.tags.join(" ")));
 
-                let elapsedstr = format!("{}:{:0>2}",
-                                         elapsed.num_hours(),
-                                         elapsed.num_minutes()%60);
+                let elapsedstr =
+                    format!("{}:{:0>2}", elapsed.num_hours(), elapsed.num_minutes() % 60);
                 values.insert("elapsed".into(), Value::text(elapsedstr));
 
                 if let Some(annotation) = tw.annotation {
@@ -124,44 +114,46 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 /// Raw output from timew
 #[derive(Deserialize, Debug)]
 struct TimewarriorRAW {
-    pub id : u32,
-    pub start : String,
-    pub tags : Vec<String>,
-    pub annotation : Option<String>,
-    pub end : Option<String>,
+    pub id: u32,
+    pub start: String,
+    pub tags: Vec<String>,
+    pub annotation: Option<String>,
+    pub end: Option<String>,
 }
 
 /// TimeWarrior entry
 #[derive(Debug, PartialEq)]
 struct TimewarriorData {
-    pub id : u32,
-    pub start : DateTime<chrono::offset::Utc>,
-    pub tags : Vec<String>,
-    pub annotation : Option<String>,
-    pub end : Option<DateTime<chrono::offset::Utc>>,
+    pub id: u32,
+    pub start: DateTime<chrono::offset::Utc>,
+    pub tags: Vec<String>,
+    pub annotation: Option<String>,
+    pub end: Option<DateTime<chrono::offset::Utc>>,
 }
 
 impl From<TimewarriorRAW> for TimewarriorData {
-    fn from(item:TimewarriorRAW) -> Self {
+    fn from(item: TimewarriorRAW) -> Self {
         Self {
             id: item.id,
             tags: item.tags,
             annotation: item.annotation,
-            start : DateTime::from_utc(
-                        chrono::NaiveDateTime::parse_from_str(&item.start, "%Y%m%dT%H%M%SZ")
-                            .unwrap(),
-                        chrono::Utc),
-            end : item.end.map(|v| DateTime::from_utc(
-                                    chrono::NaiveDateTime::parse_from_str(&v, "%Y%m%dT%H%M%SZ")
-                                        .unwrap(),
-                                    chrono::Utc)),
+            start: DateTime::from_utc(
+                chrono::NaiveDateTime::parse_from_str(&item.start, "%Y%m%dT%H%M%SZ").unwrap(),
+                chrono::Utc,
+            ),
+            end: item.end.map(|v| {
+                DateTime::from_utc(
+                    chrono::NaiveDateTime::parse_from_str(&v, "%Y%m%dT%H%M%SZ").unwrap(),
+                    chrono::Utc,
+                )
+            }),
         }
     }
 }
 
 /// Format a DateTime given a format string
 #[allow(dead_code)]
-fn format_datetime(date:&DateTime<chrono::Utc>, format:&str) -> String {
+fn format_datetime(date: &DateTime<chrono::Utc>, format: &str) -> String {
     date.format(format).to_string()
 }
 
@@ -181,7 +173,7 @@ async fn call_timewarrior() -> Result<String> {
 
 /// Stop or continue a task
 async fn stop_continue() -> Result<()> {
-    let mut execute_continue:bool = true;
+    let mut execute_continue: bool = true;
     if let Some(tw) = process_timewarrior_data(&call_timewarrior().await?) {
         // we only execute continue if the current task is stopped
         // i.e. has an end defined
@@ -195,24 +187,20 @@ async fn stop_continue() -> Result<()> {
     };
 
     Command::new("timew")
-        .args(&[args])
+        .args([args])
         .stdout(std::process::Stdio::null())
         .spawn()
-        .error("Error spawing timew")?
+        .error("Error spawning timew")?
         .wait()
         .await
         .error("Error executing stop/continue")
         .map(|_| ())
 }
 
-
 /// Process the output from "timew export" and return the first entry
-fn process_timewarrior_data(input:&str) -> Option<TimewarriorData> {
-    let t : Vec<TimewarriorRAW> = serde_json::from_str(input).unwrap_or_default();
-    match t.into_iter().next() {
-        Some(t) => Some(TimewarriorData::from(t)),
-        None => None,
-    }
+fn process_timewarrior_data(input: &str) -> Option<TimewarriorData> {
+    let t: Vec<TimewarriorRAW> = serde_json::from_str(input).unwrap_or_default();
+    t.into_iter().next().map(TimewarriorData::from)
 }
 
 #[cfg(test)]
@@ -221,15 +209,9 @@ mod tests {
 
     #[test]
     fn test_process_timewarrior_data() {
-        assert_eq!(
-            process_timewarrior_data(""),
-            None,
-        );
+        assert_eq!(process_timewarrior_data(""), None,);
 
-        assert_eq!(
-            process_timewarrior_data("[]"),
-            None,
-        );
+        assert_eq!(process_timewarrior_data("[]"), None,);
 
         let a = process_timewarrior_data("[{\"id\":1,\"start\":\"20230131T175754Z\",\"tags\":[\"i3status\"],\"annotation\":\"timewarrior plugin\"}]");
         assert_eq!(a.is_some(), true);
