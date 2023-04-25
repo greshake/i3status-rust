@@ -1,3 +1,35 @@
+//! Time and information of the current timewarrior task
+//!
+//! Clicking left mouse stops or resumes the task
+//!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `interval` | Update interval in seconds | `30`
+//! `format` | A string to customise the output of the block. See placeholders. | `" $icon {$elapsed\|}"`
+//! `info` | The threshold of minutes the task turns into a info state | -
+//! `good` | The threshold of minutes the task turns into a good state | -
+//! `warning` | The threshold of minutes the task turns into a warning state | -
+//! `critical` | The threshold of minutes the task turns into a critical state | -
+//!
+//! Placeholder | Value | Type | Unit
+//! ------------|-------|------|------
+//! `icon`   | A static icon | Icon | -
+//! `elapsed`| Elapsed time in format H:MM (Only present if task is active) | Text | -
+//! `tags`   | Tags of the active task separated by space (Only present if task is active) | Text | -
+//! `annotation` | Annotation of the active task (Only present if task is active) | Text | -
+//!
+//! # Example
+//! ```toml
+//! [[block]]
+//! block  = "timewarrior"
+//! format = " $icon {$tags.rot-str(8,1) $elapsed|}"
+//! ```
+//!
+//! # Icons Used
+//! - `tasks`
+
 use super::prelude::*;
 use tokio::process::Command;
 use chrono::DateTime;
