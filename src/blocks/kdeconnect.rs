@@ -36,18 +36,19 @@
 //! ```toml
 //! [[block]]
 //! block = "kdeconnect"
-//! format = " $icon {$bat_icon $bat_charge|}{ $notif_icon|}{$network_icon $network |}"
+//! format = " $icon {$bat_icon $bat_charge |}{$notif_icon |}{$network_icon $network |}"
 //! bat_good = 101
 //! ```
 //!
 //! # Icons Used
 //! - `bat` (as a progression)
 //! - `bat_charging` (as a progression)
-//! - `net_wireless`
+//! - `net_wireless` (as a progression)
 //! - `notification`
 //! - `phone`
 //! - `phone_disconnected`
 
+use futures::TryFutureExt;
 use tokio::sync::mpsc;
 use zbus::dbus_proxy;
 
@@ -78,7 +79,7 @@ pub struct Config {
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let format = config
         .format
-        .with_default(" $icon $name{ $bat_icon $bat_charge|}{ $notif_icon|} ")?;
+        .with_default(" $icon $name {$bat_icon $bat_charge |}{$notif_icon |}")?;
 
     let battery_state = (
         config.bat_good,
@@ -111,9 +112,13 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             if connected {
                 values.insert("icon".into(), Value::icon(api.get_icon("phone")?));
                 values.insert("connected".into(), Value::flag());
+                let (
+                    (level, charging),
+                    (cellular_network_type, cellular_network_strength),
+                    notif_count,
+                ) = tokio::join!(device.battery(), device.network(), device.notifications());
 
-                let (level, charging) = device.battery().await;
-                if let Some(level) = level {
+                if let Ok(level) = level {
                     values.insert("bat_charge".into(), Value::percents(level));
                     values.insert(
                         "bat_icon".into(),
@@ -137,28 +142,26 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     }
                 }
 
-                let (network, network_strength) = device.network().await;
-                if let Some(net) = network {
+                if let Ok(cellular_network_type) = cellular_network_type {
                     values.insert(
                         "network_icon".into(),
                         Value::icon(api.get_icon_in_progression(
                             "net_wireless",
-                            network_strength.clamp(0, 4) as f64 / 4.0,
+                            cellular_network_strength.clamp(0, 4) as f64 / 4.0,
                         )?),
                     );
 
                     // network strength is 0..=4 from docs of
                     // kdeconnect/plugins/connectivity-report, and I
                     // got -1 for disabled SIM (undocumented)
-                    if network_strength <= 0 {
+                    if cellular_network_strength <= 0 {
                         widget.state = State::Critical;
-                        values.insert("network".into(), Value::text("×".into()));
+                        values.insert("network".into(), Value::text("X".into()));
                     } else {
-                        values.insert("network".into(), Value::text(net));
+                        values.insert("network".into(), Value::text(cellular_network_type));
                     }
                 }
 
-                let notif_count = device.notifications().await.unwrap_or(0);
                 if notif_count > 0 {
                     values.insert("notif_count".into(), Value::number(notif_count));
                     values.insert(
@@ -282,32 +285,34 @@ impl Device {
         self.device_proxy.name().await.ok()
     }
 
-    async fn battery(&self) -> (Option<u8>, bool) {
-        (
+    async fn battery(&self) -> (Result<u8>, bool) {
+        tokio::join!(
             self.battery_proxy
                 .charge()
-                .await
-                .ok()
-                .map(|p| p.clamp(0, 100) as u8),
-            self.battery_proxy.is_charging().await.unwrap_or(false),
+                .map_ok(|p| p.clamp(0, 100) as u8)
+                .map_err(|_| Error::new("Could not get charge")),
+            self.battery_proxy
+                .is_charging()
+                .map_ok_or_else(|_| false, |x| x),
         )
     }
 
-    async fn notifications(&self) -> Option<usize> {
+    async fn notifications(&self) -> usize {
         self.notifications_proxy
             .active_notifications()
             .await
             .map(|n| n.len())
-            .ok()
+            .unwrap_or(0)
     }
 
-    async fn network(&self) -> (Option<String>, i32) {
-        (
-            self.connectivity_proxy.cellular_network_type().await.ok(),
+    async fn network(&self) -> (Result<String>, i32) {
+        tokio::join!(
+            self.connectivity_proxy
+                .cellular_network_type()
+                .map_err(|_| Error::new("Could not get cellular_network_type")),
             self.connectivity_proxy
                 .cellular_network_strength()
-                .await
-                .unwrap_or(0),
+                .map_ok_or_else(|_| 0, |x| x),
         )
     }
 }
