@@ -24,7 +24,7 @@
 //! ```toml
 //! [[block]]
 //! block  = "timewarrior"
-//! format = " $icon {$tags.rot-str(8,1) $elapsed|}"
+//! format = " $icon {$tags.str(w:8,max_w:8,rot_interval:4) $elapsed|}"
 //! ```
 //!
 //! # Icons Used
