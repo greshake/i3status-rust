@@ -20,6 +20,10 @@
 //! `tags`   | Tags of the active task separated by space (Only present if task is active) | Text | -
 //! `annotation` | Annotation of the active task (Only present if task is active) | Text | -
 //!
+//! Action          | Default button
+//! ----------------|----------------
+//! `stop_continue` | Left
+//!
 //! # Example
 //! ```toml
 //! [[block]]
