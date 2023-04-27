@@ -360,6 +360,7 @@
 <a href="#360" id="360">360</a>
 <a href="#361" id="361">361</a>
 <a href="#362" id="362">362</a>
+<a href="#363" id="363">363</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Volume level
 //!
 //! This block displays the volume level (according to PulseAudio or ALSA). Right click to toggle mute, scroll to adjust volume.
@@ -383,7 +384,7 @@
 //! `show_volume_when_muted` | Show the volume even if it is currently muted. | `false`
 //! `headphones_indicator` | Change icon when headphones are plugged in (pulseaudio only) | `false`
 //! `mappings` | Map `output_name` to a custom name. | `None`
-//! `mappings_use_regex` | Let `mappings` match using regex instead of string equality. The replacement will be regex aware and can contain capture groups. | `false`
+//! `mappings_use_regex` | Let `mappings` match using regex instead of string equality. The replacement will be regex aware and can contain capture groups. | `true`
 //! `active_port_mappings` | Map `active_port` to a custom name. The replacement will be regex aware and can contain capture groups. | `None`
 //!
 //! Placeholder          | Value                             | Type   | Unit
@@ -485,7 +486,8 @@
     show_volume_when_muted: bool,
     <span class="attr">#[serde_as(<span class="kw">as </span>= <span class="string">&quot;Option&lt;Map&lt;_, _&gt;&gt;&quot;</span>)]
     </span>mappings: <span class="prelude-ty">Option</span>&lt;Vec&lt;(String, String)&gt;&gt;,
-    mappings_use_regex: bool,
+    <span class="attr">#[default(<span class="bool-val">true</span>)]
+    </span>mappings_use_regex: bool,
     max_vol: <span class="prelude-ty">Option</span>&lt;u32&gt;,
     <span class="attr">#[serde_as(<span class="kw">as </span>= <span class="string">&quot;Map&lt;RegexAsString, _&gt;&quot;</span>)]
     </span>active_port_mappings: Vec&lt;(Regex, String)&gt;,
