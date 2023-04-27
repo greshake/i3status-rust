@@ -221,7 +221,7 @@
 <span class="kw">use </span>zbus::PropertyStream;
 
 <span class="attr">#[derive(Deserialize, Debug, Default)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
     driver: DriverType,
     service: String,

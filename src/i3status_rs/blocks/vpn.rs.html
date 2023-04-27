@@ -344,7 +344,7 @@
 }
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
     driver: DriverType,
     <span class="attr">#[default(<span class="number">10</span>.into())]

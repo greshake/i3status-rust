@@ -271,7 +271,7 @@
 <span class="kw">use </span>std::time::Instant;
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
     device: <span class="prelude-ty">Option</span>&lt;String&gt;,
     format: FormatConfig,

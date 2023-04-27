@@ -471,7 +471,7 @@
 
 <span class="attr">#[serde_as]
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
     driver: SoundDriver,
     name: <span class="prelude-ty">Option</span>&lt;String&gt;,

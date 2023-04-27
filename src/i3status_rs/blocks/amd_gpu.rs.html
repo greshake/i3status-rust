@@ -168,7 +168,7 @@
 <span class="kw">use </span><span class="kw">crate</span>::util::read_file;
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
     <span class="attr">#[default(<span class="string">&quot;card0&quot;</span>.into())]
     </span>device: String,

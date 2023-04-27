@@ -99,7 +99,6 @@
 <a href="#99" id="99">99</a>
 <a href="#100" id="100">100</a>
 <a href="#101" id="101">101</a>
-<a href="#102" id="102">102</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Currently focused window
 //!
 //! This block displays the title and/or the active marks (when used with `sway`/`i3`) of the currently
@@ -135,7 +134,6 @@
 //! [[block]]
 //! block = &quot;focused_window&quot;
 //! format = &quot; $title.str(0,21) | Missing &quot;
-//! ```
 
 </span><span class="kw">mod </span>sway_ipc;
 <span class="kw">mod </span>wlr_toplevel_management;
@@ -146,7 +144,7 @@
 <span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
     format: FormatConfig,
     driver: Driver,

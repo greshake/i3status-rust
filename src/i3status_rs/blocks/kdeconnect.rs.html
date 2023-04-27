@@ -383,7 +383,7 @@
 <span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
     device_id: <span class="prelude-ty">Option</span>&lt;String&gt;,
     format: FormatConfig,

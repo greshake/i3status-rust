@@ -138,7 +138,7 @@
 <span class="kw">use </span>tokio::net::UnixStream;
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
     <span class="attr">#[default(<span class="number">1</span>.into())]
     </span>interval: Seconds,

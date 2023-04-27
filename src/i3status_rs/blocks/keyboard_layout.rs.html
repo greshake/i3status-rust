@@ -478,7 +478,7 @@
 <span class="kw">use </span>zbus::dbus_proxy;
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
     format: FormatConfig,
     driver: KeyboardLayoutDriver,

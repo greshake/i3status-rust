@@ -280,7 +280,7 @@
 <span class="kw">const </span>DEFAULT_WARN: f64 = <span class="number">80.0</span>;
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
     format: FormatConfig,
     format_alt: <span class="prelude-ty">Option</span>&lt;FormatConfig&gt;,

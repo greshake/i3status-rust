@@ -146,7 +146,7 @@
 <span class="kw">use </span>maildir::Maildir;
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
     format: FormatConfig,
     <span class="attr">#[default(<span class="number">5</span>.into())]

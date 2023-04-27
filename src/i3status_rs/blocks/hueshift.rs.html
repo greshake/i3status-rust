@@ -456,7 +456,7 @@
 <span class="kw">use </span>futures::future::pending;
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
     format: FormatConfig,
     <span class="comment">// TODO: Document once this option becomes usefull

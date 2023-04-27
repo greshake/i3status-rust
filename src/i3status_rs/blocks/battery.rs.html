@@ -371,7 +371,7 @@
 <span class="comment">// make_log_macro!(debug, &quot;battery&quot;);
 
 </span><span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
     device: <span class="prelude-ty">Option</span>&lt;String&gt;,
     driver: BatteryDriver,

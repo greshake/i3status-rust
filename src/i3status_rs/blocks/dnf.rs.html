@@ -185,7 +185,7 @@
 <span class="kw">use </span>tokio::process::Command;
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
     <span class="attr">#[default(<span class="number">600</span>.into())]
     </span>interval: Seconds,

@@ -128,6 +128,7 @@
 <a href="#128" id="128">128</a>
 <a href="#129" id="129">129</a>
 <a href="#130" id="130">130</a>
+<a href="#131" id="131">131</a>
 </pre><pre class="rust"><code><span class="doccomment">//! A custom menu
 //!
 //! This block allows you to quickly run a custom shell command. Left-click on this block to
@@ -165,6 +166,7 @@
 <span class="kw">use </span><span class="kw">crate</span>::subprocess::spawn_shell;
 
 <span class="attr">#[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 </span><span class="kw">pub struct </span>Config {
     text: String,
     items: Vec&lt;Item&gt;,

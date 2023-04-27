@@ -351,6 +351,7 @@
 <a href="#351" id="351">351</a>
 <a href="#352" id="352">352</a>
 <a href="#353" id="353">353</a>
+<a href="#354" id="354">354</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Current weather
 //!
 //! This block displays local weather and temperature information. In order to use this block, you
@@ -453,6 +454,7 @@
 <span class="kw">const </span>IP_API_URL: <span class="kw-2">&amp;</span>str = <span class="string">&quot;https://ipapi.co/json&quot;</span>;
 
 <span class="attr">#[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 </span><span class="kw">pub struct </span>Config {
     <span class="attr">#[serde(default = <span class="string">&quot;default_interval&quot;</span>)]
     </span>interval: Seconds,

@@ -784,7 +784,7 @@
 <span class="kw">const </span>PREV_BTN: <span class="kw-2">&amp;</span>str = <span class="string">&quot;prev_btn&quot;</span>;
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
     format: FormatConfig,
     player: PlayerName,

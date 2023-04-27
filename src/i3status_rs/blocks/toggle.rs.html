@@ -153,6 +153,7 @@
 <a href="#153" id="153">153</a>
 <a href="#154" id="154">154</a>
 <a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
 </pre><pre class="rust"><code><span class="doccomment">//! A Toggle block
 //!
 //! You can add commands to be executed to disable the toggle (`command_off`), and to enable it
@@ -208,6 +209,7 @@
 <span class="kw">use </span>tokio::process::Command;
 
 <span class="attr">#[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 </span><span class="kw">pub struct </span>Config {
     format: FormatConfig,
     command_on: String,

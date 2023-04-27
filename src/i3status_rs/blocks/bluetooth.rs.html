@@ -440,6 +440,7 @@
 <a href="#440" id="440">440</a>
 <a href="#441" id="441">441</a>
 <a href="#442" id="442">442</a>
+<a href="#443" id="443">443</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Monitor Bluetooth device
 //!
 //! This block displays the connectivity of a given Bluetooth device and the battery level if this
@@ -507,6 +508,7 @@
 <span class="macro">make_log_macro!</span>(debug, <span class="string">&quot;bluetooth&quot;</span>);
 
 <span class="attr">#[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 </span><span class="kw">pub struct </span>Config {
     mac: String,
     <span class="attr">#[serde(default)]
