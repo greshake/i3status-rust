@@ -73,7 +73,7 @@ impl Driver for NordVpnDriver {
                     .map(|capture| capture[1].to_owned())
                     .map(|code| code.to_uppercase())
                     .map(|code| country_flag_from_iso_code(&code))
-                    .unwrap_or(String::default()),
+                    .unwrap_or_default(),
                 None => String::default(),
             };
             return Ok(Status::Connected {

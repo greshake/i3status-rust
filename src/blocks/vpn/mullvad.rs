@@ -19,7 +19,7 @@ impl MullvadDriver {
     }
 
     async fn run_network_command(arg: &str) -> Result<()> {
-        Command::new("mullvad")
+        let code = Command::new("mullvad")
             .args([arg])
             .stdin(Stdio::null())
             .stdout(Stdio::null())
@@ -28,7 +28,14 @@ impl MullvadDriver {
             .wait()
             .await
             .error(format!("Problem running mullvad command: {arg}"))?;
-        Ok(())
+
+        if code.success() {
+            Ok(())
+        } else {
+            Err(Error::new(format!(
+                "mullvad command failed with nonzero status: {code:?}"
+            )))
+        }
     }
 }
 
@@ -52,7 +59,7 @@ impl Driver for MullvadDriver {
                 .captures_iter(&status)
                 .next()
                 .map(|capture| {
-                    let country_code = capture[1].to_owned().to_uppercase();
+                    let country_code = capture[1].to_uppercase();
                     let country = capture[2].to_owned();
                     let country_flag = country_flag_from_iso_code(&country_code);
                     (country_flag, country)
