@@ -23,6 +23,7 @@
 //! `bat_icon`    | Battery level indicator (only when connected and if supported)           | Icon   | -
 //! `bat_charge`  | Battery charge level (only when connected and if supported)              | Number | %
 //! `network_icon`| Cell Network indicator (only when connected and if supported)            | Icon   | -
+//! `network_type`| Cell Network type (only when connected and if supported)                 | Text   | -
 //! `network`     | Cell Network level (only when connected and if supported)                | Number | %
 //! `notif_icon`  | Only when connected and there are notifications                          | Icon   | -
 //! `notif_count` | Number of notifications on your phone (only when connected and non-zero) | Number | -
@@ -36,7 +37,7 @@
 //! ```toml
 //! [[block]]
 //! block = "kdeconnect"
-//! format = " $icon {$bat_icon $bat_charge |}{$notif_icon |}{$network_icon $network |}"
+//! format = " $icon {$bat_icon $bat_charge |}{$notif_icon |}{$network_icon$network $network_type |}"
 //! bat_good = 101
 //! ```
 //!
@@ -143,22 +144,24 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                 }
 
                 if let Ok(cellular_network_type) = cellular_network_type {
+                    // network strength is 0..=4 from docs of
+                    // kdeconnect/plugins/connectivity-report, and I
+                    // got -1 for disabled SIM (undocumented)
+                    let cell_network_percent = (cellular_network_strength.clamp(0, 4) * 25) as f64;
                     values.insert(
                         "network_icon".into(),
                         Value::icon(api.get_icon_in_progression(
                             "net_wireless",
-                            cellular_network_strength.clamp(0, 4) as f64 / 4.0,
+                            cell_network_percent / 100.0,
                         )?),
                     );
+                    values.insert("network".into(), Value::percents(cell_network_percent));
 
-                    // network strength is 0..=4 from docs of
-                    // kdeconnect/plugins/connectivity-report, and I
-                    // got -1 for disabled SIM (undocumented)
                     if cellular_network_strength <= 0 {
                         widget.state = State::Critical;
-                        values.insert("network".into(), Value::text("X".into()));
+                        values.insert("network_type".into(), Value::text("×".into()));
                     } else {
-                        values.insert("network".into(), Value::text(cellular_network_type));
+                        values.insert("network_type".into(), Value::text(cellular_network_type));
                     }
                 }
 
