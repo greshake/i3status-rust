@@ -64,7 +64,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         let mut state = State::Idle;
         let mut widget = widget.clone();
 
-        let data = process_timewarrior_data(&call_timewarrior().await?);
+        let data = get_current_timewarrior_task().await?;
         if let Some(tw) = data {
             if tw.end.is_none() {
                 // only show active tasks
@@ -126,7 +126,8 @@ struct TimewarriorRAW {
 }
 
 /// TimeWarrior entry
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Deserialize)]
+#[serde(from = "TimewarriorRAW")]
 struct TimewarriorData {
     pub id: u32,
     pub start: DateTime<chrono::offset::Utc>,
@@ -161,24 +162,24 @@ fn format_datetime(date: &DateTime<chrono::Utc>, format: &str) -> String {
     date.format(format).to_string()
 }
 
-/// Execute "timew export now" and return the result
-async fn call_timewarrior() -> Result<String> {
+/// Execute "timew export now" and return the current task (if any)
+async fn get_current_timewarrior_task() -> Result<Option<TimewarriorData>> {
     let out = Command::new("timew")
         .args(["export", "now"])
         .output()
         .await
         .error("failed to run timewarrior")?
         .stdout;
-    let output = std::str::from_utf8(&out)
-        .error("failed to read output from timewarrior (invalid UTF-8)")?
-        .trim();
-    Ok(output.to_string())
+    Ok(serde_json::from_slice::<Vec<TimewarriorData>>(&out)
+        .unwrap_or_default()
+        .into_iter()
+        .next())
 }
 
 /// Stop or continue a task
 async fn stop_continue() -> Result<()> {
     let mut execute_continue: bool = true;
-    if let Some(tw) = process_timewarrior_data(&call_timewarrior().await?) {
+    if let Some(tw) = get_current_timewarrior_task().await? {
         // we only execute continue if the current task is stopped
         // i.e. has an end defined
         execute_continue = tw.end.is_some();
@@ -199,29 +200,4 @@ async fn stop_continue() -> Result<()> {
         .await
         .error("Error executing stop/continue")
         .map(|_| ())
-}
-
-/// Process the output from "timew export" and return the first entry
-fn process_timewarrior_data(input: &str) -> Option<TimewarriorData> {
-    let t: Vec<TimewarriorRAW> = serde_json::from_str(input).unwrap_or_default();
-    t.into_iter().next().map(TimewarriorData::from)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_process_timewarrior_data() {
-        assert_eq!(process_timewarrior_data(""), None,);
-
-        assert_eq!(process_timewarrior_data("[]"), None,);
-
-        let a = process_timewarrior_data("[{\"id\":1,\"start\":\"20230131T175754Z\",\"tags\":[\"i3status\"],\"annotation\":\"timewarrior plugin\"}]");
-        assert_eq!(a.is_some(), true);
-        if let Some(b) = a {
-            assert_eq!(b.id, 1);
-            assert_eq!(b.end, None);
-        }
-    }
 }
