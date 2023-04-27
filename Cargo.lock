@@ -205,18 +205,17 @@ checksum = "89b2fd2a0dcf38d7971e2194b6b6eebab45ae01067456a7fd93d5547a61b70be"
 
 [[package]]
 name = "calibright"
-version = "0.1.2"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a5fc8eb867a90df14dfb16a73010f06cdf089669bb52a9c2adae37776d9f1db"
+checksum = "f070763f03bb9b8a2d18332420a347cc8b149817a8c7f0421efe1b6b1d770459"
 dependencies = [
- "dirs 4.0.0",
- "env_logger",
+ "dirs",
  "futures",
  "log",
  "notify",
  "regex",
  "serde",
- "smart-default 0.6.0",
+ "smart-default",
  "thiserror",
  "tokio",
  "toml",
@@ -565,31 +564,11 @@ dependencies = [
 
 [[package]]
 name = "dirs"
-version = "4.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ca3aa72a6f96ea37bbc5aa912f6788242832f75369bdfdadcb0e38423f100059"
-dependencies = [
- "dirs-sys 0.3.7",
-]
-
-[[package]]
-name = "dirs"
 version = "5.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dece029acd3353e3a58ac2e3eb3c8d6c35827a892edc6cc4138ef9c33df46ecd"
 dependencies = [
- "dirs-sys 0.4.0",
-]
-
-[[package]]
-name = "dirs-sys"
-version = "0.3.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b1d1d91c932ef41c0f2663aa8b0ca0342d444d842c06914aa0a7e352d0bada6"
-dependencies = [
- "libc",
- "redox_users",
- "winapi",
+ "dirs-sys",
 ]
 
 [[package]]
@@ -1014,7 +993,7 @@ dependencies = [
  "chrono-tz",
  "clap",
  "crossbeam-channel",
- "dirs 5.0.0",
+ "dirs",
  "env_logger",
  "futures",
  "hyper",
@@ -1038,7 +1017,7 @@ dependencies = [
  "shellexpand",
  "signal-hook",
  "signal-hook-tokio",
- "smart-default 0.7.1",
+ "smart-default",
  "swayipc-async",
  "tokio",
  "toml",
@@ -2007,7 +1986,7 @@ version = "3.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "da03fa3b94cc19e3ebfc88c4229c49d8f08cdbd1228870a45f0ffdf84988e14b"
 dependencies = [
- "dirs 5.0.0",
+ "dirs",
 ]
 
 [[package]]
@@ -2054,17 +2033,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6528351c9bc8ab22353f9d776db39a20288e8d6c37ef8cfe3317cf875eecfc2d"
 dependencies = [
  "autocfg",
-]
-
-[[package]]
-name = "smart-default"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "133659a15339456eeeb07572eb02a91c91e9815e9cbc89566944d2c8d3efdbf6"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 1.0.109",
 ]
 
 [[package]]
