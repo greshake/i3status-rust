@@ -1,5 +1,10 @@
 # i3status-rust 0.31.0 [unreleased]
 
+### Breaking Changes
+
+* Sound: `mappings_use_regex` now defaults to `true`.
+* `block = "..."` is now required to be the first field of block configs. However, an error in a block's config will not break the entire bar.
+
 ### New Blocks and Features
 
 * Battery: added `charging_format` config option.
