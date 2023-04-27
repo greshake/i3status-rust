@@ -39,7 +39,7 @@ use chrono::DateTime;
 use tokio::process::Command;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     #[default(30.into())]
     interval: Seconds,
