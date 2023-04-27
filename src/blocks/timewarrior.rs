@@ -198,6 +198,8 @@ async fn stop_continue() -> Result<()> {
         .error("Error spawning timew")?
         .wait()
         .await
-        .error("Error executing stop/continue")
-        .map(|_| ())
+        .error("Error executing stop/continue")?
+        .success()
+        .then_some(())
+        .error("timew exited with non-zero value when attempting to stop/contniue")
 }
