@@ -12,6 +12,7 @@
 ### Bug Fixes and Improvements
 
 * Net: fix `missing_format` option.
+* Backlight: fix "calibright config error".
 
 ### Packaging
 
