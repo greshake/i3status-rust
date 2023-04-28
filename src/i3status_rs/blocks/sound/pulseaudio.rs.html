@@ -646,26 +646,26 @@
     <span class="kw">fn </span>new() -&gt; <span class="prelude-ty">Result</span>&lt;Client&gt; {
         <span class="kw">let </span>(send_req, recv_req) = unbounded();
         <span class="kw">let </span>(send_result, recv_result) = unbounded();
-        <span class="kw">let </span>send_result2 = send_result.clone();
-        <span class="kw">let </span>new_connection = |sender: Sender&lt;<span class="prelude-ty">Result</span>&lt;()&gt;&gt;| -&gt; Connection {
-            <span class="kw">let </span>conn = Connection::new();
-            <span class="kw">match </span>conn {
+
+        <span class="kw">let </span>new_connection = <span class="kw">move </span>|| -&gt; <span class="prelude-ty">Option</span>&lt;Connection&gt; {
+            <span class="kw">match </span>Connection::new() {
                 <span class="prelude-val">Ok</span>(conn) =&gt; {
-                    sender.send(<span class="prelude-val">Ok</span>(())).unwrap();
-                    conn
+                    send_result.send(<span class="prelude-val">Ok</span>(())).unwrap();
+                    <span class="prelude-val">Some</span>(conn)
                 }
                 <span class="prelude-val">Err</span>(err) =&gt; {
-                    sender.send(<span class="prelude-val">Err</span>(err)).unwrap();
-                    <span class="macro">panic!</span>(<span class="string">&quot;failed to create pulseaudio connection&quot;</span>);
-                }
+                    send_result.send(<span class="prelude-val">Err</span>(err)).unwrap();
+                    <span class="prelude-val">None
+                </span>}
             }
         };
+        <span class="kw">let </span>new_connection2 = new_connection.clone();
 
         <span class="comment">// requests
         </span>thread::Builder::new()
             .name(<span class="string">&quot;sound_pulseaudio_req&quot;</span>.into())
             .spawn(<span class="kw">move </span>|| {
-                <span class="kw">let </span><span class="kw-2">mut </span>connection = new_connection(send_result);
+                <span class="kw">let </span><span class="prelude-val">Some</span>(<span class="kw-2">mut </span>connection) = new_connection() <span class="kw">else </span>{ <span class="kw">return </span>};
 
                 <span class="kw">loop </span>{
                     <span class="comment">// make sure mainloop dispatched everything
@@ -736,7 +736,7 @@
         </span>thread::Builder::new()
             .name(<span class="string">&quot;sound_pulseaudio_sub&quot;</span>.into())
             .spawn(<span class="kw">move </span>|| {
-                <span class="kw">let </span><span class="kw-2">mut </span>connection = new_connection(send_result2);
+                <span class="kw">let </span><span class="prelude-val">Some</span>(<span class="kw-2">mut </span>connection) = new_connection2() <span class="kw">else </span>{ <span class="kw">return </span>};
 
                 <span class="comment">// subscribe for events
                 </span>connection
