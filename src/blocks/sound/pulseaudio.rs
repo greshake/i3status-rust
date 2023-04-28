@@ -163,26 +163,26 @@ impl Client {
     fn new() -> Result<Client> {
         let (send_req, recv_req) = unbounded();
         let (send_result, recv_result) = unbounded();
-        let send_result2 = send_result.clone();
-        let new_connection = |sender: Sender<Result<()>>| -> Connection {
-            let conn = Connection::new();
-            match conn {
+
+        let new_connection = move || -> Option<Connection> {
+            match Connection::new() {
                 Ok(conn) => {
-                    sender.send(Ok(())).unwrap();
-                    conn
+                    send_result.send(Ok(())).unwrap();
+                    Some(conn)
                 }
                 Err(err) => {
-                    sender.send(Err(err)).unwrap();
-                    panic!("failed to create pulseaudio connection");
+                    send_result.send(Err(err)).unwrap();
+                    None
                 }
             }
         };
+        let new_connection2 = new_connection.clone();
 
         // requests
         thread::Builder::new()
             .name("sound_pulseaudio_req".into())
             .spawn(move || {
-                let mut connection = new_connection(send_result);
+                let Some(mut connection) = new_connection() else { return };
 
                 loop {
                     // make sure mainloop dispatched everything
@@ -253,7 +253,7 @@ impl Client {
         thread::Builder::new()
             .name("sound_pulseaudio_sub".into())
             .spawn(move || {
-                let mut connection = new_connection(send_result2);
+                let Some(mut connection) = new_connection2() else { return };
 
                 // subscribe for events
                 connection
