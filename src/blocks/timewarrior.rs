@@ -7,7 +7,7 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `interval` | Update interval in seconds | `30`
-//! `format` | A string to customise the output of the block. See placeholders. | `" $icon {$elapsed\|}"`
+//! `format` | A string to customise the output of the block. See placeholders. | <code>" $icon {$elapsed &vert;}"</code>
 //! `info` | The threshold of minutes the task turns into a info state | -
 //! `good` | The threshold of minutes the task turns into a good state | -
 //! `warning` | The threshold of minutes the task turns into a warning state | -
@@ -28,7 +28,7 @@
 //! ```toml
 //! [[block]]
 //! block  = "timewarrior"
-//! format = " $icon {$tags.str(w:8,max_w:8,rot_interval:4) $elapsed|}"
+//! format = " $icon {$tags.str(w:8,rot_interval:4) $elapsed|}"
 //! ```
 //!
 //! # Icons Used
