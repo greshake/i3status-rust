@@ -67,6 +67,14 @@ net_bridge = "\uf9a9" # nf-mdi-sitemap
 net_down = "\uf6d9" # nf-mdi-download
 net_loopback = "\uf56e" # nf-mdi-backup_restore
 net_modem = "\uf8f1" # nf-mdi-phone
+net_strength = [
+        "\U000F08FD", # nf-md-network_strength_off_outline
+        "\U000F08FE", # nf-md-network_strength_outline
+        "\U000F08F4", # nf-md-network_strength_1
+        "\U000F08F6", # nf-md-network_strength_2
+        "\U000F08F8", # nf-md-network_strength_3
+        "\U000F08FA", # nf-md-network_strength_4
+]
 net_up = "\ufa51" # nf-mdi-upload
 net_vpn = "\ufa81" # nf-mdi-vpn
 net_wired = "\uf6ff" # nf-mdi-ethernet

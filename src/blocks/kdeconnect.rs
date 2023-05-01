@@ -17,18 +17,18 @@
 //! `bat_critical` | Min battery level below which state is set to critical. | `15`
 //! `hide_disconnected` | Whether to hide this block when disconnected | `true`
 //!
-//! Placeholder   | Value                                                                    | Type   | Unit
-//! --------------|--------------------------------------------------------------------------|--------|-----
-//! `icon`        | Icon based on connection's status                                        | Icon   | -
-//! `bat_icon`    | Battery level indicator (only when connected and if supported)           | Icon   | -
-//! `bat_charge`  | Battery charge level (only when connected and if supported)              | Number | %
-//! `network_icon`| Cell Network indicator (only when connected and if supported)            | Icon   | -
-//! `network_type`| Cell Network type (only when connected and if supported)                 | Text   | -
-//! `network`     | Cell Network level (only when connected and if supported)                | Number | %
-//! `notif_icon`  | Only when connected and there are notifications                          | Icon   | -
-//! `notif_count` | Number of notifications on your phone (only when connected and non-zero) | Number | -
-//! `name`        | Name of your device as reported by KDEConnect (if available)             | Text   | -
-//! `connected`   | Present if your device is connected                                      | Flag   | -
+//! Placeholder        | Value                                                                    | Type   | Unit
+//! -------------------|--------------------------------------------------------------------------|--------|-----
+//! `icon`             | Icon based on connection's status                                        | Icon   | -
+//! `bat_icon`         | Battery level indicator (only when connected and if supported)           | Icon   | -
+//! `bat_charge`       | Battery charge level (only when connected and if supported)              | Number | %
+//! `network_icon`     | Cell Network indicator (only when connected and if supported)            | Icon   | -
+//! `network_type`     | Cell Network type (only when connected and if supported)                 | Text   | -
+//! `network_strength` | Cell Network level (only when connected and if supported)                | Number | %
+//! `notif_icon`       | Only when connected and there are notifications                          | Icon   | -
+//! `notif_count`      | Number of notifications on your phone (only when connected and non-zero) | Number | -
+//! `name`             | Name of your device as reported by KDEConnect (if available)             | Text   | -
+//! `connected`        | Present if your device is connected                                      | Flag   | -
 //!
 //! # Example
 //!
@@ -37,14 +37,14 @@
 //! ```toml
 //! [[block]]
 //! block = "kdeconnect"
-//! format = " $icon {$bat_icon $bat_charge |}{$notif_icon |}{$network_icon$network $network_type |}"
+//! format = " $icon {$bat_icon $bat_charge |}{$notif_icon |}{$network_icon$network_strength $network_type |}"
 //! bat_good = 101
 //! ```
 //!
 //! # Icons Used
 //! - `bat` (as a progression)
 //! - `bat_charging` (as a progression)
-//! - `net_wireless` (as a progression)
+//! - `net_strength` (as a progression)
 //! - `notification`
 //! - `phone`
 //! - `phone_disconnected`
@@ -151,11 +151,14 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     values.insert(
                         "network_icon".into(),
                         Value::icon(api.get_icon_in_progression(
-                            "net_wireless",
+                            "net_strength",
                             cell_network_percent / 100.0,
                         )?),
                     );
-                    values.insert("network".into(), Value::percents(cell_network_percent));
+                    values.insert(
+                        "network_strength".into(),
+                        Value::percents(cell_network_percent),
+                    );
 
                     if cellular_network_strength <= 0 {
                         widget.state = State::Critical;
