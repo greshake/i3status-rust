@@ -405,7 +405,7 @@
         };
 
         widget.set_values(<span class="macro">map! </span>{
-            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;thermometer&quot;</span>)<span class="question-mark">?</span>),
+            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon_in_progression_bound(<span class="string">&quot;thermometer&quot;</span>, max_temp, good, warn)<span class="question-mark">?</span>),
             <span class="string">&quot;average&quot; </span>=&gt; Value::degrees(avg_temp),
             <span class="string">&quot;min&quot; </span>=&gt; Value::degrees(min_temp),
             <span class="string">&quot;max&quot; </span>=&gt; Value::degrees(max_temp),

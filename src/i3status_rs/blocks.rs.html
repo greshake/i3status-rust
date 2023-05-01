@@ -363,6 +363,16 @@
 <a href="#363" id="363">363</a>
 <a href="#364" id="364">364</a>
 <a href="#365" id="365">365</a>
+<a href="#366" id="366">366</a>
+<a href="#367" id="367">367</a>
+<a href="#368" id="368">368</a>
+<a href="#369" id="369">369</a>
+<a href="#370" id="370">370</a>
+<a href="#371" id="371">371</a>
+<a href="#372" id="372">372</a>
+<a href="#373" id="373">373</a>
+<a href="#374" id="374">374</a>
+<a href="#375" id="375">375</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The collection of blocks
 //!
 //! Blocks are defined as a [TOML array of tables](https://github.com/toml-lang/toml/blob/main/toml.md#user-content-array-of-tables): `[[block]]`
@@ -696,6 +706,16 @@
         <span class="self">self</span>.shared_config
             .get_icon(icon, <span class="prelude-val">Some</span>(value))
             .or_error(|| <span class="macro">format!</span>(<span class="string">&quot;Icon &#39;{icon}&#39; not found&quot;</span>))
+    }
+
+    <span class="kw">pub fn </span>get_icon_in_progression_bound(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        icon: <span class="kw-2">&amp;</span>str,
+        value: f64,
+        low: f64,
+        high: f64,
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;String&gt; {
+        <span class="self">self</span>.get_icon_in_progression(icon, (value.clamp(low, high) - low) / (high - low))
     }
 
     <span class="doccomment">/// Repeatedly call provided async function until it succeeds.
