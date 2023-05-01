@@ -1,9 +1,10 @@
+use libc::c_void;
 use libpulse_binding::callbacks::ListResult;
 use libpulse_binding::context::{
     introspect::ServerInfo, introspect::SinkInfo, introspect::SourceInfo, subscribe::Facility,
-    subscribe::InterestMaskSet, subscribe::Operation as SubscribeOperation, Context, FlagSet,
-    State as PulseState,
+    subscribe::InterestMaskSet, Context, FlagSet, State as PulseState,
 };
+use libpulse_binding::mainloop::api::MainloopApi;
 use libpulse_binding::mainloop::standard::{IterateResult, Mainloop};
 use libpulse_binding::proplist::{properties, Proplist};
 use libpulse_binding::volume::{ChannelVolumes, Volume};
@@ -12,6 +13,7 @@ use crossbeam_channel::{unbounded, Sender};
 
 use std::cmp::{max, min};
 use std::convert::{TryFrom, TryInto};
+use std::os::fd::RawFd;
 use std::sync::Mutex;
 use std::thread;
 
@@ -46,7 +48,8 @@ struct Connection {
 }
 
 struct Client {
-    sender: Sender<ClientRequest>,
+    send_req: Sender<ClientRequest>,
+    wake_tx: RawFd,
 }
 
 #[derive(Debug)]
@@ -104,11 +107,9 @@ impl TryFrom<&SinkInfo<'_>> for VolInfo {
 #[derive(Debug)]
 enum ClientRequest {
     GetDefaultDevice,
-    GetInfoByIndex(DeviceKind, u32),
     GetInfoByName(DeviceKind, String),
     SetVolumeByName(DeviceKind, String, ChannelVolumes),
     SetMuteByName(DeviceKind, String, bool),
-    Reconnect,
 }
 
 impl Connection {
@@ -197,88 +198,106 @@ impl Connection {
 impl Client {
     fn new() -> Result<Client> {
         let (send_req, recv_req) = unbounded();
+        let (wake_rx, wake_tx) = nix::unistd::pipe().unwrap();
 
-        // requests
-        Connection::spawn("sound_pulseaudio_req", move |mut connection| {
-            let mut introspector = connection.context.introspect();
-            loop {
-                // make sure mainloop dispatched everything
-                loop {
-                    connection.iterate(false).unwrap();
-                    if connection.context.get_state() == PulseState::Ready {
-                        break;
-                    }
-                }
+        extern "C" fn wake_cb(
+            _: *const MainloopApi,
+            _: *mut libpulse_binding::mainloop::events::io::IoEventInternal,
+            fd: RawFd,
+            _: libpulse_binding::mainloop::events::io::FlagSet,
+            _: *mut c_void,
+        ) {
+            nix::unistd::read(fd, &mut [0; 32]).unwrap();
+        }
 
-                let Ok(req) = recv_req.recv() else { return false };
+        Connection::spawn("sound_pulseaudio", move |mut connection| {
+            let api = connection.mainloop.get_api();
+            (api.io_new.unwrap())(
+                api as *const _,
+                wake_rx,
+                libpulse_binding::mainloop::events::io::FlagSet::INPUT,
+                Some(wake_cb),
+                std::ptr::null_mut(),
+            );
 
-                use ClientRequest::*;
-                match req {
-                    GetDefaultDevice => {
-                        introspector.get_server_info(Client::server_info_callback);
-                    }
-                    GetInfoByIndex(DeviceKind::Sink, index) => {
-                        introspector.get_sink_info_by_index(index, Client::sink_info_callback);
-                    }
-                    GetInfoByIndex(DeviceKind::Source, index) => {
-                        introspector.get_source_info_by_index(index, Client::source_info_callback);
-                    }
-                    GetInfoByName(DeviceKind::Sink, name) => {
-                        introspector.get_sink_info_by_name(&name, Client::sink_info_callback);
-                    }
-                    GetInfoByName(DeviceKind::Source, name) => {
-                        introspector.get_source_info_by_name(&name, Client::source_info_callback);
-                    }
-                    SetVolumeByName(DeviceKind::Sink, name, volumes) => {
-                        introspector.set_sink_volume_by_name(&name, &volumes, None);
-                    }
-                    SetVolumeByName(DeviceKind::Source, name, volumes) => {
-                        introspector.set_source_volume_by_name(&name, &volumes, None);
-                    }
-                    SetMuteByName(DeviceKind::Sink, name, mute) => {
-                        introspector.set_sink_mute_by_name(&name, mute, None);
-                    }
-                    SetMuteByName(DeviceKind::Source, name, mute) => {
-                        introspector.set_source_mute_by_name(&name, mute, None);
-                    }
-                    Reconnect => {
-                        connection.mainloop.iterate(true); // segfaults w/o this line!
-                        return true;
-                    }
-                };
-
-                // send request and receive response
-                connection.iterate(true).unwrap();
-                connection.iterate(true).unwrap();
-            }
-        })?;
-
-        // subscribe
-        let send_req2 = send_req.clone();
-        Connection::spawn("sound_pulseaudio_sub", move |mut connection| {
+            let introspector = connection.context.introspect();
             connection
                 .context
-                .set_subscribe_callback(Some(Box::new(Client::subscribe_callback)));
+                .set_subscribe_callback(Some(Box::new(move |facility, _, index| match facility {
+                    Some(Facility::Server) => {
+                        introspector.get_server_info(Client::server_info_callback);
+                    }
+                    Some(Facility::Sink) => {
+                        introspector.get_sink_info_by_index(index, Client::sink_info_callback);
+                    }
+                    Some(Facility::Source) => {
+                        introspector.get_source_info_by_index(index, Client::source_info_callback);
+                    }
+                    _ => (),
+                })));
+
             connection.context.subscribe(
                 InterestMaskSet::SERVER | InterestMaskSet::SINK | InterestMaskSet::SOURCE,
                 |_| (),
             );
+
+            let mut introspector = connection.context.introspect();
+
             loop {
-                if connection.context.get_state() == libpulse_binding::context::State::Failed {
-                    send_req2.send(ClientRequest::Reconnect).unwrap();
-                    return true;
+                loop {
+                    connection.iterate(true).unwrap();
+                    match connection.context.get_state() {
+                        PulseState::Ready => break,
+                        PulseState::Failed => return true,
+                        _ => (),
+                    }
                 }
-                connection.iterate(true).unwrap();
+
+                loop {
+                    let req = match recv_req.try_recv() {
+                        Ok(x) => x,
+                        Err(e) if e.is_empty() => break,
+                        Err(e) if e.is_disconnected() => return false,
+                        Err(_) => unreachable!(),
+                    };
+
+                    use ClientRequest::*;
+                    match req {
+                        GetDefaultDevice => {
+                            introspector.get_server_info(Client::server_info_callback);
+                        }
+                        GetInfoByName(DeviceKind::Sink, name) => {
+                            introspector.get_sink_info_by_name(&name, Client::sink_info_callback);
+                        }
+                        GetInfoByName(DeviceKind::Source, name) => {
+                            introspector
+                                .get_source_info_by_name(&name, Client::source_info_callback);
+                        }
+                        SetVolumeByName(DeviceKind::Sink, name, volumes) => {
+                            introspector.set_sink_volume_by_name(&name, &volumes, None);
+                        }
+                        SetVolumeByName(DeviceKind::Source, name, volumes) => {
+                            introspector.set_source_volume_by_name(&name, &volumes, None);
+                        }
+                        SetMuteByName(DeviceKind::Sink, name, mute) => {
+                            introspector.set_sink_mute_by_name(&name, mute, None);
+                        }
+                        SetMuteByName(DeviceKind::Source, name, mute) => {
+                            introspector.set_source_mute_by_name(&name, mute, None);
+                        }
+                    };
+                }
             }
         })?;
 
-        Ok(Client { sender: send_req })
+        Ok(Client { send_req, wake_tx })
     }
 
     fn send(request: ClientRequest) -> Result<()> {
         match CLIENT.as_ref() {
             Ok(client) => {
-                client.sender.send(request).unwrap();
+                client.send_req.send(request).unwrap();
+                nix::unistd::write(client.wake_tx, &[0]).unwrap();
                 Ok(())
             }
             Err(err) => Err(Error::new(format!(
@@ -326,20 +345,6 @@ impl Client {
 
             Client::send_update_event();
         }
-    }
-
-    fn subscribe_callback(
-        facility: Option<Facility>,
-        _operation: Option<SubscribeOperation>,
-        index: u32,
-    ) {
-        let request = match facility {
-            Some(Facility::Server) => ClientRequest::GetDefaultDevice,
-            Some(Facility::Sink) => ClientRequest::GetInfoByIndex(DeviceKind::Sink, index),
-            Some(Facility::Source) => ClientRequest::GetInfoByIndex(DeviceKind::Source, index),
-            _ => return,
-        };
-        let _ = Client::send(request);
     }
 
     fn send_update_event() {
