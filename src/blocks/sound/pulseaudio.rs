@@ -108,6 +108,7 @@ enum ClientRequest {
     GetInfoByName(DeviceKind, String),
     SetVolumeByName(DeviceKind, String, ChannelVolumes),
     SetMuteByName(DeviceKind, String, bool),
+    Reconnect,
 }
 
 impl Connection {
@@ -161,14 +162,28 @@ impl Connection {
     /// Create connection in a new thread.
     ///
     /// If connection can't be created, Err is returned.
-    fn spawn(thread_name: &str, f: impl FnOnce(Self) + Send + 'static) -> Result<()> {
+    fn spawn(thread_name: &str, f: impl Fn(Self) -> bool + Send + 'static) -> Result<()> {
         let (tx, rx) = std::sync::mpsc::sync_channel(0);
         thread::Builder::new()
             .name(thread_name.to_owned())
             .spawn(move || match Self::new() {
-                Ok(conn) => {
+                Ok(mut conn) => {
                     tx.send(Ok(())).unwrap();
-                    f(conn);
+                    while f(conn) {
+                        let mut try_i = 0usize;
+                        loop {
+                            try_i += 1;
+                            let delay =
+                                Duration::from_millis(if try_i <= 10 { 100 } else { 5_000 });
+                            eprintln!("reconnecting to pulseaudio in {delay:?}... (try {try_i})");
+                            thread::sleep(delay);
+                            if let Ok(c) = Self::new() {
+                                eprintln!("reconnected to pulseaudio");
+                                conn = c;
+                                break;
+                            }
+                        }
+                    }
                 }
                 Err(err) => {
                     tx.send(Err(err)).unwrap();
@@ -185,6 +200,7 @@ impl Client {
 
         // requests
         Connection::spawn("sound_pulseaudio_req", move |mut connection| {
+            let mut introspector = connection.context.introspect();
             loop {
                 // make sure mainloop dispatched everything
                 loop {
@@ -194,9 +210,7 @@ impl Client {
                     }
                 }
 
-                let Ok(req) = recv_req.recv() else { return };
-
-                let mut introspector = connection.context.introspect();
+                let Ok(req) = recv_req.recv() else { return false };
 
                 use ClientRequest::*;
                 match req {
@@ -227,6 +241,10 @@ impl Client {
                     SetMuteByName(DeviceKind::Source, name, mute) => {
                         introspector.set_source_mute_by_name(&name, mute, None);
                     }
+                    Reconnect => {
+                        connection.mainloop.iterate(true); // segfaults w/o this line!
+                        return true;
+                    }
                 };
 
                 // send request and receive response
@@ -236,7 +254,8 @@ impl Client {
         })?;
 
         // subscribe
-        Connection::spawn("sound_pulseaudio_sub", |mut connection| {
+        let send_req2 = send_req.clone();
+        Connection::spawn("sound_pulseaudio_sub", move |mut connection| {
             connection
                 .context
                 .set_subscribe_callback(Some(Box::new(Client::subscribe_callback)));
@@ -244,7 +263,13 @@ impl Client {
                 InterestMaskSet::SERVER | InterestMaskSet::SINK | InterestMaskSet::SOURCE,
                 |_| (),
             );
-            connection.mainloop.run().unwrap();
+            loop {
+                if connection.context.get_state() == libpulse_binding::context::State::Failed {
+                    send_req2.send(ClientRequest::Reconnect).unwrap();
+                    return true;
+                }
+                connection.iterate(true).unwrap();
+            }
         })?;
 
         Ok(Client { sender: send_req })
