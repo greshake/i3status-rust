@@ -1,4 +1,11 @@
-# i3status-rust 0.31.0 [unreleased]
+# i3status-rust 0.31.1
+
+### Bug Fixes and Improvements
+
+* Update `material-nf` icon set for Nerd Fonts v3.
+* Temperature: the icon now reflects the max temperature (`material-nf` icon set only).
+
+# i3status-rust 0.31.0
 
 ### Breaking Changes
 
