@@ -69,7 +69,7 @@ const FORMAT: &str = "--format=csv,noheader,nounits";
 use super::prelude::*;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     format: FormatConfig,
     #[default(1.into())]

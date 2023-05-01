@@ -141,7 +141,7 @@ const NEXT_BTN: &str = "next_btn";
 const PREV_BTN: &str = "prev_btn";
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     format: FormatConfig,
     player: PlayerName,

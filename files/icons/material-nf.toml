@@ -1,9 +1,5 @@
 # Material from NerdFont
 # https://www.nerdfonts.com/cheat-sheet
-#
-# Note: avoid using icons in the range 0xf500-0xfd46,
-# as they will cause the block to render backwards
-# until https://github.com/ryanoasis/nerd-fonts/issues/365 is fixed
 backlight = [
     "\ue38d", # nf-weather-moon_new
     "\ue3d4", # nf-weather-moon_alt_waxing_gibbous_6
@@ -21,52 +17,52 @@ backlight = [
     "\ue3c8", # nf-weather-moon_alt_waxing_crescent_1
     "\ue39b", # nf-weather-moon_full
 ]
-bat_charging = "\uf583" # nf-mdi-battery_charging
-bat_not_available = "\uf590" # nf-mdi-battery_unknown
+bat_charging = "\U000f0084" # nf-md-battery_charging
+bat_not_available = "\U000f0091" # nf-md-battery_unknown
 bat = [
-    "\uf579", # nf-mdi-battery_10
-    "\uf57a", # nf-mdi-battery_20
-    "\uf57b", # nf-mdi-battery_30
-    "\uf57c", # nf-mdi-battery_40
-    "\uf57d", # nf-mdi-battery_50
-    "\uf57e", # nf-mdi-battery_60
-    "\uf57f", # nf-mdi-battery_70
-    "\uf580", # nf-mdi-battery_80
-    "\uf581", # nf-mdi-battery_90
-    "\uf578", # nf-mdi-battery
+    "\U000f007a", # nf-md-battery_10
+    "\U000f007b", # nf-md-battery_20
+    "\U000f007c", # nf-md-battery_30
+    "\U000f007d", # nf-md-battery_40
+    "\U000f007e", # nf-md-battery_50
+    "\U000f007f", # nf-md-battery_60
+    "\U000f0080", # nf-md-battery_70
+    "\U000f0081", # nf-md-battery_80
+    "\U000f0082", # nf-md-battery_90
+    "\U000f0079", # nf-md-battery
 ]
-bell = "\uf599" # nf-mdi-bell
-bell-slash = "\uf59a" # nf-mdi-bell_off
-bluetooth = "\uf5ae" # nf-mdi-bluetooth
-calendar = "\uf5ec" # nf-mdi-calendar
-cogs = "\uf992" # nf-mdi-settings
+bell = "\U000f009c" # nf-md-bell_outline
+bell-slash = "\U000f009b" # nf-md-bell_off
+bluetooth = "\U000f00af" # nf-md-bluetooth
+calendar = "\U000f00ed" # nf-md-calendar
+cogs = "\U000f0493" # nf-md-cog
 cpu = [
 	"\U000F0F86", # nf-md-speedometer_slow
 	"\U000F0F85", # nf-md-speedometer_medium
 	"\U000F04C5", # nf-md-speedometer
 ]
-cpu_boost_on = "\ufa20"
-cpu_boost_off = "\ufa21"
-disk_drive = "\uf7c9" # nf-mdi-harddisk
+cpu_boost_on = "\U000f0521" # nf-md-toggle_switch
+cpu_boost_off = "\U000f0a19" # nf-md-toggle_switch_off_outline
+disk_drive = "\U000f02ca" # nf-md-harddisk
 docker = "\uf308" # nf-linux-docker
-github = "\uf7a3" # nf-mdi-github_circle
-gpu = "\uf878" # nf-mdi-monitor
-headphones = "\uf7ca" # nf-mdi-headphones
-joystick = "\uf796" # nf-mdi-gamepad_variant
-keyboard = "\uf80b" # nf-mdi-keyboard
-mail = "\uf6ed" # nf-mdi-email
-memory_mem = "\uf85a" # nf-mdi-memory
-memory_swap = "\uf7c9" # nf-mdi-harddisk
-mouse = "\uf87c" # nf-mdi-mouse
-music = "\uf886" # nf-mdi-music_note
-music_next = "\uf9ac" # nf-mdi-skip_next
-music_pause = "\uf8e3" # nf-mdi-pause
-music_play = "\uf909" # nf-mdi-play
-music_prev = "\uf9ad" # nf-mdi-skip_previous
-net_bridge = "\uf9a9" # nf-mdi-sitemap
-net_down = "\uf6d9" # nf-mdi-download
-net_loopback = "\uf56e" # nf-mdi-backup_restore
-net_modem = "\uf8f1" # nf-mdi-phone
+github = "\U000f02a4" # nf-md-github
+gpu = "\U000f0379" # nf-md-monitor
+headphones = "\U000f02cb" # nf-md-headphones
+joystick = "\U000f0297" # nf-md-gamepad_variant
+keyboard = "\U000f030c" # nf-md-keyboard
+mail = "\U000f01ee" # nf-md-email
+memory_mem = "\U000f035b" # nf-md-memory
+memory_swap = "\U000f02ca" # nf-md-harddisk
+mouse = "\U000f037d" # nf-md-mouse
+music = "\U000f075a" # nf-md-music
+music_next = "\U000f04ad" # nf-md-skip_next
+music_pause = "\U000f03e4" # nf-md-pause
+music_play = "\U000f040a" # nf-md-play
+music_prev = "\U000f04ae" # nf-md-skip_previous
+net_bridge = "\U000f04aa" # nf-md-sitemap
+net_down = "\U000f01da" # nf-md-download
+net_loopback = "\U000f006f" # nf-md-backup_restore
+net_modem = "\U000f03f2" # nf-md-phone
 net_strength = [
         "\U000F08FD", # nf-md-network_strength_off_outline
         "\U000F08FE", # nf-md-network_strength_outline
@@ -75,9 +71,9 @@ net_strength = [
         "\U000F08F8", # nf-md-network_strength_3
         "\U000F08FA", # nf-md-network_strength_4
 ]
-net_up = "\ufa51" # nf-mdi-upload
-net_vpn = "\ufa81" # nf-mdi-vpn
-net_wired = "\uf6ff" # nf-mdi-ethernet
+net_up = "\U000f0552" # nf-md-upload
+net_vpn = "\U000f0582" # nf-md-vpn
+net_wired = "\U000f0200" # nf-md-ethernet
 net_wireless = [
 	"\U000F092F", # nf-md-wifi_strength_outline
 	"\U000F091F", # nf-md-wifi_strength_1
@@ -85,41 +81,45 @@ net_wireless = [
 	"\U000F0925", # nf-md-wifi_strength_3
 	"\U000F0928", # nf-md-wifi_strength_4
 ]
-notification = "\uf599" # nf-mdi-bell
-phone = "\uf8f1" # nf-mdi-phone
-phone_disconnected = "\ufb57" # nf-mdi-phone_minus
-ping = "\ufa1e" # nf-mdi-timer_sand
+notification = "\U000f009c" # nf-md-bell_outline
+phone = "\U000f03f2" # nf-md-phone
+phone_disconnected = "\U000f0658" # nf-md-phone_minus
+ping = "\U000f051f" # nf-md-timer_sand
 pomodoro = "\ue001" # nf-pom-pomodoro_done
-pomodoro_break = "\uf0f4" # nf-fa-coffee
-pomodoro_paused = "\uf04c" # nf-fa-pause
-pomodoro_started = "\uf04b" # nf-fa-play
-pomodoro_stopped = "\uf04d" # nf-fa-stop
-resolution = "\uf792" # nf-mdi-fullscreen
-tasks = "\ufac6" # nf-mdi-playlist_check
-tea = "\uf675" # nf-mdi-coffee
-thermometer = "\ufa0e" # nf-mdi-thermometer
-time = "\uf64f" # nf-mdi-clock
-toggle_off = "\ufa21" # nf-mdi-toggle_switch_off
-toggle_on = "\ufa20" # nf-mdi-toggle_switch
-unknown = "\uf685" # nf-mdi-comment_question_outline | TODO: Make default?
-update = "\uf8d4" # nf-mdi-package_up
-uptime = "\uf652" # nf-mdi-clock_in
-volume_muted = "\uf466" # nf-mdi-volume_mute
+pomodoro_break = "\U000f0176" # nf-md-coffee
+pomodoro_paused = "\U000f03e4" # nf-md-pause
+pomodoro_started = "\U000f040a" # nf-md-play
+pomodoro_stopped = "\U000f04db" # nf-md-stop
+resolution = "\U000f0293" # nf-md-fullscreen
+tasks = "\U000f05c7" # nf-md-playlist_check
+tea = "\U000f0d9e" # nf-md-tea
+thermometer = [
+    "\U000f10c3", # nf-md-thermometer_low
+    "\U000f050f", # nf-md-thermometer
+    "\U000f10c2", # nf-md-thermometer_high
+]
+time = "\U000f0150" # nf-md-clock_outline
+toggle_off = "\U000f0a19" # nf-md-toggle_switch_off_outline
+toggle_on = "\U000f0521" # nf-md-toggle_switch
+unknown = "\U000f0186" # nf-md-comment_question_outline | TODO: Make default?
+update = "\U000f03d5" # nf-md-package_up
+uptime = "\U000f0153" # nf-md-clock_in
+volume_muted = "\U000f075f" # nf-md-volume_mute
 volume = [
-    "\ufa7e", # nf-mdi-volume_low
-    "\ufa7f", # nf-mdi-volume_medium
-    "\ufa7d", # nf-mdi-volume_high
+    "\U000f057f", # nf-md-volume_low
+    "\U000f0580", # nf-md-volume_medium
+    "\U000f057e", # nf-md-volume_high
 ]
-microphone_muted = "\uf86c" # nf-mdi-microphone_off
+microphone_muted = "\U000f036d" # nf-md-microphone_off
 microphone = [
-	"\uf86d", # nf-mdi-microphone_outline
-    "\uf86b", # nf-mdi-microphone
-    "\uf86b", # nf-mdi-microphone
+	"\U000f036e", # nf-md-microphone_outline
+    "\U000f036c", # nf-md-microphone
+    "\U000f036c", # nf-md-microphone
 ]
-weather_clouds = "\ufa8f" # nf-mdi-weather_cloudy
-weather_default = "\ufa8f" # Cloud symbol as default
-weather_rain = "\ufa95" # nf-mdi-weather_pouring
-weather_snow = "\ufa97" # nf-mdi-weather_snowy
-weather_sun = "\ufa98" # nf-mdi-weather_sunny
+weather_clouds = "\ue33d" # nf-weather-cloud
+weather_default = "\ue33d" # Cloud symbol as default
+weather_rain = "\ue371" # nf-weather-raindrop
+weather_snow = "\ue36f" # nf-weather-snowflake_cold
+weather_sun = "\ue30d" # nf-weather-day_sunny
 weather_thunder = "\ue31d" # nf-weather-thunderstorm
-xrandr = "\uf879}" # nf-mdi-monitor_multiple
+xrandr = "\U000f037a" # nf-md-monitor_multiple

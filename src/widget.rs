@@ -9,6 +9,7 @@ use smart_default::SmartDefault;
 pub struct Widget {
     pub state: State,
     source: Source,
+    values: Values,
 }
 
 impl Widget {
@@ -48,21 +49,16 @@ impl Widget {
     }
 
     pub fn set_format(&mut self, format: Format) {
-        match &mut self.source {
-            Source::Format(old, _) => *old = format,
-            _ => self.source = Source::Format(format, Default::default()),
-        }
+        self.source = Source::Format(format);
     }
 
     pub fn set_values(&mut self, new_values: Values) {
-        if let Source::Format(_, values) = &mut self.source {
-            *values = new_values;
-        }
+        self.values = new_values;
     }
 
     pub fn intervals(&self) -> Vec<u64> {
         match &self.source {
-            Source::Format(f, _) => f.intervals(),
+            Source::Format(f) => f.intervals(),
             _ => Vec::new(),
         }
     }
@@ -71,7 +67,7 @@ impl Widget {
     pub fn get_data(&self, shared_config: &SharedConfig, id: usize) -> Result<Vec<I3BarBlock>> {
         // Create a "template" block
         let (key_bg, key_fg) = shared_config.theme.get_colors(self.state);
-        let (full, short) = self.source.render(shared_config)?;
+        let (full, short) = self.source.render(shared_config, &self.values)?;
         let mut template = I3BarBlock {
             instance: format!("{id}:"),
             background: key_bg,
@@ -142,14 +138,18 @@ enum Source {
     /// Simple text
     Text(String),
     /// A format template
-    Format(Format, Values),
+    Format(Format),
 }
 
 impl Source {
-    fn render(&self, config: &SharedConfig) -> Result<(Vec<Fragment>, Vec<Fragment>)> {
+    fn render(
+        &self,
+        config: &SharedConfig,
+        values: &Values,
+    ) -> Result<(Vec<Fragment>, Vec<Fragment>)> {
         match self {
             Self::Text(text) => Ok((vec![text.clone().into()], vec![])),
-            Self::Format(format, values) => format.render(values, config),
+            Self::Format(format) => format.render(values, config),
             Self::None => Ok((vec![], vec![])),
         }
     }

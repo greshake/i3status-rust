@@ -34,7 +34,7 @@ use super::prelude::*;
 use tokio::net::UnixStream;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     #[default(1.into())]
     interval: Seconds,

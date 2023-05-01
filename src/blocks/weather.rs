@@ -100,6 +100,7 @@ mod open_weather_map;
 const IP_API_URL: &str = "https://ipapi.co/json";
 
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Config {
     #[serde(default = "default_interval")]
     interval: Seconds,

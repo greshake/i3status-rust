@@ -33,7 +33,6 @@
 //! [[block]]
 //! block = "focused_window"
 //! format = " $title.str(0,21) | Missing "
-//! ```
 
 mod sway_ipc;
 mod wlr_toplevel_management;
@@ -44,7 +43,7 @@ use wlr_toplevel_management::WlrToplevelManagement;
 use super::prelude::*;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     format: FormatConfig,
     driver: Driver,

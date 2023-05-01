@@ -66,7 +66,7 @@ const DEFAULT_INFO: f64 = 60.0;
 const DEFAULT_WARN: f64 = 80.0;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     format: FormatConfig,
     format_alt: Option<FormatConfig>,
@@ -191,7 +191,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         };
 
         widget.set_values(map! {
-            "icon" => Value::icon(api.get_icon("thermometer")?),
+            "icon" => Value::icon(api.get_icon_in_progression_bound("thermometer", max_temp, good, warn)?),
             "average" => Value::degrees(avg_temp),
             "min" => Value::degrees(min_temp),
             "max" => Value::degrees(max_temp),

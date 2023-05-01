@@ -21,7 +21,7 @@
 //! `show_volume_when_muted` | Show the volume even if it is currently muted. | `false`
 //! `headphones_indicator` | Change icon when headphones are plugged in (pulseaudio only) | `false`
 //! `mappings` | Map `output_name` to a custom name. | `None`
-//! `mappings_use_regex` | Let `mappings` match using regex instead of string equality. The replacement will be regex aware and can contain capture groups. | `false`
+//! `mappings_use_regex` | Let `mappings` match using regex instead of string equality. The replacement will be regex aware and can contain capture groups. | `true`
 //! `active_port_mappings` | Map `active_port` to a custom name. The replacement will be regex aware and can contain capture groups. | `None`
 //!
 //! Placeholder          | Value                             | Type   | Unit
@@ -109,7 +109,7 @@ serde_conv!(
 
 #[serde_as]
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     driver: SoundDriver,
     name: Option<String>,
@@ -123,6 +123,7 @@ pub struct Config {
     show_volume_when_muted: bool,
     #[serde_as(as = "Option<Map<_, _>>")]
     mappings: Option<Vec<(String, String)>>,
+    #[default(true)]
     mappings_use_regex: bool,
     max_vol: Option<u32>,
     #[serde_as(as = "Map<RegexAsString, _>")]

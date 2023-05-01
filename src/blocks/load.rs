@@ -33,7 +33,7 @@ use super::prelude::*;
 use crate::util;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     format: FormatConfig,
     #[default(3.into())]

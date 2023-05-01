@@ -62,7 +62,7 @@ use crate::subprocess::{spawn_shell, spawn_shell_sync};
 use std::time::Instant;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     format: FormatConfig,
     #[default("Pomodoro over! Take a break!".into())]

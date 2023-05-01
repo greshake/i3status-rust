@@ -55,7 +55,7 @@
 //! # calibright
 //!
 //! Additional display brightness calibration can be set in `$XDG_CONFIG_HOME/calibright/config.toml`
-//! See [https://github.com/bim9262/calibright] for more details.
+//! See <https://github.com/bim9262/calibright> for more details.
 //! This block will override any global config set in `$XDG_CONFIG_HOME/calibright/config.toml`
 //!
 //! # D-Bus Fallback
@@ -85,7 +85,7 @@ use calibright::{CalibrightBuilder, CalibrightConfig, CalibrightError, DeviceCon
 use super::prelude::*;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     device: Option<String>,
     format: FormatConfig,

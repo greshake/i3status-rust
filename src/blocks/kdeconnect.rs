@@ -61,7 +61,7 @@ use battery::BatteryDbusProxy;
 use connectivity_report::ConnectivityDbusProxy;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     device_id: Option<String>,
     format: FormatConfig,

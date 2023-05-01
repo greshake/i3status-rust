@@ -147,7 +147,7 @@ static PACMAN_DB: Lazy<PathBuf> = Lazy::new(|| {
 });
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     #[default(600.into())]
     interval: Seconds,

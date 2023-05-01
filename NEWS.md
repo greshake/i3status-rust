@@ -1,4 +1,16 @@
-# i3status-rust 0.31.0 [unreleased]
+# i3status-rust 0.31.1
+
+### Bug Fixes and Improvements
+
+* Update `material-nf` icon set for Nerd Fonts v3.
+* Temperature: the icon now reflects the max temperature (`material-nf` icon set only).
+
+# i3status-rust 0.31.0
+
+### Breaking Changes
+
+* Sound: `mappings_use_regex` now defaults to `true`.
+* `block = "..."` is now required to be the first field of block configs. However, an error in a block's config will not break the entire bar.
 
 ### New Blocks and Features
 
@@ -7,6 +19,7 @@
 ### Bug Fixes and Improvements
 
 * Net: fix `missing_format` option.
+* Backlight: fix "calibright config error".
 
 ### Packaging
 

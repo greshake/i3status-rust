@@ -61,7 +61,7 @@ use crate::util::has_command;
 use futures::future::pending;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     format: FormatConfig,
     // TODO: Document once this option becomes usefull

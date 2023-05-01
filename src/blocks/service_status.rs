@@ -46,7 +46,7 @@ use zbus::dbus_proxy;
 use zbus::PropertyStream;
 
 #[derive(Deserialize, Debug, Default)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     driver: DriverType,
     service: String,
