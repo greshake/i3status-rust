@@ -13,6 +13,7 @@ use crossbeam_channel::{unbounded, Sender};
 
 use std::cmp::{max, min};
 use std::convert::{TryFrom, TryInto};
+use std::io;
 use std::os::fd::RawFd;
 use std::sync::Mutex;
 use std::thread;
@@ -49,7 +50,7 @@ struct Connection {
 
 struct Client {
     send_req: Sender<ClientRequest>,
-    wake_tx: RawFd,
+    ml_waker: MainloopWaker,
 }
 
 #[derive(Debug)]
@@ -198,27 +199,10 @@ impl Connection {
 impl Client {
     fn new() -> Result<Client> {
         let (send_req, recv_req) = unbounded();
-        let (wake_rx, wake_tx) = nix::unistd::pipe().unwrap();
-
-        extern "C" fn wake_cb(
-            _: *const MainloopApi,
-            _: *mut libpulse_binding::mainloop::events::io::IoEventInternal,
-            fd: RawFd,
-            _: libpulse_binding::mainloop::events::io::FlagSet,
-            _: *mut c_void,
-        ) {
-            nix::unistd::read(fd, &mut [0; 32]).unwrap();
-        }
+        let ml_waker = MainloopWaker::new().unwrap();
 
         Connection::spawn("sound_pulseaudio", move |mut connection| {
-            let api = connection.mainloop.get_api();
-            (api.io_new.unwrap())(
-                api as *const _,
-                wake_rx,
-                libpulse_binding::mainloop::events::io::FlagSet::INPUT,
-                Some(wake_cb),
-                std::ptr::null_mut(),
-            );
+            ml_waker.attach(connection.mainloop.get_api());
 
             let introspector = connection.context.introspect();
             connection
@@ -290,14 +274,14 @@ impl Client {
             }
         })?;
 
-        Ok(Client { send_req, wake_tx })
+        Ok(Client { send_req, ml_waker })
     }
 
     fn send(request: ClientRequest) -> Result<()> {
         match CLIENT.as_ref() {
             Ok(client) => {
                 client.send_req.send(request).unwrap();
-                nix::unistd::write(client.wake_tx, &[0]).unwrap();
+                client.ml_waker.wake().unwrap();
                 Ok(())
             }
             Err(err) => Err(Error::new(format!(
@@ -477,5 +461,51 @@ impl SoundDevice for Device {
             .recv()
             .await
             .error("Failed to receive new update")
+    }
+}
+
+/// Thread safe [`Mainloop`] waker.
+///
+/// Has the same purpose as [`Mainloop::wake`], but can be shared across threads.
+#[derive(Debug, Clone, Copy)]
+struct MainloopWaker {
+    pipe_tx: RawFd,
+    pipe_rx: RawFd,
+}
+
+impl MainloopWaker {
+    /// Create new waker.
+    fn new() -> io::Result<Self> {
+        let (pipe_rx, pipe_tx) = nix::unistd::pipe2(nix::fcntl::OFlag::O_CLOEXEC)?;
+        Ok(Self { pipe_tx, pipe_rx })
+    }
+
+    /// Attach this waker to a [`Mainloop`].
+    ///
+    /// A waker should be attached to _one_ mainloop.
+    fn attach(self, ml: &MainloopApi) {
+        extern "C" fn wake_cb(
+            _: *const MainloopApi,
+            _: *mut libpulse_binding::mainloop::events::io::IoEventInternal,
+            fd: RawFd,
+            _: libpulse_binding::mainloop::events::io::FlagSet,
+            _: *mut c_void,
+        ) {
+            nix::unistd::read(fd, &mut [0; 32]).unwrap();
+        }
+
+        (ml.io_new.unwrap())(
+            ml as *const _,
+            self.pipe_rx,
+            libpulse_binding::mainloop::events::io::FlagSet::INPUT,
+            Some(wake_cb),
+            std::ptr::null_mut(),
+        );
+    }
+
+    /// Interrupt blocking [`Mainloop::iterate`].
+    fn wake(self) -> io::Result<()> {
+        nix::unistd::write(self.pipe_tx, &[0])?;
+        Ok(())
     }
 }
