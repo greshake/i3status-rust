@@ -29,6 +29,7 @@ words:
   - busctl
   - chrono
   - clippy
+  - CLOEXEC
   - conn
   - conv
   - consts
@@ -41,6 +42,7 @@ words:
   - dmenu
   - dunst
   - execvp
+  - fcntl
   - getaddr
   - getenv
   - gibi

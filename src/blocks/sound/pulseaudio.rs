@@ -1,9 +1,10 @@
+use libc::c_void;
 use libpulse_binding::callbacks::ListResult;
 use libpulse_binding::context::{
     introspect::ServerInfo, introspect::SinkInfo, introspect::SourceInfo, subscribe::Facility,
-    subscribe::InterestMaskSet, subscribe::Operation as SubscribeOperation, Context, FlagSet,
-    State as PulseState,
+    subscribe::InterestMaskSet, Context, FlagSet, State as PulseState,
 };
+use libpulse_binding::mainloop::api::MainloopApi;
 use libpulse_binding::mainloop::standard::{IterateResult, Mainloop};
 use libpulse_binding::proplist::{properties, Proplist};
 use libpulse_binding::volume::{ChannelVolumes, Volume};
@@ -12,6 +13,8 @@ use crossbeam_channel::{unbounded, Sender};
 
 use std::cmp::{max, min};
 use std::convert::{TryFrom, TryInto};
+use std::io;
+use std::os::fd::RawFd;
 use std::sync::Mutex;
 use std::thread;
 
@@ -46,7 +49,8 @@ struct Connection {
 }
 
 struct Client {
-    sender: Sender<ClientRequest>,
+    send_req: Sender<ClientRequest>,
+    ml_waker: MainloopWaker,
 }
 
 #[derive(Debug)]
@@ -104,7 +108,6 @@ impl TryFrom<&SinkInfo<'_>> for VolInfo {
 #[derive(Debug)]
 enum ClientRequest {
     GetDefaultDevice,
-    GetInfoByIndex(DeviceKind, u32),
     GetInfoByName(DeviceKind, String),
     SetVolumeByName(DeviceKind, String, ChannelVolumes),
     SetMuteByName(DeviceKind, String, bool),
@@ -161,14 +164,28 @@ impl Connection {
     /// Create connection in a new thread.
     ///
     /// If connection can't be created, Err is returned.
-    fn spawn(thread_name: &str, f: impl FnOnce(Self) + Send + 'static) -> Result<()> {
+    fn spawn(thread_name: &str, f: impl Fn(Self) -> bool + Send + 'static) -> Result<()> {
         let (tx, rx) = std::sync::mpsc::sync_channel(0);
         thread::Builder::new()
             .name(thread_name.to_owned())
             .spawn(move || match Self::new() {
-                Ok(conn) => {
+                Ok(mut conn) => {
                     tx.send(Ok(())).unwrap();
-                    f(conn);
+                    while f(conn) {
+                        let mut try_i = 0usize;
+                        loop {
+                            try_i += 1;
+                            let delay =
+                                Duration::from_millis(if try_i <= 10 { 100 } else { 5_000 });
+                            eprintln!("reconnecting to pulseaudio in {delay:?}... (try {try_i})");
+                            thread::sleep(delay);
+                            if let Ok(c) = Self::new() {
+                                eprintln!("reconnected to pulseaudio");
+                                conn = c;
+                                break;
+                            }
+                        }
+                    }
                 }
                 Err(err) => {
                     tx.send(Err(err)).unwrap();
@@ -182,78 +199,89 @@ impl Connection {
 impl Client {
     fn new() -> Result<Client> {
         let (send_req, recv_req) = unbounded();
+        let ml_waker = MainloopWaker::new().unwrap();
 
-        // requests
-        Connection::spawn("sound_pulseaudio_req", move |mut connection| {
-            loop {
-                // make sure mainloop dispatched everything
-                loop {
-                    connection.iterate(false).unwrap();
-                    if connection.context.get_state() == PulseState::Ready {
-                        break;
-                    }
-                }
+        Connection::spawn("sound_pulseaudio", move |mut connection| {
+            ml_waker.attach(connection.mainloop.get_api());
 
-                let Ok(req) = recv_req.recv() else { return };
-
-                let mut introspector = connection.context.introspect();
-
-                use ClientRequest::*;
-                match req {
-                    GetDefaultDevice => {
-                        introspector.get_server_info(Client::server_info_callback);
-                    }
-                    GetInfoByIndex(DeviceKind::Sink, index) => {
-                        introspector.get_sink_info_by_index(index, Client::sink_info_callback);
-                    }
-                    GetInfoByIndex(DeviceKind::Source, index) => {
-                        introspector.get_source_info_by_index(index, Client::source_info_callback);
-                    }
-                    GetInfoByName(DeviceKind::Sink, name) => {
-                        introspector.get_sink_info_by_name(&name, Client::sink_info_callback);
-                    }
-                    GetInfoByName(DeviceKind::Source, name) => {
-                        introspector.get_source_info_by_name(&name, Client::source_info_callback);
-                    }
-                    SetVolumeByName(DeviceKind::Sink, name, volumes) => {
-                        introspector.set_sink_volume_by_name(&name, &volumes, None);
-                    }
-                    SetVolumeByName(DeviceKind::Source, name, volumes) => {
-                        introspector.set_source_volume_by_name(&name, &volumes, None);
-                    }
-                    SetMuteByName(DeviceKind::Sink, name, mute) => {
-                        introspector.set_sink_mute_by_name(&name, mute, None);
-                    }
-                    SetMuteByName(DeviceKind::Source, name, mute) => {
-                        introspector.set_source_mute_by_name(&name, mute, None);
-                    }
-                };
-
-                // send request and receive response
-                connection.iterate(true).unwrap();
-                connection.iterate(true).unwrap();
-            }
-        })?;
-
-        // subscribe
-        Connection::spawn("sound_pulseaudio_sub", |mut connection| {
+            let introspector = connection.context.introspect();
             connection
                 .context
-                .set_subscribe_callback(Some(Box::new(Client::subscribe_callback)));
+                .set_subscribe_callback(Some(Box::new(move |facility, _, index| match facility {
+                    Some(Facility::Server) => {
+                        introspector.get_server_info(Client::server_info_callback);
+                    }
+                    Some(Facility::Sink) => {
+                        introspector.get_sink_info_by_index(index, Client::sink_info_callback);
+                    }
+                    Some(Facility::Source) => {
+                        introspector.get_source_info_by_index(index, Client::source_info_callback);
+                    }
+                    _ => (),
+                })));
+
             connection.context.subscribe(
                 InterestMaskSet::SERVER | InterestMaskSet::SINK | InterestMaskSet::SOURCE,
                 |_| (),
             );
-            connection.mainloop.run().unwrap();
+
+            let mut introspector = connection.context.introspect();
+
+            loop {
+                loop {
+                    connection.iterate(true).unwrap();
+                    match connection.context.get_state() {
+                        PulseState::Ready => break,
+                        PulseState::Failed => return true,
+                        _ => (),
+                    }
+                }
+
+                loop {
+                    let req = match recv_req.try_recv() {
+                        Ok(x) => x,
+                        Err(e) if e.is_empty() => break,
+                        Err(e) if e.is_disconnected() => return false,
+                        Err(_) => unreachable!(),
+                    };
+
+                    use ClientRequest::*;
+                    match req {
+                        GetDefaultDevice => {
+                            introspector.get_server_info(Client::server_info_callback);
+                        }
+                        GetInfoByName(DeviceKind::Sink, name) => {
+                            introspector.get_sink_info_by_name(&name, Client::sink_info_callback);
+                        }
+                        GetInfoByName(DeviceKind::Source, name) => {
+                            introspector
+                                .get_source_info_by_name(&name, Client::source_info_callback);
+                        }
+                        SetVolumeByName(DeviceKind::Sink, name, volumes) => {
+                            introspector.set_sink_volume_by_name(&name, &volumes, None);
+                        }
+                        SetVolumeByName(DeviceKind::Source, name, volumes) => {
+                            introspector.set_source_volume_by_name(&name, &volumes, None);
+                        }
+                        SetMuteByName(DeviceKind::Sink, name, mute) => {
+                            introspector.set_sink_mute_by_name(&name, mute, None);
+                        }
+                        SetMuteByName(DeviceKind::Source, name, mute) => {
+                            introspector.set_source_mute_by_name(&name, mute, None);
+                        }
+                    };
+                }
+            }
         })?;
 
-        Ok(Client { sender: send_req })
+        Ok(Client { send_req, ml_waker })
     }
 
     fn send(request: ClientRequest) -> Result<()> {
         match CLIENT.as_ref() {
             Ok(client) => {
-                client.sender.send(request).unwrap();
+                client.send_req.send(request).unwrap();
+                client.ml_waker.wake().unwrap();
                 Ok(())
             }
             Err(err) => Err(Error::new(format!(
@@ -301,20 +329,6 @@ impl Client {
 
             Client::send_update_event();
         }
-    }
-
-    fn subscribe_callback(
-        facility: Option<Facility>,
-        _operation: Option<SubscribeOperation>,
-        index: u32,
-    ) {
-        let request = match facility {
-            Some(Facility::Server) => ClientRequest::GetDefaultDevice,
-            Some(Facility::Sink) => ClientRequest::GetInfoByIndex(DeviceKind::Sink, index),
-            Some(Facility::Source) => ClientRequest::GetInfoByIndex(DeviceKind::Source, index),
-            _ => return,
-        };
-        let _ = Client::send(request);
     }
 
     fn send_update_event() {
@@ -447,5 +461,51 @@ impl SoundDevice for Device {
             .recv()
             .await
             .error("Failed to receive new update")
+    }
+}
+
+/// Thread safe [`Mainloop`] waker.
+///
+/// Has the same purpose as [`Mainloop::wake`], but can be shared across threads.
+#[derive(Debug, Clone, Copy)]
+struct MainloopWaker {
+    pipe_tx: RawFd,
+    pipe_rx: RawFd,
+}
+
+impl MainloopWaker {
+    /// Create new waker.
+    fn new() -> io::Result<Self> {
+        let (pipe_rx, pipe_tx) = nix::unistd::pipe2(nix::fcntl::OFlag::O_CLOEXEC)?;
+        Ok(Self { pipe_tx, pipe_rx })
+    }
+
+    /// Attach this waker to a [`Mainloop`].
+    ///
+    /// A waker should be attached to _one_ mainloop.
+    fn attach(self, ml: &MainloopApi) {
+        extern "C" fn wake_cb(
+            _: *const MainloopApi,
+            _: *mut libpulse_binding::mainloop::events::io::IoEventInternal,
+            fd: RawFd,
+            _: libpulse_binding::mainloop::events::io::FlagSet,
+            _: *mut c_void,
+        ) {
+            nix::unistd::read(fd, &mut [0; 32]).unwrap();
+        }
+
+        (ml.io_new.unwrap())(
+            ml as *const _,
+            self.pipe_rx,
+            libpulse_binding::mainloop::events::io::FlagSet::INPUT,
+            Some(wake_cb),
+            std::ptr::null_mut(),
+        );
+    }
+
+    /// Interrupt blocking [`Mainloop::iterate`].
+    fn wake(self) -> io::Result<()> {
+        nix::unistd::write(self.pipe_tx, &[0])?;
+        Ok(())
     }
 }
