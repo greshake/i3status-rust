@@ -353,24 +353,6 @@
 <a href="#353" id="353">353</a>
 <a href="#354" id="354">354</a>
 <a href="#355" id="355">355</a>
-<a href="#356" id="356">356</a>
-<a href="#357" id="357">357</a>
-<a href="#358" id="358">358</a>
-<a href="#359" id="359">359</a>
-<a href="#360" id="360">360</a>
-<a href="#361" id="361">361</a>
-<a href="#362" id="362">362</a>
-<a href="#363" id="363">363</a>
-<a href="#364" id="364">364</a>
-<a href="#365" id="365">365</a>
-<a href="#366" id="366">366</a>
-<a href="#367" id="367">367</a>
-<a href="#368" id="368">368</a>
-<a href="#369" id="369">369</a>
-<a href="#370" id="370">370</a>
-<a href="#371" id="371">371</a>
-<a href="#372" id="372">372</a>
-<a href="#373" id="373">373</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The collection of blocks
 //!
 //! Blocks are defined as a [TOML array of tables](https://github.com/toml-lang/toml/blob/main/toml.md#user-content-array-of-tables): `[[block]]`
@@ -475,49 +457,31 @@
                 </span>D: de::Deserializer&lt;<span class="lifetime">&#39;de</span>&gt;,
             {
                 <span class="kw">use </span>de::Error;
-                <span class="kw">use </span>de::value::MapAccessDeserializer;
 
-                <span class="kw">struct </span>Visitor;
+                <span class="kw">let </span><span class="kw-2">mut </span>table = toml::Table::deserialize(deserializer)<span class="question-mark">?</span>;
+                <span class="kw">let </span>block_name = table.remove(<span class="string">&quot;block&quot;</span>).ok_or_else(|| D::Error::missing_field(<span class="string">&quot;block&quot;</span>))<span class="question-mark">?</span>;
+                <span class="kw">let </span>block_name = block_name.as_str().ok_or_else(|| D::Error::custom(<span class="string">&quot;block must be a string&quot;</span>))<span class="question-mark">?</span>;
 
-                <span class="kw">impl</span>&lt;<span class="lifetime">&#39;de</span>&gt; de::Visitor&lt;<span class="lifetime">&#39;de</span>&gt; <span class="kw">for </span>Visitor {
-                    <span class="kw">type </span>Value = BlockConfig;
-
-                    <span class="kw">fn </span>expecting(<span class="kw-2">&amp;</span><span class="self">self</span>, formatter: <span class="kw-2">&amp;mut </span>std::fmt::Formatter) -&gt; std::fmt::Result {
-                        formatter.write_str(<span class="string">&quot;a block&quot;</span>)
-                    }
-
-                    <span class="kw">fn </span>visit_map&lt;A&gt;(<span class="self">self</span>, map: A) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>::Value, A::Error&gt;
-                    <span class="kw">where
-                        </span>A: de::MapAccess&lt;<span class="lifetime">&#39;de</span>&gt;
-                    {
-                        <span class="kw">let </span><span class="kw-2">mut </span>table = toml::Table::deserialize(MapAccessDeserializer::new(map))<span class="question-mark">?</span>;
-                        <span class="kw">let </span>block_name = table.remove(<span class="string">&quot;block&quot;</span>).ok_or_else(|| A::Error::missing_field(<span class="string">&quot;block&quot;</span>))<span class="question-mark">?</span>;
-                        <span class="kw">let </span>block_name = block_name.as_str().ok_or_else(|| A::Error::custom(<span class="string">&quot;block must be a string&quot;</span>))<span class="question-mark">?</span>;
-
-                        <span class="kw">match </span>block_name {
-                            $(
-                                $(<span class="attr">#[cfg(feature = <span class="macro-nonterminal">$feat</span>)]</span>)<span class="question-mark">?
-                                </span><span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>) =&gt; <span class="kw">match </span><span class="macro-nonterminal">$block::Config::deserialize</span>(table) {
-                                    <span class="prelude-val">Ok</span>(config) =&gt; <span class="prelude-val">Ok</span>(BlockConfig::<span class="macro-nonterminal">$block</span>(config)),
-                                    <span class="prelude-val">Err</span>(err) =&gt; <span class="prelude-val">Ok</span>(BlockConfig::Err(<span class="prelude-val">Some</span>(<span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>)), <span class="kw">crate</span>::errors::Error::new(err.to_string()))),
-                                }
-                                $(
-                                    <span class="attr">#[cfg(not(feature = <span class="macro-nonterminal">$feat</span>))]
-                                    </span><span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>) =&gt; <span class="prelude-val">Ok</span>(BlockConfig::Err(
-                                        <span class="prelude-val">Some</span>(<span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>)),
-                                        <span class="kw">crate</span>::errors::Error::new(<span class="macro">format!</span>(
-                                            <span class="string">&quot;this block is behind a feature gate &#39;{}&#39; which must be enabled at compile time&quot;</span>,
-                                            <span class="macro-nonterminal">$feat</span>,
-                                        )),
-                                    )),
-                                )<span class="question-mark">?
-                            </span>)*
-                            other =&gt; <span class="prelude-val">Err</span>(A::Error::custom(<span class="macro">format!</span>(<span class="string">&quot;unknown block &#39;{other}&#39;&quot;</span>)))
+                <span class="kw">match </span>block_name {
+                    $(
+                        $(<span class="attr">#[cfg(feature = <span class="macro-nonterminal">$feat</span>)]</span>)<span class="question-mark">?
+                        </span><span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>) =&gt; <span class="kw">match </span><span class="macro-nonterminal">$block::Config::deserialize</span>(table) {
+                            <span class="prelude-val">Ok</span>(config) =&gt; <span class="prelude-val">Ok</span>(BlockConfig::<span class="macro-nonterminal">$block</span>(config)),
+                            <span class="prelude-val">Err</span>(err) =&gt; <span class="prelude-val">Ok</span>(BlockConfig::Err(<span class="prelude-val">Some</span>(<span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>)), <span class="kw">crate</span>::errors::Error::new(err.to_string()))),
                         }
-                    }
+                        $(
+                            <span class="attr">#[cfg(not(feature = <span class="macro-nonterminal">$feat</span>))]
+                            </span><span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>) =&gt; <span class="prelude-val">Ok</span>(BlockConfig::Err(
+                                <span class="prelude-val">Some</span>(<span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>)),
+                                <span class="kw">crate</span>::errors::Error::new(<span class="macro">format!</span>(
+                                    <span class="string">&quot;this block is behind a feature gate &#39;{}&#39; which must be enabled at compile time&quot;</span>,
+                                    <span class="macro-nonterminal">$feat</span>,
+                                )),
+                            )),
+                        )<span class="question-mark">?
+                    </span>)*
+                    other =&gt; <span class="prelude-val">Err</span>(D::Error::custom(<span class="macro">format!</span>(<span class="string">&quot;unknown block &#39;{other}&#39;&quot;</span>)))
                 }
-
-                deserializer.deserialize_map(Visitor)
             }
         }
     };
