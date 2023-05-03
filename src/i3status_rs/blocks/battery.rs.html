@@ -294,6 +294,19 @@
 <a href="#294" id="294">294</a>
 <a href="#295" id="295">295</a>
 <a href="#296" id="296">296</a>
+<a href="#297" id="297">297</a>
+<a href="#298" id="298">298</a>
+<a href="#299" id="299">299</a>
+<a href="#300" id="300">300</a>
+<a href="#301" id="301">301</a>
+<a href="#302" id="302">302</a>
+<a href="#303" id="303">303</a>
+<a href="#304" id="304">304</a>
+<a href="#305" id="305">305</a>
+<a href="#306" id="306">306</a>
+<a href="#307" id="307">307</a>
+<a href="#308" id="308">308</a>
+<a href="#309" id="309">309</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Information about the internal power supply
 //!
 //! This block can display the current battery state (Full, Charging or Discharging), percentage
@@ -425,7 +438,20 @@
     };
 
     <span class="kw">loop </span>{
-        <span class="kw">let </span><span class="kw-2">mut </span>info = device.get_info().<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="comment">// `api.recoverable` doesn&#39;t work in this case because Rust&#39;s type system is not expressive
+        // enough. &quot;captured variable cannot escape `FnMut` closure body&quot;.
+        </span><span class="kw">let </span><span class="kw-2">mut </span>info = <span class="kw">loop </span>{
+            <span class="kw">match </span>device.get_info().<span class="kw">await </span>{
+                <span class="prelude-val">Ok</span>(res) =&gt; <span class="kw">break </span>res,
+                <span class="prelude-val">Err</span>(err) =&gt; {
+                    api.set_error(err).<span class="kw">await</span><span class="question-mark">?</span>;
+                    <span class="macro">select! </span>{
+                        <span class="kw">_ </span>= tokio::time::sleep(api.error_interval) =&gt; (),
+                        <span class="kw">_ </span>= api.wait_for_update_request() =&gt; (),
+                    }
+                }
+            }
+        };
 
         <span class="kw">if let </span><span class="prelude-val">Some</span>(info) = <span class="kw-2">&amp;mut </span>info {
             <span class="kw">if </span>info.capacity &gt;= config.full_threshold {
