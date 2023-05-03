@@ -129,7 +129,20 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     };
 
     loop {
-        let mut info = device.get_info().await?;
+        // `api.recoverable` doesn't work in this case because Rust's type system is not expressive
+        // enough. "captured variable cannot escape `FnMut` closure body".
+        let mut info = loop {
+            match device.get_info().await {
+                Ok(res) => break res,
+                Err(err) => {
+                    api.set_error(err).await?;
+                    select! {
+                        _ = tokio::time::sleep(api.error_interval) => (),
+                        _ = api.wait_for_update_request() => (),
+                    }
+                }
+            }
+        };
 
         if let Some(info) = &mut info {
             if info.capacity >= config.full_threshold {
