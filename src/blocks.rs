@@ -102,49 +102,31 @@ macro_rules! define_blocks {
                 D: de::Deserializer<'de>,
             {
                 use de::Error;
-                use de::value::MapAccessDeserializer;
 
-                struct Visitor;
+                let mut table = toml::Table::deserialize(deserializer)?;
+                let block_name = table.remove("block").ok_or_else(|| D::Error::missing_field("block"))?;
+                let block_name = block_name.as_str().ok_or_else(|| D::Error::custom("block must be a string"))?;
 
-                impl<'de> de::Visitor<'de> for Visitor {
-                    type Value = BlockConfig;
-
-                    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-                        formatter.write_str("a block")
-                    }
-
-                    fn visit_map<A>(self, map: A) -> Result<Self::Value, A::Error>
-                    where
-                        A: de::MapAccess<'de>
-                    {
-                        let mut table = toml::Table::deserialize(MapAccessDeserializer::new(map))?;
-                        let block_name = table.remove("block").ok_or_else(|| A::Error::missing_field("block"))?;
-                        let block_name = block_name.as_str().ok_or_else(|| A::Error::custom("block must be a string"))?;
-
-                        match block_name {
-                            $(
-                                $(#[cfg(feature = $feat)])?
-                                stringify!($block) => match $block::Config::deserialize(table) {
-                                    Ok(config) => Ok(BlockConfig::$block(config)),
-                                    Err(err) => Ok(BlockConfig::Err(Some(stringify!($block)), crate::errors::Error::new(err.to_string()))),
-                                }
-                                $(
-                                    #[cfg(not(feature = $feat))]
-                                    stringify!($block) => Ok(BlockConfig::Err(
-                                        Some(stringify!($block)),
-                                        crate::errors::Error::new(format!(
-                                            "this block is behind a feature gate '{}' which must be enabled at compile time",
-                                            $feat,
-                                        )),
-                                    )),
-                                )?
-                            )*
-                            other => Err(A::Error::custom(format!("unknown block '{other}'")))
+                match block_name {
+                    $(
+                        $(#[cfg(feature = $feat)])?
+                        stringify!($block) => match $block::Config::deserialize(table) {
+                            Ok(config) => Ok(BlockConfig::$block(config)),
+                            Err(err) => Ok(BlockConfig::Err(Some(stringify!($block)), crate::errors::Error::new(err.to_string()))),
                         }
-                    }
+                        $(
+                            #[cfg(not(feature = $feat))]
+                            stringify!($block) => Ok(BlockConfig::Err(
+                                Some(stringify!($block)),
+                                crate::errors::Error::new(format!(
+                                    "this block is behind a feature gate '{}' which must be enabled at compile time",
+                                    $feat,
+                                )),
+                            )),
+                        )?
+                    )*
+                    other => Err(D::Error::custom(format!("unknown block '{other}'")))
                 }
-
-                deserializer.deserialize_map(Visitor)
             }
         }
     };
