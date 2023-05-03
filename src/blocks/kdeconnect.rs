@@ -152,7 +152,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                         "network_icon".into(),
                         Value::icon(api.get_icon_in_progression(
                             "net_strength",
-                            cell_network_percent / 100.0,
+                            (cellular_network_strength + 1).clamp(0, 5) as f64 / 5.0,
                         )?),
                     );
                     values.insert(
@@ -318,7 +318,7 @@ impl Device {
                 .map_err(|_| Error::new("Could not get cellular_network_type")),
             self.connectivity_proxy
                 .cellular_network_strength()
-                .map_ok_or_else(|_| 0, |x| x),
+                .map_ok_or_else(|_| -1, |x| x),
         )
     }
 }

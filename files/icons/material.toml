@@ -53,7 +53,14 @@ net_bridge = "\uefe6" # cable | TODO: broken?
 net_down = "\uf090" # download
 net_loopback = "\ue028" # loop
 net_modem = "\uefe6" # cable | TODO: broken?
-net_strength = "\ue1b9" # network_cell
+net_strength = [
+        "\ue1d0", # signal_cellular_off
+        "\uf0a8", # signal_cellular_0_bar
+        "\uf0a9", # signal_cellular_1_bar
+        "\uf0aa", # signal_cellular_2_bar
+        "\uf0ab", # signal_cellular_3_bar
+        "\ue1c8", # signal_cellular_4_bar
+]
 net_up = "\uf09b" # upload
 net_vpn = "\ue0da" # vpn_key
 net_wired = "\uefe6" # cable | TODO: broken?
