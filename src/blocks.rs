@@ -113,20 +113,18 @@ macro_rules! define_blocks {
                         formatter.write_str("a block")
                     }
 
-                    fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+                    fn visit_map<A>(self, map: A) -> Result<Self::Value, A::Error>
                     where
                         A: de::MapAccess<'de>
                     {
-                        let (block_key, block_value) = map.next_entry::<String, String>()?
-                            .ok_or_else(|| A::Error::missing_field("block"))?;
-                        if block_key != "block" {
-                            return Ok(BlockConfig::Err(None, crate::errors::Error::new("first field must be `block`")));
-                        }
+                        let mut table = toml::Table::deserialize(MapAccessDeserializer::new(map))?;
+                        let block_name = table.remove("block").ok_or_else(|| A::Error::missing_field("block"))?;
+                        let block_name = block_name.as_str().ok_or_else(|| A::Error::custom("block must be a string"))?;
 
-                        match &*block_value {
+                        match block_name {
                             $(
                                 $(#[cfg(feature = $feat)])?
-                                stringify!($block) => match $block::Config::deserialize(MapAccessDeserializer::new(map)) {
+                                stringify!($block) => match $block::Config::deserialize(table) {
                                     Ok(config) => Ok(BlockConfig::$block(config)),
                                     Err(err) => Ok(BlockConfig::Err(Some(stringify!($block)), crate::errors::Error::new(err.to_string()))),
                                 }
