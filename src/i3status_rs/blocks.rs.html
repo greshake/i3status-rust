@@ -371,8 +371,6 @@
 <a href="#371" id="371">371</a>
 <a href="#372" id="372">372</a>
 <a href="#373" id="373">373</a>
-<a href="#374" id="374">374</a>
-<a href="#375" id="375">375</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The collection of blocks
 //!
 //! Blocks are defined as a [TOML array of tables](https://github.com/toml-lang/toml/blob/main/toml.md#user-content-array-of-tables): `[[block]]`
@@ -488,20 +486,18 @@
                         formatter.write_str(<span class="string">&quot;a block&quot;</span>)
                     }
 
-                    <span class="kw">fn </span>visit_map&lt;A&gt;(<span class="self">self</span>, <span class="kw-2">mut </span>map: A) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>::Value, A::Error&gt;
+                    <span class="kw">fn </span>visit_map&lt;A&gt;(<span class="self">self</span>, map: A) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>::Value, A::Error&gt;
                     <span class="kw">where
                         </span>A: de::MapAccess&lt;<span class="lifetime">&#39;de</span>&gt;
                     {
-                        <span class="kw">let </span>(block_key, block_value) = map.next_entry::&lt;String, String&gt;()<span class="question-mark">?
-                            </span>.ok_or_else(|| A::Error::missing_field(<span class="string">&quot;block&quot;</span>))<span class="question-mark">?</span>;
-                        <span class="kw">if </span>block_key != <span class="string">&quot;block&quot; </span>{
-                            <span class="kw">return </span><span class="prelude-val">Ok</span>(BlockConfig::Err(<span class="prelude-val">None</span>, <span class="kw">crate</span>::errors::Error::new(<span class="string">&quot;first field must be `block`&quot;</span>)));
-                        }
+                        <span class="kw">let </span><span class="kw-2">mut </span>table = toml::Table::deserialize(MapAccessDeserializer::new(map))<span class="question-mark">?</span>;
+                        <span class="kw">let </span>block_name = table.remove(<span class="string">&quot;block&quot;</span>).ok_or_else(|| A::Error::missing_field(<span class="string">&quot;block&quot;</span>))<span class="question-mark">?</span>;
+                        <span class="kw">let </span>block_name = block_name.as_str().ok_or_else(|| A::Error::custom(<span class="string">&quot;block must be a string&quot;</span>))<span class="question-mark">?</span>;
 
-                        <span class="kw">match </span><span class="kw-2">&amp;*</span>block_value {
+                        <span class="kw">match </span>block_name {
                             $(
                                 $(<span class="attr">#[cfg(feature = <span class="macro-nonterminal">$feat</span>)]</span>)<span class="question-mark">?
-                                </span><span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>) =&gt; <span class="kw">match </span><span class="macro-nonterminal">$block::Config::deserialize</span>(MapAccessDeserializer::new(map)) {
+                                </span><span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>) =&gt; <span class="kw">match </span><span class="macro-nonterminal">$block::Config::deserialize</span>(table) {
                                     <span class="prelude-val">Ok</span>(config) =&gt; <span class="prelude-val">Ok</span>(BlockConfig::<span class="macro-nonterminal">$block</span>(config)),
                                     <span class="prelude-val">Err</span>(err) =&gt; <span class="prelude-val">Ok</span>(BlockConfig::Err(<span class="prelude-val">Some</span>(<span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>)), <span class="kw">crate</span>::errors::Error::new(err.to_string()))),
                                 }
