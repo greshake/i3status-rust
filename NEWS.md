@@ -1,3 +1,12 @@
+# i3status-rust 0.31.2
+
+### Bug Fixes and Improvements
+
+* Don't require `block = "..."` to be the first field.
+* Battery: automatically recover from some errors.
+* Sound: automatically reconnect to pulseaudio server when connection fails.
+* Vpn: add `mullvad` driver.
+
 # i3status-rust 0.31.1
 
 ### Bug Fixes and Improvements
