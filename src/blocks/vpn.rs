@@ -6,7 +6,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `driver` | Which vpn should be used . Available drivers are: `"nordvpn"` | `"nordvpn"`
+//! `driver` | Which vpn should be used . Available drivers are: `"nordvpn"` and `"mullvad"` | `"nordvpn"`
 //! `interval` | Update interval in seconds. | `10`
 //! `format_connected` | A string to customise the output in case the network is connected. See below for available placeholders. | `" VPN: $icon "`
 //! `format_disconnected` | A string to customise the output in case the network is disconnected. See below for available placeholders. | `" VPN: $icon "`
@@ -28,6 +28,9 @@
 //! ## nordvpn
 //! Behind the scenes the nordvpn driver uses the `nordvpn` command line binary. In order for this to work
 //! properly the binary should be executable without root privileges.
+//!
+//! ## Mullvad
+//! Behind the scenes the mullvad driver uses the `mullvad` command line binary. In order for this to work properly the binary should be executable and mullvad daemon should be running.
 //!
 //! # Example
 //!
@@ -64,11 +67,10 @@
 //! Flags: They are not icons but unicode glyphs. You will need a font that
 //! includes them. Tested with: <https://www.babelstone.co.uk/Fonts/Flags.html>
 
-use regex::Regex;
-use std::process::Stdio;
-use tokio::process::Command;
-
-use crate::util::country_flag_from_iso_code;
+mod nordvpn;
+use nordvpn::NordVpnDriver;
+mod mullvad;
+use mullvad::MullvadDriver;
 
 use super::prelude::*;
 
@@ -77,6 +79,7 @@ use super::prelude::*;
 enum DriverType {
     #[default]
     Nordvpn,
+    Mullvad,
 }
 
 #[derive(Deserialize, Debug, SmartDefault)]
@@ -119,6 +122,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
     let driver: Box<dyn Driver> = match config.driver {
         DriverType::Nordvpn => Box::new(NordVpnDriver::new().await),
+        DriverType::Mullvad => Box::new(MullvadDriver::new().await),
     };
 
     loop {
@@ -174,91 +178,4 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 trait Driver {
     async fn get_status(&self) -> Result<Status>;
     async fn toggle_connection(&self, status: &Status) -> Result<()>;
-}
-
-struct NordVpnDriver {
-    regex_country_code: Regex,
-}
-
-impl NordVpnDriver {
-    async fn new() -> NordVpnDriver {
-        NordVpnDriver {
-            regex_country_code: Regex::new("^.*Hostname:\\s+([a-z]{2}).*$").unwrap(),
-        }
-    }
-
-    async fn run_network_command(arg: &str) -> Result<()> {
-        Command::new("nordvpn")
-            .args([arg])
-            .stdin(Stdio::null())
-            .stdout(Stdio::null())
-            .spawn()
-            .error(format!("Problem running nordvpn command: {arg}"))?
-            .wait()
-            .await
-            .error(format!("Problem running nordvpn command: {arg}"))?;
-        Ok(())
-    }
-
-    async fn find_line(stdout: &str, needle: &str) -> Option<String> {
-        stdout
-            .lines()
-            .find(|s| s.contains(needle))
-            .map(|s| s.to_owned())
-    }
-}
-
-#[async_trait]
-impl Driver for NordVpnDriver {
-    async fn get_status(&self) -> Result<Status> {
-        let stdout = Command::new("nordvpn")
-            .args(["status"])
-            .output()
-            .await
-            .error("Problem running nordvpn command")?
-            .stdout;
-
-        let stdout = String::from_utf8(stdout).error("nordvpn produced non-UTF8 output")?;
-        let line_status = Self::find_line(&stdout, "Status:").await;
-        let line_country = Self::find_line(&stdout, "Country:").await;
-        let line_country_flag = Self::find_line(&stdout, "Hostname:").await;
-        if line_status.is_none() {
-            return Ok(Status::Error);
-        }
-        let line_status = line_status.unwrap();
-
-        if line_status.ends_with("Disconnected") {
-            return Ok(Status::Disconnected);
-        } else if line_status.ends_with("Connected") {
-            let country = match line_country {
-                Some(country_line) => country_line.rsplit(": ").next().unwrap().to_string(),
-                None => String::default(),
-            };
-            let country_flag = match line_country_flag {
-                Some(country_line_flag) => self
-                    .regex_country_code
-                    .captures_iter(&country_line_flag)
-                    .last()
-                    .map(|capture| capture[1].to_owned())
-                    .map(|code| code.to_uppercase())
-                    .map(|code| country_flag_from_iso_code(&code))
-                    .unwrap_or(String::default()),
-                None => String::default(),
-            };
-            return Ok(Status::Connected {
-                country,
-                country_flag,
-            });
-        }
-        Ok(Status::Error)
-    }
-
-    async fn toggle_connection(&self, status: &Status) -> Result<()> {
-        match status {
-            Status::Connected { .. } => Self::run_network_command("disconnect").await?,
-            Status::Disconnected => Self::run_network_command("connect").await?,
-            Status::Error => (),
-        }
-        Ok(())
-    }
 }
