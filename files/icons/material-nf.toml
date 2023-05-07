@@ -63,7 +63,7 @@ net_bridge = "\U000f04aa" # nf-md-sitemap
 net_down = "\U000f01da" # nf-md-download
 net_loopback = "\U000f006f" # nf-md-backup_restore
 net_modem = "\U000f03f2" # nf-md-phone
-net_strength = [
+net_cellular = [
         "\U000F08FD", # nf-md-network_strength_off_outline
         "\U000F08FE", # nf-md-network_strength_outline
         "\U000F08F4", # nf-md-network_strength_1

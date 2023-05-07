@@ -44,7 +44,7 @@
 //! # Icons Used
 //! - `bat` (as a progression)
 //! - `bat_charging` (as a progression)
-//! - `net_strength` (as a progression)
+//! - `net_cellular` (as a progression)
 //! - `notification`
 //! - `phone`
 //! - `phone_disconnected`
@@ -151,7 +151,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     values.insert(
                         "network_icon".into(),
                         Value::icon(api.get_icon_in_progression(
-                            "net_strength",
+                            "net_cellular",
                             (cellular_network_strength + 1).clamp(0, 5) as f64 / 5.0,
                         )?),
                     );
