@@ -1,11 +1,20 @@
+# i3status-rust 0.31.3 [unreleased]
+
+### New Blocks and Features
+
+* Kdeconnect: Add connectivity report (cell network)
+
 # i3status-rust 0.31.2
+
+### New Blocks and Features
+
+* Vpn: add `mullvad` driver.
 
 ### Bug Fixes and Improvements
 
 * Don't require `block = "..."` to be the first field.
 * Battery: automatically recover from some errors.
 * Sound: automatically reconnect to pulseaudio server when connection fails.
-* Vpn: add `mullvad` driver.
 
 # i3status-rust 0.31.1
 
