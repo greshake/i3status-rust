@@ -156,6 +156,7 @@ pub struct Config {
     format_up_to_date: FormatConfig,
     warning_updates_regex: Option<String>,
     critical_updates_regex: Option<String>,
+    pacman_command: Option<String>,
     aur_command: Option<String>,
 }
 
@@ -183,9 +184,14 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             config
                 .aur_command
                 .error("$aur or $both found in format string but no aur_command supplied")?,
+            config
+                .pacman_command
         )
     } else if pacman && !aur {
-        Watched::Pacman
+        Watched::Pacman(
+            config
+                .pacman_command
+        )
     } else if !pacman && aur {
         Watched::Aur(
             config
@@ -196,7 +202,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         Watched::None
     };
 
-    if matches!(watched, Watched::Pacman | Watched::Both(_)) {
+    if matches!(watched, Watched::Pacman(None) | Watched::Both(_, None)) {
         check_fakeroot_command_exists().await?;
     }
 
@@ -215,8 +221,9 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
     loop {
         let (mut values, warning, critical, total) = match &watched {
-            Watched::Pacman => {
-                let updates = api.recoverable(get_pacman_available_updates).await?;
+            Watched::Pacman(pacman_command) => {
+                let updates = api
+                    .recoverable(|| get_pacman_available_updates(pacman_command)).await?;
                 let count = get_update_count(&updates);
                 let values = map!("pacman" => Value::number(count));
                 let warning = warning_updates_regex
@@ -243,11 +250,11 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     .map_or(false, |regex| has_matching_update(&updates, regex));
                 (values, warning, critical, count)
             }
-            Watched::Both(aur_command) => {
+            Watched::Both(aur_command, pacman_command) => {
                 let (pacman_updates, aur_updates) = api
                     .recoverable(|| async {
                         tokio::try_join!(
-                            get_pacman_available_updates(),
+                            get_pacman_available_updates(pacman_command),
                             get_aur_available_updates(aur_command)
                         )
                     })
@@ -304,20 +311,26 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 #[derive(Debug, PartialEq, Eq)]
 enum Watched {
     None,
-    Pacman,
+    Pacman(Option<String>),
     Aur(String),
-    Both(String),
+    Both(String, Option<String>),
 }
 
-async fn check_fakeroot_command_exists() -> Result<()> {
-    if !has_command("fakeroot").await? {
-        Err(Error::new("fakeroot not found"))
-    } else {
-        Ok(())
-    }
+async fn get_pacman_available_updates(pacman_command: &Option<String>) -> Result<String> {
+    let Some(pacman_command) = pacman_command else {
+        return get_pacman_available_updates_fakeroot().await
+    };
+    let stdout = Command::new("sh")
+        .args(["-c", pacman_command])
+        .output()
+        .await
+        .or_error(|| format!("pacman command: {pacman_command} failed"))?
+        .stdout;
+    String::from_utf8(stdout)
+        .error("There was a problem while converting the pacman command output to a string")
 }
 
-async fn get_pacman_available_updates() -> Result<String> {
+async fn get_pacman_available_updates_fakeroot() -> Result<String> {
     // Create the determined `checkup-db` path recursively
     create_dir_all(&*PACMAN_UPDATES_DB).await.or_error(|| {
         format!(
@@ -370,6 +383,14 @@ async fn get_pacman_available_updates() -> Result<String> {
         .stdout;
 
     String::from_utf8(stdout).error("Pacman produced non-UTF8 output")
+}
+
+async fn check_fakeroot_command_exists() -> Result<()> {
+    if !has_command("fakeroot").await? {
+        Err(Error::new("fakeroot not found"))
+    } else {
+        Ok(())
+    }
 }
 
 async fn get_aur_available_updates(aur_command: &str) -> Result<String> {
