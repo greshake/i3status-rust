@@ -330,6 +330,56 @@
 <a href="#330" id="330">330</a>
 <a href="#331" id="331">331</a>
 <a href="#332" id="332">332</a>
+<a href="#333" id="333">333</a>
+<a href="#334" id="334">334</a>
+<a href="#335" id="335">335</a>
+<a href="#336" id="336">336</a>
+<a href="#337" id="337">337</a>
+<a href="#338" id="338">338</a>
+<a href="#339" id="339">339</a>
+<a href="#340" id="340">340</a>
+<a href="#341" id="341">341</a>
+<a href="#342" id="342">342</a>
+<a href="#343" id="343">343</a>
+<a href="#344" id="344">344</a>
+<a href="#345" id="345">345</a>
+<a href="#346" id="346">346</a>
+<a href="#347" id="347">347</a>
+<a href="#348" id="348">348</a>
+<a href="#349" id="349">349</a>
+<a href="#350" id="350">350</a>
+<a href="#351" id="351">351</a>
+<a href="#352" id="352">352</a>
+<a href="#353" id="353">353</a>
+<a href="#354" id="354">354</a>
+<a href="#355" id="355">355</a>
+<a href="#356" id="356">356</a>
+<a href="#357" id="357">357</a>
+<a href="#358" id="358">358</a>
+<a href="#359" id="359">359</a>
+<a href="#360" id="360">360</a>
+<a href="#361" id="361">361</a>
+<a href="#362" id="362">362</a>
+<a href="#363" id="363">363</a>
+<a href="#364" id="364">364</a>
+<a href="#365" id="365">365</a>
+<a href="#366" id="366">366</a>
+<a href="#367" id="367">367</a>
+<a href="#368" id="368">368</a>
+<a href="#369" id="369">369</a>
+<a href="#370" id="370">370</a>
+<a href="#371" id="371">371</a>
+<a href="#372" id="372">372</a>
+<a href="#373" id="373">373</a>
+<a href="#374" id="374">374</a>
+<a href="#375" id="375">375</a>
+<a href="#376" id="376">376</a>
+<a href="#377" id="377">377</a>
+<a href="#378" id="378">378</a>
+<a href="#379" id="379">379</a>
+<a href="#380" id="380">380</a>
+<a href="#381" id="381">381</a>
+<a href="#382" id="382">382</a>
 </pre><pre class="rust"><code><span class="doccomment">//! [KDEConnect](https://community.kde.org/KDEConnect) indicator
 //!
 //! Display info from the currently connected device in KDEConnect, updated asynchronously.
@@ -349,15 +399,18 @@
 //! `bat_critical` | Min battery level below which state is set to critical. | `15`
 //! `hide_disconnected` | Whether to hide this block when disconnected | `true`
 //!
-//! Placeholder   | Value                                                                    | Type   | Unit
-//! --------------|--------------------------------------------------------------------------|--------|-----
-//! `icon`        | Icon based on connection&#39;s status                                        | Icon   | -
-//! `bat_icon`    | Battery level indicator (only when connected and if supported)           | Icon   | -
-//! `bat_charge`  | Battery charge level (only when connected and if supported)              | Number | %
-//! `notif_icon`  | Only when connected and there are notifications                          | Icon   | -
-//! `notif_count` | Number of notifications on your phone (only when connected and non-zero) | Number | -
-//! `name`        | Name of your device as reported by KDEConnect (if available)             | Text   | -
-//! `connected`   | Present if your device is connected                                      | Flag   | -
+//! Placeholder        | Value                                                                    | Type   | Unit
+//! -------------------|--------------------------------------------------------------------------|--------|-----
+//! `icon`             | Icon based on connection&#39;s status                                        | Icon   | -
+//! `bat_icon`         | Battery level indicator (only when connected and if supported)           | Icon   | -
+//! `bat_charge`       | Battery charge level (only when connected and if supported)              | Number | %
+//! `network_icon`     | Cell Network indicator (only when connected and if supported)            | Icon   | -
+//! `network_type`     | Cell Network type (only when connected and if supported)                 | Text   | -
+//! `network_strength` | Cell Network level (only when connected and if supported)                | Number | %
+//! `notif_icon`       | Only when connected and there are notifications                          | Icon   | -
+//! `notif_count`      | Number of notifications on your phone (only when connected and non-zero) | Number | -
+//! `name`             | Name of your device as reported by KDEConnect (if available)             | Text   | -
+//! `connected`        | Present if your device is connected                                      | Flag   | -
 //!
 //! # Example
 //!
@@ -366,21 +419,28 @@
 //! ```toml
 //! [[block]]
 //! block = &quot;kdeconnect&quot;
-//! format = &quot; $icon {$bat_icon $bat_charge|}{ $notif_icon|} &quot;
+//! format = &quot; $icon {$bat_icon $bat_charge |}{$notif_icon |}{$network_icon$network_strength $network_type |}&quot;
 //! bat_good = 101
 //! ```
 //!
 //! # Icons Used
 //! - `bat` (as a progression)
 //! - `bat_charging` (as a progression)
+//! - `net_cellular` (as a progression)
 //! - `notification`
 //! - `phone`
 //! - `phone_disconnected`
 
-</span><span class="kw">use </span>tokio::sync::mpsc;
+</span><span class="kw">use </span>futures::TryFutureExt;
+<span class="kw">use </span>tokio::sync::mpsc;
 <span class="kw">use </span>zbus::dbus_proxy;
 
 <span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+
+<span class="kw">mod </span>battery;
+<span class="kw">mod </span>connectivity_report;
+<span class="kw">use </span>battery::BatteryDbusProxy;
+<span class="kw">use </span>connectivity_report::ConnectivityDbusProxy;
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
@@ -402,7 +462,7 @@
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span>format = config
         .format
-        .with_default(<span class="string">&quot; $icon $name{ $bat_icon $bat_charge|}{ $notif_icon|} &quot;</span>)<span class="question-mark">?</span>;
+        .with_default(<span class="string">&quot; $icon $name {$bat_icon $bat_charge |}{$notif_icon |}&quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span>battery_state = (
         config.bat_good,
@@ -435,9 +495,13 @@
             <span class="kw">if </span>connected {
                 values.insert(<span class="string">&quot;icon&quot;</span>.into(), Value::icon(api.get_icon(<span class="string">&quot;phone&quot;</span>)<span class="question-mark">?</span>));
                 values.insert(<span class="string">&quot;connected&quot;</span>.into(), Value::flag());
+                <span class="kw">let </span>(
+                    (level, charging),
+                    (cellular_network_type, cellular_network_strength),
+                    notif_count,
+                ) = <span class="macro">tokio::join!</span>(device.battery(), device.network(), device.notifications());
 
-                <span class="kw">let </span>(level, charging) = device.battery().<span class="kw">await</span>;
-                <span class="kw">if let </span><span class="prelude-val">Some</span>(level) = level {
+                <span class="kw">if let </span><span class="prelude-val">Ok</span>(level) = level {
                     values.insert(<span class="string">&quot;bat_charge&quot;</span>.into(), Value::percents(level));
                     values.insert(
                         <span class="string">&quot;bat_icon&quot;</span>.into(),
@@ -461,7 +525,31 @@
                     }
                 }
 
-                <span class="kw">let </span>notif_count = device.notifications().<span class="kw">await</span>.unwrap_or(<span class="number">0</span>);
+                <span class="kw">if let </span><span class="prelude-val">Ok</span>(cellular_network_type) = cellular_network_type {
+                    <span class="comment">// network strength is 0..=4 from docs of
+                    // kdeconnect/plugins/connectivity-report, and I
+                    // got -1 for disabled SIM (undocumented)
+                    </span><span class="kw">let </span>cell_network_percent = (cellular_network_strength.clamp(<span class="number">0</span>, <span class="number">4</span>) * <span class="number">25</span>) <span class="kw">as </span>f64;
+                    values.insert(
+                        <span class="string">&quot;network_icon&quot;</span>.into(),
+                        Value::icon(api.get_icon_in_progression(
+                            <span class="string">&quot;net_cellular&quot;</span>,
+                            (cellular_network_strength + <span class="number">1</span>).clamp(<span class="number">0</span>, <span class="number">5</span>) <span class="kw">as </span>f64 / <span class="number">5.0</span>,
+                        )<span class="question-mark">?</span>),
+                    );
+                    values.insert(
+                        <span class="string">&quot;network_strength&quot;</span>.into(),
+                        Value::percents(cell_network_percent),
+                    );
+
+                    <span class="kw">if </span>cellular_network_strength &lt;= <span class="number">0 </span>{
+                        widget.state = State::Critical;
+                        values.insert(<span class="string">&quot;network_type&quot;</span>.into(), Value::text(<span class="string">&quot;×&quot;</span>.into()));
+                    } <span class="kw">else </span>{
+                        values.insert(<span class="string">&quot;network_type&quot;</span>.into(), Value::text(cellular_network_type));
+                    }
+                }
+
                 <span class="kw">if </span>notif_count &gt; <span class="number">0 </span>{
                     values.insert(<span class="string">&quot;notif_count&quot;</span>.into(), Value::number(notif_count));
                     values.insert(
@@ -502,6 +590,7 @@
     device_proxy: DeviceDbusProxy&lt;<span class="lifetime">&#39;static</span>&gt;,
     battery_proxy: BatteryDbusProxy&lt;<span class="lifetime">&#39;static</span>&gt;,
     notifications_proxy: NotificationsDbusProxy&lt;<span class="lifetime">&#39;static</span>&gt;,
+    connectivity_proxy: ConnectivityDbusProxy&lt;<span class="lifetime">&#39;static</span>&gt;,
 }
 
 <span class="kw">impl </span>Device {
@@ -509,6 +598,7 @@
         <span class="kw">let </span>device_path = <span class="macro">format!</span>(<span class="string">&quot;/modules/kdeconnect/devices/{id}&quot;</span>);
         <span class="kw">let </span>battery_path = <span class="macro">format!</span>(<span class="string">&quot;{device_path}/battery&quot;</span>);
         <span class="kw">let </span>notifications_path = <span class="macro">format!</span>(<span class="string">&quot;{device_path}/notifications&quot;</span>);
+        <span class="kw">let </span>connectivity_path = <span class="macro">format!</span>(<span class="string">&quot;{device_path}/connectivity_report&quot;</span>);
 
         <span class="kw">let </span>device_proxy = DeviceDbusProxy::builder(conn)
             .cache_properties(zbus::CacheProperties::No)
@@ -531,6 +621,13 @@
             </span>.build()
             .<span class="kw">await
             </span>.error(<span class="string">&quot;Failed to create BatteryDbusProxy&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>connectivity_proxy = ConnectivityDbusProxy::builder(conn)
+            .cache_properties(zbus::CacheProperties::No)
+            .path(connectivity_path)
+            .error(<span class="string">&quot;Failed to set connectivity path&quot;</span>)<span class="question-mark">?
+            </span>.build()
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to create ConnectivityDbusProxy&quot;</span>)<span class="question-mark">?</span>;
 
         <span class="kw">let </span><span class="kw-2">mut </span>s1 = device_proxy
             .receive_all_signals()
@@ -544,6 +641,10 @@
             .receive_all_signals()
             .<span class="kw">await
             </span>.error(<span class="string">&quot;Failed to receive signals&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span><span class="kw-2">mut </span>s4 = connectivity_proxy
+            .receive_refreshed()
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to receive signals&quot;</span>)<span class="question-mark">?</span>;
 
         tokio::spawn(<span class="kw">async move </span>{
             <span class="kw">loop </span>{
@@ -551,6 +652,7 @@
                     <span class="kw">_ </span>= s1.next() =&gt; tx.send(()).<span class="kw">await</span>.unwrap(),
                     <span class="kw">_ </span>= s2.next() =&gt; tx.send(()).<span class="kw">await</span>.unwrap(),
                     <span class="kw">_ </span>= s3.next() =&gt; tx.send(()).<span class="kw">await</span>.unwrap(),
+                    <span class="kw">_ </span>= s4.next() =&gt; tx.send(()).<span class="kw">await</span>.unwrap(),
                 }
             }
         });
@@ -559,6 +661,7 @@
             device_proxy,
             battery_proxy,
             notifications_proxy,
+            connectivity_proxy,
         })
     }
 
@@ -570,23 +673,35 @@
         <span class="self">self</span>.device_proxy.name().<span class="kw">await</span>.ok()
     }
 
-    <span class="kw">async fn </span>battery(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; (<span class="prelude-ty">Option</span>&lt;u8&gt;, bool) {
-        (
+    <span class="kw">async fn </span>battery(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; (<span class="prelude-ty">Result</span>&lt;u8&gt;, bool) {
+        <span class="macro">tokio::join!</span>(
             <span class="self">self</span>.battery_proxy
                 .charge()
-                .<span class="kw">await
-                </span>.ok()
-                .map(|p| p.clamp(<span class="number">0</span>, <span class="number">100</span>) <span class="kw">as </span>u8),
-            <span class="self">self</span>.battery_proxy.is_charging().<span class="kw">await</span>.unwrap_or(<span class="bool-val">false</span>),
+                .map_ok(|p| p.clamp(<span class="number">0</span>, <span class="number">100</span>) <span class="kw">as </span>u8)
+                .map_err(|<span class="kw">_</span>| Error::new(<span class="string">&quot;Could not get charge&quot;</span>)),
+            <span class="self">self</span>.battery_proxy
+                .is_charging()
+                .map_ok_or_else(|<span class="kw">_</span>| <span class="bool-val">false</span>, |x| x),
         )
     }
 
-    <span class="kw">async fn </span>notifications(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;usize&gt; {
+    <span class="kw">async fn </span>notifications(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; usize {
         <span class="self">self</span>.notifications_proxy
             .active_notifications()
             .<span class="kw">await
             </span>.map(|n| n.len())
-            .ok()
+            .unwrap_or(<span class="number">0</span>)
+    }
+
+    <span class="kw">async fn </span>network(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; (<span class="prelude-ty">Result</span>&lt;String&gt;, i32) {
+        <span class="macro">tokio::join!</span>(
+            <span class="self">self</span>.connectivity_proxy
+                .cellular_network_type()
+                .map_err(|<span class="kw">_</span>| Error::new(<span class="string">&quot;Could not get cellular_network_type&quot;</span>)),
+            <span class="self">self</span>.connectivity_proxy
+                .cellular_network_strength()
+                .map_ok_or_else(|<span class="kw">_</span>| -<span class="number">1</span>, |x| x),
+        )
     }
 }
 
@@ -628,21 +743,6 @@
 
     <span class="attr">#[dbus_proxy(signal, name = <span class="string">&quot;nameChanged&quot;</span>)]
     </span><span class="kw">fn </span>name_changed_(<span class="kw-2">&amp;</span><span class="self">self</span>, name: <span class="kw-2">&amp;</span>str) -&gt; zbus::Result&lt;()&gt;;
-}
-
-<span class="attr">#[dbus_proxy(
-    interface = <span class="string">&quot;org.kde.kdeconnect.device.battery&quot;</span>,
-    default_service = <span class="string">&quot;org.kde.kdeconnect&quot;
-</span>)]
-</span><span class="kw">trait </span>BatteryDbus {
-    <span class="attr">#[dbus_proxy(signal, name = <span class="string">&quot;refreshed&quot;</span>)]
-    </span><span class="kw">fn </span>refreshed(<span class="kw-2">&amp;</span><span class="self">self</span>, is_charging: bool, charge: i32) -&gt; zbus::Result&lt;()&gt;;
-
-    <span class="attr">#[dbus_proxy(property, name = <span class="string">&quot;charge&quot;</span>)]
-    </span><span class="kw">fn </span>charge(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;i32&gt;;
-
-    <span class="attr">#[dbus_proxy(property, name = <span class="string">&quot;isCharging&quot;</span>)]
-    </span><span class="kw">fn </span>is_charging(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;
 }
 
 <span class="attr">#[dbus_proxy(
