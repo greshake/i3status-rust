@@ -45,11 +45,12 @@
 //! `warning_updates_regex` | Display block as warning if updates matching regex are available. | `None`
 //! `critical_updates_regex` | Display block as critical if updates matching regex are available. | `None`
 //! `aur_command` | AUR command to check available updates, which outputs in the same format as pacman. e.g. `yay -Qua` | Required if `$both` or `$aur` are used
+//! `pacman_command` | Replace pacman with AUR helper e.g. `yay -Qu --dbpath=/var/lib/pacman/sync` | Optional
 //!
 //!  Placeholder | Value | Type | Unit
 //! -------------|----------------------------------------------------------------------------------|--------|-----
 //! `icon`       | A static icon                                                                    | Icon   | -
-//! `pacman`     | Number of updates available according to `pacman`                                | Number | -
+//! `pacman`     | Number of updates available according to `pacman` or `<pacman_command>`          | Number | -
 //! `aur`        | Number of updates available according to `<aur_command>`                         | Number | -
 //! `both`       | Cumulative number of updates available according to `pacman` and `<aur_command>` | Number | -
 //!
