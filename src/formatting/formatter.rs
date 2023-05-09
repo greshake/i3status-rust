@@ -17,6 +17,7 @@ const DEFAULT_STR_MIN_WIDTH: usize = 0;
 const DEFAULT_STR_MAX_WIDTH: usize = usize::MAX;
 const DEFAULT_STR_ROT_INTERVAL: Option<f64> = None;
 
+const DEFAULT_BAR_VERTICAL: bool = false;
 const DEFAULT_BAR_WIDTH: usize = 5;
 const DEFAULT_BAR_MAX_VAL: f64 = 100.0;
 
@@ -116,6 +117,7 @@ pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
             Ok(Box::new(PangoStrFormatter))
         }
         "bar" => {
+            let mut vertical = DEFAULT_BAR_VERTICAL;
             let mut width = DEFAULT_BAR_WIDTH;
             let mut max_value = DEFAULT_BAR_MAX_VAL;
             for arg in args {
@@ -126,12 +128,19 @@ pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
                     "max_value" => {
                         max_value = arg.val.parse().error("Max value must be a number")?;
                     }
+                    "vertical" | "v" => {
+                        vertical = arg.val.parse().error("Vertical value must be a bool")?;
+                    }
                     other => {
                         return Err(Error::new(format!("Unknown argument for 'bar': '{other}'")));
                     }
                 }
             }
-            Ok(Box::new(BarFormatter { width, max_value }))
+            Ok(Box::new(BarFormatter {
+                width,
+                max_value,
+                vertical,
+            }))
         }
         "eng" => Ok(Box::new(EngFormatter(EngFixConfig::from_args(args)?))),
         "fix" => Ok(Box::new(FixFormatter(EngFixConfig::from_args(args)?))),
@@ -230,10 +239,16 @@ impl Formatter for PangoStrFormatter {
 pub struct BarFormatter {
     width: usize,
     max_value: f64,
+    vertical: bool,
 }
 
-const VERTICAL_BAR_CHARS: [char; 9] = [
+const HORIZONTAL_BAR_CHARS: [char; 9] = [
     ' ', '\u{258f}', '\u{258e}', '\u{258d}', '\u{258c}', '\u{258b}', '\u{258a}', '\u{2589}',
+    '\u{2588}',
+];
+
+const VERTICAL_BAR_CHARS: [char; 9] = [
+    ' ', '\u{2581}', '\u{2582}', '\u{2583}', '\u{2584}', '\u{2585}', '\u{2586}', '\u{2587}',
     '\u{2588}',
 ];
 
@@ -242,12 +257,17 @@ impl Formatter for BarFormatter {
         match val {
             Value::Number { mut val, .. } => {
                 val = (val / self.max_value).clamp(0., 1.);
-                let chars_to_fill = val * self.width as f64;
-                Ok((0..self.width)
-                    .map(|i| {
-                        VERTICAL_BAR_CHARS[((chars_to_fill - i as f64).clamp(0., 1.) * 8.) as usize]
-                    })
-                    .collect())
+                if self.vertical {
+                    Ok(VERTICAL_BAR_CHARS[(val * 8.) as usize].into())
+                } else {
+                    let chars_to_fill = val * self.width as f64;
+                    Ok((0..self.width)
+                        .map(|i| {
+                            HORIZONTAL_BAR_CHARS
+                                [((chars_to_fill - i as f64).clamp(0., 1.) * 8.) as usize]
+                        })
+                        .collect())
+                }
             }
             other => Err(Error::new_format(format!(
                 "{} cannot be formatted with 'bar' formatter",
