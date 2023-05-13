@@ -590,6 +590,33 @@
 <a href="#590" id="590">590</a>
 <a href="#591" id="591">591</a>
 <a href="#592" id="592">592</a>
+<a href="#593" id="593">593</a>
+<a href="#594" id="594">594</a>
+<a href="#595" id="595">595</a>
+<a href="#596" id="596">596</a>
+<a href="#597" id="597">597</a>
+<a href="#598" id="598">598</a>
+<a href="#599" id="599">599</a>
+<a href="#600" id="600">600</a>
+<a href="#601" id="601">601</a>
+<a href="#602" id="602">602</a>
+<a href="#603" id="603">603</a>
+<a href="#604" id="604">604</a>
+<a href="#605" id="605">605</a>
+<a href="#606" id="606">606</a>
+<a href="#607" id="607">607</a>
+<a href="#608" id="608">608</a>
+<a href="#609" id="609">609</a>
+<a href="#610" id="610">610</a>
+<a href="#611" id="611">611</a>
+<a href="#612" id="612">612</a>
+<a href="#613" id="613">613</a>
+<a href="#614" id="614">614</a>
+<a href="#615" id="615">615</a>
+<a href="#616" id="616">616</a>
+<a href="#617" id="617">617</a>
+<a href="#618" id="618">618</a>
+<a href="#619" id="619">619</a>
 </pre><pre class="rust"><code><span class="kw">use </span>chrono::format::{Item, StrftimeItems};
 <span class="kw">use </span>chrono::{Local, Locale};
 <span class="kw">use </span>once_cell::sync::Lazy;
@@ -609,7 +636,9 @@
 <span class="kw">const </span>DEFAULT_STR_MAX_WIDTH: usize = usize::MAX;
 <span class="kw">const </span>DEFAULT_STR_ROT_INTERVAL: <span class="prelude-ty">Option</span>&lt;f64&gt; = <span class="prelude-val">None</span>;
 
-<span class="kw">const </span>DEFAULT_BAR_WIDTH: usize = <span class="number">5</span>;
+<span class="kw">const </span>DEFAULT_BAR_VERTICAL: bool = <span class="bool-val">false</span>;
+<span class="kw">const </span>DEFAULT_BAR_WIDTH_HORIZONTAL: usize = <span class="number">5</span>;
+<span class="kw">const </span>DEFAULT_BAR_WIDTH_VERTICAL: usize = <span class="number">1</span>;
 <span class="kw">const </span>DEFAULT_BAR_MAX_VAL: f64 = <span class="number">100.0</span>;
 
 <span class="kw">const </span>DEFAULT_NUMBER_WIDTH: usize = <span class="number">2</span>;
@@ -708,22 +737,35 @@
             <span class="prelude-val">Ok</span>(Box::new(PangoStrFormatter))
         }
         <span class="string">&quot;bar&quot; </span>=&gt; {
-            <span class="kw">let </span><span class="kw-2">mut </span>width = DEFAULT_BAR_WIDTH;
+            <span class="kw">let </span><span class="kw-2">mut </span>vertical = DEFAULT_BAR_VERTICAL;
+            <span class="kw">let </span><span class="kw-2">mut </span>width = DEFAULT_BAR_WIDTH_HORIZONTAL;
             <span class="kw">let </span><span class="kw-2">mut </span>max_value = DEFAULT_BAR_MAX_VAL;
+            <span class="kw">let </span><span class="kw-2">mut </span>width_set = <span class="bool-val">false</span>;
             <span class="kw">for </span>arg <span class="kw">in </span>args {
                 <span class="kw">match </span>arg.key {
                     <span class="string">&quot;width&quot; </span>| <span class="string">&quot;w&quot; </span>=&gt; {
                         width = arg.val.parse().error(<span class="string">&quot;Width must be a positive integer&quot;</span>)<span class="question-mark">?</span>;
+                        width_set = <span class="bool-val">true</span>;
                     }
                     <span class="string">&quot;max_value&quot; </span>=&gt; {
                         max_value = arg.val.parse().error(<span class="string">&quot;Max value must be a number&quot;</span>)<span class="question-mark">?</span>;
+                    }
+                    <span class="string">&quot;vertical&quot; </span>| <span class="string">&quot;v&quot; </span>=&gt; {
+                        vertical = arg.val.parse().error(<span class="string">&quot;Vertical value must be a bool&quot;</span>)<span class="question-mark">?</span>;
                     }
                     other =&gt; {
                         <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">&quot;Unknown argument for &#39;bar&#39;: &#39;{other}&#39;&quot;</span>)));
                     }
                 }
             }
-            <span class="prelude-val">Ok</span>(Box::new(BarFormatter { width, max_value }))
+            <span class="kw">if </span>!width_set &amp;&amp; vertical {
+                width = DEFAULT_BAR_WIDTH_VERTICAL;
+            }
+            <span class="prelude-val">Ok</span>(Box::new(BarFormatter {
+                width,
+                max_value,
+                vertical,
+            }))
         }
         <span class="string">&quot;eng&quot; </span>=&gt; <span class="prelude-val">Ok</span>(Box::new(EngFormatter(EngFixConfig::from_args(args)<span class="question-mark">?</span>))),
         <span class="string">&quot;fix&quot; </span>=&gt; <span class="prelude-val">Ok</span>(Box::new(FixFormatter(EngFixConfig::from_args(args)<span class="question-mark">?</span>))),
@@ -822,10 +864,16 @@
 </span><span class="kw">pub struct </span>BarFormatter {
     width: usize,
     max_value: f64,
+    vertical: bool,
 }
 
-<span class="kw">const </span>VERTICAL_BAR_CHARS: [char; <span class="number">9</span>] = [
+<span class="kw">const </span>HORIZONTAL_BAR_CHARS: [char; <span class="number">9</span>] = [
     <span class="string">&#39; &#39;</span>, <span class="string">&#39;\u{258f}&#39;</span>, <span class="string">&#39;\u{258e}&#39;</span>, <span class="string">&#39;\u{258d}&#39;</span>, <span class="string">&#39;\u{258c}&#39;</span>, <span class="string">&#39;\u{258b}&#39;</span>, <span class="string">&#39;\u{258a}&#39;</span>, <span class="string">&#39;\u{2589}&#39;</span>,
+    <span class="string">&#39;\u{2588}&#39;</span>,
+];
+
+<span class="kw">const </span>VERTICAL_BAR_CHARS: [char; <span class="number">9</span>] = [
+    <span class="string">&#39; &#39;</span>, <span class="string">&#39;\u{2581}&#39;</span>, <span class="string">&#39;\u{2582}&#39;</span>, <span class="string">&#39;\u{2583}&#39;</span>, <span class="string">&#39;\u{2584}&#39;</span>, <span class="string">&#39;\u{2585}&#39;</span>, <span class="string">&#39;\u{2586}&#39;</span>, <span class="string">&#39;\u{2587}&#39;</span>,
     <span class="string">&#39;\u{2588}&#39;</span>,
 ];
 
@@ -834,12 +882,18 @@
         <span class="kw">match </span>val {
             Value::Number { <span class="kw-2">mut </span>val, .. } =&gt; {
                 val = (val / <span class="self">self</span>.max_value).clamp(<span class="number">0.</span>, <span class="number">1.</span>);
-                <span class="kw">let </span>chars_to_fill = val * <span class="self">self</span>.width <span class="kw">as </span>f64;
-                <span class="prelude-val">Ok</span>((<span class="number">0</span>..<span class="self">self</span>.width)
-                    .map(|i| {
-                        VERTICAL_BAR_CHARS[((chars_to_fill - i <span class="kw">as </span>f64).clamp(<span class="number">0.</span>, <span class="number">1.</span>) * <span class="number">8.</span>) <span class="kw">as </span>usize]
-                    })
-                    .collect())
+                <span class="kw">if </span><span class="self">self</span>.vertical {
+                    <span class="kw">let </span>vert_char = VERTICAL_BAR_CHARS[(val * <span class="number">8.</span>) <span class="kw">as </span>usize];
+                    <span class="prelude-val">Ok</span>((<span class="number">0</span>..<span class="self">self</span>.width).map(|<span class="kw">_</span>| vert_char).collect())
+                } <span class="kw">else </span>{
+                    <span class="kw">let </span>chars_to_fill = val * <span class="self">self</span>.width <span class="kw">as </span>f64;
+                    <span class="prelude-val">Ok</span>((<span class="number">0</span>..<span class="self">self</span>.width)
+                        .map(|i| {
+                            HORIZONTAL_BAR_CHARS
+                                [((chars_to_fill - i <span class="kw">as </span>f64).clamp(<span class="number">0.</span>, <span class="number">1.</span>) * <span class="number">8.</span>) <span class="kw">as </span>usize]
+                        })
+                        .collect())
+                }
             }
             other =&gt; <span class="prelude-val">Err</span>(Error::new_format(<span class="macro">format!</span>(
                 <span class="string">&quot;{} cannot be formatted with &#39;bar&#39; formatter&quot;</span>,

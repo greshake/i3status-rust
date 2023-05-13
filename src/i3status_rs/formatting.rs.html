@@ -184,6 +184,7 @@
 <a href="#184" id="184">184</a>
 <a href="#185" id="185">185</a>
 <a href="#186" id="186">186</a>
+<a href="#187" id="187">187</a>
 </pre><pre class="rust"><code><span class="doccomment">//! # Formatting system
 //! Many blocks have a `format` configuration option, which allows to heavily customize the block&#39;s
 //! appearance. In short, each block with `format` option provides a set of values, which are
@@ -242,9 +243,10 @@
 //! ## `bar` - Display numbers as progress bars
 //!
 //! Argument               | Description                                                                     |Default value
-//! -----------------------|---------------------------------------------------------------------------------|-------------
-//! `width` or `w`         | the width of the bar (in characters)                                            | `5`
+//! -----------------------|---------------------------------------------------------------------------------|-------------------------
+//! `width` or `w`         | the width of the bar (in characters)                                            | `5` (`1` for `vertical`)
 //! `max_value`            | which value is treated as &quot;full&quot;. For example, for battery level `100` is full. | `100`
+//! `vertical` or `v`      | whether to render the bar vertically or not                                     | `false`
 //!
 //! ## `pango-str` - Just display the text without pango markup escaping
 //!
