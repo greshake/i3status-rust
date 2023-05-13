@@ -3,6 +3,7 @@
 ### New Blocks and Features
 
 * Kdeconnect: Add connectivity report (cell network)
+* Add vertical option for bar formatting (▁ ▂ ▃ ▄ ▅ ▆ ▇)
 
 # i3status-rust 0.31.2
 
