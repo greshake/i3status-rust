@@ -56,9 +56,10 @@
 //! ## `bar` - Display numbers as progress bars
 //!
 //! Argument               | Description                                                                     |Default value
-//! -----------------------|---------------------------------------------------------------------------------|-------------
-//! `width` or `w`         | the width of the bar (in characters)                                            | `5`
+//! -----------------------|---------------------------------------------------------------------------------|-------------------------
+//! `width` or `w`         | the width of the bar (in characters)                                            | `5` (`1` for `vertical`)
 //! `max_value`            | which value is treated as "full". For example, for battery level `100` is full. | `100`
+//! `vertical` or `v`      | whether to render the bar vertically or not                                     | `false`
 //!
 //! ## `pango-str` - Just display the text without pango markup escaping
 //!
