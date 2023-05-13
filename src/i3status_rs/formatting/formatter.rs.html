@@ -615,8 +615,6 @@
 <a href="#615" id="615">615</a>
 <a href="#616" id="616">616</a>
 <a href="#617" id="617">617</a>
-<a href="#618" id="618">618</a>
-<a href="#619" id="619">619</a>
 </pre><pre class="rust"><code><span class="kw">use </span>chrono::format::{Item, StrftimeItems};
 <span class="kw">use </span>chrono::{Local, Locale};
 <span class="kw">use </span>once_cell::sync::Lazy;
@@ -738,14 +736,12 @@
         }
         <span class="string">&quot;bar&quot; </span>=&gt; {
             <span class="kw">let </span><span class="kw-2">mut </span>vertical = DEFAULT_BAR_VERTICAL;
-            <span class="kw">let </span><span class="kw-2">mut </span>width = DEFAULT_BAR_WIDTH_HORIZONTAL;
+            <span class="kw">let </span><span class="kw-2">mut </span>width = <span class="prelude-val">None</span>;
             <span class="kw">let </span><span class="kw-2">mut </span>max_value = DEFAULT_BAR_MAX_VAL;
-            <span class="kw">let </span><span class="kw-2">mut </span>width_set = <span class="bool-val">false</span>;
             <span class="kw">for </span>arg <span class="kw">in </span>args {
                 <span class="kw">match </span>arg.key {
                     <span class="string">&quot;width&quot; </span>| <span class="string">&quot;w&quot; </span>=&gt; {
-                        width = arg.val.parse().error(<span class="string">&quot;Width must be a positive integer&quot;</span>)<span class="question-mark">?</span>;
-                        width_set = <span class="bool-val">true</span>;
+                        width = <span class="prelude-val">Some</span>(arg.val.parse().error(<span class="string">&quot;Width must be a positive integer&quot;</span>)<span class="question-mark">?</span>);
                     }
                     <span class="string">&quot;max_value&quot; </span>=&gt; {
                         max_value = arg.val.parse().error(<span class="string">&quot;Max value must be a number&quot;</span>)<span class="question-mark">?</span>;
@@ -758,11 +754,11 @@
                     }
                 }
             }
-            <span class="kw">if </span>!width_set &amp;&amp; vertical {
-                width = DEFAULT_BAR_WIDTH_VERTICAL;
-            }
             <span class="prelude-val">Ok</span>(Box::new(BarFormatter {
-                width,
+                width: width.unwrap_or(<span class="kw">match </span>vertical {
+                    <span class="bool-val">false </span>=&gt; DEFAULT_BAR_WIDTH_HORIZONTAL,
+                    <span class="bool-val">true </span>=&gt; DEFAULT_BAR_WIDTH_VERTICAL,
+                }),
                 max_value,
                 vertical,
             }))
