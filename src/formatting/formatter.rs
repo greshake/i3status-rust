@@ -119,14 +119,12 @@ pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
         }
         "bar" => {
             let mut vertical = DEFAULT_BAR_VERTICAL;
-            let mut width = DEFAULT_BAR_WIDTH_HORIZONTAL;
+            let mut width = None;
             let mut max_value = DEFAULT_BAR_MAX_VAL;
-            let mut width_set = false;
             for arg in args {
                 match arg.key {
                     "width" | "w" => {
-                        width = arg.val.parse().error("Width must be a positive integer")?;
-                        width_set = true;
+                        width = Some(arg.val.parse().error("Width must be a positive integer")?);
                     }
                     "max_value" => {
                         max_value = arg.val.parse().error("Max value must be a number")?;
@@ -139,11 +137,11 @@ pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
                     }
                 }
             }
-            if !width_set && vertical {
-                width = DEFAULT_BAR_WIDTH_VERTICAL;
-            }
             Ok(Box::new(BarFormatter {
-                width,
+                width: width.unwrap_or(match vertical {
+                    false => DEFAULT_BAR_WIDTH_HORIZONTAL,
+                    true => DEFAULT_BAR_WIDTH_VERTICAL,
+                }),
                 max_value,
                 vertical,
             }))
