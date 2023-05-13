@@ -18,7 +18,8 @@ const DEFAULT_STR_MAX_WIDTH: usize = usize::MAX;
 const DEFAULT_STR_ROT_INTERVAL: Option<f64> = None;
 
 const DEFAULT_BAR_VERTICAL: bool = false;
-const DEFAULT_BAR_WIDTH: usize = 5;
+const DEFAULT_BAR_WIDTH_HORIZONTAL: usize = 5;
+const DEFAULT_BAR_WIDTH_VERTICAL: usize = 1;
 const DEFAULT_BAR_MAX_VAL: f64 = 100.0;
 
 const DEFAULT_NUMBER_WIDTH: usize = 2;
@@ -118,12 +119,14 @@ pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
         }
         "bar" => {
             let mut vertical = DEFAULT_BAR_VERTICAL;
-            let mut width = DEFAULT_BAR_WIDTH;
+            let mut width = DEFAULT_BAR_WIDTH_HORIZONTAL;
             let mut max_value = DEFAULT_BAR_MAX_VAL;
+            let mut width_set = false;
             for arg in args {
                 match arg.key {
                     "width" | "w" => {
                         width = arg.val.parse().error("Width must be a positive integer")?;
+                        width_set = true;
                     }
                     "max_value" => {
                         max_value = arg.val.parse().error("Max value must be a number")?;
@@ -135,6 +138,9 @@ pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
                         return Err(Error::new(format!("Unknown argument for 'bar': '{other}'")));
                     }
                 }
+            }
+            if !width_set && vertical {
+                width = DEFAULT_BAR_WIDTH_VERTICAL;
             }
             Ok(Box::new(BarFormatter {
                 width,
@@ -258,7 +264,8 @@ impl Formatter for BarFormatter {
             Value::Number { mut val, .. } => {
                 val = (val / self.max_value).clamp(0., 1.);
                 if self.vertical {
-                    Ok(VERTICAL_BAR_CHARS[(val * 8.) as usize].into())
+                    let vert_char = VERTICAL_BAR_CHARS[(val * 8.) as usize];
+                    Ok((0..self.width).map(|_| vert_char).collect())
                 } else {
                     let chars_to_fill = val * self.width as f64;
                     Ok((0..self.width)
