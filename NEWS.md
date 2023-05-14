@@ -1,3 +1,9 @@
+# i3status-rust 0.31.4
+
+### Bug Fixes and Improvements
+
+* Update `Cargo.lock`.
+
 # i3status-rust 0.31.3
 
 ### New Blocks and Features
