@@ -66,12 +66,12 @@ use std::time::Instant;
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
-    device: Option<String>,
-    format: FormatConfig,
-    format_alt: Option<FormatConfig>,
-    missing_format: FormatConfig,
+    pub device: Option<String>,
+    pub format: FormatConfig,
+    pub format_alt: Option<FormatConfig>,
+    pub missing_format: FormatConfig,
     #[default(2.into())]
-    interval: Seconds,
+    pub interval: Seconds,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {

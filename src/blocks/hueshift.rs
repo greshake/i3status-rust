@@ -63,22 +63,22 @@ use futures::future::pending;
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
-    format: FormatConfig,
+    pub format: FormatConfig,
     // TODO: Document once this option becomes usefull
     #[default(5.into())]
-    interval: Seconds,
+    pub interval: Seconds,
     #[default(10_000)]
-    max_temp: u16,
+    pub max_temp: u16,
     #[default(1_000)]
-    min_temp: u16,
+    pub min_temp: u16,
     // TODO: Remove (this option is undocumented)
     #[default(6_500)]
-    current_temp: u16,
-    hue_shifter: Option<HueShifter>,
+    pub current_temp: u16,
+    pub hue_shifter: Option<HueShifter>,
     #[default(100)]
-    step: u16,
+    pub step: u16,
     #[default(6_500)]
-    click_temp: u16,
+    pub click_temp: u16,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
@@ -175,7 +175,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "snake_case")]
-enum HueShifter {
+pub enum HueShifter {
     Redshift,
     Sct,
     Gammastep,

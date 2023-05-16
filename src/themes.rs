@@ -80,28 +80,28 @@ impl Theme {
 #[derive(Deserialize, Default)]
 #[serde(deny_unknown_fields, default)]
 pub struct ThemeUserConfig {
-    theme: Option<String>,
-    overrides: Option<ThemeOverrides>,
+    pub theme: Option<String>,
+    pub overrides: Option<ThemeOverrides>,
 }
 
 #[derive(Deserialize, Debug, Clone, Default)]
 pub struct ThemeOverrides {
-    idle_bg: Option<ColorOrLink>,
-    idle_fg: Option<ColorOrLink>,
-    info_bg: Option<ColorOrLink>,
-    info_fg: Option<ColorOrLink>,
-    good_bg: Option<ColorOrLink>,
-    good_fg: Option<ColorOrLink>,
-    warning_bg: Option<ColorOrLink>,
-    warning_fg: Option<ColorOrLink>,
-    critical_bg: Option<ColorOrLink>,
-    critical_fg: Option<ColorOrLink>,
-    separator: Option<Separator>,
-    separator_bg: Option<ColorOrLink>,
-    separator_fg: Option<ColorOrLink>,
-    alternating_tint_bg: Option<ColorOrLink>,
-    alternating_tint_fg: Option<ColorOrLink>,
-    end_separator: Option<Separator>,
+    pub idle_bg: Option<ColorOrLink>,
+    pub idle_fg: Option<ColorOrLink>,
+    pub info_bg: Option<ColorOrLink>,
+    pub info_fg: Option<ColorOrLink>,
+    pub good_bg: Option<ColorOrLink>,
+    pub good_fg: Option<ColorOrLink>,
+    pub warning_bg: Option<ColorOrLink>,
+    pub warning_fg: Option<ColorOrLink>,
+    pub critical_bg: Option<ColorOrLink>,
+    pub critical_fg: Option<ColorOrLink>,
+    pub separator: Option<Separator>,
+    pub separator_bg: Option<ColorOrLink>,
+    pub separator_fg: Option<ColorOrLink>,
+    pub alternating_tint_bg: Option<ColorOrLink>,
+    pub alternating_tint_fg: Option<ColorOrLink>,
+    pub end_separator: Option<Separator>,
 }
 
 impl TryFrom<ThemeUserConfig> for Theme {
@@ -121,7 +121,7 @@ impl TryFrom<ThemeUserConfig> for Theme {
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(untagged)]
-enum ColorOrLink {
+pub enum ColorOrLink {
     Color(Color),
     Link { link: String },
 }

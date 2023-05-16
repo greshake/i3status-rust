@@ -94,8 +94,8 @@ use std::sync::Arc;
 
 use super::prelude::*;
 
-mod met_no;
-mod open_weather_map;
+pub mod met_no;
+pub mod open_weather_map;
 
 const IP_API_URL: &str = "https://ipapi.co/json";
 
@@ -103,13 +103,13 @@ const IP_API_URL: &str = "https://ipapi.co/json";
 #[serde(deny_unknown_fields)]
 pub struct Config {
     #[serde(default = "default_interval")]
-    interval: Seconds,
+    pub interval: Seconds,
     #[serde(default)]
-    format: FormatConfig,
-    service: WeatherService,
+    pub format: FormatConfig,
+    pub service: WeatherService,
     #[serde(default)]
-    autolocate: bool,
-    autolocate_interval: Option<Seconds>,
+    pub autolocate: bool,
+    pub autolocate_interval: Option<Seconds>,
 }
 
 fn default_interval() -> Seconds {
@@ -124,7 +124,7 @@ trait WeatherProvider {
 
 #[derive(Deserialize, Debug)]
 #[serde(tag = "name", rename_all = "lowercase")]
-enum WeatherService {
+pub enum WeatherService {
     OpenWeatherMap(open_weather_map::Config),
     MetNo(met_no::Config),
 }

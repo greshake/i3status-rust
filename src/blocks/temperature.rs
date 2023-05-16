@@ -68,22 +68,22 @@ const DEFAULT_WARN: f64 = 80.0;
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
-    format: FormatConfig,
-    format_alt: Option<FormatConfig>,
+    pub format: FormatConfig,
+    pub format_alt: Option<FormatConfig>,
     #[default(5.into())]
-    interval: Seconds,
-    scale: TemperatureScale,
-    good: Option<f64>,
-    idle: Option<f64>,
-    info: Option<f64>,
-    warning: Option<f64>,
-    chip: Option<String>,
-    inputs: Option<Vec<String>>,
+    pub interval: Seconds,
+    pub scale: TemperatureScale,
+    pub good: Option<f64>,
+    pub idle: Option<f64>,
+    pub info: Option<f64>,
+    pub warning: Option<f64>,
+    pub chip: Option<String>,
+    pub inputs: Option<Vec<String>>,
 }
 
 #[derive(Deserialize, Debug, SmartDefault, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
-enum TemperatureScale {
+pub enum TemperatureScale {
     #[default]
     Celsius,
     Fahrenheit,

@@ -55,16 +55,16 @@ use tokio::process::Command;
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct Config {
-    format: FormatConfig,
-    command_on: String,
-    command_off: String,
-    command_state: String,
+    pub format: FormatConfig,
+    pub command_on: String,
+    pub command_off: String,
+    pub command_state: String,
     #[serde(default)]
-    icon_on: Option<String>,
+    pub icon_on: Option<String>,
     #[serde(default)]
-    icon_off: Option<String>,
+    pub icon_off: Option<String>,
     #[serde(default)]
-    interval: Option<u64>,
+    pub interval: Option<u64>,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {

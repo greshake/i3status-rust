@@ -66,8 +66,8 @@ const DBUS_NAME: &str = "rs.i3status";
 #[serde(deny_unknown_fields)]
 pub struct Config {
     #[serde(default)]
-    format: FormatConfig,
-    path: String,
+    pub format: FormatConfig,
+    pub path: String,
 }
 
 struct Block {

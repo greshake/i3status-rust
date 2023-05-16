@@ -52,10 +52,10 @@ const CPU_NO_TURBO_PATH: &str = "/sys/devices/system/cpu/intel_pstate/no_turbo";
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
-    format: FormatConfig,
-    format_alt: Option<FormatConfig>,
+    pub format: FormatConfig,
+    pub format_alt: Option<FormatConfig>,
     #[default(5.into())]
-    interval: Seconds,
+    pub interval: Seconds,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {

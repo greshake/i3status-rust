@@ -37,10 +37,10 @@ use tokio::net::UnixStream;
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
     #[default(1.into())]
-    interval: Seconds,
+    pub interval: Seconds,
     #[default("/tmp/rofi_notification_daemon".into())]
-    socket_path: ShellString,
-    format: FormatConfig,
+    pub socket_path: ShellString,
+    pub format: FormatConfig,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {

@@ -46,9 +46,9 @@ use tokio::process::Command;
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
-    format: FormatConfig,
+    pub format: FormatConfig,
     #[default(1800.into())]
-    interval: Seconds,
+    pub interval: Seconds,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {

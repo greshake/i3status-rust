@@ -7,7 +7,7 @@ pub(super) const PLACE_ENV: &str = "OPENWEATHERMAP_PLACE";
 
 #[derive(Deserialize, Debug)]
 #[serde(tag = "name", rename_all = "lowercase")]
-pub(super) struct Config {
+pub struct Config {
     #[serde(default = "getenv_openweathermap_api_key")]
     api_key: Option<String>,
     #[serde(default = "getenv_openweathermap_city_id")]

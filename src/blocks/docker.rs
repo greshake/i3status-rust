@@ -38,10 +38,10 @@ use tokio::net::UnixStream;
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
     #[default(5.into())]
-    interval: Seconds,
-    format: FormatConfig,
+    pub interval: Seconds,
+    pub format: FormatConfig,
     #[default("/var/run/docker.sock".into())]
-    socket_path: ShellString,
+    pub socket_path: ShellString,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {

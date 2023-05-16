@@ -4,7 +4,7 @@ type LegendsStore = HashMap<String, LegendsResult>;
 
 #[derive(Deserialize, Debug)]
 #[serde(tag = "name", rename_all = "lowercase")]
-pub(super) struct Config {
+pub struct Config {
     coordinates: Option<(String, String)>,
     altitude: Option<String>,
     #[serde(default)]

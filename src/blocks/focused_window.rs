@@ -45,13 +45,13 @@ use super::prelude::*;
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
-    format: FormatConfig,
-    driver: Driver,
+    pub format: FormatConfig,
+    pub driver: Driver,
 }
 
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(rename_all = "snake_case")]
-enum Driver {
+pub enum Driver {
     #[default]
     Auto,
     SwayIpc,

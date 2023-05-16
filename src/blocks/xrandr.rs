@@ -49,10 +49,10 @@ use tokio::process::Command;
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
     #[default(5.into())]
-    interval: Seconds,
-    format: FormatConfig,
+    pub interval: Seconds,
+    pub format: FormatConfig,
     #[default(5)]
-    step_width: u32,
+    pub step_width: u32,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {

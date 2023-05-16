@@ -77,34 +77,34 @@ mod upower;
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
-    device: Option<String>,
-    driver: BatteryDriver,
-    model: Option<String>,
+    pub device: Option<String>,
+    pub driver: BatteryDriver,
+    pub model: Option<String>,
     #[default(10.into())]
-    interval: Seconds,
-    format: FormatConfig,
-    full_format: FormatConfig,
-    charging_format: FormatConfig,
-    empty_format: FormatConfig,
-    not_charging_format: FormatConfig,
-    missing_format: FormatConfig,
+    pub interval: Seconds,
+    pub format: FormatConfig,
+    pub full_format: FormatConfig,
+    pub charging_format: FormatConfig,
+    pub empty_format: FormatConfig,
+    pub not_charging_format: FormatConfig,
+    pub missing_format: FormatConfig,
     #[default(60.0)]
-    info: f64,
+    pub info: f64,
     #[default(60.0)]
-    good: f64,
+    pub good: f64,
     #[default(30.0)]
-    warning: f64,
+    pub warning: f64,
     #[default(15.0)]
-    critical: f64,
+    pub critical: f64,
     #[default(95.0)]
-    full_threshold: f64,
+    pub full_threshold: f64,
     #[default(7.5)]
-    empty_threshold: f64,
+    pub empty_threshold: f64,
 }
 
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(rename_all = "snake_case")]
-enum BatteryDriver {
+pub enum BatteryDriver {
     #[default]
     Sysfs,
     ApcUps,

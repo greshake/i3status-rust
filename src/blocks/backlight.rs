@@ -87,21 +87,21 @@ use super::prelude::*;
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
-    device: Option<String>,
-    format: FormatConfig,
-    missing_format: FormatConfig,
+    pub device: Option<String>,
+    pub format: FormatConfig,
+    pub missing_format: FormatConfig,
     #[default(5.0)]
-    step_width: f64,
+    pub step_width: f64,
     #[default(5.0)]
-    minimum: f64,
+    pub minimum: f64,
     #[default(100.0)]
-    maximum: f64,
-    cycle: Option<Vec<f64>>,
-    invert_icons: bool,
+    pub maximum: f64,
+    pub cycle: Option<Vec<f64>>,
+    pub invert_icons: bool,
     //Calibright config settings
-    root_scaling: Option<f64>,
-    ddcci_sleep_multiplier: Option<f64>,
-    ddcci_max_tries_write_read: Option<u8>,
+    pub root_scaling: Option<f64>,
+    pub ddcci_sleep_multiplier: Option<f64>,
+    pub ddcci_max_tries_write_read: Option<u8>,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {

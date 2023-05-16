@@ -67,15 +67,15 @@ make_log_macro!(debug, "bluetooth");
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct Config {
-    mac: String,
+    pub mac: String,
     #[serde(default)]
-    adapter_mac: Option<String>,
+    pub adapter_mac: Option<String>,
     #[serde(default)]
-    format: FormatConfig,
+    pub format: FormatConfig,
     #[serde(default)]
-    disconnected_format: FormatConfig,
+    pub disconnected_format: FormatConfig,
     #[serde(default)]
-    battery_state: Option<RangeMap<u8, State>>,
+    pub battery_state: Option<RangeMap<u8, State>>,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {

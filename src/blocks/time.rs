@@ -40,10 +40,10 @@ use super::prelude::*;
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
-    format: FormatConfig,
+    pub format: FormatConfig,
     #[default(10.into())]
-    interval: Seconds,
-    timezone: Option<Timezone>,
+    pub interval: Seconds,
+    pub timezone: Option<Timezone>,
 }
 
 #[derive(Deserialize, Debug, Clone)]

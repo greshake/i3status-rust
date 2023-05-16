@@ -76,7 +76,7 @@ use super::prelude::*;
 
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(rename_all = "snake_case")]
-enum DriverType {
+pub enum DriverType {
     #[default]
     Nordvpn,
     Mullvad,
@@ -85,13 +85,13 @@ enum DriverType {
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
-    driver: DriverType,
+    pub driver: DriverType,
     #[default(10.into())]
-    interval: Seconds,
-    format_connected: FormatConfig,
-    format_disconnected: FormatConfig,
-    state_connected: State,
-    state_disconnected: State,
+    pub interval: Seconds,
+    pub format_connected: FormatConfig,
+    pub format_disconnected: FormatConfig,
+    pub state_connected: State,
+    pub state_disconnected: State,
 }
 
 enum Status {

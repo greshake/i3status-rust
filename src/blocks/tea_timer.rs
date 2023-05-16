@@ -42,9 +42,9 @@ use chrono::{Duration, Utc};
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
-    format: FormatConfig,
-    increment: Option<i64>,
-    done_cmd: Option<String>,
+    pub format: FormatConfig,
+    pub increment: Option<i64>,
+    pub done_cmd: Option<String>,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {

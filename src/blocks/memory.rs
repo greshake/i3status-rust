@@ -66,18 +66,18 @@ use crate::util::read_file;
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
-    format: FormatConfig,
-    format_alt: Option<FormatConfig>,
+    pub format: FormatConfig,
+    pub format_alt: Option<FormatConfig>,
     #[default(5.into())]
-    interval: Seconds,
+    pub interval: Seconds,
     #[default(80.0)]
-    warning_mem: f64,
+    pub warning_mem: f64,
     #[default(80.0)]
-    warning_swap: f64,
+    pub warning_swap: f64,
     #[default(95.0)]
-    critical_mem: f64,
+    pub critical_mem: f64,
     #[default(95.0)]
-    critical_swap: f64,
+    pub critical_swap: f64,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {

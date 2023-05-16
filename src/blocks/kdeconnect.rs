@@ -63,18 +63,18 @@ use connectivity_report::ConnectivityDbusProxy;
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
-    device_id: Option<String>,
-    format: FormatConfig,
+    pub device_id: Option<String>,
+    pub format: FormatConfig,
     #[default(60)]
-    bat_good: u8,
+    pub bat_good: u8,
     #[default(60)]
-    bat_info: u8,
+    pub bat_info: u8,
     #[default(30)]
-    bat_warning: u8,
+    pub bat_warning: u8,
     #[default(15)]
-    bat_critical: u8,
+    pub bat_critical: u8,
     #[default(true)]
-    hide_disconnected: bool,
+    pub hide_disconnected: bool,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
