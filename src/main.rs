@@ -25,6 +25,8 @@ use i3status_rs::util::map;
 use i3status_rs::widget::{State, Widget};
 use i3status_rs::*;
 
+type WidgetUpdatesSender = mpsc::UnboundedSender<(usize, Vec<u64>)>;
+
 fn main() {
     env_logger::init();
 
@@ -78,7 +80,6 @@ pub struct Block {
     id: usize,
 
     event_sender: Option<mpsc::Sender<BlockEvent>>,
-    widget_updates_sender: mpsc::UnboundedSender<(usize, Vec<u64>)>,
     abort_handle: AbortHandle,
 
     click_handler: ClickHandler,
@@ -99,14 +100,12 @@ impl Block {
         self.state = BlockState::None;
     }
 
-    fn notify_intervals(&self) {
-        let widget = match &self.state {
+    fn notify_intervals(&self, tx: &WidgetUpdatesSender) {
+        let intervals = match &self.state {
             BlockState::None => return,
-            BlockState::Normal { widget } | BlockState::Error { widget } => widget,
+            BlockState::Normal { widget } | BlockState::Error { widget } => widget.intervals(),
         };
-        let _ = self
-            .widget_updates_sender
-            .send((self.id, widget.intervals()));
+        let _ = tx.send((self.id, intervals));
     }
 
     fn set_error(&mut self, fullscreen: bool, error: Error) {
@@ -140,7 +139,7 @@ struct BarState {
     running_blocks: FuturesUnordered<Abortable<BlockFuture>>,
 
     widget_updates_stream: BoxedStream<Vec<usize>>,
-    widget_updates_sender: mpsc::UnboundedSender<(usize, Vec<u64>)>,
+    widget_updates_sender: WidgetUpdatesSender,
     blocks_render_cache: Vec<RenderedBlock>,
 
     request_sender: mpsc::Sender<Request>,
@@ -231,7 +230,6 @@ impl BarState {
             id: self.blocks.len(),
 
             event_sender: Some(event_sender),
-            widget_updates_sender: self.widget_updates_sender.clone(),
             abort_handle,
 
             click_handler: block_config.common.click,
@@ -277,7 +275,7 @@ impl BarState {
                 block.default_actions = actions;
             }
         }
-        block.notify_intervals();
+        block.notify_intervals(&self.widget_updates_sender);
     }
 
     fn render_block(&mut self, id: usize) -> Result<()> {
@@ -364,7 +362,7 @@ impl BarState {
                             self.fullscreen_block = Some(event.id);
                             widget.set_format(block.error_fullscreen_format.clone());
                         }
-                        block.notify_intervals();
+                        block.notify_intervals(&self.widget_updates_sender);
                         self.render_block(event.id)?;
                         self.render();
                     }
@@ -411,7 +409,7 @@ impl BarState {
 
                         block.abort();
                         block.set_error(self.fullscreen_block == Some(id), error);
-                        block.notify_intervals();
+                        block.notify_intervals(&self.widget_updates_sender);
 
                         self.render_block(id)?;
                         self.render();
