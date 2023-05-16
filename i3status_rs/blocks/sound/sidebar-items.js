@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["run"],"struct":["Config"]};
+window.SIDEBAR_ITEMS = {"enum":["DeviceKind","SoundDriver"],"fn":["run"],"struct":["Config"]};

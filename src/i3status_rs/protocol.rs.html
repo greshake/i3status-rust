@@ -136,7 +136,7 @@
     }
 }
 
-<span class="kw">pub fn </span>print_blocks&lt;B&gt;(blocks: <span class="kw-2">&amp;</span>[B], config: <span class="kw-2">&amp;</span>SharedConfig)
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>print_blocks&lt;B&gt;(blocks: <span class="kw-2">&amp;</span>[B], config: <span class="kw-2">&amp;</span>SharedConfig)
 <span class="kw">where
     </span>B: Borrow&lt;RenderedBlock&gt;,
 {

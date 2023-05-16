@@ -282,22 +282,22 @@
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
-    format: FormatConfig,
-    format_alt: <span class="prelude-ty">Option</span>&lt;FormatConfig&gt;,
+    <span class="kw">pub </span>format: FormatConfig,
+    <span class="kw">pub </span>format_alt: <span class="prelude-ty">Option</span>&lt;FormatConfig&gt;,
     <span class="attr">#[default(<span class="number">5</span>.into())]
-    </span>interval: Seconds,
-    scale: TemperatureScale,
-    good: <span class="prelude-ty">Option</span>&lt;f64&gt;,
-    idle: <span class="prelude-ty">Option</span>&lt;f64&gt;,
-    info: <span class="prelude-ty">Option</span>&lt;f64&gt;,
-    warning: <span class="prelude-ty">Option</span>&lt;f64&gt;,
-    chip: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    inputs: <span class="prelude-ty">Option</span>&lt;Vec&lt;String&gt;&gt;,
+    </span><span class="kw">pub </span>interval: Seconds,
+    <span class="kw">pub </span>scale: TemperatureScale,
+    <span class="kw">pub </span>good: <span class="prelude-ty">Option</span>&lt;f64&gt;,
+    <span class="kw">pub </span>idle: <span class="prelude-ty">Option</span>&lt;f64&gt;,
+    <span class="kw">pub </span>info: <span class="prelude-ty">Option</span>&lt;f64&gt;,
+    <span class="kw">pub </span>warning: <span class="prelude-ty">Option</span>&lt;f64&gt;,
+    <span class="kw">pub </span>chip: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="kw">pub </span>inputs: <span class="prelude-ty">Option</span>&lt;Vec&lt;String&gt;&gt;,
 }
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = <span class="string">&quot;lowercase&quot;</span>)]
-</span><span class="kw">enum </span>TemperatureScale {
+</span><span class="kw">pub enum </span>TemperatureScale {
     <span class="attr">#[default]
     </span>Celsius,
     Fahrenheit,

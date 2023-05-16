@@ -148,16 +148,16 @@
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
-    format: FormatConfig,
+    <span class="kw">pub </span>format: FormatConfig,
     <span class="attr">#[default(<span class="number">5</span>.into())]
-    </span>interval: Seconds,
-    inboxes: Vec&lt;String&gt;,
+    </span><span class="kw">pub </span>interval: Seconds,
+    <span class="kw">pub </span>inboxes: Vec&lt;String&gt;,
     <span class="attr">#[default(<span class="number">1</span>)]
-    </span>threshold_warning: usize,
+    </span><span class="kw">pub </span>threshold_warning: usize,
     <span class="attr">#[default(<span class="number">10</span>)]
-    </span>threshold_critical: usize,
+    </span><span class="kw">pub </span>threshold_critical: usize,
     <span class="attr">#[default(MailType::New)]
-    </span>display_type: MailType,
+    </span><span class="kw">pub </span>display_type: MailType,
 }
 
 <span class="kw">pub async fn </span>run(<span class="kw-2">mut </span>config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
@@ -205,7 +205,7 @@
 
 <span class="attr">#[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = <span class="string">&quot;lowercase&quot;</span>)]
-</span><span class="kw">enum </span>MailType {
+</span><span class="kw">pub enum </span>MailType {
     New,
     Cur,
     All,

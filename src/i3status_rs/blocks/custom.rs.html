@@ -398,16 +398,16 @@
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
-    format: FormatConfig,
-    command: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    persistent: bool,
-    cycle: <span class="prelude-ty">Option</span>&lt;Vec&lt;String&gt;&gt;,
+    <span class="kw">pub </span>format: FormatConfig,
+    <span class="kw">pub </span>command: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="kw">pub </span>persistent: bool,
+    <span class="kw">pub </span>cycle: <span class="prelude-ty">Option</span>&lt;Vec&lt;String&gt;&gt;,
     <span class="attr">#[default(<span class="number">10</span>.into())]
-    </span>interval: Seconds,
-    json: bool,
-    hide_when_empty: bool,
-    shell: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    watch_files: Vec&lt;ShellString&gt;,
+    </span><span class="kw">pub </span>interval: Seconds,
+    <span class="kw">pub </span>json: bool,
+    <span class="kw">pub </span>hide_when_empty: bool,
+    <span class="kw">pub </span>shell: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="kw">pub </span>watch_files: Vec&lt;ShellString&gt;,
 }
 
 <span class="kw">async fn </span>update_bar(

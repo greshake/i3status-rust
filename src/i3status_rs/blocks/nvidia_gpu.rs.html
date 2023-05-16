@@ -339,19 +339,19 @@
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
-    format: FormatConfig,
+    <span class="kw">pub </span>format: FormatConfig,
     <span class="attr">#[default(<span class="number">1</span>.into())]
-    </span>interval: Seconds,
+    </span><span class="kw">pub </span>interval: Seconds,
     <span class="attr">#[default(<span class="number">0</span>)]
-    </span>gpu_id: u64,
+    </span><span class="kw">pub </span>gpu_id: u64,
     <span class="attr">#[default(<span class="number">50</span>)]
-    </span>idle: u32,
+    </span><span class="kw">pub </span>idle: u32,
     <span class="attr">#[default(<span class="number">70</span>)]
-    </span>good: u32,
+    </span><span class="kw">pub </span>good: u32,
     <span class="attr">#[default(<span class="number">75</span>)]
-    </span>info: u32,
+    </span><span class="kw">pub </span>info: u32,
     <span class="attr">#[default(<span class="number">80</span>)]
-    </span>warning: u32,
+    </span><span class="kw">pub </span>warning: u32,
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {

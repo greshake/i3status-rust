@@ -257,7 +257,7 @@
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(rename_all = <span class="string">&quot;snake_case&quot;</span>)]
-</span><span class="kw">enum </span>DriverType {
+</span><span class="kw">pub enum </span>DriverType {
     <span class="attr">#[default]
     </span>Nordvpn,
     Mullvad,
@@ -266,13 +266,13 @@
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
-    driver: DriverType,
+    <span class="kw">pub </span>driver: DriverType,
     <span class="attr">#[default(<span class="number">10</span>.into())]
-    </span>interval: Seconds,
-    format_connected: FormatConfig,
-    format_disconnected: FormatConfig,
-    state_connected: State,
-    state_disconnected: State,
+    </span><span class="kw">pub </span>interval: Seconds,
+    <span class="kw">pub </span>format_connected: FormatConfig,
+    <span class="kw">pub </span>format_disconnected: FormatConfig,
+    <span class="kw">pub </span>state_connected: State,
+    <span class="kw">pub </span>state_disconnected: State,
 }
 
 <span class="kw">enum </span>Status {

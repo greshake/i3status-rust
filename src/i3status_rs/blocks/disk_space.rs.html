@@ -267,17 +267,17 @@
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
     <span class="attr">#[default(<span class="string">&quot;/&quot;</span>.into())]
-    </span>path: ShellString,
-    info_type: InfoType,
-    format: FormatConfig,
-    format_alt: <span class="prelude-ty">Option</span>&lt;FormatConfig&gt;,
-    alert_unit: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    </span><span class="kw">pub </span>path: ShellString,
+    <span class="kw">pub </span>info_type: InfoType,
+    <span class="kw">pub </span>format: FormatConfig,
+    <span class="kw">pub </span>format_alt: <span class="prelude-ty">Option</span>&lt;FormatConfig&gt;,
+    <span class="kw">pub </span>alert_unit: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="attr">#[default(<span class="number">20</span>.into())]
-    </span>interval: Seconds,
+    </span><span class="kw">pub </span>interval: Seconds,
     <span class="attr">#[default(<span class="number">20.0</span>)]
-    </span>warning: f64,
+    </span><span class="kw">pub </span>warning: f64,
     <span class="attr">#[default(<span class="number">10.0</span>)]
-    </span>alert: f64,
+    </span><span class="kw">pub </span>alert: f64,
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {

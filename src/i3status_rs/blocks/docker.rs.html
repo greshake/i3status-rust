@@ -148,10 +148,10 @@
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
     <span class="attr">#[default(<span class="number">5</span>.into())]
-    </span>interval: Seconds,
-    format: FormatConfig,
+    </span><span class="kw">pub </span>interval: Seconds,
+    <span class="kw">pub </span>format: FormatConfig,
     <span class="attr">#[default(<span class="string">&quot;/var/run/docker.sock&quot;</span>.into())]
-    </span>socket_path: ShellString,
+    </span><span class="kw">pub </span>socket_path: ShellString,
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {

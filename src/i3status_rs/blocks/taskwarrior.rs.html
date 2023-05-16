@@ -223,14 +223,14 @@
 <span class="attr">#[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
-    interval: Seconds,
-    warning_threshold: u32,
-    critical_threshold: u32,
-    filters: Vec&lt;Filter&gt;,
-    format: FormatConfig,
-    format_singular: FormatConfig,
-    format_everything_done: FormatConfig,
-    data_location: ShellString,
+    <span class="kw">pub </span>interval: Seconds,
+    <span class="kw">pub </span>warning_threshold: u32,
+    <span class="kw">pub </span>critical_threshold: u32,
+    <span class="kw">pub </span>filters: Vec&lt;Filter&gt;,
+    <span class="kw">pub </span>format: FormatConfig,
+    <span class="kw">pub </span>format_singular: FormatConfig,
+    <span class="kw">pub </span>format_everything_done: FormatConfig,
+    <span class="kw">pub </span>data_location: ShellString,
 }
 
 <span class="kw">impl </span>Default <span class="kw">for </span>Config {
@@ -328,7 +328,7 @@
 
 <span class="attr">#[derive(Deserialize, Debug, Default, Clone)]
 #[serde(deny_unknown_fields)]
-</span><span class="kw">struct </span>Filter {
+</span><span class="kw">pub struct </span>Filter {
     <span class="kw">pub </span>name: String,
     <span class="kw">pub </span>filter: String,
 }

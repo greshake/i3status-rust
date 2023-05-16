@@ -168,17 +168,17 @@
 <span class="attr">#[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 </span><span class="kw">pub struct </span>Config {
-    text: String,
-    items: Vec&lt;Item&gt;,
+    <span class="kw">pub </span>text: String,
+    <span class="kw">pub </span>items: Vec&lt;Item&gt;,
 }
 
 <span class="attr">#[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
-</span><span class="kw">struct </span>Item {
-    display: String,
-    cmd: String,
+</span><span class="kw">pub struct </span>Item {
+    <span class="kw">pub </span>display: String,
+    <span class="kw">pub </span>cmd: String,
     <span class="attr">#[serde(default)]
-    </span>confirm_msg: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    </span><span class="kw">pub </span>confirm_msg: <span class="prelude-ty">Option</span>&lt;String&gt;,
 }
 
 <span class="kw">struct </span>Block {

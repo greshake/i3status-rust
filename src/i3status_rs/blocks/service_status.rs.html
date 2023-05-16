@@ -223,17 +223,17 @@
 <span class="attr">#[derive(Deserialize, Debug, Default)]
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
-    driver: DriverType,
-    service: String,
-    active_format: FormatConfig,
-    inactive_format: FormatConfig,
-    active_state: <span class="prelude-ty">Option</span>&lt;State&gt;,
-    inactive_state: <span class="prelude-ty">Option</span>&lt;State&gt;,
+    <span class="kw">pub </span>driver: DriverType,
+    <span class="kw">pub </span>service: String,
+    <span class="kw">pub </span>active_format: FormatConfig,
+    <span class="kw">pub </span>inactive_format: FormatConfig,
+    <span class="kw">pub </span>active_state: <span class="prelude-ty">Option</span>&lt;State&gt;,
+    <span class="kw">pub </span>inactive_state: <span class="prelude-ty">Option</span>&lt;State&gt;,
 }
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(rename_all = <span class="string">&quot;snake_case&quot;</span>)]
-</span><span class="kw">enum </span>DriverType {
+</span><span class="kw">pub enum </span>DriverType {
     <span class="attr">#[default]
     </span>Systemd,
 }

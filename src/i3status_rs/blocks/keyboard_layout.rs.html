@@ -480,17 +480,17 @@
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
-    format: FormatConfig,
-    driver: KeyboardLayoutDriver,
+    <span class="kw">pub </span>format: FormatConfig,
+    <span class="kw">pub </span>driver: KeyboardLayoutDriver,
     <span class="attr">#[default(<span class="number">60</span>.into())]
-    </span>interval: Seconds,
-    sway_kb_identifier: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    mappings: <span class="prelude-ty">Option</span>&lt;HashMap&lt;String, String&gt;&gt;,
+    </span><span class="kw">pub </span>interval: Seconds,
+    <span class="kw">pub </span>sway_kb_identifier: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="kw">pub </span>mappings: <span class="prelude-ty">Option</span>&lt;HashMap&lt;String, String&gt;&gt;,
 }
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault, Clone, Copy)]
 #[serde(rename_all = <span class="string">&quot;lowercase&quot;</span>)]
-</span><span class="kw">enum </span>KeyboardLayoutDriver {
+</span><span class="kw">pub enum </span>KeyboardLayoutDriver {
     <span class="attr">#[default]
     </span>SetXkbMap,
     LocaleBus,

@@ -458,22 +458,22 @@
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
-    format: FormatConfig,
+    <span class="kw">pub </span>format: FormatConfig,
     <span class="comment">// TODO: Document once this option becomes usefull
     </span><span class="attr">#[default(<span class="number">5</span>.into())]
-    </span>interval: Seconds,
+    </span><span class="kw">pub </span>interval: Seconds,
     <span class="attr">#[default(<span class="number">10_000</span>)]
-    </span>max_temp: u16,
+    </span><span class="kw">pub </span>max_temp: u16,
     <span class="attr">#[default(<span class="number">1_000</span>)]
-    </span>min_temp: u16,
+    </span><span class="kw">pub </span>min_temp: u16,
     <span class="comment">// TODO: Remove (this option is undocumented)
     </span><span class="attr">#[default(<span class="number">6_500</span>)]
-    </span>current_temp: u16,
-    hue_shifter: <span class="prelude-ty">Option</span>&lt;HueShifter&gt;,
+    </span><span class="kw">pub </span>current_temp: u16,
+    <span class="kw">pub </span>hue_shifter: <span class="prelude-ty">Option</span>&lt;HueShifter&gt;,
     <span class="attr">#[default(<span class="number">100</span>)]
-    </span>step: u16,
+    </span><span class="kw">pub </span>step: u16,
     <span class="attr">#[default(<span class="number">6_500</span>)]
-    </span>click_temp: u16,
+    </span><span class="kw">pub </span>click_temp: u16,
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
@@ -570,7 +570,7 @@
 
 <span class="attr">#[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = <span class="string">&quot;snake_case&quot;</span>)]
-</span><span class="kw">enum </span>HueShifter {
+</span><span class="kw">pub enum </span>HueShifter {
     Redshift,
     Sct,
     Gammastep,

@@ -251,14 +251,14 @@
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
     <span class="attr">#[default(<span class="number">60</span>.into())]
-    </span>interval: Seconds,
-    format: FormatConfig,
-    token: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    hide_if_total_is_zero: bool,
-    good: <span class="prelude-ty">Option</span>&lt;Vec&lt;String&gt;&gt;,
-    info: <span class="prelude-ty">Option</span>&lt;Vec&lt;String&gt;&gt;,
-    warning: <span class="prelude-ty">Option</span>&lt;Vec&lt;String&gt;&gt;,
-    critical: <span class="prelude-ty">Option</span>&lt;Vec&lt;String&gt;&gt;,
+    </span><span class="kw">pub </span>interval: Seconds,
+    <span class="kw">pub </span>format: FormatConfig,
+    <span class="kw">pub </span>token: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="kw">pub </span>hide_if_total_is_zero: bool,
+    <span class="kw">pub </span>good: <span class="prelude-ty">Option</span>&lt;Vec&lt;String&gt;&gt;,
+    <span class="kw">pub </span>info: <span class="prelude-ty">Option</span>&lt;Vec&lt;String&gt;&gt;,
+    <span class="kw">pub </span>warning: <span class="prelude-ty">Option</span>&lt;Vec&lt;String&gt;&gt;,
+    <span class="kw">pub </span>critical: <span class="prelude-ty">Option</span>&lt;Vec&lt;String&gt;&gt;,
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {

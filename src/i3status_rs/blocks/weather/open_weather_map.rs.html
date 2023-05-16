@@ -143,7 +143,7 @@
 
 <span class="attr">#[derive(Deserialize, Debug)]
 #[serde(tag = <span class="string">&quot;name&quot;</span>, rename_all = <span class="string">&quot;lowercase&quot;</span>)]
-</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct </span>Config {
+</span><span class="kw">pub struct </span>Config {
     <span class="attr">#[serde(default = <span class="string">&quot;getenv_openweathermap_api_key&quot;</span>)]
     </span>api_key: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="attr">#[serde(default = <span class="string">&quot;getenv_openweathermap_city_id&quot;</span>)]

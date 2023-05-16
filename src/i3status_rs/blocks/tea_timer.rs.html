@@ -160,9 +160,9 @@
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
-    format: FormatConfig,
-    increment: <span class="prelude-ty">Option</span>&lt;i64&gt;,
-    done_cmd: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="kw">pub </span>format: FormatConfig,
+    <span class="kw">pub </span>increment: <span class="prelude-ty">Option</span>&lt;i64&gt;,
+    <span class="kw">pub </span>done_cmd: <span class="prelude-ty">Option</span>&lt;String&gt;,
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {

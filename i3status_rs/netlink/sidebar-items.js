@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"struct":["Interface","InterfaceStats","NetDevice","WifiInfo"]};

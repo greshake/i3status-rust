@@ -351,8 +351,6 @@
 <a href="#351" id="351">351</a>
 <a href="#352" id="352">352</a>
 <a href="#353" id="353">353</a>
-<a href="#354" id="354">354</a>
-<a href="#355" id="355">355</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The collection of blocks
 //!
 //! Blocks are defined as a [TOML array of tables](https://github.com/toml-lang/toml/blob/main/toml.md#user-content-array-of-tables): `[[block]]`
@@ -382,7 +380,7 @@
 //! `sync` | Whether to wait for command to exit or not. | `false`
 //! `update` | Whether to update the block on click. | `false`
 
-</span><span class="kw">pub mod </span>prelude;
+</span><span class="kw">mod </span>prelude;
 
 <span class="kw">use </span><span class="kw">crate</span>::BoxedFuture;
 <span class="kw">use </span>futures::future::FutureExt;
@@ -543,13 +541,11 @@
 }
 
 <span class="kw">pub struct </span>CommonApi {
-    <span class="kw">pub </span>id: usize,
-    <span class="kw">pub </span>shared_config: SharedConfig,
-    <span class="kw">pub </span>event_receiver: mpsc::Receiver&lt;BlockEvent&gt;,
-
-    <span class="kw">pub </span>request_sender: mpsc::Sender&lt;Request&gt;,
-
-    <span class="kw">pub </span>error_interval: Duration,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) id: usize,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) shared_config: SharedConfig,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) event_receiver: mpsc::Receiver&lt;BlockEvent&gt;,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) request_sender: mpsc::Sender&lt;Request&gt;,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) error_interval: Duration,
 }
 
 <span class="kw">impl </span>CommonApi {

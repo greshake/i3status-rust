@@ -545,13 +545,13 @@
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
     <span class="attr">#[default(<span class="number">600</span>.into())]
-    </span>interval: Seconds,
-    format: FormatConfig,
-    format_singular: FormatConfig,
-    format_up_to_date: FormatConfig,
-    warning_updates_regex: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    critical_updates_regex: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    aur_command: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    </span><span class="kw">pub </span>interval: Seconds,
+    <span class="kw">pub </span>format: FormatConfig,
+    <span class="kw">pub </span>format_singular: FormatConfig,
+    <span class="kw">pub </span>format_up_to_date: FormatConfig,
+    <span class="kw">pub </span>warning_updates_regex: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="kw">pub </span>critical_updates_regex: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="kw">pub </span>aur_command: <span class="prelude-ty">Option</span>&lt;String&gt;,
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {

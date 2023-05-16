@@ -510,15 +510,15 @@
 <span class="attr">#[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 </span><span class="kw">pub struct </span>Config {
-    mac: String,
+    <span class="kw">pub </span>mac: String,
     <span class="attr">#[serde(default)]
-    </span>adapter_mac: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    </span><span class="kw">pub </span>adapter_mac: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="attr">#[serde(default)]
-    </span>format: FormatConfig,
+    </span><span class="kw">pub </span>format: FormatConfig,
     <span class="attr">#[serde(default)]
-    </span>disconnected_format: FormatConfig,
+    </span><span class="kw">pub </span>disconnected_format: FormatConfig,
     <span class="attr">#[serde(default)]
-    </span>battery_state: <span class="prelude-ty">Option</span>&lt;RangeMap&lt;u8, State&gt;&gt;,
+    </span><span class="kw">pub </span>battery_state: <span class="prelude-ty">Option</span>&lt;RangeMap&lt;u8, State&gt;&gt;,
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {

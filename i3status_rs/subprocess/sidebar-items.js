@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"fn":["spawn_process","spawn_shell","spawn_shell_sync"]};

@@ -329,13 +329,13 @@
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
-    format: FormatConfig,
+    <span class="kw">pub </span>format: FormatConfig,
     <span class="attr">#[default(<span class="string">&quot;Pomodoro over! Take a break!&quot;</span>.into())]
-    </span>message: String,
+    </span><span class="kw">pub </span>message: String,
     <span class="attr">#[default(<span class="string">&quot;Break over! Time to work!&quot;</span>.into())]
-    </span>break_message: String,
-    notify_cmd: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    blocking_cmd: bool,
+    </span><span class="kw">pub </span>break_message: String,
+    <span class="kw">pub </span>notify_cmd: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="kw">pub </span>blocking_cmd: bool,
 }
 
 <span class="kw">struct </span>Block {

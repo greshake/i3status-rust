@@ -386,34 +386,34 @@
 </span><span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
-    device: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    driver: BatteryDriver,
-    model: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="kw">pub </span>device: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="kw">pub </span>driver: BatteryDriver,
+    <span class="kw">pub </span>model: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="attr">#[default(<span class="number">10</span>.into())]
-    </span>interval: Seconds,
-    format: FormatConfig,
-    full_format: FormatConfig,
-    charging_format: FormatConfig,
-    empty_format: FormatConfig,
-    not_charging_format: FormatConfig,
-    missing_format: FormatConfig,
+    </span><span class="kw">pub </span>interval: Seconds,
+    <span class="kw">pub </span>format: FormatConfig,
+    <span class="kw">pub </span>full_format: FormatConfig,
+    <span class="kw">pub </span>charging_format: FormatConfig,
+    <span class="kw">pub </span>empty_format: FormatConfig,
+    <span class="kw">pub </span>not_charging_format: FormatConfig,
+    <span class="kw">pub </span>missing_format: FormatConfig,
     <span class="attr">#[default(<span class="number">60.0</span>)]
-    </span>info: f64,
+    </span><span class="kw">pub </span>info: f64,
     <span class="attr">#[default(<span class="number">60.0</span>)]
-    </span>good: f64,
+    </span><span class="kw">pub </span>good: f64,
     <span class="attr">#[default(<span class="number">30.0</span>)]
-    </span>warning: f64,
+    </span><span class="kw">pub </span>warning: f64,
     <span class="attr">#[default(<span class="number">15.0</span>)]
-    </span>critical: f64,
+    </span><span class="kw">pub </span>critical: f64,
     <span class="attr">#[default(<span class="number">95.0</span>)]
-    </span>full_threshold: f64,
+    </span><span class="kw">pub </span>full_threshold: f64,
     <span class="attr">#[default(<span class="number">7.5</span>)]
-    </span>empty_threshold: f64,
+    </span><span class="kw">pub </span>empty_threshold: f64,
 }
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(rename_all = <span class="string">&quot;snake_case&quot;</span>)]
-</span><span class="kw">enum </span>BatteryDriver {
+</span><span class="kw">pub enum </span>BatteryDriver {
     <span class="attr">#[default]
     </span>Sysfs,
     ApcUps,

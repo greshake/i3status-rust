@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"attr":["async_trait"],"derive":["Deserialize","SmartDefault"],"enum":["Cow"],"fn":["sleep"],"macro":["select"],"struct":["Duration","HashMap","Lazy","Pin"],"trait":["AsyncBufRead","AsyncBufReadExt","AsyncReadExt","AsyncWriteExt","Deserialize","Stream","StreamExt","Write"]};

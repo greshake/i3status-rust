@@ -445,18 +445,18 @@
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
-    device_id: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    format: FormatConfig,
+    <span class="kw">pub </span>device_id: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="kw">pub </span>format: FormatConfig,
     <span class="attr">#[default(<span class="number">60</span>)]
-    </span>bat_good: u8,
+    </span><span class="kw">pub </span>bat_good: u8,
     <span class="attr">#[default(<span class="number">60</span>)]
-    </span>bat_info: u8,
+    </span><span class="kw">pub </span>bat_info: u8,
     <span class="attr">#[default(<span class="number">30</span>)]
-    </span>bat_warning: u8,
+    </span><span class="kw">pub </span>bat_warning: u8,
     <span class="attr">#[default(<span class="number">15</span>)]
-    </span>bat_critical: u8,
+    </span><span class="kw">pub </span>bat_critical: u8,
     <span class="attr">#[default(<span class="bool-val">true</span>)]
-    </span>hide_disconnected: bool,
+    </span><span class="kw">pub </span>hide_disconnected: bool,
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {

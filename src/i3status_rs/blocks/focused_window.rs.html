@@ -146,13 +146,13 @@
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
-    format: FormatConfig,
-    driver: Driver,
+    <span class="kw">pub </span>format: FormatConfig,
+    <span class="kw">pub </span>driver: Driver,
 }
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(rename_all = <span class="string">&quot;snake_case&quot;</span>)]
-</span><span class="kw">enum </span>Driver {
+</span><span class="kw">pub enum </span>Driver {
     <span class="attr">#[default]
     </span>Auto,
     SwayIpc,

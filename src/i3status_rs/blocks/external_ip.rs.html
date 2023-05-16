@@ -310,13 +310,13 @@
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
-    format: FormatConfig,
+    <span class="kw">pub </span>format: FormatConfig,
     <span class="attr">#[default(<span class="number">300</span>.into())]
-    </span>interval: Seconds,
+    </span><span class="kw">pub </span>interval: Seconds,
     <span class="attr">#[default(<span class="bool-val">true</span>)]
-    </span>with_network_manager: bool,
+    </span><span class="kw">pub </span>with_network_manager: bool,
     <span class="attr">#[default(<span class="bool-val">false</span>)]
-    </span>use_ipv4: bool,
+    </span><span class="kw">pub </span>use_ipv4: bool,
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {

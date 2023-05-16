@@ -162,20 +162,20 @@
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
-    format: FormatConfig,
+    <span class="kw">pub </span>format: FormatConfig,
     <span class="attr">#[default(<span class="number">10</span>.into())]
-    </span>interval: Seconds,
+    </span><span class="kw">pub </span>interval: Seconds,
     <span class="attr">#[default(<span class="string">&quot;~/.mail&quot;</span>.into())]
-    </span>maildir: ShellString,
-    query: String,
+    </span><span class="kw">pub </span>maildir: ShellString,
+    <span class="kw">pub </span>query: String,
     <span class="attr">#[default(u32::MAX)]
-    </span>threshold_warning: u32,
+    </span><span class="kw">pub </span>threshold_warning: u32,
     <span class="attr">#[default(u32::MAX)]
-    </span>threshold_critical: u32,
+    </span><span class="kw">pub </span>threshold_critical: u32,
     <span class="attr">#[default(u32::MAX)]
-    </span>threshold_info: u32,
+    </span><span class="kw">pub </span>threshold_info: u32,
     <span class="attr">#[default(u32::MAX)]
-    </span>threshold_good: u32,
+    </span><span class="kw">pub </span>threshold_good: u32,
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {

@@ -274,11 +274,11 @@
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
-    format: FormatConfig,
-    state_path: <span class="prelude-ty">Option</span>&lt;ShellString&gt;,
+    <span class="kw">pub </span>format: FormatConfig,
+    <span class="kw">pub </span>state_path: <span class="prelude-ty">Option</span>&lt;ShellString&gt;,
     <span class="attr">#[default(<span class="number">60</span>.into())]
-    </span>interval: Seconds,
-    show_time: bool,
+    </span><span class="kw">pub </span>interval: Seconds,
+    <span class="kw">pub </span>show_time: bool,
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {

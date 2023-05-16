@@ -218,7 +218,7 @@
 
 <span class="attr">#[derive(Deserialize, Debug)]
 #[serde(tag = <span class="string">&quot;name&quot;</span>, rename_all = <span class="string">&quot;lowercase&quot;</span>)]
-</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct </span>Config {
+</span><span class="kw">pub struct </span>Config {
     coordinates: <span class="prelude-ty">Option</span>&lt;(String, String)&gt;,
     altitude: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="attr">#[serde(default)]

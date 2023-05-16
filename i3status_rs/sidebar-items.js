@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["RequestCmd"],"macro":["map"],"mod":["blocks","click","config","errors","escape","formatting","icons","netlink","protocol","signals","subprocess","themes","util","widget","wrappers"],"static":["REQWEST_CLIENT","REQWEST_CLIENT_IPV4"],"struct":["CliArgs","RenderedBlock","Request"],"type":["BoxedFuture","BoxedStream"]};
+window.SIDEBAR_ITEMS = {"macro":["map"],"mod":["blocks","click","config","errors","escape","formatting","icons","protocol","themes","util","widget"],"struct":["BarState","Block","CliArgs"]};

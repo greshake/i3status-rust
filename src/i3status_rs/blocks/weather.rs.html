@@ -448,8 +448,8 @@
 
 <span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
 
-<span class="kw">mod </span>met_no;
-<span class="kw">mod </span>open_weather_map;
+<span class="kw">pub mod </span>met_no;
+<span class="kw">pub mod </span>open_weather_map;
 
 <span class="kw">const </span>IP_API_URL: <span class="kw-2">&amp;</span>str = <span class="string">&quot;https://ipapi.co/json&quot;</span>;
 
@@ -457,13 +457,13 @@
 #[serde(deny_unknown_fields)]
 </span><span class="kw">pub struct </span>Config {
     <span class="attr">#[serde(default = <span class="string">&quot;default_interval&quot;</span>)]
-    </span>interval: Seconds,
+    </span><span class="kw">pub </span>interval: Seconds,
     <span class="attr">#[serde(default)]
-    </span>format: FormatConfig,
-    service: WeatherService,
+    </span><span class="kw">pub </span>format: FormatConfig,
+    <span class="kw">pub </span>service: WeatherService,
     <span class="attr">#[serde(default)]
-    </span>autolocate: bool,
-    autolocate_interval: <span class="prelude-ty">Option</span>&lt;Seconds&gt;,
+    </span><span class="kw">pub </span>autolocate: bool,
+    <span class="kw">pub </span>autolocate_interval: <span class="prelude-ty">Option</span>&lt;Seconds&gt;,
 }
 
 <span class="kw">fn </span>default_interval() -&gt; Seconds {
@@ -478,7 +478,7 @@
 
 <span class="attr">#[derive(Deserialize, Debug)]
 #[serde(tag = <span class="string">&quot;name&quot;</span>, rename_all = <span class="string">&quot;lowercase&quot;</span>)]
-</span><span class="kw">enum </span>WeatherService {
+</span><span class="kw">pub enum </span>WeatherService {
     OpenWeatherMap(open_weather_map::Config),
     MetNo(met_no::Config),
 }

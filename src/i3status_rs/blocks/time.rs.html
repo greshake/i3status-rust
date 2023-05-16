@@ -160,10 +160,10 @@
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
-    format: FormatConfig,
+    <span class="kw">pub </span>format: FormatConfig,
     <span class="attr">#[default(<span class="number">10</span>.into())]
-    </span>interval: Seconds,
-    timezone: <span class="prelude-ty">Option</span>&lt;Timezone&gt;,
+    </span><span class="kw">pub </span>interval: Seconds,
+    <span class="kw">pub </span>timezone: <span class="prelude-ty">Option</span>&lt;Timezone&gt;,
 }
 
 <span class="attr">#[derive(Deserialize, Debug, Clone)]

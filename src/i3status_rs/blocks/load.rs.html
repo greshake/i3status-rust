@@ -133,15 +133,15 @@
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
-    format: FormatConfig,
+    <span class="kw">pub </span>format: FormatConfig,
     <span class="attr">#[default(<span class="number">3</span>.into())]
-    </span>interval: Seconds,
+    </span><span class="kw">pub </span>interval: Seconds,
     <span class="attr">#[default(<span class="number">0.3</span>)]
-    </span>info: f64,
+    </span><span class="kw">pub </span>info: f64,
     <span class="attr">#[default(<span class="number">0.6</span>)]
-    </span>warning: f64,
+    </span><span class="kw">pub </span>warning: f64,
     <span class="attr">#[default(<span class="number">0.9</span>)]
-    </span>critical: f64,
+    </span><span class="kw">pub </span>critical: f64,
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {

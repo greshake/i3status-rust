@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["run"],"struct":["Config"]};
+window.SIDEBAR_ITEMS = {"enum":["TemperatureScale"],"fn":["run"],"struct":["Config"]};

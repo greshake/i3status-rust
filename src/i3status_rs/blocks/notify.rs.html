@@ -359,13 +359,13 @@
 <span class="attr">#[derive(Deserialize, Debug, Default)]
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
-    driver: DriverType,
-    format: FormatConfig,
+    <span class="kw">pub </span>driver: DriverType,
+    <span class="kw">pub </span>format: FormatConfig,
 }
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(rename_all = <span class="string">&quot;lowercase&quot;</span>)]
-</span><span class="kw">enum </span>DriverType {
+</span><span class="kw">pub enum </span>DriverType {
     <span class="attr">#[default]
     </span>Dunst,
     SwayNC,

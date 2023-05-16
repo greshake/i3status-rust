@@ -211,16 +211,16 @@
 <span class="attr">#[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 </span><span class="kw">pub struct </span>Config {
-    format: FormatConfig,
-    command_on: String,
-    command_off: String,
-    command_state: String,
+    <span class="kw">pub </span>format: FormatConfig,
+    <span class="kw">pub </span>command_on: String,
+    <span class="kw">pub </span>command_off: String,
+    <span class="kw">pub </span>command_state: String,
     <span class="attr">#[serde(default)]
-    </span>icon_on: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    </span><span class="kw">pub </span>icon_on: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="attr">#[serde(default)]
-    </span>icon_off: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    </span><span class="kw">pub </span>icon_off: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="attr">#[serde(default)]
-    </span>interval: <span class="prelude-ty">Option</span>&lt;u64&gt;,
+    </span><span class="kw">pub </span>interval: <span class="prelude-ty">Option</span>&lt;u64&gt;,
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {

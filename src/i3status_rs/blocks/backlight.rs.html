@@ -329,21 +329,21 @@
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
-    device: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    format: FormatConfig,
-    missing_format: FormatConfig,
+    <span class="kw">pub </span>device: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="kw">pub </span>format: FormatConfig,
+    <span class="kw">pub </span>missing_format: FormatConfig,
     <span class="attr">#[default(<span class="number">5.0</span>)]
-    </span>step_width: f64,
+    </span><span class="kw">pub </span>step_width: f64,
     <span class="attr">#[default(<span class="number">5.0</span>)]
-    </span>minimum: f64,
+    </span><span class="kw">pub </span>minimum: f64,
     <span class="attr">#[default(<span class="number">100.0</span>)]
-    </span>maximum: f64,
-    cycle: <span class="prelude-ty">Option</span>&lt;Vec&lt;f64&gt;&gt;,
-    invert_icons: bool,
+    </span><span class="kw">pub </span>maximum: f64,
+    <span class="kw">pub </span>cycle: <span class="prelude-ty">Option</span>&lt;Vec&lt;f64&gt;&gt;,
+    <span class="kw">pub </span>invert_icons: bool,
     <span class="comment">//Calibright config settings
-    </span>root_scaling: <span class="prelude-ty">Option</span>&lt;f64&gt;,
-    ddcci_sleep_multiplier: <span class="prelude-ty">Option</span>&lt;f64&gt;,
-    ddcci_max_tries_write_read: <span class="prelude-ty">Option</span>&lt;u8&gt;,
+    </span><span class="kw">pub </span>root_scaling: <span class="prelude-ty">Option</span>&lt;f64&gt;,
+    <span class="kw">pub </span>ddcci_sleep_multiplier: <span class="prelude-ty">Option</span>&lt;f64&gt;,
+    <span class="kw">pub </span>ddcci_max_tries_write_read: <span class="prelude-ty">Option</span>&lt;u8&gt;,
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {

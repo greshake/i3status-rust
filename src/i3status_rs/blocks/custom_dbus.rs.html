@@ -234,8 +234,8 @@
 #[serde(deny_unknown_fields)]
 </span><span class="kw">pub struct </span>Config {
     <span class="attr">#[serde(default)]
-    </span>format: FormatConfig,
-    path: String,
+    </span><span class="kw">pub </span>format: FormatConfig,
+    <span class="kw">pub </span>path: String,
 }
 
 <span class="kw">struct </span>Block {

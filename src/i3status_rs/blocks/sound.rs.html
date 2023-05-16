@@ -474,23 +474,23 @@
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
-    driver: SoundDriver,
-    name: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    device: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    device_kind: DeviceKind,
-    natural_mapping: bool,
+    <span class="kw">pub </span>driver: SoundDriver,
+    <span class="kw">pub </span>name: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="kw">pub </span>device: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="kw">pub </span>device_kind: DeviceKind,
+    <span class="kw">pub </span>natural_mapping: bool,
     <span class="attr">#[default(<span class="number">5</span>)]
-    </span>step_width: u32,
-    format: FormatConfig,
-    headphones_indicator: bool,
-    show_volume_when_muted: bool,
+    </span><span class="kw">pub </span>step_width: u32,
+    <span class="kw">pub </span>format: FormatConfig,
+    <span class="kw">pub </span>headphones_indicator: bool,
+    <span class="kw">pub </span>show_volume_when_muted: bool,
     <span class="attr">#[serde_as(<span class="kw">as </span>= <span class="string">&quot;Option&lt;Map&lt;_, _&gt;&gt;&quot;</span>)]
-    </span>mappings: <span class="prelude-ty">Option</span>&lt;Vec&lt;(String, String)&gt;&gt;,
+    </span><span class="kw">pub </span>mappings: <span class="prelude-ty">Option</span>&lt;Vec&lt;(String, String)&gt;&gt;,
     <span class="attr">#[default(<span class="bool-val">true</span>)]
-    </span>mappings_use_regex: bool,
-    max_vol: <span class="prelude-ty">Option</span>&lt;u32&gt;,
+    </span><span class="kw">pub </span>mappings_use_regex: bool,
+    <span class="kw">pub </span>max_vol: <span class="prelude-ty">Option</span>&lt;u32&gt;,
     <span class="attr">#[serde_as(<span class="kw">as </span>= <span class="string">&quot;Map&lt;RegexAsString, _&gt;&quot;</span>)]
-    </span>active_port_mappings: Vec&lt;(Regex, String)&gt;,
+    </span><span class="kw">pub </span>active_port_mappings: Vec&lt;(Regex, String)&gt;,
 }
 
 <span class="kw">enum </span>Mappings {
@@ -684,7 +684,7 @@
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault, Clone, Copy)]
 #[serde(rename_all = <span class="string">&quot;lowercase&quot;</span>)]
-</span><span class="kw">enum </span>SoundDriver {
+</span><span class="kw">pub enum </span>SoundDriver {
     <span class="attr">#[default]
     </span>Auto,
     Alsa,
@@ -694,7 +694,7 @@
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault, Clone, Copy, PartialEq, Eq, Hash)]
 #[serde(rename_all = <span class="string">&quot;lowercase&quot;</span>)]
-</span><span class="kw">enum </span>DeviceKind {
+</span><span class="kw">pub enum </span>DeviceKind {
     <span class="attr">#[default]
     </span>Sink,
     Source,

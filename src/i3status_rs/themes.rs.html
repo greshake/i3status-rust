@@ -232,28 +232,28 @@
 <span class="attr">#[derive(Deserialize, Default)]
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>ThemeUserConfig {
-    theme: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    overrides: <span class="prelude-ty">Option</span>&lt;ThemeOverrides&gt;,
+    <span class="kw">pub </span>theme: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="kw">pub </span>overrides: <span class="prelude-ty">Option</span>&lt;ThemeOverrides&gt;,
 }
 
 <span class="attr">#[derive(Deserialize, Debug, Clone, Default)]
 </span><span class="kw">pub struct </span>ThemeOverrides {
-    idle_bg: <span class="prelude-ty">Option</span>&lt;ColorOrLink&gt;,
-    idle_fg: <span class="prelude-ty">Option</span>&lt;ColorOrLink&gt;,
-    info_bg: <span class="prelude-ty">Option</span>&lt;ColorOrLink&gt;,
-    info_fg: <span class="prelude-ty">Option</span>&lt;ColorOrLink&gt;,
-    good_bg: <span class="prelude-ty">Option</span>&lt;ColorOrLink&gt;,
-    good_fg: <span class="prelude-ty">Option</span>&lt;ColorOrLink&gt;,
-    warning_bg: <span class="prelude-ty">Option</span>&lt;ColorOrLink&gt;,
-    warning_fg: <span class="prelude-ty">Option</span>&lt;ColorOrLink&gt;,
-    critical_bg: <span class="prelude-ty">Option</span>&lt;ColorOrLink&gt;,
-    critical_fg: <span class="prelude-ty">Option</span>&lt;ColorOrLink&gt;,
-    separator: <span class="prelude-ty">Option</span>&lt;Separator&gt;,
-    separator_bg: <span class="prelude-ty">Option</span>&lt;ColorOrLink&gt;,
-    separator_fg: <span class="prelude-ty">Option</span>&lt;ColorOrLink&gt;,
-    alternating_tint_bg: <span class="prelude-ty">Option</span>&lt;ColorOrLink&gt;,
-    alternating_tint_fg: <span class="prelude-ty">Option</span>&lt;ColorOrLink&gt;,
-    end_separator: <span class="prelude-ty">Option</span>&lt;Separator&gt;,
+    <span class="kw">pub </span>idle_bg: <span class="prelude-ty">Option</span>&lt;ColorOrLink&gt;,
+    <span class="kw">pub </span>idle_fg: <span class="prelude-ty">Option</span>&lt;ColorOrLink&gt;,
+    <span class="kw">pub </span>info_bg: <span class="prelude-ty">Option</span>&lt;ColorOrLink&gt;,
+    <span class="kw">pub </span>info_fg: <span class="prelude-ty">Option</span>&lt;ColorOrLink&gt;,
+    <span class="kw">pub </span>good_bg: <span class="prelude-ty">Option</span>&lt;ColorOrLink&gt;,
+    <span class="kw">pub </span>good_fg: <span class="prelude-ty">Option</span>&lt;ColorOrLink&gt;,
+    <span class="kw">pub </span>warning_bg: <span class="prelude-ty">Option</span>&lt;ColorOrLink&gt;,
+    <span class="kw">pub </span>warning_fg: <span class="prelude-ty">Option</span>&lt;ColorOrLink&gt;,
+    <span class="kw">pub </span>critical_bg: <span class="prelude-ty">Option</span>&lt;ColorOrLink&gt;,
+    <span class="kw">pub </span>critical_fg: <span class="prelude-ty">Option</span>&lt;ColorOrLink&gt;,
+    <span class="kw">pub </span>separator: <span class="prelude-ty">Option</span>&lt;Separator&gt;,
+    <span class="kw">pub </span>separator_bg: <span class="prelude-ty">Option</span>&lt;ColorOrLink&gt;,
+    <span class="kw">pub </span>separator_fg: <span class="prelude-ty">Option</span>&lt;ColorOrLink&gt;,
+    <span class="kw">pub </span>alternating_tint_bg: <span class="prelude-ty">Option</span>&lt;ColorOrLink&gt;,
+    <span class="kw">pub </span>alternating_tint_fg: <span class="prelude-ty">Option</span>&lt;ColorOrLink&gt;,
+    <span class="kw">pub </span>end_separator: <span class="prelude-ty">Option</span>&lt;Separator&gt;,
 }
 
 <span class="kw">impl </span>TryFrom&lt;ThemeUserConfig&gt; <span class="kw">for </span>Theme {
@@ -273,7 +273,7 @@
 
 <span class="attr">#[derive(Deserialize, Debug, Clone)]
 #[serde(untagged)]
-</span><span class="kw">enum </span>ColorOrLink {
+</span><span class="kw">pub enum </span>ColorOrLink {
     Color(Color),
     Link { link: String },
 }
