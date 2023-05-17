@@ -48,6 +48,9 @@ impl NetDevice {
             .await
             .map_err(BoxErrorWrapper)
             .error("Failed to fetch interfaces")?;
+        if ifaces.is_empty() {
+            return Ok(None);
+        }
 
         let default_iface = get_default_interface(&mut sock)
             .await
@@ -57,14 +60,10 @@ impl NetDevice {
         let iface_position = ifaces
             .iter()
             .position(|i| i.index == default_iface)
+            .or_else(|| ifaces.iter().position(|i| i.operstate == Operstate::Up))
             .unwrap_or(0);
 
-        let iface = if iface_position < ifaces.len() {
-            ifaces.swap_remove(iface_position)
-        } else {
-            return Ok(None);
-        };
-
+        let iface = ifaces.swap_remove(iface_position);
         let wifi_info = WifiInfo::new(iface.index).await?;
         let ip = ipv4(&mut sock, iface.index).await?;
         let ipv6 = ipv6(&mut sock, iface.index).await?;
@@ -389,7 +388,7 @@ async fn ip_payload<const BYTES: usize>(
     let mut payload = None;
 
     recv_until_done!(sock, msg: Ifaddrmsg => {
-        if msg.ifa_index != ifa_index || msg.ifa_scope == RT_SCOPE_HOST || payload.is_some() {
+        if msg.ifa_index != ifa_index || msg.ifa_scope >= RT_SCOPE_HOST || payload.is_some() {
             continue;
         }
 

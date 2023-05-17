@@ -7,10 +7,11 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `device` | Network interface to monitor (as specified in `/sys/class/net/`). Supports regex. | If not set, device will be automatically selected every `interval`
+//! `interval` | Update interval in seconds | `2`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon ^icon_net_down $speed_down.eng(prefix:K) ^icon_net_up $speed_up.eng(prefix:K) "`
 //! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
-//! `interval` | Update interval in seconds | `2`
-//! `missing_format` | Same as `format` if the interface cannot be connected (or missing). | `" × "`
+//! `inactive_format` | Same as `format` but for when the interface is inactive | `" $icon Down "`
+//! `missing_format` | Same as `format` but for when the device is missing | `" × "`
 //!
 //! Action          | Description                               | Default button
 //! ----------------|-------------------------------------------|---------------
@@ -67,11 +68,12 @@ use std::time::Instant;
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
     pub device: Option<String>,
-    pub format: FormatConfig,
-    pub format_alt: Option<FormatConfig>,
-    pub missing_format: FormatConfig,
     #[default(2.into())]
     pub interval: Seconds,
+    pub format: FormatConfig,
+    pub format_alt: Option<FormatConfig>,
+    pub inactive_format: FormatConfig,
+    pub missing_format: FormatConfig,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
@@ -82,6 +84,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         " $icon ^icon_net_down $speed_down.eng(prefix:K) ^icon_net_up $speed_up.eng(prefix:K) ",
     )?;
     let missing_format = config.missing_format.with_default(" × ")?;
+    let inactive_format = config.inactive_format.with_default(" $icon Down ")?;
     let mut format_alt = match config.format_alt {
         Some(f) => Some(f.with_default("")?),
         None => None,
@@ -108,12 +111,14 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                 api.set_widget(Widget::new().with_format(missing_format.clone()))
                     .await?;
             }
-            Some(device) if !device.is_up() => {
-                api.set_widget(Widget::new().with_format(missing_format.clone()))
-                    .await?;
-            }
             Some(device) => {
-                let mut widget = Widget::new().with_format(format.clone());
+                let mut widget = Widget::new();
+
+                if device.is_up() {
+                    widget.set_format(format.clone());
+                } else {
+                    widget.set_format(inactive_format.clone());
+                }
 
                 let mut speed_down: f64 = 0.0;
                 let mut speed_up: f64 = 0.0;
