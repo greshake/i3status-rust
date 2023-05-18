@@ -1,3 +1,11 @@
+# i3status-rust 0.31.5
+
+### Bug Fixes and Improvements
+
+* Net: do not consider IPs with `scope host` or lower.
+* Net: Define an "active" interface as an interface with 1) `state UP` or 2) `state UNKNOWN` but has an IP. Previously only part 1) was considered.
+* Net: add `inactive_format`.
+
 # i3status-rust 0.31.4
 
 ### Bug Fixes and Improvements
