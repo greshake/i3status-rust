@@ -205,6 +205,11 @@
 <a href="#205" id="205">205</a>
 <a href="#206" id="206">206</a>
 <a href="#207" id="207">207</a>
+<a href="#208" id="208">208</a>
+<a href="#209" id="209">209</a>
+<a href="#210" id="210">210</a>
+<a href="#211" id="211">211</a>
+<a href="#212" id="212">212</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Network information
 //!
 //! This block uses `sysfs` and `netlink` and thus does not require any external dependencies.
@@ -214,10 +219,11 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `device` | Network interface to monitor (as specified in `/sys/class/net/`). Supports regex. | If not set, device will be automatically selected every `interval`
+//! `interval` | Update interval in seconds | `2`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon ^icon_net_down $speed_down.eng(prefix:K) ^icon_net_up $speed_up.eng(prefix:K) &quot;`
 //! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
-//! `interval` | Update interval in seconds | `2`
-//! `missing_format` | Same as `format` if the interface cannot be connected (or missing). | `&quot; × &quot;`
+//! `inactive_format` | Same as `format` but for when the interface is inactive | `&quot; $icon Down &quot;`
+//! `missing_format` | Same as `format` but for when the device is missing | `&quot; × &quot;`
 //!
 //! Action          | Description                               | Default button
 //! ----------------|-------------------------------------------|---------------
@@ -274,11 +280,12 @@
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
     <span class="kw">pub </span>device: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    <span class="kw">pub </span>format: FormatConfig,
-    <span class="kw">pub </span>format_alt: <span class="prelude-ty">Option</span>&lt;FormatConfig&gt;,
-    <span class="kw">pub </span>missing_format: FormatConfig,
     <span class="attr">#[default(<span class="number">2</span>.into())]
     </span><span class="kw">pub </span>interval: Seconds,
+    <span class="kw">pub </span>format: FormatConfig,
+    <span class="kw">pub </span>format_alt: <span class="prelude-ty">Option</span>&lt;FormatConfig&gt;,
+    <span class="kw">pub </span>inactive_format: FormatConfig,
+    <span class="kw">pub </span>missing_format: FormatConfig,
 }
 
 <span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
@@ -289,6 +296,7 @@
         <span class="string">&quot; $icon ^icon_net_down $speed_down.eng(prefix:K) ^icon_net_up $speed_up.eng(prefix:K) &quot;</span>,
     )<span class="question-mark">?</span>;
     <span class="kw">let </span>missing_format = config.missing_format.with_default(<span class="string">&quot; × &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>inactive_format = config.inactive_format.with_default(<span class="string">&quot; $icon Down &quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>format_alt = <span class="kw">match </span>config.format_alt {
         <span class="prelude-val">Some</span>(f) =&gt; <span class="prelude-val">Some</span>(f.with_default(<span class="string">&quot;&quot;</span>)<span class="question-mark">?</span>),
         <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
@@ -315,12 +323,14 @@
                 api.set_widget(Widget::new().with_format(missing_format.clone()))
                     .<span class="kw">await</span><span class="question-mark">?</span>;
             }
-            <span class="prelude-val">Some</span>(device) <span class="kw">if </span>!device.is_up() =&gt; {
-                api.set_widget(Widget::new().with_format(missing_format.clone()))
-                    .<span class="kw">await</span><span class="question-mark">?</span>;
-            }
             <span class="prelude-val">Some</span>(device) =&gt; {
-                <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
+                <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new();
+
+                <span class="kw">if </span>device.is_up() {
+                    widget.set_format(format.clone());
+                } <span class="kw">else </span>{
+                    widget.set_format(inactive_format.clone());
+                }
 
                 <span class="kw">let </span><span class="kw-2">mut </span>speed_down: f64 = <span class="number">0.0</span>;
                 <span class="kw">let </span><span class="kw-2">mut </span>speed_up: f64 = <span class="number">0.0</span>;

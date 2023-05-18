@@ -443,6 +443,23 @@
 <a href="#443" id="443">443</a>
 <a href="#444" id="444">444</a>
 <a href="#445" id="445">445</a>
+<a href="#446" id="446">446</a>
+<a href="#447" id="447">447</a>
+<a href="#448" id="448">448</a>
+<a href="#449" id="449">449</a>
+<a href="#450" id="450">450</a>
+<a href="#451" id="451">451</a>
+<a href="#452" id="452">452</a>
+<a href="#453" id="453">453</a>
+<a href="#454" id="454">454</a>
+<a href="#455" id="455">455</a>
+<a href="#456" id="456">456</a>
+<a href="#457" id="457">457</a>
+<a href="#458" id="458">458</a>
+<a href="#459" id="459">459</a>
+<a href="#460" id="460">460</a>
+<a href="#461" id="461">461</a>
+<a href="#462" id="462">462</a>
 </pre><pre class="rust"><code><span class="kw">use </span>neli::attr::Attribute;
 <span class="kw">use </span>neli::consts::{nl::<span class="kw-2">*</span>, rtnl::<span class="kw-2">*</span>, socket::<span class="kw-2">*</span>};
 <span class="kw">use </span>neli::nl::{NlPayload, Nlmsghdr};
@@ -452,6 +469,8 @@
 
 <span class="kw">use </span>regex::Regex;
 
+<span class="kw">use </span>libc::c_uchar;
+
 <span class="kw">use </span>std::net::{Ipv4Addr, Ipv6Addr};
 <span class="kw">use </span>std::ops;
 <span class="kw">use </span>std::path::Path;
@@ -459,34 +478,8 @@
 <span class="kw">use </span><span class="kw">crate</span>::errors::<span class="kw-2">*</span>;
 <span class="kw">use </span><span class="kw">crate</span>::util;
 
-<span class="comment">// Source: https://www.kernel.org/doc/Documentation/networking/operstates.txt
-//
-</span><span class="doccomment">/// Interface is in unknown state, neither driver nor userspace has set
-/// operational state. Interface must be considered for user data as
-/// setting operational state has not been implemented in every driver.
-</span><span class="attr">#[allow(dead_code)]
-</span><span class="kw">const </span>IF_OPER_UNKNOWN: u8 = <span class="number">0</span>;
-<span class="doccomment">/// Unused in current kernel (notpresent interfaces normally disappear),
-/// just a numerical placeholder.
-</span><span class="attr">#[allow(dead_code)]
-</span><span class="kw">const </span>IF_OPER_NOTPRESENT: u8 = <span class="number">1</span>;
-<span class="doccomment">/// Interface is unable to transfer data on L1, f.e. ethernet is not
-/// plugged or interface is ADMIN down.
-</span><span class="attr">#[allow(dead_code)]
-</span><span class="kw">const </span>IF_OPER_DOWN: u8 = <span class="number">2</span>;
-<span class="doccomment">/// Interfaces stacked on an interface that is IF_OPER_DOWN show this
-/// state (f.e. VLAN).
-</span><span class="attr">#[allow(dead_code)]
-</span><span class="kw">const </span>IF_OPER_LOWERLAYERDOWN: u8 = <span class="number">3</span>;
-<span class="doccomment">/// Unused in current kernel.
-</span><span class="attr">#[allow(dead_code)]
-</span><span class="kw">const </span>IF_OPER_TESTING: u8 = <span class="number">4</span>;
-<span class="doccomment">/// Interface is L1 up, but waiting for an external event, f.e. for a
-/// protocol to establish. (802.1X)
-</span><span class="attr">#[allow(dead_code)]
-</span><span class="kw">const </span>IF_OPER_DORMANT: u8 = <span class="number">5</span>;
-<span class="doccomment">/// Interface is operational up and can be used.
-</span><span class="kw">const </span>IF_OPER_UP: u8 = <span class="number">6</span>;
+<span class="comment">// From `linux/rtnetlink.h`
+</span><span class="kw">const </span>RT_SCOPE_HOST: c_uchar = <span class="number">254</span>;
 
 <span class="attr">#[derive(Debug)]
 </span><span class="kw">pub struct </span>NetDevice {
@@ -517,6 +510,9 @@
             .<span class="kw">await
             </span>.map_err(BoxErrorWrapper)
             .error(<span class="string">&quot;Failed to fetch interfaces&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">if </span>ifaces.is_empty() {
+            <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
+        }
 
         <span class="kw">let </span>default_iface = get_default_interface(<span class="kw-2">&amp;mut </span>sock)
             .<span class="kw">await
@@ -526,14 +522,10 @@
         <span class="kw">let </span>iface_position = ifaces
             .iter()
             .position(|i| i.index == default_iface)
+            .or_else(|| ifaces.iter().position(|i| i.operstate == Operstate::Up))
             .unwrap_or(<span class="number">0</span>);
 
-        <span class="kw">let </span>iface = <span class="kw">if </span>iface_position &lt; ifaces.len() {
-            ifaces.swap_remove(iface_position)
-        } <span class="kw">else </span>{
-            <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
-        };
-
+        <span class="kw">let </span>iface = ifaces.swap_remove(iface_position);
         <span class="kw">let </span>wifi_info = WifiInfo::new(iface.index).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">let </span>ip = ipv4(<span class="kw-2">&amp;mut </span>sock, iface.index).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">let </span>ipv6 = ipv6(<span class="kw-2">&amp;mut </span>sock, iface.index).<span class="kw">await</span><span class="question-mark">?</span>;
@@ -571,7 +563,10 @@
     }
 
     <span class="kw">pub fn </span>is_up(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
-        <span class="self">self</span>.iface.is_up || <span class="self">self</span>.tun_wg_ppp
+        <span class="self">self</span>.tun_wg_ppp
+            || <span class="self">self</span>.iface.operstate == Operstate::Up
+            || (<span class="self">self</span>.iface.operstate == Operstate::Unknown
+                &amp;&amp; (<span class="self">self</span>.ip.is_some() || <span class="self">self</span>.ipv6.is_some()))
     }
 
     <span class="kw">pub fn </span>ssid(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt; {
@@ -712,7 +707,7 @@
 <span class="attr">#[derive(Debug)]
 </span><span class="kw">pub struct </span>Interface {
     <span class="kw">pub </span>index: i32,
-    <span class="kw">pub </span>is_up: bool,
+    <span class="kw">pub </span>operstate: Operstate,
     <span class="kw">pub </span>name: String,
     <span class="kw">pub </span>stats: <span class="prelude-ty">Option</span>&lt;InterfaceStats&gt;,
 }
@@ -760,12 +755,12 @@
     <span class="macro">recv_until_done!</span>(sock, msg: Ifinfomsg =&gt; {
         <span class="kw">let </span><span class="kw-2">mut </span>name = <span class="prelude-val">None</span>;
         <span class="kw">let </span><span class="kw-2">mut </span>stats = <span class="prelude-val">None</span>;
-        <span class="kw">let </span><span class="kw-2">mut </span>is_up = <span class="bool-val">false</span>;
+        <span class="kw">let </span><span class="kw-2">mut </span>operstate = Operstate::Unknown;
         <span class="kw">for </span>attr <span class="kw">in </span>msg.rtattrs.iter() {
             <span class="kw">match </span>attr.rta_type {
                 Ifla::Ifname =&gt; name = <span class="prelude-val">Some</span>(attr.get_payload_as_with_len()<span class="question-mark">?</span>),
                 Ifla::Stats64 =&gt; stats = <span class="prelude-val">Some</span>(InterfaceStats::from_stats64(attr.payload().as_ref())),
-                Ifla::Operstate =&gt; is_up = attr.get_payload_as::&lt;u8&gt;()<span class="question-mark">? </span>== IF_OPER_UP,
+                Ifla::Operstate =&gt; operstate = attr.get_payload_as::&lt;u8&gt;()<span class="question-mark">?</span>.into(),
                 <span class="kw">_ </span>=&gt; (),
             }
         }
@@ -773,7 +768,7 @@
         <span class="kw">if </span>filter.map_or(<span class="bool-val">true</span>, |f| f.is_match(<span class="kw-2">&amp;</span>name)) {
             interfaces.push(Interface {
                 index: msg.ifi_index,
-                is_up,
+                operstate,
                 name,
                 stats,
             });
@@ -855,7 +850,7 @@
     <span class="kw">let </span><span class="kw-2">mut </span>payload = <span class="prelude-val">None</span>;
 
     <span class="macro">recv_until_done!</span>(sock, msg: Ifaddrmsg =&gt; {
-        <span class="kw">if </span>msg.ifa_index != ifa_index || payload.is_some() {
+        <span class="kw">if </span>msg.ifa_index != ifa_index || msg.ifa_scope &gt;= RT_SCOPE_HOST || payload.is_some() {
             <span class="kw">continue</span>;
         }
 
@@ -887,6 +882,45 @@
         </span>.map_err(BoxErrorWrapper)
         .error(<span class="string">&quot;Failed to get IPv6 address&quot;</span>)<span class="question-mark">?
         </span>.map(Ipv6Addr::from))
+}
+
+<span class="comment">// Source: https://www.kernel.org/doc/Documentation/networking/operstates.txt
+</span><span class="attr">#[derive(Debug, PartialEq, Eq)]
+</span><span class="kw">pub enum </span>Operstate {
+    <span class="doccomment">/// Interface is in unknown state, neither driver nor userspace has set
+    /// operational state. Interface must be considered for user data as
+    /// setting operational state has not been implemented in every driver.
+    </span>Unknown,
+    <span class="doccomment">/// Unused in current kernel (notpresent interfaces normally disappear),
+    /// just a numerical placeholder.
+    </span>Notpresent,
+    <span class="doccomment">/// Interface is unable to transfer data on L1, f.e. ethernet is not
+    /// plugged or interface is ADMIN down.
+    </span>Down,
+    <span class="doccomment">/// Interfaces stacked on an interface that is IF_OPER_DOWN show this
+    /// state (f.e. VLAN).
+    </span>Lowerlayerdown,
+    <span class="doccomment">/// Unused in current kernel.
+    </span>Testing,
+    <span class="doccomment">/// Interface is L1 up, but waiting for an external event, f.e. for a
+    /// protocol to establish. (802.1X)
+    </span>Dormant,
+    <span class="doccomment">/// Interface is operational up and can be used.
+    </span>Up,
+}
+
+<span class="kw">impl </span>From&lt;u8&gt; <span class="kw">for </span>Operstate {
+    <span class="kw">fn </span>from(value: u8) -&gt; <span class="self">Self </span>{
+        <span class="kw">match </span>value {
+            <span class="number">1 </span>=&gt; <span class="self">Self</span>::Notpresent,
+            <span class="number">2 </span>=&gt; <span class="self">Self</span>::Down,
+            <span class="number">3 </span>=&gt; <span class="self">Self</span>::Lowerlayerdown,
+            <span class="number">4 </span>=&gt; <span class="self">Self</span>::Testing,
+            <span class="number">5 </span>=&gt; <span class="self">Self</span>::Dormant,
+            <span class="number">6 </span>=&gt; <span class="self">Self</span>::Up,
+            <span class="kw">_ </span>=&gt; <span class="self">Self</span>::Unknown,
+        }
+    }
 }
 </code></pre></div>
 </section></main><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.69.0 (84c898d65 2023-04-16)" data-search-js="search-8a59a8356673ec1f.js" data-settings-js="settings-f0c5c39777a9a2f6.js" data-settings-css="settings-0bcba95ff279c1db.css" ></div></body></html>
