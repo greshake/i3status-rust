@@ -21,7 +21,7 @@
 //!  Key     | Value | Type
 //! ---------|-------|-----
 //! `layout` | Keyboard layout name | String
-//! `variant`| Keyboard variant. Only `localebus`, `sway` and `kbddbus` are supported so far. | String
+//! `variant`| Keyboard variant name or `N/A` if not applicable | String
 //!
 //! # Examples
 //!
