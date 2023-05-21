@@ -129,6 +129,16 @@ In addition, some blocks have debug logs that can be enabled like so: `RUST_LOG=
 
 We welcome new contributors! Take a gander at [CONTRIBUTING.md](CONTRIBUTING.md).
 
+### Nix environment
+
+`shell.nix` is provided to configure the development environment for `i3status-rust`.
+
+You will need to use `nix-channel` to configure an unstable channel as at time of writing, rust stable isn't compatible with some crates. Hopefully this will not be the case for long.
+
+```shell
+$ nix-channel --add https://nixos.org/channels/unstable nixpkgs-unstable
+```
+
 ## License
 
 This project is licensed under the GPLv3. See the [LICENSE](LICENSE) file for details.
