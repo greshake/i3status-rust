@@ -158,7 +158,7 @@ pub struct Config {
     warning_updates_regex: Option<String>,
     critical_updates_regex: Option<String>,
     pacman_command: Option<String>,
-    aur_command: Option<String>,
+    pub aur_command: Option<String>,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {

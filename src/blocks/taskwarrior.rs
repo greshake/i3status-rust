@@ -56,14 +56,14 @@ use tokio::process::Command;
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
-    interval: Seconds,
-    warning_threshold: u32,
-    critical_threshold: u32,
-    filters: Vec<Filter>,
-    format: FormatConfig,
-    format_singular: FormatConfig,
-    format_everything_done: FormatConfig,
-    data_location: ShellString,
+    pub interval: Seconds,
+    pub warning_threshold: u32,
+    pub critical_threshold: u32,
+    pub filters: Vec<Filter>,
+    pub format: FormatConfig,
+    pub format_singular: FormatConfig,
+    pub format_everything_done: FormatConfig,
+    pub data_location: ShellString,
 }
 
 impl Default for Config {
@@ -161,7 +161,7 @@ async fn get_number_of_tasks(filter: &str) -> Result<u32> {
 
 #[derive(Deserialize, Debug, Default, Clone)]
 #[serde(deny_unknown_fields)]
-struct Filter {
+pub struct Filter {
     pub name: String,
     pub filter: String,
 }

@@ -48,20 +48,20 @@ use super::prelude::*;
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
-    format: FormatConfig,
+    pub format: FormatConfig,
     #[default(10.into())]
-    interval: Seconds,
+    pub interval: Seconds,
     #[default("~/.mail".into())]
-    maildir: ShellString,
-    query: String,
+    pub maildir: ShellString,
+    pub query: String,
     #[default(u32::MAX)]
-    threshold_warning: u32,
+    pub threshold_warning: u32,
     #[default(u32::MAX)]
-    threshold_critical: u32,
+    pub threshold_critical: u32,
     #[default(u32::MAX)]
-    threshold_info: u32,
+    pub threshold_info: u32,
     #[default(u32::MAX)]
-    threshold_good: u32,
+    pub threshold_good: u32,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {

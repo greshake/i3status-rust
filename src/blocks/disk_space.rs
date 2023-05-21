@@ -72,17 +72,17 @@ pub enum InfoType {
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
     #[default("/".into())]
-    path: ShellString,
-    info_type: InfoType,
-    format: FormatConfig,
-    format_alt: Option<FormatConfig>,
-    alert_unit: Option<String>,
+    pub path: ShellString,
+    pub info_type: InfoType,
+    pub format: FormatConfig,
+    pub format_alt: Option<FormatConfig>,
+    pub alert_unit: Option<String>,
     #[default(20.into())]
-    interval: Seconds,
+    pub interval: Seconds,
     #[default(20.0)]
-    warning: f64,
+    pub warning: f64,
     #[default(10.0)]
-    alert: f64,
+    pub alert: f64,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {

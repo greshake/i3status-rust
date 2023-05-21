@@ -42,16 +42,16 @@ use maildir::Maildir;
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
-    format: FormatConfig,
+    pub format: FormatConfig,
     #[default(5.into())]
-    interval: Seconds,
-    inboxes: Vec<String>,
+    pub interval: Seconds,
+    pub inboxes: Vec<String>,
     #[default(1)]
-    threshold_warning: usize,
+    pub threshold_warning: usize,
     #[default(10)]
-    threshold_critical: usize,
+    pub threshold_critical: usize,
     #[default(MailType::New)]
-    display_type: MailType,
+    pub display_type: MailType,
 }
 
 pub async fn run(mut config: Config, mut api: CommonApi) -> Result<()> {
@@ -99,7 +99,7 @@ pub async fn run(mut config: Config, mut api: CommonApi) -> Result<()> {
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename_all = "lowercase")]
-enum MailType {
+pub enum MailType {
     New,
     Cur,
     All,

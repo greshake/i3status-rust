@@ -67,13 +67,13 @@ const ICON_OFF: &str = "bell-slash";
 #[derive(Deserialize, Debug, Default)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
-    driver: DriverType,
-    format: FormatConfig,
+    pub driver: DriverType,
+    pub format: FormatConfig,
 }
 
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(rename_all = "lowercase")]
-enum DriverType {
+pub enum DriverType {
     #[default]
     Dunst,
     SwayNC,

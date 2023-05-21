@@ -35,15 +35,15 @@ use crate::util;
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
-    format: FormatConfig,
+    pub format: FormatConfig,
     #[default(3.into())]
-    interval: Seconds,
+    pub interval: Seconds,
     #[default(0.3)]
-    info: f64,
+    pub info: f64,
     #[default(0.6)]
-    warning: f64,
+    pub warning: f64,
     #[default(0.9)]
-    critical: f64,
+    pub critical: f64,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {

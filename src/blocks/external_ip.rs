@@ -70,13 +70,13 @@ const API_ENDPOINT: &str = "https://ipapi.co/json/";
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
-    format: FormatConfig,
+    pub format: FormatConfig,
     #[default(300.into())]
-    interval: Seconds,
+    pub interval: Seconds,
     #[default(true)]
-    with_network_manager: bool,
+    pub with_network_manager: bool,
     #[default(false)]
-    use_ipv4: bool,
+    pub use_ipv4: bool,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {

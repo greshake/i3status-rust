@@ -143,16 +143,16 @@ const PREV_BTN: &str = "prev_btn";
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
-    format: FormatConfig,
-    player: PlayerName,
+    pub format: FormatConfig,
+    pub player: PlayerName,
     #[default(vec!["playerctld".into()])]
-    interface_name_exclude: Vec<String>,
+    pub interface_name_exclude: Vec<String>,
     #[default(" - ".into())]
-    separator: String,
+    pub separator: String,
     #[default(1.into())]
-    seek_step_secs: Seconds<false>,
+    pub seek_step_secs: Seconds<false>,
     #[default(5.0)]
-    volume_step: f64,
+    pub volume_step: f64,
 }
 
 #[derive(Deserialize, Debug, Clone, SmartDefault)]

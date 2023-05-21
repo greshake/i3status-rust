@@ -43,11 +43,11 @@ use super::prelude::*;
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
-    format: FormatConfig,
-    state_path: Option<ShellString>,
+    pub format: FormatConfig,
+    pub state_path: Option<ShellString>,
     #[default(60.into())]
-    interval: Seconds,
-    show_time: bool,
+    pub interval: Seconds,
+    pub show_time: bool,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {

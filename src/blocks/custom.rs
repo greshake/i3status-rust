@@ -106,16 +106,16 @@ use tokio::process::Command;
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
-    format: FormatConfig,
-    command: Option<String>,
-    persistent: bool,
-    cycle: Option<Vec<String>>,
+    pub format: FormatConfig,
+    pub command: Option<String>,
+    pub persistent: bool,
+    pub cycle: Option<Vec<String>>,
     #[default(10.into())]
-    interval: Seconds,
-    json: bool,
-    hide_when_empty: bool,
-    shell: Option<String>,
-    watch_files: Vec<ShellString>,
+    pub interval: Seconds,
+    pub json: bool,
+    pub hide_when_empty: bool,
+    pub shell: Option<String>,
+    pub watch_files: Vec<ShellString>,
 }
 
 async fn update_bar(

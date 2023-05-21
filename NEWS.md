@@ -1,11 +1,35 @@
+# i3status-rust 0.31.5
+
+### Bug Fixes and Improvements
+
+* Net: do not consider IPs with `scope host` or lower.
+* Net: Define an "active" interface as an interface with 1) `state UP` or 2) `state UNKNOWN` but has an IP. Previously only part 1) was considered.
+* Net: add `inactive_format`.
+
+# i3status-rust 0.31.4
+
+### Bug Fixes and Improvements
+
+* Update `Cargo.lock`.
+
+# i3status-rust 0.31.3
+
+### New Blocks and Features
+
+* Kdeconnect: Add connectivity report (cell network)
+* Add vertical option for bar formatting (▁ ▂ ▃ ▄ ▅ ▆ ▇)
+
 # i3status-rust 0.31.2
+
+### New Blocks and Features
+
+* Vpn: add `mullvad` driver.
 
 ### Bug Fixes and Improvements
 
 * Don't require `block = "..."` to be the first field.
 * Battery: automatically recover from some errors.
 * Sound: automatically reconnect to pulseaudio server when connection fails.
-* Vpn: add `mullvad` driver.
 
 # i3status-rust 0.31.1
 

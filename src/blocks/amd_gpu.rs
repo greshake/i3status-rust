@@ -43,11 +43,11 @@ use crate::util::read_file;
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
     #[default("card0".into())]
-    device: String,
-    format: FormatConfig,
-    format_alt: Option<FormatConfig>,
+    pub device: String,
+    pub format: FormatConfig,
+    pub format_alt: Option<FormatConfig>,
     #[default(5.into())]
-    interval: Seconds,
+    pub interval: Seconds,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {

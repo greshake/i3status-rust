@@ -71,19 +71,19 @@ use super::prelude::*;
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
-    format: FormatConfig,
+    pub format: FormatConfig,
     #[default(1.into())]
-    interval: Seconds,
+    pub interval: Seconds,
     #[default(0)]
-    gpu_id: u64,
+    pub gpu_id: u64,
     #[default(50)]
-    idle: u32,
+    pub idle: u32,
     #[default(70)]
-    good: u32,
+    pub good: u32,
     #[default(75)]
-    info: u32,
+    pub info: u32,
     #[default(80)]
-    warning: u32,
+    pub warning: u32,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {

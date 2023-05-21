@@ -64,14 +64,14 @@ use super::prelude::*;
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
     #[default(60.into())]
-    interval: Seconds,
-    format: FormatConfig,
-    token: Option<String>,
-    hide_if_total_is_zero: bool,
-    good: Option<Vec<String>>,
-    info: Option<Vec<String>>,
-    warning: Option<Vec<String>>,
-    critical: Option<Vec<String>>,
+    pub interval: Seconds,
+    pub format: FormatConfig,
+    pub token: Option<String>,
+    pub hide_if_total_is_zero: bool,
+    pub good: Option<Vec<String>>,
+    pub info: Option<Vec<String>>,
+    pub warning: Option<Vec<String>>,
+    pub critical: Option<Vec<String>>,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {

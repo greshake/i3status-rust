@@ -64,13 +64,13 @@ use std::time::Instant;
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
-    format: FormatConfig,
+    pub format: FormatConfig,
     #[default("Pomodoro over! Take a break!".into())]
-    message: String,
+    pub message: String,
     #[default("Break over! Time to work!".into())]
-    break_message: String,
-    notify_cmd: Option<String>,
-    blocking_cmd: bool,
+    pub break_message: String,
+    pub notify_cmd: Option<String>,
+    pub blocking_cmd: bool,
 }
 
 struct Block {

@@ -48,17 +48,17 @@ use zbus::PropertyStream;
 #[derive(Deserialize, Debug, Default)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
-    driver: DriverType,
-    service: String,
-    active_format: FormatConfig,
-    inactive_format: FormatConfig,
-    active_state: Option<State>,
-    inactive_state: Option<State>,
+    pub driver: DriverType,
+    pub service: String,
+    pub active_format: FormatConfig,
+    pub inactive_format: FormatConfig,
+    pub active_state: Option<State>,
+    pub inactive_state: Option<State>,
 }
 
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(rename_all = "snake_case")]
-enum DriverType {
+pub enum DriverType {
     #[default]
     Systemd,
 }

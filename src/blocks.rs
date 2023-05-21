@@ -27,7 +27,7 @@
 //! `sync` | Whether to wait for command to exit or not. | `false`
 //! `update` | Whether to update the block on click. | `false`
 
-pub mod prelude;
+mod prelude;
 
 use crate::BoxedFuture;
 use futures::future::FutureExt;
@@ -188,13 +188,11 @@ pub enum BlockEvent {
 }
 
 pub struct CommonApi {
-    pub id: usize,
-    pub shared_config: SharedConfig,
-    pub event_receiver: mpsc::Receiver<BlockEvent>,
-
-    pub request_sender: mpsc::Sender<Request>,
-
-    pub error_interval: Duration,
+    pub(crate) id: usize,
+    pub(crate) shared_config: SharedConfig,
+    pub(crate) event_receiver: mpsc::Receiver<BlockEvent>,
+    pub(crate) request_sender: mpsc::Sender<Request>,
+    pub(crate) error_interval: Duration,
 }
 
 impl CommonApi {

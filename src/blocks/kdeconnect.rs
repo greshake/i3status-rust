@@ -17,15 +17,18 @@
 //! `bat_critical` | Min battery level below which state is set to critical. | `15`
 //! `hide_disconnected` | Whether to hide this block when disconnected | `true`
 //!
-//! Placeholder   | Value                                                                    | Type   | Unit
-//! --------------|--------------------------------------------------------------------------|--------|-----
-//! `icon`        | Icon based on connection's status                                        | Icon   | -
-//! `bat_icon`    | Battery level indicator (only when connected and if supported)           | Icon   | -
-//! `bat_charge`  | Battery charge level (only when connected and if supported)              | Number | %
-//! `notif_icon`  | Only when connected and there are notifications                          | Icon   | -
-//! `notif_count` | Number of notifications on your phone (only when connected and non-zero) | Number | -
-//! `name`        | Name of your device as reported by KDEConnect (if available)             | Text   | -
-//! `connected`   | Present if your device is connected                                      | Flag   | -
+//! Placeholder        | Value                                                                    | Type   | Unit
+//! -------------------|--------------------------------------------------------------------------|--------|-----
+//! `icon`             | Icon based on connection's status                                        | Icon   | -
+//! `bat_icon`         | Battery level indicator (only when connected and if supported)           | Icon   | -
+//! `bat_charge`       | Battery charge level (only when connected and if supported)              | Number | %
+//! `network_icon`     | Cell Network indicator (only when connected and if supported)            | Icon   | -
+//! `network_type`     | Cell Network type (only when connected and if supported)                 | Text   | -
+//! `network_strength` | Cell Network level (only when connected and if supported)                | Number | %
+//! `notif_icon`       | Only when connected and there are notifications                          | Icon   | -
+//! `notif_count`      | Number of notifications on your phone (only when connected and non-zero) | Number | -
+//! `name`             | Name of your device as reported by KDEConnect (if available)             | Text   | -
+//! `connected`        | Present if your device is connected                                      | Flag   | -
 //!
 //! # Example
 //!
@@ -34,43 +37,50 @@
 //! ```toml
 //! [[block]]
 //! block = "kdeconnect"
-//! format = " $icon {$bat_icon $bat_charge|}{ $notif_icon|} "
+//! format = " $icon {$bat_icon $bat_charge |}{$notif_icon |}{$network_icon$network_strength $network_type |}"
 //! bat_good = 101
 //! ```
 //!
 //! # Icons Used
 //! - `bat` (as a progression)
 //! - `bat_charging` (as a progression)
+//! - `net_cellular` (as a progression)
 //! - `notification`
 //! - `phone`
 //! - `phone_disconnected`
 
+use futures::TryFutureExt;
 use tokio::sync::mpsc;
 use zbus::dbus_proxy;
 
 use super::prelude::*;
 
+mod battery;
+mod connectivity_report;
+use battery::BatteryDbusProxy;
+use connectivity_report::ConnectivityDbusProxy;
+
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
-    device_id: Option<String>,
-    format: FormatConfig,
+    pub device_id: Option<String>,
+    pub format: FormatConfig,
     #[default(60)]
-    bat_good: u8,
+    pub bat_good: u8,
     #[default(60)]
-    bat_info: u8,
+    pub bat_info: u8,
     #[default(30)]
-    bat_warning: u8,
+    pub bat_warning: u8,
     #[default(15)]
-    bat_critical: u8,
+    pub bat_critical: u8,
     #[default(true)]
-    hide_disconnected: bool,
+    pub hide_disconnected: bool,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let format = config
         .format
-        .with_default(" $icon $name{ $bat_icon $bat_charge|}{ $notif_icon|} ")?;
+        .with_default(" $icon $name {$bat_icon $bat_charge |}{$notif_icon |}")?;
 
     let battery_state = (
         config.bat_good,
@@ -103,9 +113,13 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             if connected {
                 values.insert("icon".into(), Value::icon(api.get_icon("phone")?));
                 values.insert("connected".into(), Value::flag());
+                let (
+                    (level, charging),
+                    (cellular_network_type, cellular_network_strength),
+                    notif_count,
+                ) = tokio::join!(device.battery(), device.network(), device.notifications());
 
-                let (level, charging) = device.battery().await;
-                if let Some(level) = level {
+                if let Ok(level) = level {
                     values.insert("bat_charge".into(), Value::percents(level));
                     values.insert(
                         "bat_icon".into(),
@@ -129,7 +143,31 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     }
                 }
 
-                let notif_count = device.notifications().await.unwrap_or(0);
+                if let Ok(cellular_network_type) = cellular_network_type {
+                    // network strength is 0..=4 from docs of
+                    // kdeconnect/plugins/connectivity-report, and I
+                    // got -1 for disabled SIM (undocumented)
+                    let cell_network_percent = (cellular_network_strength.clamp(0, 4) * 25) as f64;
+                    values.insert(
+                        "network_icon".into(),
+                        Value::icon(api.get_icon_in_progression(
+                            "net_cellular",
+                            (cellular_network_strength + 1).clamp(0, 5) as f64 / 5.0,
+                        )?),
+                    );
+                    values.insert(
+                        "network_strength".into(),
+                        Value::percents(cell_network_percent),
+                    );
+
+                    if cellular_network_strength <= 0 {
+                        widget.state = State::Critical;
+                        values.insert("network_type".into(), Value::text("×".into()));
+                    } else {
+                        values.insert("network_type".into(), Value::text(cellular_network_type));
+                    }
+                }
+
                 if notif_count > 0 {
                     values.insert("notif_count".into(), Value::number(notif_count));
                     values.insert(
@@ -170,6 +208,7 @@ struct Device {
     device_proxy: DeviceDbusProxy<'static>,
     battery_proxy: BatteryDbusProxy<'static>,
     notifications_proxy: NotificationsDbusProxy<'static>,
+    connectivity_proxy: ConnectivityDbusProxy<'static>,
 }
 
 impl Device {
@@ -177,6 +216,7 @@ impl Device {
         let device_path = format!("/modules/kdeconnect/devices/{id}");
         let battery_path = format!("{device_path}/battery");
         let notifications_path = format!("{device_path}/notifications");
+        let connectivity_path = format!("{device_path}/connectivity_report");
 
         let device_proxy = DeviceDbusProxy::builder(conn)
             .cache_properties(zbus::CacheProperties::No)
@@ -199,6 +239,13 @@ impl Device {
             .build()
             .await
             .error("Failed to create BatteryDbusProxy")?;
+        let connectivity_proxy = ConnectivityDbusProxy::builder(conn)
+            .cache_properties(zbus::CacheProperties::No)
+            .path(connectivity_path)
+            .error("Failed to set connectivity path")?
+            .build()
+            .await
+            .error("Failed to create ConnectivityDbusProxy")?;
 
         let mut s1 = device_proxy
             .receive_all_signals()
@@ -212,6 +259,10 @@ impl Device {
             .receive_all_signals()
             .await
             .error("Failed to receive signals")?;
+        let mut s4 = connectivity_proxy
+            .receive_refreshed()
+            .await
+            .error("Failed to receive signals")?;
 
         tokio::spawn(async move {
             loop {
@@ -219,6 +270,7 @@ impl Device {
                     _ = s1.next() => tx.send(()).await.unwrap(),
                     _ = s2.next() => tx.send(()).await.unwrap(),
                     _ = s3.next() => tx.send(()).await.unwrap(),
+                    _ = s4.next() => tx.send(()).await.unwrap(),
                 }
             }
         });
@@ -227,6 +279,7 @@ impl Device {
             device_proxy,
             battery_proxy,
             notifications_proxy,
+            connectivity_proxy,
         })
     }
 
@@ -238,23 +291,35 @@ impl Device {
         self.device_proxy.name().await.ok()
     }
 
-    async fn battery(&self) -> (Option<u8>, bool) {
-        (
+    async fn battery(&self) -> (Result<u8>, bool) {
+        tokio::join!(
             self.battery_proxy
                 .charge()
-                .await
-                .ok()
-                .map(|p| p.clamp(0, 100) as u8),
-            self.battery_proxy.is_charging().await.unwrap_or(false),
+                .map_ok(|p| p.clamp(0, 100) as u8)
+                .map_err(|_| Error::new("Could not get charge")),
+            self.battery_proxy
+                .is_charging()
+                .map_ok_or_else(|_| false, |x| x),
         )
     }
 
-    async fn notifications(&self) -> Option<usize> {
+    async fn notifications(&self) -> usize {
         self.notifications_proxy
             .active_notifications()
             .await
             .map(|n| n.len())
-            .ok()
+            .unwrap_or(0)
+    }
+
+    async fn network(&self) -> (Result<String>, i32) {
+        tokio::join!(
+            self.connectivity_proxy
+                .cellular_network_type()
+                .map_err(|_| Error::new("Could not get cellular_network_type")),
+            self.connectivity_proxy
+                .cellular_network_strength()
+                .map_ok_or_else(|_| -1, |x| x),
+        )
     }
 }
 
@@ -296,21 +361,6 @@ trait DeviceDbus {
 
     #[dbus_proxy(signal, name = "nameChanged")]
     fn name_changed_(&self, name: &str) -> zbus::Result<()>;
-}
-
-#[dbus_proxy(
-    interface = "org.kde.kdeconnect.device.battery",
-    default_service = "org.kde.kdeconnect"
-)]
-trait BatteryDbus {
-    #[dbus_proxy(signal, name = "refreshed")]
-    fn refreshed(&self, is_charging: bool, charge: i32) -> zbus::Result<()>;
-
-    #[dbus_proxy(property, name = "charge")]
-    fn charge(&self) -> zbus::Result<i32>;
-
-    #[dbus_proxy(property, name = "isCharging")]
-    fn is_charging(&self) -> zbus::Result<bool>;
 }
 
 #[dbus_proxy(

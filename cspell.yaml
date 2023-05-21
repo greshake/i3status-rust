@@ -31,15 +31,15 @@ words:
   - clippy
   - CLOEXEC
   - conn
-  - conv
   - consts
+  - conv
   - COPR
   - dbpath
   - dbus
   - ddcci
   - ddcutil
-  - docsrs
   - dmenu
+  - docsrs
   - dunst
   - execvp
   - fcntl
@@ -116,6 +116,7 @@ words:
   - rtattr
   - rtattrs
   - rtmsg
+  - rtnetlink
   - rtnl
   - rtprot
   - rustc
@@ -162,9 +163,9 @@ words:
   - xclip
   - xesam
   - xkbswitch
-  - xtask
   - XKCD
   - xrandr
+  - xtask
   - zbus
   - zvariant
   - zwlr

@@ -6,8 +6,8 @@ pub use crate::formatting::{config::Config as FormatConfig, value::Value, Values
 pub use crate::util::{default, new_dbus_connection, new_system_dbus_connection};
 pub use crate::widget::{State, Widget};
 pub use crate::wrappers::{Seconds, ShellString};
-pub use crate::REQWEST_CLIENT;
-pub use crate::REQWEST_CLIENT_IPV4;
+pub(crate) use crate::REQWEST_CLIENT;
+pub(crate) use crate::REQWEST_CLIENT_IPV4;
 
 pub use serde::Deserialize;
 

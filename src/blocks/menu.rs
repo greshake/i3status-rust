@@ -37,17 +37,17 @@ use crate::subprocess::spawn_shell;
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct Config {
-    text: String,
-    items: Vec<Item>,
+    pub text: String,
+    pub items: Vec<Item>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(deny_unknown_fields)]
-struct Item {
-    display: String,
-    cmd: String,
+pub struct Item {
+    pub display: String,
+    pub cmd: String,
     #[serde(default)]
-    confirm_msg: Option<String>,
+    pub confirm_msg: Option<String>,
 }
 
 struct Block {

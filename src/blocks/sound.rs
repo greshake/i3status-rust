@@ -111,23 +111,23 @@ serde_conv!(
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
-    driver: SoundDriver,
-    name: Option<String>,
-    device: Option<String>,
-    device_kind: DeviceKind,
-    natural_mapping: bool,
+    pub driver: SoundDriver,
+    pub name: Option<String>,
+    pub device: Option<String>,
+    pub device_kind: DeviceKind,
+    pub natural_mapping: bool,
     #[default(5)]
-    step_width: u32,
-    format: FormatConfig,
-    headphones_indicator: bool,
-    show_volume_when_muted: bool,
+    pub step_width: u32,
+    pub format: FormatConfig,
+    pub headphones_indicator: bool,
+    pub show_volume_when_muted: bool,
     #[serde_as(as = "Option<Map<_, _>>")]
-    mappings: Option<Vec<(String, String)>>,
+    pub mappings: Option<Vec<(String, String)>>,
     #[default(true)]
-    mappings_use_regex: bool,
-    max_vol: Option<u32>,
+    pub mappings_use_regex: bool,
+    pub max_vol: Option<u32>,
     #[serde_as(as = "Map<RegexAsString, _>")]
-    active_port_mappings: Vec<(Regex, String)>,
+    pub active_port_mappings: Vec<(Regex, String)>,
 }
 
 enum Mappings {
@@ -321,7 +321,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
 #[derive(Deserialize, Debug, SmartDefault, Clone, Copy)]
 #[serde(rename_all = "lowercase")]
-enum SoundDriver {
+pub enum SoundDriver {
     #[default]
     Auto,
     Alsa,
@@ -331,7 +331,7 @@ enum SoundDriver {
 
 #[derive(Deserialize, Debug, SmartDefault, Clone, Copy, PartialEq, Eq, Hash)]
 #[serde(rename_all = "lowercase")]
-enum DeviceKind {
+pub enum DeviceKind {
     #[default]
     Sink,
     Source,

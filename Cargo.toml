@@ -4,7 +4,7 @@ description = "A feature-rich and resource-friendly replacement for i3status, wr
 repository = "https://github.com/greshake/i3status-rust/"
 readme = "README.md"
 license = "GPL-3.0-only"
-version = "0.31.2"
+version = "0.31.5"
 authors = [
   "Kai Greshake <development@kai-greshake.de>",
   "Contributors on GitHub (https://github.com/greshake/i3status-rust/graphs/contributors)",
@@ -27,9 +27,13 @@ rustdoc-args = ["--cfg", "docsrs"]
 async-once-cell = "0.5"
 async-trait = "0.1"
 calibright = { version = "0.1", features = ["watch"] }
+chrono = { version = "0.4", default-features = false, features = ["clock", "unstable-locales"] }
+chrono-tz = { version = "0.8", features = ["serde"] }
+clap = { version = "4.0", default-features = false, features = ["std", "derive", "help", "usage"] }
 crossbeam-channel = "0.5"
 dirs = "5.0"
 env_logger = "0.10"
+futures = { version = "0.3", default-features = false }
 hyper = "0.14"
 inotify = "0.10"
 libc = "0.2"
@@ -43,26 +47,20 @@ nom = "7.1.2"
 notmuch = { version = "0.8", optional = true }
 once_cell = "1"
 regex = "1.5"
+reqwest = { version = "0.11", features = ["json"] }
 sensors = "0.2.2"
+serde = { version = "1.0", features = ["derive", "rc"] }
 serde_json = "1.0"
 serde_with = "3.0"
 shellexpand = "3.0"
 signal-hook = "0.3"
+signal-hook-tokio = { version = "0.3", features = ["futures-v0_3"] }
 smart-default = "0.7"
 swayipc-async = "2.0"
 toml = "0.7"
-zbus = { version = "3.8", default-features = false, features = ["tokio"] }
 wayrs-client = { version = "0.10", features = ["tokio"] }
 wayrs-protocols = { version = "0.10", features = ["wlr-foreign-toplevel-management-unstable-v1"] }
-
-[dependencies.clap]
-version = "4.0"
-default-features = false
-features = ["std", "derive", "help", "usage"]
-
-[dependencies.serde]
-version = "1.0"
-features = ["derive", "rc"]
+zbus = { version = "3.8", default-features = false, features = ["tokio"] }
 
 [dependencies.tokio]
 version = "1.12"
@@ -80,27 +78,6 @@ features = [
   "sync",
   "time",
 ]
-
-[dependencies.futures]
-version = "0.3"
-default-features = false
-
-[dependencies.chrono]
-version = "0.4"
-default-features = false
-features = ["clock", "unstable-locales"]
-
-[dependencies.chrono-tz]
-version = "0.8"
-features = ["serde"]
-
-[dependencies.signal-hook-tokio]
-version = "0.3"
-features = ["futures-v0_3"]
-
-[dependencies.reqwest]
-version = "0.11"
-features = ["json"]
 
 [profile.release]
 lto = "thin"

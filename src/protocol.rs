@@ -18,7 +18,7 @@ pub fn init(never_pause: bool) {
     }
 }
 
-pub fn print_blocks<B>(blocks: &[B], config: &SharedConfig)
+pub(crate) fn print_blocks<B>(blocks: &[B], config: &SharedConfig)
 where
     B: Borrow<RenderedBlock>,
 {

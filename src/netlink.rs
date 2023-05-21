@@ -7,6 +7,8 @@ use neli::types::RtBuffer;
 
 use regex::Regex;
 
+use libc::c_uchar;
+
 use std::net::{Ipv4Addr, Ipv6Addr};
 use std::ops;
 use std::path::Path;
@@ -14,34 +16,8 @@ use std::path::Path;
 use crate::errors::*;
 use crate::util;
 
-// Source: https://www.kernel.org/doc/Documentation/networking/operstates.txt
-//
-/// Interface is in unknown state, neither driver nor userspace has set
-/// operational state. Interface must be considered for user data as
-/// setting operational state has not been implemented in every driver.
-#[allow(dead_code)]
-const IF_OPER_UNKNOWN: u8 = 0;
-/// Unused in current kernel (notpresent interfaces normally disappear),
-/// just a numerical placeholder.
-#[allow(dead_code)]
-const IF_OPER_NOTPRESENT: u8 = 1;
-/// Interface is unable to transfer data on L1, f.e. ethernet is not
-/// plugged or interface is ADMIN down.
-#[allow(dead_code)]
-const IF_OPER_DOWN: u8 = 2;
-/// Interfaces stacked on an interface that is IF_OPER_DOWN show this
-/// state (f.e. VLAN).
-#[allow(dead_code)]
-const IF_OPER_LOWERLAYERDOWN: u8 = 3;
-/// Unused in current kernel.
-#[allow(dead_code)]
-const IF_OPER_TESTING: u8 = 4;
-/// Interface is L1 up, but waiting for an external event, f.e. for a
-/// protocol to establish. (802.1X)
-#[allow(dead_code)]
-const IF_OPER_DORMANT: u8 = 5;
-/// Interface is operational up and can be used.
-const IF_OPER_UP: u8 = 6;
+// From `linux/rtnetlink.h`
+const RT_SCOPE_HOST: c_uchar = 254;
 
 #[derive(Debug)]
 pub struct NetDevice {
@@ -72,6 +48,9 @@ impl NetDevice {
             .await
             .map_err(BoxErrorWrapper)
             .error("Failed to fetch interfaces")?;
+        if ifaces.is_empty() {
+            return Ok(None);
+        }
 
         let default_iface = get_default_interface(&mut sock)
             .await
@@ -81,14 +60,10 @@ impl NetDevice {
         let iface_position = ifaces
             .iter()
             .position(|i| i.index == default_iface)
+            .or_else(|| ifaces.iter().position(|i| i.operstate == Operstate::Up))
             .unwrap_or(0);
 
-        let iface = if iface_position < ifaces.len() {
-            ifaces.swap_remove(iface_position)
-        } else {
-            return Ok(None);
-        };
-
+        let iface = ifaces.swap_remove(iface_position);
         let wifi_info = WifiInfo::new(iface.index).await?;
         let ip = ipv4(&mut sock, iface.index).await?;
         let ipv6 = ipv6(&mut sock, iface.index).await?;
@@ -126,7 +101,10 @@ impl NetDevice {
     }
 
     pub fn is_up(&self) -> bool {
-        self.iface.is_up || self.tun_wg_ppp
+        self.tun_wg_ppp
+            || self.iface.operstate == Operstate::Up
+            || (self.iface.operstate == Operstate::Unknown
+                && (self.ip.is_some() || self.ipv6.is_some()))
     }
 
     pub fn ssid(&self) -> Option<String> {
@@ -267,7 +245,7 @@ impl InterfaceStats {
 #[derive(Debug)]
 pub struct Interface {
     pub index: i32,
-    pub is_up: bool,
+    pub operstate: Operstate,
     pub name: String,
     pub stats: Option<InterfaceStats>,
 }
@@ -315,12 +293,12 @@ async fn get_interfaces(
     recv_until_done!(sock, msg: Ifinfomsg => {
         let mut name = None;
         let mut stats = None;
-        let mut is_up = false;
+        let mut operstate = Operstate::Unknown;
         for attr in msg.rtattrs.iter() {
             match attr.rta_type {
                 Ifla::Ifname => name = Some(attr.get_payload_as_with_len()?),
                 Ifla::Stats64 => stats = Some(InterfaceStats::from_stats64(attr.payload().as_ref())),
-                Ifla::Operstate => is_up = attr.get_payload_as::<u8>()? == IF_OPER_UP,
+                Ifla::Operstate => operstate = attr.get_payload_as::<u8>()?.into(),
                 _ => (),
             }
         }
@@ -328,7 +306,7 @@ async fn get_interfaces(
         if filter.map_or(true, |f| f.is_match(&name)) {
             interfaces.push(Interface {
                 index: msg.ifi_index,
-                is_up,
+                operstate,
                 name,
                 stats,
             });
@@ -410,7 +388,7 @@ async fn ip_payload<const BYTES: usize>(
     let mut payload = None;
 
     recv_until_done!(sock, msg: Ifaddrmsg => {
-        if msg.ifa_index != ifa_index || payload.is_some() {
+        if msg.ifa_index != ifa_index || msg.ifa_scope >= RT_SCOPE_HOST || payload.is_some() {
             continue;
         }
 
@@ -442,4 +420,43 @@ async fn ipv6(sock: &mut NlSocket, ifa_index: i32) -> Result<Option<Ipv6Addr>> {
         .map_err(BoxErrorWrapper)
         .error("Failed to get IPv6 address")?
         .map(Ipv6Addr::from))
+}
+
+// Source: https://www.kernel.org/doc/Documentation/networking/operstates.txt
+#[derive(Debug, PartialEq, Eq)]
+pub enum Operstate {
+    /// Interface is in unknown state, neither driver nor userspace has set
+    /// operational state. Interface must be considered for user data as
+    /// setting operational state has not been implemented in every driver.
+    Unknown,
+    /// Unused in current kernel (notpresent interfaces normally disappear),
+    /// just a numerical placeholder.
+    Notpresent,
+    /// Interface is unable to transfer data on L1, f.e. ethernet is not
+    /// plugged or interface is ADMIN down.
+    Down,
+    /// Interfaces stacked on an interface that is IF_OPER_DOWN show this
+    /// state (f.e. VLAN).
+    Lowerlayerdown,
+    /// Unused in current kernel.
+    Testing,
+    /// Interface is L1 up, but waiting for an external event, f.e. for a
+    /// protocol to establish. (802.1X)
+    Dormant,
+    /// Interface is operational up and can be used.
+    Up,
+}
+
+impl From<u8> for Operstate {
+    fn from(value: u8) -> Self {
+        match value {
+            1 => Self::Notpresent,
+            2 => Self::Down,
+            3 => Self::Lowerlayerdown,
+            4 => Self::Testing,
+            5 => Self::Dormant,
+            6 => Self::Up,
+            _ => Self::Unknown,
+        }
+    }
 }

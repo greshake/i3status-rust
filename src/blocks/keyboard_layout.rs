@@ -87,17 +87,17 @@ use zbus::dbus_proxy;
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
-    format: FormatConfig,
-    driver: KeyboardLayoutDriver,
+    pub format: FormatConfig,
+    pub driver: KeyboardLayoutDriver,
     #[default(60.into())]
-    interval: Seconds,
-    sway_kb_identifier: Option<String>,
-    mappings: Option<HashMap<String, String>>,
+    pub interval: Seconds,
+    pub sway_kb_identifier: Option<String>,
+    pub mappings: Option<HashMap<String, String>>,
 }
 
 #[derive(Deserialize, Debug, SmartDefault, Clone, Copy)]
 #[serde(rename_all = "lowercase")]
-enum KeyboardLayoutDriver {
+pub enum KeyboardLayoutDriver {
     #[default]
     SetXkbMap,
     LocaleBus,

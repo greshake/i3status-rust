@@ -61,13 +61,13 @@ use super::prelude::*;
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
     #[default(600.into())]
-    interval: Seconds,
-    format: FormatConfig,
-    format_singular: FormatConfig,
-    format_up_to_date: FormatConfig,
-    warning_updates_regex: Option<String>,
-    critical_updates_regex: Option<String>,
-    ignore_phased_updates: bool,
+    pub interval: Seconds,
+    pub format: FormatConfig,
+    pub format_singular: FormatConfig,
+    pub format_up_to_date: FormatConfig,
+    pub warning_updates_regex: Option<String>,
+    pub critical_updates_regex: Option<String>,
+    pub ignore_phased_updates: bool,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
