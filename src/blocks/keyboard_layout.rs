@@ -173,10 +173,24 @@ impl Backend for SetXkbMap {
             .error("Could not find the layout entry from setxkbmap")?
             .split_ascii_whitespace()
             .last()
-            .error("Could not read the layout entry from setxkbmap.")?;
+            .error("Could not read the layout entry from setxkbmap.")?
+            .into();
+        let variant_line = output
+            .lines()
+            // Find the "variant:   xxxx" line if it exists.
+            .find(|line| line.starts_with("variant"));
+        let variant = match variant_line {
+            Some(s) => Some(s
+            .split_ascii_whitespace()
+            .last()
+            .error("Could not read the variant entry from setxkbmap.")?.to_string()),
+            None => None
+        };
+                
+
         Ok(Info {
-            layout: layout.into(),
-            variant: None,
+            layout: layout,
+            variant: variant,
         })
     }
 
