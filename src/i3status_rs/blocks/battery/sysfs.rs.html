@@ -280,6 +280,8 @@
 <a href="#280" id="280">280</a>
 <a href="#281" id="281">281</a>
 <a href="#282" id="282">282</a>
+<a href="#283" id="283">283</a>
+<a href="#284" id="284">284</a>
 </pre><pre class="rust"><code><span class="kw">use </span>std::convert::Infallible;
 <span class="kw">use </span>std::path::{Path, PathBuf};
 <span class="kw">use </span>std::str::FromStr;
@@ -511,10 +513,12 @@
 
         </span><span class="kw">let </span>status = status.unwrap_or_default();
 
-        <span class="kw">let </span>calc_capacity = |(now, full)| (now / full * <span class="number">100.0</span>);
-        <span class="kw">let </span>capacity = capacity
-            .or_else(|| charge_now.zip(charge_full).map(calc_capacity))
-            .or_else(|| energy_now.zip(energy_full).map(calc_capacity))
+        <span class="comment">// Prefer `charge_now/charge_full` and `energy_now/energy_full` because `capacity` is
+        // calculated using `_full_design`, which is not practical (#1410, #1906).
+        </span><span class="kw">let </span>calc_capacity = |now, full| <span class="prelude-val">Some</span>(now<span class="question-mark">? </span>/ full<span class="question-mark">? </span>* <span class="number">100.0</span>);
+        <span class="kw">let </span>capacity = calc_capacity(charge_now, charge_full)
+            .or_else(|| calc_capacity(energy_now, energy_full))
+            .or(capacity)
             .or_else(|| capacity_level.and_then(CapacityLevel::percentage))
             .error(<span class="string">&quot;Failed to get capacity&quot;</span>)<span class="question-mark">?</span>;
 
