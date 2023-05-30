@@ -161,7 +161,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 // active_port if that property is not present.
                 None => device
                     .active_port()
-                    .map_or(false, |p| p.contains("headphones")),
+                    .is_some_and(|p| p.contains("headphones")),
                 // form_factor is present and is some non-headphone value
                 _ => false,
             };

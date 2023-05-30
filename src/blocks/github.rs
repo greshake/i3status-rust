@@ -87,7 +87,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     loop {
         let stats = get_stats(&token).await?;
 
-        if stats.get("total").map_or(false, |x| *x > 0) || !config.hide_if_total_is_zero {
+        if stats.get("total").is_some_and(|x| *x > 0) || !config.hide_if_total_is_zero {
             let mut widget = Widget::new().with_format(format.clone());
 
             'outer: for (list_opt, ret) in [
@@ -98,7 +98,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             ] {
                 if let Some(list) = list_opt {
                     for val in list {
-                        if stats.get(val).map_or(false, |x| *x > 0) {
+                        if stats.get(val).is_some_and(|x| *x > 0) {
                             widget.state = ret;
                             break 'outer;
                         }

@@ -223,10 +223,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 let values = map!("pacman" => Value::number(count));
                 let warning = warning_updates_regex
                     .as_ref()
-                    .map_or(false, |regex| has_matching_update(&updates, regex));
+                    .is_some_and(|regex| has_matching_update(&updates, regex));
                 let critical = critical_updates_regex
                     .as_ref()
-                    .map_or(false, |regex| has_matching_update(&updates, regex));
+                    .is_some_and(|regex| has_matching_update(&updates, regex));
                 (values, warning, critical, count)
             }
             Watched::Aur(aur_command) => {
@@ -237,10 +237,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 );
                 let warning = warning_updates_regex
                     .as_ref()
-                    .map_or(false, |regex| has_matching_update(&updates, regex));
+                    .is_some_and(|regex| has_matching_update(&updates, regex));
                 let critical = critical_updates_regex
                     .as_ref()
-                    .map_or(false, |regex| has_matching_update(&updates, regex));
+                    .is_some_and(|regex| has_matching_update(&updates, regex));
                 (values, warning, critical, count)
             }
             Watched::Both(aur_command) => {
@@ -255,11 +255,11 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     "aur" =>    Value::number(aur_count),
                     "both" =>   Value::number(pacman_count + aur_count),
                 };
-                let warning = warning_updates_regex.as_ref().map_or(false, |regex| {
+                let warning = warning_updates_regex.as_ref().is_some_and(|regex| {
                     has_matching_update(&aur_updates, regex)
                         || has_matching_update(&pacman_updates, regex)
                 });
-                let critical = critical_updates_regex.as_ref().map_or(false, |regex| {
+                let critical = critical_updates_regex.as_ref().is_some_and(|regex| {
                     has_matching_update(&aur_updates, regex)
                         || has_matching_update(&pacman_updates, regex)
                 });
