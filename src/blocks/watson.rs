@@ -130,7 +130,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 _ = api.wait_for_update_request() => break,
                 Some(update) = state_updates.next() => {
                     let update = update.error("Bad inotify update")?;
-                    if update.name.map_or(false, |x| state_file == x) {
+                    if update.name.is_some_and(|x| state_file == x) {
                         break;
                     }
                 }
