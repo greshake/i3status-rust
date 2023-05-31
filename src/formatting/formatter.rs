@@ -16,6 +16,7 @@ use crate::escape::CollectEscaped;
 const DEFAULT_STR_MIN_WIDTH: usize = 0;
 const DEFAULT_STR_MAX_WIDTH: usize = usize::MAX;
 const DEFAULT_STR_ROT_INTERVAL: Option<f64> = None;
+const DEFAULT_STR_ROT_SEP: Option<String> = None;
 
 const DEFAULT_BAR_VERTICAL: bool = false;
 const DEFAULT_BAR_WIDTH_HORIZONTAL: usize = 5;
@@ -32,6 +33,7 @@ pub const DEFAULT_STRING_FORMATTER: StrFormatter = StrFormatter {
     max_width: DEFAULT_STR_MAX_WIDTH,
     rot_interval_ms: None,
     init_time: None,
+    rot_separator: None,
 };
 
 // TODO: split those defaults
@@ -66,6 +68,7 @@ pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
             let mut min_width = DEFAULT_STR_MIN_WIDTH;
             let mut max_width = DEFAULT_STR_MAX_WIDTH;
             let mut rot_interval = DEFAULT_STR_ROT_INTERVAL;
+            let mut rot_separator = DEFAULT_STR_ROT_SEP;
             for arg in args {
                 match arg.key {
                     "min_width" | "min_w" => {
@@ -84,6 +87,9 @@ pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
                                 .parse()
                                 .error("Interval must be a positive number")?,
                         );
+                    }
+                    "rot_separator" => {
+                        rot_separator = Some(arg.val.to_string());
                     }
                     other => {
                         return Err(Error::new(format!("Unknown argument for 'str': '{other}'")));
@@ -105,6 +111,7 @@ pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
                 max_width,
                 rot_interval_ms: rot_interval.map(|x| (x * 1e3) as u64),
                 init_time: Some(Instant::now()),
+                rot_separator,
             }))
         }
         "pango-str" => {
@@ -182,6 +189,7 @@ pub struct StrFormatter {
     max_width: usize,
     rot_interval_ms: Option<u64>,
     init_time: Option<Instant>,
+    rot_separator: Option<String>,
 }
 
 impl Formatter for StrFormatter {
@@ -191,13 +199,14 @@ impl Formatter for StrFormatter {
                 let width = text.chars().count();
                 Ok(match (self.rot_interval_ms, self.init_time) {
                     (Some(rot_interval_ms), Some(init_time)) if width > self.max_width => {
-                        let width = width + 1; // Now we include '|' at the end
+                        let rot_separator = self.rot_separator.clone().unwrap_or("|".to_string());
+                        let width = width + rot_separator.chars().count(); // Now we include `rot_separator` at the end
                         let step = (init_time.elapsed().as_millis() as u64 / rot_interval_ms)
                             as usize
                             % width;
                         let w1 = self.max_width.min(width - step);
                         text.chars()
-                            .chain(Some('|'))
+                            .chain(rot_separator.chars())
                             .skip(step)
                             .take(w1)
                             .chain(text.chars())
