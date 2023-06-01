@@ -1,3 +1,14 @@
+# i3status-rust 0.31.6
+
+### New Blocks and Features
+
+* Support custom separators in rotating text. Example: `format = " $title.str(max_w:30, rot_interval:0.2, rot_separator:' - ') |"`.
+
+### Bug Fixes and Improvements
+
+* Battery(sysfs): calculate battery level based on `{charge,energy}_{now,full}` instead of kernel-provided `capacity` (see [#1906](https://github.com/greshake/i3status-rust/issues/1906)).
+* Text formatting now operates on graphemes instead of "chars". This means that symbols like "a̐" are now processed correctly.
+
 # i3status-rust 0.31.5
 
 ### Bug Fixes and Improvements
