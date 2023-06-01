@@ -58,6 +58,7 @@ signal-hook-tokio = { version = "0.3", features = ["futures-v0_3"] }
 smart-default = "0.7"
 swayipc-async = "2.0"
 toml = "0.7"
+unicode-segmentation = "1.10.1"
 wayrs-client = { version = "0.10", features = ["tokio"] }
 wayrs-protocols = { version = "0.10", features = ["wlr-foreign-toplevel-management-unstable-v1"] }
 zbus = { version = "3.8", default-features = false, features = ["tokio"] }

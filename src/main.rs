@@ -2,7 +2,7 @@ use clap::Parser;
 
 use i3status_rs::config::Config;
 use i3status_rs::errors::*;
-use i3status_rs::escape::CollectEscaped;
+use i3status_rs::escape::Escaped;
 use i3status_rs::widget::{State, Widget};
 use i3status_rs::{protocol, util, BarState};
 
@@ -34,7 +34,7 @@ fn main() {
         });
     if let Err(error) = result {
         let error_widget = Widget::new()
-            .with_text(error.to_string().chars().collect_pango_escaped())
+            .with_text(error.to_string().pango_escaped())
             .with_state(State::Critical);
 
         println!(

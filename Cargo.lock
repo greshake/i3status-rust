@@ -968,6 +968,7 @@ dependencies = [
  "swayipc-async",
  "tokio",
  "toml",
+ "unicode-segmentation",
  "wayrs-client",
  "wayrs-protocols",
  "zbus",

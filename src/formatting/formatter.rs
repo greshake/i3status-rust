@@ -1,6 +1,7 @@
 use chrono::format::{Item, StrftimeItems};
 use chrono::{Local, Locale};
 use once_cell::sync::Lazy;
+use unicode_segmentation::UnicodeSegmentation;
 
 use std::fmt::Debug;
 use std::iter::repeat;
@@ -196,26 +197,32 @@ impl Formatter for StrFormatter {
     fn format(&self, val: &Value) -> Result<String> {
         match val {
             Value::Text(text) => {
-                let width = text.chars().count();
+                let text: Vec<&str> = text.graphemes(true).collect();
+                let width = text.len();
                 Ok(match (self.rot_interval_ms, self.init_time) {
                     (Some(rot_interval_ms), Some(init_time)) if width > self.max_width => {
-                        let rot_separator = self.rot_separator.clone().unwrap_or("|".to_string());
-                        let width = width + rot_separator.chars().count(); // Now we include `rot_separator` at the end
+                        let rot_separator: Vec<&str> = self
+                            .rot_separator
+                            .as_deref()
+                            .unwrap_or("|")
+                            .graphemes(true)
+                            .collect();
+                        let width = width + rot_separator.len(); // Now we include `rot_separator` at the end
                         let step = (init_time.elapsed().as_millis() as u64 / rot_interval_ms)
                             as usize
                             % width;
                         let w1 = self.max_width.min(width - step);
-                        text.chars()
-                            .chain(rot_separator.chars())
+                        text.iter()
+                            .chain(rot_separator.iter())
                             .skip(step)
                             .take(w1)
-                            .chain(text.chars())
+                            .chain(text.iter())
                             .take(self.max_width)
                             .collect_pango_escaped()
                     }
                     _ => text
-                        .chars()
-                        .chain(repeat(' ').take(self.min_width.saturating_sub(width)))
+                        .iter()
+                        .chain(repeat(&" ").take(self.min_width.saturating_sub(width)))
                         .take(self.max_width)
                         .collect_pango_escaped(),
                 })
