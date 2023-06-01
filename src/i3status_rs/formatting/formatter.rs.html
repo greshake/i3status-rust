@@ -615,9 +615,26 @@
 <a href="#615" id="615">615</a>
 <a href="#616" id="616">616</a>
 <a href="#617" id="617">617</a>
+<a href="#618" id="618">618</a>
+<a href="#619" id="619">619</a>
+<a href="#620" id="620">620</a>
+<a href="#621" id="621">621</a>
+<a href="#622" id="622">622</a>
+<a href="#623" id="623">623</a>
+<a href="#624" id="624">624</a>
+<a href="#625" id="625">625</a>
+<a href="#626" id="626">626</a>
+<a href="#627" id="627">627</a>
+<a href="#628" id="628">628</a>
+<a href="#629" id="629">629</a>
+<a href="#630" id="630">630</a>
+<a href="#631" id="631">631</a>
+<a href="#632" id="632">632</a>
+<a href="#633" id="633">633</a>
 </pre><pre class="rust"><code><span class="kw">use </span>chrono::format::{Item, StrftimeItems};
 <span class="kw">use </span>chrono::{Local, Locale};
 <span class="kw">use </span>once_cell::sync::Lazy;
+<span class="kw">use </span>unicode_segmentation::UnicodeSegmentation;
 
 <span class="kw">use </span>std::fmt::Debug;
 <span class="kw">use </span>std::iter::repeat;
@@ -633,6 +650,7 @@
 <span class="kw">const </span>DEFAULT_STR_MIN_WIDTH: usize = <span class="number">0</span>;
 <span class="kw">const </span>DEFAULT_STR_MAX_WIDTH: usize = usize::MAX;
 <span class="kw">const </span>DEFAULT_STR_ROT_INTERVAL: <span class="prelude-ty">Option</span>&lt;f64&gt; = <span class="prelude-val">None</span>;
+<span class="kw">const </span>DEFAULT_STR_ROT_SEP: <span class="prelude-ty">Option</span>&lt;String&gt; = <span class="prelude-val">None</span>;
 
 <span class="kw">const </span>DEFAULT_BAR_VERTICAL: bool = <span class="bool-val">false</span>;
 <span class="kw">const </span>DEFAULT_BAR_WIDTH_HORIZONTAL: usize = <span class="number">5</span>;
@@ -649,6 +667,7 @@
     max_width: DEFAULT_STR_MAX_WIDTH,
     rot_interval_ms: <span class="prelude-val">None</span>,
     init_time: <span class="prelude-val">None</span>,
+    rot_separator: <span class="prelude-val">None</span>,
 };
 
 <span class="comment">// TODO: split those defaults
@@ -683,6 +702,7 @@
             <span class="kw">let </span><span class="kw-2">mut </span>min_width = DEFAULT_STR_MIN_WIDTH;
             <span class="kw">let </span><span class="kw-2">mut </span>max_width = DEFAULT_STR_MAX_WIDTH;
             <span class="kw">let </span><span class="kw-2">mut </span>rot_interval = DEFAULT_STR_ROT_INTERVAL;
+            <span class="kw">let </span><span class="kw-2">mut </span>rot_separator = DEFAULT_STR_ROT_SEP;
             <span class="kw">for </span>arg <span class="kw">in </span>args {
                 <span class="kw">match </span>arg.key {
                     <span class="string">&quot;min_width&quot; </span>| <span class="string">&quot;min_w&quot; </span>=&gt; {
@@ -701,6 +721,9 @@
                                 .parse()
                                 .error(<span class="string">&quot;Interval must be a positive number&quot;</span>)<span class="question-mark">?</span>,
                         );
+                    }
+                    <span class="string">&quot;rot_separator&quot; </span>=&gt; {
+                        rot_separator = <span class="prelude-val">Some</span>(arg.val.to_string());
                     }
                     other =&gt; {
                         <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">&quot;Unknown argument for &#39;str&#39;: &#39;{other}&#39;&quot;</span>)));
@@ -722,6 +745,7 @@
                 max_width,
                 rot_interval_ms: rot_interval.map(|x| (x * <span class="number">1e3</span>) <span class="kw">as </span>u64),
                 init_time: <span class="prelude-val">Some</span>(Instant::now()),
+                rot_separator,
             }))
         }
         <span class="string">&quot;pango-str&quot; </span>=&gt; {
@@ -799,31 +823,39 @@
     max_width: usize,
     rot_interval_ms: <span class="prelude-ty">Option</span>&lt;u64&gt;,
     init_time: <span class="prelude-ty">Option</span>&lt;Instant&gt;,
+    rot_separator: <span class="prelude-ty">Option</span>&lt;String&gt;,
 }
 
 <span class="kw">impl </span>Formatter <span class="kw">for </span>StrFormatter {
     <span class="kw">fn </span>format(<span class="kw-2">&amp;</span><span class="self">self</span>, val: <span class="kw-2">&amp;</span>Value) -&gt; <span class="prelude-ty">Result</span>&lt;String&gt; {
         <span class="kw">match </span>val {
             Value::Text(text) =&gt; {
-                <span class="kw">let </span>width = text.chars().count();
+                <span class="kw">let </span>text: Vec&lt;<span class="kw-2">&amp;</span>str&gt; = text.graphemes(<span class="bool-val">true</span>).collect();
+                <span class="kw">let </span>width = text.len();
                 <span class="prelude-val">Ok</span>(<span class="kw">match </span>(<span class="self">self</span>.rot_interval_ms, <span class="self">self</span>.init_time) {
                     (<span class="prelude-val">Some</span>(rot_interval_ms), <span class="prelude-val">Some</span>(init_time)) <span class="kw">if </span>width &gt; <span class="self">self</span>.max_width =&gt; {
-                        <span class="kw">let </span>width = width + <span class="number">1</span>; <span class="comment">// Now we include &#39;|&#39; at the end
+                        <span class="kw">let </span>rot_separator: Vec&lt;<span class="kw-2">&amp;</span>str&gt; = <span class="self">self
+                            </span>.rot_separator
+                            .as_deref()
+                            .unwrap_or(<span class="string">&quot;|&quot;</span>)
+                            .graphemes(<span class="bool-val">true</span>)
+                            .collect();
+                        <span class="kw">let </span>width = width + rot_separator.len(); <span class="comment">// Now we include `rot_separator` at the end
                         </span><span class="kw">let </span>step = (init_time.elapsed().as_millis() <span class="kw">as </span>u64 / rot_interval_ms)
                             <span class="kw">as </span>usize
                             % width;
                         <span class="kw">let </span>w1 = <span class="self">self</span>.max_width.min(width - step);
-                        text.chars()
-                            .chain(<span class="prelude-val">Some</span>(<span class="string">&#39;|&#39;</span>))
+                        text.iter()
+                            .chain(rot_separator.iter())
                             .skip(step)
                             .take(w1)
-                            .chain(text.chars())
+                            .chain(text.iter())
                             .take(<span class="self">self</span>.max_width)
                             .collect_pango_escaped()
                     }
                     <span class="kw">_ </span>=&gt; text
-                        .chars()
-                        .chain(repeat(<span class="string">&#39; &#39;</span>).take(<span class="self">self</span>.min_width.saturating_sub(width)))
+                        .iter()
+                        .chain(repeat(<span class="kw-2">&amp;</span><span class="string">&quot; &quot;</span>).take(<span class="self">self</span>.min_width.saturating_sub(width)))
                         .take(<span class="self">self</span>.max_width)
                         .collect_pango_escaped(),
                 })
