@@ -189,10 +189,7 @@ impl Backend for SetXkbMap {
             None => None,
         };
 
-        Ok(Info {
-            layout: layout,
-            variant: variant,
-        })
+        Ok(Info { layout, variant })
     }
 
     async fn wait_for_change(&mut self) -> Result<()> {
