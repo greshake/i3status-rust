@@ -21,7 +21,7 @@
 //!  Key     | Value | Type
 //! ---------|-------|-----
 //! `layout` | Keyboard layout name | String
-//! `variant`| Keyboard variant. Only `localebus`, `sway` and `kbddbus` are supported so far. | String
+//! `variant`| Keyboard variant name or `N/A` if not applicable | String
 //!
 //! # Examples
 //!
@@ -173,11 +173,23 @@ impl Backend for SetXkbMap {
             .error("Could not find the layout entry from setxkbmap")?
             .split_ascii_whitespace()
             .last()
-            .error("Could not read the layout entry from setxkbmap.")?;
-        Ok(Info {
-            layout: layout.into(),
-            variant: None,
-        })
+            .error("Could not read the layout entry from setxkbmap.")?
+            .into();
+        let variant_line = output
+            .lines()
+            // Find the "variant:   xxxx" line if it exists.
+            .find(|line| line.starts_with("variant"));
+        let variant = match variant_line {
+            Some(s) => Some(
+                s.split_ascii_whitespace()
+                    .last()
+                    .error("Could not read the variant entry from setxkbmap.")?
+                    .to_string(),
+            ),
+            None => None,
+        };
+
+        Ok(Info { layout, variant })
     }
 
     async fn wait_for_change(&mut self) -> Result<()> {
