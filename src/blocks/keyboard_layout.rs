@@ -12,7 +12,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `driver` | One of `"setxkbmap"`, `"localebus"`, `"kbddbus"` or `"sway"`, depending on your system. | `"setxkbmap"`
+//! `driver` | One of `"setxkbmap"`, `"localebus"`, `"kbddbus"`, `"sway"` or "XkbSwitch", depending on your system. | `"setxkbmap"`
 //! `interval` | Update interval, in seconds. Only used by the `"setxkbmap"` driver. | `60`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `" $layout "`
 //! `sway_kb_identifier` | Identifier of the device you want to monitor, as found in the output of `swaymsg -t get_inputs`. | Defaults to first input found
@@ -103,6 +103,7 @@ pub enum KeyboardLayoutDriver {
     LocaleBus,
     KbddBus,
     Sway,
+    XkbSwitch,
 }
 
 pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
@@ -113,6 +114,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         KeyboardLayoutDriver::LocaleBus => Box::new(LocaleBus::new().await?),
         KeyboardLayoutDriver::KbddBus => Box::new(KbddBus::new().await?),
         KeyboardLayoutDriver::Sway => Box::new(Sway::new(config.sway_kb_identifier).await?),
+        KeyboardLayoutDriver::XkbSwitch => Box::new(XkbSwitch(config.interval)),
     };
 
     loop {
@@ -152,6 +154,39 @@ trait Backend {
 struct Info {
     layout: String,
     variant: Option<String>,
+}
+
+struct XkbSwitch(Seconds);
+
+#[async_trait]
+impl Backend for XkbSwitch {
+    async fn get_info(&mut self) -> Result<Info> {
+        let output = Command::new("xkbswitch")
+            .arg("-query")
+            .output()
+            .await
+            .error("Failed to execute xkbswitch command")?;
+            
+        let output = String::from_utf8_lossy(&output.stdout).error("xkbswitch produced a non-UTF8 output")?;
+
+        let layout = output
+            .lines()
+            // Find the "layout:    xxxx" entry.
+            .find(|line| line.starts_with("layout"))
+            .error("Could not find the layout entry from xkbswitch")?
+            .split_ascii_whitespace()
+            .last()
+            .error("Could not read the layout entry from xkbswitch.")?;
+        Ok(Info { 
+            layout: layout.into(),
+            variant: None,
+        })
+    }
+
+    async fn wait_for_change(&mut self) -> Result<()> {
+        sleep(self.0 .0).await;
+        Ok(())
+    }
 }
 
 struct SetXkbMap(Seconds);
