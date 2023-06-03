@@ -239,7 +239,9 @@ impl BatteryDevice for Device {
             .error("Failed to get capacity")?;
 
         // A * V = W
-        let power = power_now.or_else(|| current_now.zip(voltage_now).map(|(c, v)| c * v));
+        let power = power_now
+            .or_else(|| current_now.zip(voltage_now).map(|(c, v)| c * v))
+            .filter(|&p| p != 0.0);
 
         // Ah * V = Wh
         // Wh / W = h
