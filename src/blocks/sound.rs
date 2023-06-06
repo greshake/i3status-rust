@@ -130,12 +130,13 @@ pub struct Config {
     pub active_port_mappings: Vec<(Regex, String)>,
 }
 
-enum Mappings {
-    Exact(Vec<(String, String)>),
-    Regex(Vec<(Regex, String)>),
+enum Mappings<'a> {
+    Exact(&'a [(String, String)]),
+    Regex(Vec<(Regex, &'a str)>),
 }
 
-pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+    let mut actions = api.get_actions().await?;
     api.set_default_actions(&[
         (MouseButton::Right, None, "toggle_mute"),
         (MouseButton::WheelUp, None, "volume_up"),
@@ -185,21 +186,22 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let mut device: DeviceType = match config.driver {
         SoundDriver::Alsa => Box::new(alsa::Device::new(
             config.name.clone().unwrap_or_else(|| "Master".into()),
-            config.device.unwrap_or_else(|| "default".into()),
+            config.device.clone().unwrap_or_else(|| "default".into()),
             config.natural_mapping,
         )?),
         #[cfg(feature = "pulseaudio")]
-        SoundDriver::PulseAudio => {
-            Box::new(pulseaudio::Device::new(config.device_kind, config.name)?)
-        }
+        SoundDriver::PulseAudio => Box::new(pulseaudio::Device::new(
+            config.device_kind,
+            config.name.clone(),
+        )?),
         #[cfg(feature = "pulseaudio")]
         SoundDriver::Auto => {
             if let Ok(pulse) = pulseaudio::Device::new(config.device_kind, config.name.clone()) {
                 Box::new(pulse)
             } else {
                 Box::new(alsa::Device::new(
-                    config.name.unwrap_or_else(|| "Master".into()),
-                    config.device.unwrap_or_else(|| "default".into()),
+                    config.name.clone().unwrap_or_else(|| "Master".into()),
+                    config.device.clone().unwrap_or_else(|| "default".into()),
                     config.natural_mapping,
                 )?)
             }
@@ -207,21 +209,21 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         #[cfg(not(feature = "pulseaudio"))]
         SoundDriver::Auto => Box::new(alsa::Device::new(
             config.name.clone().unwrap_or_else(|| "Master".into()),
-            config.device.unwrap_or_else(|| "default".into()),
+            config.device.clone().unwrap_or_else(|| "default".into()),
             config.natural_mapping,
         )?),
     };
 
-    let mappings = match config.mappings {
+    let mappings = match &config.mappings {
         Some(m) => {
             if config.mappings_use_regex {
                 Some(Mappings::Regex(
-                    m.into_iter()
+                    m.iter()
                         .map(|(key, val)| {
                             Ok((
-                                Regex::new(&key)
+                                Regex::new(key)
                                     .error("Failed to parse `{key}` in mappings as regex")?,
-                                val,
+                                val.as_str(),
                             ))
                         })
                         .collect::<Result<_>>()?,
@@ -244,7 +246,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                 if let Some((regex, mapped)) =
                     m.iter().find(|(regex, _)| regex.is_match(&output_name))
                 {
-                    output_name = regex.replace(&output_name, mapped).into_owned();
+                    output_name = regex.replace(&output_name, *mapped).into_owned();
                 }
             }
             Some(Mappings::Exact(m)) => {
@@ -301,15 +303,15 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     val?;
                     break;
                 }
-                event = api.event() => match event {
-                    UpdateRequest => break,
-                    Action(a) if a == "toggle_mute" => {
+                _ = api.wait_for_update_request() => break,
+                Some(action) = actions.recv() => match action.as_ref() {
+                    "toggle_mute" => {
                         device.toggle().await?;
                     }
-                    Action(a) if a == "volume_up" => {
+                    "volume_up" => {
                         device.set_volume(step_width, config.max_vol).await?;
                     }
-                    Action(a) if a == "volume_down" => {
+                    "volume_down" => {
                         device.set_volume(-step_width, config.max_vol).await?;
                     }
                     _ => (),

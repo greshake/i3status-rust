@@ -31,7 +31,9 @@
 //! confirm_msg = "Are you sure you want to reboot?"
 //! ```
 
-use super::prelude::*;
+use tokio::sync::mpsc::UnboundedReceiver;
+
+use super::{prelude::*, BlockAction};
 use crate::subprocess::spawn_shell;
 
 #[derive(Deserialize, Debug)]
@@ -50,42 +52,37 @@ pub struct Item {
     pub confirm_msg: Option<String>,
 }
 
-struct Block {
-    api: CommonApi,
-    text: String,
-    items: Vec<Item>,
+struct Block<'a> {
+    actions: UnboundedReceiver<BlockAction>,
+    api: &'a CommonApi,
+    text: &'a str,
+    items: &'a [Item],
 }
 
-impl Block {
+impl Block<'_> {
     async fn reset(&mut self) -> Result<()> {
-        self.set_text(self.text.clone()).await
+        self.set_text(self.text.to_owned()).await
     }
 
     async fn set_text(&mut self, text: String) -> Result<()> {
         self.api.set_widget(Widget::new().with_text(text)).await
     }
 
-    async fn wait_for_click(&mut self, button: &str) {
-        loop {
-            match self.api.event().await {
-                Action(a) if a == button => break,
-                _ => (),
-            }
-        }
+    async fn wait_for_click(&mut self, button: &str) -> Result<()> {
+        while self.actions.recv().await.error("channel closed")? != button {}
+        Ok(())
     }
 
     async fn run_menu(&mut self) -> Result<Option<Item>> {
         let mut index = 0;
         loop {
             self.set_text(self.items[index].display.clone()).await?;
-            if let Action(action) = self.api.event().await {
-                match action.as_ref() {
-                    "_up" => index += 1,
-                    "_down" => index += self.items.len() + 1,
-                    "_left" => return Ok(Some(self.items[index].clone())),
-                    "_right" => return Ok(None),
-                    _ => (),
-                }
+            match &*self.actions.recv().await.error("channel closed")? {
+                "_up" => index += 1,
+                "_down" => index += self.items.len() + 1,
+                "_left" => return Ok(Some(self.items[index].clone())),
+                "_right" => return Ok(None),
+                _ => (),
             }
             index %= self.items.len();
         }
@@ -93,15 +90,11 @@ impl Block {
 
     async fn confirm(&mut self, msg: String) -> Result<bool> {
         self.set_text(msg).await?;
-        loop {
-            if let Action(action) = self.api.event().await {
-                return Ok(action == "_left");
-            }
-        }
+        Ok(self.actions.recv().await.as_deref() == Some("_left"))
     }
 }
 
-pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     api.set_default_actions(&[
         (MouseButton::Left, None, "_left"),
         (MouseButton::Right, None, "_right"),
@@ -111,14 +104,15 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     .await?;
 
     let mut block = Block {
+        actions: api.get_actions().await?,
         api,
-        text: config.text,
-        items: config.items,
+        text: &config.text,
+        items: &config.items,
     };
 
     loop {
         block.reset().await?;
-        block.wait_for_click("_left").await;
+        block.wait_for_click("_left").await?;
         if let Some(res) = block.run_menu().await? {
             if let Some(msg) = res.confirm_msg {
                 if !block.confirm(msg).await? {

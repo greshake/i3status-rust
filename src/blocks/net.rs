@@ -76,7 +76,8 @@ pub struct Config {
     pub missing_format: FormatConfig,
 }
 
-pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+    let mut actions = api.get_actions().await?;
     api.set_default_actions(&[(MouseButton::Left, None, "toggle_format")])
         .await?;
 
@@ -85,7 +86,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     )?;
     let missing_format = config.missing_format.with_default(" × ")?;
     let inactive_format = config.inactive_format.with_default(" $icon Down ")?;
-    let mut format_alt = match config.format_alt {
+    let mut format_alt = match &config.format_alt {
         Some(f) => Some(f.with_default("")?),
         None => None,
     };
@@ -170,9 +171,9 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         loop {
             select! {
                 _ = timer.tick() => break,
-                event = api.event() => match event {
-                    UpdateRequest => break,
-                    Action(a) if a == "toggle_format" => {
+                _ = api.wait_for_update_request() => break,
+                Some(action) = actions.recv() => match action.as_ref() {
+                    "toggle_format" => {
                         if let Some(format_alt) = &mut format_alt {
                             std::mem::swap(format_alt, &mut format);
                             break;

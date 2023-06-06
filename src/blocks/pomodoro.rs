@@ -57,6 +57,8 @@
 //! - Use different icons.
 //! - Use format strings.
 
+use tokio::sync::mpsc;
+
 use super::prelude::*;
 use crate::subprocess::{spawn_shell, spawn_shell_sync};
 use std::time::Instant;
@@ -73,13 +75,14 @@ pub struct Config {
     pub blocking_cmd: bool,
 }
 
-struct Block {
+struct Block<'a> {
     widget: Widget,
-    api: CommonApi,
-    block_config: Config,
+    actions: mpsc::UnboundedReceiver<BlockAction>,
+    api: &'a CommonApi,
+    block_config: &'a Config,
 }
 
-impl Block {
+impl Block<'_> {
     async fn set_text(&mut self, text: String) -> Result<()> {
         let mut values = map!(
             "icon" => Value::icon(self.api.get_icon("pomodoro")?),
@@ -91,14 +94,9 @@ impl Block {
         self.api.set_widget(self.widget.clone()).await
     }
 
-    async fn wait_for_click(&mut self, button: &str) {
-        loop {
-            if let Action(action) = self.api.event().await {
-                if action == button {
-                    break;
-                }
-            }
-        }
+    async fn wait_for_click(&mut self, button: &str) -> Result<()> {
+        while self.actions.recv().await.error("channel closed")? != button {}
+        Ok(())
     }
 
     async fn read_params(&mut self) -> Result<(Duration, Duration, u64)> {
@@ -115,13 +113,11 @@ impl Block {
     async fn read_u64(&mut self, mut number: u64, msg: &str) -> Result<u64> {
         loop {
             self.set_text(format!("{msg} {number}")).await?;
-            if let Action(action) = self.api.event().await {
-                match action.as_ref() {
-                    "_left" => break,
-                    "_up" => number += 1,
-                    "_down" => number = number.saturating_sub(1),
-                    _ => (),
-                }
+            match &*self.actions.recv().await.error("channel closed")? {
+                "_left" => break,
+                "_up" => number += 1,
+                "_down" => number = number.saturating_sub(1),
+                _ => (),
             }
         }
         Ok(number)
@@ -155,12 +151,7 @@ impl Block {
                 self.set_text(text).await?;
                 select! {
                     _ = sleep(Duration::from_secs(10)) => (),
-                    event = self.api.event() => match event {
-                        Action(a) if a == "_middle" => {
-                            return Ok(());
-                        }
-                        _ => (),
-                    }
+                    _ = self.wait_for_click("_middle") => return Ok(()),
                 }
             }
 
@@ -175,10 +166,10 @@ impl Block {
                         .error("failed to run notify_cmd")?;
                 } else {
                     spawn_shell(&cmd).error("failed to run notify_cmd")?;
-                    self.wait_for_click("_left").await;
+                    self.wait_for_click("_left").await?;
                 }
             } else {
-                self.wait_for_click("_left").await;
+                self.wait_for_click("_left").await?;
             }
 
             // No break after the last pomodoro
@@ -198,12 +189,7 @@ impl Block {
                     .await?;
                 select! {
                     _ = sleep(Duration::from_secs(10)) => (),
-                    event = self.api.event() => match event {
-                        Action(a) if a == "_middle" => {
-                            return Ok(());
-                        }
-                        _ => (),
-                    }
+                    _ = self.wait_for_click("_middle") => return Ok(()),
                 }
             }
 
@@ -219,10 +205,10 @@ impl Block {
                         .error("failed to run notify_cmd")?;
                 } else {
                     spawn_shell(&cmd).error("failed to run notify_cmd")?;
-                    self.wait_for_click("_left").await;
+                    self.wait_for_click("_left").await?;
                 }
             } else {
-                self.wait_for_click("_left").await;
+                self.wait_for_click("_left").await?;
             }
         }
 
@@ -230,7 +216,7 @@ impl Block {
     }
 }
 
-pub async fn run(block_config: Config, mut api: CommonApi) -> Result<()> {
+pub async fn run(block_config: &Config, api: &CommonApi) -> Result<()> {
     api.set_default_actions(&[
         (MouseButton::Left, None, "_left"),
         (MouseButton::Middle, None, "_middle"),
@@ -248,6 +234,7 @@ pub async fn run(block_config: Config, mut api: CommonApi) -> Result<()> {
 
     let mut block = Block {
         widget,
+        actions: api.get_actions().await?,
         api,
         block_config,
     };
@@ -257,7 +244,7 @@ pub async fn run(block_config: Config, mut api: CommonApi) -> Result<()> {
         block.widget.state = State::Idle;
         block.set_text(String::new()).await?;
 
-        block.wait_for_click("_left").await;
+        block.wait_for_click("_left").await?;
 
         let (task_len, break_len, pomodoros) = block.read_params().await?;
         block.run_pomodoro(task_len, break_len, pomodoros).await?;

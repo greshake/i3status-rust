@@ -13,17 +13,41 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn with_default(self, default_full: &str) -> Result<Format> {
+    pub fn with_default(&self, default_full: &str) -> Result<Format> {
         self.with_defaults(default_full, "")
     }
 
-    pub fn with_default_config(self, default_config: &Self) -> Format {
+    pub fn with_defaults(&self, default_full: &str, default_short: &str) -> Result<Format> {
+        let full = match self.full.clone() {
+            Some(full) => full,
+            None => Arc::new(default_full.parse()?),
+        };
+
+        let short = match self.short.clone() {
+            Some(short) => short,
+            None => Arc::new(default_short.parse()?),
+        };
+
+        let mut intervals = Vec::new();
+        full.init_intervals(&mut intervals);
+        short.init_intervals(&mut intervals);
+
+        Ok(Format {
+            full,
+            short,
+            intervals,
+        })
+    }
+
+    pub fn with_default_config(&self, default_config: &Self) -> Format {
         let full = self
             .full
+            .clone()
             .or_else(|| default_config.full.clone())
             .unwrap_or_default();
         let short = self
             .short
+            .clone()
             .or_else(|| default_config.short.clone())
             .unwrap_or_default();
 
@@ -38,9 +62,15 @@ impl Config {
         }
     }
 
-    pub fn with_default_format(self, default_format: &Format) -> Format {
-        let full = self.full.unwrap_or_else(|| default_format.full.clone());
-        let short = self.short.unwrap_or_else(|| default_format.short.clone());
+    pub fn with_default_format(&self, default_format: &Format) -> Format {
+        let full = self
+            .full
+            .clone()
+            .unwrap_or_else(|| default_format.full.clone());
+        let short = self
+            .short
+            .clone()
+            .unwrap_or_else(|| default_format.short.clone());
 
         let mut intervals = Vec::new();
         full.init_intervals(&mut intervals);
@@ -51,28 +81,6 @@ impl Config {
             short,
             intervals,
         }
-    }
-
-    pub fn with_defaults(self, default_full: &str, default_short: &str) -> Result<Format> {
-        let full = match self.full {
-            Some(full) => full,
-            None => Arc::new(default_full.parse()?),
-        };
-
-        let short = match self.short {
-            Some(short) => short,
-            None => Arc::new(default_short.parse()?),
-        };
-
-        let mut intervals = Vec::new();
-        full.init_intervals(&mut intervals);
-        short.init_intervals(&mut intervals);
-
-        Ok(Format {
-            full,
-            short,
-            intervals,
-        })
     }
 }
 

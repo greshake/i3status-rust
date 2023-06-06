@@ -126,7 +126,7 @@ impl ShellString {
 }
 
 /// A map with keys being ranges.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct RangeMap<K, V>(Vec<(RangeInclusive<K>, V)>);
 
 impl<K, V> RangeMap<K, V> {

@@ -58,9 +58,7 @@ pub enum Driver {
     WlrToplevelManagement,
 }
 
-pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
-    api.event_receiver.close();
-
+pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let format = config.format.with_default(" $title.str(max_w:21) |")?;
 
     let mut backend: Box<dyn Backend> = match config.driver {

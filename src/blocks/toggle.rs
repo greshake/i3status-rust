@@ -67,15 +67,23 @@ pub struct Config {
     pub interval: Option<u64>,
 }
 
-pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+async fn sleep_opt(dur: Option<Duration>) {
+    match dur {
+        Some(dur) => tokio::time::sleep(dur).await,
+        None => std::future::pending().await,
+    }
+}
+
+pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+    let mut actions = api.get_actions().await?;
     api.set_default_actions(&[(MouseButton::Left, None, "toggle")])
         .await?;
 
     let interval = config.interval.map(Duration::from_secs);
     let mut widget = Widget::new().with_format(config.format.with_default(" $icon ")?);
 
-    let icon_on = config.icon_on.unwrap_or_else(|| "toggle_on".into());
-    let icon_off = config.icon_off.unwrap_or_else(|| "toggle_off".into());
+    let icon_on = config.icon_on.as_deref().unwrap_or("toggle_on");
+    let icon_off = config.icon_off.as_deref().unwrap_or("toggle_off");
 
     let shell = env::var("SHELL").unwrap_or_else(|_| "sh".to_string());
 
@@ -93,44 +101,17 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
         widget.set_values(map!(
             "icon" => Value::icon(
-                api.get_icon(if is_toggled { &icon_on } else { &icon_off })?
+                api.get_icon(if is_toggled { icon_on } else { icon_off })?
             )
         ));
         api.set_widget(widget.clone()).await?;
 
-        // TODO: try not to duplicate code
         loop {
-            match interval {
-                Some(interval) => {
-                    select! {
-                        _ = sleep(interval) => break,
-                        event = api.event() => match event {
-                            UpdateRequest => break,
-                            Action(a) if a == "toggle" => {
-                                let cmd = if is_toggled {
-                                    &config.command_off
-                                } else {
-                                    &config.command_on
-                                };
-                                let output = Command::new(&shell)
-                                    .args(["-c", cmd])
-                                    .output()
-                                    .await
-                                    .error("Failed to run command")?;
-                                if output.status.success() {
-                                    widget.state = State::Idle;
-                                    break;
-                                } else {
-                                    widget.state = State::Critical;
-                                }
-                            }
-                            _ => (),
-                        }
-                    }
-                }
-                None => match api.event().await {
-                    UpdateRequest => break,
-                    Action(a) if a == "toggle" => {
+            select! {
+                _ = sleep_opt(interval) => break,
+                _ = api.wait_for_update_request() => break,
+                Some(action) = actions.recv() => match action.as_ref() {
+                    "toggle" => {
                         let cmd = if is_toggled {
                             &config.command_off
                         } else {
@@ -149,7 +130,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                         }
                     }
                     _ => (),
-                },
+                }
             }
         }
     }

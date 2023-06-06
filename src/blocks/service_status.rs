@@ -63,9 +63,7 @@ pub enum DriverType {
     Systemd,
 }
 
-pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
-    api.event_receiver.close();
-
+pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let active_format = config.active_format.with_default(" $service active ")?;
     let inactive_format = config.inactive_format.with_default(" $service inactive ")?;
 

@@ -1,6 +1,7 @@
 #![warn(clippy::match_same_arms)]
 #![warn(clippy::semicolon_if_nothing_returned)]
 #![warn(clippy::unnecessary_wraps)]
+#![allow(clippy::single_match)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
 #[macro_use]
@@ -35,9 +36,9 @@ use futures::stream::{FuturesUnordered, StreamExt};
 use futures::Stream;
 use once_cell::sync::Lazy;
 use tokio::process::Command;
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, Notify};
 
-use crate::blocks::{BlockEvent, BlockFuture, CommonApi};
+use crate::blocks::{BlockAction, BlockFuture, CommonApi};
 use crate::click::{ClickHandler, MouseButton};
 use crate::config::{BlockConfigEntry, Config, SharedConfig};
 use crate::errors::*;
@@ -133,6 +134,7 @@ enum RequestCmd {
     UnsetWidget,
     SetError(Error),
     SetDefaultActions(&'static [(MouseButton, Option<&'static str>, &'static str)]),
+    SubscribeToActions(mpsc::UnboundedSender<BlockAction>),
 }
 
 #[derive(Debug, Clone)]
@@ -146,7 +148,8 @@ pub struct Block {
     id: usize,
     name: &'static str,
 
-    event_sender: Option<mpsc::Sender<BlockEvent>>,
+    update_request: Arc<Notify>,
+    action_sender: Option<mpsc::UnboundedSender<BlockAction>>,
     abort_handle: AbortHandle,
 
     click_handler: ClickHandler,
@@ -170,7 +173,7 @@ enum BlockState {
 impl Block {
     fn abort(&mut self) {
         self.abort_handle.abort();
-        self.event_sender = None;
+        self.action_sender = None;
         self.state = BlockState::None;
     }
 
@@ -253,15 +256,13 @@ impl BarState {
             Arc::make_mut(&mut shared_config.icons).apply_overrides(icons_overrides);
         }
 
-        let (event_sender, event_receiver) = mpsc::channel(64);
+        let update_request = Arc::new(Notify::new());
 
         let api = CommonApi {
             id: self.blocks.len(),
             shared_config: shared_config.clone(),
-            event_receiver,
-
+            update_request: update_request.clone(),
             request_sender: self.request_sender.clone(),
-
             error_interval: Duration::from_secs(block_config.common.error_interval),
         };
 
@@ -281,7 +282,8 @@ impl BarState {
             id: self.blocks.len(),
             name: block_name,
 
-            event_sender: Some(event_sender),
+            update_request,
+            action_sender: None,
             abort_handle,
 
             click_handler: block_config.common.click,
@@ -325,6 +327,9 @@ impl BarState {
             }
             RequestCmd::SetDefaultActions(actions) => {
                 block.default_actions = actions;
+            }
+            RequestCmd::SubscribeToActions(action_sender) => {
+                block.action_sender = Some(action_sender);
             }
         }
         block.notify_intervals(&self.widget_updates_sender);
@@ -386,21 +391,21 @@ impl BarState {
                     BlockState::None => (),
                     BlockState::Normal { .. } => {
                         let post_actions = block.click_handler.handle(&event).await.in_block(block.name, event.id)?;
-                        if let Some(sender) = &block.event_sender {
+                        if let Some(sender) = &block.action_sender {
                             match post_actions {
                                 Some(post_actions) => {
                                     if let Some(action) = post_actions.action {
-                                        let _ = sender.send(BlockEvent::Action(Cow::Owned(action))).await;
+                                        let _ = sender.send(Cow::Owned(action));
                                     }
                                     if post_actions.update {
-                                        let _ = sender.send(BlockEvent::UpdateRequest).await;
+                                        block.update_request.notify_one();
                                     }
                                 }
                                 None => {
                                     if let Some((_, _, action)) = block.default_actions
                                         .iter()
                                         .find(|(btn, widget, _)| *btn == event.button && *widget == event.instance.as_deref()) {
-                                        let _ = sender.send(BlockEvent::Action(Cow::Borrowed(action))).await;
+                                        let _ = sender.send(Cow::Borrowed(action));
                                     }
                                 }
                             }
@@ -425,19 +430,15 @@ impl BarState {
             Some(signal) = self.signals_stream.next() => match signal {
                 Signal::Usr1 => {
                     for block in &self.blocks {
-                        if let Some(sender) = &block.event_sender {
-                            let _ = sender.send(BlockEvent::UpdateRequest).await;
-                        }
+                        block.update_request.notify_one();
                     }
                     Ok(())
                 }
                 Signal::Usr2 => restart(),
                 Signal::Custom(signal) => {
                     for block in &self.blocks {
-                        if let Some(sender) = &block.event_sender {
-                            if block.signal == Some(signal) {
-                                let _ = sender.send(BlockEvent::UpdateRequest).await;
-                            }
+                        if block.signal == Some(signal) {
+                            block.update_request.notify_one();
                         }
                     }
                     Ok(())

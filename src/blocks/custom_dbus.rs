@@ -121,12 +121,7 @@ impl Block {
     }
 }
 
-pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
-    // This block doesn't listen for any events. Closing the channel is necessary, because channels
-    // are bounded by the number of pending messages, and if we don't close it now, main thread
-    // will get blocked while trying to send a new message.
-    api.event_receiver.close();
-
+pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let widget = Widget::new().with_format(config.format.with_defaults(
         "{ $icon|}{ $text.pango-str()|} ",
         "{ $icon|} $short_text.pango-str() | ",
@@ -140,10 +135,10 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     dbus_conn
         .object_server()
         .at(
-            config.path,
+            config.path.clone(),
             Block {
                 widget,
-                api,
+                api: api.clone(),
                 icon: None,
                 text: None,
                 short_text: None,

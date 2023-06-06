@@ -104,7 +104,8 @@ pub struct Config {
     pub ddcci_max_tries_write_read: Option<u8>,
 }
 
-pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+    let mut actions = api.get_actions().await?;
     api.set_default_actions(&[
         (MouseButton::Left, None, "cycle"),
         (MouseButton::WheelUp, None, "brightness_up"),
@@ -117,10 +118,12 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         .missing_format
         .with_default(" no backlight devices ")?;
 
+    let default_cycle = &[config.minimum, config.maximum];
     let mut cycle = config
         .cycle
-        .unwrap_or_else(|| vec![config.minimum, config.maximum])
-        .into_iter()
+        .as_deref()
+        .unwrap_or(default_cycle)
+        .iter()
         .map(|x| x / 100.0)
         .cycle();
 
@@ -206,8 +209,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
                     break;
                 },
-                event = api.event() => match event {
-                    Action(a) if a == "cycle" => {
+                Some(action) = actions.recv() => match action.as_ref() {
+                    "cycle" => {
                         if let Some(cycle_brightness) = cycle.next() {
                             brightness = cycle_brightness;
                             block_error = calibright
@@ -218,21 +221,21 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
                         }
                     }
-                    Action(a) if a == "brightness_up" => {
-                            brightness = (brightness + step_width).clamp(minimum, maximum);
-                            block_error = calibright
-                                .set_brightness(brightness)
-                                .await
-                                .err();
-                            break;
+                    "brightness_up" => {
+                        brightness = (brightness + step_width).clamp(minimum, maximum);
+                        block_error = calibright
+                            .set_brightness(brightness)
+                            .await
+                            .err();
+                        break;
                     }
-                    Action(a) if a == "brightness_down" => {
-                            brightness = (brightness - step_width).clamp(minimum, maximum);
-                            block_error = calibright
-                                .set_brightness(brightness)
-                                .await
-                                .err();
-                            break;
+                    "brightness_down" => {
+                        brightness = (brightness - step_width).clamp(minimum, maximum);
+                        block_error = calibright
+                            .set_brightness(brightness)
+                            .await
+                            .err();
+                        break;
                     }
                     _ => (),
                 }

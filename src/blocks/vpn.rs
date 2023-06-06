@@ -113,7 +113,8 @@ impl Status {
     }
 }
 
-pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+    let mut actions = api.get_actions().await?;
     api.set_default_actions(&[(MouseButton::Left, None, "toggle")])
         .await?;
 
@@ -164,11 +165,10 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
         select! {
             _ = sleep(config.interval.0) => (),
-            event = api.event() => {
-                match event {
-                    Action(a) if a == "toggle" => driver.toggle_connection(&status).await?,
-                    _ => (),
-                }
+            _ = api.wait_for_update_request() => (),
+            Some(action) = actions.recv() => match action.as_ref() {
+                "toggle" => driver.toggle_connection(&status).await?,
+                _ => (),
             }
         }
     }

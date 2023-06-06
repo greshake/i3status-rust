@@ -70,7 +70,7 @@ pub struct Config {
     pub ignore_phased_updates: bool,
 }
 
-pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let format = config.format.with_default(" $icon $count.eng(w:1) ")?;
     let format_singular = config
         .format_singular
