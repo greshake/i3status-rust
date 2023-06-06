@@ -31,7 +31,6 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
 
-use futures::future::{abortable, AbortHandle, Abortable};
 use futures::stream::{FuturesUnordered, StreamExt};
 use futures::Stream;
 use once_cell::sync::Lazy;
@@ -109,7 +108,7 @@ pub struct BarState {
 
     blocks: Vec<Block>,
     fullscreen_block: Option<usize>,
-    running_blocks: FuturesUnordered<Abortable<BlockFuture>>,
+    running_blocks: FuturesUnordered<BlockFuture>,
 
     widget_updates_sender: WidgetUpdatesSender,
     blocks_render_cache: Vec<RenderedBlock>,
@@ -150,7 +149,6 @@ pub struct Block {
 
     update_request: Arc<Notify>,
     action_sender: Option<mpsc::UnboundedSender<BlockAction>>,
-    abort_handle: AbortHandle,
 
     click_handler: ClickHandler,
     default_actions: &'static [(MouseButton, Option<&'static str>, &'static str)],
@@ -171,12 +169,6 @@ enum BlockState {
 }
 
 impl Block {
-    fn abort(&mut self) {
-        self.abort_handle.abort();
-        self.action_sender = None;
-        self.state = BlockState::None;
-    }
-
     fn notify_intervals(&self, tx: &WidgetUpdatesSender) {
         let intervals = match &self.state {
             BlockState::None => Vec::new(),
@@ -276,7 +268,7 @@ impl BarState {
             .with_default_config(&self.config.error_fullscreen_format);
 
         let block_name = block_config.config.name();
-        let (block_fut, abort_handle) = abortable(block_config.config.run(api));
+        let block_fut = block_config.config.run(api);
 
         let block = Block {
             id: self.blocks.len(),
@@ -284,7 +276,6 @@ impl BarState {
 
             update_request,
             action_sender: None,
-            abort_handle,
 
             click_handler: block_config.common.click,
             default_actions: &[],
@@ -363,10 +354,7 @@ impl BarState {
         tokio::select! {
             // Handle blocks' errors
             Some(block_result) = self.running_blocks.next() => {
-                match block_result {
-                    Ok(res) => res,
-                    Err(_aborted) => Ok(()),
-                }
+                block_result
             }
             // Receive messages from blocks
             Some(request) = self.request_receiver.recv() => {
@@ -460,7 +448,6 @@ impl BarState {
                             return Err(error);
                         }
 
-                        block.abort();
                         block.set_error(self.fullscreen_block == Some(id), error);
                         block.notify_intervals(&self.widget_updates_sender);
 
