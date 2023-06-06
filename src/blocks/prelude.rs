@@ -11,6 +11,8 @@ pub(crate) use crate::REQWEST_CLIENT_IPV4;
 
 pub use serde::Deserialize;
 
+pub use backon::{ExponentialBuilder, Retryable};
+
 pub use std::borrow::Cow;
 pub use std::collections::HashMap;
 pub use std::fmt::Write;

@@ -137,7 +137,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     };
 
     loop {
-        let info = IPAddressInfo::new(client).await?;
+        let fetch_info = || IPAddressInfo::new(client);
+        let info = fetch_info.retry(&ExponentialBuilder::default()).await?;
 
         let mut values = map! {
             "ip" => Value::text(info.ip),
