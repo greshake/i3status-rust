@@ -111,7 +111,7 @@ pub enum BatteryDriver {
     Upower,
 }
 
-pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let format = config.format.with_default(" $icon $percentage ")?;
     let format_full = config.full_format.with_default(" $icon ")?;
     let charging_format = config.charging_format.with_default_format(&format);
@@ -119,30 +119,21 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     let format_not_charging = config.not_charging_format.with_default(" $icon ")?;
     let missing_format = config.missing_format.with_default(" $icon ")?;
 
-    let dev_name = DeviceName::new(config.device)?;
+    let dev_name = DeviceName::new(config.device.clone())?;
     let mut device: Box<dyn BatteryDevice + Send + Sync> = match config.driver {
-        BatteryDriver::Sysfs => {
-            Box::new(sysfs::Device::new(dev_name, config.model, config.interval))
-        }
+        BatteryDriver::Sysfs => Box::new(sysfs::Device::new(
+            dev_name,
+            config.model.clone(),
+            config.interval,
+        )),
         BatteryDriver::ApcUps => Box::new(apc_ups::Device::new(dev_name, config.interval).await?),
-        BatteryDriver::Upower => Box::new(upower::Device::new(dev_name, config.model).await?),
+        BatteryDriver::Upower => {
+            Box::new(upower::Device::new(dev_name, config.model.clone()).await?)
+        }
     };
 
     loop {
-        // `api.recoverable` doesn't work in this case because Rust's type system is not expressive
-        // enough. "captured variable cannot escape `FnMut` closure body".
-        let mut info = loop {
-            match device.get_info().await {
-                Ok(res) => break res,
-                Err(err) => {
-                    api.set_error(err).await?;
-                    select! {
-                        _ = tokio::time::sleep(api.error_interval) => (),
-                        _ = api.wait_for_update_request() => (),
-                    }
-                }
-            }
-        };
+        let mut info = device.get_info().await?;
 
         if let Some(info) = &mut info {
             if info.capacity >= config.full_threshold {

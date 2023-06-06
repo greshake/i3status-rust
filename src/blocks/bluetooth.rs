@@ -78,7 +78,8 @@ pub struct Config {
     pub battery_state: Option<RangeMap<u8, State>>,
 }
 
-pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+    let mut actions = api.get_actions().await?;
     api.set_default_actions(&[(MouseButton::Right, None, "toggle")])
         .await?;
 
@@ -87,9 +88,9 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         .disconnected_format
         .with_default(" $icon{ $name|} ")?;
 
-    let mut monitor = DeviceMonitor::new(config.mac, config.adapter_mac).await?;
+    let mut monitor = DeviceMonitor::new(config.mac.clone(), config.adapter_mac.clone()).await?;
 
-    let battery_states = config.battery_state.unwrap_or_else(|| {
+    let battery_states = config.battery_state.clone().unwrap_or_else(|| {
         vec![
             (0..=15, State::Critical),
             (16..=30, State::Warning),
@@ -145,8 +146,8 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     res?;
                     break;
                 },
-                event = api.event() => match event {
-                    Action(a) if a == "toggle" => {
+                Some(action) = actions.recv() => match action.as_ref() {
+                    "toggle" => {
                         if let Some(dev) = &monitor.device {
                             if let Ok(connected) = dev.device.connected().await {
                                 if connected {

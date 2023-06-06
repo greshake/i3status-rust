@@ -23,6 +23,7 @@ words:
   - aplay
   - armv
   - arphrd
+  - backon
   - BCHARGE
   - bluez
   - bokmaal
@@ -158,8 +159,8 @@ words:
   - wlroots
   - wlsunset
   - wofi
-  - wttr
   - Wttr
+  - wttr
   - xclip
   - xesam
   - xkbswitch

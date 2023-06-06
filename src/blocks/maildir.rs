@@ -54,18 +54,19 @@ pub struct Config {
     pub display_type: MailType,
 }
 
-pub async fn run(mut config: Config, mut api: CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let format = config.format.with_default(" $icon $status ")?;
 
-    for inbox in &mut config.inboxes {
-        *inbox = shellexpand::full(inbox)
-            .error("Failed to expand string")?
-            .to_string();
-    }
+    let inboxes = config
+        .inboxes
+        .iter()
+        .map(shellexpand::full)
+        .collect::<Result<Vec<_>, _>>()
+        .error("Failed to expand string")?;
 
     loop {
         let mut newmails = 0;
-        for inbox in &config.inboxes {
+        for inbox in &inboxes {
             let isl: &str = &inbox[..];
             // TODO: spawn_blocking?
             let maildir = Maildir::from(isl);

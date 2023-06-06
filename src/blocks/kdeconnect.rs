@@ -77,7 +77,7 @@ pub struct Config {
     pub hide_disconnected: bool,
 }
 
-pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let format = config
         .format
         .with_default(" $icon $name {$bat_icon $bat_charge |}{$notif_icon |}")?;
@@ -90,9 +90,9 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
     ) != (0, 0, 0, 0);
 
     let dbus_conn = new_dbus_connection().await?;
-    let id = match config.device_id {
+    let id = match config.device_id.clone() {
         Some(id) => id,
-        None => api.recoverable(|| any_device_id(&dbus_conn)).await?,
+        None => any_device_id(&dbus_conn).await?,
     };
 
     let (tx, mut rx) = mpsc::channel(8);
@@ -195,12 +195,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             api.hide().await?;
         }
 
-        loop {
-            select! {
-                _ = rx.recv() => break,
-                _ = api.event() => (),
-            }
-        }
+        rx.recv().await.error("channel closed")?;
     }
 }
 

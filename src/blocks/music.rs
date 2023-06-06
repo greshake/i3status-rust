@@ -163,7 +163,8 @@ pub enum PlayerName {
     Multiple(Vec<String>),
 }
 
-pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+    let mut actions = api.get_actions().await?;
     api.set_default_actions(&[
         (MouseButton::Left, Some(PLAY_PAUSE_BTN), "play_pause"),
         (MouseButton::Left, Some(NEXT_BTN), "next"),
@@ -182,17 +183,17 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
     let volume_step = config.volume_step.clamp(0.0, 50.0) / 100.0;
 
-    let new_btn = |icon: &str, instance: &'static str, api: &mut CommonApi| -> Result<Value> {
+    let new_btn = |icon: &str, instance: &'static str, api: &CommonApi| -> Result<Value> {
         Ok(Value::icon(api.get_icon(icon)?).with_instance(instance))
     };
 
     let values = map! {
         "icon" => Value::icon(api.get_icon("music")?),
-        "next" => new_btn("music_next", NEXT_BTN, &mut api)?,
-        "prev" => new_btn("music_prev", PREV_BTN, &mut api)?,
+        "next" => new_btn("music_next", NEXT_BTN, api)?,
+        "prev" => new_btn("music_prev", PREV_BTN, api)?,
     };
 
-    let preferred_players = match config.player {
+    let preferred_players = match config.player.clone() {
         PlayerName::Single(name) => vec![name],
         PlayerName::Multiple(names) => names,
     };
@@ -275,7 +276,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         let avail = players.len();
         let player = cur_player.map(|c| players.get_mut(c).unwrap());
         match player {
-            Some(ref player) => {
+            Some(player) => {
                 let mut values = values.clone();
                 values.insert("avail".into(), Value::number(avail));
                 values.insert("cur".into(), Value::number(cur_player.unwrap() + 1));
@@ -291,7 +292,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     Some(PlaybackStatus::Playing) => (State::Info, "music_pause"),
                     _ => (State::Idle, "music_play"),
                 };
-                values.insert("play".into(), new_btn(play_icon, PLAY_PAUSE_BTN, &mut api)?);
+                values.insert("play".into(), new_btn(play_icon, PLAY_PAUSE_BTN, api)?);
                 if let Some(url) = &player.metadata.url {
                     values.insert("url".into(), Value::text(url.clone()));
                 }
@@ -417,42 +418,39 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                     }
                     break;
                 }
-                event = api.event() => match event {
-                    UpdateRequest => (),
-                    Action(a) => {
-                        if let Some(i) = cur_player {
-                            let player = &players[i];
-                            match a.as_ref() {
-                                "play_pause" => {
-                                    player.play_pause().await?;
-                                }
-                                "next" => {
-                                    player.next().await?;
-                                }
-                                "prev" => {
-                                    player.prev().await?;
-                                }
-                                "next_player" => {
-                                    cur_player = Some((i + 1) % players.len());
-                                    if let Err(e) = playerctld_proxy.shift().await{
-                                        debug!("{e}");
-                                    }
-                                    break;
-                                }
-                                "seek_forward" => {
-                                    player.seek(config.seek_step_secs.0.as_micros() as i64).await?;
-                                }
-                                "seek_backward" => {
-                                    player.seek(-(config.seek_step_secs.0.as_micros() as i64)).await?;
-                                }
-                                "volume_up" => {
-                                    player.set_volume(volume_step).await?;
-                                }
-                                "volume_down" => {
-                                    player.set_volume(-volume_step).await?;
-                                }
-                                _ => (),
+                Some(action) = actions.recv() => {
+                    if let Some(i) = cur_player {
+                        let player = &players[i];
+                        match action.as_ref() {
+                            "play_pause" => {
+                                player.play_pause().await?;
                             }
+                            "next" => {
+                                player.next().await?;
+                            }
+                            "prev" => {
+                                player.prev().await?;
+                            }
+                            "next_player" => {
+                                cur_player = Some((i + 1) % players.len());
+                                if let Err(e) = playerctld_proxy.shift().await{
+                                    debug!("{e}");
+                                }
+                                break;
+                            }
+                            "seek_forward" => {
+                                player.seek(config.seek_step_secs.0.as_micros() as i64).await?;
+                            }
+                            "seek_backward" => {
+                                player.seek(-(config.seek_step_secs.0.as_micros() as i64)).await?;
+                            }
+                            "volume_up" => {
+                                player.set_volume(volume_step).await?;
+                            }
+                            "volume_down" => {
+                                player.set_volume(-volume_step).await?;
+                            }
+                            _ => (),
                         }
                     }
                 }

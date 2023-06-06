@@ -105,14 +105,14 @@ pub enum KeyboardLayoutDriver {
     Sway,
 }
 
-pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let format = config.format.with_default(" $layout ")?;
 
     let mut backend: Box<dyn Backend> = match config.driver {
         KeyboardLayoutDriver::SetXkbMap => Box::new(SetXkbMap(config.interval)),
         KeyboardLayoutDriver::LocaleBus => Box::new(LocaleBus::new().await?),
         KeyboardLayoutDriver::KbddBus => Box::new(KbddBus::new().await?),
-        KeyboardLayoutDriver::Sway => Box::new(Sway::new(config.sway_kb_identifier).await?),
+        KeyboardLayoutDriver::Sway => Box::new(Sway::new(config.sway_kb_identifier.clone()).await?),
     };
 
     loop {

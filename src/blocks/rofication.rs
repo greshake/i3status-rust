@@ -43,14 +43,14 @@ pub struct Config {
     pub format: FormatConfig,
 }
 
-pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let format = config.format.with_default(" $icon $num.eng(w:1) ")?;
 
     let path = config.socket_path.expand()?;
     let mut timer = config.interval.timer();
 
     loop {
-        let (num, crit) = api.recoverable(|| rofication_status(&path)).await?;
+        let (num, crit) = rofication_status(&path).await?;
 
         let mut widget = Widget::new().with_format(format.clone());
 

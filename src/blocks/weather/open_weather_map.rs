@@ -21,12 +21,12 @@ pub struct Config {
     lang: String,
 }
 
-pub(super) struct Service {
-    config: Config,
+pub(super) struct Service<'a> {
+    config: &'a Config,
 }
 
-impl Service {
-    pub(super) fn new(config: Config) -> Self {
+impl<'a> Service<'a> {
+    pub(super) fn new(config: &'a Config) -> Self {
         Self { config }
     }
 }
@@ -72,7 +72,7 @@ struct ApiWeather {
 }
 
 #[async_trait]
-impl WeatherProvider for Service {
+impl WeatherProvider for Service<'_> {
     async fn get_weather(&self, autolocated: Option<Coordinates>) -> Result<WeatherResult> {
         let api_key = self.config.api_key.as_ref().or_error(|| {
             format!("missing key 'service.api_key' and environment variable {API_KEY_ENV}",)

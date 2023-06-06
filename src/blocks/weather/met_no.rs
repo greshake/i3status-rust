@@ -11,16 +11,16 @@ pub struct Config {
     lang: ApiLanguage,
 }
 
-pub(super) struct Service {
-    config: Config,
+pub(super) struct Service<'a> {
+    config: &'a Config,
     legend: LegendsStore,
 }
 
-impl Service {
-    pub(super) async fn new(api: &mut CommonApi, config: Config) -> Result<Self> {
+impl<'a> Service<'a> {
+    pub(super) async fn new(config: &'a Config) -> Result<Service<'a>> {
         Ok(Self {
             config,
-            legend: api.recoverable(get_legend).await?,
+            legend: get_legend().await?,
         })
     }
 }
@@ -117,7 +117,7 @@ fn translate(legend: &LegendsStore, summary: &str, lang: &ApiLanguage) -> String
 }
 
 #[async_trait]
-impl WeatherProvider for Service {
+impl WeatherProvider for Service<'_> {
     async fn get_weather(&self, location: Option<Coordinates>) -> Result<WeatherResult> {
         let Config {
             coordinates,

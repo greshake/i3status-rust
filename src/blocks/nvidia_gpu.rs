@@ -86,7 +86,8 @@ pub struct Config {
     pub warning: u32,
 }
 
-pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+    let mut actions = api.get_actions().await?;
     api.set_default_actions(&[
         (MouseButton::Left, Some(MEM_BTN), "toggle_mem_total"),
         (MouseButton::Left, Some(FAN_BTN), "toggle_fan_controlled"),
@@ -144,39 +145,31 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
         api.set_widget(widget).await?;
 
-        loop {
-            select! {
-                event = api.event() => match event {
-                    UpdateRequest => break,
-                    Action(a) if a == "toggle_mem_total" => {
-                        show_mem_total = !show_mem_total;
-                        break;
-                    }
-                    Action(a) if a == "toggle_fan_controlled" => {
-                        fan_controlled = !fan_controlled;
-                        set_fan_speed(config.gpu_id, fan_controlled.then_some(info.fan_speed)).await?;
-                        break;
-                    }
-                    Action(a) if a == "fan_speed_up" && fan_controlled && info.fan_speed < 100 => {
-                        info.fan_speed += 1;
-                        set_fan_speed(config.gpu_id, Some(info.fan_speed)).await?;
-                        break;
-                    }
-                    Action(a) if a == "fan_speed_down" && fan_controlled && info.fan_speed > 0 => {
-                        info.fan_speed -= 1;
-                        set_fan_speed(config.gpu_id, Some(info.fan_speed)).await?;
-                        break;
-                    }
-                    _ => (),
-                },
-                new_info = GpuInfo::from_reader(&mut reader) => {
-                    info = new_info?;
-                    break;
+        select! {
+            new_info = GpuInfo::from_reader(&mut reader) => {
+                info = new_info?;
+            }
+            code = child.wait() => {
+                let code = code.error("failed to check nvidia-smi exit code")?;
+                return Err(Error::new(format!("nvidia-smi exited with code {code}")));
+            }
+            Some(action) = actions.recv() => match action.as_ref() {
+                "toggle_mem_total" => {
+                    show_mem_total = !show_mem_total;
                 }
-                code = child.wait() => {
-                    let code = code.error("failed to check nvidia-smi exit code")?;
-                    return Err(Error::new(format!("nvidia-smi exited with code {code}")));
+                "toggle_fan_controlled" => {
+                    fan_controlled = !fan_controlled;
+                    set_fan_speed(config.gpu_id, fan_controlled.then_some(info.fan_speed)).await?;
                 }
+                "fan_speed_up" if fan_controlled && info.fan_speed < 100 => {
+                    info.fan_speed += 1;
+                    set_fan_speed(config.gpu_id, Some(info.fan_speed)).await?;
+                }
+                "fan_speed_down" if fan_controlled && info.fan_speed > 0 => {
+                    info.fan_speed -= 1;
+                    set_fan_speed(config.gpu_id, Some(info.fan_speed)).await?;
+                }
+                _ => (),
             }
         }
     }

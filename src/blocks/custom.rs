@@ -122,7 +122,7 @@ async fn update_bar(
     stdout: &str,
     hide_when_empty: bool,
     json: bool,
-    api: &mut CommonApi,
+    api: &CommonApi,
     format: Format,
 ) -> Result<()> {
     let mut widget = Widget::new().with_format(format);
@@ -154,7 +154,7 @@ async fn update_bar(
     }
 }
 
-pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     api.set_default_actions(&[(MouseButton::Left, None, "cycle")])
         .await?;
 
@@ -184,18 +184,13 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         }
     };
 
-    // Choose the shell in this priority:
-    // 1) `shell` config option
-    // 2) `SHELL` environment variable
-    // 3) `"sh"`
     let shell = config
         .shell
+        .clone()
         .or_else(|| std::env::var("SHELL").ok())
         .unwrap_or_else(|| "sh".to_string());
 
     if config.persistent {
-        api.event_receiver.close();
-
         let mut process = Command::new(&shell)
             .args([
                 "-c",
@@ -206,6 +201,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             ])
             .stdout(Stdio::piped())
             .stdin(Stdio::null())
+            .kill_on_drop(true)
             .spawn()
             .error("failed to run command")?;
 
@@ -229,14 +225,17 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                 &line,
                 config.hide_when_empty,
                 config.json,
-                &mut api,
+                api,
                 format.clone(),
             )
             .await?;
         }
     } else {
+        let mut actions = api.get_actions().await?;
+
         let mut cycle = config
             .cycle
+            .clone()
             .or_else(|| config.command.clone().map(|cmd| vec![cmd]))
             .error("either 'command' or 'cycle' must be specified")?
             .into_iter()
@@ -259,7 +258,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                 stdout,
                 config.hide_when_empty,
                 config.json,
-                &mut api,
+                api,
                 format.clone(),
             )
             .await?;
@@ -268,9 +267,9 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                 select! {
                     _ = timer.tick() => break,
                     _ = file_updates.next() => break,
-                    event = api.event() => match event {
-                        UpdateRequest => break,
-                        Action(a) if a == "cycle" => {
+                    _ = api.wait_for_update_request() => break,
+                    Some(action) = actions.recv() => match action.as_ref() {
+                        "cycle" => {
                             cmd = cycle.next().unwrap();
                             break;
                         }

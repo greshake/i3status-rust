@@ -90,7 +90,8 @@
 //! - `weather_default` (in all other cases)
 
 use std::fmt;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
+use std::time::Instant;
 
 use super::prelude::*;
 
@@ -98,6 +99,8 @@ pub mod met_no;
 pub mod open_weather_map;
 
 const IP_API_URL: &str = "https://ipapi.co/json";
+
+static LAST_AUTOLOCATE: Mutex<Option<AutolocateResult>> = Mutex::new(None);
 
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
@@ -129,6 +132,7 @@ pub enum WeatherService {
     MetNo(met_no::Config),
 }
 
+#[derive(Clone, Copy)]
 enum WeatherIcon {
     Sun,
     Rain,
@@ -139,7 +143,7 @@ enum WeatherIcon {
 }
 
 impl WeatherIcon {
-    fn to_icon_str(&self) -> &str {
+    fn to_icon_str(self) -> &'static str {
         match self {
             Self::Sun => "weather_sun",
             Self::Rain => "weather_rain",
@@ -181,90 +185,32 @@ impl WeatherResult {
     }
 }
 
-pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
-    let mut widget =
-        Widget::new().with_format(config.format.with_default(" $icon $weather $temp ")?);
+pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+    let format = config.format.with_default(" $icon $weather $temp ")?;
 
-    let provider: Box<dyn WeatherProvider + Send + Sync> = match config.service {
-        WeatherService::MetNo(config) => Box::new(met_no::Service::new(&mut api, config).await?),
+    let provider: Box<dyn WeatherProvider + Send + Sync> = match &config.service {
+        WeatherService::MetNo(config) => Box::new(met_no::Service::new(config).await?),
         WeatherService::OpenWeatherMap(config) => Box::new(open_weather_map::Service::new(config)),
     };
 
-    if config.autolocate {
-        // The default behavior is to mirror `interval`
-        let autolocate_interval = match config.autolocate_interval {
-            Some(s) => s,
-            None => config.interval,
+    let autolocate_interval = config.autolocate_interval.unwrap_or(config.interval);
+
+    loop {
+        let location = if config.autolocate {
+            Some(find_ip_location(autolocate_interval.0).await?)
+        } else {
+            None
         };
 
-        if autolocate_interval == config.interval {
-            // In the case where `autolocate_interval` matches `interval` merge both actions.
-            loop {
-                let location = api.recoverable(find_ip_location).await?;
-                let data = api
-                    .recoverable(|| provider.get_weather(Some(location)))
-                    .await?;
-                widget.set_values(data.into_values(&api)?);
-                api.set_widget(widget.clone()).await?;
+        let data = provider.get_weather(location).await?;
 
-                select! {
-                    _ = sleep(config.interval.0) => (),
-                    _ = api.wait_for_update_request() => (),
-                }
-            }
-        } else {
-            // Two timers, one to rerender the block and the other to update the location.
-            let mut interval = config.interval.timer();
-            let mut autolocate_interval = autolocate_interval.timer();
+        let mut widget = Widget::new().with_format(format.clone());
+        widget.set_values(data.into_values(api)?);
+        api.set_widget(widget).await?;
 
-            // Initial pass
-            let mut location = api.recoverable(find_ip_location).await?;
-            let data = api
-                .recoverable(|| provider.get_weather(Some(location)))
-                .await?;
-            widget.set_values(data.into_values(&api)?);
-            api.set_widget(widget.clone()).await?;
-
-            loop {
-                select! {
-                    biased; // if both timers `tick()` autolocate should run first
-                    _ = autolocate_interval.tick() => {
-                        location = api.recoverable(find_ip_location).await?;
-                    }
-                    _ = interval.tick() => {
-                        let data = api
-                            .recoverable(|| provider.get_weather(Some(location)))
-                            .await?;
-                        widget.set_values(data.into_values(&api)?);
-                        api.set_widget(widget.clone()).await?;
-                    },
-                    // On update request autolocate and update the block.
-                    _ = api.wait_for_update_request() => {
-                        location = api.recoverable(find_ip_location).await?;
-
-                        let data = api
-                            .recoverable(|| provider.get_weather(Some(location)))
-                            .await?;
-                        widget.set_values(data.into_values(&api)?);
-                        api.set_widget(widget.clone()).await?;
-
-                        // both intervals should be reset after a manual sync
-                        autolocate_interval.reset();
-                        interval.reset();
-                    },
-                }
-            }
-        }
-    } else {
-        loop {
-            let data = api.recoverable(|| provider.get_weather(None)).await?;
-            widget.set_values(data.into_values(&api)?);
-            api.set_widget(widget.clone()).await?;
-
-            select! {
-                _ = sleep(config.interval.0) => (),
-                _ = api.wait_for_update_request() => ()
-            }
+        select! {
+            _ = sleep(config.interval.0) => (),
+            _ = api.wait_for_update_request() => ()
         }
     }
 }
@@ -283,8 +229,23 @@ struct Coordinates {
     longitude: f64,
 }
 
+struct AutolocateResult {
+    location: Coordinates,
+    timestamp: Instant,
+}
+
 // TODO: might be good to allow for different geolocation services to be used, similar to how we have `service` for the weather API
-async fn find_ip_location() -> Result<Coordinates> {
+/// No-op if last API call was made in the last `interval` seconds.
+async fn find_ip_location(interval: Duration) -> Result<Coordinates> {
+    {
+        let guard = LAST_AUTOLOCATE.lock().unwrap();
+        if let Some(cached) = &*guard {
+            if cached.timestamp.elapsed() < interval {
+                return Ok(cached.location);
+            }
+        }
+    }
+
     #[derive(Deserialize)]
     struct ApiResponse {
         #[serde(flatten)]
@@ -315,18 +276,28 @@ async fn find_ip_location() -> Result<Coordinates> {
         .await
         .error("Failed while parsing location API result")?;
 
-    if response.error {
-        Err(Error {
+    let location = if response.error {
+        return Err(Error {
             kind: ErrorKind::Other,
             message: Some("ipapi.co error".into()),
             cause: Some(Arc::new(response.reason)),
             block: None,
-        })
+        });
     } else {
         response
             .location
-            .error("Failed while parsing location API result")
+            .error("Failed while parsing location API result")?
+    };
+
+    {
+        let mut guard = LAST_AUTOLOCATE.lock().unwrap();
+        *guard = Some(AutolocateResult {
+            location,
+            timestamp: Instant::now(),
+        });
     }
+
+    Ok(location)
 }
 
 // Convert wind direction in azimuth degrees to abbreviation names

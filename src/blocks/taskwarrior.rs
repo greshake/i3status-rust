@@ -84,7 +84,8 @@ impl Default for Config {
     }
 }
 
-pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+    let mut actions = api.get_actions().await?;
     api.set_default_actions(&[(MouseButton::Right, None, "next_filter")])
         .await?;
 
@@ -135,8 +136,9 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         select! {
             _ = sleep(config.interval.0) =>(),
             _ = updates.next() => (),
-            event = api.event() => match event {
-                Action(a) if a == "next_filter" => {
+            _ = api.wait_for_update_request() => (),
+            Some(action) = actions.recv() => match action.as_ref() {
+                "next_filter" => {
                     filter = filters.next().unwrap();
                 }
                 _ => (),

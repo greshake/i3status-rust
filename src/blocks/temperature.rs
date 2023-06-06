@@ -99,14 +99,15 @@ impl TemperatureScale {
     }
 }
 
-pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+    let mut actions = api.get_actions().await?;
     api.set_default_actions(&[(MouseButton::Left, None, "toggle_format")])
         .await?;
 
     let mut format = config
         .format
         .with_default(" $icon $average avg, $max max ")?;
-    let mut format_alt = match config.format_alt {
+    let mut format_alt = match &config.format_alt {
         Some(f) => Some(f.with_default("")?),
         None => None,
     };
@@ -125,9 +126,9 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         .unwrap_or_else(|| config.scale.from_celsius(DEFAULT_WARN));
 
     loop {
-        // Perhaps it's better to just Box::leak() once and don't clone() every time?
         let chip = config.chip.clone();
         let inputs = config.inputs.clone();
+        let config_scale = config.scale;
         let temp = tokio::task::spawn_blocking(move || {
             let mut vals = Vec::new();
             let sensors = Sensors::new();
@@ -152,7 +153,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
                         if *subfeat.subfeature_type() == SENSORS_SUBFEATURE_TEMP_INPUT {
                             if let Ok(value) = subfeat.get_value() {
                                 if (-100.0..=150.0).contains(&value) {
-                                    vals.push(config.scale.from_celsius(value));
+                                    vals.push(config_scale.from_celsius(value));
                                 } else {
                                     eprintln!(
                                         "Temperature ({value}) outside of range ([-100, 150])"
@@ -201,8 +202,9 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
         select! {
             _ = sleep(config.interval.0) => (),
-            event = api.event() => match event {
-                Action(a) if a == "toggle_format" => {
+            _ = api.wait_for_update_request() => (),
+            Some(action) = actions.recv() => match action.as_ref() {
+                "toggle_format" => {
                     if let Some(format_alt) = &mut format_alt {
                         std::mem::swap(format_alt, &mut format);
                     }

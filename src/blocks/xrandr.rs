@@ -55,7 +55,8 @@ pub struct Config {
     pub step_width: u32,
 }
 
-pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+    let mut actions = api.get_actions().await?;
     api.set_default_actions(&[
         (MouseButton::Left, None, "cycle_outputs"),
         (MouseButton::WheelUp, None, "brightness_up"),
@@ -94,18 +95,18 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
             select! {
                 _ = timer.tick() => break,
-                event = api.event() => match event {
-                    UpdateRequest => break,
-                    Action(a) if a == "cycle_outputs" => {
+                _ = api.wait_for_update_request() => break,
+                Some(action) = actions.recv() => match action.as_ref() {
+                    "cycle_outputs" => {
                         cur_indx = (cur_indx + 1) % monitors.len();
                     }
-                    Action(a) if a == "brightness_up" => {
+                    "brightness_up" => {
                         if let Some(monitor) = monitors.get_mut(cur_indx) {
                             let bright = (monitor.brightness + config.step_width).min(100);
                             monitor.set_brightness(bright);
                         }
                     }
-                    Action(a) if a == "brightness_down" => {
+                    "brightness_down" => {
                         if let Some(monitor) = monitors.get_mut(cur_indx) {
                             let bright = monitor.brightness.saturating_sub(config.step_width);
                             monitor.set_brightness(bright);

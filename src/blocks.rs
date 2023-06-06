@@ -32,10 +32,9 @@ mod prelude;
 use crate::BoxedFuture;
 use futures::future::FutureExt;
 use serde::de::{self, Deserialize};
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, Notify};
 
 use std::borrow::Cow;
-use std::future::Future;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -82,7 +81,16 @@ macro_rules! define_blocks {
                 match self {
                     $(
                         $(#[cfg(feature = $feat)])?
-                        Self::$block(config) => $block::run(config, api).map(move |e| e.in_block(stringify!($block), id)).boxed_local(),
+                        Self::$block(config) => async move {
+                            while let Err(err) = $block::run(&config, &api).await {
+                                api.set_error(err).await?;
+                                tokio::select! {
+                                    _ = tokio::time::sleep(api.error_interval) => (),
+                                    _ = api.wait_for_update_request() => (),
+                                }
+                            }
+                            Ok(())
+                        }.boxed_local(),
                     )*
                     Self::Err(name, err) => {
                         std::future::ready(Err(Error {
@@ -181,16 +189,13 @@ define_blocks!(
 
 pub type BlockFuture = BoxedFuture<Result<()>>;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum BlockEvent {
-    Action(Cow<'static, str>),
-    UpdateRequest,
-}
+pub type BlockAction = Cow<'static, str>;
 
+#[derive(Clone)]
 pub struct CommonApi {
     pub(crate) id: usize,
     pub(crate) shared_config: SharedConfig,
-    pub(crate) event_receiver: mpsc::Receiver<BlockEvent>,
+    pub(crate) update_request: Arc<Notify>,
     pub(crate) request_sender: mpsc::Sender<Request>,
     pub(crate) error_interval: Duration,
 }
@@ -230,7 +235,7 @@ impl CommonApi {
     }
 
     pub async fn set_default_actions(
-        &mut self,
+        &self,
         actions: &'static [(MouseButton, Option<&'static str>, &'static str)],
     ) -> Result<()> {
         self.request_sender
@@ -242,61 +247,20 @@ impl CommonApi {
             .error("Failed to send Request")
     }
 
-    /// Receive the next event, such as click notification or update request.
-    ///
-    /// This method should be called regularly to avoid sender blocking. Currently, the runtime is
-    /// single threaded, so full channel buffer will cause a deadlock. If receiving events is
-    /// impossible / meaningless, call `event_receiver.close()`.
-    ///
-    /// # Cancel safety
-    ///
-    /// This method is cancel safe.
-    ///
-    /// # Panics
-    ///
-    /// Panics if event sender is closed
-    ///
-    /// # Examples
-    ///
-    /// ```ignore
-    /// tokio::select! {
-    ///     _ = timer.tick() => (),
-    ///     event = api.event() => match event {
-    ///         // ...
-    ///         _ => (),
-    ///     }
-    /// }
-    /// ```
-    pub async fn event(&mut self) -> BlockEvent {
-        match self.event_receiver.recv().await {
-            Some(event) => event,
-            None => panic!("events stream ended"),
-        }
+    pub async fn get_actions(&self) -> Result<mpsc::UnboundedReceiver<BlockAction>> {
+        let (tx, rx) = mpsc::unbounded_channel();
+        self.request_sender
+            .send(Request {
+                block_id: self.id,
+                cmd: RequestCmd::SubscribeToActions(tx),
+            })
+            .await
+            .error("Failed to send Request")?;
+        Ok(rx)
     }
 
-    /// Wait for the next update request.
-    ///
-    /// The update request can be send by clicking on the block (with `update=true`) or sending a
-    /// signal.
-    ///
-    /// # Cancel safety
-    ///
-    /// This method is cancel safe.
-    ///
-    /// # Panics
-    ///
-    /// Panics if event sender is closed
-    ///
-    /// # Examples
-    ///
-    /// ```ignore
-    /// tokio::select! {
-    ///     _ = timer.tick() => (),
-    ///     _ = api.wait_for_update_request() => (),
-    /// }
-    /// ```
-    pub async fn wait_for_update_request(&mut self) {
-        while self.event().await != BlockEvent::UpdateRequest {}
+    pub async fn wait_for_update_request(&self) {
+        self.update_request.notified().await;
     }
 
     pub fn get_icon(&self, icon: &str) -> Result<String> {
@@ -319,35 +283,5 @@ impl CommonApi {
         high: f64,
     ) -> Result<String> {
         self.get_icon_in_progression(icon, (value.clamp(low, high) - low) / (high - low))
-    }
-
-    /// Repeatedly call provided async function until it succeeds.
-    ///
-    /// This function will call `f` in a loop. If it succeeds, the result will be returned.
-    /// Otherwise, the block will enter error mode: "X" will be shown and on left click the error
-    /// message will be shown.
-    ///
-    /// # Examples
-    ///
-    /// ```ignore
-    /// let status = api.recoverable(|| Status::new(&*socket_path)).await?;
-    /// ```
-    pub async fn recoverable<Fn, Fut, T>(&mut self, mut f: Fn) -> Result<T>
-    where
-        Fn: FnMut() -> Fut,
-        Fut: Future<Output = Result<T>>,
-    {
-        loop {
-            match f().await {
-                Ok(res) => return Ok(res),
-                Err(err) => {
-                    self.set_error(err).await?;
-                    tokio::select! {
-                        _ = tokio::time::sleep(self.error_interval) => (),
-                        _ = self.wait_for_update_request() => (),
-                    }
-                }
-            }
-        }
     }
 }

@@ -81,7 +81,8 @@ pub struct Config {
     pub click_temp: u16,
 }
 
-pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+    let mut actions = api.get_actions().await?;
     api.set_default_actions(&[
         (MouseButton::Left, None, "set_click_temp"),
         (MouseButton::Right, None, "reset"),
@@ -138,42 +139,40 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
             update = driver.receive_update() => {
                 current_temp = update?;
             }
-            event = api.event() => {
-                match event {
-                    UpdateRequest => {
-                        if let Some(val) = driver.get().await? {
-                            current_temp = val;
-                        }
-                    }
-                    Action(a) if a == "set_click_temp" => {
-                        current_temp = config.click_temp;
-                        driver.update(current_temp).await?;
-                    }
-                    Action(a) if a == "reset" => {
-                        if max_temp > 6500 {
-                            current_temp = 6500;
-                            driver.reset().await?;
-                        } else {
-                            current_temp = max_temp;
-                            driver.update(current_temp).await?;
-                        }
-                    }
-                    Action(a) if a == "temperature_up" => {
-                        current_temp = (current_temp + step).min(max_temp);
-                        driver.update(current_temp).await?;
-                    }
-                    Action(a) if a == "temperature_down" => {
-                        current_temp = current_temp.saturating_sub(step).max(min_temp);
-                        driver.update(current_temp).await?;
-                    }
-                    _ => (),
+            _ = api.wait_for_update_request() => {
+                if let Some(val) = driver.get().await? {
+                    current_temp = val;
                 }
+            }
+            Some(action) = actions.recv() => match action.as_ref() {
+                "set_click_temp" => {
+                    current_temp = config.click_temp;
+                    driver.update(current_temp).await?;
+                }
+                "reset" => {
+                    if max_temp > 6500 {
+                        current_temp = 6500;
+                        driver.reset().await?;
+                    } else {
+                        current_temp = max_temp;
+                        driver.update(current_temp).await?;
+                    }
+                }
+                "temperature_up" => {
+                    current_temp = (current_temp + step).min(max_temp);
+                    driver.update(current_temp).await?;
+                }
+                "temperature_down" => {
+                    current_temp = current_temp.saturating_sub(step).max(min_temp);
+                    driver.update(current_temp).await?;
+                }
+                _ => (),
             }
         }
     }
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Debug, Clone, Copy)]
 #[serde(rename_all = "snake_case")]
 pub enum HueShifter {
     Redshift,

@@ -50,7 +50,8 @@ pub struct Config {
     pub show_time: bool,
 }
 
-pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+    let mut actions = api.get_actions().await?;
     api.set_default_actions(&[(MouseButton::Left, None, "toggle_show_time")])
         .await?;
 
@@ -58,7 +59,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
     let mut show_time = config.show_time;
 
-    let (state_dir, state_file, state_path) = match config.state_path {
+    let (state_dir, state_file, state_path) = match &config.state_path {
         Some(p) => {
             let mut p: PathBuf = (*p.expand()?).into();
             let path = p.clone();
@@ -126,15 +127,15 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         loop {
             select! {
                 _ = timer.tick() => break,
+                _ = api.wait_for_update_request() => break,
                 Some(update) = state_updates.next() => {
                     let update = update.error("Bad inotify update")?;
-                    if update.name.map(|x| state_file == x).unwrap_or(false) {
+                    if update.name.map_or(false, |x| state_file == x) {
                         break;
                     }
                 }
-                event = api.event() => match event {
-                    UpdateRequest => break,
-                    Action(a) if a == "toggle_show_time" => {
+                Some(action) = actions.recv() => match action.as_ref() {
+                    "toggle_show_time" => {
                         show_time = !show_time;
                         break;
                     }

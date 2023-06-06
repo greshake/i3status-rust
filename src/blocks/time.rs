@@ -53,7 +53,8 @@ pub enum Timezone {
     Timezones(Vec<Tz>),
 }
 
-pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+    let mut actions = api.get_actions().await?;
     api.set_default_actions(&[
         (MouseButton::Left, None, "next_timezone"),
         (MouseButton::Right, None, "prev_timezone"),
@@ -64,7 +65,7 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
         .format
         .with_default(" $icon $timestamp.datetime() ")?;
 
-    let timezones = match config.timezone {
+    let timezones = match config.timezone.clone() {
         Some(tzs) => match tzs {
             Timezone::Timezone(tz) => vec![tz],
             Timezone::Timezones(tzs) => tzs,
@@ -98,11 +99,12 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
         tokio::select! {
             _ = timer.tick() => (),
-            event = api.event() => match event {
-                Action(e) if e == "next_timezone" => {
+            _ = api.wait_for_update_request() => (),
+            Some(action) = actions.recv() => match action.as_ref() {
+                "next_timezone" => {
                     timezone = timezone_iter.next();
                 },
-                Action(e) if e == "prev_timezone" => {
+                "prev_timezone" => {
                     timezone = timezone_iter.nth(prev_step_length);
                 },
                 _ => (),
