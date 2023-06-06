@@ -197,12 +197,14 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     loop {
         let location = if config.autolocate {
-            Some(find_ip_location(autolocate_interval.0).await?)
+            let fetch = || find_ip_location(autolocate_interval.0);
+            Some(fetch.retry(&ExponentialBuilder::default()).await?)
         } else {
             None
         };
 
-        let data = provider.get_weather(location).await?;
+        let fetch = || provider.get_weather(location);
+        let data = fetch.retry(&ExponentialBuilder::default()).await?;
 
         let mut widget = Widget::new().with_format(format.clone());
         widget.set_values(data.into_values(api)?);

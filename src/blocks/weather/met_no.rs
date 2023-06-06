@@ -20,7 +20,7 @@ impl<'a> Service<'a> {
     pub(super) async fn new(config: &'a Config) -> Result<Service<'a>> {
         Ok(Self {
             config,
-            legend: get_legend().await?,
+            legend: get_legend.retry(&ExponentialBuilder::default()).await?,
         })
     }
 }
