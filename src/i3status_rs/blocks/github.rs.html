@@ -185,6 +185,9 @@
 <a href="#185" id="185">185</a>
 <a href="#186" id="186">186</a>
 <a href="#187" id="187">187</a>
+<a href="#188" id="188">188</a>
+<a href="#189" id="189">189</a>
+<a href="#190" id="190">190</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! The number of GitHub notifications
 //!
 //! This block shows the unread notification count for a GitHub account. A GitHub [personal access token](https://github.com/settings/tokens/new) with the &quot;notifications&quot; scope is required, and must be passed using the `I3RS_GITHUB_TOKEN` environment variable or `token` configuration option. Optionally the colour of the block is determined by the highest notification in the following lists from highest to lowest: `critical`,`warning`,`info`,`good`
@@ -261,21 +264,22 @@
     <span class="kw">pub </span>critical: <span class="prelude-ty">Option</span>&lt;Vec&lt;String&gt;&gt;,
 }
 
-<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+<span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $total.eng(w:1) &quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>interval = config.interval.timer();
     <span class="kw">let </span>token = config
         .token
+        .clone()
         .or_else(|| std::env::var(<span class="string">&quot;I3RS_GITHUB_TOKEN&quot;</span>).ok())
         .error(<span class="string">&quot;Github token not found&quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">loop </span>{
-        <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
+        <span class="kw">let </span>stats = get_stats(<span class="kw-2">&amp;</span>token).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="kw">let </span>stats = api.recoverable(|| get_stats(<span class="kw-2">&amp;</span>token)).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">if </span>stats.get(<span class="string">&quot;total&quot;</span>).map_or(<span class="bool-val">false</span>, |x| <span class="kw-2">*</span>x &gt; <span class="number">0</span>) || !config.hide_if_total_is_zero {
-            <span class="kw">let </span><span class="kw-2">mut </span>state = State::Idle;
+            <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
+
             <span class="lifetime">&#39;outer</span>: <span class="kw">for </span>(list_opt, ret) <span class="kw">in </span>[
                 (<span class="kw-2">&amp;</span>config.critical, State::Critical),
                 (<span class="kw-2">&amp;</span>config.warning, State::Warning),
@@ -285,19 +289,20 @@
                 <span class="kw">if let </span><span class="prelude-val">Some</span>(list) = list_opt {
                     <span class="kw">for </span>val <span class="kw">in </span>list {
                         <span class="kw">if </span>stats.get(val).map_or(<span class="bool-val">false</span>, |x| <span class="kw-2">*</span>x &gt; <span class="number">0</span>) {
-                            state = ret;
+                            widget.state = ret;
                             <span class="kw">break </span><span class="lifetime">&#39;outer</span>;
                         }
                     }
                 }
             }
+
             <span class="kw">let </span><span class="kw-2">mut </span>values: HashMap&lt;<span class="kw">_</span>, <span class="kw">_</span>&gt; = stats
                 .into_iter()
                 .map(|(k, v)| (k.into(), Value::number(v)))
                 .collect();
             values.insert(<span class="string">&quot;icon&quot;</span>.into(), Value::icon(api.get_icon(<span class="string">&quot;github&quot;</span>)<span class="question-mark">?</span>));
             widget.set_values(values);
-            widget.state = state;
+
             api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
         } <span class="kw">else </span>{
             api.hide().<span class="kw">await</span><span class="question-mark">?</span>;
@@ -319,7 +324,8 @@
     <span class="kw">let </span><span class="kw-2">mut </span>stats = HashMap::new();
     <span class="kw">let </span><span class="kw-2">mut </span>total = <span class="number">0</span>;
     <span class="kw">for </span>page <span class="kw">in </span><span class="number">1</span>..<span class="number">100 </span>{
-        <span class="kw">let </span>on_page = get_on_page(token, page).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let </span>fetch = || get_on_page(token, page);
+        <span class="kw">let </span>on_page = fetch.retry(<span class="kw-2">&amp;</span>ExponentialBuilder::default()).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">if </span>on_page.is_empty() {
             <span class="kw">break</span>;
         }

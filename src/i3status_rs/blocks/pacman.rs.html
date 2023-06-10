@@ -389,10 +389,6 @@
 <a href="#389" id="389">389</a>
 <a href="#390" id="390">390</a>
 <a href="#391" id="391">391</a>
-<a href="#392" id="392">392</a>
-<a href="#393" id="393">393</a>
-<a href="#394" id="394">394</a>
-<a href="#395" id="395">395</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Pending updates available on pacman or an AUR helper.
 //!
 //! Requires fakeroot to be installed (only required for pacman).
@@ -554,7 +550,7 @@
     <span class="kw">pub </span>aur_command: <span class="prelude-ty">Option</span>&lt;String&gt;,
 }
 
-<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+<span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $pacman.eng(w:1) &quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>format_singular = config
         .format_singular
@@ -577,6 +573,7 @@
         Watched::Both(
             config
                 .aur_command
+                .as_deref()
                 .error(<span class="string">&quot;$aur or $both found in format string but no aur_command supplied&quot;</span>)<span class="question-mark">?</span>,
         )
     } <span class="kw">else if </span>pacman &amp;&amp; !aur {
@@ -585,6 +582,7 @@
         Watched::Aur(
             config
                 .aur_command
+                .as_deref()
                 .error(<span class="string">&quot;$aur or $both found in format string but no aur_command supplied&quot;</span>)<span class="question-mark">?</span>,
         )
     } <span class="kw">else </span>{
@@ -611,7 +609,7 @@
     <span class="kw">loop </span>{
         <span class="kw">let </span>(<span class="kw-2">mut </span>values, warning, critical, total) = <span class="kw">match </span><span class="kw-2">&amp;</span>watched {
             Watched::Pacman =&gt; {
-                <span class="kw">let </span>updates = api.recoverable(get_pacman_available_updates).<span class="kw">await</span><span class="question-mark">?</span>;
+                <span class="kw">let </span>updates = get_pacman_available_updates().<span class="kw">await</span><span class="question-mark">?</span>;
                 <span class="kw">let </span>count = get_update_count(<span class="kw-2">&amp;</span>updates);
                 <span class="kw">let </span>values = <span class="macro">map!</span>(<span class="string">&quot;pacman&quot; </span>=&gt; Value::number(count));
                 <span class="kw">let </span>warning = warning_updates_regex
@@ -623,9 +621,7 @@
                 (values, warning, critical, count)
             }
             Watched::Aur(aur_command) =&gt; {
-                <span class="kw">let </span>updates = api
-                    .recoverable(|| get_aur_available_updates(aur_command))
-                    .<span class="kw">await</span><span class="question-mark">?</span>;
+                <span class="kw">let </span>updates = get_aur_available_updates(aur_command).<span class="kw">await</span><span class="question-mark">?</span>;
                 <span class="kw">let </span>count = get_update_count(<span class="kw-2">&amp;</span>updates);
                 <span class="kw">let </span>values = <span class="macro">map!</span>(
                     <span class="string">&quot;aur&quot; </span>=&gt; Value::number(count)
@@ -639,14 +635,10 @@
                 (values, warning, critical, count)
             }
             Watched::Both(aur_command) =&gt; {
-                <span class="kw">let </span>(pacman_updates, aur_updates) = api
-                    .recoverable(|| <span class="kw">async </span>{
-                        <span class="macro">tokio::try_join!</span>(
-                            get_pacman_available_updates(),
-                            get_aur_available_updates(aur_command)
-                        )
-                    })
-                    .<span class="kw">await</span><span class="question-mark">?</span>;
+                <span class="kw">let </span>(pacman_updates, aur_updates) = <span class="macro">tokio::try_join!</span>(
+                    get_pacman_available_updates(),
+                    get_aur_available_updates(aur_command)
+                )<span class="question-mark">?</span>;
                 <span class="kw">let </span>pacman_count = get_update_count(<span class="kw-2">&amp;</span>pacman_updates);
                 <span class="kw">let </span>aur_count = get_update_count(<span class="kw-2">&amp;</span>aur_updates);
                 <span class="kw">let </span>values = <span class="macro">map! </span>{
@@ -697,11 +689,11 @@
 }
 
 <span class="attr">#[derive(Debug, PartialEq, Eq)]
-</span><span class="kw">enum </span>Watched {
+</span><span class="kw">enum </span>Watched&lt;<span class="lifetime">&#39;a</span>&gt; {
     <span class="prelude-val">None</span>,
     Pacman,
-    Aur(String),
-    Both(String),
+    Aur(<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str),
+    Both(<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str),
 }
 
 <span class="kw">async fn </span>check_fakeroot_command_exists() -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {

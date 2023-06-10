@@ -193,6 +193,7 @@
 <a href="#193" id="193">193</a>
 <a href="#194" id="194">194</a>
 <a href="#195" id="195">195</a>
+<a href="#196" id="196">196</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Disk usage statistics
 //!
 //! # Configuration
@@ -280,12 +281,13 @@
     </span><span class="kw">pub </span>alert: f64,
 }
 
-<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+<span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions().<span class="kw">await</span><span class="question-mark">?</span>;
     api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;toggle_format&quot;</span>)])
         .<span class="kw">await</span><span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>format = config.format.with_default(<span class="string">&quot; $icon $available &quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let </span><span class="kw-2">mut </span>format_alt = <span class="kw">match </span>config.format_alt {
+    <span class="kw">let </span><span class="kw-2">mut </span>format_alt = <span class="kw">match </span><span class="kw-2">&amp;</span>config.format_alt {
         <span class="prelude-val">Some</span>(f) =&gt; <span class="prelude-val">Some</span>(f.with_default(<span class="string">&quot;&quot;</span>)<span class="question-mark">?</span>),
         <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
     };
@@ -374,10 +376,10 @@
         <span class="kw">loop </span>{
             <span class="macro">select! </span>{
                 <span class="kw">_ </span>= timer.tick() =&gt; <span class="kw">break</span>,
-                event = api.event() =&gt; <span class="kw">match </span>event {
-                    UpdateRequest =&gt; <span class="kw">break</span>,
-                    Action(a) <span class="kw">if </span>a == <span class="string">&quot;toggle_format&quot; </span>=&gt; {
-                        <span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">ref mut </span>format_alt) = format_alt {
+                <span class="kw">_ </span>= api.wait_for_update_request() =&gt; <span class="kw">break</span>,
+                <span class="prelude-val">Some</span>(action) = actions.recv() =&gt; <span class="kw">match </span>action.as_ref() {
+                    <span class="string">&quot;toggle_format&quot; </span>=&gt; {
+                        <span class="kw">if let </span><span class="prelude-val">Some</span>(format_alt) = <span class="kw-2">&amp;mut </span>format_alt {
                             std::mem::swap(format_alt, <span class="kw-2">&amp;mut </span>format);
                             <span class="kw">break</span>;
                         }

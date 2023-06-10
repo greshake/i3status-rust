@@ -639,8 +639,6 @@
 <a href="#639" id="639">639</a>
 <a href="#640" id="640">640</a>
 <a href="#641" id="641">641</a>
-<a href="#642" id="642">642</a>
-<a href="#643" id="643">643</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! The current song title and artist
 //!
 //! Also provides buttons for play/pause, previous and next.
@@ -806,7 +804,8 @@
     </span>Multiple(Vec&lt;String&gt;),
 }
 
-<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+<span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions().<span class="kw">await</span><span class="question-mark">?</span>;
     api.set_default_actions(<span class="kw-2">&amp;</span>[
         (MouseButton::Left, <span class="prelude-val">Some</span>(PLAY_PAUSE_BTN), <span class="string">&quot;play_pause&quot;</span>),
         (MouseButton::Left, <span class="prelude-val">Some</span>(NEXT_BTN), <span class="string">&quot;next&quot;</span>),
@@ -825,17 +824,17 @@
 
     <span class="kw">let </span>volume_step = config.volume_step.clamp(<span class="number">0.0</span>, <span class="number">50.0</span>) / <span class="number">100.0</span>;
 
-    <span class="kw">let </span>new_btn = |icon: <span class="kw-2">&amp;</span>str, instance: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str, api: <span class="kw-2">&amp;mut </span>CommonApi| -&gt; <span class="prelude-ty">Result</span>&lt;Value&gt; {
+    <span class="kw">let </span>new_btn = |icon: <span class="kw-2">&amp;</span>str, instance: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str, api: <span class="kw-2">&amp;</span>CommonApi| -&gt; <span class="prelude-ty">Result</span>&lt;Value&gt; {
         <span class="prelude-val">Ok</span>(Value::icon(api.get_icon(icon)<span class="question-mark">?</span>).with_instance(instance))
     };
 
     <span class="kw">let </span>values = <span class="macro">map! </span>{
         <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;music&quot;</span>)<span class="question-mark">?</span>),
-        <span class="string">&quot;next&quot; </span>=&gt; new_btn(<span class="string">&quot;music_next&quot;</span>, NEXT_BTN, <span class="kw-2">&amp;mut </span>api)<span class="question-mark">?</span>,
-        <span class="string">&quot;prev&quot; </span>=&gt; new_btn(<span class="string">&quot;music_prev&quot;</span>, PREV_BTN, <span class="kw-2">&amp;mut </span>api)<span class="question-mark">?</span>,
+        <span class="string">&quot;next&quot; </span>=&gt; new_btn(<span class="string">&quot;music_next&quot;</span>, NEXT_BTN, api)<span class="question-mark">?</span>,
+        <span class="string">&quot;prev&quot; </span>=&gt; new_btn(<span class="string">&quot;music_prev&quot;</span>, PREV_BTN, api)<span class="question-mark">?</span>,
     };
 
-    <span class="kw">let </span>preferred_players = <span class="kw">match </span>config.player {
+    <span class="kw">let </span>preferred_players = <span class="kw">match </span>config.player.clone() {
         PlayerName::Single(name) =&gt; <span class="macro">vec!</span>[name],
         PlayerName::Multiple(names) =&gt; names,
     };
@@ -918,7 +917,7 @@
         <span class="kw">let </span>avail = players.len();
         <span class="kw">let </span>player = cur_player.map(|c| players.get_mut(c).unwrap());
         <span class="kw">match </span>player {
-            <span class="prelude-val">Some</span>(<span class="kw-2">ref </span>player) =&gt; {
+            <span class="prelude-val">Some</span>(player) =&gt; {
                 <span class="kw">let </span><span class="kw-2">mut </span>values = values.clone();
                 values.insert(<span class="string">&quot;avail&quot;</span>.into(), Value::number(avail));
                 values.insert(<span class="string">&quot;cur&quot;</span>.into(), Value::number(cur_player.unwrap() + <span class="number">1</span>));
@@ -934,7 +933,7 @@
                     <span class="prelude-val">Some</span>(PlaybackStatus::Playing) =&gt; (State::Info, <span class="string">&quot;music_pause&quot;</span>),
                     <span class="kw">_ </span>=&gt; (State::Idle, <span class="string">&quot;music_play&quot;</span>),
                 };
-                values.insert(<span class="string">&quot;play&quot;</span>.into(), new_btn(play_icon, PLAY_PAUSE_BTN, <span class="kw-2">&amp;mut </span>api)<span class="question-mark">?</span>);
+                values.insert(<span class="string">&quot;play&quot;</span>.into(), new_btn(play_icon, PLAY_PAUSE_BTN, api)<span class="question-mark">?</span>);
                 <span class="kw">if let </span><span class="prelude-val">Some</span>(url) = <span class="kw-2">&amp;</span>player.metadata.url {
                     values.insert(<span class="string">&quot;url&quot;</span>.into(), Value::text(url.clone()));
                 }
@@ -1060,42 +1059,39 @@
                     }
                     <span class="kw">break</span>;
                 }
-                event = api.event() =&gt; <span class="kw">match </span>event {
-                    UpdateRequest =&gt; (),
-                    Action(a) =&gt; {
-                        <span class="kw">if let </span><span class="prelude-val">Some</span>(i) = cur_player {
-                            <span class="kw">let </span>player = <span class="kw-2">&amp;</span>players[i];
-                            <span class="kw">match </span>a.as_ref() {
-                                <span class="string">&quot;play_pause&quot; </span>=&gt; {
-                                    player.play_pause().<span class="kw">await</span><span class="question-mark">?</span>;
-                                }
-                                <span class="string">&quot;next&quot; </span>=&gt; {
-                                    player.next().<span class="kw">await</span><span class="question-mark">?</span>;
-                                }
-                                <span class="string">&quot;prev&quot; </span>=&gt; {
-                                    player.prev().<span class="kw">await</span><span class="question-mark">?</span>;
-                                }
-                                <span class="string">&quot;next_player&quot; </span>=&gt; {
-                                    cur_player = <span class="prelude-val">Some</span>((i + <span class="number">1</span>) % players.len());
-                                    <span class="kw">if let </span><span class="prelude-val">Err</span>(e) = playerctld_proxy.shift().<span class="kw">await</span>{
-                                        <span class="macro">debug!</span>(<span class="string">&quot;{e}&quot;</span>);
-                                    }
-                                    <span class="kw">break</span>;
-                                }
-                                <span class="string">&quot;seek_forward&quot; </span>=&gt; {
-                                    player.seek(config.seek_step_secs.<span class="number">0</span>.as_micros() <span class="kw">as </span>i64).<span class="kw">await</span><span class="question-mark">?</span>;
-                                }
-                                <span class="string">&quot;seek_backward&quot; </span>=&gt; {
-                                    player.seek(-(config.seek_step_secs.<span class="number">0</span>.as_micros() <span class="kw">as </span>i64)).<span class="kw">await</span><span class="question-mark">?</span>;
-                                }
-                                <span class="string">&quot;volume_up&quot; </span>=&gt; {
-                                    player.set_volume(volume_step).<span class="kw">await</span><span class="question-mark">?</span>;
-                                }
-                                <span class="string">&quot;volume_down&quot; </span>=&gt; {
-                                    player.set_volume(-volume_step).<span class="kw">await</span><span class="question-mark">?</span>;
-                                }
-                                <span class="kw">_ </span>=&gt; (),
+                <span class="prelude-val">Some</span>(action) = actions.recv() =&gt; {
+                    <span class="kw">if let </span><span class="prelude-val">Some</span>(i) = cur_player {
+                        <span class="kw">let </span>player = <span class="kw-2">&amp;</span>players[i];
+                        <span class="kw">match </span>action.as_ref() {
+                            <span class="string">&quot;play_pause&quot; </span>=&gt; {
+                                player.play_pause().<span class="kw">await</span><span class="question-mark">?</span>;
                             }
+                            <span class="string">&quot;next&quot; </span>=&gt; {
+                                player.next().<span class="kw">await</span><span class="question-mark">?</span>;
+                            }
+                            <span class="string">&quot;prev&quot; </span>=&gt; {
+                                player.prev().<span class="kw">await</span><span class="question-mark">?</span>;
+                            }
+                            <span class="string">&quot;next_player&quot; </span>=&gt; {
+                                cur_player = <span class="prelude-val">Some</span>((i + <span class="number">1</span>) % players.len());
+                                <span class="kw">if let </span><span class="prelude-val">Err</span>(e) = playerctld_proxy.shift().<span class="kw">await</span>{
+                                    <span class="macro">debug!</span>(<span class="string">&quot;{e}&quot;</span>);
+                                }
+                                <span class="kw">break</span>;
+                            }
+                            <span class="string">&quot;seek_forward&quot; </span>=&gt; {
+                                player.seek(config.seek_step_secs.<span class="number">0</span>.as_micros() <span class="kw">as </span>i64).<span class="kw">await</span><span class="question-mark">?</span>;
+                            }
+                            <span class="string">&quot;seek_backward&quot; </span>=&gt; {
+                                player.seek(-(config.seek_step_secs.<span class="number">0</span>.as_micros() <span class="kw">as </span>i64)).<span class="kw">await</span><span class="question-mark">?</span>;
+                            }
+                            <span class="string">&quot;volume_up&quot; </span>=&gt; {
+                                player.set_volume(volume_step).<span class="kw">await</span><span class="question-mark">?</span>;
+                            }
+                            <span class="string">&quot;volume_down&quot; </span>=&gt; {
+                                player.set_volume(-volume_step).<span class="kw">await</span><span class="question-mark">?</span>;
+                            }
+                            <span class="kw">_ </span>=&gt; (),
                         }
                     }
                 }

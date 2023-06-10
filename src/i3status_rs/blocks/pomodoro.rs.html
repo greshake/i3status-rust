@@ -250,19 +250,6 @@
 <a href="#250" id="250">250</a>
 <a href="#251" id="251">251</a>
 <a href="#252" id="252">252</a>
-<a href="#253" id="253">253</a>
-<a href="#254" id="254">254</a>
-<a href="#255" id="255">255</a>
-<a href="#256" id="256">256</a>
-<a href="#257" id="257">257</a>
-<a href="#258" id="258">258</a>
-<a href="#259" id="259">259</a>
-<a href="#260" id="260">260</a>
-<a href="#261" id="261">261</a>
-<a href="#262" id="262">262</a>
-<a href="#263" id="263">263</a>
-<a href="#264" id="264">264</a>
-<a href="#265" id="265">265</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! A [pomodoro timer](https://en.wikipedia.org/wiki/Pomodoro_Technique)
 //!
 //! # Technique
@@ -322,7 +309,9 @@
 //! - Use different icons.
 //! - Use format strings.
 
-</span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+</span><span class="kw">use </span>tokio::sync::mpsc;
+
+<span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
 <span class="kw">use </span><span class="kw">crate</span>::subprocess::{spawn_shell, spawn_shell_sync};
 <span class="kw">use </span>std::time::Instant;
 
@@ -338,13 +327,14 @@
     <span class="kw">pub </span>blocking_cmd: bool,
 }
 
-<span class="kw">struct </span>Block {
+<span class="kw">struct </span>Block&lt;<span class="lifetime">&#39;a</span>&gt; {
     widget: Widget,
-    api: CommonApi,
-    block_config: Config,
+    actions: mpsc::UnboundedReceiver&lt;BlockAction&gt;,
+    api: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>CommonApi,
+    block_config: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>Config,
 }
 
-<span class="kw">impl </span>Block {
+<span class="kw">impl </span>Block&lt;<span class="lifetime">&#39;_</span>&gt; {
     <span class="kw">async fn </span>set_text(<span class="kw-2">&amp;mut </span><span class="self">self</span>, text: String) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="kw">let </span><span class="kw-2">mut </span>values = <span class="macro">map!</span>(
             <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(<span class="self">self</span>.api.get_icon(<span class="string">&quot;pomodoro&quot;</span>)<span class="question-mark">?</span>),
@@ -356,14 +346,9 @@
         <span class="self">self</span>.api.set_widget(<span class="self">self</span>.widget.clone()).<span class="kw">await
     </span>}
 
-    <span class="kw">async fn </span>wait_for_click(<span class="kw-2">&amp;mut </span><span class="self">self</span>, button: <span class="kw-2">&amp;</span>str) {
-        <span class="kw">loop </span>{
-            <span class="kw">if let </span>Action(action) = <span class="self">self</span>.api.event().<span class="kw">await </span>{
-                <span class="kw">if </span>action == button {
-                    <span class="kw">break</span>;
-                }
-            }
-        }
+    <span class="kw">async fn </span>wait_for_click(<span class="kw-2">&amp;mut </span><span class="self">self</span>, button: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        <span class="kw">while </span><span class="self">self</span>.actions.recv().<span class="kw">await</span>.error(<span class="string">&quot;channel closed&quot;</span>)<span class="question-mark">? </span>!= button {}
+        <span class="prelude-val">Ok</span>(())
     }
 
     <span class="kw">async fn </span>read_params(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;(Duration, Duration, u64)&gt; {
@@ -380,13 +365,11 @@
     <span class="kw">async fn </span>read_u64(<span class="kw-2">&amp;mut </span><span class="self">self</span>, <span class="kw-2">mut </span>number: u64, msg: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;u64&gt; {
         <span class="kw">loop </span>{
             <span class="self">self</span>.set_text(<span class="macro">format!</span>(<span class="string">&quot;{msg} {number}&quot;</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
-            <span class="kw">if let </span>Action(action) = <span class="self">self</span>.api.event().<span class="kw">await </span>{
-                <span class="kw">match </span>action.as_ref() {
-                    <span class="string">&quot;_left&quot; </span>=&gt; <span class="kw">break</span>,
-                    <span class="string">&quot;_up&quot; </span>=&gt; number += <span class="number">1</span>,
-                    <span class="string">&quot;_down&quot; </span>=&gt; number = number.saturating_sub(<span class="number">1</span>),
-                    <span class="kw">_ </span>=&gt; (),
-                }
+            <span class="kw">match </span><span class="kw-2">&amp;*</span><span class="self">self</span>.actions.recv().<span class="kw">await</span>.error(<span class="string">&quot;channel closed&quot;</span>)<span class="question-mark">? </span>{
+                <span class="string">&quot;_left&quot; </span>=&gt; <span class="kw">break</span>,
+                <span class="string">&quot;_up&quot; </span>=&gt; number += <span class="number">1</span>,
+                <span class="string">&quot;_down&quot; </span>=&gt; number = number.saturating_sub(<span class="number">1</span>),
+                <span class="kw">_ </span>=&gt; (),
             }
         }
         <span class="prelude-val">Ok</span>(number)
@@ -420,12 +403,7 @@
                 <span class="self">self</span>.set_text(text).<span class="kw">await</span><span class="question-mark">?</span>;
                 <span class="macro">select! </span>{
                     <span class="kw">_ </span>= sleep(Duration::from_secs(<span class="number">10</span>)) =&gt; (),
-                    event = <span class="self">self</span>.api.event() =&gt; <span class="kw">match </span>event {
-                        Action(a) <span class="kw">if </span>a == <span class="string">&quot;_middle&quot; </span>=&gt; {
-                            <span class="kw">return </span><span class="prelude-val">Ok</span>(());
-                        }
-                        <span class="kw">_ </span>=&gt; (),
-                    }
+                    <span class="kw">_ </span>= <span class="self">self</span>.wait_for_click(<span class="string">&quot;_middle&quot;</span>) =&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(()),
                 }
             }
 
@@ -440,10 +418,10 @@
                         </span>.error(<span class="string">&quot;failed to run notify_cmd&quot;</span>)<span class="question-mark">?</span>;
                 } <span class="kw">else </span>{
                     spawn_shell(<span class="kw-2">&amp;</span>cmd).error(<span class="string">&quot;failed to run notify_cmd&quot;</span>)<span class="question-mark">?</span>;
-                    <span class="self">self</span>.wait_for_click(<span class="string">&quot;_left&quot;</span>).<span class="kw">await</span>;
+                    <span class="self">self</span>.wait_for_click(<span class="string">&quot;_left&quot;</span>).<span class="kw">await</span><span class="question-mark">?</span>;
                 }
             } <span class="kw">else </span>{
-                <span class="self">self</span>.wait_for_click(<span class="string">&quot;_left&quot;</span>).<span class="kw">await</span>;
+                <span class="self">self</span>.wait_for_click(<span class="string">&quot;_left&quot;</span>).<span class="kw">await</span><span class="question-mark">?</span>;
             }
 
             <span class="comment">// No break after the last pomodoro
@@ -463,12 +441,7 @@
                     .<span class="kw">await</span><span class="question-mark">?</span>;
                 <span class="macro">select! </span>{
                     <span class="kw">_ </span>= sleep(Duration::from_secs(<span class="number">10</span>)) =&gt; (),
-                    event = <span class="self">self</span>.api.event() =&gt; <span class="kw">match </span>event {
-                        Action(a) <span class="kw">if </span>a == <span class="string">&quot;_middle&quot; </span>=&gt; {
-                            <span class="kw">return </span><span class="prelude-val">Ok</span>(());
-                        }
-                        <span class="kw">_ </span>=&gt; (),
-                    }
+                    <span class="kw">_ </span>= <span class="self">self</span>.wait_for_click(<span class="string">&quot;_middle&quot;</span>) =&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(()),
                 }
             }
 
@@ -484,10 +457,10 @@
                         </span>.error(<span class="string">&quot;failed to run notify_cmd&quot;</span>)<span class="question-mark">?</span>;
                 } <span class="kw">else </span>{
                     spawn_shell(<span class="kw-2">&amp;</span>cmd).error(<span class="string">&quot;failed to run notify_cmd&quot;</span>)<span class="question-mark">?</span>;
-                    <span class="self">self</span>.wait_for_click(<span class="string">&quot;_left&quot;</span>).<span class="kw">await</span>;
+                    <span class="self">self</span>.wait_for_click(<span class="string">&quot;_left&quot;</span>).<span class="kw">await</span><span class="question-mark">?</span>;
                 }
             } <span class="kw">else </span>{
-                <span class="self">self</span>.wait_for_click(<span class="string">&quot;_left&quot;</span>).<span class="kw">await</span>;
+                <span class="self">self</span>.wait_for_click(<span class="string">&quot;_left&quot;</span>).<span class="kw">await</span><span class="question-mark">?</span>;
             }
         }
 
@@ -495,7 +468,7 @@
     }
 }
 
-<span class="kw">pub async fn </span>run(block_config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+<span class="kw">pub async fn </span>run(block_config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     api.set_default_actions(<span class="kw-2">&amp;</span>[
         (MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;_left&quot;</span>),
         (MouseButton::Middle, <span class="prelude-val">None</span>, <span class="string">&quot;_middle&quot;</span>),
@@ -513,6 +486,7 @@
 
     <span class="kw">let </span><span class="kw-2">mut </span>block = Block {
         widget,
+        actions: api.get_actions().<span class="kw">await</span><span class="question-mark">?</span>,
         api,
         block_config,
     };
@@ -522,7 +496,7 @@
         </span>block.widget.state = State::Idle;
         block.set_text(String::new()).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        block.wait_for_click(<span class="string">&quot;_left&quot;</span>).<span class="kw">await</span>;
+        block.wait_for_click(<span class="string">&quot;_left&quot;</span>).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="kw">let </span>(task_len, break_len, pomodoros) = block.read_params().<span class="kw">await</span><span class="question-mark">?</span>;
         block.run_pomodoro(task_len, break_len, pomodoros).<span class="kw">await</span><span class="question-mark">?</span>;

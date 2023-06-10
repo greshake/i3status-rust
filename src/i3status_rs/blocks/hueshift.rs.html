@@ -392,7 +392,6 @@
 <a href="#392" id="392">392</a>
 <a href="#393" id="393">393</a>
 <a href="#394" id="394">394</a>
-<a href="#395" id="395">395</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Manage display temperature
 //!
 //! This block displays the current color temperature in Kelvin. When scrolling upon the block the color temperature is changed.
@@ -476,7 +475,8 @@
     </span><span class="kw">pub </span>click_temp: u16,
 }
 
-<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+<span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions().<span class="kw">await</span><span class="question-mark">?</span>;
     api.set_default_actions(<span class="kw-2">&amp;</span>[
         (MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;set_click_temp&quot;</span>),
         (MouseButton::Right, <span class="prelude-val">None</span>, <span class="string">&quot;reset&quot;</span>),
@@ -533,42 +533,40 @@
             update = driver.receive_update() =&gt; {
                 current_temp = update<span class="question-mark">?</span>;
             }
-            event = api.event() =&gt; {
-                <span class="kw">match </span>event {
-                    UpdateRequest =&gt; {
-                        <span class="kw">if let </span><span class="prelude-val">Some</span>(val) = driver.get().<span class="kw">await</span><span class="question-mark">? </span>{
-                            current_temp = val;
-                        }
-                    }
-                    Action(a) <span class="kw">if </span>a == <span class="string">&quot;set_click_temp&quot; </span>=&gt; {
-                        current_temp = config.click_temp;
-                        driver.update(current_temp).<span class="kw">await</span><span class="question-mark">?</span>;
-                    }
-                    Action(a) <span class="kw">if </span>a == <span class="string">&quot;reset&quot; </span>=&gt; {
-                        <span class="kw">if </span>max_temp &gt; <span class="number">6500 </span>{
-                            current_temp = <span class="number">6500</span>;
-                            driver.reset().<span class="kw">await</span><span class="question-mark">?</span>;
-                        } <span class="kw">else </span>{
-                            current_temp = max_temp;
-                            driver.update(current_temp).<span class="kw">await</span><span class="question-mark">?</span>;
-                        }
-                    }
-                    Action(a) <span class="kw">if </span>a == <span class="string">&quot;temperature_up&quot; </span>=&gt; {
-                        current_temp = (current_temp + step).min(max_temp);
-                        driver.update(current_temp).<span class="kw">await</span><span class="question-mark">?</span>;
-                    }
-                    Action(a) <span class="kw">if </span>a == <span class="string">&quot;temperature_down&quot; </span>=&gt; {
-                        current_temp = current_temp.saturating_sub(step).max(min_temp);
-                        driver.update(current_temp).<span class="kw">await</span><span class="question-mark">?</span>;
-                    }
-                    <span class="kw">_ </span>=&gt; (),
+            <span class="kw">_ </span>= api.wait_for_update_request() =&gt; {
+                <span class="kw">if let </span><span class="prelude-val">Some</span>(val) = driver.get().<span class="kw">await</span><span class="question-mark">? </span>{
+                    current_temp = val;
                 }
+            }
+            <span class="prelude-val">Some</span>(action) = actions.recv() =&gt; <span class="kw">match </span>action.as_ref() {
+                <span class="string">&quot;set_click_temp&quot; </span>=&gt; {
+                    current_temp = config.click_temp;
+                    driver.update(current_temp).<span class="kw">await</span><span class="question-mark">?</span>;
+                }
+                <span class="string">&quot;reset&quot; </span>=&gt; {
+                    <span class="kw">if </span>max_temp &gt; <span class="number">6500 </span>{
+                        current_temp = <span class="number">6500</span>;
+                        driver.reset().<span class="kw">await</span><span class="question-mark">?</span>;
+                    } <span class="kw">else </span>{
+                        current_temp = max_temp;
+                        driver.update(current_temp).<span class="kw">await</span><span class="question-mark">?</span>;
+                    }
+                }
+                <span class="string">&quot;temperature_up&quot; </span>=&gt; {
+                    current_temp = (current_temp + step).min(max_temp);
+                    driver.update(current_temp).<span class="kw">await</span><span class="question-mark">?</span>;
+                }
+                <span class="string">&quot;temperature_down&quot; </span>=&gt; {
+                    current_temp = current_temp.saturating_sub(step).max(min_temp);
+                    driver.update(current_temp).<span class="kw">await</span><span class="question-mark">?</span>;
+                }
+                <span class="kw">_ </span>=&gt; (),
             }
         }
     }
 }
 
-<span class="attr">#[derive(Deserialize, Debug, Clone)]
+<span class="attr">#[derive(Deserialize, Debug, Clone, Copy)]
 #[serde(rename_all = <span class="string">&quot;snake_case&quot;</span>)]
 </span><span class="kw">pub enum </span>HueShifter {
     Redshift,

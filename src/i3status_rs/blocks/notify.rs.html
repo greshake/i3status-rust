@@ -290,6 +290,7 @@
 <a href="#290" id="290">290</a>
 <a href="#291" id="291">291</a>
 <a href="#292" id="292">292</a>
+<a href="#293" id="293">293</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Display and toggle the state of notifications daemon
 //!
 //! Left-clicking on this block will enable/disable notifications.
@@ -371,7 +372,8 @@
     SwayNC,
 }
 
-<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+<span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions().<span class="kw">await</span><span class="question-mark">?</span>;
     api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;toggle_paused&quot;</span>)])
         .<span class="kw">await</span><span class="question-mark">?</span>;
 
@@ -401,11 +403,11 @@
 
         <span class="macro">select! </span>{
             x = driver.wait_for_change() =&gt; x<span class="question-mark">?</span>,
-            event = api.event() =&gt; <span class="kw">match </span>event {
-                Action(a) <span class="kw">if </span>a == <span class="string">&quot;toggle_paused&quot; </span>=&gt; {
+            <span class="prelude-val">Some</span>(action) = actions.recv() =&gt; <span class="kw">match </span>action.as_ref() {
+                <span class="string">&quot;toggle_paused&quot; </span>=&gt; {
                     driver.set_paused(!is_paused).<span class="kw">await</span><span class="question-mark">?</span>;
                 }
-                Action(a) <span class="kw">if </span>a == <span class="string">&quot;show&quot; </span>=&gt; {
+                <span class="string">&quot;show&quot; </span>=&gt; {
                     driver.notification_show().<span class="kw">await</span><span class="question-mark">?</span>;
                 }
                 <span class="kw">_ </span>=&gt; (),

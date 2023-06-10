@@ -115,7 +115,6 @@
 <a href="#115" id="115">115</a>
 <a href="#116" id="116">116</a>
 <a href="#117" id="117">117</a>
-<a href="#118" id="118">118</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Timer
 //!
 //! # Configuration
@@ -165,7 +164,8 @@
     <span class="kw">pub </span>done_cmd: <span class="prelude-ty">Option</span>&lt;String&gt;,
 }
 
-<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+<span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions().<span class="kw">await</span><span class="question-mark">?</span>;
     api.set_default_actions(<span class="kw-2">&amp;</span>[
         (MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;increment&quot;</span>),
         (MouseButton::WheelUp, <span class="prelude-val">None</span>, <span class="string">&quot;increment&quot;</span>),
@@ -216,20 +216,18 @@
 
         api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="macro">tokio::select! </span>{
+        <span class="macro">select! </span>{
             <span class="kw">_ </span>= timer.tick(), <span class="kw">if </span>is_timer_active =&gt; (),
-            event = api.event() =&gt; <span class="kw">match </span>event {
-                UpdateRequest =&gt; (),
-                Action(action) =&gt; {
-                    <span class="kw">let </span>now = Utc::now();
-                    <span class="kw">match </span>action.as_ref() {
-                        <span class="string">&quot;increment&quot; </span><span class="kw">if </span>is_timer_active =&gt; timer_end += increment,
-                        <span class="string">&quot;increment&quot; </span>=&gt; timer_end = now + increment,
-                        <span class="string">&quot;decrement&quot; </span><span class="kw">if </span>is_timer_active =&gt; timer_end -= increment,
-                        <span class="string">&quot;reset&quot; </span>=&gt; timer_end = now,
-                        <span class="kw">_ </span>=&gt; (),
-                    }
-                },
+            <span class="kw">_ </span>= api.wait_for_update_request() =&gt; (),
+            <span class="prelude-val">Some</span>(action) = actions.recv() =&gt; {
+                <span class="kw">let </span>now = Utc::now();
+                <span class="kw">match </span>action.as_ref() {
+                    <span class="string">&quot;increment&quot; </span><span class="kw">if </span>is_timer_active =&gt; timer_end += increment,
+                    <span class="string">&quot;increment&quot; </span>=&gt; timer_end = now + increment,
+                    <span class="string">&quot;decrement&quot; </span><span class="kw">if </span>is_timer_active =&gt; timer_end -= increment,
+                    <span class="string">&quot;reset&quot; </span>=&gt; timer_end = now,
+                    <span class="kw">_ </span>=&gt; (),
+                }
             }
         }
     }

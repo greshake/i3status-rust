@@ -123,12 +123,6 @@
 <a href="#123" id="123">123</a>
 <a href="#124" id="124">124</a>
 <a href="#125" id="125">125</a>
-<a href="#126" id="126">126</a>
-<a href="#127" id="127">127</a>
-<a href="#128" id="128">128</a>
-<a href="#129" id="129">129</a>
-<a href="#130" id="130">130</a>
-<a href="#131" id="131">131</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! A custom menu
 //!
 //! This block allows you to quickly run a custom shell command. Left-click on this block to
@@ -162,7 +156,9 @@
 //! confirm_msg = &quot;Are you sure you want to reboot?&quot;
 //! ```
 
-</span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+</span><span class="kw">use </span>tokio::sync::mpsc::UnboundedReceiver;
+
+<span class="kw">use super</span>::{prelude::<span class="kw-2">*</span>, BlockAction};
 <span class="kw">use </span><span class="kw">crate</span>::subprocess::spawn_shell;
 
 <span class="attr">#[derive(Deserialize, Debug)]
@@ -181,42 +177,37 @@
     </span><span class="kw">pub </span>confirm_msg: <span class="prelude-ty">Option</span>&lt;String&gt;,
 }
 
-<span class="kw">struct </span>Block {
-    api: CommonApi,
-    text: String,
-    items: Vec&lt;Item&gt;,
+<span class="kw">struct </span>Block&lt;<span class="lifetime">&#39;a</span>&gt; {
+    actions: UnboundedReceiver&lt;BlockAction&gt;,
+    api: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>CommonApi,
+    text: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str,
+    items: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[Item],
 }
 
-<span class="kw">impl </span>Block {
+<span class="kw">impl </span>Block&lt;<span class="lifetime">&#39;_</span>&gt; {
     <span class="kw">async fn </span>reset(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-        <span class="self">self</span>.set_text(<span class="self">self</span>.text.clone()).<span class="kw">await
+        <span class="self">self</span>.set_text(<span class="self">self</span>.text.to_owned()).<span class="kw">await
     </span>}
 
     <span class="kw">async fn </span>set_text(<span class="kw-2">&amp;mut </span><span class="self">self</span>, text: String) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="self">self</span>.api.set_widget(Widget::new().with_text(text)).<span class="kw">await
     </span>}
 
-    <span class="kw">async fn </span>wait_for_click(<span class="kw-2">&amp;mut </span><span class="self">self</span>, button: <span class="kw-2">&amp;</span>str) {
-        <span class="kw">loop </span>{
-            <span class="kw">match </span><span class="self">self</span>.api.event().<span class="kw">await </span>{
-                Action(a) <span class="kw">if </span>a == button =&gt; <span class="kw">break</span>,
-                <span class="kw">_ </span>=&gt; (),
-            }
-        }
+    <span class="kw">async fn </span>wait_for_click(<span class="kw-2">&amp;mut </span><span class="self">self</span>, button: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+        <span class="kw">while </span><span class="self">self</span>.actions.recv().<span class="kw">await</span>.error(<span class="string">&quot;channel closed&quot;</span>)<span class="question-mark">? </span>!= button {}
+        <span class="prelude-val">Ok</span>(())
     }
 
     <span class="kw">async fn </span>run_menu(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Item&gt;&gt; {
         <span class="kw">let </span><span class="kw-2">mut </span>index = <span class="number">0</span>;
         <span class="kw">loop </span>{
             <span class="self">self</span>.set_text(<span class="self">self</span>.items[index].display.clone()).<span class="kw">await</span><span class="question-mark">?</span>;
-            <span class="kw">if let </span>Action(action) = <span class="self">self</span>.api.event().<span class="kw">await </span>{
-                <span class="kw">match </span>action.as_ref() {
-                    <span class="string">&quot;_up&quot; </span>=&gt; index += <span class="number">1</span>,
-                    <span class="string">&quot;_down&quot; </span>=&gt; index += <span class="self">self</span>.items.len() + <span class="number">1</span>,
-                    <span class="string">&quot;_left&quot; </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="self">self</span>.items[index].clone())),
-                    <span class="string">&quot;_right&quot; </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
-                    <span class="kw">_ </span>=&gt; (),
-                }
+            <span class="kw">match </span><span class="kw-2">&amp;*</span><span class="self">self</span>.actions.recv().<span class="kw">await</span>.error(<span class="string">&quot;channel closed&quot;</span>)<span class="question-mark">? </span>{
+                <span class="string">&quot;_up&quot; </span>=&gt; index += <span class="number">1</span>,
+                <span class="string">&quot;_down&quot; </span>=&gt; index += <span class="self">self</span>.items.len() + <span class="number">1</span>,
+                <span class="string">&quot;_left&quot; </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="self">self</span>.items[index].clone())),
+                <span class="string">&quot;_right&quot; </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
+                <span class="kw">_ </span>=&gt; (),
             }
             index %= <span class="self">self</span>.items.len();
         }
@@ -224,15 +215,11 @@
 
     <span class="kw">async fn </span>confirm(<span class="kw-2">&amp;mut </span><span class="self">self</span>, msg: String) -&gt; <span class="prelude-ty">Result</span>&lt;bool&gt; {
         <span class="self">self</span>.set_text(msg).<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">loop </span>{
-            <span class="kw">if let </span>Action(action) = <span class="self">self</span>.api.event().<span class="kw">await </span>{
-                <span class="kw">return </span><span class="prelude-val">Ok</span>(action == <span class="string">&quot;_left&quot;</span>);
-            }
-        }
+        <span class="prelude-val">Ok</span>(<span class="self">self</span>.actions.recv().<span class="kw">await</span>.as_deref() == <span class="prelude-val">Some</span>(<span class="string">&quot;_left&quot;</span>))
     }
 }
 
-<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+<span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     api.set_default_actions(<span class="kw-2">&amp;</span>[
         (MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;_left&quot;</span>),
         (MouseButton::Right, <span class="prelude-val">None</span>, <span class="string">&quot;_right&quot;</span>),
@@ -242,14 +229,15 @@
     .<span class="kw">await</span><span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>block = Block {
+        actions: api.get_actions().<span class="kw">await</span><span class="question-mark">?</span>,
         api,
-        text: config.text,
-        items: config.items,
+        text: <span class="kw-2">&amp;</span>config.text,
+        items: <span class="kw-2">&amp;</span>config.items,
     };
 
     <span class="kw">loop </span>{
         block.reset().<span class="kw">await</span><span class="question-mark">?</span>;
-        block.wait_for_click(<span class="string">&quot;_left&quot;</span>).<span class="kw">await</span>;
+        block.wait_for_click(<span class="string">&quot;_left&quot;</span>).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">if let </span><span class="prelude-val">Some</span>(res) = block.run_menu().<span class="kw">await</span><span class="question-mark">? </span>{
             <span class="kw">if let </span><span class="prelude-val">Some</span>(msg) = res.confirm_msg {
                 <span class="kw">if </span>!block.confirm(msg).<span class="kw">await</span><span class="question-mark">? </span>{

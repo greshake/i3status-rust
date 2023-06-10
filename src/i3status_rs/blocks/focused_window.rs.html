@@ -97,8 +97,6 @@
 <a href="#97" id="97">97</a>
 <a href="#98" id="98">98</a>
 <a href="#99" id="99">99</a>
-<a href="#100" id="100">100</a>
-<a href="#101" id="101">101</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Currently focused window
 //!
 //! This block displays the title and/or the active marks (when used with `sway`/`i3`) of the currently
@@ -159,9 +157,7 @@
     WlrToplevelManagement,
 }
 
-<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    api.event_receiver.close();
-
+<span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $title.str(max_w:21) |&quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>backend: Box&lt;<span class="kw">dyn </span>Backend&gt; = <span class="kw">match </span>config.driver {

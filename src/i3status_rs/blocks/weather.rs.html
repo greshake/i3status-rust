@@ -325,33 +325,6 @@
 <a href="#325" id="325">325</a>
 <a href="#326" id="326">326</a>
 <a href="#327" id="327">327</a>
-<a href="#328" id="328">328</a>
-<a href="#329" id="329">329</a>
-<a href="#330" id="330">330</a>
-<a href="#331" id="331">331</a>
-<a href="#332" id="332">332</a>
-<a href="#333" id="333">333</a>
-<a href="#334" id="334">334</a>
-<a href="#335" id="335">335</a>
-<a href="#336" id="336">336</a>
-<a href="#337" id="337">337</a>
-<a href="#338" id="338">338</a>
-<a href="#339" id="339">339</a>
-<a href="#340" id="340">340</a>
-<a href="#341" id="341">341</a>
-<a href="#342" id="342">342</a>
-<a href="#343" id="343">343</a>
-<a href="#344" id="344">344</a>
-<a href="#345" id="345">345</a>
-<a href="#346" id="346">346</a>
-<a href="#347" id="347">347</a>
-<a href="#348" id="348">348</a>
-<a href="#349" id="349">349</a>
-<a href="#350" id="350">350</a>
-<a href="#351" id="351">351</a>
-<a href="#352" id="352">352</a>
-<a href="#353" id="353">353</a>
-<a href="#354" id="354">354</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Current weather
 //!
 //! This block displays local weather and temperature information. In order to use this block, you
@@ -444,7 +417,8 @@
 //! - `weather_default` (in all other cases)
 
 </span><span class="kw">use </span>std::fmt;
-<span class="kw">use </span>std::sync::Arc;
+<span class="kw">use </span>std::sync::{Arc, Mutex};
+<span class="kw">use </span>std::time::Instant;
 
 <span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
 
@@ -452,6 +426,8 @@
 <span class="kw">pub mod </span>open_weather_map;
 
 <span class="kw">const </span>IP_API_URL: <span class="kw-2">&amp;</span>str = <span class="string">&quot;https://ipapi.co/json&quot;</span>;
+
+<span class="kw">static </span>LAST_AUTOLOCATE: Mutex&lt;<span class="prelude-ty">Option</span>&lt;AutolocateResult&gt;&gt; = Mutex::new(<span class="prelude-val">None</span>);
 
 <span class="attr">#[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
@@ -483,7 +459,8 @@
     MetNo(met_no::Config),
 }
 
-<span class="kw">enum </span>WeatherIcon {
+<span class="attr">#[derive(Clone, Copy)]
+</span><span class="kw">enum </span>WeatherIcon {
     Sun,
     Rain,
     Clouds,
@@ -493,7 +470,7 @@
 }
 
 <span class="kw">impl </span>WeatherIcon {
-    <span class="kw">fn </span>to_icon_str(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>str {
+    <span class="kw">fn </span>to_icon_str(<span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str {
         <span class="kw">match </span><span class="self">self </span>{
             <span class="self">Self</span>::Sun =&gt; <span class="string">&quot;weather_sun&quot;</span>,
             <span class="self">Self</span>::Rain =&gt; <span class="string">&quot;weather_rain&quot;</span>,
@@ -535,90 +512,34 @@
     }
 }
 
-<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span><span class="kw-2">mut </span>widget =
-        Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon $weather $temp &quot;</span>)<span class="question-mark">?</span>);
+<span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $weather $temp &quot;</span>)<span class="question-mark">?</span>;
 
-    <span class="kw">let </span>provider: Box&lt;<span class="kw">dyn </span>WeatherProvider + Send + Sync&gt; = <span class="kw">match </span>config.service {
-        WeatherService::MetNo(config) =&gt; Box::new(met_no::Service::new(<span class="kw-2">&amp;mut </span>api, config).<span class="kw">await</span><span class="question-mark">?</span>),
+    <span class="kw">let </span>provider: Box&lt;<span class="kw">dyn </span>WeatherProvider + Send + Sync&gt; = <span class="kw">match </span><span class="kw-2">&amp;</span>config.service {
+        WeatherService::MetNo(config) =&gt; Box::new(met_no::Service::new(config).<span class="kw">await</span><span class="question-mark">?</span>),
         WeatherService::OpenWeatherMap(config) =&gt; Box::new(open_weather_map::Service::new(config)),
     };
 
-    <span class="kw">if </span>config.autolocate {
-        <span class="comment">// The default behavior is to mirror `interval`
-        </span><span class="kw">let </span>autolocate_interval = <span class="kw">match </span>config.autolocate_interval {
-            <span class="prelude-val">Some</span>(s) =&gt; s,
-            <span class="prelude-val">None </span>=&gt; config.interval,
-        };
+    <span class="kw">let </span>autolocate_interval = config.autolocate_interval.unwrap_or(config.interval);
 
-        <span class="kw">if </span>autolocate_interval == config.interval {
-            <span class="comment">// In the case where `autolocate_interval` matches `interval` merge both actions.
-            </span><span class="kw">loop </span>{
-                <span class="kw">let </span>location = api.recoverable(find_ip_location).<span class="kw">await</span><span class="question-mark">?</span>;
-                <span class="kw">let </span>data = api
-                    .recoverable(|| provider.get_weather(<span class="prelude-val">Some</span>(location)))
-                    .<span class="kw">await</span><span class="question-mark">?</span>;
-                widget.set_values(data.into_values(<span class="kw-2">&amp;</span>api)<span class="question-mark">?</span>);
-                api.set_widget(widget.clone()).<span class="kw">await</span><span class="question-mark">?</span>;
-
-                <span class="macro">select! </span>{
-                    <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt; (),
-                    <span class="kw">_ </span>= api.wait_for_update_request() =&gt; (),
-                }
-            }
+    <span class="kw">loop </span>{
+        <span class="kw">let </span>location = <span class="kw">if </span>config.autolocate {
+            <span class="kw">let </span>fetch = || find_ip_location(autolocate_interval.<span class="number">0</span>);
+            <span class="prelude-val">Some</span>(fetch.retry(<span class="kw-2">&amp;</span>ExponentialBuilder::default()).<span class="kw">await</span><span class="question-mark">?</span>)
         } <span class="kw">else </span>{
-            <span class="comment">// Two timers, one to rerender the block and the other to update the location.
-            </span><span class="kw">let </span><span class="kw-2">mut </span>interval = config.interval.timer();
-            <span class="kw">let </span><span class="kw-2">mut </span>autolocate_interval = autolocate_interval.timer();
+            <span class="prelude-val">None
+        </span>};
 
-            <span class="comment">// Initial pass
-            </span><span class="kw">let </span><span class="kw-2">mut </span>location = api.recoverable(find_ip_location).<span class="kw">await</span><span class="question-mark">?</span>;
-            <span class="kw">let </span>data = api
-                .recoverable(|| provider.get_weather(<span class="prelude-val">Some</span>(location)))
-                .<span class="kw">await</span><span class="question-mark">?</span>;
-            widget.set_values(data.into_values(<span class="kw-2">&amp;</span>api)<span class="question-mark">?</span>);
-            api.set_widget(widget.clone()).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let </span>fetch = || provider.get_weather(location);
+        <span class="kw">let </span>data = fetch.retry(<span class="kw-2">&amp;</span>ExponentialBuilder::default()).<span class="kw">await</span><span class="question-mark">?</span>;
 
-            <span class="kw">loop </span>{
-                <span class="macro">select! </span>{
-                    biased; <span class="comment">// if both timers `tick()` autolocate should run first
-                    </span><span class="kw">_ </span>= autolocate_interval.tick() =&gt; {
-                        location = api.recoverable(find_ip_location).<span class="kw">await</span><span class="question-mark">?</span>;
-                    }
-                    <span class="kw">_ </span>= interval.tick() =&gt; {
-                        <span class="kw">let </span>data = api
-                            .recoverable(|| provider.get_weather(<span class="prelude-val">Some</span>(location)))
-                            .<span class="kw">await</span><span class="question-mark">?</span>;
-                        widget.set_values(data.into_values(<span class="kw-2">&amp;</span>api)<span class="question-mark">?</span>);
-                        api.set_widget(widget.clone()).<span class="kw">await</span><span class="question-mark">?</span>;
-                    },
-                    <span class="comment">// On update request autolocate and update the block.
-                    </span><span class="kw">_ </span>= api.wait_for_update_request() =&gt; {
-                        location = api.recoverable(find_ip_location).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
+        widget.set_values(data.into_values(api)<span class="question-mark">?</span>);
+        api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
-                        <span class="kw">let </span>data = api
-                            .recoverable(|| provider.get_weather(<span class="prelude-val">Some</span>(location)))
-                            .<span class="kw">await</span><span class="question-mark">?</span>;
-                        widget.set_values(data.into_values(<span class="kw-2">&amp;</span>api)<span class="question-mark">?</span>);
-                        api.set_widget(widget.clone()).<span class="kw">await</span><span class="question-mark">?</span>;
-
-                        <span class="comment">// both intervals should be reset after a manual sync
-                        </span>autolocate_interval.reset();
-                        interval.reset();
-                    },
-                }
-            }
-        }
-    } <span class="kw">else </span>{
-        <span class="kw">loop </span>{
-            <span class="kw">let </span>data = api.recoverable(|| provider.get_weather(<span class="prelude-val">None</span>)).<span class="kw">await</span><span class="question-mark">?</span>;
-            widget.set_values(data.into_values(<span class="kw-2">&amp;</span>api)<span class="question-mark">?</span>);
-            api.set_widget(widget.clone()).<span class="kw">await</span><span class="question-mark">?</span>;
-
-            <span class="macro">select! </span>{
-                <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt; (),
-                <span class="kw">_ </span>= api.wait_for_update_request() =&gt; ()
-            }
+        <span class="macro">select! </span>{
+            <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt; (),
+            <span class="kw">_ </span>= api.wait_for_update_request() =&gt; ()
         }
     }
 }
@@ -637,8 +558,23 @@
     longitude: f64,
 }
 
+<span class="kw">struct </span>AutolocateResult {
+    location: Coordinates,
+    timestamp: Instant,
+}
+
 <span class="comment">// TODO: might be good to allow for different geolocation services to be used, similar to how we have `service` for the weather API
-</span><span class="kw">async fn </span>find_ip_location() -&gt; <span class="prelude-ty">Result</span>&lt;Coordinates&gt; {
+</span><span class="doccomment">/// No-op if last API call was made in the last `interval` seconds.
+</span><span class="kw">async fn </span>find_ip_location(interval: Duration) -&gt; <span class="prelude-ty">Result</span>&lt;Coordinates&gt; {
+    {
+        <span class="kw">let </span>guard = LAST_AUTOLOCATE.lock().unwrap();
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(cached) = <span class="kw-2">&amp;*</span>guard {
+            <span class="kw">if </span>cached.timestamp.elapsed() &lt; interval {
+                <span class="kw">return </span><span class="prelude-val">Ok</span>(cached.location);
+            }
+        }
+    }
+
     <span class="attr">#[derive(Deserialize)]
     </span><span class="kw">struct </span>ApiResponse {
         <span class="attr">#[serde(flatten)]
@@ -669,18 +605,28 @@
         .<span class="kw">await
         </span>.error(<span class="string">&quot;Failed while parsing location API result&quot;</span>)<span class="question-mark">?</span>;
 
-    <span class="kw">if </span>response.error {
-        <span class="prelude-val">Err</span>(Error {
+    <span class="kw">let </span>location = <span class="kw">if </span>response.error {
+        <span class="kw">return </span><span class="prelude-val">Err</span>(Error {
             kind: ErrorKind::Other,
             message: <span class="prelude-val">Some</span>(<span class="string">&quot;ipapi.co error&quot;</span>.into()),
             cause: <span class="prelude-val">Some</span>(Arc::new(response.reason)),
             block: <span class="prelude-val">None</span>,
-        })
+        });
     } <span class="kw">else </span>{
         response
             .location
-            .error(<span class="string">&quot;Failed while parsing location API result&quot;</span>)
+            .error(<span class="string">&quot;Failed while parsing location API result&quot;</span>)<span class="question-mark">?
+    </span>};
+
+    {
+        <span class="kw">let </span><span class="kw-2">mut </span>guard = LAST_AUTOLOCATE.lock().unwrap();
+        <span class="kw-2">*</span>guard = <span class="prelude-val">Some</span>(AutolocateResult {
+            location,
+            timestamp: Instant::now(),
+        });
     }
+
+    <span class="prelude-val">Ok</span>(location)
 }
 
 <span class="comment">// Convert wind direction in azimuth degrees to abbreviation names

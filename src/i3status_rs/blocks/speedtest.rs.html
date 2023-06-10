@@ -147,7 +147,7 @@
     </span><span class="kw">pub </span>interval: Seconds,
 }
 
-<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+<span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span>format = config
         .format
         .with_default(<span class="string">&quot; ^icon_ping $ping ^icon_net_down $speed_down ^icon_net_up $speed_up &quot;</span>)<span class="question-mark">?</span>;

@@ -460,21 +460,10 @@
 <a href="#460" id="460">460</a>
 <a href="#461" id="461">461</a>
 <a href="#462" id="462">462</a>
-<a href="#463" id="463">463</a>
-<a href="#464" id="464">464</a>
-<a href="#465" id="465">465</a>
-<a href="#466" id="466">466</a>
-<a href="#467" id="467">467</a>
-<a href="#468" id="468">468</a>
-<a href="#469" id="469">469</a>
-<a href="#470" id="470">470</a>
-<a href="#471" id="471">471</a>
-<a href="#472" id="472">472</a>
-<a href="#473" id="473">473</a>
-<a href="#474" id="474">474</a>
 </pre></div><pre class="rust"><code><span class="attr">#![warn(clippy::match_same_arms)]
 #![warn(clippy::semicolon_if_nothing_returned)]
 #![warn(clippy::unnecessary_wraps)]
+#![allow(clippy::single_match)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
 #[macro_use]
@@ -504,14 +493,13 @@
 <span class="kw">use </span>std::sync::Arc;
 <span class="kw">use </span>std::time::Duration;
 
-<span class="kw">use </span>futures::future::{abortable, AbortHandle, Abortable};
 <span class="kw">use </span>futures::stream::{FuturesUnordered, StreamExt};
 <span class="kw">use </span>futures::Stream;
 <span class="kw">use </span>once_cell::sync::Lazy;
 <span class="kw">use </span>tokio::process::Command;
-<span class="kw">use </span>tokio::sync::mpsc;
+<span class="kw">use </span>tokio::sync::{mpsc, Notify};
 
-<span class="kw">use </span><span class="kw">crate</span>::blocks::{BlockEvent, BlockFuture, CommonApi};
+<span class="kw">use </span><span class="kw">crate</span>::blocks::{BlockAction, BlockFuture, CommonApi};
 <span class="kw">use </span><span class="kw">crate</span>::click::{ClickHandler, MouseButton};
 <span class="kw">use </span><span class="kw">crate</span>::config::{BlockConfigEntry, Config, SharedConfig};
 <span class="kw">use </span><span class="kw">crate</span>::errors::<span class="kw-2">*</span>;
@@ -582,7 +570,7 @@
 
     blocks: Vec&lt;Block&gt;,
     fullscreen_block: <span class="prelude-ty">Option</span>&lt;usize&gt;,
-    running_blocks: FuturesUnordered&lt;Abortable&lt;BlockFuture&gt;&gt;,
+    running_blocks: FuturesUnordered&lt;BlockFuture&gt;,
 
     widget_updates_sender: WidgetUpdatesSender,
     blocks_render_cache: Vec&lt;RenderedBlock&gt;,
@@ -607,6 +595,7 @@
     UnsetWidget,
     SetError(Error),
     SetDefaultActions(<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>[(MouseButton, <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt;, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str)]),
+    SubscribeToActions(mpsc::UnboundedSender&lt;BlockAction&gt;),
 }
 
 <span class="attr">#[derive(Debug, Clone)]
@@ -620,8 +609,8 @@
     id: usize,
     name: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str,
 
-    event_sender: <span class="prelude-ty">Option</span>&lt;mpsc::Sender&lt;BlockEvent&gt;&gt;,
-    abort_handle: AbortHandle,
+    update_request: Arc&lt;Notify&gt;,
+    action_sender: <span class="prelude-ty">Option</span>&lt;mpsc::UnboundedSender&lt;BlockAction&gt;&gt;,
 
     click_handler: ClickHandler,
     default_actions: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>[(MouseButton, <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt;, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str)],
@@ -642,12 +631,6 @@
 }
 
 <span class="kw">impl </span>Block {
-    <span class="kw">fn </span>abort(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
-        <span class="self">self</span>.abort_handle.abort();
-        <span class="self">self</span>.event_sender = <span class="prelude-val">None</span>;
-        <span class="self">self</span>.state = BlockState::None;
-    }
-
     <span class="kw">fn </span>notify_intervals(<span class="kw-2">&amp;</span><span class="self">self</span>, tx: <span class="kw-2">&amp;</span>WidgetUpdatesSender) {
         <span class="kw">let </span>intervals = <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.state {
             BlockState::None =&gt; Vec::new(),
@@ -727,15 +710,13 @@
             Arc::make_mut(<span class="kw-2">&amp;mut </span>shared_config.icons).apply_overrides(icons_overrides);
         }
 
-        <span class="kw">let </span>(event_sender, event_receiver) = mpsc::channel(<span class="number">64</span>);
+        <span class="kw">let </span>update_request = Arc::new(Notify::new());
 
         <span class="kw">let </span>api = CommonApi {
             id: <span class="self">self</span>.blocks.len(),
             shared_config: shared_config.clone(),
-            event_receiver,
-
+            update_request: update_request.clone(),
             request_sender: <span class="self">self</span>.request_sender.clone(),
-
             error_interval: Duration::from_secs(block_config.common.error_interval),
         };
 
@@ -749,14 +730,14 @@
             .with_default_config(<span class="kw-2">&amp;</span><span class="self">self</span>.config.error_fullscreen_format);
 
         <span class="kw">let </span>block_name = block_config.config.name();
-        <span class="kw">let </span>(block_fut, abort_handle) = abortable(block_config.config.run(api));
+        <span class="kw">let </span>block_fut = block_config.config.run(api);
 
         <span class="kw">let </span>block = Block {
             id: <span class="self">self</span>.blocks.len(),
             name: block_name,
 
-            event_sender: <span class="prelude-val">Some</span>(event_sender),
-            abort_handle,
+            update_request,
+            action_sender: <span class="prelude-val">None</span>,
 
             click_handler: block_config.common.click,
             default_actions: <span class="kw-2">&amp;</span>[],
@@ -800,6 +781,9 @@
             RequestCmd::SetDefaultActions(actions) =&gt; {
                 block.default_actions = actions;
             }
+            RequestCmd::SubscribeToActions(action_sender) =&gt; {
+                block.action_sender = <span class="prelude-val">Some</span>(action_sender);
+            }
         }
         block.notify_intervals(<span class="kw-2">&amp;</span><span class="self">self</span>.widget_updates_sender);
     }
@@ -832,10 +816,7 @@
         <span class="macro">tokio::select! </span>{
             <span class="comment">// Handle blocks&#39; errors
             </span><span class="prelude-val">Some</span>(block_result) = <span class="self">self</span>.running_blocks.next() =&gt; {
-                <span class="kw">match </span>block_result {
-                    <span class="prelude-val">Ok</span>(res) =&gt; res,
-                    <span class="prelude-val">Err</span>(_aborted) =&gt; <span class="prelude-val">Ok</span>(()),
-                }
+                block_result
             }
             <span class="comment">// Receive messages from blocks
             </span><span class="prelude-val">Some</span>(request) = <span class="self">self</span>.request_receiver.recv() =&gt; {
@@ -860,21 +841,21 @@
                     BlockState::None =&gt; (),
                     BlockState::Normal { .. } =&gt; {
                         <span class="kw">let </span>post_actions = block.click_handler.handle(<span class="kw-2">&amp;</span>event).<span class="kw">await</span>.in_block(block.name, event.id)<span class="question-mark">?</span>;
-                        <span class="kw">if let </span><span class="prelude-val">Some</span>(sender) = <span class="kw-2">&amp;</span>block.event_sender {
+                        <span class="kw">if let </span><span class="prelude-val">Some</span>(sender) = <span class="kw-2">&amp;</span>block.action_sender {
                             <span class="kw">match </span>post_actions {
                                 <span class="prelude-val">Some</span>(post_actions) =&gt; {
                                     <span class="kw">if let </span><span class="prelude-val">Some</span>(action) = post_actions.action {
-                                        <span class="kw">let _ </span>= sender.send(BlockEvent::Action(Cow::Owned(action))).<span class="kw">await</span>;
+                                        <span class="kw">let _ </span>= sender.send(Cow::Owned(action));
                                     }
                                     <span class="kw">if </span>post_actions.update {
-                                        <span class="kw">let _ </span>= sender.send(BlockEvent::UpdateRequest).<span class="kw">await</span>;
+                                        block.update_request.notify_one();
                                     }
                                 }
                                 <span class="prelude-val">None </span>=&gt; {
                                     <span class="kw">if let </span><span class="prelude-val">Some</span>((<span class="kw">_</span>, <span class="kw">_</span>, action)) = block.default_actions
                                         .iter()
                                         .find(|(btn, widget, <span class="kw">_</span>)| <span class="kw-2">*</span>btn == event.button &amp;&amp; <span class="kw-2">*</span>widget == event.instance.as_deref()) {
-                                        <span class="kw">let _ </span>= sender.send(BlockEvent::Action(Cow::Borrowed(action))).<span class="kw">await</span>;
+                                        <span class="kw">let _ </span>= sender.send(Cow::Borrowed(action));
                                     }
                                 }
                             }
@@ -899,19 +880,15 @@
             </span><span class="prelude-val">Some</span>(signal) = <span class="self">self</span>.signals_stream.next() =&gt; <span class="kw">match </span>signal {
                 Signal::Usr1 =&gt; {
                     <span class="kw">for </span>block <span class="kw">in </span><span class="kw-2">&amp;</span><span class="self">self</span>.blocks {
-                        <span class="kw">if let </span><span class="prelude-val">Some</span>(sender) = <span class="kw-2">&amp;</span>block.event_sender {
-                            <span class="kw">let _ </span>= sender.send(BlockEvent::UpdateRequest).<span class="kw">await</span>;
-                        }
+                        block.update_request.notify_one();
                     }
                     <span class="prelude-val">Ok</span>(())
                 }
                 Signal::Usr2 =&gt; restart(),
                 Signal::Custom(signal) =&gt; {
                     <span class="kw">for </span>block <span class="kw">in </span><span class="kw-2">&amp;</span><span class="self">self</span>.blocks {
-                        <span class="kw">if let </span><span class="prelude-val">Some</span>(sender) = <span class="kw-2">&amp;</span>block.event_sender {
-                            <span class="kw">if </span>block.signal == <span class="prelude-val">Some</span>(signal) {
-                                <span class="kw">let _ </span>= sender.send(BlockEvent::UpdateRequest).<span class="kw">await</span>;
-                            }
+                        <span class="kw">if </span>block.signal == <span class="prelude-val">Some</span>(signal) {
+                            block.update_request.notify_one();
                         }
                     }
                     <span class="prelude-val">Ok</span>(())
@@ -933,7 +910,6 @@
                             </span><span class="kw">return </span><span class="prelude-val">Err</span>(error);
                         }
 
-                        block.abort();
                         block.set_error(<span class="self">self</span>.fullscreen_block == <span class="prelude-val">Some</span>(id), error);
                         block.notify_intervals(<span class="kw-2">&amp;</span><span class="self">self</span>.widget_updates_sender);
 

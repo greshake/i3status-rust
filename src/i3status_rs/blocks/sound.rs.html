@@ -361,6 +361,8 @@
 <a href="#361" id="361">361</a>
 <a href="#362" id="362">362</a>
 <a href="#363" id="363">363</a>
+<a href="#364" id="364">364</a>
+<a href="#365" id="365">365</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Volume level
 //!
 //! This block displays the volume level (according to PulseAudio or ALSA). Right click to toggle mute, scroll to adjust volume.
@@ -493,12 +495,13 @@
     </span><span class="kw">pub </span>active_port_mappings: Vec&lt;(Regex, String)&gt;,
 }
 
-<span class="kw">enum </span>Mappings {
-    Exact(Vec&lt;(String, String)&gt;),
-    Regex(Vec&lt;(Regex, String)&gt;),
+<span class="kw">enum </span>Mappings&lt;<span class="lifetime">&#39;a</span>&gt; {
+    Exact(<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[(String, String)]),
+    Regex(Vec&lt;(Regex, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str)&gt;),
 }
 
-<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+<span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions().<span class="kw">await</span><span class="question-mark">?</span>;
     api.set_default_actions(<span class="kw-2">&amp;</span>[
         (MouseButton::Right, <span class="prelude-val">None</span>, <span class="string">&quot;toggle_mute&quot;</span>),
         (MouseButton::WheelUp, <span class="prelude-val">None</span>, <span class="string">&quot;volume_up&quot;</span>),
@@ -548,21 +551,22 @@
     <span class="kw">let </span><span class="kw-2">mut </span>device: DeviceType = <span class="kw">match </span>config.driver {
         SoundDriver::Alsa =&gt; Box::new(alsa::Device::new(
             config.name.clone().unwrap_or_else(|| <span class="string">&quot;Master&quot;</span>.into()),
-            config.device.unwrap_or_else(|| <span class="string">&quot;default&quot;</span>.into()),
+            config.device.clone().unwrap_or_else(|| <span class="string">&quot;default&quot;</span>.into()),
             config.natural_mapping,
         )<span class="question-mark">?</span>),
         <span class="attr">#[cfg(feature = <span class="string">&quot;pulseaudio&quot;</span>)]
-        </span>SoundDriver::PulseAudio =&gt; {
-            Box::new(pulseaudio::Device::new(config.device_kind, config.name)<span class="question-mark">?</span>)
-        }
+        </span>SoundDriver::PulseAudio =&gt; Box::new(pulseaudio::Device::new(
+            config.device_kind,
+            config.name.clone(),
+        )<span class="question-mark">?</span>),
         <span class="attr">#[cfg(feature = <span class="string">&quot;pulseaudio&quot;</span>)]
         </span>SoundDriver::Auto =&gt; {
             <span class="kw">if let </span><span class="prelude-val">Ok</span>(pulse) = pulseaudio::Device::new(config.device_kind, config.name.clone()) {
                 Box::new(pulse)
             } <span class="kw">else </span>{
                 Box::new(alsa::Device::new(
-                    config.name.unwrap_or_else(|| <span class="string">&quot;Master&quot;</span>.into()),
-                    config.device.unwrap_or_else(|| <span class="string">&quot;default&quot;</span>.into()),
+                    config.name.clone().unwrap_or_else(|| <span class="string">&quot;Master&quot;</span>.into()),
+                    config.device.clone().unwrap_or_else(|| <span class="string">&quot;default&quot;</span>.into()),
                     config.natural_mapping,
                 )<span class="question-mark">?</span>)
             }
@@ -570,21 +574,21 @@
         <span class="attr">#[cfg(not(feature = <span class="string">&quot;pulseaudio&quot;</span>))]
         </span>SoundDriver::Auto =&gt; Box::new(alsa::Device::new(
             config.name.clone().unwrap_or_else(|| <span class="string">&quot;Master&quot;</span>.into()),
-            config.device.unwrap_or_else(|| <span class="string">&quot;default&quot;</span>.into()),
+            config.device.clone().unwrap_or_else(|| <span class="string">&quot;default&quot;</span>.into()),
             config.natural_mapping,
         )<span class="question-mark">?</span>),
     };
 
-    <span class="kw">let </span>mappings = <span class="kw">match </span>config.mappings {
+    <span class="kw">let </span>mappings = <span class="kw">match </span><span class="kw-2">&amp;</span>config.mappings {
         <span class="prelude-val">Some</span>(m) =&gt; {
             <span class="kw">if </span>config.mappings_use_regex {
                 <span class="prelude-val">Some</span>(Mappings::Regex(
-                    m.into_iter()
+                    m.iter()
                         .map(|(key, val)| {
                             <span class="prelude-val">Ok</span>((
-                                Regex::new(<span class="kw-2">&amp;</span>key)
+                                Regex::new(key)
                                     .error(<span class="string">&quot;Failed to parse `{key}` in mappings as regex&quot;</span>)<span class="question-mark">?</span>,
-                                val,
+                                val.as_str(),
                             ))
                         })
                         .collect::&lt;<span class="prelude-ty">Result</span>&lt;<span class="kw">_</span>&gt;&gt;()<span class="question-mark">?</span>,
@@ -607,7 +611,7 @@
                 <span class="kw">if let </span><span class="prelude-val">Some</span>((regex, mapped)) =
                     m.iter().find(|(regex, <span class="kw">_</span>)| regex.is_match(<span class="kw-2">&amp;</span>output_name))
                 {
-                    output_name = regex.replace(<span class="kw-2">&amp;</span>output_name, mapped).into_owned();
+                    output_name = regex.replace(<span class="kw-2">&amp;</span>output_name, <span class="kw-2">*</span>mapped).into_owned();
                 }
             }
             <span class="prelude-val">Some</span>(Mappings::Exact(m)) =&gt; {
@@ -664,15 +668,15 @@
                     val<span class="question-mark">?</span>;
                     <span class="kw">break</span>;
                 }
-                event = api.event() =&gt; <span class="kw">match </span>event {
-                    UpdateRequest =&gt; <span class="kw">break</span>,
-                    Action(a) <span class="kw">if </span>a == <span class="string">&quot;toggle_mute&quot; </span>=&gt; {
+                <span class="kw">_ </span>= api.wait_for_update_request() =&gt; <span class="kw">break</span>,
+                <span class="prelude-val">Some</span>(action) = actions.recv() =&gt; <span class="kw">match </span>action.as_ref() {
+                    <span class="string">&quot;toggle_mute&quot; </span>=&gt; {
                         device.toggle().<span class="kw">await</span><span class="question-mark">?</span>;
                     }
-                    Action(a) <span class="kw">if </span>a == <span class="string">&quot;volume_up&quot; </span>=&gt; {
+                    <span class="string">&quot;volume_up&quot; </span>=&gt; {
                         device.set_volume(step_width, config.max_vol).<span class="kw">await</span><span class="question-mark">?</span>;
                     }
-                    Action(a) <span class="kw">if </span>a == <span class="string">&quot;volume_down&quot; </span>=&gt; {
+                    <span class="string">&quot;volume_down&quot; </span>=&gt; {
                         device.set_volume(-step_width, config.max_vol).<span class="kw">await</span><span class="question-mark">?</span>;
                     }
                     <span class="kw">_ </span>=&gt; (),

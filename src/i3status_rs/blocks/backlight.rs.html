@@ -240,6 +240,9 @@
 <a href="#240" id="240">240</a>
 <a href="#241" id="241">241</a>
 <a href="#242" id="242">242</a>
+<a href="#243" id="243">243</a>
+<a href="#244" id="244">244</a>
+<a href="#245" id="245">245</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! The brightness of a backlight device
 //!
 //! This block reads brightness information directly from the filesystem, so it works under both
@@ -346,7 +349,8 @@
     <span class="kw">pub </span>ddcci_max_tries_write_read: <span class="prelude-ty">Option</span>&lt;u8&gt;,
 }
 
-<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+<span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions().<span class="kw">await</span><span class="question-mark">?</span>;
     api.set_default_actions(<span class="kw-2">&amp;</span>[
         (MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;cycle&quot;</span>),
         (MouseButton::WheelUp, <span class="prelude-val">None</span>, <span class="string">&quot;brightness_up&quot;</span>),
@@ -359,10 +363,12 @@
         .missing_format
         .with_default(<span class="string">&quot; no backlight devices &quot;</span>)<span class="question-mark">?</span>;
 
+    <span class="kw">let </span>default_cycle = <span class="kw-2">&amp;</span>[config.minimum, config.maximum];
     <span class="kw">let </span><span class="kw-2">mut </span>cycle = config
         .cycle
-        .unwrap_or_else(|| <span class="macro">vec!</span>[config.minimum, config.maximum])
-        .into_iter()
+        .as_deref()
+        .unwrap_or(default_cycle)
+        .iter()
         .map(|x| x / <span class="number">100.0</span>)
         .cycle();
 
@@ -448,8 +454,8 @@
 
                     <span class="kw">break</span>;
                 },
-                event = api.event() =&gt; <span class="kw">match </span>event {
-                    Action(a) <span class="kw">if </span>a == <span class="string">&quot;cycle&quot; </span>=&gt; {
+                <span class="prelude-val">Some</span>(action) = actions.recv() =&gt; <span class="kw">match </span>action.as_ref() {
+                    <span class="string">&quot;cycle&quot; </span>=&gt; {
                         <span class="kw">if let </span><span class="prelude-val">Some</span>(cycle_brightness) = cycle.next() {
                             brightness = cycle_brightness;
                             block_error = calibright
@@ -460,21 +466,21 @@
 
                         }
                     }
-                    Action(a) <span class="kw">if </span>a == <span class="string">&quot;brightness_up&quot; </span>=&gt; {
-                            brightness = (brightness + step_width).clamp(minimum, maximum);
-                            block_error = calibright
-                                .set_brightness(brightness)
-                                .<span class="kw">await
-                                </span>.err();
-                            <span class="kw">break</span>;
+                    <span class="string">&quot;brightness_up&quot; </span>=&gt; {
+                        brightness = (brightness + step_width).clamp(minimum, maximum);
+                        block_error = calibright
+                            .set_brightness(brightness)
+                            .<span class="kw">await
+                            </span>.err();
+                        <span class="kw">break</span>;
                     }
-                    Action(a) <span class="kw">if </span>a == <span class="string">&quot;brightness_down&quot; </span>=&gt; {
-                            brightness = (brightness - step_width).clamp(minimum, maximum);
-                            block_error = calibright
-                                .set_brightness(brightness)
-                                .<span class="kw">await
-                                </span>.err();
-                            <span class="kw">break</span>;
+                    <span class="string">&quot;brightness_down&quot; </span>=&gt; {
+                        brightness = (brightness - step_width).clamp(minimum, maximum);
+                        block_error = calibright
+                            .set_brightness(brightness)
+                            .<span class="kw">await
+                            </span>.err();
+                        <span class="kw">break</span>;
                     }
                     <span class="kw">_ </span>=&gt; (),
                 }

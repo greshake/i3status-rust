@@ -319,7 +319,7 @@
 }
 
 <span class="doccomment">/// A map with keys being ranges.
-</span><span class="attr">#[derive(Debug, Default)]
+</span><span class="attr">#[derive(Debug, Default, Clone)]
 </span><span class="kw">pub struct </span>RangeMap&lt;K, V&gt;(Vec&lt;(RangeInclusive&lt;K&gt;, V)&gt;);
 
 <span class="kw">impl</span>&lt;K, V&gt; RangeMap&lt;K, V&gt; {

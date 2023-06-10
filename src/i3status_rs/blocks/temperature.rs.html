@@ -212,6 +212,8 @@
 <a href="#212" id="212">212</a>
 <a href="#213" id="213">213</a>
 <a href="#214" id="214">214</a>
+<a href="#215" id="215">215</a>
+<a href="#216" id="216">216</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! The system temperature
 //!
 //! This block displays the system temperature, based on `libsensors` library.
@@ -313,14 +315,15 @@
     }
 }
 
-<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+<span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions().<span class="kw">await</span><span class="question-mark">?</span>;
     api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;toggle_format&quot;</span>)])
         .<span class="kw">await</span><span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>format = config
         .format
         .with_default(<span class="string">&quot; $icon $average avg, $max max &quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let </span><span class="kw-2">mut </span>format_alt = <span class="kw">match </span>config.format_alt {
+    <span class="kw">let </span><span class="kw-2">mut </span>format_alt = <span class="kw">match </span><span class="kw-2">&amp;</span>config.format_alt {
         <span class="prelude-val">Some</span>(f) =&gt; <span class="prelude-val">Some</span>(f.with_default(<span class="string">&quot;&quot;</span>)<span class="question-mark">?</span>),
         <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
     };
@@ -339,9 +342,9 @@
         .unwrap_or_else(|| config.scale.from_celsius(DEFAULT_WARN));
 
     <span class="kw">loop </span>{
-        <span class="comment">// Perhaps it&#39;s better to just Box::leak() once and don&#39;t clone() every time?
-        </span><span class="kw">let </span>chip = config.chip.clone();
+        <span class="kw">let </span>chip = config.chip.clone();
         <span class="kw">let </span>inputs = config.inputs.clone();
+        <span class="kw">let </span>config_scale = config.scale;
         <span class="kw">let </span>temp = tokio::task::spawn_blocking(<span class="kw">move </span>|| {
             <span class="kw">let </span><span class="kw-2">mut </span>vals = Vec::new();
             <span class="kw">let </span>sensors = Sensors::new();
@@ -366,7 +369,7 @@
                         <span class="kw">if </span><span class="kw-2">*</span>subfeat.subfeature_type() == SENSORS_SUBFEATURE_TEMP_INPUT {
                             <span class="kw">if let </span><span class="prelude-val">Ok</span>(value) = subfeat.get_value() {
                                 <span class="kw">if </span>(-<span class="number">100.0</span>..=<span class="number">150.0</span>).contains(<span class="kw-2">&amp;</span>value) {
-                                    vals.push(config.scale.from_celsius(value));
+                                    vals.push(config_scale.from_celsius(value));
                                 } <span class="kw">else </span>{
                                     <span class="macro">eprintln!</span>(
                                         <span class="string">&quot;Temperature ({value}) outside of range ([-100, 150])&quot;
@@ -415,8 +418,9 @@
 
         <span class="macro">select! </span>{
             <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt; (),
-            event = api.event() =&gt; <span class="kw">match </span>event {
-                Action(a) <span class="kw">if </span>a == <span class="string">&quot;toggle_format&quot; </span>=&gt; {
+            <span class="kw">_ </span>= api.wait_for_update_request() =&gt; (),
+            <span class="prelude-val">Some</span>(action) = actions.recv() =&gt; <span class="kw">match </span>action.as_ref() {
+                <span class="string">&quot;toggle_format&quot; </span>=&gt; {
                     <span class="kw">if let </span><span class="prelude-val">Some</span>(format_alt) = <span class="kw-2">&amp;mut </span>format_alt {
                         std::mem::swap(format_alt, <span class="kw-2">&amp;mut </span>format);
                     }

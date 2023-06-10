@@ -158,6 +158,14 @@
 <a href="#158" id="158">158</a>
 <a href="#159" id="159">159</a>
 <a href="#160" id="160">160</a>
+<a href="#161" id="161">161</a>
+<a href="#162" id="162">162</a>
+<a href="#163" id="163">163</a>
+<a href="#164" id="164">164</a>
+<a href="#165" id="165">165</a>
+<a href="#166" id="166">166</a>
+<a href="#167" id="167">167</a>
+<a href="#168" id="168">168</a>
 </pre></div><pre class="rust"><code><span class="kw">use super</span>::{template::FormatTemplate, Format};
 <span class="kw">use </span><span class="kw">crate</span>::errors::<span class="kw-2">*</span>;
 <span class="kw">use </span>serde::de::{MapAccess, Visitor};
@@ -173,17 +181,41 @@
 }
 
 <span class="kw">impl </span>Config {
-    <span class="kw">pub fn </span>with_default(<span class="self">self</span>, default_full: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;Format&gt; {
+    <span class="kw">pub fn </span>with_default(<span class="kw-2">&amp;</span><span class="self">self</span>, default_full: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;Format&gt; {
         <span class="self">self</span>.with_defaults(default_full, <span class="string">&quot;&quot;</span>)
     }
 
-    <span class="kw">pub fn </span>with_default_config(<span class="self">self</span>, default_config: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; Format {
+    <span class="kw">pub fn </span>with_defaults(<span class="kw-2">&amp;</span><span class="self">self</span>, default_full: <span class="kw-2">&amp;</span>str, default_short: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;Format&gt; {
+        <span class="kw">let </span>full = <span class="kw">match </span><span class="self">self</span>.full.clone() {
+            <span class="prelude-val">Some</span>(full) =&gt; full,
+            <span class="prelude-val">None </span>=&gt; Arc::new(default_full.parse()<span class="question-mark">?</span>),
+        };
+
+        <span class="kw">let </span>short = <span class="kw">match </span><span class="self">self</span>.short.clone() {
+            <span class="prelude-val">Some</span>(short) =&gt; short,
+            <span class="prelude-val">None </span>=&gt; Arc::new(default_short.parse()<span class="question-mark">?</span>),
+        };
+
+        <span class="kw">let </span><span class="kw-2">mut </span>intervals = Vec::new();
+        full.init_intervals(<span class="kw-2">&amp;mut </span>intervals);
+        short.init_intervals(<span class="kw-2">&amp;mut </span>intervals);
+
+        <span class="prelude-val">Ok</span>(Format {
+            full,
+            short,
+            intervals,
+        })
+    }
+
+    <span class="kw">pub fn </span>with_default_config(<span class="kw-2">&amp;</span><span class="self">self</span>, default_config: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; Format {
         <span class="kw">let </span>full = <span class="self">self
             </span>.full
+            .clone()
             .or_else(|| default_config.full.clone())
             .unwrap_or_default();
         <span class="kw">let </span>short = <span class="self">self
             </span>.short
+            .clone()
             .or_else(|| default_config.short.clone())
             .unwrap_or_default();
 
@@ -198,9 +230,15 @@
         }
     }
 
-    <span class="kw">pub fn </span>with_default_format(<span class="self">self</span>, default_format: <span class="kw-2">&amp;</span>Format) -&gt; Format {
-        <span class="kw">let </span>full = <span class="self">self</span>.full.unwrap_or_else(|| default_format.full.clone());
-        <span class="kw">let </span>short = <span class="self">self</span>.short.unwrap_or_else(|| default_format.short.clone());
+    <span class="kw">pub fn </span>with_default_format(<span class="kw-2">&amp;</span><span class="self">self</span>, default_format: <span class="kw-2">&amp;</span>Format) -&gt; Format {
+        <span class="kw">let </span>full = <span class="self">self
+            </span>.full
+            .clone()
+            .unwrap_or_else(|| default_format.full.clone());
+        <span class="kw">let </span>short = <span class="self">self
+            </span>.short
+            .clone()
+            .unwrap_or_else(|| default_format.short.clone());
 
         <span class="kw">let </span><span class="kw-2">mut </span>intervals = Vec::new();
         full.init_intervals(<span class="kw-2">&amp;mut </span>intervals);
@@ -211,28 +249,6 @@
             short,
             intervals,
         }
-    }
-
-    <span class="kw">pub fn </span>with_defaults(<span class="self">self</span>, default_full: <span class="kw-2">&amp;</span>str, default_short: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;Format&gt; {
-        <span class="kw">let </span>full = <span class="kw">match </span><span class="self">self</span>.full {
-            <span class="prelude-val">Some</span>(full) =&gt; full,
-            <span class="prelude-val">None </span>=&gt; Arc::new(default_full.parse()<span class="question-mark">?</span>),
-        };
-
-        <span class="kw">let </span>short = <span class="kw">match </span><span class="self">self</span>.short {
-            <span class="prelude-val">Some</span>(short) =&gt; short,
-            <span class="prelude-val">None </span>=&gt; Arc::new(default_short.parse()<span class="question-mark">?</span>),
-        };
-
-        <span class="kw">let </span><span class="kw-2">mut </span>intervals = Vec::new();
-        full.init_intervals(<span class="kw-2">&amp;mut </span>intervals);
-        short.init_intervals(<span class="kw-2">&amp;mut </span>intervals);
-
-        <span class="prelude-val">Ok</span>(Format {
-            full,
-            short,
-            intervals,
-        })
     }
 }
 

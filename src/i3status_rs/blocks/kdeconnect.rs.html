@@ -375,11 +375,6 @@
 <a href="#375" id="375">375</a>
 <a href="#376" id="376">376</a>
 <a href="#377" id="377">377</a>
-<a href="#378" id="378">378</a>
-<a href="#379" id="379">379</a>
-<a href="#380" id="380">380</a>
-<a href="#381" id="381">381</a>
-<a href="#382" id="382">382</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! [KDEConnect](https://community.kde.org/KDEConnect) indicator
 //!
 //! Display info from the currently connected device in KDEConnect, updated asynchronously.
@@ -459,7 +454,7 @@
     </span><span class="kw">pub </span>hide_disconnected: bool,
 }
 
-<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+<span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span>format = config
         .format
         .with_default(<span class="string">&quot; $icon $name {$bat_icon $bat_charge |}{$notif_icon |}&quot;</span>)<span class="question-mark">?</span>;
@@ -472,9 +467,9 @@
     ) != (<span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>);
 
     <span class="kw">let </span>dbus_conn = new_dbus_connection().<span class="kw">await</span><span class="question-mark">?</span>;
-    <span class="kw">let </span>id = <span class="kw">match </span>config.device_id {
+    <span class="kw">let </span>id = <span class="kw">match </span>config.device_id.clone() {
         <span class="prelude-val">Some</span>(id) =&gt; id,
-        <span class="prelude-val">None </span>=&gt; api.recoverable(|| any_device_id(<span class="kw-2">&amp;</span>dbus_conn)).<span class="kw">await</span><span class="question-mark">?</span>,
+        <span class="prelude-val">None </span>=&gt; any_device_id(<span class="kw-2">&amp;</span>dbus_conn).<span class="kw">await</span><span class="question-mark">?</span>,
     };
 
     <span class="kw">let </span>(tx, <span class="kw-2">mut </span>rx) = mpsc::channel(<span class="number">8</span>);
@@ -577,12 +572,7 @@
             api.hide().<span class="kw">await</span><span class="question-mark">?</span>;
         }
 
-        <span class="kw">loop </span>{
-            <span class="macro">select! </span>{
-                <span class="kw">_ </span>= rx.recv() =&gt; <span class="kw">break</span>,
-                <span class="kw">_ </span>= api.event() =&gt; (),
-            }
-        }
+        rx.recv().<span class="kw">await</span>.error(<span class="string">&quot;channel closed&quot;</span>)<span class="question-mark">?</span>;
     }
 }
 

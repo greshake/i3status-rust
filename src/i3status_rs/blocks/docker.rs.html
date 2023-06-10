@@ -154,12 +154,12 @@
     </span><span class="kw">pub </span>socket_path: ShellString,
 }
 
-<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+<span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $running.eng(w:1) &quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>socket_path = config.socket_path.expand()<span class="question-mark">?</span>;
 
     <span class="kw">loop </span>{
-        <span class="kw">let </span>status = api.recoverable(|| Status::new(<span class="kw-2">&amp;*</span>socket_path)).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let </span>status = Status::new(<span class="kw-2">&amp;*</span>socket_path).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
         widget.set_values(<span class="macro">map! </span>{

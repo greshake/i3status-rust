@@ -285,72 +285,6 @@
 <a href="#285" id="285">285</a>
 <a href="#286" id="286">286</a>
 <a href="#287" id="287">287</a>
-<a href="#288" id="288">288</a>
-<a href="#289" id="289">289</a>
-<a href="#290" id="290">290</a>
-<a href="#291" id="291">291</a>
-<a href="#292" id="292">292</a>
-<a href="#293" id="293">293</a>
-<a href="#294" id="294">294</a>
-<a href="#295" id="295">295</a>
-<a href="#296" id="296">296</a>
-<a href="#297" id="297">297</a>
-<a href="#298" id="298">298</a>
-<a href="#299" id="299">299</a>
-<a href="#300" id="300">300</a>
-<a href="#301" id="301">301</a>
-<a href="#302" id="302">302</a>
-<a href="#303" id="303">303</a>
-<a href="#304" id="304">304</a>
-<a href="#305" id="305">305</a>
-<a href="#306" id="306">306</a>
-<a href="#307" id="307">307</a>
-<a href="#308" id="308">308</a>
-<a href="#309" id="309">309</a>
-<a href="#310" id="310">310</a>
-<a href="#311" id="311">311</a>
-<a href="#312" id="312">312</a>
-<a href="#313" id="313">313</a>
-<a href="#314" id="314">314</a>
-<a href="#315" id="315">315</a>
-<a href="#316" id="316">316</a>
-<a href="#317" id="317">317</a>
-<a href="#318" id="318">318</a>
-<a href="#319" id="319">319</a>
-<a href="#320" id="320">320</a>
-<a href="#321" id="321">321</a>
-<a href="#322" id="322">322</a>
-<a href="#323" id="323">323</a>
-<a href="#324" id="324">324</a>
-<a href="#325" id="325">325</a>
-<a href="#326" id="326">326</a>
-<a href="#327" id="327">327</a>
-<a href="#328" id="328">328</a>
-<a href="#329" id="329">329</a>
-<a href="#330" id="330">330</a>
-<a href="#331" id="331">331</a>
-<a href="#332" id="332">332</a>
-<a href="#333" id="333">333</a>
-<a href="#334" id="334">334</a>
-<a href="#335" id="335">335</a>
-<a href="#336" id="336">336</a>
-<a href="#337" id="337">337</a>
-<a href="#338" id="338">338</a>
-<a href="#339" id="339">339</a>
-<a href="#340" id="340">340</a>
-<a href="#341" id="341">341</a>
-<a href="#342" id="342">342</a>
-<a href="#343" id="343">343</a>
-<a href="#344" id="344">344</a>
-<a href="#345" id="345">345</a>
-<a href="#346" id="346">346</a>
-<a href="#347" id="347">347</a>
-<a href="#348" id="348">348</a>
-<a href="#349" id="349">349</a>
-<a href="#350" id="350">350</a>
-<a href="#351" id="351">351</a>
-<a href="#352" id="352">352</a>
-<a href="#353" id="353">353</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! The collection of blocks
 //!
 //! Blocks are defined as a [TOML array of tables](https://github.com/toml-lang/toml/blob/main/toml.md#user-content-array-of-tables): `[[block]]`
@@ -385,10 +319,9 @@
 <span class="kw">use </span><span class="kw">crate</span>::BoxedFuture;
 <span class="kw">use </span>futures::future::FutureExt;
 <span class="kw">use </span>serde::de::{<span class="self">self</span>, Deserialize};
-<span class="kw">use </span>tokio::sync::mpsc;
+<span class="kw">use </span>tokio::sync::{mpsc, Notify};
 
 <span class="kw">use </span>std::borrow::Cow;
-<span class="kw">use </span>std::future::Future;
 <span class="kw">use </span>std::sync::Arc;
 <span class="kw">use </span>std::time::Duration;
 
@@ -435,7 +368,16 @@
                 <span class="kw">match </span><span class="self">self </span>{
                     $(
                         $(<span class="attr">#[cfg(feature = <span class="macro-nonterminal">$feat</span>)]</span>)<span class="question-mark">?
-                        </span><span class="self">Self</span>::<span class="macro-nonterminal">$block</span>(config) =&gt; <span class="macro-nonterminal">$block::run</span>(config, api).map(<span class="kw">move </span>|e| e.in_block(<span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>), id)).boxed_local(),
+                        </span><span class="self">Self</span>::<span class="macro-nonterminal">$block</span>(config) =&gt; <span class="kw">async move </span>{
+                            <span class="kw">while let </span><span class="prelude-val">Err</span>(err) = <span class="macro-nonterminal">$block::run</span>(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>api).<span class="kw">await </span>{
+                                api.set_error(err).<span class="kw">await</span><span class="question-mark">?</span>;
+                                <span class="macro">tokio::select! </span>{
+                                    <span class="kw">_ </span>= tokio::time::sleep(api.error_interval) =&gt; (),
+                                    <span class="kw">_ </span>= api.wait_for_update_request() =&gt; (),
+                                }
+                            }
+                            <span class="prelude-val">Ok</span>(())
+                        }.boxed_local(),
                     )*
                     <span class="self">Self</span>::Err(name, err) =&gt; {
                         std::future::ready(<span class="prelude-val">Err</span>(Error {
@@ -534,16 +476,13 @@
 
 <span class="kw">pub type </span>BlockFuture = BoxedFuture&lt;<span class="prelude-ty">Result</span>&lt;()&gt;&gt;;
 
-<span class="attr">#[derive(Debug, Clone, PartialEq, Eq)]
-</span><span class="kw">pub enum </span>BlockEvent {
-    Action(Cow&lt;<span class="lifetime">&#39;static</span>, str&gt;),
-    UpdateRequest,
-}
+<span class="kw">pub type </span>BlockAction = Cow&lt;<span class="lifetime">&#39;static</span>, str&gt;;
 
-<span class="kw">pub struct </span>CommonApi {
+<span class="attr">#[derive(Clone)]
+</span><span class="kw">pub struct </span>CommonApi {
     <span class="kw">pub</span>(<span class="kw">crate</span>) id: usize,
     <span class="kw">pub</span>(<span class="kw">crate</span>) shared_config: SharedConfig,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) event_receiver: mpsc::Receiver&lt;BlockEvent&gt;,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) update_request: Arc&lt;Notify&gt;,
     <span class="kw">pub</span>(<span class="kw">crate</span>) request_sender: mpsc::Sender&lt;Request&gt;,
     <span class="kw">pub</span>(<span class="kw">crate</span>) error_interval: Duration,
 }
@@ -583,7 +522,7 @@
     }
 
     <span class="kw">pub async fn </span>set_default_actions(
-        <span class="kw-2">&amp;mut </span><span class="self">self</span>,
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
         actions: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>[(MouseButton, <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt;, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str)],
     ) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="self">self</span>.request_sender
@@ -595,61 +534,20 @@
             </span>.error(<span class="string">&quot;Failed to send Request&quot;</span>)
     }
 
-    <span class="doccomment">/// Receive the next event, such as click notification or update request.
-    ///
-    /// This method should be called regularly to avoid sender blocking. Currently, the runtime is
-    /// single threaded, so full channel buffer will cause a deadlock. If receiving events is
-    /// impossible / meaningless, call `event_receiver.close()`.
-    ///
-    /// # Cancel safety
-    ///
-    /// This method is cancel safe.
-    ///
-    /// # Panics
-    ///
-    /// Panics if event sender is closed
-    ///
-    /// # Examples
-    ///
-    /// ```ignore
-    /// tokio::select! {
-    ///     _ = timer.tick() =&gt; (),
-    ///     event = api.event() =&gt; match event {
-    ///         // ...
-    ///         _ =&gt; (),
-    ///     }
-    /// }
-    /// ```
-    </span><span class="kw">pub async fn </span>event(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; BlockEvent {
-        <span class="kw">match </span><span class="self">self</span>.event_receiver.recv().<span class="kw">await </span>{
-            <span class="prelude-val">Some</span>(event) =&gt; event,
-            <span class="prelude-val">None </span>=&gt; <span class="macro">panic!</span>(<span class="string">&quot;events stream ended&quot;</span>),
-        }
+    <span class="kw">pub async fn </span>get_actions(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;mpsc::UnboundedReceiver&lt;BlockAction&gt;&gt; {
+        <span class="kw">let </span>(tx, rx) = mpsc::unbounded_channel();
+        <span class="self">self</span>.request_sender
+            .send(Request {
+                block_id: <span class="self">self</span>.id,
+                cmd: RequestCmd::SubscribeToActions(tx),
+            })
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;Failed to send Request&quot;</span>)<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(rx)
     }
 
-    <span class="doccomment">/// Wait for the next update request.
-    ///
-    /// The update request can be send by clicking on the block (with `update=true`) or sending a
-    /// signal.
-    ///
-    /// # Cancel safety
-    ///
-    /// This method is cancel safe.
-    ///
-    /// # Panics
-    ///
-    /// Panics if event sender is closed
-    ///
-    /// # Examples
-    ///
-    /// ```ignore
-    /// tokio::select! {
-    ///     _ = timer.tick() =&gt; (),
-    ///     _ = api.wait_for_update_request() =&gt; (),
-    /// }
-    /// ```
-    </span><span class="kw">pub async fn </span>wait_for_update_request(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
-        <span class="kw">while </span><span class="self">self</span>.event().<span class="kw">await </span>!= BlockEvent::UpdateRequest {}
+    <span class="kw">pub async fn </span>wait_for_update_request(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+        <span class="self">self</span>.update_request.notified().<span class="kw">await</span>;
     }
 
     <span class="kw">pub fn </span>get_icon(<span class="kw-2">&amp;</span><span class="self">self</span>, icon: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;String&gt; {
@@ -672,36 +570,6 @@
         high: f64,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;String&gt; {
         <span class="self">self</span>.get_icon_in_progression(icon, (value.clamp(low, high) - low) / (high - low))
-    }
-
-    <span class="doccomment">/// Repeatedly call provided async function until it succeeds.
-    ///
-    /// This function will call `f` in a loop. If it succeeds, the result will be returned.
-    /// Otherwise, the block will enter error mode: &quot;X&quot; will be shown and on left click the error
-    /// message will be shown.
-    ///
-    /// # Examples
-    ///
-    /// ```ignore
-    /// let status = api.recoverable(|| Status::new(&amp;*socket_path)).await?;
-    /// ```
-    </span><span class="kw">pub async fn </span>recoverable&lt;Fn, Fut, T&gt;(<span class="kw-2">&amp;mut </span><span class="self">self</span>, <span class="kw-2">mut </span>f: Fn) -&gt; <span class="prelude-ty">Result</span>&lt;T&gt;
-    <span class="kw">where
-        </span>Fn: FnMut() -&gt; Fut,
-        Fut: Future&lt;Output = <span class="prelude-ty">Result</span>&lt;T&gt;&gt;,
-    {
-        <span class="kw">loop </span>{
-            <span class="kw">match </span>f().<span class="kw">await </span>{
-                <span class="prelude-val">Ok</span>(res) =&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(res),
-                <span class="prelude-val">Err</span>(err) =&gt; {
-                    <span class="self">self</span>.set_error(err).<span class="kw">await</span><span class="question-mark">?</span>;
-                    <span class="macro">tokio::select! </span>{
-                        <span class="kw">_ </span>= tokio::time::sleep(<span class="self">self</span>.error_interval) =&gt; (),
-                        <span class="kw">_ </span>= <span class="self">self</span>.wait_for_update_request() =&gt; (),
-                    }
-                }
-            }
-        }
     }
 }
 </code></pre></div></section></main></body></html>

@@ -147,14 +147,14 @@
     <span class="kw">pub </span>format: FormatConfig,
 }
 
-<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+<span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $num.eng(w:1) &quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span>path = config.socket_path.expand()<span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>timer = config.interval.timer();
 
     <span class="kw">loop </span>{
-        <span class="kw">let </span>(num, crit) = api.recoverable(|| rofication_status(<span class="kw-2">&amp;</span>path)).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let </span>(num, crit) = rofication_status(<span class="kw-2">&amp;</span>path).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
 

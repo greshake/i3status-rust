@@ -135,25 +135,6 @@
 <a href="#135" id="135">135</a>
 <a href="#136" id="136">136</a>
 <a href="#137" id="137">137</a>
-<a href="#138" id="138">138</a>
-<a href="#139" id="139">139</a>
-<a href="#140" id="140">140</a>
-<a href="#141" id="141">141</a>
-<a href="#142" id="142">142</a>
-<a href="#143" id="143">143</a>
-<a href="#144" id="144">144</a>
-<a href="#145" id="145">145</a>
-<a href="#146" id="146">146</a>
-<a href="#147" id="147">147</a>
-<a href="#148" id="148">148</a>
-<a href="#149" id="149">149</a>
-<a href="#150" id="150">150</a>
-<a href="#151" id="151">151</a>
-<a href="#152" id="152">152</a>
-<a href="#153" id="153">153</a>
-<a href="#154" id="154">154</a>
-<a href="#155" id="155">155</a>
-<a href="#156" id="156">156</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! A Toggle block
 //!
 //! You can add commands to be executed to disable the toggle (`command_off`), and to enable it
@@ -223,15 +204,23 @@
     </span><span class="kw">pub </span>interval: <span class="prelude-ty">Option</span>&lt;u64&gt;,
 }
 
-<span class="kw">pub async fn </span>run(config: Config, <span class="kw-2">mut </span>api: CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+<span class="kw">async fn </span>sleep_opt(dur: <span class="prelude-ty">Option</span>&lt;Duration&gt;) {
+    <span class="kw">match </span>dur {
+        <span class="prelude-val">Some</span>(dur) =&gt; tokio::time::sleep(dur).<span class="kw">await</span>,
+        <span class="prelude-val">None </span>=&gt; std::future::pending().<span class="kw">await</span>,
+    }
+}
+
+<span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions().<span class="kw">await</span><span class="question-mark">?</span>;
     api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;toggle&quot;</span>)])
         .<span class="kw">await</span><span class="question-mark">?</span>;
 
     <span class="kw">let </span>interval = config.interval.map(Duration::from_secs);
     <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>);
 
-    <span class="kw">let </span>icon_on = config.icon_on.unwrap_or_else(|| <span class="string">&quot;toggle_on&quot;</span>.into());
-    <span class="kw">let </span>icon_off = config.icon_off.unwrap_or_else(|| <span class="string">&quot;toggle_off&quot;</span>.into());
+    <span class="kw">let </span>icon_on = config.icon_on.as_deref().unwrap_or(<span class="string">&quot;toggle_on&quot;</span>);
+    <span class="kw">let </span>icon_off = config.icon_off.as_deref().unwrap_or(<span class="string">&quot;toggle_off&quot;</span>);
 
     <span class="kw">let </span>shell = env::var(<span class="string">&quot;SHELL&quot;</span>).unwrap_or_else(|<span class="kw">_</span>| <span class="string">&quot;sh&quot;</span>.to_string());
 
@@ -249,44 +238,17 @@
 
         widget.set_values(<span class="macro">map!</span>(
             <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(
-                api.get_icon(<span class="kw">if </span>is_toggled { <span class="kw-2">&amp;</span>icon_on } <span class="kw">else </span>{ <span class="kw-2">&amp;</span>icon_off })<span class="question-mark">?
+                api.get_icon(<span class="kw">if </span>is_toggled { icon_on } <span class="kw">else </span>{ icon_off })<span class="question-mark">?
             </span>)
         ));
         api.set_widget(widget.clone()).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="comment">// TODO: try not to duplicate code
-        </span><span class="kw">loop </span>{
-            <span class="kw">match </span>interval {
-                <span class="prelude-val">Some</span>(interval) =&gt; {
-                    <span class="macro">select! </span>{
-                        <span class="kw">_ </span>= sleep(interval) =&gt; <span class="kw">break</span>,
-                        event = api.event() =&gt; <span class="kw">match </span>event {
-                            UpdateRequest =&gt; <span class="kw">break</span>,
-                            Action(a) <span class="kw">if </span>a == <span class="string">&quot;toggle&quot; </span>=&gt; {
-                                <span class="kw">let </span>cmd = <span class="kw">if </span>is_toggled {
-                                    <span class="kw-2">&amp;</span>config.command_off
-                                } <span class="kw">else </span>{
-                                    <span class="kw-2">&amp;</span>config.command_on
-                                };
-                                <span class="kw">let </span>output = Command::new(<span class="kw-2">&amp;</span>shell)
-                                    .args([<span class="string">&quot;-c&quot;</span>, cmd])
-                                    .output()
-                                    .<span class="kw">await
-                                    </span>.error(<span class="string">&quot;Failed to run command&quot;</span>)<span class="question-mark">?</span>;
-                                <span class="kw">if </span>output.status.success() {
-                                    widget.state = State::Idle;
-                                    <span class="kw">break</span>;
-                                } <span class="kw">else </span>{
-                                    widget.state = State::Critical;
-                                }
-                            }
-                            <span class="kw">_ </span>=&gt; (),
-                        }
-                    }
-                }
-                <span class="prelude-val">None </span>=&gt; <span class="kw">match </span>api.event().<span class="kw">await </span>{
-                    UpdateRequest =&gt; <span class="kw">break</span>,
-                    Action(a) <span class="kw">if </span>a == <span class="string">&quot;toggle&quot; </span>=&gt; {
+        <span class="kw">loop </span>{
+            <span class="macro">select! </span>{
+                <span class="kw">_ </span>= sleep_opt(interval) =&gt; <span class="kw">break</span>,
+                <span class="kw">_ </span>= api.wait_for_update_request() =&gt; <span class="kw">break</span>,
+                <span class="prelude-val">Some</span>(action) = actions.recv() =&gt; <span class="kw">match </span>action.as_ref() {
+                    <span class="string">&quot;toggle&quot; </span>=&gt; {
                         <span class="kw">let </span>cmd = <span class="kw">if </span>is_toggled {
                             <span class="kw-2">&amp;</span>config.command_off
                         } <span class="kw">else </span>{
@@ -305,7 +267,7 @@
                         }
                     }
                     <span class="kw">_ </span>=&gt; (),
-                },
+                }
             }
         }
     }
