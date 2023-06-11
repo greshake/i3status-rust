@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["KeyboardLayoutDriver"],"fn":["run"],"struct":["Config","KbddBusInterfaceProxy","KbddBusInterfaceProxyBlocking","LocaleBusInterfaceProxy","LocaleBusInterfaceProxyBlocking","layoutNameChanged","layoutNameChangedArgs","layoutNameChangedIterator","layoutNameChangedStream"]};
+window.SIDEBAR_ITEMS = {"enum":["KeyboardLayoutDriver"],"fn":["run"],"struct":["Config"]};
