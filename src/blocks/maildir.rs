@@ -10,7 +10,7 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $status "`
-//! `inboxes` | List of maildir inboxes to look for mails in. Supports path expansions e.g. `~`. | **Required**
+//! `inboxes` | List of maildir inboxes to look for mails in. Supports path/glob expansions (e.g. `~` and `*`). | **Required**
 //! `threshold_warning` | Number of unread mails where state is set to warning. | `1`
 //! `threshold_critical` | Number of unread mails where state is set to critical. | `10`
 //! `interval` | Update interval, in seconds. | `5`
@@ -27,7 +27,7 @@
 //! [[block]]
 //! block = "maildir"
 //! interval = 60
-//! inboxes = ["/home/user/mail/local", "/home/user/mail/gmail/Inbox"]
+//! inboxes = ["~/mail/local", "~/maildir/account1/*"]
 //! threshold_warning = 1
 //! threshold_critical = 10
 //! display_type = "new"
@@ -38,6 +38,7 @@
 
 use super::prelude::*;
 use maildir::Maildir;
+use std::path::PathBuf;
 
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
@@ -54,26 +55,28 @@ pub struct Config {
     pub display_type: MailType,
 }
 
+fn expand_inbox(inbox: &str) -> Result<impl Iterator<Item = PathBuf>> {
+    let expanded = shellexpand::full(inbox).error("Failed to expand inbox")?;
+    let paths = glob::glob(&expanded).error("Glob expansion failed")?;
+    Ok(paths.filter_map(|p| p.ok()))
+}
+
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let format = config.format.with_default(" $icon $status ")?;
 
-    let inboxes = config
-        .inboxes
-        .iter()
-        .map(shellexpand::full)
-        .collect::<Result<Vec<_>, _>>()
-        .error("Failed to expand string")?;
+    let mut inboxes = Vec::with_capacity(config.inboxes.len());
+    for inbox in &config.inboxes {
+        inboxes.extend(expand_inbox(inbox)?.map(Maildir::from));
+    }
 
     loop {
         let mut newmails = 0;
         for inbox in &inboxes {
-            let isl: &str = &inbox[..];
             // TODO: spawn_blocking?
-            let maildir = Maildir::from(isl);
             newmails += match config.display_type {
-                MailType::New => maildir.count_new(),
-                MailType::Cur => maildir.count_cur(),
-                MailType::All => maildir.count_new() + maildir.count_cur(),
+                MailType::New => inbox.count_new(),
+                MailType::Cur => inbox.count_cur(),
+                MailType::All => inbox.count_new() + inbox.count_cur(),
             };
         }
 
