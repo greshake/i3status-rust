@@ -17,6 +17,7 @@ members = [".", "xtask"]
 [features]
 default = ["pulseaudio"]
 pulseaudio = ["libpulse-binding"]
+maildir = ["dep:maildir", "glob"]
 debug_borders = []                # Make widgets' borders visible
 
 [package.metadata.docs.rs]
@@ -35,7 +36,7 @@ crossbeam-channel = "0.5"
 dirs = "5.0"
 env_logger = "0.10"
 futures = { version = "0.3", default-features = false }
-glob = "0.3.1"
+glob = { version = "0.3.1", optional = true }
 hyper = "0.14"
 inotify = "0.10"
 libc = "0.2"
