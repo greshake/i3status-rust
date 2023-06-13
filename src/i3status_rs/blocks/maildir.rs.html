@@ -105,6 +105,9 @@
 <a href="#105" id="105">105</a>
 <a href="#106" id="106">106</a>
 <a href="#107" id="107">107</a>
+<a href="#108" id="108">108</a>
+<a href="#109" id="109">109</a>
+<a href="#110" id="110">110</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Unread mail. Only supports maildir format.
 //!
 //! Note that you need to enable `maildir` feature to use this block:
@@ -117,7 +120,7 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $status &quot;`
-//! `inboxes` | List of maildir inboxes to look for mails in. Supports path expansions e.g. `~`. | **Required**
+//! `inboxes` | List of maildir inboxes to look for mails in. Supports path/glob expansions (e.g. `~` and `*`). | **Required**
 //! `threshold_warning` | Number of unread mails where state is set to warning. | `1`
 //! `threshold_critical` | Number of unread mails where state is set to critical. | `10`
 //! `interval` | Update interval, in seconds. | `5`
@@ -134,7 +137,7 @@
 //! [[block]]
 //! block = &quot;maildir&quot;
 //! interval = 60
-//! inboxes = [&quot;/home/user/mail/local&quot;, &quot;/home/user/mail/gmail/Inbox&quot;]
+//! inboxes = [&quot;~/mail/local&quot;, &quot;~/maildir/account1/*&quot;]
 //! threshold_warning = 1
 //! threshold_critical = 10
 //! display_type = &quot;new&quot;
@@ -145,6 +148,7 @@
 
 </span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
 <span class="kw">use </span>maildir::Maildir;
+<span class="kw">use </span>std::path::PathBuf;
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
@@ -161,26 +165,28 @@
     </span><span class="kw">pub </span>display_type: MailType,
 }
 
+<span class="kw">fn </span>expand_inbox(inbox: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw">impl </span>Iterator&lt;Item = PathBuf&gt;&gt; {
+    <span class="kw">let </span>expanded = shellexpand::full(inbox).error(<span class="string">&quot;Failed to expand inbox&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>paths = glob::glob(<span class="kw-2">&amp;</span>expanded).error(<span class="string">&quot;Glob expansion failed&quot;</span>)<span class="question-mark">?</span>;
+    <span class="prelude-val">Ok</span>(paths.filter_map(|p| p.ok()))
+}
+
 <span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $status &quot;</span>)<span class="question-mark">?</span>;
 
-    <span class="kw">let </span>inboxes = config
-        .inboxes
-        .iter()
-        .map(shellexpand::full)
-        .collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;<span class="kw">_</span>&gt;, <span class="kw">_</span>&gt;&gt;()
-        .error(<span class="string">&quot;Failed to expand string&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>inboxes = Vec::with_capacity(config.inboxes.len());
+    <span class="kw">for </span>inbox <span class="kw">in </span><span class="kw-2">&amp;</span>config.inboxes {
+        inboxes.extend(expand_inbox(inbox)<span class="question-mark">?</span>.map(Maildir::from));
+    }
 
     <span class="kw">loop </span>{
         <span class="kw">let </span><span class="kw-2">mut </span>newmails = <span class="number">0</span>;
         <span class="kw">for </span>inbox <span class="kw">in </span><span class="kw-2">&amp;</span>inboxes {
-            <span class="kw">let </span>isl: <span class="kw-2">&amp;</span>str = <span class="kw-2">&amp;</span>inbox[..];
             <span class="comment">// TODO: spawn_blocking?
-            </span><span class="kw">let </span>maildir = Maildir::from(isl);
-            newmails += <span class="kw">match </span>config.display_type {
-                MailType::New =&gt; maildir.count_new(),
-                MailType::Cur =&gt; maildir.count_cur(),
-                MailType::All =&gt; maildir.count_new() + maildir.count_cur(),
+            </span>newmails += <span class="kw">match </span>config.display_type {
+                MailType::New =&gt; inbox.count_new(),
+                MailType::Cur =&gt; inbox.count_cur(),
+                MailType::All =&gt; inbox.count_new() + inbox.count_cur(),
             };
         }
 
