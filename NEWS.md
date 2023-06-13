@@ -1,3 +1,16 @@
+# i3status-rust 0.31.7
+
+### New Blocks and Features
+
+* Maildir: Support glob expansions in `inboxes` (for example, this now works: `inboxes = ["~/Maildir/account1/*"]`).
+
+### Bug Fixes and Improvements
+
+* Battery(sysfs): Handle the case when charge rate is lower than current power usage.
+* Keyboard layout: Add support for keyboard layout variant to setxkbmap driver.
+* Blocks that make web requests will now do 3 retries before displaying an error.
+* Blocks can now recover from "Failed to render full text" errors.
+
 # i3status-rust 0.31.6
 
 ### New Blocks and Features
