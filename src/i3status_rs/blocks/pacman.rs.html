@@ -614,10 +614,10 @@
                 <span class="kw">let </span>values = <span class="macro">map!</span>(<span class="string">&quot;pacman&quot; </span>=&gt; Value::number(count));
                 <span class="kw">let </span>warning = warning_updates_regex
                     .as_ref()
-                    .map_or(<span class="bool-val">false</span>, |regex| has_matching_update(<span class="kw-2">&amp;</span>updates, regex));
+                    .is_some_and(|regex| has_matching_update(<span class="kw-2">&amp;</span>updates, regex));
                 <span class="kw">let </span>critical = critical_updates_regex
                     .as_ref()
-                    .map_or(<span class="bool-val">false</span>, |regex| has_matching_update(<span class="kw-2">&amp;</span>updates, regex));
+                    .is_some_and(|regex| has_matching_update(<span class="kw-2">&amp;</span>updates, regex));
                 (values, warning, critical, count)
             }
             Watched::Aur(aur_command) =&gt; {
@@ -628,10 +628,10 @@
                 );
                 <span class="kw">let </span>warning = warning_updates_regex
                     .as_ref()
-                    .map_or(<span class="bool-val">false</span>, |regex| has_matching_update(<span class="kw-2">&amp;</span>updates, regex));
+                    .is_some_and(|regex| has_matching_update(<span class="kw-2">&amp;</span>updates, regex));
                 <span class="kw">let </span>critical = critical_updates_regex
                     .as_ref()
-                    .map_or(<span class="bool-val">false</span>, |regex| has_matching_update(<span class="kw-2">&amp;</span>updates, regex));
+                    .is_some_and(|regex| has_matching_update(<span class="kw-2">&amp;</span>updates, regex));
                 (values, warning, critical, count)
             }
             Watched::Both(aur_command) =&gt; {
@@ -646,11 +646,11 @@
                     <span class="string">&quot;aur&quot; </span>=&gt;    Value::number(aur_count),
                     <span class="string">&quot;both&quot; </span>=&gt;   Value::number(pacman_count + aur_count),
                 };
-                <span class="kw">let </span>warning = warning_updates_regex.as_ref().map_or(<span class="bool-val">false</span>, |regex| {
+                <span class="kw">let </span>warning = warning_updates_regex.as_ref().is_some_and(|regex| {
                     has_matching_update(<span class="kw-2">&amp;</span>aur_updates, regex)
                         || has_matching_update(<span class="kw-2">&amp;</span>pacman_updates, regex)
                 });
-                <span class="kw">let </span>critical = critical_updates_regex.as_ref().map_or(<span class="bool-val">false</span>, |regex| {
+                <span class="kw">let </span>critical = critical_updates_regex.as_ref().is_some_and(|regex| {
                     has_matching_update(<span class="kw-2">&amp;</span>aur_updates, regex)
                         || has_matching_update(<span class="kw-2">&amp;</span>pacman_updates, regex)
                 });

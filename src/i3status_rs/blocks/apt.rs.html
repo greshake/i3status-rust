@@ -368,10 +368,10 @@
 
         <span class="kw">let </span>warning = warning_updates_regex
             .as_ref()
-            .map_or(<span class="bool-val">false</span>, |regex| has_matching_update(<span class="kw-2">&amp;</span>updates, regex));
+            .is_some_and(|regex| has_matching_update(<span class="kw-2">&amp;</span>updates, regex));
         <span class="kw">let </span>critical = critical_updates_regex
             .as_ref()
-            .map_or(<span class="bool-val">false</span>, |regex| has_matching_update(<span class="kw-2">&amp;</span>updates, regex));
+            .is_some_and(|regex| has_matching_update(<span class="kw-2">&amp;</span>updates, regex));
         widget.state = <span class="kw">match </span>count {
             <span class="number">0 </span>=&gt; State::Idle,
             <span class="kw">_ </span>=&gt; {

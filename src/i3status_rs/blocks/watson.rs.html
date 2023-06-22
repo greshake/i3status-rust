@@ -362,7 +362,7 @@
                 <span class="kw">_ </span>= api.wait_for_update_request() =&gt; <span class="kw">break</span>,
                 <span class="prelude-val">Some</span>(update) = state_updates.next() =&gt; {
                     <span class="kw">let </span>update = update.error(<span class="string">&quot;Bad inotify update&quot;</span>)<span class="question-mark">?</span>;
-                    <span class="kw">if </span>update.name.map_or(<span class="bool-val">false</span>, |x| state_file == x) {
+                    <span class="kw">if </span>update.name.is_some_and(|x| state_file == x) {
                         <span class="kw">break</span>;
                     }
                 }

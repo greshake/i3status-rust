@@ -526,7 +526,7 @@
                 // active_port if that property is not present.
                 </span><span class="prelude-val">None </span>=&gt; device
                     .active_port()
-                    .map_or(<span class="bool-val">false</span>, |p| p.contains(<span class="string">&quot;headphones&quot;</span>)),
+                    .is_some_and(|p| p.contains(<span class="string">&quot;headphones&quot;</span>)),
                 <span class="comment">// form_factor is present and is some non-headphone value
                 </span><span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
             };

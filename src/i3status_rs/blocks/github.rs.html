@@ -277,7 +277,7 @@
     <span class="kw">loop </span>{
         <span class="kw">let </span>stats = get_stats(<span class="kw-2">&amp;</span>token).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        <span class="kw">if </span>stats.get(<span class="string">&quot;total&quot;</span>).map_or(<span class="bool-val">false</span>, |x| <span class="kw-2">*</span>x &gt; <span class="number">0</span>) || !config.hide_if_total_is_zero {
+        <span class="kw">if </span>stats.get(<span class="string">&quot;total&quot;</span>).is_some_and(|x| <span class="kw-2">*</span>x &gt; <span class="number">0</span>) || !config.hide_if_total_is_zero {
             <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
 
             <span class="lifetime">&#39;outer</span>: <span class="kw">for </span>(list_opt, ret) <span class="kw">in </span>[
@@ -288,7 +288,7 @@
             ] {
                 <span class="kw">if let </span><span class="prelude-val">Some</span>(list) = list_opt {
                     <span class="kw">for </span>val <span class="kw">in </span>list {
-                        <span class="kw">if </span>stats.get(val).map_or(<span class="bool-val">false</span>, |x| <span class="kw-2">*</span>x &gt; <span class="number">0</span>) {
+                        <span class="kw">if </span>stats.get(val).is_some_and(|x| <span class="kw-2">*</span>x &gt; <span class="number">0</span>) {
                             widget.state = ret;
                             <span class="kw">break </span><span class="lifetime">&#39;outer</span>;
                         }
