@@ -894,7 +894,7 @@
             .msg_type(zbus::MessageType::Signal)
             .interface(<span class="string">&quot;org.freedesktop.DBus&quot;</span>)
             .and_then(|x| x.member(<span class="string">&quot;NameOwnerChanged&quot;</span>))
-            .and_then(|x| x.arg0namespace(<span class="string">&quot;org.mpris.MediaPlayer2&quot;</span>))
+            .and_then(|x| x.arg0ns(<span class="string">&quot;org.mpris.MediaPlayer2&quot;</span>))
             .unwrap()
             .build(),
         <span class="kw-2">&amp;</span>dbus_conn,
