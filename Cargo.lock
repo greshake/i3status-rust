@@ -2807,7 +2807,7 @@ dependencies = [
 [[package]]
 name = "zbus"
 version = "3.13.1"
-source = "git+https://github.com/MaxVerevkin/zbus?branch=fix-arg0namespace#6effcb016d12f96967fa2158680824fac4a62202"
+source = "git+https://github.com/dbus2/zbus?rev=1814000#1814000084a64b8a4d01e69595ae00755bf4fee3"
 dependencies = [
  "async-broadcast",
  "async-process",
@@ -2842,7 +2842,7 @@ dependencies = [
 [[package]]
 name = "zbus_macros"
 version = "3.13.1"
-source = "git+https://github.com/MaxVerevkin/zbus?branch=fix-arg0namespace#6effcb016d12f96967fa2158680824fac4a62202"
+source = "git+https://github.com/dbus2/zbus?rev=1814000#1814000084a64b8a4d01e69595ae00755bf4fee3"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
@@ -2855,7 +2855,7 @@ dependencies = [
 [[package]]
 name = "zbus_names"
 version = "2.5.1"
-source = "git+https://github.com/MaxVerevkin/zbus?branch=fix-arg0namespace#6effcb016d12f96967fa2158680824fac4a62202"
+source = "git+https://github.com/dbus2/zbus?rev=1814000#1814000084a64b8a4d01e69595ae00755bf4fee3"
 dependencies = [
  "serde",
  "static_assertions",
@@ -2865,7 +2865,7 @@ dependencies = [
 [[package]]
 name = "zvariant"
 version = "3.14.0"
-source = "git+https://github.com/MaxVerevkin/zbus?branch=fix-arg0namespace#6effcb016d12f96967fa2158680824fac4a62202"
+source = "git+https://github.com/dbus2/zbus?rev=1814000#1814000084a64b8a4d01e69595ae00755bf4fee3"
 dependencies = [
  "byteorder",
  "enumflags2",
@@ -2878,7 +2878,7 @@ dependencies = [
 [[package]]
 name = "zvariant_derive"
 version = "3.14.0"
-source = "git+https://github.com/MaxVerevkin/zbus?branch=fix-arg0namespace#6effcb016d12f96967fa2158680824fac4a62202"
+source = "git+https://github.com/dbus2/zbus?rev=1814000#1814000084a64b8a4d01e69595ae00755bf4fee3"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
@@ -2890,7 +2890,7 @@ dependencies = [
 [[package]]
 name = "zvariant_utils"
 version = "1.0.1"
-source = "git+https://github.com/MaxVerevkin/zbus?branch=fix-arg0namespace#6effcb016d12f96967fa2158680824fac4a62202"
+source = "git+https://github.com/dbus2/zbus?rev=1814000#1814000084a64b8a4d01e69595ae00755bf4fee3"
 dependencies = [
  "proc-macro2",
  "quote",

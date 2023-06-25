@@ -86,7 +86,7 @@ features = [
 # Fixes #1914
 # TODO: remove once https://github.com/dbus2/zbus/issues/382 is resolved and a fix is released
 [patch.crates-io]
-zbus = { git = "https://github.com/MaxVerevkin/zbus", branch = "fix-arg0namespace" }
+zbus = { git = "https://github.com/dbus2/zbus", rev = "1814000" }
 
 [profile.release]
 lto = "thin"

@@ -253,7 +253,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             .msg_type(zbus::MessageType::Signal)
             .interface("org.freedesktop.DBus")
             .and_then(|x| x.member("NameOwnerChanged"))
-            .and_then(|x| x.arg0namespace("org.mpris.MediaPlayer2"))
+            .and_then(|x| x.arg0ns("org.mpris.MediaPlayer2"))
             .unwrap()
             .build(),
         &dbus_conn,
