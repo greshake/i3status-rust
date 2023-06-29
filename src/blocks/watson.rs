@@ -76,12 +76,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         }
     };
 
-    let mut notify = Inotify::init().error("Failed to start inotify")?;
+    let notify = Inotify::init().error("Failed to start inotify")?;
     notify
-        .add_watch(&state_dir, WatchMask::CREATE | WatchMask::MOVED_TO)
+        .watches()
+        .add(&state_dir, WatchMask::CREATE | WatchMask::MOVED_TO)
         .error("Failed to watch watson state directory")?;
     let mut state_updates = notify
-        .event_stream([0; 1024])
+        .into_event_stream([0; 1024])
         .error("Failed to create event stream")?;
 
     let mut timer = config.interval.timer();

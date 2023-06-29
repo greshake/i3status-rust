@@ -100,12 +100,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut filters = config.filters.iter().cycle();
     let mut filter = filters.next().error("`filters` is empty")?;
 
-    let mut notify = Inotify::init().error("Failed to start inotify")?;
+    let notify = Inotify::init().error("Failed to start inotify")?;
     notify
-        .add_watch(&*config.data_location.expand()?, WatchMask::MODIFY)
+        .watches()
+        .add(&*config.data_location.expand()?, WatchMask::MODIFY)
         .error("Failed to watch data location")?;
     let mut updates = notify
-        .event_stream([0; 1024])
+        .into_event_stream([0; 1024])
         .error("Failed to create event stream")?;
 
     loop {

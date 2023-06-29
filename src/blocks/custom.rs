@@ -169,16 +169,17 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut file_updates: FileStream = match config.watch_files.as_slice() {
         [] => Box::pin(futures::stream::pending()),
         files => {
-            let mut notify = Inotify::init().error("Failed to start inotify")?;
+            let notify = Inotify::init().error("Failed to start inotify")?;
+            let mut watches = notify.watches();
             for file in files {
                 let file = file.expand()?;
-                notify
-                    .add_watch(&*file, WatchMask::MODIFY | WatchMask::CLOSE_WRITE)
+                watches
+                    .add(&*file, WatchMask::MODIFY | WatchMask::CLOSE_WRITE)
                     .error("Failed to add file watch")?;
             }
             Box::pin(
                 notify
-                    .event_stream([0; 1024])
+                    .into_event_stream([0; 1024])
                     .error("Failed to create event stream")?,
             )
         }
