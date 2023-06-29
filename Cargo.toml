@@ -64,7 +64,7 @@ toml = "0.7"
 unicode-segmentation = "1.10.1"
 wayrs-client = { version = "0.10", features = ["tokio"] }
 wayrs-protocols = { version = "0.10", features = ["wlr-foreign-toplevel-management-unstable-v1"] }
-zbus = { version = "3.13", default-features = false, features = ["tokio"] }
+zbus = { version = "3.14", default-features = false, features = ["tokio"] }
 
 [dependencies.tokio]
 version = "1.12"
@@ -82,11 +82,6 @@ features = [
   "sync",
   "time",
 ]
-
-# Fixes #1914
-# TODO: remove once https://github.com/dbus2/zbus/issues/382 is resolved and a fix is released
-[patch.crates-io]
-zbus = { git = "https://github.com/dbus2/zbus", rev = "1814000" }
 
 [profile.release]
 lto = "thin"
