@@ -1050,7 +1050,7 @@ dependencies = [
 
 [[package]]
 name = "i3status-rs"
-version = "0.31.7"
+version = "0.31.8"
 dependencies = [
  "async-once-cell",
  "async-trait",
