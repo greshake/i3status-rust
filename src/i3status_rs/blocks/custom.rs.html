@@ -289,6 +289,7 @@
 <a href="#289" id="289">289</a>
 <a href="#290" id="290">290</a>
 <a href="#291" id="291">291</a>
+<a href="#292" id="292">292</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! The output of a custom shell command
 //!
 //! For further customisation, use the `json` option and have the shell command output valid JSON in the schema below:
@@ -460,16 +461,17 @@
     <span class="kw">let </span><span class="kw-2">mut </span>file_updates: FileStream = <span class="kw">match </span>config.watch_files.as_slice() {
         [] =&gt; Box::pin(futures::stream::pending()),
         files =&gt; {
-            <span class="kw">let </span><span class="kw-2">mut </span>notify = Inotify::init().error(<span class="string">&quot;Failed to start inotify&quot;</span>)<span class="question-mark">?</span>;
+            <span class="kw">let </span>notify = Inotify::init().error(<span class="string">&quot;Failed to start inotify&quot;</span>)<span class="question-mark">?</span>;
+            <span class="kw">let </span><span class="kw-2">mut </span>watches = notify.watches();
             <span class="kw">for </span>file <span class="kw">in </span>files {
                 <span class="kw">let </span>file = file.expand()<span class="question-mark">?</span>;
-                notify
-                    .add_watch(<span class="kw-2">&amp;*</span>file, WatchMask::MODIFY | WatchMask::CLOSE_WRITE)
+                watches
+                    .add(<span class="kw-2">&amp;*</span>file, WatchMask::MODIFY | WatchMask::CLOSE_WRITE)
                     .error(<span class="string">&quot;Failed to add file watch&quot;</span>)<span class="question-mark">?</span>;
             }
             Box::pin(
                 notify
-                    .event_stream([<span class="number">0</span>; <span class="number">1024</span>])
+                    .into_event_stream([<span class="number">0</span>; <span class="number">1024</span>])
                     .error(<span class="string">&quot;Failed to create event stream&quot;</span>)<span class="question-mark">?</span>,
             )
         }

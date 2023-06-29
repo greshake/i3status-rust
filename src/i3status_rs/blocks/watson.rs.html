@@ -230,6 +230,7 @@
 <a href="#230" id="230">230</a>
 <a href="#231" id="231">231</a>
 <a href="#232" id="232">232</a>
+<a href="#233" id="233">233</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Watson statistics
 //!
 //! [Watson](http://tailordev.github.io/Watson/) is a simple CLI time tracking application. This block will show the name of your current active project, tags and optionally recorded time. Clicking the widget will toggle the `show_time` variable dynamically.
@@ -308,12 +309,13 @@
         }
     };
 
-    <span class="kw">let </span><span class="kw-2">mut </span>notify = Inotify::init().error(<span class="string">&quot;Failed to start inotify&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>notify = Inotify::init().error(<span class="string">&quot;Failed to start inotify&quot;</span>)<span class="question-mark">?</span>;
     notify
-        .add_watch(<span class="kw-2">&amp;</span>state_dir, WatchMask::CREATE | WatchMask::MOVED_TO)
+        .watches()
+        .add(<span class="kw-2">&amp;</span>state_dir, WatchMask::CREATE | WatchMask::MOVED_TO)
         .error(<span class="string">&quot;Failed to watch watson state directory&quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>state_updates = notify
-        .event_stream([<span class="number">0</span>; <span class="number">1024</span>])
+        .into_event_stream([<span class="number">0</span>; <span class="number">1024</span>])
         .error(<span class="string">&quot;Failed to create event stream&quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>timer = config.interval.timer();

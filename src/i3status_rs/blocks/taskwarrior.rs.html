@@ -167,6 +167,7 @@
 <a href="#167" id="167">167</a>
 <a href="#168" id="168">168</a>
 <a href="#169" id="169">169</a>
+<a href="#170" id="170">170</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! The number of tasks from the taskwarrior list
 //!
 //! Clicking the right mouse button on the icon cycles the view of the block through the user&#39;s filters.
@@ -269,12 +270,13 @@
     <span class="kw">let </span><span class="kw-2">mut </span>filters = config.filters.iter().cycle();
     <span class="kw">let </span><span class="kw-2">mut </span>filter = filters.next().error(<span class="string">&quot;`filters` is empty&quot;</span>)<span class="question-mark">?</span>;
 
-    <span class="kw">let </span><span class="kw-2">mut </span>notify = Inotify::init().error(<span class="string">&quot;Failed to start inotify&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>notify = Inotify::init().error(<span class="string">&quot;Failed to start inotify&quot;</span>)<span class="question-mark">?</span>;
     notify
-        .add_watch(<span class="kw-2">&amp;*</span>config.data_location.expand()<span class="question-mark">?</span>, WatchMask::MODIFY)
+        .watches()
+        .add(<span class="kw-2">&amp;*</span>config.data_location.expand()<span class="question-mark">?</span>, WatchMask::MODIFY)
         .error(<span class="string">&quot;Failed to watch data location&quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>updates = notify
-        .event_stream([<span class="number">0</span>; <span class="number">1024</span>])
+        .into_event_stream([<span class="number">0</span>; <span class="number">1024</span>])
         .error(<span class="string">&quot;Failed to create event stream&quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">loop </span>{
