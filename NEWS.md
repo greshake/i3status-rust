@@ -1,3 +1,9 @@
+# i3status-rust 0.31.8
+
+### Bug Fixes and Improvements
+
+* Music block now functions properly when a player name contains `-`.
+
 # i3status-rust 0.31.7
 
 ### New Blocks and Features
