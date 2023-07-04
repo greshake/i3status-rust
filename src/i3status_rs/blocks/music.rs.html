@@ -639,6 +639,8 @@
 <a href="#639" id="639">639</a>
 <a href="#640" id="640">640</a>
 <a href="#641" id="641">641</a>
+<a href="#642" id="642">642</a>
+<a href="#643" id="643">643</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! The current song title and artist
 //!
 //! Also provides buttons for play/pause, previous and next.
@@ -1020,6 +1022,7 @@
                     <span class="kw">let </span>args = msg.args().unwrap();
                     <span class="kw">match </span>(args.old_owner.as_ref(), args.new_owner.as_ref()) {
                         (<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(new)) =&gt; <span class="kw">if </span>player_matches(args.name.as_str(), <span class="kw-2">&amp;</span>preferred_players, <span class="kw-2">&amp;</span>exclude_regex) {
+                            <span class="macro">debug!</span>(<span class="string">&quot;new player {} owned by {new}&quot;</span>, args.name);
                             <span class="kw">match </span>Player::new(<span class="kw-2">&amp;</span>dbus_conn, args.name.to_owned().into(), new.to_owned().into()).<span class="kw">await </span>{
                                 <span class="prelude-val">Ok</span>(player) =&gt; players.push(player),
                                 <span class="prelude-val">Err</span>(e) =&gt; {
@@ -1029,6 +1032,7 @@
                         }
                         (<span class="prelude-val">Some</span>(old), <span class="prelude-val">None</span>) =&gt; {
                             <span class="kw">if let </span><span class="prelude-val">Some</span>(pos) = players.iter().position(|p| <span class="kw-2">&amp;*</span>p.owner == old) {
+                                <span class="macro">debug!</span>(<span class="string">&quot;removed player {} owned by {old}&quot;</span>, args.name);
                                 players.remove(pos);
                                 <span class="kw">if let </span><span class="prelude-val">Some</span>(cur) = cur_player {
                                     <span class="kw">if </span>players.is_empty() {
@@ -1045,7 +1049,7 @@
                     }
                     <span class="kw">break</span>;
                 }
-                <span class="prelude-val">Some</span>(msg)  = active_player_change_end_stream.next() =&gt; {
+                <span class="prelude-val">Some</span>(msg) = active_player_change_end_stream.next() =&gt; {
                     <span class="kw">let </span>args = msg.args().unwrap();
                     <span class="kw">if let </span><span class="prelude-val">Some</span>(pos) = players.iter().position(|p| p.bus_name == args.name){
                         cur_player = <span class="prelude-val">Some</span>(pos);
