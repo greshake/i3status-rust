@@ -379,6 +379,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     let args = msg.args().unwrap();
                     match (args.old_owner.as_ref(), args.new_owner.as_ref()) {
                         (None, Some(new)) => if player_matches(args.name.as_str(), &preferred_players, &exclude_regex) {
+                            debug!("new player {} owned by {new}", args.name);
                             match Player::new(&dbus_conn, args.name.to_owned().into(), new.to_owned().into()).await {
                                 Ok(player) => players.push(player),
                                 Err(e) => {
@@ -388,6 +389,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                         }
                         (Some(old), None) => {
                             if let Some(pos) = players.iter().position(|p| &*p.owner == old) {
+                                debug!("removed player {} owned by {old}", args.name);
                                 players.remove(pos);
                                 if let Some(cur) = cur_player {
                                     if players.is_empty() {
@@ -404,7 +406,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     }
                     break;
                 }
-                Some(msg)  = active_player_change_end_stream.next() => {
+                Some(msg) = active_player_change_end_stream.next() => {
                     let args = msg.args().unwrap();
                     if let Some(pos) = players.iter().position(|p| p.bus_name == args.name){
                         cur_player = Some(pos);
