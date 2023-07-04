@@ -641,6 +641,19 @@
 <a href="#641" id="641">641</a>
 <a href="#642" id="642">642</a>
 <a href="#643" id="643">643</a>
+<a href="#644" id="644">644</a>
+<a href="#645" id="645">645</a>
+<a href="#646" id="646">646</a>
+<a href="#647" id="647">647</a>
+<a href="#648" id="648">648</a>
+<a href="#649" id="649">649</a>
+<a href="#650" id="650">650</a>
+<a href="#651" id="651">651</a>
+<a href="#652" id="652">652</a>
+<a href="#653" id="653">653</a>
+<a href="#654" id="654">654</a>
+<a href="#655" id="655">655</a>
+<a href="#656" id="656">656</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! The current song title and artist
 //!
 //! Also provides buttons for play/pause, previous and next.
@@ -769,7 +782,10 @@
 //! [MediaPlayer2 Interface]: https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html
 
 </span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span><span class="kw">crate</span>::wrappers::DisplaySlice;
+
 <span class="kw">use </span>regex::Regex;
+<span class="kw">use </span>std::fmt;
 <span class="kw">use </span>zbus::fdo::{DBusProxy, NameOwnerChanged, PropertiesChanged};
 <span class="kw">use </span>zbus::names::{OwnedBusName, OwnedUniqueName};
 <span class="kw">use </span>zbus::{MatchRule, MessageStream};
@@ -911,10 +927,7 @@
         </span>.error(<span class="string">&quot;Failed to create ActivePlayerChangeEndStream&quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">loop </span>{
-        <span class="macro">debug!</span>(<span class="string">&quot;available players:&quot;</span>);
-        <span class="kw">for </span>player <span class="kw">in </span><span class="kw-2">&amp;</span>players {
-            <span class="macro">debug!</span>(<span class="string">&quot;{}&quot;</span>, player.bus_name);
-        }
+        <span class="macro">debug!</span>(<span class="string">&quot;available players: {}&quot;</span>, DisplaySlice(<span class="kw-2">&amp;</span>players));
 
         <span class="kw">let </span>avail = players.len();
         <span class="kw">let </span>player = cur_player.map(|c| players.get_mut(c).unwrap());
@@ -1021,13 +1034,15 @@
                     <span class="kw">let </span>msg = NameOwnerChanged::from_message(msg).unwrap();
                     <span class="kw">let </span>args = msg.args().unwrap();
                     <span class="kw">match </span>(args.old_owner.as_ref(), args.new_owner.as_ref()) {
-                        (<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(new)) =&gt; <span class="kw">if </span>player_matches(args.name.as_str(), <span class="kw-2">&amp;</span>preferred_players, <span class="kw-2">&amp;</span>exclude_regex) {
+                        (<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(new)) =&gt; {
                             <span class="macro">debug!</span>(<span class="string">&quot;new player {} owned by {new}&quot;</span>, args.name);
-                            <span class="kw">match </span>Player::new(<span class="kw-2">&amp;</span>dbus_conn, args.name.to_owned().into(), new.to_owned().into()).<span class="kw">await </span>{
-                                <span class="prelude-val">Ok</span>(player) =&gt; players.push(player),
-                                <span class="prelude-val">Err</span>(e) =&gt; {
-                                    <span class="macro">debug!</span>(<span class="string">&quot;{e}&quot;</span>);
-                                },
+                            <span class="kw">if </span>player_matches(args.name.as_str(), <span class="kw-2">&amp;</span>preferred_players, <span class="kw-2">&amp;</span>exclude_regex) {
+                                <span class="kw">match </span>Player::new(<span class="kw-2">&amp;</span>dbus_conn, args.name.to_owned().into(), new.to_owned().into()).<span class="kw">await </span>{
+                                    <span class="prelude-val">Ok</span>(player) =&gt; players.push(player),
+                                    <span class="prelude-val">Err</span>(e) =&gt; {
+                                        <span class="macro">debug!</span>(<span class="string">&quot;{e}&quot;</span>);
+                                    },
+                                }
                             }
                         }
                         (<span class="prelude-val">Some</span>(old), <span class="prelude-val">None</span>) =&gt; {
@@ -1147,6 +1162,8 @@
         bus_name: OwnedBusName,
         owner: OwnedUniqueName,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Player&gt; {
+        <span class="macro">debug!</span>(<span class="string">&quot;creating Player for {bus_name}&quot;</span>);
+
         <span class="kw">let </span>proxy = zbus_mpris::PlayerProxy::builder(dbus_conn)
             .destination(bus_name.clone())
             .error(<span class="string">&quot;failed to set proxy destination&quot;</span>)<span class="question-mark">?
@@ -1154,11 +1171,14 @@
             .<span class="kw">await
             </span>.error(<span class="string">&quot;failed to open player proxy&quot;</span>)<span class="question-mark">?</span>;
 
+        <span class="macro">debug!</span>(<span class="string">&quot;querying player info&quot;</span>);
         <span class="kw">let </span>(metadata, status, volume) =
             <span class="macro">tokio::join!</span>(proxy.metadata(), proxy.playback_status(), proxy.volume());
 
         <span class="kw">let </span>metadata = metadata.error(<span class="string">&quot;failed to obtain player metadata&quot;</span>)<span class="question-mark">?</span>;
         <span class="kw">let </span>status = status.error(<span class="string">&quot;failed to obtain player status&quot;</span>)<span class="question-mark">?</span>;
+
+        <span class="macro">debug!</span>(<span class="string">&quot;Player created&quot;</span>);
 
         <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
             status: PlaybackStatus::from_str(<span class="kw-2">&amp;</span>status),
@@ -1205,6 +1225,12 @@
                 </span>.error(<span class="string">&quot;set_volume() failed&quot;</span>)<span class="question-mark">?</span>;
         }
         <span class="prelude-val">Ok</span>(())
+    }
+}
+
+<span class="kw">impl </span>fmt::Display <span class="kw">for </span>Player {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
+        extract_player_name(<span class="kw-2">&amp;</span><span class="self">self</span>.bus_name).unwrap().fmt(f)
     }
 }
 
