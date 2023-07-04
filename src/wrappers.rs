@@ -2,7 +2,7 @@ use crate::errors::*;
 
 use serde::de::{self, Deserialize, Deserializer};
 use std::borrow::Cow;
-use std::fmt::Display;
+use std::fmt::{self, Display};
 use std::marker::PhantomData;
 use std::ops::RangeInclusive;
 use std::str::FromStr;
@@ -43,7 +43,7 @@ impl<'de, const ALLOW_ONCE: bool> Deserialize<'de> for Seconds<ALLOW_ONCE> {
         impl<'de, const ALLOW_ONCE: bool> de::Visitor<'de> for SecondsVisitor<ALLOW_ONCE> {
             type Value = Seconds<ALLOW_ONCE>;
 
-            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 formatter.write_str("\"once\", i64 or f64")
             }
 
@@ -99,7 +99,7 @@ impl<'de> Deserialize<'de> for ShellString {
         impl<'de> de::Visitor<'de> for Visitor {
             type Value = ShellString;
 
-            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 formatter.write_str("text")
             }
 
@@ -166,7 +166,7 @@ where
         {
             type Value = RangeMap<K, V>;
 
-            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 formatter.write_str("range map")
             }
 
@@ -189,5 +189,22 @@ where
         }
 
         deserializer.deserialize_map(Visitor(PhantomData))
+    }
+}
+
+/// Display a slice. Similar to Debug impl for slice, but uses Display impl for elements.
+pub struct DisplaySlice<'a, T>(pub &'a [T]);
+
+impl<'a, T: Display> Display for DisplaySlice<'a, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        struct DisplayAsDebug<'a, T>(&'a T);
+        impl<'a, T: Display> fmt::Debug for DisplayAsDebug<'a, T> {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                fmt::Display::fmt(self.0, f)
+            }
+        }
+        f.debug_list()
+            .entries(self.0.iter().map(DisplayAsDebug))
+            .finish()
     }
 }

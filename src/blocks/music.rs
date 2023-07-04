@@ -126,7 +126,10 @@
 //! [MediaPlayer2 Interface]: https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html
 
 use super::prelude::*;
+use crate::wrappers::DisplaySlice;
+
 use regex::Regex;
+use std::fmt;
 use zbus::fdo::{DBusProxy, NameOwnerChanged, PropertiesChanged};
 use zbus::names::{OwnedBusName, OwnedUniqueName};
 use zbus::{MatchRule, MessageStream};
@@ -268,10 +271,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         .error("Failed to create ActivePlayerChangeEndStream")?;
 
     loop {
-        debug!("available players:");
-        for player in &players {
-            debug!("{}", player.bus_name);
-        }
+        debug!("available players: {}", DisplaySlice(&players));
 
         let avail = players.len();
         let player = cur_player.map(|c| players.get_mut(c).unwrap());
@@ -378,13 +378,15 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     let msg = NameOwnerChanged::from_message(msg).unwrap();
                     let args = msg.args().unwrap();
                     match (args.old_owner.as_ref(), args.new_owner.as_ref()) {
-                        (None, Some(new)) => if player_matches(args.name.as_str(), &preferred_players, &exclude_regex) {
+                        (None, Some(new)) => {
                             debug!("new player {} owned by {new}", args.name);
-                            match Player::new(&dbus_conn, args.name.to_owned().into(), new.to_owned().into()).await {
-                                Ok(player) => players.push(player),
-                                Err(e) => {
-                                    debug!("{e}");
-                                },
+                            if player_matches(args.name.as_str(), &preferred_players, &exclude_regex) {
+                                match Player::new(&dbus_conn, args.name.to_owned().into(), new.to_owned().into()).await {
+                                    Ok(player) => players.push(player),
+                                    Err(e) => {
+                                        debug!("{e}");
+                                    },
+                                }
                             }
                         }
                         (Some(old), None) => {
@@ -504,6 +506,8 @@ impl Player {
         bus_name: OwnedBusName,
         owner: OwnedUniqueName,
     ) -> Result<Player> {
+        debug!("creating Player for {bus_name}");
+
         let proxy = zbus_mpris::PlayerProxy::builder(dbus_conn)
             .destination(bus_name.clone())
             .error("failed to set proxy destination")?
@@ -562,6 +566,12 @@ impl Player {
                 .error("set_volume() failed")?;
         }
         Ok(())
+    }
+}
+
+impl fmt::Display for Player {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        extract_player_name(&self.bus_name).unwrap().fmt(f)
     }
 }
 
