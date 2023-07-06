@@ -515,9 +515,15 @@ impl Player {
             .await
             .error("failed to open player proxy")?;
 
-        debug!("querying player info");
-        let (metadata, status, volume) =
-            tokio::join!(proxy.metadata(), proxy.playback_status(), proxy.volume());
+        // debug!("querying player info");
+        // let (metadata, status, volume) =
+        //     tokio::join!(proxy.metadata(), proxy.playback_status(), proxy.volume());
+        debug!("querying player metadata");
+        let metadata = proxy.metadata().await;
+        debug!("querying player status");
+        let status = proxy.playback_status().await;
+        debug!("querying player volume");
+        let volume = proxy.volume().await;
 
         let metadata = metadata.error("failed to obtain player metadata")?;
         let status = status.error("failed to obtain player status")?;
