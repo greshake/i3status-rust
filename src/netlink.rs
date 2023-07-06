@@ -151,8 +151,9 @@ impl WifiInfo {
         }
 
         // Ignore connection error because `nl80211` might not be enabled on the system.
-        let Ok(mut socket) = neli_wifi::AsyncSocket::connect()
-        else { return Ok(None) };
+        let Ok(mut socket) = neli_wifi::AsyncSocket::connect() else {
+            return Ok(None);
+        };
 
         let interfaces = socket
             .get_interfaces_info()
@@ -165,8 +166,9 @@ impl WifiInfo {
                     continue;
                 }
 
-                let Ok(ap) = socket.get_station_info(index).await
-                else { continue };
+                let Ok(ap) = socket.get_station_info(index).await else {
+                    continue;
+                };
 
                 let bss = socket
                     .get_bss_info(index)

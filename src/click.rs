@@ -40,7 +40,9 @@ impl ClickHandler {
             .0
             .iter()
             .find(|e| e.button == event.button && e.widget == event.instance)
-        else { return Ok(None) };
+        else {
+            return Ok(None);
+        };
 
         if let Some(cmd) = &entry.cmd {
             if entry.sync {
