@@ -222,7 +222,7 @@ async fn is_phased_update(config_path: &str, package_line: &str) -> Result<bool>
     )
     .error("Problem capturing apt-cache command output")?;
 
-    let phased_regex = regex!(r#".*\(phased (\d+)%\).*"#);
+    let phased_regex = regex!(r".*\(phased (\d+)%\).*");
     Ok(match phased_regex.captures(&output) {
         Some(matches) => &matches[1] != "100",
         None => false,
