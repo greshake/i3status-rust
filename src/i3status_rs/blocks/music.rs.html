@@ -654,6 +654,12 @@
 <a href="#654" id="654">654</a>
 <a href="#655" id="655">655</a>
 <a href="#656" id="656">656</a>
+<a href="#657" id="657">657</a>
+<a href="#658" id="658">658</a>
+<a href="#659" id="659">659</a>
+<a href="#660" id="660">660</a>
+<a href="#661" id="661">661</a>
+<a href="#662" id="662">662</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! The current song title and artist
 //!
 //! Also provides buttons for play/pause, previous and next.
@@ -1171,9 +1177,15 @@
             .<span class="kw">await
             </span>.error(<span class="string">&quot;failed to open player proxy&quot;</span>)<span class="question-mark">?</span>;
 
-        <span class="macro">debug!</span>(<span class="string">&quot;querying player info&quot;</span>);
-        <span class="kw">let </span>(metadata, status, volume) =
-            <span class="macro">tokio::join!</span>(proxy.metadata(), proxy.playback_status(), proxy.volume());
+        <span class="comment">// debug!(&quot;querying player info&quot;);
+        // let (metadata, status, volume) =
+        //     tokio::join!(proxy.metadata(), proxy.playback_status(), proxy.volume());
+        </span><span class="macro">debug!</span>(<span class="string">&quot;querying player metadata&quot;</span>);
+        <span class="kw">let </span>metadata = proxy.metadata().<span class="kw">await</span>;
+        <span class="macro">debug!</span>(<span class="string">&quot;querying player status&quot;</span>);
+        <span class="kw">let </span>status = proxy.playback_status().<span class="kw">await</span>;
+        <span class="macro">debug!</span>(<span class="string">&quot;querying player volume&quot;</span>);
+        <span class="kw">let </span>volume = proxy.volume().<span class="kw">await</span>;
 
         <span class="kw">let </span>metadata = metadata.error(<span class="string">&quot;failed to obtain player metadata&quot;</span>)<span class="question-mark">?</span>;
         <span class="kw">let </span>status = status.error(<span class="string">&quot;failed to obtain player status&quot;</span>)<span class="question-mark">?</span>;

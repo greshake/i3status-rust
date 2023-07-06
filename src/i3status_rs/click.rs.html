@@ -146,6 +146,8 @@
 <a href="#146" id="146">146</a>
 <a href="#147" id="147">147</a>
 <a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::fmt;
 
 <span class="kw">use </span>serde::de::{<span class="self">self</span>, Deserializer, Visitor};
@@ -188,7 +190,9 @@
             </span>.<span class="number">0
             </span>.iter()
             .find(|e| e.button == event.button &amp;&amp; e.widget == event.instance)
-        <span class="kw">else </span>{ <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>) };
+        <span class="kw">else </span>{
+            <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
+        };
 
         <span class="kw">if let </span><span class="prelude-val">Some</span>(cmd) = <span class="kw-2">&amp;</span>entry.cmd {
             <span class="kw">if </span>entry.sync {
