@@ -236,10 +236,9 @@ impl InterfaceStats {
         //     // the rest is omitted
         // }
         assert!(stats.len() >= 8 * 4);
-        let stats = stats.as_ptr() as *const u64;
         Self {
-            rx_bytes: unsafe { stats.add(2).read_unaligned() },
-            tx_bytes: unsafe { stats.add(3).read_unaligned() },
+            rx_bytes: u64::from_ne_bytes(stats[16..24].try_into().unwrap()),
+            tx_bytes: u64::from_ne_bytes(stats[24..32].try_into().unwrap()),
         }
     }
 }
