@@ -208,7 +208,7 @@ impl BatteryDevice for Device {
 
         debug!("status = {:?}", status);
         debug!("capacity_level = {:?}", capacity_level);
-        debug!("capacity= {:?}", capacity);
+        debug!("capacity = {:?}", capacity);
         debug!("charge_now = {:?}", charge_now);
         debug!("charge_full = {:?}", charge_full);
         debug!("energy_now = {:?}", energy_now);
