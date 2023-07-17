@@ -461,7 +461,6 @@
 <a href="#461" id="461">461</a>
 <a href="#462" id="462">462</a>
 <a href="#463" id="463">463</a>
-<a href="#464" id="464">464</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>neli::attr::Attribute;
 <span class="kw">use </span>neli::consts::{nl::<span class="kw-2">*</span>, rtnl::<span class="kw-2">*</span>, socket::<span class="kw-2">*</span>};
 <span class="kw">use </span>neli::nl::{NlPayload, Nlmsghdr};
@@ -700,10 +699,9 @@
         //     // the rest is omitted
         // }
         </span><span class="macro">assert!</span>(stats.len() &gt;= <span class="number">8 </span>* <span class="number">4</span>);
-        <span class="kw">let </span>stats = stats.as_ptr() <span class="kw">as </span><span class="kw-2">*const </span>u64;
         <span class="self">Self </span>{
-            rx_bytes: <span class="kw">unsafe </span>{ stats.add(<span class="number">2</span>).read_unaligned() },
-            tx_bytes: <span class="kw">unsafe </span>{ stats.add(<span class="number">3</span>).read_unaligned() },
+            rx_bytes: u64::from_ne_bytes(stats[<span class="number">16</span>..<span class="number">24</span>].try_into().unwrap()),
+            tx_bytes: u64::from_ne_bytes(stats[<span class="number">24</span>..<span class="number">32</span>].try_into().unwrap()),
         }
     }
 }
