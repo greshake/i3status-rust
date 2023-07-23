@@ -89,10 +89,14 @@ warning_bg = { link = "good_bg" }
 [icons]
 icons = "awesome6"
 [icons.overrides]
-bat = " | | "
-bat_full = " |X| "
-bat_charging = " |^| "
-bat_discharging = " |v| "
+bat = [
+    "| |",
+    "|¼|",
+    "|½|",
+    "|¾|",
+    "|X|",
+]
+bat_charging = "|^|"
 ```
 
 Besides global overrides you may also use per-block overrides using the `theme_overrides`, `icons_overrides` and `icons_format` options available for all blocks.
