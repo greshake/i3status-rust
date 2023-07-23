@@ -20,6 +20,12 @@ impl From<&'static str> for Icon {
     }
 }
 
+impl<const N: usize> From<[&str; N]> for Icon {
+    fn from(value: [&str; N]) -> Self {
+        Self::Progression(value.iter().map(|s| s.to_string()).collect())
+    }
+}
+
 impl Default for Icons {
     fn default() -> Self {
         // "none" icon set
@@ -53,6 +59,14 @@ impl Default for Icons {
             "music_play" => ">",
             "music_prev" => "<",
             "net_bridge" => "BRIDGE",
+            "net_cellular" => [
+                                "NO SIGNAL",
+                                "0 BARS",
+                                "1 BAR",
+                                "2 BARS",
+                                "3 BARS",
+                                "4 BARS",
+                              ],
             "net_down" => "DOWN",
             "net_loopback" => "LO",
             "net_modem" => "MODEM",
