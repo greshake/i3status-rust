@@ -18,6 +18,7 @@ jobs:
                 fmt,
                 clippy,
                 cargo-test,
+                verify_icon_files
               ]
     steps:
     - name: Get required packages

@@ -51,3 +51,16 @@ repos:
       types: [rust]
       pass_filenames: false
       args: ["--all-features", "--"]
+  - repo: local
+    hooks:
+    - id: verify_icon_files
+      name: verify_icon_files
+      description: Run verify_icon_files.sh
+      entry: ./verify_icon_files.sh
+      language: system
+      files: |
+            (?x)^(
+                src/icons\.rs|
+                files/icons/.*\.toml
+            )$
+      pass_filenames: false
