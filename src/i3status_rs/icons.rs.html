@@ -145,6 +145,17 @@
 <a href="#145" id="145">145</a>
 <a href="#146" id="146">146</a>
 <a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+<a href="#157" id="157">157</a>
+<a href="#158" id="158">158</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::errors::<span class="kw-2">*</span>;
 <span class="kw">use </span><span class="kw">crate</span>::util;
 <span class="kw">use </span>serde::Deserialize;
@@ -167,6 +178,12 @@
     }
 }
 
+<span class="kw">impl</span>&lt;<span class="kw">const </span>N: usize&gt; From&lt;[<span class="kw-2">&amp;</span>str; N]&gt; <span class="kw">for </span>Icon {
+    <span class="kw">fn </span>from(value: [<span class="kw-2">&amp;</span>str; N]) -&gt; <span class="self">Self </span>{
+        <span class="self">Self</span>::Progression(value.iter().map(|s| s.to_string()).collect())
+    }
+}
+
 <span class="kw">impl </span>Default <span class="kw">for </span>Icons {
     <span class="kw">fn </span>default() -&gt; <span class="self">Self </span>{
         <span class="comment">// &quot;none&quot; icon set
@@ -174,9 +191,6 @@
             <span class="string">&quot;backlight&quot; </span>=&gt; <span class="string">&quot;BRIGHT&quot;</span>,
             <span class="string">&quot;bat&quot; </span>=&gt; <span class="string">&quot;BAT&quot;</span>,
             <span class="string">&quot;bat_charging&quot; </span>=&gt; <span class="string">&quot;CHG&quot;</span>,
-            <span class="string">&quot;bat_discharging&quot; </span>=&gt; <span class="string">&quot;DCG&quot;</span>,
-            <span class="string">&quot;bat_empty&quot; </span>=&gt; <span class="string">&quot;EMP&quot;</span>,
-            <span class="string">&quot;bat_full&quot; </span>=&gt; <span class="string">&quot;FULL&quot;</span>,
             <span class="string">&quot;bat_not_available&quot; </span>=&gt; <span class="string">&quot;BAT N/A&quot;</span>,
             <span class="string">&quot;bell&quot; </span>=&gt; <span class="string">&quot;ON&quot;</span>,
             <span class="string">&quot;bell-slash&quot; </span>=&gt; <span class="string">&quot;OFF&quot;</span>,
@@ -203,6 +217,14 @@
             <span class="string">&quot;music_play&quot; </span>=&gt; <span class="string">&quot;&gt;&quot;</span>,
             <span class="string">&quot;music_prev&quot; </span>=&gt; <span class="string">&quot;&lt;&quot;</span>,
             <span class="string">&quot;net_bridge&quot; </span>=&gt; <span class="string">&quot;BRIDGE&quot;</span>,
+            <span class="string">&quot;net_cellular&quot; </span>=&gt; [
+                                <span class="string">&quot;NO SIGNAL&quot;</span>,
+                                <span class="string">&quot;0 BARS&quot;</span>,
+                                <span class="string">&quot;1 BAR&quot;</span>,
+                                <span class="string">&quot;2 BARS&quot;</span>,
+                                <span class="string">&quot;3 BARS&quot;</span>,
+                                <span class="string">&quot;4 BARS&quot;</span>,
+                              ],
             <span class="string">&quot;net_down&quot; </span>=&gt; <span class="string">&quot;DOWN&quot;</span>,
             <span class="string">&quot;net_loopback&quot; </span>=&gt; <span class="string">&quot;LO&quot;</span>,
             <span class="string">&quot;net_modem&quot; </span>=&gt; <span class="string">&quot;MODEM&quot;</span>,
