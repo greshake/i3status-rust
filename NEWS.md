@@ -1,3 +1,10 @@
+# i3status-rust 0.31.9 [unreleased]
+
+### Bug Fixes and Improvements
+
+* Add missing default net_cellular icon progression in the `"none"` icon set.
+* Removed unused default icons in the `"none"` icon set.
+
 # i3status-rust 0.31.8
 
 ### Bug Fixes and Improvements
