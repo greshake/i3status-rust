@@ -27,36 +27,44 @@ Notes:
 
 # Available themes
 
-Note: screenshots were generated using [this config](https://github.com/greshake/i3status-rust/blob/master/gen-screenshots/screenshot_config.toml) with [this swaybar config](https://github.com/greshake/i3status-rust/blob/master/gen-screenshots/swayconfig_i3rs).
+Note: screenshots were generated using [this config](../gen-screenshots/screenshot_config.toml) with [this swaybar config](../gen-screenshots/swayconfig_i3rs).
 
 * `plain` (default)
-![plain](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/plain.png)
+![plain](../img/themes/plain.png)
 * `solarized-dark`
-![solarized-dark](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/solarized-dark.png)
+![solarized-dark](../img/themes/solarized-dark.png)
 * `solarized-light`
-![solarized-light](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/solarized-light.png)
+![solarized-light](../img/themes/solarized-light.png)
 * `slick`
-![slick](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/slick.png)
+![slick](../img/themes/slick.png)
 * `modern`
-![modern](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/modern.png)
+![modern](../img/themes/modern.png)
 * `bad-wolf`
-![bad-wolf](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/bad-wolf.png)
+![bad-wolf](../img/themes/bad-wolf.png)
 * `gruvbox-light`
-![gruvbox-light](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/gruvbox-light.png)
+![gruvbox-light](../img/themes/gruvbox-light.png)
 * `gruvbox-dark`
-![gruvbox-dark](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/gruvbox-dark.png)
+![gruvbox-dark](../img/themes/gruvbox-dark.png)
 * `space-villain`
-![space-villain](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/space-villain.png)
+![space-villain](../img/themes/space-villain.png)
 * `native` (like plain with no background and native separators)
-![native](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/native.png)
+![native](../img/themes/native.png)
 * `semi-native` (like native but with background)
-![semi-native](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/semi-native.png)
+![semi-native](../img/themes/semi-native.png)
 * `nord-dark` (polar night)
-![nord-dark](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/nord-dark.png)
+![nord-dark](../img/themes/nord-dark.png)
 * `dracula`
-![dracula](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/dracula.png)
+![dracula](../img/themes/dracula.png)
 * `srcery`
-![srcery](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/srcery.png)
+![srcery](../img/themes/srcery.png)
+* `ctp-frappe`
+![ctp-frappe](../img/themes/ctp-frappe.png)
+* `ctp-latte`
+![ctp-latte](../img/themes/ctp-latte.png)
+* `ctp-macchiato`
+![ctp-macchiato](../img/themes/ctp-macchiato.png)
+* `ctp-mocha`
+![ctp-mocha](../img/themes/ctp-mocha.png)
 
 # Available icon sets
 
@@ -144,4 +152,4 @@ These can be directly set to a string containing the desired unicode codepoint(s
 
 You can find the codepoints in the documentation of the icon font you're using.
 
-Refer to individual block's documentation for a list of used icons or [provided icon sets](https://github.com/greshake/i3status-rust/tree/master/files/icons) for a complete list of icons.
+Refer to individual block's documentation for a list of used icons or [provided icon sets](../files/icons) for a complete list of icons.

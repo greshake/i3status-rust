@@ -4,6 +4,7 @@ bar {
     status_padding 0
     tray_output none
     font pango:DejaVu Sans Mono, Font Awesome 6 Free 10
+    #font pango:DejaVu Sans Mono for Powerline, Font Awesome 6 Free 10
     status_command i3status-rs $I3RS_PWD/screenshot_config.toml
 
     colors {

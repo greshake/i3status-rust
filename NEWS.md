@@ -169,7 +169,7 @@
 
 ### Packaging
 
-Manual page is no longer provided in the repo. To generate `man/i3status-rs.1` run `cargo xtask generate-manpage`. See [manual_install.md](https://github.com/greshake/i3status-rust/blob/master/doc/manual_install.md) for more details.
+Manual page is no longer provided in the repo. To generate `man/i3status-rs.1` run `cargo xtask generate-manpage`. See [manual_install.md](doc/manual_install.md) for more details.
 
 # i3status-rust 0.30.4
 

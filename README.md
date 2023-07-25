@@ -1,6 +1,6 @@
 # i3status-rust
 
-![demo1](https://raw.githubusercontent.com/greshake/i3status-rust/master/img/themes/solarized-dark.png)
+![demo1](img/themes/solarized-dark.png)
 
 `i3status-rs` is a feature-rich and resource-friendly replacement for i3status, written in pure Rust. It provides a way to display "blocks" of system information (time, battery status, volume, etc) on bars that support the [i3bar protocol](https://i3wm.org/docs/i3bar-protocol.html).
 
@@ -16,11 +16,11 @@ Install from one of the packages below:
 
 * **NOTE:** Installation via `cargo` is not supported.
 
-Otherwise refer to [manual install](https://github.com/greshake/i3status-rust/blob/master/doc/manual_install.md) docs.
+Otherwise refer to [manual install](doc/manual_install.md) docs.
 
 ## Configuration
 
-After installing `i3status-rust`, edit the [example configuration](https://raw.githubusercontent.com/greshake/i3status-rust/master/examples/config.toml) to your liking.
+After installing `i3status-rust`, edit the [example configuration](examples/config.toml) to your liking.
 The default location is `$XDG_CONFIG_HOME/i3status-rust/config.toml`.
 
 There are some optional global configuration variables, defined either at the top-level or in a [TOML table](https://github.com/toml-lang/toml/blob/main/toml.md#table).
@@ -28,13 +28,13 @@ There are some optional global configuration variables, defined either at the to
 `[icons]` table:
 Key | Description | Default
 ----|-------------|----------
-`icons` | The [icon set](https://github.com/greshake/i3status-rust/blob/master/doc/themes.md#available-icon-sets) that should be used. | `"none"`
+`icons` | The [icon set](doc/themes.md#available-icon-sets) that should be used. | `"none"`
 `[icons.icons_overrides]` | Refer to `Themes and Icons` below. | None
 
 `[theme]` table:
 Key | Description | Default
 ----|-------------|----------
-`theme` | The [theme](https://github.com/greshake/i3status-rust/blob/master/doc/themes.md#available-themes) that should be used. | `"plain"`
+`theme` | The [theme](doc/themes.md#available-themes) that should be used. | `"plain"`
 `[theme.theme_overrides]` | Refer to `Themes and Icons` below. | None
 
 Global variables:
@@ -64,7 +64,7 @@ short_error_message | The short error message, if available
 
 - [Blocks](https://greshake.github.io/i3status-rust/i3status_rs/blocks/index.html)
 - [Formatting](https://greshake.github.io/i3status-rust/i3status_rs/formatting/index.html)
-- [Themes and Icons](https://github.com/greshake/i3status-rust/blob/master/doc/themes.md)
+- [Themes and Icons](doc/themes.md)
 
 ## Integrate it into i3/sway
 
