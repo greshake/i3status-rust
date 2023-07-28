@@ -1,5 +1,12 @@
 # i3status-rust 0.31.9 [unreleased]
 
+### New Themes
+
+* `ctp-frappe`
+* `ctp-latte`
+* `ctp-macchiato`
+* `ctp-mocha`
+
 ### Bug Fixes and Improvements
 
 * Add missing default net_cellular icon progression in the `"none"` icon set.
