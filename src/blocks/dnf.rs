@@ -89,7 +89,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             _ => format.clone(),
         });
         widget.set_values(map!(
-            "icon" => Value::icon(api.get_icon("update")?),
+            "icon" => Value::icon("update"),
             "count" => Value::number(count)
         ));
 

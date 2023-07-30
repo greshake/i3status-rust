@@ -101,7 +101,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         widget.set_values(map!(
             "icon" => Value::icon(
-                api.get_icon(if is_toggled { icon_on } else { icon_off })?
+                if is_toggled { icon_on.to_string() } else { icon_off.to_string() }
             )
         ));
         api.set_widget(widget.clone()).await?;

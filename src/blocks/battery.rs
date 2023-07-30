@@ -202,7 +202,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
                 values.insert(
                     "icon".into(),
-                    Value::icon(api.get_icon_in_progression(icon_name, icon_value)?),
+                    Value::icon_progression(icon_name, icon_value),
                 );
 
                 widget.set_values(values);
@@ -213,7 +213,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 let mut widget = Widget::new()
                     .with_format(missing_format.clone())
                     .with_state(State::Critical);
-                widget.set_values(map!("icon" => Value::icon(api.get_icon("bat_not_available")?)));
+                widget.set_values(map!("icon" => Value::icon("bat_not_available")));
                 api.set_widget(widget).await?;
             }
         }

@@ -186,14 +186,14 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     let volume_step = config.volume_step.clamp(0.0, 50.0) / 100.0;
 
-    let new_btn = |icon: &str, instance: &'static str, api: &CommonApi| -> Result<Value> {
-        Ok(Value::icon(api.get_icon(icon)?).with_instance(instance))
+    let new_btn = |icon: &str, instance: &'static str| -> Result<Value> {
+        Ok(Value::icon(icon.to_string()).with_instance(instance))
     };
 
     let values = map! {
-        "icon" => Value::icon(api.get_icon("music")?),
-        "next" => new_btn("music_next", NEXT_BTN, api)?,
-        "prev" => new_btn("music_prev", PREV_BTN, api)?,
+        "icon" => Value::icon("music"),
+        "next" => new_btn("music_next", NEXT_BTN)?,
+        "prev" => new_btn("music_prev", PREV_BTN)?,
     };
 
     let preferred_players = match config.player.clone() {
@@ -292,7 +292,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     Some(PlaybackStatus::Playing) => (State::Info, "music_pause"),
                     _ => (State::Idle, "music_play"),
                 };
-                values.insert("play".into(), new_btn(play_icon, PLAY_PAUSE_BTN, api)?);
+                values.insert("play".into(), new_btn(play_icon, PLAY_PAUSE_BTN)?);
                 if let Some(url) = &player.metadata.url {
                     values.insert("url".into(), Value::text(url.clone()));
                 }
@@ -325,7 +325,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 if let Some(volume) = player.volume {
                     values.insert(
                         "volume_icon".into(),
-                        Value::icon(api.get_icon_in_progression("volume", volume)?),
+                        Value::icon_progression("volume", volume),
                     );
                     values.insert("volume".into(), Value::percents(volume * 100.0));
                 }
@@ -336,7 +336,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             }
             None => {
                 let mut widget = Widget::new().with_format(format.clone());
-                widget.set_values(map!("icon" => Value::icon(api.get_icon("music")?)));
+                widget.set_values(map!("icon" => Value::icon("music")));
                 api.set_widget(widget).await?;
             }
         }

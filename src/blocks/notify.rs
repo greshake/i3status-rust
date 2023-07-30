@@ -97,7 +97,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         let mut widget = Widget::new().with_format(format.clone());
         widget.set_values(map!(
-            "icon" => Value::icon(api.get_icon(if is_paused { ICON_OFF } else { ICON_ON })?),
+            "icon" => Value::icon(if is_paused { ICON_OFF } else { ICON_ON }),
             [if notification_count != 0] "notification_count" => Value::number(notification_count),
             [if is_paused] "paused" => Value::flag(),
         ));

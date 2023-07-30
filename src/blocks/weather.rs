@@ -169,9 +169,9 @@ struct WeatherResult {
 }
 
 impl WeatherResult {
-    fn into_values(self, api: &CommonApi) -> Result<Values> {
-        Ok(map! {
-            "icon" => Value::icon(api.get_icon(self.icon.to_icon_str())?),
+    fn into_values(self) -> Values {
+        map! {
+            "icon" => Value::icon(self.icon.to_icon_str()),
             "location" => Value::text(self.location),
             "temp" => Value::degrees(self.temp),
             "apparent" => Value::degrees(self.apparent),
@@ -181,7 +181,7 @@ impl WeatherResult {
             "wind" => Value::number(self.wind),
             "wind_kmh" => Value::number(self.wind_kmh),
             "direction" => Value::text(self.wind_direction),
-        })
+        }
     }
 }
 
@@ -207,7 +207,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let data = fetch.retry(&ExponentialBuilder::default()).await?;
 
         let mut widget = Widget::new().with_format(format.clone());
-        widget.set_values(data.into_values(api)?);
+        widget.set_values(data.into_values());
         api.set_widget(widget).await?;
 
         select! {

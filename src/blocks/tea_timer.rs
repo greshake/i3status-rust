@@ -91,7 +91,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let mut widget = Widget::new().with_format(format.clone());
 
         widget.set_values(map!(
-            "icon" => Value::icon(api.get_icon("tea")?),
+            "icon" => Value::icon("tea"),
             [if is_timer_active] "hours" => Value::text(format!("{hours:02}")),
             [if is_timer_active] "minutes" => Value::text(format!("{minutes:02}")),
             [if is_timer_active] "seconds" => Value::text(format!("{seconds:02}")),

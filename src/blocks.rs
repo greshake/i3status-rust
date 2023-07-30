@@ -39,7 +39,6 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use crate::click::MouseButton;
-use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::widget::Widget;
 use crate::{Request, RequestCmd};
@@ -194,7 +193,6 @@ pub type BlockAction = Cow<'static, str>;
 #[derive(Clone)]
 pub struct CommonApi {
     pub(crate) id: usize,
-    pub(crate) shared_config: SharedConfig,
     pub(crate) update_request: Arc<Notify>,
     pub(crate) request_sender: mpsc::Sender<Request>,
     pub(crate) error_interval: Duration,
@@ -261,27 +259,5 @@ impl CommonApi {
 
     pub async fn wait_for_update_request(&self) {
         self.update_request.notified().await;
-    }
-
-    pub fn get_icon(&self, icon: &str) -> Result<String> {
-        self.shared_config
-            .get_icon(icon, None)
-            .or_error(|| format!("Icon '{icon}' not found"))
-    }
-
-    pub fn get_icon_in_progression(&self, icon: &str, value: f64) -> Result<String> {
-        self.shared_config
-            .get_icon(icon, Some(value))
-            .or_error(|| format!("Icon '{icon}' not found"))
-    }
-
-    pub fn get_icon_in_progression_bound(
-        &self,
-        icon: &str,
-        value: f64,
-        low: f64,
-        high: f64,
-    ) -> Result<String> {
-        self.get_icon_in_progression(icon, (value.clamp(low, high) - low) / (high - low))
     }
 }

@@ -278,7 +278,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             .unwrap_or_else(|| output_name.clone());
 
         let mut values = map! {
-            "icon" => Value::icon(api.get_icon_in_progression(icon(muted, &*device), volume as f64 / 100.0)?),
+            "icon" => Value::icon_progression(icon(muted, &*device), volume as f64 / 100.0),
             "volume" => Value::percents(volume),
             "output_name" => Value::text(output_name),
             "output_description" => Value::text(output_description),

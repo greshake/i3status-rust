@@ -42,14 +42,16 @@ pub struct SharedConfig {
 }
 
 impl SharedConfig {
-    pub fn get_icon(&self, icon: &str, value: Option<f64>) -> Option<String> {
+    pub fn get_icon(&self, icon: &str, value: Option<f64>) -> Result<String> {
         if icon.is_empty() {
-            Some(String::new())
+            Ok(String::new())
         } else {
-            Some(
-                self.icons_format
-                    .replace("{icon}", self.icons.get(icon, value)?),
-            )
+            Ok(self.icons_format.replace(
+                "{icon}",
+                self.icons
+                    .get(icon, value)
+                    .or_error(|| format!("Icon '{icon}' not found"))?,
+            ))
         }
     }
 }

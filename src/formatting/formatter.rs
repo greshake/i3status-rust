@@ -11,6 +11,7 @@ use super::parse::Arg;
 use super::prefix::Prefix;
 use super::unit::Unit;
 use super::value::ValueInner as Value;
+use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::escape::CollectEscaped;
 
@@ -56,7 +57,7 @@ pub static DEFAULT_DATETIME_FORMATTER: Lazy<DatetimeFormatter> =
 pub const DEFAULT_FLAG_FORMATTER: FlagFormatter = FlagFormatter;
 
 pub trait Formatter: Debug + Send + Sync {
-    fn format(&self, val: &Value) -> Result<String>;
+    fn format(&self, val: &Value, config: &SharedConfig) -> Result<String>;
 
     fn interval(&self) -> Option<Duration> {
         None
@@ -194,7 +195,7 @@ pub struct StrFormatter {
 }
 
 impl Formatter for StrFormatter {
-    fn format(&self, val: &Value) -> Result<String> {
+    fn format(&self, val: &Value, config: &SharedConfig) -> Result<String> {
         match val {
             Value::Text(text) => {
                 let text: Vec<&str> = text.graphemes(true).collect();
@@ -227,7 +228,7 @@ impl Formatter for StrFormatter {
                         .collect_pango_escaped(),
                 })
             }
-            Value::Icon(icon) => Ok(icon.clone()), // No escaping
+            Value::Icon(icon, value) => config.get_icon(icon, *value),
             other => Err(Error::new_format(format!(
                 "{} cannot be formatted with 'str' formatter",
                 other.type_name(),
@@ -244,9 +245,10 @@ impl Formatter for StrFormatter {
 pub struct PangoStrFormatter;
 
 impl Formatter for PangoStrFormatter {
-    fn format(&self, val: &Value) -> Result<String> {
+    fn format(&self, val: &Value, config: &SharedConfig) -> Result<String> {
         match val {
-            Value::Text(x) | Value::Icon(x) => Ok(x.clone()), // No escaping
+            Value::Text(x) => Ok(x.clone()), // No escaping
+            Value::Icon(icon, value) => config.get_icon(icon, *value),
             other => Err(Error::new_format(format!(
                 "{} cannot be formatted with 'str' formatter",
                 other.type_name(),
@@ -273,7 +275,7 @@ const VERTICAL_BAR_CHARS: [char; 9] = [
 ];
 
 impl Formatter for BarFormatter {
-    fn format(&self, val: &Value) -> Result<String> {
+    fn format(&self, val: &Value, _config: &SharedConfig) -> Result<String> {
         match val {
             Value::Number { mut val, .. } => {
                 val = (val / self.max_value).clamp(0., 1.);
@@ -401,7 +403,7 @@ impl EngFixConfig {
 pub struct EngFormatter(EngFixConfig);
 
 impl Formatter for EngFormatter {
-    fn format(&self, val: &Value) -> Result<String> {
+    fn format(&self, val: &Value, _config: &SharedConfig) -> Result<String> {
         match val {
             Value::Number { mut val, mut unit } => {
                 let is_negative = val.is_sign_negative();
@@ -478,7 +480,7 @@ impl Formatter for EngFormatter {
 pub struct FixFormatter(EngFixConfig);
 
 impl Formatter for FixFormatter {
-    fn format(&self, val: &Value) -> Result<String> {
+    fn format(&self, val: &Value, _config: &SharedConfig) -> Result<String> {
         match val {
             Value::Number {
                 ..
@@ -530,7 +532,7 @@ impl DatetimeFormatter {
 }
 
 impl Formatter for DatetimeFormatter {
-    fn format(&self, val: &Value) -> Result<String> {
+    fn format(&self, val: &Value, _config: &SharedConfig) -> Result<String> {
         match val {
             Value::Datetime(datetime, timezone) => Ok(match self.locale {
                 Some(locale) => match timezone {
@@ -563,7 +565,7 @@ impl Formatter for DatetimeFormatter {
 pub struct FlagFormatter;
 
 impl Formatter for FlagFormatter {
-    fn format(&self, val: &Value) -> Result<String> {
+    fn format(&self, val: &Value, _config: &SharedConfig) -> Result<String> {
         match val {
             Value::Flag => Ok(String::new()),
             _ => {
@@ -580,53 +582,72 @@ mod tests {
     #[test]
     fn eng_rounding_and_negatives() {
         let fmt = new_formatter("eng", &[Arg { key: "w", val: "3" }]).unwrap();
+        let config = SharedConfig::default();
 
         let result = fmt
-            .format(&Value::Number {
-                val: -1.0,
-                unit: Unit::None,
-            })
+            .format(
+                &Value::Number {
+                    val: -1.0,
+                    unit: Unit::None,
+                },
+                &config,
+            )
             .unwrap();
         assert_eq!(result, " -1");
 
         let result = fmt
-            .format(&Value::Number {
-                val: 9.9999,
-                unit: Unit::None,
-            })
+            .format(
+                &Value::Number {
+                    val: 9.9999,
+                    unit: Unit::None,
+                },
+                &config,
+            )
             .unwrap();
         assert_eq!(result, " 10");
 
         // TODO: This should be " 1KB"
         let result = fmt
-            .format(&Value::Number {
-                val: 999.9,
-                unit: Unit::Bytes,
-            })
+            .format(
+                &Value::Number {
+                    val: 999.9,
+                    unit: Unit::Bytes,
+                },
+                &config,
+            )
             .unwrap();
         assert_eq!(result, "999B");
 
         let result = fmt
-            .format(&Value::Number {
-                val: -9.99,
-                unit: Unit::None,
-            })
+            .format(
+                &Value::Number {
+                    val: -9.99,
+                    unit: Unit::None,
+                },
+                &config,
+            )
             .unwrap();
         assert_eq!(result, "-10");
 
         let result = fmt
-            .format(&Value::Number {
-                val: 9.94,
-                unit: Unit::None,
-            })
+            .format(
+                &Value::Number {
+                    val: 9.94,
+                    unit: Unit::None,
+                },
+                &config,
+            )
             .unwrap();
         assert_eq!(result, "9.9");
 
         let result = fmt
-            .format(&Value::Number {
-                val: 9.95,
-                unit: Unit::None,
-            })
+            .format(
+                &Value::Number {
+                    val: 9.95,
+                    unit: Unit::None,
+                },
+                &config,
+            )
             .unwrap();
         assert_eq!(result, " 10");
     }

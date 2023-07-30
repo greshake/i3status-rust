@@ -53,7 +53,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         let mut widget = Widget::new().with_format(format.clone());
         widget.set_values(map! {
-            "icon" => Value::icon(api.get_icon("docker")?),
+            "icon" => Value::icon("docker"),
             "total" =>   Value::number(status.total),
             "running" => Value::number(status.running),
             "paused" =>  Value::number(status.paused),

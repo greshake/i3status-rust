@@ -133,7 +133,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         });
         widget.set_values(map!(
             "count" => Value::number(count),
-            "icon" => Value::icon(api.get_icon("update")?)
+            "icon" => Value::icon("update"),
         ));
 
         let warning = warning_updates_regex

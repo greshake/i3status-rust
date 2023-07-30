@@ -252,7 +252,6 @@ impl BarState {
 
         let api = CommonApi {
             id: self.blocks.len(),
-            shared_config: shared_config.clone(),
             update_request: update_request.clone(),
             request_sender: self.request_sender.clone(),
             error_interval: Duration::from_secs(block_config.common.error_interval),

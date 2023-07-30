@@ -78,12 +78,12 @@ struct Block {
     short_text: Option<String>,
 }
 
-fn block_values(block: &Block, api: &CommonApi) -> Result<HashMap<Cow<'static, str>, Value>> {
-    Ok(map! {
-        [if let Some(icon) = &block.icon] "icon" => Value::icon(api.get_icon(icon)?),
+fn block_values(block: &Block) -> HashMap<Cow<'static, str>, Value> {
+    map! {
+        [if let Some(icon) = &block.icon] "icon" => Value::icon(icon.to_string()),
         [if let Some(text) = &block.text] "text" => Value::text(text.to_string()),
         [if let Some(short_text) = &block.short_text] "short_text" => Value::text(short_text.to_string()),
-    })
+    }
 }
 
 #[dbus_interface(name = "rs.i3status.custom")]
@@ -94,7 +94,7 @@ impl Block {
         } else {
             Some(icon.to_string())
         };
-        self.widget.set_values(block_values(self, &self.api)?);
+        self.widget.set_values(block_values(self));
         self.api.set_widget(self.widget.clone()).await?;
         Ok(())
     }
@@ -102,7 +102,7 @@ impl Block {
     async fn set_text(&mut self, full: String, short: String) -> fdo::Result<()> {
         self.text = Some(full);
         self.short_text = Some(short);
-        self.widget.set_values(block_values(self, &self.api)?);
+        self.widget.set_values(block_values(self));
         self.api.set_widget(self.widget.clone()).await?;
         Ok(())
     }

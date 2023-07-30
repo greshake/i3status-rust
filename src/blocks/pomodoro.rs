@@ -85,7 +85,7 @@ struct Block<'a> {
 impl Block<'_> {
     async fn set_text(&mut self, text: String) -> Result<()> {
         let mut values = map!(
-            "icon" => Value::icon(self.api.get_icon("pomodoro")?),
+            "icon" => Value::icon("pomodoro"),
         );
         if !text.is_empty() {
             values.insert("message".into(), Value::text(text));

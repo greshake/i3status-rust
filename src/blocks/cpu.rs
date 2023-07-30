@@ -69,9 +69,6 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         None => None,
     };
 
-    let boost_icon_on = api.get_icon("cpu_boost_on")?;
-    let boost_icon_off = api.get_icon("cpu_boost_off")?;
-
     // Store previous /proc/stat state
     let mut cputime = read_proc_stat().await?;
     let cores = cputime.1.len();
@@ -106,12 +103,12 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         // Read boost state on intel CPUs
         let boost = boost_status().await.map(|status| match status {
-            true => boost_icon_on.clone(),
-            false => boost_icon_off.clone(),
+            true => "cpu_boost_on",
+            false => "cpu_boost_off",
         });
 
         let mut values = map!(
-            "icon" => Value::icon(api.get_icon_in_progression("cpu", utilization_avg)?),
+            "icon" => Value::icon_progression("cpu", utilization_avg),
             "barchart" => Value::text(barchart),
             "utilization" => Value::percents(utilization_avg * 100.),
             [if !freqs.is_empty()] "frequency" => Value::hertz(freqs.iter().sum::<f64>() / (freqs.len() as f64)),

@@ -98,7 +98,7 @@ impl TokenList {
                         .as_ref()
                         .map(Box::as_ref)
                         .unwrap_or_else(|| value.default_formatter());
-                    let formatted = formatter.format(&value.inner)?;
+                    let formatted = formatter.format(&value.inner, config)?;
                     if value.metadata == cur.metadata {
                         cur.text.push_str(&formatted);
                     } else {
@@ -112,9 +112,7 @@ impl TokenList {
                     }
                 }
                 Token::Icon { name } => {
-                    let icon = config
-                        .get_icon(name, None)
-                        .or_format_error(|| format!("Icon '{name}' not found"))?;
+                    let icon = config.get_icon(name, None)?;
                     if cur.metadata.is_default() {
                         cur.text.push_str(&icon);
                     } else {

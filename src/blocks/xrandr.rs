@@ -85,10 +85,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     "display" => Value::text(mon.name.clone()),
                     "brightness" => Value::percents(mon.brightness),
                     //TODO: change `brightness_icon` based on `brightness`
-                    "brightness_icon" => Value::icon(api.get_icon("backlight")?),
+                    "brightness_icon" => Value::icon("backlight"),
                     "resolution" => Value::text(mon.resolution.clone()),
-                    "icon" => Value::icon(api.get_icon("xrandr")?),
-                    "res_icon" => Value::icon(api.get_icon("resolution")?),
+                    "icon" => Value::icon("xrandr"),
+                    "res_icon" => Value::icon("resolution"),
                 });
             }
             api.set_widget(widget).await?;

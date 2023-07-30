@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use super::formatter;
 use super::unit::Unit;
 use super::Metadata;
@@ -13,7 +15,7 @@ pub struct Value {
 #[derive(Debug, Clone)]
 pub enum ValueInner {
     Text(String),
-    Icon(String),
+    Icon(Cow<'static, str>, Option<f64>),
     Number { val: f64, unit: Unit },
     Datetime(DateTime<Utc>, Option<Tz>),
     Flag,
@@ -65,8 +67,24 @@ impl Value {
         Self::new(ValueInner::Datetime(datetime, tz))
     }
 
-    pub fn icon(icon: String) -> Self {
-        Self::new(ValueInner::Icon(icon))
+    pub fn icon<S>(name: S) -> Self
+    where
+        S: Into<Cow<'static, str>>,
+    {
+        Self::new(ValueInner::Icon(name.into(), None))
+    }
+
+    pub fn icon_progression<S>(name: S, value: f64) -> Self
+    where
+        S: Into<Cow<'static, str>>,
+    {
+        Self::new(ValueInner::Icon(name.into(), Some(value)))
+    }
+    pub fn icon_progression_bound<S>(name: S, value: f64, low: f64, high: f64) -> Self
+    where
+        S: Into<Cow<'static, str>>,
+    {
+        Self::icon_progression(name, (value.clamp(low, high) - low) / (high - low))
     }
 
     pub fn text(text: String) -> Self {
@@ -125,7 +143,7 @@ impl Value {
 
     pub fn default_formatter(&self) -> &'static dyn formatter::Formatter {
         match &self.inner {
-            ValueInner::Text(_) | ValueInner::Icon(_) => &formatter::DEFAULT_STRING_FORMATTER,
+            ValueInner::Text(_) | ValueInner::Icon(..) => &formatter::DEFAULT_STRING_FORMATTER,
             ValueInner::Number { .. } => &formatter::DEFAULT_NUMBER_FORMATTER,
             ValueInner::Datetime { .. } => &*formatter::DEFAULT_DATETIME_FORMATTER,
             ValueInner::Flag => &formatter::DEFAULT_FLAG_FORMATTER,

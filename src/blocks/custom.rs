@@ -135,7 +135,7 @@ async fn update_bar(
                 text_empty = input.text.is_empty();
                 widget.set_values(map! {
                     "text" => Value::text(input.text),
-                    [if !input.icon.is_empty()] "icon" => Value::icon(api.get_icon(&input.icon)?),
+                    [if !input.icon.is_empty()] "icon" => Value::icon(input.icon),
                     [if let Some(t) = input.short_text] "short_text" => Value::text(t)
                 });
                 widget.state = input.state;

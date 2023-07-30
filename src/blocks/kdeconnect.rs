@@ -111,7 +111,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             }
 
             if connected {
-                values.insert("icon".into(), Value::icon(api.get_icon("phone")?));
+                values.insert("icon".into(), Value::icon("phone"));
                 values.insert("connected".into(), Value::flag());
                 let (
                     (level, charging),
@@ -123,10 +123,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     values.insert("bat_charge".into(), Value::percents(level));
                     values.insert(
                         "bat_icon".into(),
-                        Value::icon(api.get_icon_in_progression(
+                        Value::icon_progression(
                             if charging { "bat_charging" } else { "bat" },
                             level as f64 / 100.0,
-                        )?),
+                        ),
                     );
                     if battery_state {
                         widget.state = if charging {
@@ -150,10 +150,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     let cell_network_percent = (cellular_network_strength.clamp(0, 4) * 25) as f64;
                     values.insert(
                         "network_icon".into(),
-                        Value::icon(api.get_icon_in_progression(
+                        Value::icon_progression(
                             "net_cellular",
                             (cellular_network_strength + 1).clamp(0, 5) as f64 / 5.0,
-                        )?),
+                        ),
                     );
                     values.insert(
                         "network_strength".into(),
@@ -170,10 +170,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
                 if notif_count > 0 {
                     values.insert("notif_count".into(), Value::number(notif_count));
-                    values.insert(
-                        "notif_icon".into(),
-                        Value::icon(api.get_icon("notification")?),
-                    );
+                    values.insert("notif_icon".into(), Value::icon("notification"));
                 }
                 if !battery_state {
                     widget.state = if notif_count == 0 {
@@ -183,10 +180,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     };
                 }
             } else {
-                values.insert(
-                    "icon".into(),
-                    Value::icon(api.get_icon("phone_disconnected")?),
-                );
+                values.insert("icon".into(), Value::icon("phone_disconnected"));
             }
 
             widget.set_values(values);

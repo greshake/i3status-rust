@@ -121,7 +121,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         });
 
         widget.set_values(map! {
-            "icon" => Value::icon(api.get_icon("tasks")?),
+            "icon" => Value::icon("tasks"),
             "count" => Value::number(number_of_tasks),
             "filter_name" => Value::text(filter.name.clone()),
         });

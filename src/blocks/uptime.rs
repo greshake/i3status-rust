@@ -74,7 +74,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         let mut widget = Widget::new().with_format(format.clone());
         widget.set_values(map! {
-          "icon" => Value::icon(api.get_icon("uptime")?),
+          "icon" => Value::icon("uptime"),
           "text" => Value::text(text)
         });
         api.set_widget(widget).await?;

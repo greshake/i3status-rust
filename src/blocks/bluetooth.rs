@@ -109,12 +109,12 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 let mut widget = Widget::new();
 
                 let values = map! {
-                    "icon" => Value::icon(api.get_icon(device.icon)?),
+                    "icon" => Value::icon(device.icon),
                     "name" => Value::text(device.name),
                     "available" => Value::flag(),
                     [if let Some(p) = device.battery_percentage] "percentage" => Value::percents(p),
                     [if let Some(p) = device.battery_percentage]
-                        "battery_icon" => Value::icon(api.get_icon_in_progression("bat", p as f64 / 100.0)?),
+                        "battery_icon" => Value::icon_progression("bat", p as f64 / 100.0),
                 };
 
                 if device.connected {
@@ -135,7 +135,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             None => {
                 debug!("Showing device as unavailable");
                 let mut widget = Widget::new().with_format(disconnected_format.clone());
-                widget.set_values(map!("icon" => Value::icon(api.get_icon("bluetooth")?)));
+                widget.set_values(map!("icon" => Value::icon("bluetooth")));
                 api.set_widget(widget).await?;
             }
         }

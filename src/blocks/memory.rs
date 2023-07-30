@@ -150,8 +150,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         let mut widget = Widget::new().with_format(format.clone());
         widget.set_values(map! {
-            "icon" => Value::icon(api.get_icon("memory_mem")?),
-            "icon_swap" => Value::icon(api.get_icon("memory_swap")?),
+            "icon" => Value::icon("memory_mem"),
+            "icon_swap" => Value::icon("memory_swap"),
             "mem_total" => Value::bytes(mem_total),
             "mem_free" => Value::bytes(mem_free),
             "mem_free_percents" => Value::percents(mem_free / mem_total * 100.),

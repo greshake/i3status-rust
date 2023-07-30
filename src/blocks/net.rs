@@ -144,9 +144,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 push_to_hist(&mut tx_hist, speed_up);
 
                 let icon = if let Some(signal) = device.signal() {
-                    Value::icon(api.get_icon_in_progression(device.icon, signal / 100.0)?)
+                    Value::icon_progression(device.icon, signal / 100.0)
                 } else {
-                    Value::icon(api.get_icon(device.icon)?)
+                    Value::icon(device.icon)
                 };
 
                 widget.set_values(map! {

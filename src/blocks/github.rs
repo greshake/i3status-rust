@@ -110,7 +110,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 .into_iter()
                 .map(|(k, v)| (k.into(), Value::number(v)))
                 .collect();
-            values.insert("icon".into(), Value::icon(api.get_icon("github")?));
+            values.insert("icon".into(), Value::icon("github"));
             widget.set_values(values);
 
             api.set_widget(widget).await?;

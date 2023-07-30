@@ -83,7 +83,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             _ => State::Idle,
         };
         widget.set_values(map! {
-            "icon" => Value::icon(api.get_icon("cogs")?),
+            "icon" => Value::icon("cogs"),
             "1m" => Value::number(m1),
             "5m" => Value::number(m5),
             "15m" => Value::number(m15),

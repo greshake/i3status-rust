@@ -267,7 +267,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             }
             Watched::None => (HashMap::new(), false, false, 0),
         };
-        values.insert("icon".into(), Value::icon(api.get_icon("update")?));
+        values.insert("icon".into(), Value::icon("update"));
 
         let mut widget = Widget::new();
         widget.set_format(match total {
