@@ -11,6 +11,7 @@
 
 * Add missing default net_cellular icon progression in the `"none"` icon set.
 * Removed unused default icons in the `"none"` icon set.
+* Defer icon lookup until formatting (see [#1774](https://github.com/greshake/i3status-rust/issues/1774))
 
 # i3status-rust 0.31.8
 
