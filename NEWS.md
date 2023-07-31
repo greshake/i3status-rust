@@ -1,4 +1,4 @@
-# i3status-rust 0.31.9 [unreleased]
+# i3status-rust 0.31.9
 
 ### New Themes
 
