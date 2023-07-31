@@ -285,11 +285,11 @@
 }
 
 <span class="kw">impl </span>Status {
-    <span class="kw">fn </span>icon(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>str {
+    <span class="kw">fn </span>icon(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Cow&lt;<span class="lifetime">&#39;static</span>, str&gt; {
         <span class="kw">match </span><span class="self">self </span>{
-            Status::Connected { .. } =&gt; <span class="string">&quot;net_vpn&quot;</span>,
-            Status::Disconnected =&gt; <span class="string">&quot;net_wired&quot;</span>,
-            Status::Error =&gt; <span class="string">&quot;net_down&quot;</span>,
+            Status::Connected { .. } =&gt; <span class="string">&quot;net_vpn&quot;</span>.into(),
+            Status::Disconnected =&gt; <span class="string">&quot;net_wired&quot;</span>.into(),
+            Status::Error =&gt; <span class="string">&quot;net_down&quot;</span>.into(),
         }
     }
 }
@@ -318,7 +318,7 @@
                 country_flag,
             } =&gt; {
                 widget.set_values(<span class="macro">map!</span>(
-                        <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(status.icon())<span class="question-mark">?</span>),
+                        <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(status.icon()),
                         <span class="string">&quot;country&quot; </span>=&gt; Value::text(country.to_string()),
                         <span class="string">&quot;flag&quot; </span>=&gt; Value::text(country_flag.to_string()),
 
@@ -328,14 +328,14 @@
             }
             Status::Disconnected =&gt; {
                 widget.set_values(<span class="macro">map!</span>(
-                        <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(status.icon())<span class="question-mark">?</span>),
+                        <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(status.icon()),
                 ));
                 widget.set_format(format_disconnected.clone());
                 config.state_disconnected
             }
             Status::Error =&gt; {
                 widget.set_values(<span class="macro">map!</span>(
-                        <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(status.icon())<span class="question-mark">?</span>),
+                        <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(status.icon()),
                 ));
                 widget.set_format(format_disconnected.clone());
                 State::Critical

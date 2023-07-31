@@ -300,7 +300,7 @@
                 .into_iter()
                 .map(|(k, v)| (k.into(), Value::number(v)))
                 .collect();
-            values.insert(<span class="string">&quot;icon&quot;</span>.into(), Value::icon(api.get_icon(<span class="string">&quot;github&quot;</span>)<span class="question-mark">?</span>));
+            values.insert(<span class="string">&quot;icon&quot;</span>.into(), Value::icon(<span class="string">&quot;github&quot;</span>));
             widget.set_values(values);
 
             api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;

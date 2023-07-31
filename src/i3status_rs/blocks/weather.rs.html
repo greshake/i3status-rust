@@ -496,9 +496,9 @@
 }
 
 <span class="kw">impl </span>WeatherResult {
-    <span class="kw">fn </span>into_values(<span class="self">self</span>, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;Values&gt; {
-        <span class="prelude-val">Ok</span>(<span class="macro">map! </span>{
-            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="self">self</span>.icon.to_icon_str())<span class="question-mark">?</span>),
+    <span class="kw">fn </span>into_values(<span class="self">self</span>) -&gt; Values {
+        <span class="macro">map! </span>{
+            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(<span class="self">self</span>.icon.to_icon_str()),
             <span class="string">&quot;location&quot; </span>=&gt; Value::text(<span class="self">self</span>.location),
             <span class="string">&quot;temp&quot; </span>=&gt; Value::degrees(<span class="self">self</span>.temp),
             <span class="string">&quot;apparent&quot; </span>=&gt; Value::degrees(<span class="self">self</span>.apparent),
@@ -508,7 +508,7 @@
             <span class="string">&quot;wind&quot; </span>=&gt; Value::number(<span class="self">self</span>.wind),
             <span class="string">&quot;wind_kmh&quot; </span>=&gt; Value::number(<span class="self">self</span>.wind_kmh),
             <span class="string">&quot;direction&quot; </span>=&gt; Value::text(<span class="self">self</span>.wind_direction),
-        })
+        }
     }
 }
 
@@ -534,7 +534,7 @@
         <span class="kw">let </span>data = fetch.retry(<span class="kw-2">&amp;</span>ExponentialBuilder::default()).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
-        widget.set_values(data.into_values(api)<span class="question-mark">?</span>);
+        widget.set_values(data.into_values());
         api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="macro">select! </span>{

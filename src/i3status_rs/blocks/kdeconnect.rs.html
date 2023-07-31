@@ -369,12 +369,6 @@
 <a href="#369" id="369">369</a>
 <a href="#370" id="370">370</a>
 <a href="#371" id="371">371</a>
-<a href="#372" id="372">372</a>
-<a href="#373" id="373">373</a>
-<a href="#374" id="374">374</a>
-<a href="#375" id="375">375</a>
-<a href="#376" id="376">376</a>
-<a href="#377" id="377">377</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! [KDEConnect](https://community.kde.org/KDEConnect) indicator
 //!
 //! Display info from the currently connected device in KDEConnect, updated asynchronously.
@@ -488,7 +482,7 @@
             }
 
             <span class="kw">if </span>connected {
-                values.insert(<span class="string">&quot;icon&quot;</span>.into(), Value::icon(api.get_icon(<span class="string">&quot;phone&quot;</span>)<span class="question-mark">?</span>));
+                values.insert(<span class="string">&quot;icon&quot;</span>.into(), Value::icon(<span class="string">&quot;phone&quot;</span>));
                 values.insert(<span class="string">&quot;connected&quot;</span>.into(), Value::flag());
                 <span class="kw">let </span>(
                     (level, charging),
@@ -500,10 +494,10 @@
                     values.insert(<span class="string">&quot;bat_charge&quot;</span>.into(), Value::percents(level));
                     values.insert(
                         <span class="string">&quot;bat_icon&quot;</span>.into(),
-                        Value::icon(api.get_icon_in_progression(
+                        Value::icon_progression(
                             <span class="kw">if </span>charging { <span class="string">&quot;bat_charging&quot; </span>} <span class="kw">else </span>{ <span class="string">&quot;bat&quot; </span>},
                             level <span class="kw">as </span>f64 / <span class="number">100.0</span>,
-                        )<span class="question-mark">?</span>),
+                        ),
                     );
                     <span class="kw">if </span>battery_state {
                         widget.state = <span class="kw">if </span>charging {
@@ -527,10 +521,10 @@
                     </span><span class="kw">let </span>cell_network_percent = (cellular_network_strength.clamp(<span class="number">0</span>, <span class="number">4</span>) * <span class="number">25</span>) <span class="kw">as </span>f64;
                     values.insert(
                         <span class="string">&quot;network_icon&quot;</span>.into(),
-                        Value::icon(api.get_icon_in_progression(
+                        Value::icon_progression(
                             <span class="string">&quot;net_cellular&quot;</span>,
                             (cellular_network_strength + <span class="number">1</span>).clamp(<span class="number">0</span>, <span class="number">5</span>) <span class="kw">as </span>f64 / <span class="number">5.0</span>,
-                        )<span class="question-mark">?</span>),
+                        ),
                     );
                     values.insert(
                         <span class="string">&quot;network_strength&quot;</span>.into(),
@@ -547,10 +541,7 @@
 
                 <span class="kw">if </span>notif_count &gt; <span class="number">0 </span>{
                     values.insert(<span class="string">&quot;notif_count&quot;</span>.into(), Value::number(notif_count));
-                    values.insert(
-                        <span class="string">&quot;notif_icon&quot;</span>.into(),
-                        Value::icon(api.get_icon(<span class="string">&quot;notification&quot;</span>)<span class="question-mark">?</span>),
-                    );
+                    values.insert(<span class="string">&quot;notif_icon&quot;</span>.into(), Value::icon(<span class="string">&quot;notification&quot;</span>));
                 }
                 <span class="kw">if </span>!battery_state {
                     widget.state = <span class="kw">if </span>notif_count == <span class="number">0 </span>{
@@ -560,10 +551,7 @@
                     };
                 }
             } <span class="kw">else </span>{
-                values.insert(
-                    <span class="string">&quot;icon&quot;</span>.into(),
-                    Value::icon(api.get_icon(<span class="string">&quot;phone_disconnected&quot;</span>)<span class="question-mark">?</span>),
-                );
+                values.insert(<span class="string">&quot;icon&quot;</span>.into(), Value::icon(<span class="string">&quot;phone_disconnected&quot;</span>));
             }
 
             widget.set_values(values);

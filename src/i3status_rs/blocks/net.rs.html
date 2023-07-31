@@ -357,9 +357,9 @@
                 push_to_hist(<span class="kw-2">&amp;mut </span>tx_hist, speed_up);
 
                 <span class="kw">let </span>icon = <span class="kw">if let </span><span class="prelude-val">Some</span>(signal) = device.signal() {
-                    Value::icon(api.get_icon_in_progression(device.icon, signal / <span class="number">100.0</span>)<span class="question-mark">?</span>)
+                    Value::icon_progression(device.icon, signal / <span class="number">100.0</span>)
                 } <span class="kw">else </span>{
-                    Value::icon(api.get_icon(device.icon)<span class="question-mark">?</span>)
+                    Value::icon(device.icon)
                 };
 
                 widget.set_values(<span class="macro">map! </span>{

@@ -238,8 +238,8 @@
 
         widget.set_values(<span class="macro">map!</span>(
             <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(
-                api.get_icon(<span class="kw">if </span>is_toggled { icon_on } <span class="kw">else </span>{ icon_off })<span class="question-mark">?
-            </span>)
+                <span class="kw">if </span>is_toggled { icon_on.to_string() } <span class="kw">else </span>{ icon_off.to_string() }
+            )
         ));
         api.set_widget(widget.clone()).<span class="kw">await</span><span class="question-mark">?</span>;
 

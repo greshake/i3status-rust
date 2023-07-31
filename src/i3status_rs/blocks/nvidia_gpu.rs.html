@@ -394,7 +394,7 @@
         };
 
         widget.set_values(<span class="macro">map! </span>{
-            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;gpu&quot;</span>)<span class="question-mark">?</span>),
+            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(<span class="string">&quot;gpu&quot;</span>),
             <span class="string">&quot;name&quot; </span>=&gt; Value::text(info.name.clone()),
             <span class="string">&quot;utilization&quot; </span>=&gt; Value::percents(info.utilization),
             <span class="string">&quot;memory&quot; </span>=&gt; Value::bytes(<span class="kw">if </span>show_mem_total {info.mem_total} <span class="kw">else </span>{info.mem_used}).with_instance(MEM_BTN),

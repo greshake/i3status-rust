@@ -427,7 +427,7 @@
                 text_empty = input.text.is_empty();
                 widget.set_values(<span class="macro">map! </span>{
                     <span class="string">&quot;text&quot; </span>=&gt; Value::text(input.text),
-                    [<span class="kw">if </span>!input.icon.is_empty()] <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="kw-2">&amp;</span>input.icon)<span class="question-mark">?</span>),
+                    [<span class="kw">if </span>!input.icon.is_empty()] <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(input.icon),
                     [<span class="kw">if let </span><span class="prelude-val">Some</span>(t) = input.short_text] <span class="string">&quot;short_text&quot; </span>=&gt; Value::text(t)
                 });
                 widget.state = input.state;

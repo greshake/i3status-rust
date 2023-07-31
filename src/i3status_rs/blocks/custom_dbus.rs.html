@@ -241,12 +241,12 @@
     short_text: <span class="prelude-ty">Option</span>&lt;String&gt;,
 }
 
-<span class="kw">fn </span>block_values(block: <span class="kw-2">&amp;</span>Block, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;HashMap&lt;Cow&lt;<span class="lifetime">&#39;static</span>, str&gt;, Value&gt;&gt; {
-    <span class="prelude-val">Ok</span>(<span class="macro">map! </span>{
-        [<span class="kw">if let </span><span class="prelude-val">Some</span>(icon) = <span class="kw-2">&amp;</span>block.icon] <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(icon)<span class="question-mark">?</span>),
+<span class="kw">fn </span>block_values(block: <span class="kw-2">&amp;</span>Block) -&gt; HashMap&lt;Cow&lt;<span class="lifetime">&#39;static</span>, str&gt;, Value&gt; {
+    <span class="macro">map! </span>{
+        [<span class="kw">if let </span><span class="prelude-val">Some</span>(icon) = <span class="kw-2">&amp;</span>block.icon] <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(icon.to_string()),
         [<span class="kw">if let </span><span class="prelude-val">Some</span>(text) = <span class="kw-2">&amp;</span>block.text] <span class="string">&quot;text&quot; </span>=&gt; Value::text(text.to_string()),
         [<span class="kw">if let </span><span class="prelude-val">Some</span>(short_text) = <span class="kw-2">&amp;</span>block.short_text] <span class="string">&quot;short_text&quot; </span>=&gt; Value::text(short_text.to_string()),
-    })
+    }
 }
 
 <span class="attr">#[dbus_interface(name = <span class="string">&quot;rs.i3status.custom&quot;</span>)]
@@ -257,7 +257,7 @@
         </span>} <span class="kw">else </span>{
             <span class="prelude-val">Some</span>(icon.to_string())
         };
-        <span class="self">self</span>.widget.set_values(block_values(<span class="self">self</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.api)<span class="question-mark">?</span>);
+        <span class="self">self</span>.widget.set_values(block_values(<span class="self">self</span>));
         <span class="self">self</span>.api.set_widget(<span class="self">self</span>.widget.clone()).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
     }
@@ -265,7 +265,7 @@
     <span class="kw">async fn </span>set_text(<span class="kw-2">&amp;mut </span><span class="self">self</span>, full: String, short: String) -&gt; fdo::Result&lt;()&gt; {
         <span class="self">self</span>.text = <span class="prelude-val">Some</span>(full);
         <span class="self">self</span>.short_text = <span class="prelude-val">Some</span>(short);
-        <span class="self">self</span>.widget.set_values(block_values(<span class="self">self</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.api)<span class="question-mark">?</span>);
+        <span class="self">self</span>.widget.set_values(block_values(<span class="self">self</span>));
         <span class="self">self</span>.api.set_widget(<span class="self">self</span>.widget.clone()).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
     }

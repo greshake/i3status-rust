@@ -502,7 +502,7 @@
 
                 values.insert(
                     <span class="string">&quot;icon&quot;</span>.into(),
-                    Value::icon(api.get_icon_in_progression(icon_name, icon_value)<span class="question-mark">?</span>),
+                    Value::icon_progression(icon_name, icon_value),
                 );
 
                 widget.set_values(values);
@@ -513,7 +513,7 @@
                 <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new()
                     .with_format(missing_format.clone())
                     .with_state(State::Critical);
-                widget.set_values(<span class="macro">map!</span>(<span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;bat_not_available&quot;</span>)<span class="question-mark">?</span>)));
+                widget.set_values(<span class="macro">map!</span>(<span class="string">&quot;icon&quot; </span>=&gt; Value::icon(<span class="string">&quot;bat_not_available&quot;</span>)));
                 api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
             }
         }

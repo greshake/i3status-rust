@@ -196,7 +196,7 @@
         <span class="kw">let </span>info = read_gpu_info(<span class="kw-2">&amp;</span>config.device).<span class="kw">await</span><span class="question-mark">?</span>;
 
         widget.set_values(<span class="macro">map! </span>{
-            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;gpu&quot;</span>)<span class="question-mark">?</span>),
+            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(<span class="string">&quot;gpu&quot;</span>),
             <span class="string">&quot;utilization&quot; </span>=&gt; Value::percents(info.utilization_percents),
             <span class="string">&quot;vram_total&quot; </span>=&gt; Value::bytes(info.vram_total_bytes),
             <span class="string">&quot;vram_used&quot; </span>=&gt; Value::bytes(info.vram_used_bytes),

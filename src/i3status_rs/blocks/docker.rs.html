@@ -163,7 +163,7 @@
 
         <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
         widget.set_values(<span class="macro">map! </span>{
-            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;docker&quot;</span>)<span class="question-mark">?</span>),
+            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(<span class="string">&quot;docker&quot;</span>),
             <span class="string">&quot;total&quot; </span>=&gt;   Value::number(status.total),
             <span class="string">&quot;running&quot; </span>=&gt; Value::number(status.running),
             <span class="string">&quot;paused&quot; </span>=&gt;  Value::number(status.paused),

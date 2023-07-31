@@ -261,30 +261,6 @@
 <a href="#261" id="261">261</a>
 <a href="#262" id="262">262</a>
 <a href="#263" id="263">263</a>
-<a href="#264" id="264">264</a>
-<a href="#265" id="265">265</a>
-<a href="#266" id="266">266</a>
-<a href="#267" id="267">267</a>
-<a href="#268" id="268">268</a>
-<a href="#269" id="269">269</a>
-<a href="#270" id="270">270</a>
-<a href="#271" id="271">271</a>
-<a href="#272" id="272">272</a>
-<a href="#273" id="273">273</a>
-<a href="#274" id="274">274</a>
-<a href="#275" id="275">275</a>
-<a href="#276" id="276">276</a>
-<a href="#277" id="277">277</a>
-<a href="#278" id="278">278</a>
-<a href="#279" id="279">279</a>
-<a href="#280" id="280">280</a>
-<a href="#281" id="281">281</a>
-<a href="#282" id="282">282</a>
-<a href="#283" id="283">283</a>
-<a href="#284" id="284">284</a>
-<a href="#285" id="285">285</a>
-<a href="#286" id="286">286</a>
-<a href="#287" id="287">287</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! The collection of blocks
 //!
 //! Blocks are defined as a [TOML array of tables](https://github.com/toml-lang/toml/blob/main/toml.md#user-content-array-of-tables): `[[block]]`
@@ -326,7 +302,6 @@
 <span class="kw">use </span>std::time::Duration;
 
 <span class="kw">use </span><span class="kw">crate</span>::click::MouseButton;
-<span class="kw">use </span><span class="kw">crate</span>::config::SharedConfig;
 <span class="kw">use </span><span class="kw">crate</span>::errors::<span class="kw-2">*</span>;
 <span class="kw">use </span><span class="kw">crate</span>::widget::Widget;
 <span class="kw">use crate</span>::{Request, RequestCmd};
@@ -481,7 +456,6 @@
 <span class="attr">#[derive(Clone)]
 </span><span class="kw">pub struct </span>CommonApi {
     <span class="kw">pub</span>(<span class="kw">crate</span>) id: usize,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) shared_config: SharedConfig,
     <span class="kw">pub</span>(<span class="kw">crate</span>) update_request: Arc&lt;Notify&gt;,
     <span class="kw">pub</span>(<span class="kw">crate</span>) request_sender: mpsc::Sender&lt;Request&gt;,
     <span class="kw">pub</span>(<span class="kw">crate</span>) error_interval: Duration,
@@ -548,28 +522,6 @@
 
     <span class="kw">pub async fn </span>wait_for_update_request(<span class="kw-2">&amp;</span><span class="self">self</span>) {
         <span class="self">self</span>.update_request.notified().<span class="kw">await</span>;
-    }
-
-    <span class="kw">pub fn </span>get_icon(<span class="kw-2">&amp;</span><span class="self">self</span>, icon: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;String&gt; {
-        <span class="self">self</span>.shared_config
-            .get_icon(icon, <span class="prelude-val">None</span>)
-            .or_error(|| <span class="macro">format!</span>(<span class="string">&quot;Icon &#39;{icon}&#39; not found&quot;</span>))
-    }
-
-    <span class="kw">pub fn </span>get_icon_in_progression(<span class="kw-2">&amp;</span><span class="self">self</span>, icon: <span class="kw-2">&amp;</span>str, value: f64) -&gt; <span class="prelude-ty">Result</span>&lt;String&gt; {
-        <span class="self">self</span>.shared_config
-            .get_icon(icon, <span class="prelude-val">Some</span>(value))
-            .or_error(|| <span class="macro">format!</span>(<span class="string">&quot;Icon &#39;{icon}&#39; not found&quot;</span>))
-    }
-
-    <span class="kw">pub fn </span>get_icon_in_progression_bound(
-        <span class="kw-2">&amp;</span><span class="self">self</span>,
-        icon: <span class="kw-2">&amp;</span>str,
-        value: f64,
-        low: f64,
-        high: f64,
-    ) -&gt; <span class="prelude-ty">Result</span>&lt;String&gt; {
-        <span class="self">self</span>.get_icon_in_progression(icon, (value.clamp(low, high) - low) / (high - low))
     }
 }
 </code></pre></div></section></main></body></html>

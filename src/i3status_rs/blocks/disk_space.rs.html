@@ -330,7 +330,7 @@
 
         <span class="kw">let </span>percentage = result / (total <span class="kw">as </span>f64) * <span class="number">100.</span>;
         widget.set_values(<span class="macro">map! </span>{
-            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;disk_drive&quot;</span>)<span class="question-mark">?</span>),
+            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(<span class="string">&quot;disk_drive&quot;</span>),
             <span class="string">&quot;path&quot; </span>=&gt; Value::text(path.to_string()),
             <span class="string">&quot;percentage&quot; </span>=&gt; Value::percents(percentage),
             <span class="string">&quot;total&quot; </span>=&gt; Value::bytes(total <span class="kw">as </span>f64),

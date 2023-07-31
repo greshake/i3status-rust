@@ -435,7 +435,7 @@
                     icon_value = <span class="number">1.0 </span>- icon_value;
                 }
                 widget.set_values(<span class="macro">map! </span>{
-                    <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon_in_progression(<span class="string">&quot;backlight&quot;</span>, icon_value)<span class="question-mark">?</span>),
+                    <span class="string">&quot;icon&quot; </span>=&gt; Value::icon_progression(<span class="string">&quot;backlight&quot;</span>, icon_value),
                     <span class="string">&quot;brightness&quot; </span>=&gt; Value::percents((brightness * <span class="number">100.0</span>).round())
                 });
                 api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;

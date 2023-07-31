@@ -254,9 +254,6 @@
 <a href="#254" id="254">254</a>
 <a href="#255" id="255">255</a>
 <a href="#256" id="256">256</a>
-<a href="#257" id="257">257</a>
-<a href="#258" id="258">258</a>
-<a href="#259" id="259">259</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! CPU statistics
 //!
 //! # Configuration
@@ -328,9 +325,6 @@
         <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
     };
 
-    <span class="kw">let </span>boost_icon_on = api.get_icon(<span class="string">&quot;cpu_boost_on&quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let </span>boost_icon_off = api.get_icon(<span class="string">&quot;cpu_boost_off&quot;</span>)<span class="question-mark">?</span>;
-
     <span class="comment">// Store previous /proc/stat state
     </span><span class="kw">let </span><span class="kw-2">mut </span>cputime = read_proc_stat().<span class="kw">await</span><span class="question-mark">?</span>;
     <span class="kw">let </span>cores = cputime.<span class="number">1</span>.len();
@@ -365,12 +359,12 @@
 
         <span class="comment">// Read boost state on intel CPUs
         </span><span class="kw">let </span>boost = boost_status().<span class="kw">await</span>.map(|status| <span class="kw">match </span>status {
-            <span class="bool-val">true </span>=&gt; boost_icon_on.clone(),
-            <span class="bool-val">false </span>=&gt; boost_icon_off.clone(),
+            <span class="bool-val">true </span>=&gt; <span class="string">&quot;cpu_boost_on&quot;</span>,
+            <span class="bool-val">false </span>=&gt; <span class="string">&quot;cpu_boost_off&quot;</span>,
         });
 
         <span class="kw">let </span><span class="kw-2">mut </span>values = <span class="macro">map!</span>(
-            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon_in_progression(<span class="string">&quot;cpu&quot;</span>, utilization_avg)<span class="question-mark">?</span>),
+            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon_progression(<span class="string">&quot;cpu&quot;</span>, utilization_avg),
             <span class="string">&quot;barchart&quot; </span>=&gt; Value::text(barchart),
             <span class="string">&quot;utilization&quot; </span>=&gt; Value::percents(utilization_avg * <span class="number">100.</span>),
             [<span class="kw">if </span>!freqs.is_empty()] <span class="string">&quot;frequency&quot; </span>=&gt; Value::hertz(freqs.iter().sum::&lt;f64&gt;() / (freqs.len() <span class="kw">as </span>f64)),

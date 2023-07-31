@@ -199,7 +199,7 @@
             State::Idle
         };
         widget.set_values(<span class="macro">map!</span>(
-            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;mail&quot;</span>)<span class="question-mark">?</span>),
+            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(<span class="string">&quot;mail&quot;</span>),
             <span class="string">&quot;status&quot; </span>=&gt; Value::number(newmails)
         ));
         api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;

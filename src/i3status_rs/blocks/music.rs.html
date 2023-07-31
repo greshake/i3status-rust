@@ -848,14 +848,14 @@
 
     <span class="kw">let </span>volume_step = config.volume_step.clamp(<span class="number">0.0</span>, <span class="number">50.0</span>) / <span class="number">100.0</span>;
 
-    <span class="kw">let </span>new_btn = |icon: <span class="kw-2">&amp;</span>str, instance: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str, api: <span class="kw-2">&amp;</span>CommonApi| -&gt; <span class="prelude-ty">Result</span>&lt;Value&gt; {
-        <span class="prelude-val">Ok</span>(Value::icon(api.get_icon(icon)<span class="question-mark">?</span>).with_instance(instance))
+    <span class="kw">let </span>new_btn = |icon: <span class="kw-2">&amp;</span>str, instance: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str| -&gt; <span class="prelude-ty">Result</span>&lt;Value&gt; {
+        <span class="prelude-val">Ok</span>(Value::icon(icon.to_string()).with_instance(instance))
     };
 
     <span class="kw">let </span>values = <span class="macro">map! </span>{
-        <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;music&quot;</span>)<span class="question-mark">?</span>),
-        <span class="string">&quot;next&quot; </span>=&gt; new_btn(<span class="string">&quot;music_next&quot;</span>, NEXT_BTN, api)<span class="question-mark">?</span>,
-        <span class="string">&quot;prev&quot; </span>=&gt; new_btn(<span class="string">&quot;music_prev&quot;</span>, PREV_BTN, api)<span class="question-mark">?</span>,
+        <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(<span class="string">&quot;music&quot;</span>),
+        <span class="string">&quot;next&quot; </span>=&gt; new_btn(<span class="string">&quot;music_next&quot;</span>, NEXT_BTN)<span class="question-mark">?</span>,
+        <span class="string">&quot;prev&quot; </span>=&gt; new_btn(<span class="string">&quot;music_prev&quot;</span>, PREV_BTN)<span class="question-mark">?</span>,
     };
 
     <span class="kw">let </span>preferred_players = <span class="kw">match </span>config.player.clone() {
@@ -954,7 +954,7 @@
                     <span class="prelude-val">Some</span>(PlaybackStatus::Playing) =&gt; (State::Info, <span class="string">&quot;music_pause&quot;</span>),
                     <span class="kw">_ </span>=&gt; (State::Idle, <span class="string">&quot;music_play&quot;</span>),
                 };
-                values.insert(<span class="string">&quot;play&quot;</span>.into(), new_btn(play_icon, PLAY_PAUSE_BTN, api)<span class="question-mark">?</span>);
+                values.insert(<span class="string">&quot;play&quot;</span>.into(), new_btn(play_icon, PLAY_PAUSE_BTN)<span class="question-mark">?</span>);
                 <span class="kw">if let </span><span class="prelude-val">Some</span>(url) = <span class="kw-2">&amp;</span>player.metadata.url {
                     values.insert(<span class="string">&quot;url&quot;</span>.into(), Value::text(url.clone()));
                 }
@@ -987,7 +987,7 @@
                 <span class="kw">if let </span><span class="prelude-val">Some</span>(volume) = player.volume {
                     values.insert(
                         <span class="string">&quot;volume_icon&quot;</span>.into(),
-                        Value::icon(api.get_icon_in_progression(<span class="string">&quot;volume&quot;</span>, volume)<span class="question-mark">?</span>),
+                        Value::icon_progression(<span class="string">&quot;volume&quot;</span>, volume),
                     );
                     values.insert(<span class="string">&quot;volume&quot;</span>.into(), Value::percents(volume * <span class="number">100.0</span>));
                 }
@@ -998,7 +998,7 @@
             }
             <span class="prelude-val">None </span>=&gt; {
                 <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
-                widget.set_values(<span class="macro">map!</span>(<span class="string">&quot;icon&quot; </span>=&gt; Value::icon(api.get_icon(<span class="string">&quot;music&quot;</span>)<span class="question-mark">?</span>)));
+                widget.set_values(<span class="macro">map!</span>(<span class="string">&quot;icon&quot; </span>=&gt; Value::icon(<span class="string">&quot;music&quot;</span>)));
                 api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
             }
         }
