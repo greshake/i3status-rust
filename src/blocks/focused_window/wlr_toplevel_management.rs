@@ -3,8 +3,8 @@ use crate::blocks::prelude::*;
 
 use wayrs_protocols::wlr_foreign_toplevel_management_unstable_v1::*;
 
-use wayrs_client::connection::Connection;
 use wayrs_client::global::GlobalsExt;
+use wayrs_client::Connection;
 
 pub(super) struct WlrToplevelManagement {
     conn: Connection<State>,
@@ -27,11 +27,9 @@ struct Toplevel {
 
 impl WlrToplevelManagement {
     pub(super) async fn new() -> Result<Self> {
-        let mut conn = Connection::connect().error("failed to connect to wayland")?;
-        let globals = conn
-            .async_collect_initial_globals()
+        let (mut conn, globals) = Connection::async_connect_and_collect_globals()
             .await
-            .error("wayland error")?;
+            .error("failed to connect to wayland")?;
 
         let _: ZwlrForeignToplevelManagerV1 = globals
             .bind_with_cb(&mut conn, 1..=3, toplevel_manager_cb)
