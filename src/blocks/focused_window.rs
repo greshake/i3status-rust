@@ -76,10 +76,21 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let mut widget = Widget::new().with_format(format.clone());
 
         if !title.is_empty() {
+            let join_marks = |mut s: String, m: &String| {
+                let _ = write!(s, "[{m}]"); // writing to String never fails
+                s
+            };
+
+            let marks_str = marks.iter().fold(String::new(), join_marks);
+            let visible_marks_str = marks
+                .iter()
+                .filter(|m| !m.starts_with('_'))
+                .fold(String::new(), join_marks);
+
             widget.set_values(map! {
                 "title" => Value::text(title),
-                "marks" => Value::text(marks.iter().map(|m| format!("[{m}]")).collect()),
-                "visible_marks" => Value::text(marks.iter().filter(|m| !m.starts_with('_')).map(|m| format!("[{m}]")).collect()),
+                "marks" => Value::text(marks_str),
+                "visible_marks" => Value::text(visible_marks_str),
             });
         }
 
