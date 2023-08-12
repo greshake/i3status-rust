@@ -4,7 +4,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block when in "Memory" view. See below for available placeholders. | `" $icon $mem_avail.eng(prefix:M)/$mem_total.eng(prefix:M)($mem_total_used_percents.eng(w:2)) "`
+//! `format` | A string to customise the output of this block when in "Memory" view. See below for available placeholders. | `" $icon $mem_used.eng(prefix:Mi)/$mem_total.eng(prefix:Mi)($mem_used_percents.eng(w:2)) "`
 //! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
 //! `interval` | Update interval in seconds | `5`
 //! `warning_mem` | Percentage of memory usage, where state is set to warning | `80.0`
@@ -45,7 +45,7 @@
 //! [[block]]
 //! block = "memory"
 //! format = " $icon $mem_used_percents.eng(w:1) "
-//! format_alt = " $icon_swap $swap_free.eng(w:3,u:B,p:M)/$swap_total.eng(w:3,u:B,p:M)($swap_used_percents.eng(w:2)) "
+//! format_alt = " $icon_swap $swap_free.eng(w:3,u:B,p:Mi)/$swap_total.eng(w:3,u:B,p:Mi)($swap_used_percents.eng(w:2)) "
 //! interval = 30
 //! warning_mem = 70
 //! critical_mem = 90
@@ -86,7 +86,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         .await?;
 
     let mut format = config.format.with_default(
-        " $icon $mem_avail.eng(prefix:M)/$mem_total.eng(prefix:M)($mem_total_used_percents.eng(w:2)) ",
+        " $icon $mem_used.eng(prefix:Mi)/$mem_total.eng(prefix:Mi)($mem_used_percents.eng(w:2)) ",
     )?;
     let mut format_alt = match &config.format_alt {
         Some(f) => Some(f.with_default("")?),
