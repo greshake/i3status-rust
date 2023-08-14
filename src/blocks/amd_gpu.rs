@@ -4,7 +4,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `device` | The device in `/sys/class/drm/` to read from. | `"card0"`
+//! `device` | The device in `/sys/class/drm/` to read from. | Any AMD card
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $utilization "`
 //! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
 //! `interval` | Update interval in seconds | `5`
@@ -34,7 +34,10 @@
 //! # Icons Used
 //! - `gpu`
 
+use std::path::PathBuf;
 use std::str::FromStr;
+
+use tokio::fs::read_dir;
 
 use super::prelude::*;
 use crate::util::read_file;
@@ -42,8 +45,7 @@ use crate::util::read_file;
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
-    #[default("card0".into())]
-    pub device: String,
+    pub device: Option<String>,
     pub format: FormatConfig,
     pub format_alt: Option<FormatConfig>,
     #[default(5.into())]
@@ -61,10 +63,18 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         None => None,
     };
 
+    let device = match &config.device {
+        Some(name) => Device::new(name),
+        None => Device::default_card()
+            .await
+            .error("failed to get default GPU")?
+            .error("no GPU found")?,
+    };
+
     loop {
         let mut widget = Widget::new().with_format(format.clone());
 
-        let info = read_gpu_info(&config.device).await?;
+        let info = device.read_info().await?;
 
         widget.set_values(map! {
             "icon" => Value::icon("gpu"),
@@ -101,29 +111,69 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     }
 }
 
+pub struct Device {
+    path: PathBuf,
+}
+
 struct GpuInfo {
     utilization_percents: f64,
     vram_total_bytes: f64,
     vram_used_bytes: f64,
 }
 
-async fn read_prop<T: FromStr>(device: &str, prop: &str) -> Option<T> {
-    read_file(format!("/sys/class/drm/{device}/device/{prop}"))
-        .await
-        .ok()
-        .and_then(|x| x.parse().ok())
-}
+impl Device {
+    fn new(name: &str) -> Self {
+        Self {
+            path: PathBuf::from(format!("/sys/class/drm/{name}/device")),
+        }
+    }
 
-async fn read_gpu_info(device: &str) -> Result<GpuInfo> {
-    Ok(GpuInfo {
-        utilization_percents: read_prop::<f64>(device, "gpu_busy_percent")
+    async fn default_card() -> std::io::Result<Option<Self>> {
+        let mut dir = read_dir("/sys/class/drm").await?;
+
+        while let Some(entry) = dir.next_entry().await? {
+            let name = entry.file_name();
+            let Some(name) = name.to_str() else { continue };
+            if !name.starts_with("card") {
+                continue;
+            }
+
+            let mut path = entry.path();
+            path.push("device");
+
+            let Ok(uevent) = read_file(path.join("uevent")).await else {
+                continue;
+            };
+
+            if uevent.contains("PCI_ID=1002") {
+                return Ok(Some(Self { path }));
+            }
+        }
+
+        Ok(None)
+    }
+
+    async fn read_prop<T: FromStr>(&self, prop: &str) -> Option<T> {
+        read_file(self.path.join(prop))
             .await
-            .error("Failed to read gpu_busy_percent")?,
-        vram_total_bytes: read_prop::<f64>(device, "mem_info_vram_total")
-            .await
-            .error("Failed to read mem_info_vram_total")?,
-        vram_used_bytes: read_prop::<f64>(device, "mem_info_vram_used")
-            .await
-            .error("Failed to read mem_info_vram_used")?,
-    })
+            .ok()
+            .and_then(|x| x.parse().ok())
+    }
+
+    async fn read_info(&self) -> Result<GpuInfo> {
+        Ok(GpuInfo {
+            utilization_percents: self
+                .read_prop::<f64>("gpu_busy_percent")
+                .await
+                .error("Failed to read gpu_busy_percent")?,
+            vram_total_bytes: self
+                .read_prop::<f64>("mem_info_vram_total")
+                .await
+                .error("Failed to read mem_info_vram_total")?,
+            vram_used_bytes: self
+                .read_prop::<f64>("mem_info_vram_used")
+                .await
+                .error("Failed to read mem_info_vram_used")?,
+        })
+    }
 }
