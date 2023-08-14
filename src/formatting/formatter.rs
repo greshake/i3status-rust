@@ -443,7 +443,7 @@ impl Formatter for EngFormatter {
 
                 let sign = if is_negative { "-" } else { "" };
                 let mut retval = match self.0.width as i32 - digits {
-                    i32::MIN..=0 => format!("{sign}{}", val.floor()),
+                    i32::MIN..=0 => format!("{sign}{}", val.round()),
                     1 => format!("{}{sign}{}", self.0.pad_with, val.round() as i64),
                     rest => format!("{sign}{val:.*}", rest as usize - 1),
                 };
@@ -579,9 +579,17 @@ impl Formatter for FlagFormatter {
 mod tests {
     use super::*;
 
+    macro_rules! fmt {
+    ($name:ident, $($key:ident : $value:tt),*) => {
+        new_formatter(stringify!($name), &[
+            $( Arg { key: stringify!($key), val: stringify!($value) } ),*
+        ]).unwrap()
+    };
+}
+
     #[test]
     fn eng_rounding_and_negatives() {
-        let fmt = new_formatter("eng", &[Arg { key: "w", val: "3" }]).unwrap();
+        let fmt = fmt!(eng, w: 3);
         let config = SharedConfig::default();
 
         let result = fmt
@@ -606,7 +614,6 @@ mod tests {
             .unwrap();
         assert_eq!(result, " 10");
 
-        // TODO: This should be " 1KB"
         let result = fmt
             .format(
                 &Value::Number {
@@ -616,7 +623,7 @@ mod tests {
                 &config,
             )
             .unwrap();
-        assert_eq!(result, "999B");
+        assert_eq!(result, "1.0KB");
 
         let result = fmt
             .format(
@@ -650,5 +657,43 @@ mod tests {
             )
             .unwrap();
         assert_eq!(result, " 10");
+
+        let fmt = fmt!(eng, w: 5, p: 1);
+        let result = fmt
+            .format(
+                &Value::Number {
+                    val: 321_600_000_000.,
+                    unit: Unit::Bytes,
+                },
+                &config,
+            )
+            .unwrap();
+        assert_eq!(result, "321.6GB");
+    }
+
+    #[test]
+    fn eng_prefixes() {
+        let config = SharedConfig::default();
+        // 14.96 GiB
+        let val = Value::Number {
+            val: 14.96 * 1024. * 1024. * 1024.,
+            unit: Unit::Bytes,
+        };
+
+        let fmt = fmt!(eng, w: 5, p: Mi);
+        let result = fmt.format(&val, &config).unwrap();
+        assert_eq!(result, "14.96GiB");
+
+        let fmt = fmt!(eng, w: 4, p: Mi);
+        let result = fmt.format(&val, &config).unwrap();
+        assert_eq!(result, "15.0GiB");
+
+        let fmt = fmt!(eng, w: 3, p: Mi);
+        let result = fmt.format(&val, &config).unwrap();
+        assert_eq!(result, " 15GiB");
+
+        let fmt = fmt!(eng, w: 2, p: Mi);
+        let result = fmt.format(&val, &config).unwrap();
+        assert_eq!(result, "15GiB");
     }
 }
