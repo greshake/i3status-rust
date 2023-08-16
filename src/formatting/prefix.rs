@@ -71,11 +71,19 @@ impl Prefix {
         value / MUL[self as usize]
     }
 
-    pub fn eng(number: f64) -> Self {
+    pub fn eng(mut number: f64) -> Self {
         if number == 0.0 {
             Self::One
         } else {
-            match number.abs().log10().div_euclid(3.) as i32 {
+            number = number.abs();
+            if number > 1.0 {
+                number = number.round();
+            } else {
+                let round_up_to = -(number.log10().ceil() as i32);
+                let m = 10f64.powi(round_up_to);
+                number = (number * m).round() / m;
+            }
+            match number.log10().div_euclid(3.) as i32 {
                 i32::MIN..=-3 => Prefix::Nano,
                 -2 => Prefix::Micro,
                 -1 => Prefix::Milli,
@@ -92,7 +100,7 @@ impl Prefix {
         if number == 0.0 {
             Self::One
         } else {
-            match number.abs().log2().div_euclid(10.) as i32 {
+            match number.abs().round().log2().div_euclid(10.) as i32 {
                 i32::MIN..=0 => Prefix::OneButBinary,
                 1 => Prefix::Kibi,
                 2 => Prefix::Mebi,
@@ -149,5 +157,104 @@ impl FromStr for Prefix {
             "Ti" => Ok(Prefix::Tebi),
             x => Err(Error::new(format!("Unknown prefix: '{x}'"))),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn eng() {
+        assert_eq!(Prefix::eng(0.000_000_000_1), Prefix::Nano);
+        assert_eq!(Prefix::eng(0.000_000_001), Prefix::Nano);
+        assert_eq!(Prefix::eng(0.000_000_01), Prefix::Nano);
+        assert_eq!(Prefix::eng(0.000_000_1), Prefix::Nano);
+        assert_eq!(Prefix::eng(0.000_001), Prefix::Micro);
+        assert_eq!(Prefix::eng(0.000_01), Prefix::Micro);
+        assert_eq!(Prefix::eng(0.000_1), Prefix::Micro);
+        assert_eq!(Prefix::eng(0.001), Prefix::Milli);
+        assert_eq!(Prefix::eng(0.01), Prefix::Milli);
+        assert_eq!(Prefix::eng(0.1), Prefix::Milli);
+        assert_eq!(Prefix::eng(1.0), Prefix::One);
+        assert_eq!(Prefix::eng(10.0), Prefix::One);
+        assert_eq!(Prefix::eng(100.0), Prefix::One);
+        assert_eq!(Prefix::eng(1_000.0), Prefix::Kilo);
+        assert_eq!(Prefix::eng(10_000.0), Prefix::Kilo);
+        assert_eq!(Prefix::eng(100_000.0), Prefix::Kilo);
+        assert_eq!(Prefix::eng(1_000_000.0), Prefix::Mega);
+        assert_eq!(Prefix::eng(10_000_000.0), Prefix::Mega);
+        assert_eq!(Prefix::eng(100_000_000.0), Prefix::Mega);
+        assert_eq!(Prefix::eng(1_000_000_000.0), Prefix::Giga);
+        assert_eq!(Prefix::eng(10_000_000_000.0), Prefix::Giga);
+        assert_eq!(Prefix::eng(100_000_000_000.0), Prefix::Giga);
+        assert_eq!(Prefix::eng(1_000_000_000_000.0), Prefix::Tera);
+        assert_eq!(Prefix::eng(10_000_000_000_000.0), Prefix::Tera);
+        assert_eq!(Prefix::eng(100_000_000_000_000.0), Prefix::Tera);
+        assert_eq!(Prefix::eng(1_000_000_000_000_000.0), Prefix::Tera);
+    }
+
+    #[test]
+    fn eng_round() {
+        assert_eq!(Prefix::eng(0.000_000_000_09), Prefix::Nano);
+        assert_eq!(Prefix::eng(0.000_000_000_9), Prefix::Nano);
+        assert_eq!(Prefix::eng(0.000_000_009), Prefix::Nano);
+        assert_eq!(Prefix::eng(0.000_000_09), Prefix::Nano);
+        assert_eq!(Prefix::eng(0.000_000_9), Prefix::Micro);
+        assert_eq!(Prefix::eng(0.000_009), Prefix::Micro);
+        assert_eq!(Prefix::eng(0.000_09), Prefix::Micro);
+        assert_eq!(Prefix::eng(0.000_9), Prefix::Milli);
+        assert_eq!(Prefix::eng(0.009), Prefix::Milli);
+        assert_eq!(Prefix::eng(0.09), Prefix::Milli);
+        assert_eq!(Prefix::eng(0.9), Prefix::One);
+        assert_eq!(Prefix::eng(9.9), Prefix::One);
+        assert_eq!(Prefix::eng(99.9), Prefix::One);
+        assert_eq!(Prefix::eng(999.9), Prefix::Kilo);
+        assert_eq!(Prefix::eng(9_999.9), Prefix::Kilo);
+        assert_eq!(Prefix::eng(99_999.9), Prefix::Kilo);
+        assert_eq!(Prefix::eng(999_999.9), Prefix::Mega);
+        assert_eq!(Prefix::eng(9_999_999.9), Prefix::Mega);
+        assert_eq!(Prefix::eng(99_999_999.9), Prefix::Mega);
+        assert_eq!(Prefix::eng(999_999_999.9), Prefix::Giga);
+        assert_eq!(Prefix::eng(9_999_999_999.9), Prefix::Giga);
+        assert_eq!(Prefix::eng(99_999_999_999.9), Prefix::Giga);
+        assert_eq!(Prefix::eng(999_999_999_999.9), Prefix::Tera);
+        assert_eq!(Prefix::eng(9_999_999_999_999.9), Prefix::Tera);
+        assert_eq!(Prefix::eng(99_999_999_999_999.9), Prefix::Tera);
+        assert_eq!(Prefix::eng(999_999_999_999_999.9), Prefix::Tera);
+    }
+
+    #[test]
+    fn eng_binary() {
+        assert_eq!(Prefix::eng_binary(0.1), Prefix::OneButBinary);
+        assert_eq!(Prefix::eng_binary(1.0), Prefix::OneButBinary);
+        assert_eq!(Prefix::eng_binary((1 << 9) as f64), Prefix::OneButBinary);
+        assert_eq!(Prefix::eng_binary((1 << 10) as f64), Prefix::Kibi);
+        assert_eq!(Prefix::eng_binary((1 << 19) as f64), Prefix::Kibi);
+        assert_eq!(Prefix::eng_binary((1 << 29) as f64), Prefix::Mebi);
+        assert_eq!(Prefix::eng_binary((1 << 20) as f64), Prefix::Mebi);
+        assert_eq!(Prefix::eng_binary((1 << 30) as f64), Prefix::Gibi);
+        assert_eq!(Prefix::eng_binary((1_u64 << 39) as f64), Prefix::Gibi);
+        assert_eq!(Prefix::eng_binary((1_u64 << 40) as f64), Prefix::Tebi);
+        assert_eq!(Prefix::eng_binary((1_u64 << 49) as f64), Prefix::Tebi);
+        assert_eq!(Prefix::eng_binary((1_u64 << 50) as f64), Prefix::Tebi);
+    }
+
+    #[test]
+    fn eng_binary_round() {
+        assert_eq!(Prefix::eng_binary(0.9), Prefix::OneButBinary);
+        assert_eq!(
+            Prefix::eng_binary((1 << 9) as f64 - 0.1),
+            Prefix::OneButBinary
+        );
+        assert_eq!(Prefix::eng_binary((1 << 10) as f64 - 0.1), Prefix::Kibi);
+        assert_eq!(Prefix::eng_binary((1 << 19) as f64 - 0.1), Prefix::Kibi);
+        assert_eq!(Prefix::eng_binary((1 << 29) as f64 - 0.1), Prefix::Mebi);
+        assert_eq!(Prefix::eng_binary((1 << 20) as f64 - 0.1), Prefix::Mebi);
+        assert_eq!(Prefix::eng_binary((1 << 30) as f64 - 0.1), Prefix::Gibi);
+        assert_eq!(Prefix::eng_binary((1_u64 << 39) as f64 - 0.1), Prefix::Gibi);
+        assert_eq!(Prefix::eng_binary((1_u64 << 40) as f64 - 0.1), Prefix::Tebi);
+        assert_eq!(Prefix::eng_binary((1_u64 << 49) as f64 - 0.1), Prefix::Tebi);
+        assert_eq!(Prefix::eng_binary((1_u64 << 50) as f64 - 0.1), Prefix::Tebi);
     }
 }
