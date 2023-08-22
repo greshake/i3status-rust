@@ -1,3 +1,11 @@
+# i3status-rust 0.31.10 [unreleased]
+
+### Bug Fixes and Improvements
+
+* Update default memory format.
+* Fix inconsistent rounding in `.eng()` formatter.
+* AMD GPU: select device automatically if `device` is not set.
+
 # i3status-rust 0.31.9
 
 ### New Themes
