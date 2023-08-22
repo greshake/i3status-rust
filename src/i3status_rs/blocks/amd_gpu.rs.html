@@ -127,13 +127,63 @@
 <a href="#127" id="127">127</a>
 <a href="#128" id="128">128</a>
 <a href="#129" id="129">129</a>
+<a href="#130" id="130">130</a>
+<a href="#131" id="131">131</a>
+<a href="#132" id="132">132</a>
+<a href="#133" id="133">133</a>
+<a href="#134" id="134">134</a>
+<a href="#135" id="135">135</a>
+<a href="#136" id="136">136</a>
+<a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a>
+<a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+<a href="#157" id="157">157</a>
+<a href="#158" id="158">158</a>
+<a href="#159" id="159">159</a>
+<a href="#160" id="160">160</a>
+<a href="#161" id="161">161</a>
+<a href="#162" id="162">162</a>
+<a href="#163" id="163">163</a>
+<a href="#164" id="164">164</a>
+<a href="#165" id="165">165</a>
+<a href="#166" id="166">166</a>
+<a href="#167" id="167">167</a>
+<a href="#168" id="168">168</a>
+<a href="#169" id="169">169</a>
+<a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
+<a href="#172" id="172">172</a>
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Display the stats of your AMD GPU
 //!
 //! # Configuration
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `device` | The device in `/sys/class/drm/` to read from. | `&quot;card0&quot;`
+//! `device` | The device in `/sys/class/drm/` to read from. | Any AMD card
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $utilization &quot;`
 //! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
 //! `interval` | Update interval in seconds | `5`
@@ -163,7 +213,10 @@
 //! # Icons Used
 //! - `gpu`
 
-</span><span class="kw">use </span>std::str::FromStr;
+</span><span class="kw">use </span>std::path::PathBuf;
+<span class="kw">use </span>std::str::FromStr;
+
+<span class="kw">use </span>tokio::fs::read_dir;
 
 <span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
 <span class="kw">use </span><span class="kw">crate</span>::util::read_file;
@@ -171,8 +224,7 @@
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
-    <span class="attr">#[default(<span class="string">&quot;card0&quot;</span>.into())]
-    </span><span class="kw">pub </span>device: String,
+    <span class="kw">pub </span>device: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="kw">pub </span>format: FormatConfig,
     <span class="kw">pub </span>format_alt: <span class="prelude-ty">Option</span>&lt;FormatConfig&gt;,
     <span class="attr">#[default(<span class="number">5</span>.into())]
@@ -190,10 +242,18 @@
         <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
     };
 
+    <span class="kw">let </span>device = <span class="kw">match </span><span class="kw-2">&amp;</span>config.device {
+        <span class="prelude-val">Some</span>(name) =&gt; Device::new(name),
+        <span class="prelude-val">None </span>=&gt; Device::default_card()
+            .<span class="kw">await
+            </span>.error(<span class="string">&quot;failed to get default GPU&quot;</span>)<span class="question-mark">?
+            </span>.error(<span class="string">&quot;no GPU found&quot;</span>)<span class="question-mark">?</span>,
+    };
+
     <span class="kw">loop </span>{
         <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
 
-        <span class="kw">let </span>info = read_gpu_info(<span class="kw-2">&amp;</span>config.device).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let </span>info = device.read_info().<span class="kw">await</span><span class="question-mark">?</span>;
 
         widget.set_values(<span class="macro">map! </span>{
             <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(<span class="string">&quot;gpu&quot;</span>),
@@ -230,30 +290,70 @@
     }
 }
 
+<span class="kw">pub struct </span>Device {
+    path: PathBuf,
+}
+
 <span class="kw">struct </span>GpuInfo {
     utilization_percents: f64,
     vram_total_bytes: f64,
     vram_used_bytes: f64,
 }
 
-<span class="kw">async fn </span>read_prop&lt;T: FromStr&gt;(device: <span class="kw-2">&amp;</span>str, prop: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Option</span>&lt;T&gt; {
-    read_file(<span class="macro">format!</span>(<span class="string">&quot;/sys/class/drm/{device}/device/{prop}&quot;</span>))
-        .<span class="kw">await
-        </span>.ok()
-        .and_then(|x| x.parse().ok())
-}
+<span class="kw">impl </span>Device {
+    <span class="kw">fn </span>new(name: <span class="kw-2">&amp;</span>str) -&gt; <span class="self">Self </span>{
+        <span class="self">Self </span>{
+            path: PathBuf::from(<span class="macro">format!</span>(<span class="string">&quot;/sys/class/drm/{name}/device&quot;</span>)),
+        }
+    }
 
-<span class="kw">async fn </span>read_gpu_info(device: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;GpuInfo&gt; {
-    <span class="prelude-val">Ok</span>(GpuInfo {
-        utilization_percents: read_prop::&lt;f64&gt;(device, <span class="string">&quot;gpu_busy_percent&quot;</span>)
+    <span class="kw">async fn </span>default_card() -&gt; std::io::Result&lt;<span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>&gt;&gt; {
+        <span class="kw">let </span><span class="kw-2">mut </span>dir = read_dir(<span class="string">&quot;/sys/class/drm&quot;</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+
+        <span class="kw">while let </span><span class="prelude-val">Some</span>(entry) = dir.next_entry().<span class="kw">await</span><span class="question-mark">? </span>{
+            <span class="kw">let </span>name = entry.file_name();
+            <span class="kw">let </span><span class="prelude-val">Some</span>(name) = name.to_str() <span class="kw">else </span>{ <span class="kw">continue </span>};
+            <span class="kw">if </span>!name.starts_with(<span class="string">&quot;card&quot;</span>) {
+                <span class="kw">continue</span>;
+            }
+
+            <span class="kw">let </span><span class="kw-2">mut </span>path = entry.path();
+            path.push(<span class="string">&quot;device&quot;</span>);
+
+            <span class="kw">let </span><span class="prelude-val">Ok</span>(uevent) = read_file(path.join(<span class="string">&quot;uevent&quot;</span>)).<span class="kw">await else </span>{
+                <span class="kw">continue</span>;
+            };
+
+            <span class="kw">if </span>uevent.contains(<span class="string">&quot;PCI_ID=1002&quot;</span>) {
+                <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="self">Self </span>{ path }));
+            }
+        }
+
+        <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
+    }
+
+    <span class="kw">async fn </span>read_prop&lt;T: FromStr&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, prop: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Option</span>&lt;T&gt; {
+        read_file(<span class="self">self</span>.path.join(prop))
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to read gpu_busy_percent&quot;</span>)<span class="question-mark">?</span>,
-        vram_total_bytes: read_prop::&lt;f64&gt;(device, <span class="string">&quot;mem_info_vram_total&quot;</span>)
-            .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to read mem_info_vram_total&quot;</span>)<span class="question-mark">?</span>,
-        vram_used_bytes: read_prop::&lt;f64&gt;(device, <span class="string">&quot;mem_info_vram_used&quot;</span>)
-            .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to read mem_info_vram_used&quot;</span>)<span class="question-mark">?</span>,
-    })
+            </span>.ok()
+            .and_then(|x| x.parse().ok())
+    }
+
+    <span class="kw">async fn </span>read_info(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;GpuInfo&gt; {
+        <span class="prelude-val">Ok</span>(GpuInfo {
+            utilization_percents: <span class="self">self
+                </span>.read_prop::&lt;f64&gt;(<span class="string">&quot;gpu_busy_percent&quot;</span>)
+                .<span class="kw">await
+                </span>.error(<span class="string">&quot;Failed to read gpu_busy_percent&quot;</span>)<span class="question-mark">?</span>,
+            vram_total_bytes: <span class="self">self
+                </span>.read_prop::&lt;f64&gt;(<span class="string">&quot;mem_info_vram_total&quot;</span>)
+                .<span class="kw">await
+                </span>.error(<span class="string">&quot;Failed to read mem_info_vram_total&quot;</span>)<span class="question-mark">?</span>,
+            vram_used_bytes: <span class="self">self
+                </span>.read_prop::&lt;f64&gt;(<span class="string">&quot;mem_info_vram_used&quot;</span>)
+                .<span class="kw">await
+                </span>.error(<span class="string">&quot;Failed to read mem_info_vram_used&quot;</span>)<span class="question-mark">?</span>,
+        })
+    }
 }
 </code></pre></div></section></main></body></html>
