@@ -9,8 +9,6 @@ use libpulse_binding::mainloop::standard::{IterateResult, Mainloop};
 use libpulse_binding::proplist::{properties, Proplist};
 use libpulse_binding::volume::{ChannelVolumes, Volume};
 
-use crossbeam_channel::{unbounded, Sender};
-
 use std::cmp::{max, min};
 use std::convert::{TryFrom, TryInto};
 use std::io;
@@ -49,7 +47,7 @@ struct Connection {
 }
 
 struct Client {
-    send_req: Sender<ClientRequest>,
+    send_req: std::sync::mpsc::Sender<ClientRequest>,
     ml_waker: MainloopWaker,
 }
 
@@ -198,7 +196,7 @@ impl Connection {
 
 impl Client {
     fn new() -> Result<Client> {
-        let (send_req, recv_req) = unbounded();
+        let (send_req, recv_req) = std::sync::mpsc::channel();
         let ml_waker = MainloopWaker::new().unwrap();
 
         Connection::spawn("sound_pulseaudio", move |mut connection| {
@@ -238,11 +236,11 @@ impl Client {
                 }
 
                 loop {
+                    use std::sync::mpsc::TryRecvError;
                     let req = match recv_req.try_recv() {
                         Ok(x) => x,
-                        Err(e) if e.is_empty() => break,
-                        Err(e) if e.is_disconnected() => return false,
-                        Err(_) => unreachable!(),
+                        Err(TryRecvError::Empty) => break,
+                        Err(TryRecvError::Disconnected) => return false,
                     };
 
                     use ClientRequest::*;
