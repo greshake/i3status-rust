@@ -2,7 +2,7 @@
 //!
 //! Requires fakeroot to be installed (only required for pacman).
 //!
-//! Tip: You can grab the list of available updates using `fakeroot pacman -Qu --dbpath /tmp/checkup-db-i3statusrs/`.
+//! Tip: You can grab the list of available updates using `fakeroot pacman -Qu --dbpath /tmp/checkup-db-i3statusrs-$USER/`.
 //! If you have the `CHECKUPDATES_DB` env var set on your system then substitute that dir instead.
 //!
 //! Note: `pikaur` may hang the whole block if there is no internet connectivity [reference](https://github.com/actionless/pikaur/issues/595). In that case, try a different AUR helper.
@@ -68,7 +68,7 @@
 //! [[block.click]]
 //! # pop-up a menu showing the available updates. Replace wofi with your favourite menu command.
 //! button = "left"
-//! cmd = "fakeroot pacman -Qu --dbpath /tmp/checkup-db-i3statusrs/ | wofi --show dmenu"
+//! cmd = "fakeroot pacman -Qu --dbpath /tmp/checkup-db-i3statusrs-$USER/ | wofi --show dmenu"
 //! [[block.click]]
 //! # Updates the block on right click
 //! button = "right"
@@ -130,7 +130,11 @@ static PACMAN_UPDATES_DB: Lazy<PathBuf> = Lazy::new(|| {
         Some(val) => val.into(),
         None => {
             let mut path = env::temp_dir();
-            path.push("checkup-db-i3statusrs");
+            let user = env::var("USER");
+            path.push(format!(
+                "checkup-db-i3statusrs-{}",
+                user.as_deref().unwrap_or("no-user")
+            ));
             path
         }
     };
