@@ -1,4 +1,8 @@
-# i3status-rust 0.31.10 [unreleased]
+# i3status-rust 0.32.0 [unreleased]
+
+### Breaking Changes
+
+* Pacman block now creates checkup-db directory per user. This may break your scripts if they rely on the db path. Instead of `/tmp/checkup-db-i3statusrs` it is now `/tmp/checkup-db-i3statusrs-$USER`.
 
 ### Bug Fixes and Improvements
 
