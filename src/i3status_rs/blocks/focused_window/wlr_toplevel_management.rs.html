@@ -118,20 +118,13 @@
 <a href="#118" id="118">118</a>
 <a href="#119" id="119">119</a>
 <a href="#120" id="120">120</a>
-<a href="#121" id="121">121</a>
-<a href="#122" id="122">122</a>
-<a href="#123" id="123">123</a>
-<a href="#124" id="124">124</a>
-<a href="#125" id="125">125</a>
-<a href="#126" id="126">126</a>
-<a href="#127" id="127">127</a>
 </pre></div><pre class="rust"><code><span class="kw">use super</span>::{Backend, Info};
 <span class="kw">use </span><span class="kw">crate</span>::blocks::prelude::<span class="kw-2">*</span>;
 
 <span class="kw">use </span>wayrs_protocols::wlr_foreign_toplevel_management_unstable_v1::<span class="kw-2">*</span>;
 
 <span class="kw">use </span>wayrs_client::global::GlobalsExt;
-<span class="kw">use </span>wayrs_client::Connection;
+<span class="kw">use </span>wayrs_client::{Connection, EventCtx};
 
 <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct </span>WlrToplevelManagement {
     conn: Connection&lt;State&gt;,
@@ -192,36 +185,29 @@
     }
 }
 
-<span class="kw">fn </span>toplevel_manager_cb(
-    conn: <span class="kw-2">&amp;mut </span>Connection&lt;State&gt;,
-    state: <span class="kw-2">&amp;mut </span>State,
-    <span class="kw">_</span>: ZwlrForeignToplevelManagerV1,
-    event: zwlr_foreign_toplevel_manager_v1::Event,
-) {
-    <span class="kw">match </span>event {
-        zwlr_foreign_toplevel_manager_v1::Event::Toplevel(toplevel) =&gt; {
-            state.toplevels.insert(toplevel, default());
-            conn.set_callback_for(toplevel, toplevel_cb);
+<span class="kw">fn </span>toplevel_manager_cb(ctx: EventCtx&lt;State, ZwlrForeignToplevelManagerV1&gt;) {
+    <span class="kw">use </span>zwlr_foreign_toplevel_manager_v1::Event;
+    <span class="kw">match </span>ctx.event {
+        Event::Toplevel(toplevel) =&gt; {
+            ctx.state.toplevels.insert(toplevel, default());
+            ctx.conn.set_callback_for(toplevel, toplevel_cb);
         }
-        zwlr_foreign_toplevel_manager_v1::Event::Finished =&gt; {
-            state.error = <span class="prelude-val">Some</span>(Error::new(<span class="string">&quot;unexpected &#39;finished&#39; event&quot;</span>));
-            conn.break_dispatch_loop();
+        Event::Finished =&gt; {
+            ctx.state.error = <span class="prelude-val">Some</span>(Error::new(<span class="string">&quot;unexpected &#39;finished&#39; event&quot;</span>));
+            ctx.conn.break_dispatch_loop();
         }
         <span class="kw">_ </span>=&gt; (),
     }
 }
 
-<span class="kw">fn </span>toplevel_cb(
-    conn: <span class="kw-2">&amp;mut </span>Connection&lt;State&gt;,
-    state: <span class="kw-2">&amp;mut </span>State,
-    wlr_toplevel: ZwlrForeignToplevelHandleV1,
-    event: zwlr_foreign_toplevel_handle_v1::Event,
-) {
+<span class="kw">fn </span>toplevel_cb(ctx: EventCtx&lt;State, ZwlrForeignToplevelHandleV1&gt;) {
     <span class="kw">use </span>zwlr_foreign_toplevel_handle_v1::Event;
 
-    <span class="kw">let </span>toplevel = state.toplevels.get_mut(<span class="kw-2">&amp;</span>wlr_toplevel).unwrap();
+    <span class="kw">let </span><span class="prelude-val">Some</span>(toplevel) = ctx.state.toplevels.get_mut(<span class="kw-2">&amp;</span>ctx.proxy) <span class="kw">else </span>{
+        <span class="kw">return</span>;
+    };
 
-    <span class="kw">match </span>event {
+    <span class="kw">match </span>ctx.event {
         Event::Title(title) =&gt; {
             toplevel.title = <span class="prelude-val">Some</span>(String::from_utf8_lossy(title.as_bytes()).into());
         }
@@ -232,21 +218,21 @@
                 .any(|s| s == zwlr_foreign_toplevel_handle_v1::State::Activated <span class="kw">as </span>u32);
         }
         Event::Closed =&gt; {
-            <span class="kw">if </span>state.active_toplevel == <span class="prelude-val">Some</span>(wlr_toplevel) {
-                state.active_toplevel = <span class="prelude-val">None</span>;
-                state.new_title = <span class="prelude-val">Some</span>(default());
+            <span class="kw">if </span>ctx.state.active_toplevel == <span class="prelude-val">Some</span>(ctx.proxy) {
+                ctx.state.active_toplevel = <span class="prelude-val">None</span>;
+                ctx.state.new_title = <span class="prelude-val">Some</span>(default());
             }
 
-            wlr_toplevel.destroy(conn);
-            state.toplevels.remove(<span class="kw-2">&amp;</span>wlr_toplevel);
+            ctx.proxy.destroy(ctx.conn);
+            ctx.state.toplevels.remove(<span class="kw-2">&amp;</span>ctx.proxy);
         }
         Event::Done =&gt; {
             <span class="kw">if </span>toplevel.is_active {
-                state.active_toplevel = <span class="prelude-val">Some</span>(wlr_toplevel);
-                state.new_title = <span class="prelude-val">Some</span>(toplevel.title.clone().unwrap_or_default());
-            } <span class="kw">else if </span>state.active_toplevel == <span class="prelude-val">Some</span>(wlr_toplevel) {
-                state.active_toplevel = <span class="prelude-val">None</span>;
-                state.new_title = <span class="prelude-val">Some</span>(default());
+                ctx.state.active_toplevel = <span class="prelude-val">Some</span>(ctx.proxy);
+                ctx.state.new_title = <span class="prelude-val">Some</span>(toplevel.title.clone().unwrap_or_default());
+            } <span class="kw">else if </span>ctx.state.active_toplevel == <span class="prelude-val">Some</span>(ctx.proxy) {
+                ctx.state.active_toplevel = <span class="prelude-val">None</span>;
+                ctx.state.new_title = <span class="prelude-val">Some</span>(default());
             }
         }
         <span class="kw">_ </span>=&gt; (),
