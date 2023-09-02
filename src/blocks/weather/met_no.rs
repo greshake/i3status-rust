@@ -17,7 +17,7 @@ pub(super) struct Service<'a> {
 }
 
 impl<'a> Service<'a> {
-    pub(super) async fn new(config: &'a Config) -> Result<Service<'a>> {
+    pub(super) fn new(config: &'a Config) -> Result<Service<'a>> {
         Ok(Self {
             config,
             legend: LEGENDS.as_ref().error("Invalid legends file")?,

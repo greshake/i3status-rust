@@ -189,7 +189,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let format = config.format.with_default(" $icon $weather $temp ")?;
 
     let provider: Box<dyn WeatherProvider + Send + Sync> = match &config.service {
-        WeatherService::MetNo(config) => Box::new(met_no::Service::new(config).await?),
+        WeatherService::MetNo(config) => Box::new(met_no::Service::new(config)?),
         WeatherService::OpenWeatherMap(config) => Box::new(open_weather_map::Service::new(config)),
     };
 
