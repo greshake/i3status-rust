@@ -1,3 +1,9 @@
+# i3status-rust 0.32.1 [unreleased]
+
+### Bug Fixes and Improvements
+
+* Weather(metno): stop using an API which was terminated on August 31, 2023. The functionality of the block is not affected, but all i3status-rust versions older than 0.32.1 will be unable to use met.no weather service.
+
 # i3status-rust 0.32.0
 
 ### Breaking Changes
