@@ -516,7 +516,7 @@
     <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $weather $temp &quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span>provider: Box&lt;<span class="kw">dyn </span>WeatherProvider + Send + Sync&gt; = <span class="kw">match </span><span class="kw-2">&amp;</span>config.service {
-        WeatherService::MetNo(config) =&gt; Box::new(met_no::Service::new(config).<span class="kw">await</span><span class="question-mark">?</span>),
+        WeatherService::MetNo(config) =&gt; Box::new(met_no::Service::new(config)<span class="question-mark">?</span>),
         WeatherService::OpenWeatherMap(config) =&gt; Box::new(open_weather_map::Service::new(config)),
     };
 
