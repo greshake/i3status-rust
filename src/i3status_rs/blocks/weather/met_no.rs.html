@@ -203,15 +203,6 @@
 <a href="#203" id="203">203</a>
 <a href="#204" id="204">204</a>
 <a href="#205" id="205">205</a>
-<a href="#206" id="206">206</a>
-<a href="#207" id="207">207</a>
-<a href="#208" id="208">208</a>
-<a href="#209" id="209">209</a>
-<a href="#210" id="210">210</a>
-<a href="#211" id="211">211</a>
-<a href="#212" id="212">212</a>
-<a href="#213" id="213">213</a>
-<a href="#214" id="214">214</a>
 </pre></div><pre class="rust"><code><span class="kw">use super</span>::<span class="kw-2">*</span>;
 
 <span class="kw">type </span>LegendsStore = HashMap&lt;String, LegendsResult&gt;;
@@ -227,14 +218,14 @@
 
 <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct </span>Service&lt;<span class="lifetime">&#39;a</span>&gt; {
     config: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>Config,
-    legend: LegendsStore,
+    legend: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>LegendsStore,
 }
 
 <span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>&gt; Service&lt;<span class="lifetime">&#39;a</span>&gt; {
     <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">async fn </span>new(config: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>Config) -&gt; <span class="prelude-ty">Result</span>&lt;Service&lt;<span class="lifetime">&#39;a</span>&gt;&gt; {
         <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
             config,
-            legend: get_legend.retry(<span class="kw-2">&amp;</span>ExponentialBuilder::default()).<span class="kw">await</span><span class="question-mark">?</span>,
+            legend: LEGENDS.as_ref().error(<span class="string">&quot;Invalid legends file&quot;</span>)<span class="question-mark">?</span>,
         })
     }
 }
@@ -304,19 +295,10 @@
     relative_humidity: <span class="prelude-ty">Option</span>&lt;f64&gt;,
 }
 
-<span class="kw">const </span>LEGENDS_URL: <span class="kw-2">&amp;</span>str = <span class="string">&quot;https://api.met.no/weatherapi/weathericon/2.0/legends&quot;</span>;
-<span class="kw">const </span>FORECAST_URL: <span class="kw-2">&amp;</span>str = <span class="string">&quot;https://api.met.no/weatherapi/locationforecast/2.0/compact&quot;</span>;
+<span class="kw">static </span>LEGENDS: Lazy&lt;<span class="prelude-ty">Option</span>&lt;LegendsStore&gt;&gt; =
+    Lazy::new(|| serde_json::from_str(<span class="macro">include_str!</span>(<span class="string">&quot;met_no_legends.json&quot;</span>)).ok());
 
-<span class="kw">async fn </span>get_legend() -&gt; <span class="prelude-ty">Result</span>&lt;LegendsStore&gt; {
-    REQWEST_CLIENT
-        .get(LEGENDS_URL)
-        .send()
-        .<span class="kw">await
-        </span>.error(<span class="string">&quot;Failed to fetch legend from met.no&quot;</span>)<span class="question-mark">?
-        </span>.json()
-        .<span class="kw">await
-        </span>.error(<span class="string">&quot;Legend replied in unknown format&quot;</span>)
-}
+<span class="kw">const </span>FORECAST_URL: <span class="kw-2">&amp;</span>str = <span class="string">&quot;https://api.met.no/weatherapi/locationforecast/2.0/compact&quot;</span>;
 
 <span class="kw">fn </span>translate(legend: <span class="kw-2">&amp;</span>LegendsStore, summary: <span class="kw-2">&amp;</span>str, lang: <span class="kw-2">&amp;</span>ApiLanguage) -&gt; String {
     legend
@@ -375,7 +357,7 @@
             .split(<span class="string">&#39;_&#39;</span>)
             .next()
             .unwrap();
-        <span class="kw">let </span>translated = translate(<span class="kw-2">&amp;</span><span class="self">self</span>.legend, summary, lang);
+        <span class="kw">let </span>translated = translate(<span class="self">self</span>.legend, summary, lang);
 
         <span class="kw">let </span>temp = instant.air_temperature.unwrap_or_default();
         <span class="kw">let </span>humidity = instant.relative_humidity.unwrap_or_default();
