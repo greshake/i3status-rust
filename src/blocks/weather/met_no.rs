@@ -13,14 +13,14 @@ pub struct Config {
 
 pub(super) struct Service<'a> {
     config: &'a Config,
-    legend: LegendsStore,
+    legend: &'static LegendsStore,
 }
 
 impl<'a> Service<'a> {
     pub(super) async fn new(config: &'a Config) -> Result<Service<'a>> {
         Ok(Self {
             config,
-            legend: get_legend.retry(&ExponentialBuilder::default()).await?,
+            legend: LEGENDS.as_ref().error("Invalid legends file")?,
         })
     }
 }
@@ -90,19 +90,10 @@ struct ForecastTimeInstant {
     relative_humidity: Option<f64>,
 }
 
-const LEGENDS_URL: &str = "https://api.met.no/weatherapi/weathericon/2.0/legends";
-const FORECAST_URL: &str = "https://api.met.no/weatherapi/locationforecast/2.0/compact";
+static LEGENDS: Lazy<Option<LegendsStore>> =
+    Lazy::new(|| serde_json::from_str(include_str!("met_no_legends.json")).ok());
 
-async fn get_legend() -> Result<LegendsStore> {
-    REQWEST_CLIENT
-        .get(LEGENDS_URL)
-        .send()
-        .await
-        .error("Failed to fetch legend from met.no")?
-        .json()
-        .await
-        .error("Legend replied in unknown format")
-}
+const FORECAST_URL: &str = "https://api.met.no/weatherapi/locationforecast/2.0/compact";
 
 fn translate(legend: &LegendsStore, summary: &str, lang: &ApiLanguage) -> String {
     legend
@@ -161,7 +152,7 @@ impl WeatherProvider for Service<'_> {
             .split('_')
             .next()
             .unwrap();
-        let translated = translate(&self.legend, summary, lang);
+        let translated = translate(self.legend, summary, lang);
 
         let temp = instant.air_temperature.unwrap_or_default();
         let humidity = instant.relative_humidity.unwrap_or_default();
