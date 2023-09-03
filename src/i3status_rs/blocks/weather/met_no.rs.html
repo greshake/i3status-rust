@@ -203,6 +203,15 @@
 <a href="#203" id="203">203</a>
 <a href="#204" id="204">204</a>
 <a href="#205" id="205">205</a>
+<a href="#206" id="206">206</a>
+<a href="#207" id="207">207</a>
+<a href="#208" id="208">208</a>
+<a href="#209" id="209">209</a>
+<a href="#210" id="210">210</a>
+<a href="#211" id="211">211</a>
+<a href="#212" id="212">212</a>
+<a href="#213" id="213">213</a>
+<a href="#214" id="214">214</a>
 </pre></div><pre class="rust"><code><span class="kw">use super</span>::<span class="kw-2">*</span>;
 
 <span class="kw">type </span>LegendsStore = HashMap&lt;String, LegendsResult&gt;;
@@ -348,15 +357,21 @@
 
         <span class="kw">let </span>instant = <span class="kw-2">&amp;</span>first.instant.details;
 
-        <span class="kw">let </span>summary = first
+        <span class="kw">let </span><span class="kw-2">mut </span>symbol_code_split = first
             .next_1_hours
             .as_ref()
             .unwrap()
             .summary
             .symbol_code
-            .split(<span class="string">&#39;_&#39;</span>)
+            .split(<span class="string">&#39;_&#39;</span>);
+
+        <span class="kw">let </span>summary = symbol_code_split.next().unwrap();
+
+        <span class="comment">// Times of day can be day, night, and polartwilight
+        </span><span class="kw">let </span>is_night = symbol_code_split
             .next()
-            .unwrap();
+            .map_or(<span class="bool-val">false</span>, |time_of_day| time_of_day == <span class="string">&quot;night&quot;</span>);
+
         <span class="kw">let </span>translated = translate(<span class="self">self</span>.legend, summary, lang);
 
         <span class="kw">let </span>temp = instant.air_temperature.unwrap_or_default();
@@ -373,17 +388,18 @@
             wind: wind_speed,
             wind_kmh: instant.wind_speed.unwrap_or_default() * <span class="number">3.6</span>,
             wind_direction: convert_wind_direction(instant.wind_from_direction).into(),
-            icon: weather_to_icon(summary),
+            icon: weather_to_icon(summary, is_night),
         })
     }
 }
 
-<span class="kw">fn </span>weather_to_icon(weather: <span class="kw-2">&amp;</span>str) -&gt; WeatherIcon {
+<span class="kw">fn </span>weather_to_icon(weather: <span class="kw-2">&amp;</span>str, is_night: bool) -&gt; WeatherIcon {
     <span class="kw">match </span>weather {
-        <span class="string">&quot;cloudy&quot; </span>| <span class="string">&quot;partlycloudy&quot; </span>| <span class="string">&quot;fair&quot; </span>| <span class="string">&quot;fog&quot; </span>=&gt; WeatherIcon::Clouds,
-        <span class="string">&quot;clearsky&quot; </span>=&gt; WeatherIcon::Sun,
+        <span class="string">&quot;cloudy&quot; </span>| <span class="string">&quot;partlycloudy&quot; </span>| <span class="string">&quot;fair&quot; </span>=&gt; WeatherIcon::Clouds{is_night},
+        <span class="string">&quot;fog&quot; </span>=&gt; WeatherIcon::Fog{is_night},
+        <span class="string">&quot;clearsky&quot; </span>=&gt; WeatherIcon::Clear{is_night},
         <span class="string">&quot;heavyrain&quot; </span>| <span class="string">&quot;heavyrainshowers&quot; </span>| <span class="string">&quot;lightrain&quot; </span>| <span class="string">&quot;lightrainshowers&quot; </span>| <span class="string">&quot;rain&quot;
-        </span>| <span class="string">&quot;rainshowers&quot; </span>=&gt; WeatherIcon::Rain,
+        </span>| <span class="string">&quot;rainshowers&quot; </span>=&gt; WeatherIcon::Rain{is_night},
         <span class="string">&quot;rainandthunder&quot;
         </span>| <span class="string">&quot;heavyrainandthunder&quot;
         </span>| <span class="string">&quot;rainshowersandthunder&quot;
@@ -399,9 +415,11 @@
         </span>| <span class="string">&quot;lightsleetandthunder&quot;
         </span>| <span class="string">&quot;lightrainandthunder&quot;
         </span>| <span class="string">&quot;lightsnowandthunder&quot;
-        </span>| <span class="string">&quot;lightssleetshowersandthunder&quot;
-        </span>| <span class="string">&quot;lightssnowshowersandthunder&quot;
-        </span>| <span class="string">&quot;lightrainshowersandthunder&quot; </span>=&gt; WeatherIcon::Thunder,
+        </span>| <span class="string">&quot;lightssleetshowersandthunder&quot; </span><span class="comment">// There&#39;s a typo in the api it will be fixed in the next version to the following entry
+        </span>| <span class="string">&quot;lightsleetshowersandthunder&quot;
+        </span>| <span class="string">&quot;lightssnowshowersandthunder&quot;</span><span class="comment">// There&#39;s a typo in the api it will be fixed in the next version to the following entry
+        </span>| <span class="string">&quot;lightsnowshowersandthunder&quot;
+        </span>| <span class="string">&quot;lightrainshowersandthunder&quot; </span>=&gt; WeatherIcon::Thunder{is_night},
         <span class="string">&quot;heavysleet&quot; </span>| <span class="string">&quot;heavysleetshowers&quot; </span>| <span class="string">&quot;heavysnow&quot; </span>| <span class="string">&quot;heavysnowshowers&quot; </span>| <span class="string">&quot;lightsleet&quot;
         </span>| <span class="string">&quot;lightsleetshowers&quot; </span>| <span class="string">&quot;lightsnow&quot; </span>| <span class="string">&quot;lightsnowshowers&quot; </span>| <span class="string">&quot;sleet&quot; </span>| <span class="string">&quot;sleetshowers&quot;
         </span>| <span class="string">&quot;snow&quot; </span>| <span class="string">&quot;snowshowers&quot; </span>=&gt; WeatherIcon::Snow,

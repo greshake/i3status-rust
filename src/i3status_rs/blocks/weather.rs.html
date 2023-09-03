@@ -325,6 +325,18 @@
 <a href="#325" id="325">325</a>
 <a href="#326" id="326">326</a>
 <a href="#327" id="327">327</a>
+<a href="#328" id="328">328</a>
+<a href="#329" id="329">329</a>
+<a href="#330" id="330">330</a>
+<a href="#331" id="331">331</a>
+<a href="#332" id="332">332</a>
+<a href="#333" id="333">333</a>
+<a href="#334" id="334">334</a>
+<a href="#335" id="335">335</a>
+<a href="#336" id="336">336</a>
+<a href="#337" id="337">337</a>
+<a href="#338" id="338">338</a>
+<a href="#339" id="339">339</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Current weather
 //!
 //! This block displays local weather and temperature information. In order to use this block, you
@@ -409,12 +421,17 @@
 //!
 //! # Used Icons
 //!
-//! - `weather_sun` (when weather is reported as &quot;Clear&quot;)
-//! - `weather_rain` (when weather is reported as &quot;Rain&quot; or &quot;Drizzle&quot;)
-//! - `weather_clouds` (when weather is reported as &quot;Clouds&quot;, &quot;Fog&quot; or &quot;Mist&quot;)
-//! - `weather_thunder` (when weather is reported as &quot;Thunderstorm&quot;)
+//! - `weather_sun` (when weather is reported as &quot;Clear&quot; during the day)
+//! - `weather_moon` (when weather is reported as &quot;Clear&quot; at night)
+//! - `weather_clouds` (when weather is reported as &quot;Clouds&quot; during the day)
+//! - `weather_clouds_night` (when weather is reported as &quot;Clouds&quot; at night)
+//! - `weather_fog` (when weather is reported as &quot;Fog&quot; or &quot;Mist&quot; during the day)
+//! - `weather_fog_night` (when weather is reported as &quot;Fog&quot; or &quot;Mist&quot; at night)
+//! - `weather_rain` (when weather is reported as &quot;Rain&quot; or &quot;Drizzle&quot; during the day)
+//! - `weather_rain_night` (when weather is reported as &quot;Rain&quot; or &quot;Drizzle&quot; at night)
 //! - `weather_snow` (when weather is reported as &quot;Snow&quot;)
-//! - `weather_default` (in all other cases)
+//! - `weather_thunder` (when weather is reported as &quot;Thunderstorm&quot; during the day)
+//! - `weather_thunder_night` (when weather is reported as &quot;Thunderstorm&quot; at night)
 
 </span><span class="kw">use </span>std::fmt;
 <span class="kw">use </span>std::sync::{Arc, Mutex};
@@ -461,22 +478,29 @@
 
 <span class="attr">#[derive(Clone, Copy)]
 </span><span class="kw">enum </span>WeatherIcon {
-    Sun,
-    Rain,
-    Clouds,
-    Thunder,
+    Clear { is_night: bool },
+    Clouds { is_night: bool },
+    Fog { is_night: bool },
+    Rain { is_night: bool },
     Snow,
+    Thunder { is_night: bool },
     Default,
 }
 
 <span class="kw">impl </span>WeatherIcon {
     <span class="kw">fn </span>to_icon_str(<span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str {
         <span class="kw">match </span><span class="self">self </span>{
-            <span class="self">Self</span>::Sun =&gt; <span class="string">&quot;weather_sun&quot;</span>,
-            <span class="self">Self</span>::Rain =&gt; <span class="string">&quot;weather_rain&quot;</span>,
-            <span class="self">Self</span>::Clouds =&gt; <span class="string">&quot;weather_clouds&quot;</span>,
-            <span class="self">Self</span>::Thunder =&gt; <span class="string">&quot;weather_thunder&quot;</span>,
+            <span class="self">Self</span>::Clear { is_night: <span class="bool-val">false </span>} =&gt; <span class="string">&quot;weather_sun&quot;</span>,
+            <span class="self">Self</span>::Clear { is_night: <span class="bool-val">true </span>} =&gt; <span class="string">&quot;weather_moon&quot;</span>,
+            <span class="self">Self</span>::Clouds { is_night: <span class="bool-val">false </span>} =&gt; <span class="string">&quot;weather_clouds&quot;</span>,
+            <span class="self">Self</span>::Clouds { is_night: <span class="bool-val">true </span>} =&gt; <span class="string">&quot;weather_clouds_night&quot;</span>,
+            <span class="self">Self</span>::Fog { is_night: <span class="bool-val">false </span>} =&gt; <span class="string">&quot;weather_fog&quot;</span>,
+            <span class="self">Self</span>::Fog { is_night: <span class="bool-val">true </span>} =&gt; <span class="string">&quot;weather_fog_night&quot;</span>,
+            <span class="self">Self</span>::Rain { is_night: <span class="bool-val">false </span>} =&gt; <span class="string">&quot;weather_rain&quot;</span>,
+            <span class="self">Self</span>::Rain { is_night: <span class="bool-val">true </span>} =&gt; <span class="string">&quot;weather_rain_night&quot;</span>,
             <span class="self">Self</span>::Snow =&gt; <span class="string">&quot;weather_snow&quot;</span>,
+            <span class="self">Self</span>::Thunder { is_night: <span class="bool-val">false </span>} =&gt; <span class="string">&quot;weather_thunder&quot;</span>,
+            <span class="self">Self</span>::Thunder { is_night: <span class="bool-val">true </span>} =&gt; <span class="string">&quot;weather_thunder_night&quot;</span>,
             <span class="self">Self</span>::Default =&gt; <span class="string">&quot;weather_default&quot;</span>,
         }
     }
