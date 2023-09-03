@@ -82,12 +82,17 @@
 //!
 //! # Used Icons
 //!
-//! - `weather_sun` (when weather is reported as "Clear")
-//! - `weather_rain` (when weather is reported as "Rain" or "Drizzle")
-//! - `weather_clouds` (when weather is reported as "Clouds", "Fog" or "Mist")
-//! - `weather_thunder` (when weather is reported as "Thunderstorm")
+//! - `weather_sun` (when weather is reported as "Clear" during the day)
+//! - `weather_moon` (when weather is reported as "Clear" at night)
+//! - `weather_clouds` (when weather is reported as "Clouds" during the day)
+//! - `weather_clouds_night` (when weather is reported as "Clouds" at night)
+//! - `weather_fog` (when weather is reported as "Fog" or "Mist" during the day)
+//! - `weather_fog_night` (when weather is reported as "Fog" or "Mist" at night)
+//! - `weather_rain` (when weather is reported as "Rain" or "Drizzle" during the day)
+//! - `weather_rain_night` (when weather is reported as "Rain" or "Drizzle" at night)
 //! - `weather_snow` (when weather is reported as "Snow")
-//! - `weather_default` (in all other cases)
+//! - `weather_thunder` (when weather is reported as "Thunderstorm" during the day)
+//! - `weather_thunder_night` (when weather is reported as "Thunderstorm" at night)
 
 use std::fmt;
 use std::sync::{Arc, Mutex};
@@ -134,22 +139,29 @@ pub enum WeatherService {
 
 #[derive(Clone, Copy)]
 enum WeatherIcon {
-    Sun,
-    Rain,
-    Clouds,
-    Thunder,
+    Clear { is_night: bool },
+    Clouds { is_night: bool },
+    Fog { is_night: bool },
+    Rain { is_night: bool },
     Snow,
+    Thunder { is_night: bool },
     Default,
 }
 
 impl WeatherIcon {
     fn to_icon_str(self) -> &'static str {
         match self {
-            Self::Sun => "weather_sun",
-            Self::Rain => "weather_rain",
-            Self::Clouds => "weather_clouds",
-            Self::Thunder => "weather_thunder",
+            Self::Clear { is_night: false } => "weather_sun",
+            Self::Clear { is_night: true } => "weather_moon",
+            Self::Clouds { is_night: false } => "weather_clouds",
+            Self::Clouds { is_night: true } => "weather_clouds_night",
+            Self::Fog { is_night: false } => "weather_fog",
+            Self::Fog { is_night: true } => "weather_fog_night",
+            Self::Rain { is_night: false } => "weather_rain",
+            Self::Rain { is_night: true } => "weather_rain_night",
             Self::Snow => "weather_snow",
+            Self::Thunder { is_night: false } => "weather_thunder",
+            Self::Thunder { is_night: true } => "weather_thunder_night",
             Self::Default => "weather_default",
         }
     }

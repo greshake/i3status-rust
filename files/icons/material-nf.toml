@@ -117,9 +117,15 @@ microphone = [
     "\U000f036c", # nf-md-microphone
 ]
 weather_clouds = "\ue33d" # nf-weather-cloud
+weather_clouds_night = "\ue37e" # nf-weather-night_alt_cloudy
 weather_default = "\ue33d" # Cloud symbol as default
+weather_fog = "\ue313" # nf-weather-fog
+weather_fog_night = "\ue346" # nf-weather-night_fog
+weather_moon = "\uf186" # nf-fa-moon_o
 weather_rain = "\ue371" # nf-weather-raindrop
+weather_rain_night = "\ue325" # nf-weather-night_alt_rain
 weather_snow = "\ue36f" # nf-weather-snowflake_cold
 weather_sun = "\ue30d" # nf-weather-day_sunny
 weather_thunder = "\ue31d" # nf-weather-thunderstorm
+weather_thunder_night = "\ue32a" # nf-weather-night_alt_thunderstorm
 xrandr = "\U000f037a" # nf-md-monitor_multiple

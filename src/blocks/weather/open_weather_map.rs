@@ -1,4 +1,5 @@
 use super::*;
+use chrono::Utc;
 
 pub(super) const URL: &str = "https://api.openweathermap.org/data/2.5/weather";
 pub(super) const API_KEY_ENV: &str = "OPENWEATHERMAP_API_KEY";
@@ -49,6 +50,7 @@ struct ApiResponse {
     weather: Vec<ApiWeather>,
     main: ApiMain,
     wind: ApiWind,
+    sys: ApiSys,
     name: String,
 }
 
@@ -63,6 +65,12 @@ struct ApiMain {
     temp: f64,
     feels_like: f64,
     humidity: f64,
+}
+
+#[derive(Deserialize, Debug)]
+struct ApiSys {
+    sunrise: i64,
+    sunset: i64,
 }
 
 #[derive(Deserialize, Debug)]
@@ -109,6 +117,9 @@ impl WeatherProvider for Service<'_> {
             .await
             .error("Forecast request failed")?;
 
+        let now = Utc::now().timestamp();
+        let is_night = data.sys.sunrise >= now || now >= data.sys.sunset;
+
         Ok(WeatherResult {
             location: data.name,
             temp: data.main.temp,
@@ -124,10 +135,11 @@ impl WeatherProvider for Service<'_> {
                 },
             wind_direction: convert_wind_direction(data.wind.deg).into(),
             icon: match data.weather[0].main.as_str() {
-                "Clear" => WeatherIcon::Sun,
-                "Rain" | "Drizzle" => WeatherIcon::Rain,
-                "Clouds" | "Fog" | "Mist" => WeatherIcon::Clouds,
-                "Thunderstorm" => WeatherIcon::Thunder,
+                "Clear" => WeatherIcon::Clear { is_night },
+                "Rain" | "Drizzle" => WeatherIcon::Rain { is_night },
+                "Clouds" => WeatherIcon::Clouds { is_night },
+                "Fog" | "Mist" => WeatherIcon::Fog { is_night },
+                "Thunderstorm" => WeatherIcon::Thunder { is_night },
                 "Snow" => WeatherIcon::Snow,
                 _ => WeatherIcon::Default,
             },

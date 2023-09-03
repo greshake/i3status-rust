@@ -143,15 +143,21 @@ impl WeatherProvider for Service<'_> {
 
         let instant = &first.instant.details;
 
-        let summary = first
+        let mut symbol_code_split = first
             .next_1_hours
             .as_ref()
             .unwrap()
             .summary
             .symbol_code
-            .split('_')
+            .split('_');
+
+        let summary = symbol_code_split.next().unwrap();
+
+        // Times of day can be day, night, and polartwilight
+        let is_night = symbol_code_split
             .next()
-            .unwrap();
+            .map_or(false, |time_of_day| time_of_day == "night");
+
         let translated = translate(self.legend, summary, lang);
 
         let temp = instant.air_temperature.unwrap_or_default();
@@ -168,17 +174,18 @@ impl WeatherProvider for Service<'_> {
             wind: wind_speed,
             wind_kmh: instant.wind_speed.unwrap_or_default() * 3.6,
             wind_direction: convert_wind_direction(instant.wind_from_direction).into(),
-            icon: weather_to_icon(summary),
+            icon: weather_to_icon(summary, is_night),
         })
     }
 }
 
-fn weather_to_icon(weather: &str) -> WeatherIcon {
+fn weather_to_icon(weather: &str, is_night: bool) -> WeatherIcon {
     match weather {
-        "cloudy" | "partlycloudy" | "fair" | "fog" => WeatherIcon::Clouds,
-        "clearsky" => WeatherIcon::Sun,
+        "cloudy" | "partlycloudy" | "fair" => WeatherIcon::Clouds{is_night},
+        "fog" => WeatherIcon::Fog{is_night},
+        "clearsky" => WeatherIcon::Clear{is_night},
         "heavyrain" | "heavyrainshowers" | "lightrain" | "lightrainshowers" | "rain"
-        | "rainshowers" => WeatherIcon::Rain,
+        | "rainshowers" => WeatherIcon::Rain{is_night},
         "rainandthunder"
         | "heavyrainandthunder"
         | "rainshowersandthunder"
@@ -194,9 +201,11 @@ fn weather_to_icon(weather: &str) -> WeatherIcon {
         | "lightsleetandthunder"
         | "lightrainandthunder"
         | "lightsnowandthunder"
-        | "lightssleetshowersandthunder"
-        | "lightssnowshowersandthunder"
-        | "lightrainshowersandthunder" => WeatherIcon::Thunder,
+        | "lightssleetshowersandthunder" // There's a typo in the api it will be fixed in the next version to the following entry
+        | "lightsleetshowersandthunder"
+        | "lightssnowshowersandthunder"// There's a typo in the api it will be fixed in the next version to the following entry
+        | "lightsnowshowersandthunder"
+        | "lightrainshowersandthunder" => WeatherIcon::Thunder{is_night},
         "heavysleet" | "heavysleetshowers" | "heavysnow" | "heavysnowshowers" | "lightsleet"
         | "lightsleetshowers" | "lightsnow" | "lightsnowshowers" | "sleet" | "sleetshowers"
         | "snow" | "snowshowers" => WeatherIcon::Snow,
