@@ -1,10 +1,10 @@
 # FontAwesome 4: https://fontawesome.com/v4.7.0/cheatsheet/
 backlight = [
-    "\U0001f315",
-    "\U0001f314",
-    "\U0001f313",
-    "\U0001f312",
     "\U0001f311",
+    "\U0001f318",
+    "\U0001f317",
+    "\U0001f316",
+    "\U0001f315",
 ]
 bat_charging = "\uf1e6" # fa-plug
 bat = [
