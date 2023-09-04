@@ -45,7 +45,10 @@ words:
   - docsrs
   - dunst
   - execvp
+  - favg
   - fcntl
+  - fmax
+  - fmin
   - getaddr
   - getenv
   - gibi
@@ -55,6 +58,7 @@ words:
   - gsettings
   - HHMM
   - horiz
+  - hypot
   - ibus
   - iface
   - ifaces

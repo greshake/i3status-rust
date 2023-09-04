@@ -155,6 +155,14 @@ macro_rules! map {
         )*
         m
     }};
+    ($( $key:expr => $value:expr ),* $(,)?) => {{
+        #[allow(unused_mut)]
+        let mut m = ::std::collections::HashMap::new();
+        $(
+        map!(@insert m, $key, $value);
+        )*
+        m
+    }};
     (@insert $map:ident, $key:expr, $value:expr) => {{
         $map.insert($key.into(), $value.into());
     }};
