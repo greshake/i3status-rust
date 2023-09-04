@@ -6,7 +6,7 @@ ignorePaths:
   - man/
   - src/blocks/weather/met_no_legends.json
 ignoreRegExpList:
-  # Ignore usernames that are @'d 
+  # Ignore usernames that are @'d
   - /@[\w-]*/g
   #  Ignore names in dbus_proxy
   - /#\[dbus_proxy\([\w\s=\.",\/]*\)\]/gm
@@ -28,6 +28,7 @@ words:
   - BCHARGE
   - bluez
   - bokmaal
+  - bugz
   - busctl
   - chrono
   - clippy
@@ -109,6 +110,7 @@ words:
   - posix
   - powf
   - powi
+  - pybugz
   - recip
   - repr
   - reqwest
