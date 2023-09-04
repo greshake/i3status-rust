@@ -9,11 +9,13 @@ Feel free to add to the list below by sending a PR. Additional scripts can be ad
 
 ## Custom Blocks
 
+- [Bugs assigned to user](#bugs-assigned-to-user)
 - [Hostname](#hostname)
 - [HTTP Status Code](#http-status-code)
 - [Intel GPU Usage](#intel-gpu-usage)
 - [Kernel](#kernel)
 - [Liquid cooling system status](#Liquid-cooling-system-status)
+- [Maintained by user and outdated](#maintained-by-user-and-outdated)
 - [Monitors](#monitors)
 - [Ping/RTT](#pingrtt)
 - [Public IP](#public-ip)
@@ -25,6 +27,17 @@ Feel free to add to the list below by sending a PR. Additional scripts can be ad
 - [Spotify TUI](#spt)
 - [Nextcloud](#nextcloud)
 - [Wttr.in](#wttrin)
+
+### Bugs assigned to user
+
+Display number of unresolved bugs assigned to user in Bugzilla using `pybugz`.
+
+```toml
+[[block]]
+block = "custom"
+command = "echo 🐛 $(bugz --quiet --skip-auth search --assigned-to user@example.com | wc -l)"
+interval = 3600
+```
 
 ### Hostname
 
@@ -139,6 +152,17 @@ interval = "once"
 [[block.click]]
 button = "left"
 cmd = "~/Projects/i3status-rust/examples/scripts/screenshot.sh"
+```
+
+### Maintained by user and outdated
+
+List number of packages in repository `REPO` maintained by a given maintainer with newer upstream release. Relies on `jq`.
+
+```toml
+[[block]]
+block = "custom"
+command = "echo 🦕 $(curl -s 'https://repology.org/api/v1/projects/?inrepo=<REPO>&maintainer=user@example.com&outdated=1' | jq '. | length')"
+interval = 3600
 ```
 
 ### Monitors
