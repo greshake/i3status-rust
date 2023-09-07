@@ -331,10 +331,7 @@ impl Device {
         mac: &str,
         adapter_mac: Option<&str>,
     ) -> Result<Option<Self>> {
-        let Ok(devices) = manager_proxy
-            .get_managed_objects()
-            .await
-        else {
+        let Ok(devices) = manager_proxy.get_managed_objects().await else {
             debug!("could not get the list of managed objects");
             return Ok(None);
         };
@@ -375,8 +372,7 @@ impl Device {
                 }
             }
 
-            let Some(device_interface) = interfaces.get("org.bluez.Device1")
-            else {
+            let Some(device_interface) = interfaces.get("org.bluez.Device1") else {
                 // Not a device
                 continue;
             };
