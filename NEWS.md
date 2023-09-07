@@ -3,6 +3,7 @@
 ### Bug Fixes and Improvements
 
 * Weather: Add icons for night, separated icons for Fog/Mist from Cloudy
+* icons: Add new set of emoji icons
 
 # i3status-rust 0.32.1
 
