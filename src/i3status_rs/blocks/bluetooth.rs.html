@@ -438,10 +438,6 @@
 <a href="#438" id="438">438</a>
 <a href="#439" id="439">439</a>
 <a href="#440" id="440">440</a>
-<a href="#441" id="441">441</a>
-<a href="#442" id="442">442</a>
-<a href="#443" id="443">443</a>
-<a href="#444" id="444">444</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Monitor Bluetooth device
 //!
 //! This block displays the connectivity of a given Bluetooth device and the battery level if this
@@ -775,10 +771,7 @@
         mac: <span class="kw-2">&amp;</span>str,
         adapter_mac: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt;,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>&gt;&gt; {
-        <span class="kw">let </span><span class="prelude-val">Ok</span>(devices) = manager_proxy
-            .get_managed_objects()
-            .<span class="kw">await
-        else </span>{
+        <span class="kw">let </span><span class="prelude-val">Ok</span>(devices) = manager_proxy.get_managed_objects().<span class="kw">await else </span>{
             <span class="macro">debug!</span>(<span class="string">&quot;could not get the list of managed objects&quot;</span>);
             <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
         };
@@ -819,8 +812,7 @@
                 }
             }
 
-            <span class="kw">let </span><span class="prelude-val">Some</span>(device_interface) = interfaces.get(<span class="string">&quot;org.bluez.Device1&quot;</span>)
-            <span class="kw">else </span>{
+            <span class="kw">let </span><span class="prelude-val">Some</span>(device_interface) = interfaces.get(<span class="string">&quot;org.bluez.Device1&quot;</span>) <span class="kw">else </span>{
                 <span class="comment">// Not a device
                 </span><span class="kw">continue</span>;
             };
