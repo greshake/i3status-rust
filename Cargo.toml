@@ -32,7 +32,6 @@ calibright = { version = "0.1", features = ["watch"] }
 chrono = { version = "0.4", default-features = false, features = ["clock", "unstable-locales"] }
 chrono-tz = { version = "0.8", features = ["serde"] }
 clap = { version = "4.0", default-features = false, features = ["std", "derive", "help", "usage"] }
-crossbeam-channel = "0.5"
 dirs = "5.0"
 env_logger = "0.10"
 futures = { version = "0.3", default-features = false }
