@@ -177,6 +177,14 @@ impl Block {
         let _ = tx.send((self.id, intervals));
     }
 
+    fn send_action(&mut self, action: BlockAction) {
+        if let Some(sender) = &self.action_sender {
+            if sender.send(action).is_err() {
+                self.action_sender = None;
+            }
+        }
+    }
+
     fn set_error(&mut self, fullscreen: bool, error: Error) {
         let mut widget = Widget::new()
             .with_state(State::Critical)
@@ -377,23 +385,20 @@ impl BarState {
                 match &mut block.state {
                     BlockState::None => (),
                     BlockState::Normal { .. } => {
-                        let post_actions = block.click_handler.handle(&event).await.in_block(block.name, event.id)?;
-                        if let Some(sender) = &block.action_sender {
-                            match post_actions {
-                                Some(post_actions) => {
-                                    if let Some(action) = post_actions.action {
-                                        let _ = sender.send(Cow::Owned(action));
-                                    }
-                                    if post_actions.update {
-                                        block.update_request.notify_one();
-                                    }
+                        match block.click_handler.handle(&event).await.in_block(block.name, event.id)? {
+                            Some(post_actions) => {
+                                if let Some(action) = post_actions.action {
+                                    block.send_action(Cow::Owned(action));
                                 }
-                                None => {
-                                    if let Some((_, _, action)) = block.default_actions
-                                        .iter()
-                                        .find(|(btn, widget, _)| *btn == event.button && *widget == event.instance.as_deref()) {
-                                        let _ = sender.send(Cow::Borrowed(action));
-                                    }
+                                if post_actions.update {
+                                    block.update_request.notify_one();
+                                }
+                            }
+                            None => {
+                                if let Some((_, _, action)) = block.default_actions
+                                    .iter()
+                                    .find(|(btn, widget, _)| *btn == event.button && *widget == event.instance.as_deref()) {
+                                    block.send_action(Cow::Borrowed(action));
                                 }
                             }
                         }
