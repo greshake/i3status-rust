@@ -1,4 +1,4 @@
-# i3status-rust 0.32.2 [unreleased]
+# i3status-rust 0.32.2
 
 ### Bug Fixes and Improvements
 
