@@ -2,8 +2,9 @@
 
 ### Bug Fixes and Improvements
 
-* Weather: Add icons for night, separated icons for Fog/Mist from Cloudy
-* icons: Add new set of emoji icons
+* Weather: Add icons for night, separated icons for Fog/Mist from Cloudy.
+* icons: Add new set of emoji icons.
+* Fix "update = true" click event handling for some blocks (e.g. pacman).
 
 # i3status-rust 0.32.1
 
