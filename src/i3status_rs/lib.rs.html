@@ -459,6 +459,11 @@
 <a href="#459" id="459">459</a>
 <a href="#460" id="460">460</a>
 <a href="#461" id="461">461</a>
+<a href="#462" id="462">462</a>
+<a href="#463" id="463">463</a>
+<a href="#464" id="464">464</a>
+<a href="#465" id="465">465</a>
+<a href="#466" id="466">466</a>
 </pre></div><pre class="rust"><code><span class="attr">#![warn(clippy::match_same_arms)]
 #![warn(clippy::semicolon_if_nothing_returned)]
 #![warn(clippy::unnecessary_wraps)]
@@ -636,6 +641,14 @@
             BlockState::Normal { widget } | BlockState::Error { widget } =&gt; widget.intervals(),
         };
         <span class="kw">let _ </span>= tx.send((<span class="self">self</span>.id, intervals));
+    }
+
+    <span class="kw">fn </span>send_action(<span class="kw-2">&amp;mut </span><span class="self">self</span>, action: BlockAction) {
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(sender) = <span class="kw-2">&amp;</span><span class="self">self</span>.action_sender {
+            <span class="kw">if </span>sender.send(action).is_err() {
+                <span class="self">self</span>.action_sender = <span class="prelude-val">None</span>;
+            }
+        }
     }
 
     <span class="kw">fn </span>set_error(<span class="kw-2">&amp;mut </span><span class="self">self</span>, fullscreen: bool, error: Error) {
@@ -838,23 +851,20 @@
                 <span class="kw">match </span><span class="kw-2">&amp;mut </span>block.state {
                     BlockState::None =&gt; (),
                     BlockState::Normal { .. } =&gt; {
-                        <span class="kw">let </span>post_actions = block.click_handler.handle(<span class="kw-2">&amp;</span>event).<span class="kw">await</span>.in_block(block.name, event.id)<span class="question-mark">?</span>;
-                        <span class="kw">if let </span><span class="prelude-val">Some</span>(sender) = <span class="kw-2">&amp;</span>block.action_sender {
-                            <span class="kw">match </span>post_actions {
-                                <span class="prelude-val">Some</span>(post_actions) =&gt; {
-                                    <span class="kw">if let </span><span class="prelude-val">Some</span>(action) = post_actions.action {
-                                        <span class="kw">let _ </span>= sender.send(Cow::Owned(action));
-                                    }
-                                    <span class="kw">if </span>post_actions.update {
-                                        block.update_request.notify_one();
-                                    }
+                        <span class="kw">match </span>block.click_handler.handle(<span class="kw-2">&amp;</span>event).<span class="kw">await</span>.in_block(block.name, event.id)<span class="question-mark">? </span>{
+                            <span class="prelude-val">Some</span>(post_actions) =&gt; {
+                                <span class="kw">if let </span><span class="prelude-val">Some</span>(action) = post_actions.action {
+                                    block.send_action(Cow::Owned(action));
                                 }
-                                <span class="prelude-val">None </span>=&gt; {
-                                    <span class="kw">if let </span><span class="prelude-val">Some</span>((<span class="kw">_</span>, <span class="kw">_</span>, action)) = block.default_actions
-                                        .iter()
-                                        .find(|(btn, widget, <span class="kw">_</span>)| <span class="kw-2">*</span>btn == event.button &amp;&amp; <span class="kw-2">*</span>widget == event.instance.as_deref()) {
-                                        <span class="kw">let _ </span>= sender.send(Cow::Borrowed(action));
-                                    }
+                                <span class="kw">if </span>post_actions.update {
+                                    block.update_request.notify_one();
+                                }
+                            }
+                            <span class="prelude-val">None </span>=&gt; {
+                                <span class="kw">if let </span><span class="prelude-val">Some</span>((<span class="kw">_</span>, <span class="kw">_</span>, action)) = block.default_actions
+                                    .iter()
+                                    .find(|(btn, widget, <span class="kw">_</span>)| <span class="kw-2">*</span>btn == event.button &amp;&amp; <span class="kw-2">*</span>widget == event.instance.as_deref()) {
+                                    block.send_action(Cow::Borrowed(action));
                                 }
                             }
                         }
