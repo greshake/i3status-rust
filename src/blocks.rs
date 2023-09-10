@@ -4,7 +4,7 @@
 //!
 //! Key | Description | Default
 //! ----|-------------|----------
-//! `block` | Name of the i3status-rs block you want to use. See `Blocks` below for valid block names. Must be the first field of a block config. | -
+//! `block` | Name of the i3status-rs block you want to use. See [modules](#modules) below for valid block names. | -
 //! `signal` | Signal value that causes an update for this block with `0` corresponding to `-SIGRTMIN+0` and the largest value being `-SIGRTMAX` | None
 //! `if_command` | Only display the block if the supplied command returns 0 on startup. | None
 //! `merge_with_next` | If true this will group the block with the next one, so rendering such as alternating_tint will apply to the whole group | `false`
@@ -20,7 +20,7 @@
 //!
 //! Key | Description | Default
 //! ----|-------------|----------
-//! `button` | `left`, `middle`, `right`, `up`, `down`, `forward`, `back` or [`double_left`](https://greshake.github.io/i3status-rust/i3status_rs/click/enum.MouseButton.html). | -
+//! `button` | `left`, `middle`, `right`, `up`, `down`, `forward`, `back` or [`double_left`](MouseButton). | -
 //! `widget` | To which part of the block this entry applies | None
 //! `cmd` | Command to run when the mouse button event is detected. | None
 //! `action` | Which block action to trigger | None
