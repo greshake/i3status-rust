@@ -170,6 +170,11 @@ impl WifiInfo {
                     continue;
                 };
 
+                // TODO: are there any situations when there is more than one station?
+                let Some(ap) = ap.into_iter().next() else {
+                    continue;
+                };
+
                 let bss = socket
                     .get_bss_info(index)
                     .await

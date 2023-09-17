@@ -43,7 +43,7 @@ libpulse-binding = { version = "2.0", default-features = false, optional = true 
 log = "0.4"
 maildir = { version = "0.6", optional = true }
 neli = { version = "0.6", features = ["async"] }
-neli-wifi = { version = "0.5", features = ["async"] }
+neli-wifi = { version = "0.6", features = ["async"] }
 nix = { version = "0.27", features = ["fs", "process"] }
 nom = "7.1.2"
 notmuch = { version = "0.8", optional = true }
@@ -59,7 +59,7 @@ signal-hook = "0.3"
 signal-hook-tokio = { version = "0.3", features = ["futures-v0_3"] }
 smart-default = "0.7"
 swayipc-async = "2.0"
-toml = "0.7"
+toml = "0.8"
 unicode-segmentation = "1.10.1"
 wayrs-client = { version = "0.12", features = ["tokio"] }
 wayrs-protocols = { version = "0.12", features = ["wlr-foreign-toplevel-management-unstable-v1"] }
