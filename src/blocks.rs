@@ -60,7 +60,7 @@ macro_rules! define_blocks {
                 #[allow(non_camel_case_types)]
                 $block($block::Config),
             )*
-            Err(Option<&'static str>, Error),
+            Err(&'static str, Error),
         }
 
         impl BlockConfig {
@@ -70,8 +70,7 @@ macro_rules! define_blocks {
                         $(#[cfg(feature = $feat)])?
                         Self::$block { .. } => stringify!($block),
                     )*
-                    Self::Err(Some(name), _err) => name,
-                    Self::Err(None, _err) => "???",
+                    Self::Err(name, _err) => name,
                 }
             }
 
@@ -96,7 +95,7 @@ macro_rules! define_blocks {
                             kind: ErrorKind::Config,
                             message: None,
                             cause: Some(Arc::new(err)),
-                            block: Some((name.unwrap_or("???"), id)),
+                            block: Some((name, id)),
                         })).boxed_local()
                     },
                 }
@@ -119,12 +118,12 @@ macro_rules! define_blocks {
                         $(#[cfg(feature = $feat)])?
                         stringify!($block) => match $block::Config::deserialize(table) {
                             Ok(config) => Ok(BlockConfig::$block(config)),
-                            Err(err) => Ok(BlockConfig::Err(Some(stringify!($block)), crate::errors::Error::new(err.to_string()))),
+                            Err(err) => Ok(BlockConfig::Err(stringify!($block), crate::errors::Error::new(err.to_string()))),
                         }
                         $(
                             #[cfg(not(feature = $feat))]
                             stringify!($block) => Ok(BlockConfig::Err(
-                                Some(stringify!($block)),
+                                stringify!($block),
                                 crate::errors::Error::new(format!(
                                     "this block is behind a feature gate '{}' which must be enabled at compile time",
                                     $feat,
