@@ -88,7 +88,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             "5m" => Value::number(m5),
             "15m" => Value::number(m15),
         });
-        api.set_widget(widget).await?;
+        api.set_widget(widget)?;
 
         select! {
             _ = sleep(config.interval.0) => (),

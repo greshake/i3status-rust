@@ -95,7 +95,7 @@ impl Block {
             Some(icon.to_string())
         };
         self.widget.set_values(block_values(self));
-        self.api.set_widget(self.widget.clone()).await?;
+        self.api.set_widget(self.widget.clone())?;
         Ok(())
     }
 
@@ -103,7 +103,7 @@ impl Block {
         self.text = Some(full);
         self.short_text = Some(short);
         self.widget.set_values(block_values(self));
-        self.api.set_widget(self.widget.clone()).await?;
+        self.api.set_widget(self.widget.clone())?;
         Ok(())
     }
 
@@ -116,7 +116,7 @@ impl Block {
             "critical" => State::Critical,
             _ => return Err(Error::new(format!("'{state}' is not a valid state")).into()),
         };
-        self.api.set_widget(self.widget.clone()).await?;
+        self.api.set_widget(self.widget.clone())?;
         Ok(())
     }
 }

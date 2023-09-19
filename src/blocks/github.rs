@@ -113,9 +113,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             values.insert("icon".into(), Value::icon("github"));
             widget.set_values(values);
 
-            api.set_widget(widget).await?;
+            api.set_widget(widget)?;
         } else {
-            api.hide().await?;
+            api.hide()?;
         }
 
         select! {

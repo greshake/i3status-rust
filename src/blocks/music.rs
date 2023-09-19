@@ -167,7 +167,7 @@ pub enum PlayerName {
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let mut actions = api.get_actions().await?;
+    let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, Some(PLAY_PAUSE_BTN), "play_pause"),
         (MouseButton::Left, Some(NEXT_BTN), "next"),
@@ -175,8 +175,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         (MouseButton::Right, None, "next_player"),
         (MouseButton::WheelUp, None, "seek_forward"),
         (MouseButton::WheelDown, None, "seek_backward"),
-    ])
-    .await?;
+    ])?;
 
     let dbus_conn = new_dbus_connection().await?;
 
@@ -332,12 +331,12 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 let mut widget = Widget::new().with_format(format.clone());
                 widget.set_values(values);
                 widget.state = state;
-                api.set_widget(widget).await?;
+                api.set_widget(widget)?;
             }
             None => {
                 let mut widget = Widget::new().with_format(format.clone());
                 widget.set_values(map!("icon" => Value::icon("music")));
-                api.set_widget(widget).await?;
+                api.set_widget(widget)?;
             }
         }
 

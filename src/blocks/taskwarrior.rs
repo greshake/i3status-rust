@@ -85,9 +85,8 @@ impl Default for Config {
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let mut actions = api.get_actions().await?;
-    api.set_default_actions(&[(MouseButton::Right, None, "next_filter")])
-        .await?;
+    let mut actions = api.get_actions()?;
+    api.set_default_actions(&[(MouseButton::Right, None, "next_filter")])?;
 
     let format = config.format.with_default(" $icon $count.eng(w:1) ")?;
     let format_singular = config
@@ -132,7 +131,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             _ => State::Idle,
         };
 
-        api.set_widget(widget).await?;
+        api.set_widget(widget)?;
 
         select! {
             _ = sleep(config.interval.0) =>(),

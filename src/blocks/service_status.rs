@@ -91,7 +91,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             "service" =>Value::text(config.service.clone()),
         });
 
-        api.set_widget(widget).await?;
+        api.set_widget(widget)?;
 
         driver.wait_for_change().await?;
     }

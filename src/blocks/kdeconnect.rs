@@ -184,9 +184,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             }
 
             widget.set_values(values);
-            api.set_widget(widget).await?;
+            api.set_widget(widget)?;
         } else {
-            api.hide().await?;
+            api.hide()?;
         }
 
         rx.recv().await.error("channel closed")?;

@@ -91,7 +91,7 @@ impl Block<'_> {
             values.insert("message".into(), Value::text(text));
         }
         self.widget.set_values(values);
-        self.api.set_widget(self.widget.clone()).await
+        self.api.set_widget(self.widget.clone())
     }
 
     async fn wait_for_click(&mut self, button: &str) -> Result<()> {
@@ -223,8 +223,7 @@ pub async fn run(block_config: &Config, api: &CommonApi) -> Result<()> {
         (MouseButton::Right, None, "_right"),
         (MouseButton::WheelUp, None, "_up"),
         (MouseButton::WheelDown, None, "_down"),
-    ])
-    .await?;
+    ])?;
 
     let format = block_config
         .format
@@ -234,7 +233,7 @@ pub async fn run(block_config: &Config, api: &CommonApi) -> Result<()> {
 
     let mut block = Block {
         widget,
-        actions: api.get_actions().await?,
+        actions: api.get_actions()?,
         api,
         block_config,
     };

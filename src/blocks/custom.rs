@@ -140,7 +140,7 @@ async fn update_bar(
                 });
                 widget.state = input.state;
             }
-            Err(error) => return api.set_error(error).await,
+            Err(error) => return api.set_error(error),
         }
     } else {
         text_empty = stdout.is_empty();
@@ -148,15 +148,14 @@ async fn update_bar(
     }
 
     if text_empty && hide_when_empty {
-        api.hide().await
+        api.hide()
     } else {
-        api.set_widget(widget).await
+        api.set_widget(widget)
     }
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    api.set_default_actions(&[(MouseButton::Left, None, "cycle")])
-        .await?;
+    api.set_default_actions(&[(MouseButton::Left, None, "cycle")])?;
 
     let format = config.format.with_defaults(
         "{ $icon|} $text.pango-str() ",
@@ -232,7 +231,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             .await?;
         }
     } else {
-        let mut actions = api.get_actions().await?;
+        let mut actions = api.get_actions()?;
 
         let mut cycle = config
             .cycle

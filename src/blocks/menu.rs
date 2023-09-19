@@ -65,7 +65,7 @@ impl Block<'_> {
     }
 
     async fn set_text(&mut self, text: String) -> Result<()> {
-        self.api.set_widget(Widget::new().with_text(text)).await
+        self.api.set_widget(Widget::new().with_text(text))
     }
 
     async fn wait_for_click(&mut self, button: &str) -> Result<()> {
@@ -100,11 +100,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         (MouseButton::Right, None, "_right"),
         (MouseButton::WheelUp, None, "_up"),
         (MouseButton::WheelDown, None, "_down"),
-    ])
-    .await?;
+    ])?;
 
     let mut block = Block {
-        actions: api.get_actions().await?,
+        actions: api.get_actions()?,
         api,
         text: &config.text,
         items: &config.items,

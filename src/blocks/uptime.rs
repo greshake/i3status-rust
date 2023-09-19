@@ -77,7 +77,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
           "icon" => Value::icon("uptime"),
           "text" => Value::text(text)
         });
-        api.set_widget(widget).await?;
+        api.set_widget(widget)?;
 
         select! {
             _ = sleep(config.interval.0) => (),

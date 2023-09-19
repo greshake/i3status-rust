@@ -60,7 +60,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             "stopped" => Value::number(status.stopped),
             "images" =>  Value::number(status.images),
         });
-        api.set_widget(widget).await?;
+        api.set_widget(widget)?;
 
         select! {
             _ = sleep(config.interval.0) => (),

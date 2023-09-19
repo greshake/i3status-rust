@@ -142,7 +142,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             "layout" => Value::text(layout),
             "variant" => Value::text(variant),
         });
-        api.set_widget(widget).await?;
+        api.set_widget(widget)?;
 
         select! {
             update = backend.wait_for_change() => update?,

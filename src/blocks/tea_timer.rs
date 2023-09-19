@@ -48,14 +48,13 @@ pub struct Config {
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let mut actions = api.get_actions().await?;
+    let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, None, "increment"),
         (MouseButton::WheelUp, None, "increment"),
         (MouseButton::WheelDown, None, "decrement"),
         (MouseButton::Right, None, "reset"),
-    ])
-    .await?;
+    ])?;
 
     let interval: Seconds = 1.into();
     let mut timer = interval.timer();
@@ -97,7 +96,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             [if is_timer_active] "seconds" => Value::text(format!("{seconds:02}")),
         ));
 
-        api.set_widget(widget).await?;
+        api.set_widget(widget)?;
 
         select! {
             _ = timer.tick(), if is_timer_active => (),

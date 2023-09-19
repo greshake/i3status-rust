@@ -79,9 +79,8 @@ pub struct Config {
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let mut actions = api.get_actions().await?;
-    api.set_default_actions(&[(MouseButton::Right, None, "toggle")])
-        .await?;
+    let mut actions = api.get_actions()?;
+    api.set_default_actions(&[(MouseButton::Right, None, "toggle")])?;
 
     let format = config.format.with_default(" $icon $name{ $percentage|} ")?;
     let disconnected_format = config
@@ -129,14 +128,14 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 }
 
                 widget.set_values(values);
-                api.set_widget(widget).await?;
+                api.set_widget(widget)?;
             }
             // Unavailable
             None => {
                 debug!("Showing device as unavailable");
                 let mut widget = Widget::new().with_format(disconnected_format.clone());
                 widget.set_values(map!("icon" => Value::icon("bluetooth")));
-                api.set_widget(widget).await?;
+                api.set_widget(widget)?;
             }
         }
 

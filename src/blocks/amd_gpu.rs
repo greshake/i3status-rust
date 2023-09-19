@@ -53,9 +53,8 @@ pub struct Config {
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let mut actions = api.get_actions().await?;
-    api.set_default_actions(&[(MouseButton::Left, None, "toggle_format")])
-        .await?;
+    let mut actions = api.get_actions()?;
+    api.set_default_actions(&[(MouseButton::Left, None, "toggle_format")])?;
 
     let mut format = config.format.with_default(" $icon $utilization ")?;
     let mut format_alt = match &config.format_alt {
@@ -91,7 +90,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             _ => State::Idle,
         };
 
-        api.set_widget(widget).await?;
+        api.set_widget(widget)?;
 
         loop {
             select! {

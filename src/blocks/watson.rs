@@ -51,9 +51,8 @@ pub struct Config {
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let mut actions = api.get_actions().await?;
-    api.set_default_actions(&[(MouseButton::Left, None, "toggle_show_time")])
-        .await?;
+    let mut actions = api.get_actions()?;
+    api.set_default_actions(&[(MouseButton::Left, None, "toggle_show_time")])?;
 
     let format = config.format.with_default(" $text |")?;
 
@@ -123,7 +122,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             }
         }
 
-        api.set_widget(widget).await?;
+        api.set_widget(widget)?;
 
         loop {
             select! {

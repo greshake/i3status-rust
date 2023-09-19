@@ -80,9 +80,8 @@ pub enum DriverType {
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let mut actions = api.get_actions().await?;
-    api.set_default_actions(&[(MouseButton::Left, None, "toggle_paused")])
-        .await?;
+    let mut actions = api.get_actions()?;
+    api.set_default_actions(&[(MouseButton::Left, None, "toggle_paused")])?;
 
     let format = config.format.with_default(" $icon ")?;
 
@@ -106,7 +105,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         } else {
             State::Info
         };
-        api.set_widget(widget).await?;
+        api.set_widget(widget)?;
 
         select! {
             x = driver.wait_for_change() => x?,

@@ -207,14 +207,14 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
                 widget.set_values(values);
                 widget.state = state;
-                api.set_widget(widget).await?;
+                api.set_widget(widget)?;
             }
             None => {
                 let mut widget = Widget::new()
                     .with_format(missing_format.clone())
                     .with_state(State::Critical);
                 widget.set_values(map!("icon" => Value::icon("bat_not_available")));
-                api.set_widget(widget).await?;
+                api.set_widget(widget)?;
             }
         }
 

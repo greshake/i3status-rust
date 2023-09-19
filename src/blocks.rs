@@ -81,7 +81,7 @@ macro_rules! define_blocks {
                         $(#[cfg(feature = $feat)])?
                         Self::$block(config) => async move {
                             while let Err(err) = $block::run(&config, &api).await {
-                                api.set_error(err).await?;
+                                api.set_error(err)?;
                                 tokio::select! {
                                     _ = tokio::time::sleep(api.error_interval) => (),
                                     _ = api.wait_for_update_request() => (),
@@ -191,45 +191,42 @@ pub type BlockAction = Cow<'static, str>;
 pub struct CommonApi {
     pub(crate) id: usize,
     pub(crate) update_request: Arc<Notify>,
-    pub(crate) request_sender: mpsc::Sender<Request>,
+    pub(crate) request_sender: mpsc::UnboundedSender<Request>,
     pub(crate) error_interval: Duration,
 }
 
 impl CommonApi {
     /// Sends the widget to be displayed.
-    pub async fn set_widget(&self, widget: Widget) -> Result<()> {
+    pub fn set_widget(&self, widget: Widget) -> Result<()> {
         self.request_sender
             .send(Request {
                 block_id: self.id,
                 cmd: RequestCmd::SetWidget(widget),
             })
-            .await
             .error("Failed to send Request")
     }
 
     /// Hides the block. Send new widget to make it visible again.
-    pub async fn hide(&self) -> Result<()> {
+    pub fn hide(&self) -> Result<()> {
         self.request_sender
             .send(Request {
                 block_id: self.id,
                 cmd: RequestCmd::UnsetWidget,
             })
-            .await
             .error("Failed to send Request")
     }
 
     /// Sends the error to be displayed.
-    pub async fn set_error(&self, error: Error) -> Result<()> {
+    pub fn set_error(&self, error: Error) -> Result<()> {
         self.request_sender
             .send(Request {
                 block_id: self.id,
                 cmd: RequestCmd::SetError(error),
             })
-            .await
             .error("Failed to send Request")
     }
 
-    pub async fn set_default_actions(
+    pub fn set_default_actions(
         &self,
         actions: &'static [(MouseButton, Option<&'static str>, &'static str)],
     ) -> Result<()> {
@@ -238,18 +235,16 @@ impl CommonApi {
                 block_id: self.id,
                 cmd: RequestCmd::SetDefaultActions(actions),
             })
-            .await
             .error("Failed to send Request")
     }
 
-    pub async fn get_actions(&self) -> Result<mpsc::UnboundedReceiver<BlockAction>> {
+    pub fn get_actions(&self) -> Result<mpsc::UnboundedReceiver<BlockAction>> {
         let (tx, rx) = mpsc::unbounded_channel();
         self.request_sender
             .send(Request {
                 block_id: self.id,
                 cmd: RequestCmd::SubscribeToActions(tx),
             })
-            .await
             .error("Failed to send Request")?;
         Ok(rx)
     }

@@ -56,13 +56,12 @@ pub struct Config {
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let mut actions = api.get_actions().await?;
+    let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, None, "cycle_outputs"),
         (MouseButton::WheelUp, None, "brightness_up"),
         (MouseButton::WheelDown, None, "brightness_down"),
-    ])
-    .await?;
+    ])?;
 
     let format = config
         .format
@@ -91,7 +90,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     "res_icon" => Value::icon("resolution"),
                 });
             }
-            api.set_widget(widget).await?;
+            api.set_widget(widget)?;
 
             select! {
                 _ = timer.tick() => break,

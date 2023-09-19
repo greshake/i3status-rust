@@ -100,9 +100,8 @@ impl TemperatureScale {
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let mut actions = api.get_actions().await?;
-    api.set_default_actions(&[(MouseButton::Left, None, "toggle_format")])
-        .await?;
+    let mut actions = api.get_actions()?;
+    api.set_default_actions(&[(MouseButton::Left, None, "toggle_format")])?;
 
     let mut format = config
         .format
@@ -198,7 +197,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             "max" => Value::degrees(max_temp),
         });
 
-        api.set_widget(widget).await?;
+        api.set_widget(widget)?;
 
         select! {
             _ = sleep(config.interval.0) => (),

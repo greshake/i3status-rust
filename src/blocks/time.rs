@@ -54,12 +54,11 @@ pub enum Timezone {
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let mut actions = api.get_actions().await?;
+    let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, None, "next_timezone"),
         (MouseButton::Right, None, "prev_timezone"),
-    ])
-    .await?;
+    ])?;
 
     let format = config
         .format
@@ -95,7 +94,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             "timestamp" => Value::datetime(Utc::now(), timezone.copied())
         });
 
-        api.set_widget(widget).await?;
+        api.set_widget(widget)?;
 
         tokio::select! {
             _ = timer.tick() => (),

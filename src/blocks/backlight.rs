@@ -105,13 +105,12 @@ pub struct Config {
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let mut actions = api.get_actions().await?;
+    let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, None, "cycle"),
         (MouseButton::WheelUp, None, "brightness_up"),
         (MouseButton::WheelDown, None, "brightness_down"),
-    ])
-    .await?;
+    ])?;
 
     let format = config.format.with_default(" $icon $brightness ")?;
     let missing_format = config
@@ -172,7 +171,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 let widget = Widget::new()
                     .with_format(missing_format.clone())
                     .with_state(State::Critical);
-                api.set_widget(widget).await?;
+                api.set_widget(widget)?;
             }
             Some(e) => {
                 api.set_error(Error {
@@ -180,8 +179,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     message: None,
                     cause: Some(Arc::new(e)),
                     block: None,
-                })
-                .await?;
+                })?;
             }
             None => {
                 let mut widget = Widget::new().with_format(format.clone());
@@ -193,7 +191,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     "icon" => Value::icon_progression("backlight", icon_value),
                     "brightness" => Value::percents((brightness * 100.0).round())
                 });
-                api.set_widget(widget).await?;
+                api.set_widget(widget)?;
             }
         }
 

@@ -77,9 +77,8 @@ pub struct Config {
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let mut actions = api.get_actions().await?;
-    api.set_default_actions(&[(MouseButton::Left, None, "toggle_format")])
-        .await?;
+    let mut actions = api.get_actions()?;
+    api.set_default_actions(&[(MouseButton::Left, None, "toggle_format")])?;
 
     let mut format = config.format.with_default(
         " $icon ^icon_net_down $speed_down.eng(prefix:K) ^icon_net_up $speed_up.eng(prefix:K) ",
@@ -109,8 +108,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     loop {
         match NetDevice::new(device_re.as_ref()).await? {
             None => {
-                api.set_widget(Widget::new().with_format(missing_format.clone()))
-                    .await?;
+                api.set_widget(Widget::new().with_format(missing_format.clone()))?;
             }
             Some(device) => {
                 let mut widget = Widget::new();
@@ -164,7 +162,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     "device" => Value::text(device.iface.name),
                 });
 
-                api.set_widget(widget).await?;
+                api.set_widget(widget)?;
             }
         }
 

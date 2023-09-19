@@ -76,7 +76,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             "speed_down" => Value::bits(output.download),
             "speed_up" => Value::bits(output.upload),
         });
-        api.set_widget(widget).await?;
+        api.set_widget(widget)?;
 
         select! {
             _ = sleep(config.interval.0) => (),

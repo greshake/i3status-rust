@@ -87,14 +87,13 @@ pub struct Config {
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let mut actions = api.get_actions().await?;
+    let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, Some(MEM_BTN), "toggle_mem_total"),
         (MouseButton::Left, Some(FAN_BTN), "toggle_fan_controlled"),
         (MouseButton::WheelUp, Some(FAN_BTN), "fan_speed_up"),
         (MouseButton::WheelDown, Some(FAN_BTN), "fan_speed_down"),
-    ])
-    .await?;
+    ])?;
 
     let format = config
         .format
@@ -143,7 +142,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             "power" => Value::watts(info.power_draw),
         });
 
-        api.set_widget(widget).await?;
+        api.set_widget(widget)?;
 
         select! {
             new_info = GpuInfo::from_reader(&mut reader) => {

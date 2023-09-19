@@ -82,14 +82,13 @@ pub struct Config {
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let mut actions = api.get_actions().await?;
+    let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, None, "set_click_temp"),
         (MouseButton::Right, None, "reset"),
         (MouseButton::WheelUp, None, "temperature_up"),
         (MouseButton::WheelDown, None, "temperature_down"),
-    ])
-    .await?;
+    ])?;
 
     let format = config.format.with_default(" $temperature ")?;
 
@@ -133,7 +132,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     loop {
         let mut widget = Widget::new().with_format(format.clone());
         widget.set_values(map!("temperature" => Value::number(current_temp)));
-        api.set_widget(widget).await?;
+        api.set_widget(widget)?;
 
         select! {
             update = driver.receive_update() => {

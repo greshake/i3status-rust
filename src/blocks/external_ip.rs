@@ -175,7 +175,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         let mut widget = Widget::new().with_format(format.clone());
         widget.set_values(values);
-        api.set_widget(widget).await?;
+        api.set_widget(widget)?;
 
         select! {
             _ = sleep(config.interval.0) => (),

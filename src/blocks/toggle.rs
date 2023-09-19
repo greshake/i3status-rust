@@ -75,9 +75,8 @@ async fn sleep_opt(dur: Option<Duration>) {
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let mut actions = api.get_actions().await?;
-    api.set_default_actions(&[(MouseButton::Left, None, "toggle")])
-        .await?;
+    let mut actions = api.get_actions()?;
+    api.set_default_actions(&[(MouseButton::Left, None, "toggle")])?;
 
     let interval = config.interval.map(Duration::from_secs);
     let mut widget = Widget::new().with_format(config.format.with_default(" $icon ")?);
@@ -104,7 +103,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 if is_toggled { icon_on.to_string() } else { icon_off.to_string() }
             )
         ));
-        api.set_widget(widget.clone()).await?;
+        api.set_widget(widget.clone())?;
 
         loop {
             select! {

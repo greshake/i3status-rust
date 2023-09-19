@@ -113,8 +113,8 @@ pub struct BarState {
     widget_updates_sender: WidgetUpdatesSender,
     blocks_render_cache: Vec<RenderedBlock>,
 
-    request_sender: mpsc::Sender<Request>,
-    request_receiver: mpsc::Receiver<Request>,
+    request_sender: mpsc::UnboundedSender<Request>,
+    request_receiver: mpsc::UnboundedReceiver<Request>,
 
     widget_updates_stream: BoxedStream<Vec<usize>>,
     signals_stream: BoxedStream<Signal>,
@@ -203,7 +203,7 @@ impl Block {
 
 impl BarState {
     pub fn new(config: Config) -> Self {
-        let (request_sender, request_receiver) = mpsc::channel(64);
+        let (request_sender, request_receiver) = mpsc::unbounded_channel();
         let (widget_updates_sender, widget_updates_stream) =
             formatting::scheduling::manage_widgets_updates();
         Self {

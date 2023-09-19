@@ -136,13 +136,12 @@ enum Mappings<'a> {
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let mut actions = api.get_actions().await?;
+    let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Right, None, "toggle_mute"),
         (MouseButton::WheelUp, None, "volume_up"),
         (MouseButton::WheelDown, None, "volume_down"),
-    ])
-    .await?;
+    ])?;
 
     let format = config.format.with_default(" $icon {$volume.eng(w:2)|} ")?;
 
@@ -295,7 +294,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         }
 
         widget.set_values(values);
-        api.set_widget(widget).await?;
+        api.set_widget(widget)?;
 
         loop {
             select! {

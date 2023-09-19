@@ -114,9 +114,8 @@ impl Status {
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let mut actions = api.get_actions().await?;
-    api.set_default_actions(&[(MouseButton::Left, None, "toggle")])
-        .await?;
+    let mut actions = api.get_actions()?;
+    api.set_default_actions(&[(MouseButton::Left, None, "toggle")])?;
 
     let format_connected = config.format_connected.with_default(" VPN: $icon ")?;
     let format_disconnected = config.format_disconnected.with_default(" VPN: $icon ")?;
@@ -161,7 +160,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             }
         };
 
-        api.set_widget(widget).await?;
+        api.set_widget(widget)?;
 
         select! {
             _ = sleep(config.interval.0) => (),

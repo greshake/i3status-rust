@@ -67,7 +67,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             State::Idle
         };
 
-        api.set_widget(widget).await?;
+        api.set_widget(widget)?;
 
         tokio::select! {
             _ = timer.tick() => (),
