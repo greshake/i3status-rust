@@ -122,13 +122,11 @@ macro_rules! define_blocks {
                         }
                         $(
                             #[cfg(not(feature = $feat))]
-                            stringify!($block) => Ok(BlockConfig::Err(
+                            stringify!($block) => Err(D::Error::custom(format!(
+                                "block {} is behind a feature gate '{}' which must be enabled at compile time",
                                 stringify!($block),
-                                crate::errors::Error::new(format!(
-                                    "this block is behind a feature gate '{}' which must be enabled at compile time",
-                                    $feat,
-                                )),
-                            )),
+                                $feat,
+                            ))),
                         )?
                     )*
                     other => Err(D::Error::custom(format!("unknown block '{other}'")))
