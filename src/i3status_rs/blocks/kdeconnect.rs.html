@@ -555,9 +555,9 @@
             }
 
             widget.set_values(values);
-            api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
+            api.set_widget(widget)<span class="question-mark">?</span>;
         } <span class="kw">else </span>{
-            api.hide().<span class="kw">await</span><span class="question-mark">?</span>;
+            api.hide()<span class="question-mark">?</span>;
         }
 
         rx.recv().<span class="kw">await</span>.error(<span class="string">&quot;channel closed&quot;</span>)<span class="question-mark">?</span>;

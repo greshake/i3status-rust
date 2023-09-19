@@ -172,7 +172,7 @@
             <span class="string">&quot;speed_down&quot; </span>=&gt; Value::bits(output.download),
             <span class="string">&quot;speed_up&quot; </span>=&gt; Value::bits(output.upload),
         });
-        api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(widget)<span class="question-mark">?</span>;
 
         <span class="macro">select! </span>{
             <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt; (),

@@ -207,7 +207,7 @@
             State::Idle
         };
 
-        api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(widget)<span class="question-mark">?</span>;
 
         <span class="macro">tokio::select! </span>{
             <span class="kw">_ </span>= timer.tick() =&gt; (),

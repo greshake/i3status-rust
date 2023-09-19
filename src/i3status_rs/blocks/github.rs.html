@@ -303,9 +303,9 @@
             values.insert(<span class="string">&quot;icon&quot;</span>.into(), Value::icon(<span class="string">&quot;github&quot;</span>));
             widget.set_values(values);
 
-            api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
+            api.set_widget(widget)<span class="question-mark">?</span>;
         } <span class="kw">else </span>{
-            api.hide().<span class="kw">await</span><span class="question-mark">?</span>;
+            api.hide()<span class="question-mark">?</span>;
         }
 
         <span class="macro">select! </span>{

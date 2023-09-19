@@ -253,14 +253,6 @@
 <a href="#253" id="253">253</a>
 <a href="#254" id="254">254</a>
 <a href="#255" id="255">255</a>
-<a href="#256" id="256">256</a>
-<a href="#257" id="257">257</a>
-<a href="#258" id="258">258</a>
-<a href="#259" id="259">259</a>
-<a href="#260" id="260">260</a>
-<a href="#261" id="261">261</a>
-<a href="#262" id="262">262</a>
-<a href="#263" id="263">263</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! The collection of blocks
 //!
 //! Blocks are defined as a [TOML array of tables](https://github.com/toml-lang/toml/blob/main/toml.md#user-content-array-of-tables): `[[block]]`
@@ -323,7 +315,7 @@
                 </span><span class="attr">#[allow(non_camel_case_types)]
                 </span><span class="macro-nonterminal">$block</span>(<span class="macro-nonterminal">$block::Config</span>),
             )*
-            <span class="prelude-val">Err</span>(<span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt;, Error),
+            <span class="prelude-val">Err</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str, Error),
         }
 
         <span class="kw">impl </span>BlockConfig {
@@ -333,8 +325,7 @@
                         $(<span class="attr">#[cfg(feature = <span class="macro-nonterminal">$feat</span>)]</span>)<span class="question-mark">?
                         </span><span class="self">Self</span>::<span class="macro-nonterminal">$block </span>{ .. } =&gt; <span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>),
                     )*
-                    <span class="self">Self</span>::Err(<span class="prelude-val">Some</span>(name), _err) =&gt; name,
-                    <span class="self">Self</span>::Err(<span class="prelude-val">None</span>, _err) =&gt; <span class="string">&quot;???&quot;</span>,
+                    <span class="self">Self</span>::Err(name, _err) =&gt; name,
                 }
             }
 
@@ -345,7 +336,7 @@
                         $(<span class="attr">#[cfg(feature = <span class="macro-nonterminal">$feat</span>)]</span>)<span class="question-mark">?
                         </span><span class="self">Self</span>::<span class="macro-nonterminal">$block</span>(config) =&gt; <span class="kw">async move </span>{
                             <span class="kw">while let </span><span class="prelude-val">Err</span>(err) = <span class="macro-nonterminal">$block::run</span>(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>api).<span class="kw">await </span>{
-                                api.set_error(err).<span class="kw">await</span><span class="question-mark">?</span>;
+                                api.set_error(err)<span class="question-mark">?</span>;
                                 <span class="macro">tokio::select! </span>{
                                     <span class="kw">_ </span>= tokio::time::sleep(api.error_interval) =&gt; (),
                                     <span class="kw">_ </span>= api.wait_for_update_request() =&gt; (),
@@ -359,7 +350,7 @@
                             kind: ErrorKind::Config,
                             message: <span class="prelude-val">None</span>,
                             cause: <span class="prelude-val">Some</span>(Arc::new(err)),
-                            block: <span class="prelude-val">Some</span>((name.unwrap_or(<span class="string">&quot;???&quot;</span>), id)),
+                            block: <span class="prelude-val">Some</span>((name, id)),
                         })).boxed_local()
                     },
                 }
@@ -382,17 +373,15 @@
                         $(<span class="attr">#[cfg(feature = <span class="macro-nonterminal">$feat</span>)]</span>)<span class="question-mark">?
                         </span><span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>) =&gt; <span class="kw">match </span><span class="macro-nonterminal">$block::Config::deserialize</span>(table) {
                             <span class="prelude-val">Ok</span>(config) =&gt; <span class="prelude-val">Ok</span>(BlockConfig::<span class="macro-nonterminal">$block</span>(config)),
-                            <span class="prelude-val">Err</span>(err) =&gt; <span class="prelude-val">Ok</span>(BlockConfig::Err(<span class="prelude-val">Some</span>(<span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>)), <span class="kw">crate</span>::errors::Error::new(err.to_string()))),
+                            <span class="prelude-val">Err</span>(err) =&gt; <span class="prelude-val">Ok</span>(BlockConfig::Err(<span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>), <span class="kw">crate</span>::errors::Error::new(err.to_string()))),
                         }
                         $(
                             <span class="attr">#[cfg(not(feature = <span class="macro-nonterminal">$feat</span>))]
-                            </span><span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>) =&gt; <span class="prelude-val">Ok</span>(BlockConfig::Err(
-                                <span class="prelude-val">Some</span>(<span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>)),
-                                <span class="kw">crate</span>::errors::Error::new(<span class="macro">format!</span>(
-                                    <span class="string">&quot;this block is behind a feature gate &#39;{}&#39; which must be enabled at compile time&quot;</span>,
-                                    <span class="macro-nonterminal">$feat</span>,
-                                )),
-                            )),
+                            </span><span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>) =&gt; <span class="prelude-val">Err</span>(D::Error::custom(<span class="macro">format!</span>(
+                                <span class="string">&quot;block {} is behind a feature gate &#39;{}&#39; which must be enabled at compile time&quot;</span>,
+                                <span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>),
+                                <span class="macro-nonterminal">$feat</span>,
+                            ))),
                         )<span class="question-mark">?
                     </span>)*
                     other =&gt; <span class="prelude-val">Err</span>(D::Error::custom(<span class="macro">format!</span>(<span class="string">&quot;unknown block &#39;{other}&#39;&quot;</span>)))
@@ -457,45 +446,42 @@
 </span><span class="kw">pub struct </span>CommonApi {
     <span class="kw">pub</span>(<span class="kw">crate</span>) id: usize,
     <span class="kw">pub</span>(<span class="kw">crate</span>) update_request: Arc&lt;Notify&gt;,
-    <span class="kw">pub</span>(<span class="kw">crate</span>) request_sender: mpsc::Sender&lt;Request&gt;,
+    <span class="kw">pub</span>(<span class="kw">crate</span>) request_sender: mpsc::UnboundedSender&lt;Request&gt;,
     <span class="kw">pub</span>(<span class="kw">crate</span>) error_interval: Duration,
 }
 
 <span class="kw">impl </span>CommonApi {
     <span class="doccomment">/// Sends the widget to be displayed.
-    </span><span class="kw">pub async fn </span>set_widget(<span class="kw-2">&amp;</span><span class="self">self</span>, widget: Widget) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    </span><span class="kw">pub fn </span>set_widget(<span class="kw-2">&amp;</span><span class="self">self</span>, widget: Widget) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="self">self</span>.request_sender
             .send(Request {
                 block_id: <span class="self">self</span>.id,
                 cmd: RequestCmd::SetWidget(widget),
             })
-            .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to send Request&quot;</span>)
+            .error(<span class="string">&quot;Failed to send Request&quot;</span>)
     }
 
     <span class="doccomment">/// Hides the block. Send new widget to make it visible again.
-    </span><span class="kw">pub async fn </span>hide(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    </span><span class="kw">pub fn </span>hide(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="self">self</span>.request_sender
             .send(Request {
                 block_id: <span class="self">self</span>.id,
                 cmd: RequestCmd::UnsetWidget,
             })
-            .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to send Request&quot;</span>)
+            .error(<span class="string">&quot;Failed to send Request&quot;</span>)
     }
 
     <span class="doccomment">/// Sends the error to be displayed.
-    </span><span class="kw">pub async fn </span>set_error(<span class="kw-2">&amp;</span><span class="self">self</span>, error: Error) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    </span><span class="kw">pub fn </span>set_error(<span class="kw-2">&amp;</span><span class="self">self</span>, error: Error) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="self">self</span>.request_sender
             .send(Request {
                 block_id: <span class="self">self</span>.id,
                 cmd: RequestCmd::SetError(error),
             })
-            .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to send Request&quot;</span>)
+            .error(<span class="string">&quot;Failed to send Request&quot;</span>)
     }
 
-    <span class="kw">pub async fn </span>set_default_actions(
+    <span class="kw">pub fn </span>set_default_actions(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         actions: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>[(MouseButton, <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt;, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str)],
     ) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
@@ -504,19 +490,17 @@
                 block_id: <span class="self">self</span>.id,
                 cmd: RequestCmd::SetDefaultActions(actions),
             })
-            .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to send Request&quot;</span>)
+            .error(<span class="string">&quot;Failed to send Request&quot;</span>)
     }
 
-    <span class="kw">pub async fn </span>get_actions(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;mpsc::UnboundedReceiver&lt;BlockAction&gt;&gt; {
+    <span class="kw">pub fn </span>get_actions(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;mpsc::UnboundedReceiver&lt;BlockAction&gt;&gt; {
         <span class="kw">let </span>(tx, rx) = mpsc::unbounded_channel();
         <span class="self">self</span>.request_sender
             .send(Request {
                 block_id: <span class="self">self</span>.id,
                 cmd: RequestCmd::SubscribeToActions(tx),
             })
-            .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to send Request&quot;</span>)<span class="question-mark">?</span>;
+            .error(<span class="string">&quot;Failed to send Request&quot;</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(rx)
     }
 

@@ -241,8 +241,6 @@
 <a href="#241" id="241">241</a>
 <a href="#242" id="242">242</a>
 <a href="#243" id="243">243</a>
-<a href="#244" id="244">244</a>
-<a href="#245" id="245">245</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! The brightness of a backlight device
 //!
 //! This block reads brightness information directly from the filesystem, so it works under both
@@ -350,13 +348,12 @@
 }
 
 <span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions().<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions()<span class="question-mark">?</span>;
     api.set_default_actions(<span class="kw-2">&amp;</span>[
         (MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;cycle&quot;</span>),
         (MouseButton::WheelUp, <span class="prelude-val">None</span>, <span class="string">&quot;brightness_up&quot;</span>),
         (MouseButton::WheelDown, <span class="prelude-val">None</span>, <span class="string">&quot;brightness_down&quot;</span>),
-    ])
-    .<span class="kw">await</span><span class="question-mark">?</span>;
+    ])<span class="question-mark">?</span>;
 
     <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $brightness &quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>missing_format = config
@@ -417,7 +414,7 @@
                 <span class="kw">let </span>widget = Widget::new()
                     .with_format(missing_format.clone())
                     .with_state(State::Critical);
-                api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
+                api.set_widget(widget)<span class="question-mark">?</span>;
             }
             <span class="prelude-val">Some</span>(e) =&gt; {
                 api.set_error(Error {
@@ -425,8 +422,7 @@
                     message: <span class="prelude-val">None</span>,
                     cause: <span class="prelude-val">Some</span>(Arc::new(e)),
                     block: <span class="prelude-val">None</span>,
-                })
-                .<span class="kw">await</span><span class="question-mark">?</span>;
+                })<span class="question-mark">?</span>;
             }
             <span class="prelude-val">None </span>=&gt; {
                 <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
@@ -438,7 +434,7 @@
                     <span class="string">&quot;icon&quot; </span>=&gt; Value::icon_progression(<span class="string">&quot;backlight&quot;</span>, icon_value),
                     <span class="string">&quot;brightness&quot; </span>=&gt; Value::percents((brightness * <span class="number">100.0</span>).round())
                 });
-                api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
+                api.set_widget(widget)<span class="question-mark">?</span>;
             }
         }
 

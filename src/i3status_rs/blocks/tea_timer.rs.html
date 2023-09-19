@@ -114,7 +114,6 @@
 <a href="#114" id="114">114</a>
 <a href="#115" id="115">115</a>
 <a href="#116" id="116">116</a>
-<a href="#117" id="117">117</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Timer
 //!
 //! # Configuration
@@ -165,14 +164,13 @@
 }
 
 <span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions().<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions()<span class="question-mark">?</span>;
     api.set_default_actions(<span class="kw-2">&amp;</span>[
         (MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;increment&quot;</span>),
         (MouseButton::WheelUp, <span class="prelude-val">None</span>, <span class="string">&quot;increment&quot;</span>),
         (MouseButton::WheelDown, <span class="prelude-val">None</span>, <span class="string">&quot;decrement&quot;</span>),
         (MouseButton::Right, <span class="prelude-val">None</span>, <span class="string">&quot;reset&quot;</span>),
-    ])
-    .<span class="kw">await</span><span class="question-mark">?</span>;
+    ])<span class="question-mark">?</span>;
 
     <span class="kw">let </span>interval: Seconds = <span class="number">1</span>.into();
     <span class="kw">let </span><span class="kw-2">mut </span>timer = interval.timer();
@@ -214,7 +212,7 @@
             [<span class="kw">if </span>is_timer_active] <span class="string">&quot;seconds&quot; </span>=&gt; Value::text(<span class="macro">format!</span>(<span class="string">&quot;{seconds:02}&quot;</span>)),
         ));
 
-        api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(widget)<span class="question-mark">?</span>;
 
         <span class="macro">select! </span>{
             <span class="kw">_ </span>= timer.tick(), <span class="kw">if </span>is_timer_active =&gt; (),

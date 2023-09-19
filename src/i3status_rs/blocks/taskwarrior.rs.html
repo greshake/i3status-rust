@@ -167,7 +167,6 @@
 <a href="#167" id="167">167</a>
 <a href="#168" id="168">168</a>
 <a href="#169" id="169">169</a>
-<a href="#170" id="170">170</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! The number of tasks from the taskwarrior list
 //!
 //! Clicking the right mouse button on the icon cycles the view of the block through the user&#39;s filters.
@@ -255,9 +254,8 @@
 }
 
 <span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions().<span class="kw">await</span><span class="question-mark">?</span>;
-    api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Right, <span class="prelude-val">None</span>, <span class="string">&quot;next_filter&quot;</span>)])
-        .<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions()<span class="question-mark">?</span>;
+    api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Right, <span class="prelude-val">None</span>, <span class="string">&quot;next_filter&quot;</span>)])<span class="question-mark">?</span>;
 
     <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $count.eng(w:1) &quot;</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>format_singular = config
@@ -302,7 +300,7 @@
             <span class="kw">_ </span>=&gt; State::Idle,
         };
 
-        api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(widget)<span class="question-mark">?</span>;
 
         <span class="macro">select! </span>{
             <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt;(),

@@ -323,7 +323,7 @@
             <span class="string">&quot;layout&quot; </span>=&gt; Value::text(layout),
             <span class="string">&quot;variant&quot; </span>=&gt; Value::text(variant),
         });
-        api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(widget)<span class="question-mark">?</span>;
 
         <span class="macro">select! </span>{
             update = backend.wait_for_change() =&gt; update<span class="question-mark">?</span>,

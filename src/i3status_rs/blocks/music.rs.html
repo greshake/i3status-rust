@@ -659,7 +659,6 @@
 <a href="#659" id="659">659</a>
 <a href="#660" id="660">660</a>
 <a href="#661" id="661">661</a>
-<a href="#662" id="662">662</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! The current song title and artist
 //!
 //! Also provides buttons for play/pause, previous and next.
@@ -829,7 +828,7 @@
 }
 
 <span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions().<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions()<span class="question-mark">?</span>;
     api.set_default_actions(<span class="kw-2">&amp;</span>[
         (MouseButton::Left, <span class="prelude-val">Some</span>(PLAY_PAUSE_BTN), <span class="string">&quot;play_pause&quot;</span>),
         (MouseButton::Left, <span class="prelude-val">Some</span>(NEXT_BTN), <span class="string">&quot;next&quot;</span>),
@@ -837,8 +836,7 @@
         (MouseButton::Right, <span class="prelude-val">None</span>, <span class="string">&quot;next_player&quot;</span>),
         (MouseButton::WheelUp, <span class="prelude-val">None</span>, <span class="string">&quot;seek_forward&quot;</span>),
         (MouseButton::WheelDown, <span class="prelude-val">None</span>, <span class="string">&quot;seek_backward&quot;</span>),
-    ])
-    .<span class="kw">await</span><span class="question-mark">?</span>;
+    ])<span class="question-mark">?</span>;
 
     <span class="kw">let </span>dbus_conn = new_dbus_connection().<span class="kw">await</span><span class="question-mark">?</span>;
 
@@ -994,12 +992,12 @@
                 <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
                 widget.set_values(values);
                 widget.state = state;
-                api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
+                api.set_widget(widget)<span class="question-mark">?</span>;
             }
             <span class="prelude-val">None </span>=&gt; {
                 <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
                 widget.set_values(<span class="macro">map!</span>(<span class="string">&quot;icon&quot; </span>=&gt; Value::icon(<span class="string">&quot;music&quot;</span>)));
-                api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
+                api.set_widget(widget)<span class="question-mark">?</span>;
             }
         }
 

@@ -264,7 +264,7 @@
             <span class="string">&quot;service&quot; </span>=&gt;Value::text(config.service.clone()),
         });
 
-        api.set_widget(widget).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(widget)<span class="question-mark">?</span>;
 
         driver.wait_for_change().<span class="kw">await</span><span class="question-mark">?</span>;
     }

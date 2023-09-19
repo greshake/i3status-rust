@@ -289,7 +289,6 @@
 <a href="#289" id="289">289</a>
 <a href="#290" id="290">290</a>
 <a href="#291" id="291">291</a>
-<a href="#292" id="292">292</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! The output of a custom shell command
 //!
 //! For further customisation, use the `json` option and have the shell command output valid JSON in the schema below:
@@ -432,7 +431,7 @@
                 });
                 widget.state = input.state;
             }
-            <span class="prelude-val">Err</span>(error) =&gt; <span class="kw">return </span>api.set_error(error).<span class="kw">await</span>,
+            <span class="prelude-val">Err</span>(error) =&gt; <span class="kw">return </span>api.set_error(error),
         }
     } <span class="kw">else </span>{
         text_empty = stdout.is_empty();
@@ -440,15 +439,14 @@
     }
 
     <span class="kw">if </span>text_empty &amp;&amp; hide_when_empty {
-        api.hide().<span class="kw">await
-    </span>} <span class="kw">else </span>{
-        api.set_widget(widget).<span class="kw">await
-    </span>}
+        api.hide()
+    } <span class="kw">else </span>{
+        api.set_widget(widget)
+    }
 }
 
 <span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;cycle&quot;</span>)])
-        .<span class="kw">await</span><span class="question-mark">?</span>;
+    api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;cycle&quot;</span>)])<span class="question-mark">?</span>;
 
     <span class="kw">let </span>format = config.format.with_defaults(
         <span class="string">&quot;{ $icon|} $text.pango-str() &quot;</span>,
@@ -524,7 +522,7 @@
             .<span class="kw">await</span><span class="question-mark">?</span>;
         }
     } <span class="kw">else </span>{
-        <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions().<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions()<span class="question-mark">?</span>;
 
         <span class="kw">let </span><span class="kw-2">mut </span>cycle = config
             .cycle

@@ -579,8 +579,8 @@
     widget_updates_sender: WidgetUpdatesSender,
     blocks_render_cache: Vec&lt;RenderedBlock&gt;,
 
-    request_sender: mpsc::Sender&lt;Request&gt;,
-    request_receiver: mpsc::Receiver&lt;Request&gt;,
+    request_sender: mpsc::UnboundedSender&lt;Request&gt;,
+    request_receiver: mpsc::UnboundedReceiver&lt;Request&gt;,
 
     widget_updates_stream: BoxedStream&lt;Vec&lt;usize&gt;&gt;,
     signals_stream: BoxedStream&lt;Signal&gt;,
@@ -669,7 +669,7 @@
 
 <span class="kw">impl </span>BarState {
     <span class="kw">pub fn </span>new(config: Config) -&gt; <span class="self">Self </span>{
-        <span class="kw">let </span>(request_sender, request_receiver) = mpsc::channel(<span class="number">64</span>);
+        <span class="kw">let </span>(request_sender, request_receiver) = mpsc::unbounded_channel();
         <span class="kw">let </span>(widget_updates_sender, widget_updates_stream) =
             formatting::scheduling::manage_widgets_updates();
         <span class="self">Self </span>{

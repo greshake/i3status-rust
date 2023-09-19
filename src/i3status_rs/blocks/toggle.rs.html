@@ -134,7 +134,6 @@
 <a href="#134" id="134">134</a>
 <a href="#135" id="135">135</a>
 <a href="#136" id="136">136</a>
-<a href="#137" id="137">137</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! A Toggle block
 //!
 //! You can add commands to be executed to disable the toggle (`command_off`), and to enable it
@@ -212,9 +211,8 @@
 }
 
 <span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions().<span class="kw">await</span><span class="question-mark">?</span>;
-    api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;toggle&quot;</span>)])
-        .<span class="kw">await</span><span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions()<span class="question-mark">?</span>;
+    api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;toggle&quot;</span>)])<span class="question-mark">?</span>;
 
     <span class="kw">let </span>interval = config.interval.map(Duration::from_secs);
     <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>);
@@ -241,7 +239,7 @@
                 <span class="kw">if </span>is_toggled { icon_on.to_string() } <span class="kw">else </span>{ icon_off.to_string() }
             )
         ));
-        api.set_widget(widget.clone()).<span class="kw">await</span><span class="question-mark">?</span>;
+        api.set_widget(widget.clone())<span class="question-mark">?</span>;
 
         <span class="kw">loop </span>{
             <span class="macro">select! </span>{
