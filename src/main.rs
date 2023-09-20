@@ -1,10 +1,19 @@
 use clap::Parser;
 
+use i3status_rs::blocks::BlockError;
 use i3status_rs::config::Config;
 use i3status_rs::errors::*;
 use i3status_rs::escape::Escaped;
 use i3status_rs::widget::{State, Widget};
 use i3status_rs::{protocol, util, BarState};
+
+#[derive(Debug, thiserror::Error)]
+enum ErrorMaybeInBlock {
+    #[error(transparent)]
+    InBlock(#[from] BlockError),
+    #[error(transparent)]
+    NotInBlock(#[from] Error),
+}
 
 fn main() {
     env_logger::init();
@@ -16,7 +25,7 @@ fn main() {
         protocol::init(args.never_pause);
     }
 
-    let result = tokio::runtime::Builder::new_current_thread()
+    let result: Result<(), ErrorMaybeInBlock> = tokio::runtime::Builder::new_current_thread()
         .max_blocking_threads(blocking_threads)
         .enable_all()
         .build()
@@ -30,7 +39,8 @@ fn main() {
             for block_config in blocks {
                 bar.spawn_block(block_config).await?;
             }
-            bar.run_event_loop(restart).await
+            bar.run_event_loop(restart).await?;
+            Ok(())
         });
     if let Err(error) = result {
         let error_widget = Widget::new()

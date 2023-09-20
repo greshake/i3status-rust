@@ -11,6 +11,7 @@ use super::parse::Arg;
 use super::prefix::Prefix;
 use super::unit::Unit;
 use super::value::ValueInner as Value;
+use super::FormatError;
 use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::escape::CollectEscaped;
@@ -57,7 +58,7 @@ pub static DEFAULT_DATETIME_FORMATTER: Lazy<DatetimeFormatter> =
 pub const DEFAULT_FLAG_FORMATTER: FlagFormatter = FlagFormatter;
 
 pub trait Formatter: Debug + Send + Sync {
-    fn format(&self, val: &Value, config: &SharedConfig) -> Result<String>;
+    fn format(&self, val: &Value, config: &SharedConfig) -> Result<String, FormatError>;
 
     fn interval(&self) -> Option<Duration> {
         None
@@ -195,7 +196,7 @@ pub struct StrFormatter {
 }
 
 impl Formatter for StrFormatter {
-    fn format(&self, val: &Value, config: &SharedConfig) -> Result<String> {
+    fn format(&self, val: &Value, config: &SharedConfig) -> Result<String, FormatError> {
         match val {
             Value::Text(text) => {
                 let text: Vec<&str> = text.graphemes(true).collect();
@@ -228,11 +229,11 @@ impl Formatter for StrFormatter {
                         .collect_pango_escaped(),
                 })
             }
-            Value::Icon(icon, value) => config.get_icon(icon, *value),
-            other => Err(Error::new_format(format!(
-                "{} cannot be formatted with 'str' formatter",
-                other.type_name(),
-            ))),
+            Value::Icon(icon, value) => config.get_icon(icon, *value).map_err(Into::into),
+            other => Err(FormatError::IncompatibleFormatter {
+                ty: other.type_name(),
+                fmt: "str",
+            }),
         }
     }
 
@@ -245,14 +246,14 @@ impl Formatter for StrFormatter {
 pub struct PangoStrFormatter;
 
 impl Formatter for PangoStrFormatter {
-    fn format(&self, val: &Value, config: &SharedConfig) -> Result<String> {
+    fn format(&self, val: &Value, config: &SharedConfig) -> Result<String, FormatError> {
         match val {
             Value::Text(x) => Ok(x.clone()), // No escaping
-            Value::Icon(icon, value) => config.get_icon(icon, *value),
-            other => Err(Error::new_format(format!(
-                "{} cannot be formatted with 'str' formatter",
-                other.type_name(),
-            ))),
+            Value::Icon(icon, value) => config.get_icon(icon, *value).map_err(Into::into),
+            other => Err(FormatError::IncompatibleFormatter {
+                ty: other.type_name(),
+                fmt: "pango-str",
+            }),
         }
     }
 }
@@ -275,7 +276,7 @@ const VERTICAL_BAR_CHARS: [char; 9] = [
 ];
 
 impl Formatter for BarFormatter {
-    fn format(&self, val: &Value, _config: &SharedConfig) -> Result<String> {
+    fn format(&self, val: &Value, _config: &SharedConfig) -> Result<String, FormatError> {
         match val {
             Value::Number { mut val, .. } => {
                 val = (val / self.max_value).clamp(0., 1.);
@@ -292,10 +293,10 @@ impl Formatter for BarFormatter {
                         .collect())
                 }
             }
-            other => Err(Error::new_format(format!(
-                "{} cannot be formatted with 'bar' formatter",
-                other.type_name(),
-            ))),
+            other => Err(FormatError::IncompatibleFormatter {
+                ty: other.type_name(),
+                fmt: "bar",
+            }),
         }
     }
 }
@@ -403,7 +404,7 @@ impl EngFixConfig {
 pub struct EngFormatter(EngFixConfig);
 
 impl Formatter for EngFormatter {
-    fn format(&self, val: &Value, _config: &SharedConfig) -> Result<String> {
+    fn format(&self, val: &Value, _config: &SharedConfig) -> Result<String, FormatError> {
         match val {
             Value::Number { mut val, mut unit } => {
                 let is_negative = val.is_sign_negative();
@@ -468,10 +469,10 @@ impl Formatter for EngFormatter {
 
                 Ok(retval)
             }
-            other => Err(Error::new_format(format!(
-                "{} cannot be formatted with 'eng' formatter",
-                other.type_name(),
-            ))),
+            other => Err(FormatError::IncompatibleFormatter {
+                ty: other.type_name(),
+                fmt: "eng",
+            }),
         }
     }
 }
@@ -480,18 +481,18 @@ impl Formatter for EngFormatter {
 pub struct FixFormatter(EngFixConfig);
 
 impl Formatter for FixFormatter {
-    fn format(&self, val: &Value, _config: &SharedConfig) -> Result<String> {
+    fn format(&self, val: &Value, _config: &SharedConfig) -> Result<String, FormatError> {
         match val {
             Value::Number {
                 ..
                 // mut val,
                 // unit,
                 // icon,
-            } => Err(Error::new_format("'fix' formatter is not implemented yet")),
-            other => Err(Error::new_format(format!(
-                "{} cannot be formatted with 'fix' formatter",
-                other.type_name(),
-            )))
+            } => Err(Error::new("'fix' formatter is not implemented yet").into()),
+            other => Err(FormatError::IncompatibleFormatter {
+                ty: other.type_name(),
+                fmt: "fix",
+            }),
         }
     }
 }
@@ -532,7 +533,7 @@ impl DatetimeFormatter {
 }
 
 impl Formatter for DatetimeFormatter {
-    fn format(&self, val: &Value, _config: &SharedConfig) -> Result<String> {
+    fn format(&self, val: &Value, _config: &SharedConfig) -> Result<String, FormatError> {
         match val {
             Value::Datetime(datetime, timezone) => Ok(match self.locale {
                 Some(locale) => match timezone {
@@ -553,10 +554,10 @@ impl Formatter for DatetimeFormatter {
                 },
             }
             .to_string()),
-            other => Err(Error::new_format(format!(
-                "{} cannot be formatted with 'datetime' formatter",
-                other.type_name(),
-            ))),
+            other => Err(FormatError::IncompatibleFormatter {
+                ty: other.type_name(),
+                fmt: "datetime",
+            }),
         }
     }
 }
@@ -565,7 +566,7 @@ impl Formatter for DatetimeFormatter {
 pub struct FlagFormatter;
 
 impl Formatter for FlagFormatter {
-    fn format(&self, val: &Value, _config: &SharedConfig) -> Result<String> {
+    fn format(&self, val: &Value, _config: &SharedConfig) -> Result<String, FormatError> {
         match val {
             Value::Flag => Ok(String::new()),
             _ => {
@@ -580,12 +581,12 @@ mod tests {
     use super::*;
 
     macro_rules! fmt {
-    ($name:ident, $($key:ident : $value:tt),*) => {
-        new_formatter(stringify!($name), &[
-            $( Arg { key: stringify!($key), val: stringify!($value) } ),*
-        ]).unwrap()
-    };
-}
+        ($name:ident, $($key:ident : $value:tt),*) => {
+            new_formatter(stringify!($name), &[
+                $( Arg { key: stringify!($key), val: stringify!($value) } ),*
+            ]).unwrap()
+        };
+    }
 
     #[test]
     fn eng_rounding_and_negatives() {
