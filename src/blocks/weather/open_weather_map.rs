@@ -2,9 +2,11 @@ use super::*;
 use chrono::Utc;
 
 pub(super) const URL: &str = "https://api.openweathermap.org/data/2.5/weather";
+pub(super) const GEO_URL: &str = "https://api.openweathermap.org/geo/1.0";
 pub(super) const API_KEY_ENV: &str = "OPENWEATHERMAP_API_KEY";
 pub(super) const CITY_ID_ENV: &str = "OPENWEATHERMAP_CITY_ID";
 pub(super) const PLACE_ENV: &str = "OPENWEATHERMAP_PLACE";
+pub(super) const ZIP_ENV: &str = "OPENWEATHERMAP_ZIP";
 
 #[derive(Deserialize, Debug)]
 #[serde(tag = "name", rename_all = "lowercase")]
@@ -15,6 +17,8 @@ pub struct Config {
     city_id: Option<String>,
     #[serde(default = "getenv_openweathermap_place")]
     place: Option<String>,
+    #[serde(default = "getenv_openweathermap_zip")]
+    zip: Option<String>,
     coordinates: Option<(String, String)>,
     #[serde(default)]
     units: UnitSystem,
@@ -23,12 +27,82 @@ pub struct Config {
 }
 
 pub(super) struct Service<'a> {
-    config: &'a Config,
+    api_key: &'a String,
+    units: &'a UnitSystem,
+    lang: &'a String,
+    location_query: Option<String>,
 }
 
 impl<'a> Service<'a> {
-    pub(super) fn new(config: &'a Config) -> Self {
-        Self { config }
+    pub(super) async fn new(autolocate: bool, config: &'a Config) -> Result<Service<'a>> {
+        let api_key = config.api_key.as_ref().or_error(|| {
+            format!("missing key 'service.api_key' and environment variable {API_KEY_ENV}",)
+        })?;
+        Ok(Self {
+            api_key,
+            units: &config.units,
+            lang: &config.lang,
+            location_query: Service::get_location_query(autolocate, api_key, config).await?,
+        })
+    }
+
+    async fn get_location_query(
+        autolocate: bool,
+        api_key: &String,
+        config: &Config,
+    ) -> Result<Option<String>> {
+        if autolocate {
+            return Ok(None);
+        }
+
+        let mut location_query = config
+            .coordinates
+            .as_ref()
+            .map(|(lat, lon)| format!("lat={lat}&lon={lon}"))
+            .or_else(|| config.city_id.as_ref().map(|x| format!("id={x}")));
+
+        location_query = match location_query {
+            Some(x) => Some(x),
+            None => match config.place.as_ref() {
+                Some(place) => {
+                    let url = format!("{GEO_URL}/direct?q={place}&appid={api_key}");
+
+                    REQWEST_CLIENT
+                        .get(url)
+                        .send()
+                        .await
+                        .error("Geo request failed")?
+                        .json::<Vec<CityCoord>>()
+                        .await
+                        .error("Geo failed to parse json")?
+                        .first()
+                        .map(|city| format!("lat={}&lon={}", city.lat, city.lon))
+                }
+                None => None,
+            },
+        };
+
+        location_query = match location_query {
+            Some(x) => Some(x),
+            None => match config.zip.as_ref() {
+                Some(zip) => {
+                    let url = format!("{GEO_URL}/zip?zip={zip}&appid={api_key}");
+                    let city: CityCoord = REQWEST_CLIENT
+                        .get(url)
+                        .send()
+                        .await
+                        .error("Geo request failed")?
+                        .json()
+                        .await
+                        .error("Geo failed to parse json")?;
+
+                    Some(format!("lat={}&lon={}", city.lat, city.lon))
+                }
+                None => None,
+            },
+        };
+
+        Ok(location_query)
     }
 }
 
@@ -40,6 +114,9 @@ fn getenv_openweathermap_city_id() -> Option<String> {
 }
 fn getenv_openweathermap_place() -> Option<String> {
     std::env::var(PLACE_ENV).ok()
+}
+fn getenv_openweathermap_zip() -> Option<String> {
+    std::env::var(ZIP_ENV).ok()
 }
 fn default_lang() -> String {
     "en".into()
@@ -79,33 +156,29 @@ struct ApiWeather {
     description: String,
 }
 
+#[derive(Deserialize, Debug)]
+struct CityCoord {
+    lat: f64,
+    lon: f64,
+}
+
 #[async_trait]
 impl WeatherProvider for Service<'_> {
     async fn get_weather(&self, autolocated: Option<Coordinates>) -> Result<WeatherResult> {
-        let api_key = self.config.api_key.as_ref().or_error(|| {
-            format!("missing key 'service.api_key' and environment variable {API_KEY_ENV}",)
-        })?;
-
         let location_query = autolocated
             .map(|al| format!("lat={}&lon={}", al.latitude, al.longitude))
-            .or_else(|| {
-                self.config
-                    .coordinates
-                    .as_ref()
-                    .map(|(lat, lon)| format!("lat={lat}&lon={lon}"))
-            })
-            .or_else(|| self.config.city_id.as_ref().map(|x| format!("id={x}")))
-            .or_else(|| self.config.place.as_ref().map(|x| format!("q={x}")))
+            .or_else(|| self.location_query.clone())
             .error("no location was provided")?;
 
         // Refer to https://openweathermap.org/current
         let url = format!(
             "{URL}?{location_query}&appid={api_key}&units={units}&lang={lang}",
-            units = match self.config.units {
+            api_key = self.api_key,
+            units = match self.units {
                 UnitSystem::Metric => "metric",
                 UnitSystem::Imperial => "imperial",
             },
-            lang = self.config.lang,
+            lang = self.lang,
         );
 
         let data: ApiResponse = REQWEST_CLIENT
@@ -129,7 +202,7 @@ impl WeatherProvider for Service<'_> {
             weather_verbose: data.weather[0].description.clone(),
             wind: data.wind.speed,
             wind_kmh: data.wind.speed
-                * match self.config.units {
+                * match self.units {
                     UnitSystem::Metric => 3.6,
                     UnitSystem::Imperial => 3.6 * 0.447,
                 },
