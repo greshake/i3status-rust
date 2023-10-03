@@ -4,9 +4,10 @@
 # so identifiers get checked and, if not in a dictionary, will then be split
 #  into words to be checked.
 
-files.extend-exclude = [
+[files]
+extend-exclude = [
+    "cspell.yaml",
     "target/",
-    "man/*",
 ]
 
 # Identifiers are defined using unicode's XID_Continue which includes [a-zA-Z0-9_].

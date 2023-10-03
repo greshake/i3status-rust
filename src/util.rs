@@ -234,7 +234,7 @@ pub fn country_flag_from_iso_code(country_code: &str) -> String {
     String::from_utf8(vec![0xf0, 0x9f, 0x87, b1, 0xf0, 0x9f, 0x87, b2]).unwrap()
 }
 
-/// A shorcut for `Default::default()`
+/// A shortcut for `Default::default()`
 /// See <https://github.com/rust-lang/rust/issues/73014>
 #[inline]
 pub fn default<T: Default>() -> T {

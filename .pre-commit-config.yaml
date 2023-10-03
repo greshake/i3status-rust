@@ -30,9 +30,10 @@ repos:
   # typos is corrections based
   # Corrections: Known misspellings that map to their corresponding dictionary word
   - repo: https://github.com/crate-ci/typos
-    rev: v1.13.12
+    rev: v1.16.17
     hooks:
     - id: typos
+      pass_filenames: false
       args: [] # this prevents typos from being autocorrected (so you have a chance to review them)
   - repo: https://github.com/doublify/pre-commit-rust
     rev: v1.0

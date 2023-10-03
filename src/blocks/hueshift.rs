@@ -64,7 +64,7 @@ use futures::future::pending;
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
     pub format: FormatConfig,
-    // TODO: Document once this option becomes usefull
+    // TODO: Document once this option becomes useful
     #[default(5.into())]
     pub interval: Seconds,
     #[default(10_000)]
