@@ -175,10 +175,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             }
             Some(e) => {
                 api.set_error(Error {
-                    kind: ErrorKind::Other,
                     message: None,
                     cause: Some(Arc::new(e)),
-                    block: None,
                 })?;
             }
             None => {

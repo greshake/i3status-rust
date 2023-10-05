@@ -29,8 +29,8 @@
 
 mod prelude;
 
-use crate::BoxedFuture;
 use futures::future::FutureExt;
+use futures::stream::FuturesUnordered;
 use serde::de::{self, Deserialize};
 use tokio::sync::{mpsc, Notify};
 
@@ -41,7 +41,7 @@ use std::time::Duration;
 use crate::click::MouseButton;
 use crate::errors::*;
 use crate::widget::Widget;
-use crate::{Request, RequestCmd};
+use crate::{BoxedFuture, Request, RequestCmd};
 
 macro_rules! define_blocks {
     {
@@ -74,29 +74,27 @@ macro_rules! define_blocks {
                 }
             }
 
-            pub fn run(self, api: CommonApi) -> BlockFuture {
-                let id = api.id;
+            pub fn spawn(self, api: CommonApi, futures: &mut FuturesUnordered<BoxedFuture<()>>) {
                 match self {
                     $(
                         $(#[cfg(feature = $feat)])?
-                        Self::$block(config) => async move {
+                        Self::$block(config) => futures.push(async move {
                             while let Err(err) = $block::run(&config, &api).await {
-                                api.set_error(err)?;
+                                if api.set_error(err).is_err() {
+                                    return;
+                                }
                                 tokio::select! {
                                     _ = tokio::time::sleep(api.error_interval) => (),
                                     _ = api.wait_for_update_request() => (),
                                 }
                             }
-                            Ok(())
-                        }.boxed_local(),
+                        }.boxed_local()),
                     )*
-                    Self::Err(name, err) => {
-                        std::future::ready(Err(Error {
-                            kind: ErrorKind::Config,
-                            message: None,
+                    Self::Err(_name, err) => {
+                        let _ = api.set_error(Error {
+                            message: Some("Configuration error".into()),
                             cause: Some(Arc::new(err)),
-                            block: Some((name, id)),
-                        })).boxed_local()
+                        });
                     },
                 }
             }
@@ -183,7 +181,14 @@ define_blocks!(
     xrandr,
 );
 
-pub type BlockFuture = BoxedFuture<Result<()>>;
+/// An error which originates from a block
+#[derive(Debug, thiserror::Error)]
+#[error("In block {}: {}", .block_name, .error)]
+pub struct BlockError {
+    pub block_id: usize,
+    pub block_name: &'static str,
+    pub error: Error,
+}
 
 pub type BlockAction = Cow<'static, str>;
 

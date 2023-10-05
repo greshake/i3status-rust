@@ -115,6 +115,16 @@ use value::Value;
 
 pub type Values = HashMap<Cow<'static, str>, Value>;
 
+#[derive(Debug, thiserror::Error)]
+pub enum FormatError {
+    #[error("Placeholder '{0}' not found")]
+    PlaceholderNotFound(String),
+    #[error("{} cannot be formatted with '{}' formatter", .ty, .fmt)]
+    IncompatibleFormatter { ty: &'static str, fmt: &'static str },
+    #[error(transparent)]
+    Other(#[from] Error),
+}
+
 #[derive(Debug, Clone)]
 pub struct Format {
     full: Arc<FormatTemplate>,

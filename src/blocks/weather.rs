@@ -295,10 +295,8 @@ async fn find_ip_location(interval: Duration) -> Result<Coordinates> {
 
     let location = if response.error {
         return Err(Error {
-            kind: ErrorKind::Other,
             message: Some("ipapi.co error".into()),
             cause: Some(Arc::new(response.reason)),
-            block: None,
         });
     } else {
         response
