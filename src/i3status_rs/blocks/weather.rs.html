@@ -338,8 +338,6 @@
 <a href="#338" id="338">338</a>
 <a href="#339" id="339">339</a>
 <a href="#340" id="340">340</a>
-<a href="#341" id="341">341</a>
-<a href="#342" id="342">342</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Current weather
 //!
 //! This block displays local weather and temperature information. In order to use this block, you
@@ -637,10 +635,8 @@
 
     <span class="kw">let </span>location = <span class="kw">if </span>response.error {
         <span class="kw">return </span><span class="prelude-val">Err</span>(Error {
-            kind: ErrorKind::Other,
             message: <span class="prelude-val">Some</span>(<span class="string">&quot;ipapi.co error&quot;</span>.into()),
             cause: <span class="prelude-val">Some</span>(Arc::new(response.reason)),
-            block: <span class="prelude-val">None</span>,
         });
     } <span class="kw">else </span>{
         response

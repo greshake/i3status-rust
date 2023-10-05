@@ -697,6 +697,7 @@
 <a href="#697" id="697">697</a>
 <a href="#698" id="698">698</a>
 <a href="#699" id="699">699</a>
+<a href="#700" id="700">700</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>chrono::format::{Item, StrftimeItems};
 <span class="kw">use </span>chrono::{Local, Locale};
 <span class="kw">use </span>once_cell::sync::Lazy;
@@ -710,6 +711,7 @@
 <span class="kw">use </span><span class="kw">super</span>::prefix::Prefix;
 <span class="kw">use </span><span class="kw">super</span>::unit::Unit;
 <span class="kw">use </span><span class="kw">super</span>::value::ValueInner <span class="kw">as </span>Value;
+<span class="kw">use </span><span class="kw">super</span>::FormatError;
 <span class="kw">use </span><span class="kw">crate</span>::config::SharedConfig;
 <span class="kw">use </span><span class="kw">crate</span>::errors::<span class="kw-2">*</span>;
 <span class="kw">use </span><span class="kw">crate</span>::escape::CollectEscaped;
@@ -756,7 +758,7 @@
 <span class="kw">pub const </span>DEFAULT_FLAG_FORMATTER: FlagFormatter = FlagFormatter;
 
 <span class="kw">pub trait </span>Formatter: Debug + Send + Sync {
-    <span class="kw">fn </span>format(<span class="kw-2">&amp;</span><span class="self">self</span>, val: <span class="kw-2">&amp;</span>Value, config: <span class="kw-2">&amp;</span>SharedConfig) -&gt; <span class="prelude-ty">Result</span>&lt;String&gt;;
+    <span class="kw">fn </span>format(<span class="kw-2">&amp;</span><span class="self">self</span>, val: <span class="kw-2">&amp;</span>Value, config: <span class="kw-2">&amp;</span>SharedConfig) -&gt; <span class="prelude-ty">Result</span>&lt;String, FormatError&gt;;
 
     <span class="kw">fn </span>interval(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;Duration&gt; {
         <span class="prelude-val">None
@@ -894,7 +896,7 @@
 }
 
 <span class="kw">impl </span>Formatter <span class="kw">for </span>StrFormatter {
-    <span class="kw">fn </span>format(<span class="kw-2">&amp;</span><span class="self">self</span>, val: <span class="kw-2">&amp;</span>Value, config: <span class="kw-2">&amp;</span>SharedConfig) -&gt; <span class="prelude-ty">Result</span>&lt;String&gt; {
+    <span class="kw">fn </span>format(<span class="kw-2">&amp;</span><span class="self">self</span>, val: <span class="kw-2">&amp;</span>Value, config: <span class="kw-2">&amp;</span>SharedConfig) -&gt; <span class="prelude-ty">Result</span>&lt;String, FormatError&gt; {
         <span class="kw">match </span>val {
             Value::Text(text) =&gt; {
                 <span class="kw">let </span>text: Vec&lt;<span class="kw-2">&amp;</span>str&gt; = text.graphemes(<span class="bool-val">true</span>).collect();
@@ -927,11 +929,11 @@
                         .collect_pango_escaped(),
                 })
             }
-            Value::Icon(icon, value) =&gt; config.get_icon(icon, <span class="kw-2">*</span>value),
-            other =&gt; <span class="prelude-val">Err</span>(Error::new_format(<span class="macro">format!</span>(
-                <span class="string">&quot;{} cannot be formatted with &#39;str&#39; formatter&quot;</span>,
-                other.type_name(),
-            ))),
+            Value::Icon(icon, value) =&gt; config.get_icon(icon, <span class="kw-2">*</span>value).map_err(Into::into),
+            other =&gt; <span class="prelude-val">Err</span>(FormatError::IncompatibleFormatter {
+                ty: other.type_name(),
+                fmt: <span class="string">&quot;str&quot;</span>,
+            }),
         }
     }
 
@@ -944,14 +946,14 @@
 </span><span class="kw">pub struct </span>PangoStrFormatter;
 
 <span class="kw">impl </span>Formatter <span class="kw">for </span>PangoStrFormatter {
-    <span class="kw">fn </span>format(<span class="kw-2">&amp;</span><span class="self">self</span>, val: <span class="kw-2">&amp;</span>Value, config: <span class="kw-2">&amp;</span>SharedConfig) -&gt; <span class="prelude-ty">Result</span>&lt;String&gt; {
+    <span class="kw">fn </span>format(<span class="kw-2">&amp;</span><span class="self">self</span>, val: <span class="kw-2">&amp;</span>Value, config: <span class="kw-2">&amp;</span>SharedConfig) -&gt; <span class="prelude-ty">Result</span>&lt;String, FormatError&gt; {
         <span class="kw">match </span>val {
             Value::Text(x) =&gt; <span class="prelude-val">Ok</span>(x.clone()), <span class="comment">// No escaping
-            </span>Value::Icon(icon, value) =&gt; config.get_icon(icon, <span class="kw-2">*</span>value),
-            other =&gt; <span class="prelude-val">Err</span>(Error::new_format(<span class="macro">format!</span>(
-                <span class="string">&quot;{} cannot be formatted with &#39;str&#39; formatter&quot;</span>,
-                other.type_name(),
-            ))),
+            </span>Value::Icon(icon, value) =&gt; config.get_icon(icon, <span class="kw-2">*</span>value).map_err(Into::into),
+            other =&gt; <span class="prelude-val">Err</span>(FormatError::IncompatibleFormatter {
+                ty: other.type_name(),
+                fmt: <span class="string">&quot;pango-str&quot;</span>,
+            }),
         }
     }
 }
@@ -974,7 +976,7 @@
 ];
 
 <span class="kw">impl </span>Formatter <span class="kw">for </span>BarFormatter {
-    <span class="kw">fn </span>format(<span class="kw-2">&amp;</span><span class="self">self</span>, val: <span class="kw-2">&amp;</span>Value, _config: <span class="kw-2">&amp;</span>SharedConfig) -&gt; <span class="prelude-ty">Result</span>&lt;String&gt; {
+    <span class="kw">fn </span>format(<span class="kw-2">&amp;</span><span class="self">self</span>, val: <span class="kw-2">&amp;</span>Value, _config: <span class="kw-2">&amp;</span>SharedConfig) -&gt; <span class="prelude-ty">Result</span>&lt;String, FormatError&gt; {
         <span class="kw">match </span>val {
             Value::Number { <span class="kw-2">mut </span>val, .. } =&gt; {
                 val = (val / <span class="self">self</span>.max_value).clamp(<span class="number">0.</span>, <span class="number">1.</span>);
@@ -991,10 +993,10 @@
                         .collect())
                 }
             }
-            other =&gt; <span class="prelude-val">Err</span>(Error::new_format(<span class="macro">format!</span>(
-                <span class="string">&quot;{} cannot be formatted with &#39;bar&#39; formatter&quot;</span>,
-                other.type_name(),
-            ))),
+            other =&gt; <span class="prelude-val">Err</span>(FormatError::IncompatibleFormatter {
+                ty: other.type_name(),
+                fmt: <span class="string">&quot;bar&quot;</span>,
+            }),
         }
     }
 }
@@ -1102,7 +1104,7 @@
 </span><span class="kw">pub struct </span>EngFormatter(EngFixConfig);
 
 <span class="kw">impl </span>Formatter <span class="kw">for </span>EngFormatter {
-    <span class="kw">fn </span>format(<span class="kw-2">&amp;</span><span class="self">self</span>, val: <span class="kw-2">&amp;</span>Value, _config: <span class="kw-2">&amp;</span>SharedConfig) -&gt; <span class="prelude-ty">Result</span>&lt;String&gt; {
+    <span class="kw">fn </span>format(<span class="kw-2">&amp;</span><span class="self">self</span>, val: <span class="kw-2">&amp;</span>Value, _config: <span class="kw-2">&amp;</span>SharedConfig) -&gt; <span class="prelude-ty">Result</span>&lt;String, FormatError&gt; {
         <span class="kw">match </span>val {
             Value::Number { <span class="kw-2">mut </span>val, <span class="kw-2">mut </span>unit } =&gt; {
                 <span class="kw">let </span>is_negative = val.is_sign_negative();
@@ -1167,10 +1169,10 @@
 
                 <span class="prelude-val">Ok</span>(retval)
             }
-            other =&gt; <span class="prelude-val">Err</span>(Error::new_format(<span class="macro">format!</span>(
-                <span class="string">&quot;{} cannot be formatted with &#39;eng&#39; formatter&quot;</span>,
-                other.type_name(),
-            ))),
+            other =&gt; <span class="prelude-val">Err</span>(FormatError::IncompatibleFormatter {
+                ty: other.type_name(),
+                fmt: <span class="string">&quot;eng&quot;</span>,
+            }),
         }
     }
 }
@@ -1179,18 +1181,18 @@
 </span><span class="kw">pub struct </span>FixFormatter(EngFixConfig);
 
 <span class="kw">impl </span>Formatter <span class="kw">for </span>FixFormatter {
-    <span class="kw">fn </span>format(<span class="kw-2">&amp;</span><span class="self">self</span>, val: <span class="kw-2">&amp;</span>Value, _config: <span class="kw-2">&amp;</span>SharedConfig) -&gt; <span class="prelude-ty">Result</span>&lt;String&gt; {
+    <span class="kw">fn </span>format(<span class="kw-2">&amp;</span><span class="self">self</span>, val: <span class="kw-2">&amp;</span>Value, _config: <span class="kw-2">&amp;</span>SharedConfig) -&gt; <span class="prelude-ty">Result</span>&lt;String, FormatError&gt; {
         <span class="kw">match </span>val {
             Value::Number {
                 ..
                 <span class="comment">// mut val,
                 // unit,
                 // icon,
-            </span>} =&gt; <span class="prelude-val">Err</span>(Error::new_format(<span class="string">&quot;&#39;fix&#39; formatter is not implemented yet&quot;</span>)),
-            other =&gt; <span class="prelude-val">Err</span>(Error::new_format(<span class="macro">format!</span>(
-                <span class="string">&quot;{} cannot be formatted with &#39;fix&#39; formatter&quot;</span>,
-                other.type_name(),
-            )))
+            </span>} =&gt; <span class="prelude-val">Err</span>(Error::new(<span class="string">&quot;&#39;fix&#39; formatter is not implemented yet&quot;</span>).into()),
+            other =&gt; <span class="prelude-val">Err</span>(FormatError::IncompatibleFormatter {
+                ty: other.type_name(),
+                fmt: <span class="string">&quot;fix&quot;</span>,
+            }),
         }
     }
 }
@@ -1231,7 +1233,7 @@
 }
 
 <span class="kw">impl </span>Formatter <span class="kw">for </span>DatetimeFormatter {
-    <span class="kw">fn </span>format(<span class="kw-2">&amp;</span><span class="self">self</span>, val: <span class="kw-2">&amp;</span>Value, _config: <span class="kw-2">&amp;</span>SharedConfig) -&gt; <span class="prelude-ty">Result</span>&lt;String&gt; {
+    <span class="kw">fn </span>format(<span class="kw-2">&amp;</span><span class="self">self</span>, val: <span class="kw-2">&amp;</span>Value, _config: <span class="kw-2">&amp;</span>SharedConfig) -&gt; <span class="prelude-ty">Result</span>&lt;String, FormatError&gt; {
         <span class="kw">match </span>val {
             Value::Datetime(datetime, timezone) =&gt; <span class="prelude-val">Ok</span>(<span class="kw">match </span><span class="self">self</span>.locale {
                 <span class="prelude-val">Some</span>(locale) =&gt; <span class="kw">match </span>timezone {
@@ -1252,10 +1254,10 @@
                 },
             }
             .to_string()),
-            other =&gt; <span class="prelude-val">Err</span>(Error::new_format(<span class="macro">format!</span>(
-                <span class="string">&quot;{} cannot be formatted with &#39;datetime&#39; formatter&quot;</span>,
-                other.type_name(),
-            ))),
+            other =&gt; <span class="prelude-val">Err</span>(FormatError::IncompatibleFormatter {
+                ty: other.type_name(),
+                fmt: <span class="string">&quot;datetime&quot;</span>,
+            }),
         }
     }
 }
@@ -1264,7 +1266,7 @@
 </span><span class="kw">pub struct </span>FlagFormatter;
 
 <span class="kw">impl </span>Formatter <span class="kw">for </span>FlagFormatter {
-    <span class="kw">fn </span>format(<span class="kw-2">&amp;</span><span class="self">self</span>, val: <span class="kw-2">&amp;</span>Value, _config: <span class="kw-2">&amp;</span>SharedConfig) -&gt; <span class="prelude-ty">Result</span>&lt;String&gt; {
+    <span class="kw">fn </span>format(<span class="kw-2">&amp;</span><span class="self">self</span>, val: <span class="kw-2">&amp;</span>Value, _config: <span class="kw-2">&amp;</span>SharedConfig) -&gt; <span class="prelude-ty">Result</span>&lt;String, FormatError&gt; {
         <span class="kw">match </span>val {
             Value::Flag =&gt; <span class="prelude-val">Ok</span>(String::new()),
             <span class="kw">_ </span>=&gt; {
@@ -1279,12 +1281,12 @@
     <span class="kw">use super</span>::<span class="kw-2">*</span>;
 
     <span class="macro">macro_rules! </span>fmt {
-    (<span class="macro-nonterminal">$name</span>:ident, $(<span class="macro-nonterminal">$key</span>:ident : <span class="macro-nonterminal">$value</span>:tt),<span class="kw-2">*</span>) =&gt; {
-        new_formatter(<span class="macro">stringify!</span>(<span class="macro-nonterminal">$name</span>), <span class="kw-2">&amp;</span>[
-            $( Arg { key: <span class="macro">stringify!</span>(<span class="macro-nonterminal">$key</span>), val: <span class="macro">stringify!</span>(<span class="macro-nonterminal">$value</span>) } ),*
-        ]).unwrap()
-    };
-}
+        (<span class="macro-nonterminal">$name</span>:ident, $(<span class="macro-nonterminal">$key</span>:ident : <span class="macro-nonterminal">$value</span>:tt),<span class="kw-2">*</span>) =&gt; {
+            new_formatter(<span class="macro">stringify!</span>(<span class="macro-nonterminal">$name</span>), <span class="kw-2">&amp;</span>[
+                $( Arg { key: <span class="macro">stringify!</span>(<span class="macro-nonterminal">$key</span>), val: <span class="macro">stringify!</span>(<span class="macro-nonterminal">$value</span>) } ),*
+            ]).unwrap()
+        };
+    }
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>eng_rounding_and_negatives() {

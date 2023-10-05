@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["ErrorKind"],"struct":["BoxErrorWrapper","Error"],"trait":["InBlock","OptionExt","ResultExt","StdError","ToSerdeError"],"type":["Result"]};
+window.SIDEBAR_ITEMS = {"struct":["BoxErrorWrapper","Error"],"trait":["ErrorContext","StdError","ToSerdeError"],"type":["Result"]};

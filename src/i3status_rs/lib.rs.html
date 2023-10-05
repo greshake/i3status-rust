@@ -464,6 +464,8 @@
 <a href="#464" id="464">464</a>
 <a href="#465" id="465">465</a>
 <a href="#466" id="466">466</a>
+<a href="#467" id="467">467</a>
+<a href="#468" id="468">468</a>
 </pre></div><pre class="rust"><code><span class="attr">#![warn(clippy::match_same_arms)]
 #![warn(clippy::semicolon_if_nothing_returned)]
 #![warn(clippy::unnecessary_wraps)]
@@ -503,7 +505,7 @@
 <span class="kw">use </span>tokio::process::Command;
 <span class="kw">use </span>tokio::sync::{mpsc, Notify};
 
-<span class="kw">use </span><span class="kw">crate</span>::blocks::{BlockAction, BlockFuture, CommonApi};
+<span class="kw">use </span><span class="kw">crate</span>::blocks::{BlockAction, BlockError, CommonApi};
 <span class="kw">use </span><span class="kw">crate</span>::click::{ClickHandler, MouseButton};
 <span class="kw">use </span><span class="kw">crate</span>::config::{BlockConfigEntry, Config, SharedConfig};
 <span class="kw">use </span><span class="kw">crate</span>::errors::<span class="kw-2">*</span>;
@@ -574,7 +576,7 @@
 
     blocks: Vec&lt;Block&gt;,
     fullscreen_block: <span class="prelude-ty">Option</span>&lt;usize&gt;,
-    running_blocks: FuturesUnordered&lt;BlockFuture&gt;,
+    running_blocks: FuturesUnordered&lt;BoxedFuture&lt;()&gt;&gt;,
 
     widget_updates_sender: WidgetUpdatesSender,
     blocks_render_cache: Vec&lt;RenderedBlock&gt;,
@@ -652,6 +654,12 @@
     }
 
     <span class="kw">fn </span>set_error(<span class="kw-2">&amp;mut </span><span class="self">self</span>, fullscreen: bool, error: Error) {
+        <span class="kw">let </span>error = BlockError {
+            block_id: <span class="self">self</span>.id,
+            block_name: <span class="self">self</span>.name,
+            error,
+        };
+
         <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new()
             .with_state(State::Critical)
             .with_format(<span class="kw">if </span>fullscreen {
@@ -661,7 +669,7 @@
             });
         widget.set_values(<span class="macro">map! </span>{
             <span class="string">&quot;full_error_message&quot; </span>=&gt; Value::text(error.to_string()),
-            [<span class="kw">if let </span><span class="prelude-val">Some</span>(v) = <span class="kw-2">&amp;</span>error.message] <span class="string">&quot;short_error_message&quot; </span>=&gt; Value::text(v.to_string()),
+            [<span class="kw">if let </span><span class="prelude-val">Some</span>(v) = <span class="kw-2">&amp;</span>error.error.message] <span class="string">&quot;short_error_message&quot; </span>=&gt; Value::text(v.to_string()),
         });
         <span class="self">self</span>.state = BlockState::Error { widget };
     }
@@ -740,12 +748,9 @@
             .error_fullscreen_format
             .with_default_config(<span class="kw-2">&amp;</span><span class="self">self</span>.config.error_fullscreen_format);
 
-        <span class="kw">let </span>block_name = block_config.config.name();
-        <span class="kw">let </span>block_fut = block_config.config.run(api);
-
         <span class="kw">let </span>block = Block {
             id: <span class="self">self</span>.blocks.len(),
-            name: block_name,
+            name: block_config.config.name(),
 
             update_request,
             action_sender: <span class="prelude-val">None</span>,
@@ -761,7 +766,8 @@
             state: BlockState::None,
         };
 
-        <span class="self">self</span>.running_blocks.push(block_fut);
+        block_config.config.spawn(api, <span class="kw-2">&amp;mut </span><span class="self">self</span>.running_blocks);
+
         <span class="self">self</span>.blocks.push(block);
         <span class="self">self</span>.blocks_render_cache.push(RenderedBlock {
             segments: Vec::new(),
@@ -799,7 +805,7 @@
         block.notify_intervals(<span class="kw-2">&amp;</span><span class="self">self</span>.widget_updates_sender);
     }
 
-    <span class="kw">fn </span>render_block(<span class="kw-2">&amp;mut </span><span class="self">self</span>, id: usize) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">fn </span>render_block(<span class="kw-2">&amp;mut </span><span class="self">self</span>, id: usize) -&gt; <span class="prelude-ty">Result</span>&lt;(), BlockError&gt; {
         <span class="kw">let </span>block = <span class="kw-2">&amp;mut </span><span class="self">self</span>.blocks[id];
         <span class="kw">let </span>data = <span class="kw-2">&amp;mut </span><span class="self">self</span>.blocks_render_cache[id].segments;
         <span class="kw">match </span><span class="kw-2">&amp;</span>block.state {
@@ -809,7 +815,11 @@
             BlockState::Normal { widget } | BlockState::Error { widget, .. } =&gt; {
                 <span class="kw-2">*</span>data = widget
                     .get_data(<span class="kw-2">&amp;</span>block.shared_config, id)
-                    .in_block(block.name, id)<span class="question-mark">?</span>;
+                    .map_err(|error| BlockError {
+                        block_id: id,
+                        block_name: block.name,
+                        error,
+                    })<span class="question-mark">?</span>;
             }
         }
         <span class="prelude-val">Ok</span>(())
@@ -823,19 +833,16 @@
         }
     }
 
-    <span class="kw">async fn </span>process_event(<span class="kw-2">&amp;mut </span><span class="self">self</span>, restart: <span class="kw">fn</span>() -&gt; !) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">async fn </span>process_event(<span class="kw-2">&amp;mut </span><span class="self">self</span>, restart: <span class="kw">fn</span>() -&gt; !) -&gt; <span class="prelude-ty">Result</span>&lt;(), BlockError&gt; {
         <span class="macro">tokio::select! </span>{
-            <span class="comment">// Handle blocks&#39; errors
-            </span><span class="prelude-val">Some</span>(block_result) = <span class="self">self</span>.running_blocks.next() =&gt; {
-                block_result
-            }
+            <span class="comment">// Poll blocks
+            </span><span class="prelude-val">Some</span>(()) = <span class="self">self</span>.running_blocks.next() =&gt; (),
             <span class="comment">// Receive messages from blocks
             </span><span class="prelude-val">Some</span>(request) = <span class="self">self</span>.request_receiver.recv() =&gt; {
                 <span class="kw">let </span>id = request.block_id;
                 <span class="self">self</span>.process_request(request);
                 <span class="self">self</span>.render_block(id)<span class="question-mark">?</span>;
                 <span class="self">self</span>.render();
-                <span class="prelude-val">Ok</span>(())
             }
             <span class="comment">// Handle scheduled updates
             </span><span class="prelude-val">Some</span>(ids) = <span class="self">self</span>.widget_updates_stream.next() =&gt; {
@@ -843,15 +850,19 @@
                     <span class="self">self</span>.render_block(id)<span class="question-mark">?</span>;
                 }
                 <span class="self">self</span>.render();
-                <span class="prelude-val">Ok</span>(())
             }
             <span class="comment">// Handle clicks
             </span><span class="prelude-val">Some</span>(event) = <span class="self">self</span>.events_stream.next() =&gt; {
-                <span class="kw">let </span>block = <span class="self">self</span>.blocks.get_mut(event.id).error(<span class="string">&quot;Events receiver: ID out of bounds&quot;</span>)<span class="question-mark">?</span>;
+                <span class="kw">let </span>block = <span class="self">self</span>.blocks.get_mut(event.id).expect(<span class="string">&quot;Events receiver: ID out of bounds&quot;</span>);
                 <span class="kw">match </span><span class="kw-2">&amp;mut </span>block.state {
                     BlockState::None =&gt; (),
                     BlockState::Normal { .. } =&gt; {
-                        <span class="kw">match </span>block.click_handler.handle(<span class="kw-2">&amp;</span>event).<span class="kw">await</span>.in_block(block.name, event.id)<span class="question-mark">? </span>{
+                        <span class="kw">let </span>result = block.click_handler.handle(<span class="kw-2">&amp;</span>event).<span class="kw">await</span>.map_err(|error| BlockError {
+                            block_id: event.id,
+                            block_name: block.name,
+                            error,
+                        })<span class="question-mark">?</span>;
+                        <span class="kw">match </span>result {
                             <span class="prelude-val">Some</span>(post_actions) =&gt; {
                                 <span class="kw">if let </span><span class="prelude-val">Some</span>(action) = post_actions.action {
                                     block.send_action(Cow::Owned(action));
@@ -882,7 +893,6 @@
                         <span class="self">self</span>.render();
                     }
                 }
-                <span class="prelude-val">Ok</span>(())
             }
             <span class="comment">// Handle signals
             </span><span class="prelude-val">Some</span>(signal) = <span class="self">self</span>.signals_stream.next() =&gt; <span class="kw">match </span>signal {
@@ -890,7 +900,6 @@
                     <span class="kw">for </span>block <span class="kw">in </span><span class="kw-2">&amp;</span><span class="self">self</span>.blocks {
                         block.update_request.notify_one();
                     }
-                    <span class="prelude-val">Ok</span>(())
                 }
                 Signal::Usr2 =&gt; restart(),
                 Signal::Custom(signal) =&gt; {
@@ -899,33 +908,28 @@
                             block.update_request.notify_one();
                         }
                     }
-                    <span class="prelude-val">Ok</span>(())
                 }
             }
         }
+        <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">pub async fn </span>run_event_loop(<span class="kw-2">mut </span><span class="self">self</span>, restart: <span class="kw">fn</span>() -&gt; !) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+    <span class="kw">pub async fn </span>run_event_loop(<span class="kw-2">mut </span><span class="self">self</span>, restart: <span class="kw">fn</span>() -&gt; !) -&gt; <span class="prelude-ty">Result</span>&lt;(), BlockError&gt; {
         <span class="kw">loop </span>{
             <span class="kw">if let </span><span class="prelude-val">Err</span>(error) = <span class="self">self</span>.process_event(restart).<span class="kw">await </span>{
-                <span class="kw">match </span>error.block {
-                    <span class="prelude-val">Some</span>((<span class="kw">_</span>, id)) =&gt; {
-                        <span class="kw">let </span>block = <span class="kw-2">&amp;mut </span><span class="self">self</span>.blocks[id];
+                <span class="kw">let </span>block = <span class="kw-2">&amp;mut </span><span class="self">self</span>.blocks[error.block_id];
 
-                        <span class="kw">if </span><span class="macro">matches!</span>(block.state, BlockState::Error { .. }) {
-                            <span class="comment">// This should never happen. If this code runs, it could mean that we
-                            // got an error while trying to display and error. We better stop here.
-                            </span><span class="kw">return </span><span class="prelude-val">Err</span>(error);
-                        }
-
-                        block.set_error(<span class="self">self</span>.fullscreen_block == <span class="prelude-val">Some</span>(id), error);
-                        block.notify_intervals(<span class="kw-2">&amp;</span><span class="self">self</span>.widget_updates_sender);
-
-                        <span class="self">self</span>.render_block(id)<span class="question-mark">?</span>;
-                        <span class="self">self</span>.render();
-                    }
-                    <span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(error),
+                <span class="kw">if </span><span class="macro">matches!</span>(block.state, BlockState::Error { .. }) {
+                    <span class="comment">// This should never happen. If this code runs, it could mean that we
+                    // got an error while trying to display and error. We better stop here.
+                    </span><span class="kw">return </span><span class="prelude-val">Err</span>(error);
                 }
+
+                block.set_error(<span class="self">self</span>.fullscreen_block == <span class="prelude-val">Some</span>(block.id), error.error);
+                block.notify_intervals(<span class="kw-2">&amp;</span><span class="self">self</span>.widget_updates_sender);
+
+                <span class="self">self</span>.render_block(error.block_id)<span class="question-mark">?</span>;
+                <span class="self">self</span>.render();
             }
         }
     }

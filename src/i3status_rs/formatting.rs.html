@@ -186,6 +186,16 @@
 <a href="#186" id="186">186</a>
 <a href="#187" id="187">187</a>
 <a href="#188" id="188">188</a>
+<a href="#189" id="189">189</a>
+<a href="#190" id="190">190</a>
+<a href="#191" id="191">191</a>
+<a href="#192" id="192">192</a>
+<a href="#193" id="193">193</a>
+<a href="#194" id="194">194</a>
+<a href="#195" id="195">195</a>
+<a href="#196" id="196">196</a>
+<a href="#197" id="197">197</a>
+<a href="#198" id="198">198</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! # Formatting system
 //! Many blocks have a `format` configuration option, which allows to heavily customize the block&#39;s
 //! appearance. In short, each block with `format` option provides a set of values, which are
@@ -302,6 +312,16 @@
 <span class="kw">use </span>value::Value;
 
 <span class="kw">pub type </span>Values = HashMap&lt;Cow&lt;<span class="lifetime">&#39;static</span>, str&gt;, Value&gt;;
+
+<span class="attr">#[derive(Debug, thiserror::Error)]
+</span><span class="kw">pub enum </span>FormatError {
+    <span class="attr">#[error(<span class="string">&quot;Placeholder &#39;{0}&#39; not found&quot;</span>)]
+    </span>PlaceholderNotFound(String),
+    <span class="attr">#[error(<span class="string">&quot;{} cannot be formatted with &#39;{}&#39; formatter&quot;</span>, .ty, .fmt)]
+    </span>IncompatibleFormatter { ty: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str, fmt: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str },
+    <span class="attr">#[error(transparent)]
+    </span>Other(<span class="attr">#[from] </span>Error),
+}
 
 <span class="attr">#[derive(Debug, Clone)]
 </span><span class="kw">pub struct </span>Format {

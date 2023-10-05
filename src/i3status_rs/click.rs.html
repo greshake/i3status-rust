@@ -153,7 +153,7 @@
 <span class="kw">use </span>serde::de::{<span class="self">self</span>, Deserializer, Visitor};
 <span class="kw">use </span>serde::Deserialize;
 
-<span class="kw">use </span><span class="kw">crate</span>::errors::{<span class="prelude-ty">Result</span>, ResultExt};
+<span class="kw">use </span><span class="kw">crate</span>::errors::{ErrorContext, <span class="prelude-ty">Result</span>};
 <span class="kw">use </span><span class="kw">crate</span>::protocol::i3bar_event::I3BarEvent;
 <span class="kw">use </span><span class="kw">crate</span>::subprocess::{spawn_shell, spawn_shell_sync};
 
