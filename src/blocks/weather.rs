@@ -16,7 +16,7 @@
 //! `service` | The configuration of a weather service (see below). | **Required**
 //! `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | `" $icon $weather $temp "`
 //! `interval` | Update interval, in seconds. | `600`
-//! `autolocate` | Gets your location using the ipapi.co IP location service (no API key required). If the API call fails then the block will fallback to `city_id` or `place`. | `false`
+//! `autolocate` | Gets your location using the ipapi.co IP location service (no API key required). If the API call fails then the block will fallback to service specific location config. | `false`
 //! `autolocate_interval` | Update interval for `autolocate` in seconds or "once" | `interval`
 //!
 //! # OpenWeatherMap Options
@@ -27,17 +27,18 @@
 //! ----|--------|----------|--------
 //! `name` | `openweathermap`. | Yes | None
 //! `api_key` | Your OpenWeatherMap API key. | Yes | None
-//! `city_id` | OpenWeatherMap's ID for the city. | Yes* | None
-//! `place` | OpenWeatherMap 'By city name' search query. See [here](https://openweathermap.org/current) | Yes* | None
 //! `coordinates` | GPS latitude longitude coordinates as a tuple, example: `["39.2362","9.3317"]` | Yes* | None
+//! `city_id` | OpenWeatherMap's ID for the city. (Deprecated) | Yes* | None
+//! `place` | OpenWeatherMap 'By {city name},{state code},{country code}' search query. See [here](https://openweathermap.org/api/geocoding-api#direct_name). Consumes an additional API call | Yes* | None
+//! `zip` | OpenWeatherMap 'By {zip code},{country code}' search query. See [here](https://openweathermap.org/api/geocoding-api#direct_zip). Consumes an additional API call | Yes* | None
 //! `units` | Either `"metric"` or `"imperial"`. | No | `"metric"`
 //! `lang` | Language code. See [here](https://openweathermap.org/current#multi). Currently only affects `weather_verbose` key. | No | `"en"`
 //!
-//! One of `city_id`, `place` or `coordinates` is required. If more than one are supplied, `city_id` takes precedence over `place` which takes place over `coordinates`.
+//! One of `coordinates`, `city_id`, `place`, or `zip` is required. If more than one are supplied, `coordinates` takes precedence over `city_id` which takes precedence over `place` which takes precedence over `zip`.
 //!
-//! The options `api_key`, `city_id`, `place` can be omitted from configuration,
+//! The options `api_key`, `city_id`, `place`, `zip`, can be omitted from configuration,
 //! in which case they must be provided in the environment variables
-//! `OPENWEATHERMAP_API_KEY`, `OPENWEATHERMAP_CITY_ID`, `OPENWEATHERMAP_PLACE`.
+//! `OPENWEATHERMAP_API_KEY`, `OPENWEATHERMAP_CITY_ID`, `OPENWEATHERMAP_PLACE`, `OPENWEATHERMAP_ZIP`.
 //!
 //! # met.no Options
 //!
@@ -201,8 +202,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let format = config.format.with_default(" $icon $weather $temp ")?;
 
     let provider: Box<dyn WeatherProvider + Send + Sync> = match &config.service {
-        WeatherService::MetNo(config) => Box::new(met_no::Service::new(config)?),
-        WeatherService::OpenWeatherMap(config) => Box::new(open_weather_map::Service::new(config)),
+        WeatherService::MetNo(service_config) => Box::new(met_no::Service::new(service_config)?),
+        WeatherService::OpenWeatherMap(service_config) => {
+            Box::new(open_weather_map::Service::new(config.autolocate, service_config).await?)
+        }
     };
 
     let autolocate_interval = config.autolocate_interval.unwrap_or(config.interval);
