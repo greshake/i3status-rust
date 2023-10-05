@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/weather/open_weather_map.rs`."><title>open_weather_map.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-9bb858ba049f1f21.css" id="mainThemeStyle"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.72.1 (d5c2e9c34 2023-09-13)" data-channel="1.72.1" data-search-js="search-f6292fe389d70017.js" data-settings-js="settings-de11bff964e9d4e5.js" data-settings-css="settings-8c76f75bfb6bd192.css" data-theme-light-css="light-0f8c037637f9eb3e.css" data-theme-dark-css="dark-1097f8e92a01e3cf.css" data-theme-ayu-css="ayu-614652228113ac93.css" ><script src="../../../../static.files/storage-59fd9b8ccb335783.js"></script><script defer src="../../../../static.files/source-script-106908c7a7964ba4.js"></script><script defer src="../../../../source-files.js"></script><script defer src="../../../../static.files/main-0795b7d26be81095.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../../../../static.files/light-0f8c037637f9eb3e.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../../../../static.files/dark-1097f8e92a01e3cf.css"><link rel="stylesheet" href="../../../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../../i3status_rs/index.html"><img class="rust-logo" src="../../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/weather/open_weather_map.rs`."><title>open_weather_map.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-cb6f1f67f1bcd037.css" id="mainThemeStyle"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.73.0 (cc66ad468 2023-10-03)" data-channel="1.73.0" data-search-js="search-6dfdfced5eff6596.js" data-settings-js="settings-de11bff964e9d4e5.js" data-settings-css="settings-8c76f75bfb6bd192.css" data-theme-light-css="light-1596385f77d47ef2.css" data-theme-dark-css="dark-0a43001d3fc2282c.css" data-theme-ayu-css="ayu-fd19013d6ce078bf.css" ><script src="../../../../static.files/storage-db41da1a38ea3cb8.js"></script><script defer src="../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-0795b7d26be81095.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../../../../static.files/light-1596385f77d47ef2.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../../../../static.files/dark-0a43001d3fc2282c.css"><link rel="stylesheet" href="../../../../static.files/noscript-cffde32267a19fd6.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../../i3status_rs/index.html"><img class="rust-logo" src="../../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -146,13 +146,88 @@
 <a href="#146" id="146">146</a>
 <a href="#147" id="147">147</a>
 <a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+<a href="#157" id="157">157</a>
+<a href="#158" id="158">158</a>
+<a href="#159" id="159">159</a>
+<a href="#160" id="160">160</a>
+<a href="#161" id="161">161</a>
+<a href="#162" id="162">162</a>
+<a href="#163" id="163">163</a>
+<a href="#164" id="164">164</a>
+<a href="#165" id="165">165</a>
+<a href="#166" id="166">166</a>
+<a href="#167" id="167">167</a>
+<a href="#168" id="168">168</a>
+<a href="#169" id="169">169</a>
+<a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
+<a href="#172" id="172">172</a>
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
+<a href="#180" id="180">180</a>
+<a href="#181" id="181">181</a>
+<a href="#182" id="182">182</a>
+<a href="#183" id="183">183</a>
+<a href="#184" id="184">184</a>
+<a href="#185" id="185">185</a>
+<a href="#186" id="186">186</a>
+<a href="#187" id="187">187</a>
+<a href="#188" id="188">188</a>
+<a href="#189" id="189">189</a>
+<a href="#190" id="190">190</a>
+<a href="#191" id="191">191</a>
+<a href="#192" id="192">192</a>
+<a href="#193" id="193">193</a>
+<a href="#194" id="194">194</a>
+<a href="#195" id="195">195</a>
+<a href="#196" id="196">196</a>
+<a href="#197" id="197">197</a>
+<a href="#198" id="198">198</a>
+<a href="#199" id="199">199</a>
+<a href="#200" id="200">200</a>
+<a href="#201" id="201">201</a>
+<a href="#202" id="202">202</a>
+<a href="#203" id="203">203</a>
+<a href="#204" id="204">204</a>
+<a href="#205" id="205">205</a>
+<a href="#206" id="206">206</a>
+<a href="#207" id="207">207</a>
+<a href="#208" id="208">208</a>
+<a href="#209" id="209">209</a>
+<a href="#210" id="210">210</a>
+<a href="#211" id="211">211</a>
+<a href="#212" id="212">212</a>
+<a href="#213" id="213">213</a>
+<a href="#214" id="214">214</a>
+<a href="#215" id="215">215</a>
+<a href="#216" id="216">216</a>
+<a href="#217" id="217">217</a>
+<a href="#218" id="218">218</a>
+<a href="#219" id="219">219</a>
+<a href="#220" id="220">220</a>
+<a href="#221" id="221">221</a>
 </pre></div><pre class="rust"><code><span class="kw">use super</span>::<span class="kw-2">*</span>;
 <span class="kw">use </span>chrono::Utc;
 
 <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">const </span>URL: <span class="kw-2">&amp;</span>str = <span class="string">&quot;https://api.openweathermap.org/data/2.5/weather&quot;</span>;
+<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">const </span>GEO_URL: <span class="kw-2">&amp;</span>str = <span class="string">&quot;https://api.openweathermap.org/geo/1.0&quot;</span>;
 <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">const </span>API_KEY_ENV: <span class="kw-2">&amp;</span>str = <span class="string">&quot;OPENWEATHERMAP_API_KEY&quot;</span>;
 <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">const </span>CITY_ID_ENV: <span class="kw-2">&amp;</span>str = <span class="string">&quot;OPENWEATHERMAP_CITY_ID&quot;</span>;
 <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">const </span>PLACE_ENV: <span class="kw-2">&amp;</span>str = <span class="string">&quot;OPENWEATHERMAP_PLACE&quot;</span>;
+<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">const </span>ZIP_ENV: <span class="kw-2">&amp;</span>str = <span class="string">&quot;OPENWEATHERMAP_ZIP&quot;</span>;
 
 <span class="attr">#[derive(Deserialize, Debug)]
 #[serde(tag = <span class="string">&quot;name&quot;</span>, rename_all = <span class="string">&quot;lowercase&quot;</span>)]
@@ -163,6 +238,8 @@
     </span>city_id: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="attr">#[serde(default = <span class="string">&quot;getenv_openweathermap_place&quot;</span>)]
     </span>place: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="attr">#[serde(default = <span class="string">&quot;getenv_openweathermap_zip&quot;</span>)]
+    </span>zip: <span class="prelude-ty">Option</span>&lt;String&gt;,
     coordinates: <span class="prelude-ty">Option</span>&lt;(String, String)&gt;,
     <span class="attr">#[serde(default)]
     </span>units: UnitSystem,
@@ -171,12 +248,82 @@
 }
 
 <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct </span>Service&lt;<span class="lifetime">&#39;a</span>&gt; {
-    config: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>Config,
+    api_key: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>String,
+    units: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>UnitSystem,
+    lang: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>String,
+    location_query: <span class="prelude-ty">Option</span>&lt;String&gt;,
 }
 
 <span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>&gt; Service&lt;<span class="lifetime">&#39;a</span>&gt; {
-    <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>new(config: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>Config) -&gt; <span class="self">Self </span>{
-        <span class="self">Self </span>{ config }
+    <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">async fn </span>new(autolocate: bool, config: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>Config) -&gt; <span class="prelude-ty">Result</span>&lt;Service&lt;<span class="lifetime">&#39;a</span>&gt;&gt; {
+        <span class="kw">let </span>api_key = config.api_key.as_ref().or_error(|| {
+            <span class="macro">format!</span>(<span class="string">&quot;missing key &#39;service.api_key&#39; and environment variable {API_KEY_ENV}&quot;</span>,)
+        })<span class="question-mark">?</span>;
+        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
+            api_key,
+            units: <span class="kw-2">&amp;</span>config.units,
+            lang: <span class="kw-2">&amp;</span>config.lang,
+            location_query: Service::get_location_query(autolocate, api_key, config).<span class="kw">await</span><span class="question-mark">?</span>,
+        })
+    }
+
+    <span class="kw">async fn </span>get_location_query(
+        autolocate: bool,
+        api_key: <span class="kw-2">&amp;</span>String,
+        config: <span class="kw-2">&amp;</span>Config,
+    ) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;String&gt;&gt; {
+        <span class="kw">if </span>autolocate {
+            <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
+        }
+
+        <span class="kw">let </span><span class="kw-2">mut </span>location_query = config
+            .coordinates
+            .as_ref()
+            .map(|(lat, lon)| <span class="macro">format!</span>(<span class="string">&quot;lat={lat}&amp;lon={lon}&quot;</span>))
+            .or_else(|| config.city_id.as_ref().map(|x| <span class="macro">format!</span>(<span class="string">&quot;id={x}&quot;</span>)));
+
+        location_query = <span class="kw">match </span>location_query {
+            <span class="prelude-val">Some</span>(x) =&gt; <span class="prelude-val">Some</span>(x),
+            <span class="prelude-val">None </span>=&gt; <span class="kw">match </span>config.place.as_ref() {
+                <span class="prelude-val">Some</span>(place) =&gt; {
+                    <span class="kw">let </span>url = <span class="macro">format!</span>(<span class="string">&quot;{GEO_URL}/direct?q={place}&amp;appid={api_key}&quot;</span>);
+
+                    REQWEST_CLIENT
+                        .get(url)
+                        .send()
+                        .<span class="kw">await
+                        </span>.error(<span class="string">&quot;Geo request failed&quot;</span>)<span class="question-mark">?
+                        </span>.json::&lt;Vec&lt;CityCoord&gt;&gt;()
+                        .<span class="kw">await
+                        </span>.error(<span class="string">&quot;Geo failed to parse json&quot;</span>)<span class="question-mark">?
+                        </span>.first()
+                        .map(|city| <span class="macro">format!</span>(<span class="string">&quot;lat={}&amp;lon={}&quot;</span>, city.lat, city.lon))
+                }
+                <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
+            },
+        };
+
+        location_query = <span class="kw">match </span>location_query {
+            <span class="prelude-val">Some</span>(x) =&gt; <span class="prelude-val">Some</span>(x),
+            <span class="prelude-val">None </span>=&gt; <span class="kw">match </span>config.zip.as_ref() {
+                <span class="prelude-val">Some</span>(zip) =&gt; {
+                    <span class="kw">let </span>url = <span class="macro">format!</span>(<span class="string">&quot;{GEO_URL}/zip?zip={zip}&amp;appid={api_key}&quot;</span>);
+                    <span class="kw">let </span>city: CityCoord = REQWEST_CLIENT
+                        .get(url)
+                        .send()
+                        .<span class="kw">await
+                        </span>.error(<span class="string">&quot;Geo request failed&quot;</span>)<span class="question-mark">?
+                        </span>.json()
+                        .<span class="kw">await
+                        </span>.error(<span class="string">&quot;Geo failed to parse json&quot;</span>)<span class="question-mark">?</span>;
+
+                    <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">&quot;lat={}&amp;lon={}&quot;</span>, city.lat, city.lon))
+                }
+                <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
+            },
+        };
+
+        <span class="prelude-val">Ok</span>(location_query)
     }
 }
 
@@ -188,6 +335,9 @@
 }
 <span class="kw">fn </span>getenv_openweathermap_place() -&gt; <span class="prelude-ty">Option</span>&lt;String&gt; {
     std::env::var(PLACE_ENV).ok()
+}
+<span class="kw">fn </span>getenv_openweathermap_zip() -&gt; <span class="prelude-ty">Option</span>&lt;String&gt; {
+    std::env::var(ZIP_ENV).ok()
 }
 <span class="kw">fn </span>default_lang() -&gt; String {
     <span class="string">&quot;en&quot;</span>.into()
@@ -227,33 +377,29 @@
     description: String,
 }
 
+<span class="attr">#[derive(Deserialize, Debug)]
+</span><span class="kw">struct </span>CityCoord {
+    lat: f64,
+    lon: f64,
+}
+
 <span class="attr">#[async_trait]
 </span><span class="kw">impl </span>WeatherProvider <span class="kw">for </span>Service&lt;<span class="lifetime">&#39;_</span>&gt; {
     <span class="kw">async fn </span>get_weather(<span class="kw-2">&amp;</span><span class="self">self</span>, autolocated: <span class="prelude-ty">Option</span>&lt;Coordinates&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;WeatherResult&gt; {
-        <span class="kw">let </span>api_key = <span class="self">self</span>.config.api_key.as_ref().or_error(|| {
-            <span class="macro">format!</span>(<span class="string">&quot;missing key &#39;service.api_key&#39; and environment variable {API_KEY_ENV}&quot;</span>,)
-        })<span class="question-mark">?</span>;
-
         <span class="kw">let </span>location_query = autolocated
             .map(|al| <span class="macro">format!</span>(<span class="string">&quot;lat={}&amp;lon={}&quot;</span>, al.latitude, al.longitude))
-            .or_else(|| {
-                <span class="self">self</span>.config
-                    .coordinates
-                    .as_ref()
-                    .map(|(lat, lon)| <span class="macro">format!</span>(<span class="string">&quot;lat={lat}&amp;lon={lon}&quot;</span>))
-            })
-            .or_else(|| <span class="self">self</span>.config.city_id.as_ref().map(|x| <span class="macro">format!</span>(<span class="string">&quot;id={x}&quot;</span>)))
-            .or_else(|| <span class="self">self</span>.config.place.as_ref().map(|x| <span class="macro">format!</span>(<span class="string">&quot;q={x}&quot;</span>)))
+            .or_else(|| <span class="self">self</span>.location_query.clone())
             .error(<span class="string">&quot;no location was provided&quot;</span>)<span class="question-mark">?</span>;
 
         <span class="comment">// Refer to https://openweathermap.org/current
         </span><span class="kw">let </span>url = <span class="macro">format!</span>(
             <span class="string">&quot;{URL}?{location_query}&amp;appid={api_key}&amp;units={units}&amp;lang={lang}&quot;</span>,
-            units = <span class="kw">match </span><span class="self">self</span>.config.units {
+            api_key = <span class="self">self</span>.api_key,
+            units = <span class="kw">match </span><span class="self">self</span>.units {
                 UnitSystem::Metric =&gt; <span class="string">&quot;metric&quot;</span>,
                 UnitSystem::Imperial =&gt; <span class="string">&quot;imperial&quot;</span>,
             },
-            lang = <span class="self">self</span>.config.lang,
+            lang = <span class="self">self</span>.lang,
         );
 
         <span class="kw">let </span>data: ApiResponse = REQWEST_CLIENT
@@ -277,7 +423,7 @@
             weather_verbose: data.weather[<span class="number">0</span>].description.clone(),
             wind: data.wind.speed,
             wind_kmh: data.wind.speed
-                * <span class="kw">match </span><span class="self">self</span>.config.units {
+                * <span class="kw">match </span><span class="self">self</span>.units {
                     UnitSystem::Metric =&gt; <span class="number">3.6</span>,
                     UnitSystem::Imperial =&gt; <span class="number">3.6 </span>* <span class="number">0.447</span>,
                 },
