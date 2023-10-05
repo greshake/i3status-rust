@@ -179,14 +179,19 @@ async fn get_monitors() -> Result<Vec<Monitor>> {
         let line1 = unwrap_or_break!(it.next());
         let line2 = unwrap_or_break!(it.next());
 
-        let mut tokens = line1.split_ascii_whitespace();
+        let mut tokens = line1.split_ascii_whitespace().peekable();
         let name = tokens.next().error("Failed to parse xrandr output")?.into();
         let _ = tokens.next();
+
+        // The output may be "<name> connected <resolution>" or "<name> connected primary <resolution>"
+        let _ = tokens.next_if_eq(&"primary");
+
         let resolution = tokens
             .next()
             .and_then(|x| x.split('+').next())
             .error("Failed to parse xrandr output")?
             .into();
+
         let brightness = (line2
             .split(':')
             .nth(1)
