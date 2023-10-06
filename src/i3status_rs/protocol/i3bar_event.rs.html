@@ -101,6 +101,13 @@
 <a href="#101" id="101">101</a>
 <a href="#102" id="102">102</a>
 <a href="#103" id="103">103</a>
+<a href="#104" id="104">104</a>
+<a href="#105" id="105">105</a>
+<a href="#106" id="106">106</a>
+<a href="#107" id="107">107</a>
+<a href="#108" id="108">108</a>
+<a href="#109" id="109">109</a>
+<a href="#110" id="110">110</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::os::unix::io::FromRawFd;
 <span class="kw">use </span>std::time::Duration;
 
@@ -143,7 +150,14 @@
                 button: MouseButton,
             }
 
-            <span class="kw">let </span>event: I3BarEventRaw = serde_json::from_str(line).unwrap();
+            <span class="kw">let </span>event: I3BarEventRaw = <span class="kw">match </span>serde_json::from_str(line) {
+                <span class="prelude-val">Ok</span>(event) =&gt; event,
+                <span class="prelude-val">Err</span>(err) =&gt; {
+                    <span class="macro">eprintln!</span>(<span class="string">&quot;Failed to deserialize click event.\nData: {line}\nError: {err}&quot;</span>);
+                    <span class="kw">continue</span>;
+                }
+            };
+
             <span class="kw">let </span>(id, instance) = <span class="kw">match </span>event.instance {
                 <span class="prelude-val">Some</span>(name) =&gt; {
                     <span class="kw">let </span>(id, instance) = name.split_once(<span class="string">&#39;:&#39;</span>).unwrap();
