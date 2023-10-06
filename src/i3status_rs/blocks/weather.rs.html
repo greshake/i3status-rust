@@ -586,6 +586,7 @@
 <a href="#586" id="586">586</a>
 <a href="#587" id="587">587</a>
 <a href="#588" id="588">588</a>
+<a href="#589" id="589">589</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Current weather
 //!
 //! This block displays local weather and temperature information. In order to use this block, you
@@ -642,7 +643,7 @@
 //! `altitude` | Meters above sea level of the ground | No | Approximated by server
 //! `forecast_hours` | How many hours should be forecast | No | 12
 //!
-//! Met.no does not support location name.
+//! Met.no does not support location name, but if autolocate is enabled then autolocate&#39;s city value is used.
 //!
 //! # Available Format Keys
 //!
@@ -741,7 +742,7 @@
 </span><span class="kw">trait </span>WeatherProvider {
     <span class="kw">async fn </span>get_weather(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        autolocated_location: <span class="prelude-ty">Option</span>&lt;Coordinates&gt;,
+        autolocated_location: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Coordinates&gt;,
         need_forecast: bool,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;WeatherResult&gt;;
 }
@@ -900,7 +901,7 @@
     };
 
     <span class="kw">let </span>autolocate_interval = config.autolocate_interval.unwrap_or(config.interval);
-    <span class="kw">let </span>need_forecast = need_forecast(<span class="kw-2">&amp;</span>format, <span class="kw-2">&amp;</span>format_alt);
+    <span class="kw">let </span>need_forecast = need_forecast(<span class="kw-2">&amp;</span>format, format_alt.as_ref());
 
     <span class="kw">let </span><span class="kw-2">mut </span>timer = config.interval.timer();
 
@@ -912,7 +913,7 @@
             <span class="prelude-val">None
         </span>};
 
-        <span class="kw">let </span>fetch = || provider.get_weather(location, need_forecast);
+        <span class="kw">let </span>fetch = || provider.get_weather(location.as_ref(), need_forecast);
         <span class="kw">let </span>data = fetch.retry(<span class="kw-2">&amp;</span>ExponentialBuilder::default()).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">let </span>data_values = data.into_values();
 
@@ -937,7 +938,7 @@
     }
 }
 
-<span class="kw">fn </span>need_forecast(format: <span class="kw-2">&amp;</span>Format, format_alt: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;Format&gt;) -&gt; bool {
+<span class="kw">fn </span>need_forecast(format: <span class="kw-2">&amp;</span>Format, format_alt: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Format&gt;) -&gt; bool {
     <span class="kw">fn </span>has_forecast_key(format: <span class="kw-2">&amp;</span>Format) -&gt; bool {
         <span class="macro">macro_rules! </span>format_suffix {
             ($(<span class="macro-nonterminal">$suffix</span>: literal),* $(,)<span class="question-mark">?</span>) =&gt; {
@@ -958,7 +959,7 @@
             || format.contains_key(<span class="string">&quot;weather_ffin&quot;</span>)
             || format.contains_key(<span class="string">&quot;weather_verbose_ffin&quot;</span>)
     }
-    has_forecast_key(format) || format_alt.as_ref().is_some_and(has_forecast_key)
+    has_forecast_key(format) || format_alt.is_some_and(has_forecast_key)
 }
 
 <span class="attr">#[derive(Debug, Deserialize, Clone, Copy, PartialEq, Eq, SmartDefault)]
@@ -969,10 +970,11 @@
     Imperial,
 }
 
-<span class="attr">#[derive(Deserialize, Clone, Copy)]
+<span class="attr">#[derive(Deserialize, Clone)]
 </span><span class="kw">struct </span>Coordinates {
     latitude: f64,
     longitude: f64,
+    city: String,
 }
 
 <span class="kw">struct </span>AutolocateResult {
@@ -987,7 +989,7 @@
         <span class="kw">let </span>guard = LAST_AUTOLOCATE.lock().unwrap();
         <span class="kw">if let </span><span class="prelude-val">Some</span>(cached) = <span class="kw-2">&amp;*</span>guard {
             <span class="kw">if </span>cached.timestamp.elapsed() &lt; interval {
-                <span class="kw">return </span><span class="prelude-val">Ok</span>(cached.location);
+                <span class="kw">return </span><span class="prelude-val">Ok</span>(cached.location.clone());
             }
         }
     }
@@ -1036,7 +1038,7 @@
     {
         <span class="kw">let </span><span class="kw-2">mut </span>guard = LAST_AUTOLOCATE.lock().unwrap();
         <span class="kw-2">*</span>guard = <span class="prelude-val">Some</span>(AutolocateResult {
-            location,
+            location: location.clone(),
             timestamp: Instant::now(),
         });
     }

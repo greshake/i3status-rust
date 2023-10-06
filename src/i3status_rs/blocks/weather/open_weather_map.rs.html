@@ -404,6 +404,7 @@
 <a href="#404" id="404">404</a>
 <a href="#405" id="405">405</a>
 <a href="#406" id="406">406</a>
+<a href="#407" id="407">407</a>
 </pre></div><pre class="rust"><code><span class="kw">use super</span>::<span class="kw-2">*</span>;
 <span class="kw">use </span>serde::{de, Deserializer};
 
@@ -608,10 +609,11 @@
 </span><span class="kw">impl </span>WeatherProvider <span class="kw">for </span>Service&lt;<span class="lifetime">&#39;_</span>&gt; {
     <span class="kw">async fn </span>get_weather(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        autolocated: <span class="prelude-ty">Option</span>&lt;Coordinates&gt;,
+        autolocated: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Coordinates&gt;,
         need_forecast: bool,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;WeatherResult&gt; {
         <span class="kw">let </span>location_query = autolocated
+            .as_ref()
             .map(|al| <span class="macro">format!</span>(<span class="string">&quot;lat={}&amp;lon={}&quot;</span>, al.latitude, al.longitude))
             .or_else(|| <span class="self">self</span>.location_query.clone())
             .error(<span class="string">&quot;no location was provided&quot;</span>)<span class="question-mark">?</span>;

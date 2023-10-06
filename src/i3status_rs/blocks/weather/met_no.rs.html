@@ -477,7 +477,7 @@
 </span><span class="kw">impl </span>WeatherProvider <span class="kw">for </span>Service&lt;<span class="lifetime">&#39;_</span>&gt; {
     <span class="kw">async fn </span>get_weather(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        location: <span class="prelude-ty">Option</span>&lt;Coordinates&gt;,
+        location: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Coordinates&gt;,
         need_forecast: bool,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;WeatherResult&gt; {
         <span class="kw">let </span>(lat, lon) = location
@@ -611,7 +611,7 @@
         };
 
         <span class="prelude-val">Ok</span>(WeatherResult {
-            location: <span class="string">&quot;Unknown&quot;</span>.to_string(),
+            location: location.map_or(<span class="string">&quot;Unknown&quot;</span>.to_string(), |c| c.city.clone()),
             current_weather: <span class="self">self
                 </span>.get_weather_instant(<span class="kw-2">&amp;</span>data.properties.timeseries.first().unwrap().data),
             forecast,
