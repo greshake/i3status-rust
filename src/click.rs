@@ -21,7 +21,6 @@ pub enum MouseButton {
     WheelDown,
     Forward,
     Back,
-    Unknown,
     DoubleLeft,
 }
 
@@ -93,7 +92,7 @@ impl<'de> Deserialize<'de> for MouseButton {
             type Value = MouseButton;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_str("u64 or string")
+                formatter.write_str("button as int or string")
             }
 
             // ```toml
@@ -114,7 +113,7 @@ impl<'de> Deserialize<'de> for MouseButton {
                     "back" => Back,
                     // Experimental
                     "double_left" => DoubleLeft,
-                    _ => Unknown,
+                    other => return Err(E::custom(format!("unknown button '{other}'"))),
                 })
             }
 
@@ -132,9 +131,9 @@ impl<'de> Deserialize<'de> for MouseButton {
                     3 => Right,
                     4 => WheelUp,
                     5 => WheelDown,
-                    9 => Forward,
                     8 => Back,
-                    _ => Unknown,
+                    9 => Forward,
+                    other => return Err(E::custom(format!("unknown button '{other}'"))),
                 })
             }
             fn visit_u64<E>(self, number: u64) -> Result<MouseButton, E>

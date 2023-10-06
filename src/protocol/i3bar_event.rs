@@ -40,7 +40,14 @@ fn unprocessed_events_stream(invert_scrolling: bool) -> BoxedStream<I3BarEvent> 
                 button: MouseButton,
             }
 
-            let event: I3BarEventRaw = serde_json::from_str(line).unwrap();
+            let event: I3BarEventRaw = match serde_json::from_str(line) {
+                Ok(event) => event,
+                Err(err) => {
+                    eprintln!("Failed to deserialize click event.\nData: {line}\nError: {err}");
+                    continue;
+                }
+            };
+
             let (id, instance) = match event.instance {
                 Some(name) => {
                     let (id, instance) = name.split_once(':').unwrap();
