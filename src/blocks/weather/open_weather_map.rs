@@ -202,10 +202,11 @@ struct CityCoord {
 impl WeatherProvider for Service<'_> {
     async fn get_weather(
         &self,
-        autolocated: Option<Coordinates>,
+        autolocated: Option<&Coordinates>,
         need_forecast: bool,
     ) -> Result<WeatherResult> {
         let location_query = autolocated
+            .as_ref()
             .map(|al| format!("lat={}&lon={}", al.latitude, al.longitude))
             .or_else(|| self.location_query.clone())
             .error("no location was provided")?;
