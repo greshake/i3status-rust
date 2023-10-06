@@ -150,7 +150,7 @@ fn translate(legend: &LegendsStore, summary: &str, lang: &ApiLanguage) -> String
 impl WeatherProvider for Service<'_> {
     async fn get_weather(
         &self,
-        location: Option<Coordinates>,
+        location: Option<&Coordinates>,
         need_forecast: bool,
     ) -> Result<WeatherResult> {
         let (lat, lon) = location
@@ -284,7 +284,7 @@ impl WeatherProvider for Service<'_> {
         };
 
         Ok(WeatherResult {
-            location: "Unknown".to_string(),
+            location: location.map_or("Unknown".to_string(), |c| c.city.clone()),
             current_weather: self
                 .get_weather_instant(&data.properties.timeseries.first().unwrap().data),
             forecast,

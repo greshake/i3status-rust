@@ -54,7 +54,7 @@
 //! `altitude` | Meters above sea level of the ground | No | Approximated by server
 //! `forecast_hours` | How many hours should be forecast | No | 12
 //!
-//! Met.no does not support location name.
+//! Met.no does not support location name, but if autolocate is enabled then autolocate's city value is used.
 //!
 //! # Available Format Keys
 //!
@@ -153,7 +153,7 @@ fn default_interval() -> Seconds {
 trait WeatherProvider {
     async fn get_weather(
         &self,
-        autolocated_location: Option<Coordinates>,
+        autolocated_location: Option<&Coordinates>,
         need_forecast: bool,
     ) -> Result<WeatherResult>;
 }
@@ -312,7 +312,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     };
 
     let autolocate_interval = config.autolocate_interval.unwrap_or(config.interval);
-    let need_forecast = need_forecast(&format, &format_alt);
+    let need_forecast = need_forecast(&format, format_alt.as_ref());
 
     let mut timer = config.interval.timer();
 
@@ -324,7 +324,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             None
         };
 
-        let fetch = || provider.get_weather(location, need_forecast);
+        let fetch = || provider.get_weather(location.as_ref(), need_forecast);
         let data = fetch.retry(&ExponentialBuilder::default()).await?;
         let data_values = data.into_values();
 
@@ -349,7 +349,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     }
 }
 
-fn need_forecast(format: &Format, format_alt: &Option<Format>) -> bool {
+fn need_forecast(format: &Format, format_alt: Option<&Format>) -> bool {
     fn has_forecast_key(format: &Format) -> bool {
         macro_rules! format_suffix {
             ($($suffix: literal),* $(,)?) => {
@@ -370,7 +370,7 @@ fn need_forecast(format: &Format, format_alt: &Option<Format>) -> bool {
             || format.contains_key("weather_ffin")
             || format.contains_key("weather_verbose_ffin")
     }
-    has_forecast_key(format) || format_alt.as_ref().is_some_and(has_forecast_key)
+    has_forecast_key(format) || format_alt.is_some_and(has_forecast_key)
 }
 
 #[derive(Debug, Deserialize, Clone, Copy, PartialEq, Eq, SmartDefault)]
@@ -381,10 +381,11 @@ enum UnitSystem {
     Imperial,
 }
 
-#[derive(Deserialize, Clone, Copy)]
+#[derive(Deserialize, Clone)]
 struct Coordinates {
     latitude: f64,
     longitude: f64,
+    city: String,
 }
 
 struct AutolocateResult {
@@ -399,7 +400,7 @@ async fn find_ip_location(interval: Duration) -> Result<Coordinates> {
         let guard = LAST_AUTOLOCATE.lock().unwrap();
         if let Some(cached) = &*guard {
             if cached.timestamp.elapsed() < interval {
-                return Ok(cached.location);
+                return Ok(cached.location.clone());
             }
         }
     }
@@ -448,7 +449,7 @@ async fn find_ip_location(interval: Duration) -> Result<Coordinates> {
     {
         let mut guard = LAST_AUTOLOCATE.lock().unwrap();
         *guard = Some(AutolocateResult {
-            location,
+            location: location.clone(),
             timestamp: Instant::now(),
         });
     }
