@@ -266,6 +266,14 @@
 <a href="#266" id="266">266</a>
 <a href="#267" id="267">267</a>
 <a href="#268" id="268">268</a>
+<a href="#269" id="269">269</a>
+<a href="#270" id="270">270</a>
+<a href="#271" id="271">271</a>
+<a href="#272" id="272">272</a>
+<a href="#273" id="273">273</a>
+<a href="#274" id="274">274</a>
+<a href="#275" id="275">275</a>
+<a href="#276" id="276">276</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::path::{Path, PathBuf};
 
 <span class="kw">use </span>dirs::{config_dir, data_dir};
@@ -420,6 +428,14 @@
         </span><span class="kw">let </span><span class="kw-2">mut </span>m = ::std::collections::HashMap::new();
         $(
         <span class="macro">map!</span>(@insert m, <span class="macro-nonterminal">$key</span>, <span class="macro-nonterminal">$value </span>$(,$(<span class="macro-nonterminal">$cond_tokens</span>)<span class="kw-2">*</span>)<span class="question-mark">?</span>);
+        )*
+        m
+    }};
+    ($( <span class="macro-nonterminal">$key</span>:expr =&gt; <span class="macro-nonterminal">$value</span>:expr ),* $(,)<span class="question-mark">?</span>) =&gt; {{
+        <span class="attr">#[allow(unused_mut)]
+        </span><span class="kw">let </span><span class="kw-2">mut </span>m = ::std::collections::HashMap::new();
+        $(
+        <span class="macro">map!</span>(@insert m, <span class="macro-nonterminal">$key</span>, <span class="macro-nonterminal">$value</span>);
         )*
         m
     }};
