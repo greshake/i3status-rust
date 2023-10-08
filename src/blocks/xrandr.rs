@@ -135,15 +135,6 @@ impl Monitor {
     }
 }
 
-macro_rules! unwrap_or_break {
-    ($e: expr) => {
-        match $e {
-            Some(e) => e,
-            None => break,
-        }
-    };
-}
-
 async fn get_monitors() -> Result<Vec<Monitor>> {
     let mut monitors = Vec::new();
 
@@ -174,11 +165,7 @@ async fn get_monitors() -> Result<Vec<Monitor>> {
 
     let mut it = monitors_info.lines().filter(|line| regex.is_match(line));
 
-    #[allow(clippy::while_let_loop)]
-    loop {
-        let line1 = unwrap_or_break!(it.next());
-        let line2 = unwrap_or_break!(it.next());
-
+    while let (Some(line1), Some(line2)) = (it.next(), it.next()) {
         let mut tokens = line1.split_ascii_whitespace().peekable();
         let name = tokens.next().error("Failed to parse xrandr output")?.into();
         let _ = tokens.next();
