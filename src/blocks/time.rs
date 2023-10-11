@@ -81,12 +81,6 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut timer = config.interval.timer();
 
     loop {
-        if timezone.is_none() {
-            // Update timezone because `chrono` will not do that for us.
-            // https://github.com/chronotope/chrono/issues/272
-            unsafe { tzset() };
-        }
-
         let mut widget = Widget::new().with_format(format.clone());
 
         widget.set_values(map! {
@@ -110,12 +104,4 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             }
         }
     }
-}
-
-extern "C" {
-    /// The tzset function initializes the tzname variable from the value of the TZ environment
-    /// variable. It is not usually necessary for your program to call this function, because it is
-    /// called automatically when you use the other time conversion functions that depend on the
-    /// time zone.
-    fn tzset();
 }
