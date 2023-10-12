@@ -4,9 +4,16 @@ use crate::config::SharedConfig;
 use crate::errors::*;
 
 use std::str::FromStr;
+use std::sync::Arc;
 
-#[derive(Debug, Default)]
-pub struct FormatTemplate(pub Vec<TokenList>);
+#[derive(Debug, Clone)]
+pub struct FormatTemplate(Arc<[TokenList]>);
+
+impl Default for FormatTemplate {
+    fn default() -> Self {
+        Self(Arc::new([]))
+    }
+}
 
 #[derive(Debug)]
 pub struct TokenList(pub Vec<Token>);
@@ -53,7 +60,7 @@ impl FormatTemplate {
     }
 
     pub fn init_intervals(&self, intervals: &mut Vec<u64>) {
-        for tl in &self.0 {
+        for tl in self.0.iter() {
             for t in &tl.0 {
                 match t {
                     Token::Recursive(r) => r.init_intervals(intervals),
@@ -159,7 +166,7 @@ impl TryFrom<parse::FormatTemplate<'_>> for FormatTemplate {
             .0
             .into_iter()
             .map(TryInto::try_into)
-            .collect::<Result<Vec<_>>>()
+            .collect::<Result<Arc<[_]>>>()
             .map(Self)
     }
 }

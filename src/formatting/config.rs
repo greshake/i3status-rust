@@ -4,12 +4,11 @@ use serde::de::{MapAccess, Visitor};
 use serde::{de, Deserialize, Deserializer};
 use std::fmt;
 use std::str::FromStr;
-use std::sync::Arc;
 
 #[derive(Debug, Default, Clone)]
 pub struct Config {
-    pub full: Option<Arc<FormatTemplate>>,
-    pub short: Option<Arc<FormatTemplate>>,
+    pub full: Option<FormatTemplate>,
+    pub short: Option<FormatTemplate>,
 }
 
 impl Config {
@@ -20,12 +19,12 @@ impl Config {
     pub fn with_defaults(&self, default_full: &str, default_short: &str) -> Result<Format> {
         let full = match self.full.clone() {
             Some(full) => full,
-            None => Arc::new(default_full.parse()?),
+            None => default_full.parse()?,
         };
 
         let short = match self.short.clone() {
             Some(short) => short,
-            None => Arc::new(default_short.parse()?),
+            None => default_short.parse()?,
         };
 
         let mut intervals = Vec::new();
@@ -89,7 +88,7 @@ impl FromStr for Config {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self {
-            full: Some(Arc::new(s.parse()?)),
+            full: Some(s.parse()?),
             short: None,
         })
     }
@@ -139,23 +138,21 @@ impl<'de> Deserialize<'de> for Config {
             where
                 V: MapAccess<'de>,
             {
-                let mut full: Option<Arc<FormatTemplate>> = None;
-                let mut short: Option<Arc<FormatTemplate>> = None;
+                let mut full: Option<FormatTemplate> = None;
+                let mut short: Option<FormatTemplate> = None;
                 while let Some(key) = map.next_key()? {
                     match key {
                         Field::Full => {
                             if full.is_some() {
                                 return Err(de::Error::duplicate_field("full"));
                             }
-                            full =
-                                Some(Arc::new(map.next_value::<String>()?.parse().serde_error()?));
+                            full = Some(map.next_value::<String>()?.parse().serde_error()?);
                         }
                         Field::Short => {
                             if short.is_some() {
                                 return Err(de::Error::duplicate_field("short"));
                             }
-                            short =
-                                Some(Arc::new(map.next_value::<String>()?.parse().serde_error()?));
+                            short = Some(map.next_value::<String>()?.parse().serde_error()?);
                         }
                     }
                 }

@@ -106,7 +106,6 @@ pub mod value;
 
 use std::borrow::Cow;
 use std::collections::HashMap;
-use std::sync::Arc;
 
 use crate::config::SharedConfig;
 use crate::errors::*;
@@ -127,8 +126,8 @@ pub enum FormatError {
 
 #[derive(Debug, Clone)]
 pub struct Format {
-    full: Arc<FormatTemplate>,
-    short: Arc<FormatTemplate>,
+    full: FormatTemplate,
+    short: FormatTemplate,
     intervals: Vec<u64>,
 }
 
