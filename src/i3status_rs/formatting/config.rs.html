@@ -163,21 +163,17 @@
 <a href="#163" id="163">163</a>
 <a href="#164" id="164">164</a>
 <a href="#165" id="165">165</a>
-<a href="#166" id="166">166</a>
-<a href="#167" id="167">167</a>
-<a href="#168" id="168">168</a>
 </pre></div><pre class="rust"><code><span class="kw">use super</span>::{template::FormatTemplate, Format};
 <span class="kw">use </span><span class="kw">crate</span>::errors::<span class="kw-2">*</span>;
 <span class="kw">use </span>serde::de::{MapAccess, Visitor};
 <span class="kw">use </span>serde::{de, Deserialize, Deserializer};
 <span class="kw">use </span>std::fmt;
 <span class="kw">use </span>std::str::FromStr;
-<span class="kw">use </span>std::sync::Arc;
 
 <span class="attr">#[derive(Debug, Default, Clone)]
 </span><span class="kw">pub struct </span>Config {
-    <span class="kw">pub </span>full: <span class="prelude-ty">Option</span>&lt;Arc&lt;FormatTemplate&gt;&gt;,
-    <span class="kw">pub </span>short: <span class="prelude-ty">Option</span>&lt;Arc&lt;FormatTemplate&gt;&gt;,
+    <span class="kw">pub </span>full: <span class="prelude-ty">Option</span>&lt;FormatTemplate&gt;,
+    <span class="kw">pub </span>short: <span class="prelude-ty">Option</span>&lt;FormatTemplate&gt;,
 }
 
 <span class="kw">impl </span>Config {
@@ -188,12 +184,12 @@
     <span class="kw">pub fn </span>with_defaults(<span class="kw-2">&amp;</span><span class="self">self</span>, default_full: <span class="kw-2">&amp;</span>str, default_short: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;Format&gt; {
         <span class="kw">let </span>full = <span class="kw">match </span><span class="self">self</span>.full.clone() {
             <span class="prelude-val">Some</span>(full) =&gt; full,
-            <span class="prelude-val">None </span>=&gt; Arc::new(default_full.parse()<span class="question-mark">?</span>),
+            <span class="prelude-val">None </span>=&gt; default_full.parse()<span class="question-mark">?</span>,
         };
 
         <span class="kw">let </span>short = <span class="kw">match </span><span class="self">self</span>.short.clone() {
             <span class="prelude-val">Some</span>(short) =&gt; short,
-            <span class="prelude-val">None </span>=&gt; Arc::new(default_short.parse()<span class="question-mark">?</span>),
+            <span class="prelude-val">None </span>=&gt; default_short.parse()<span class="question-mark">?</span>,
         };
 
         <span class="kw">let </span><span class="kw-2">mut </span>intervals = Vec::new();
@@ -257,7 +253,7 @@
 
     <span class="kw">fn </span>from_str(s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Err&gt; {
         <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
-            full: <span class="prelude-val">Some</span>(Arc::new(s.parse()<span class="question-mark">?</span>)),
+            full: <span class="prelude-val">Some</span>(s.parse()<span class="question-mark">?</span>),
             short: <span class="prelude-val">None</span>,
         })
     }
@@ -307,23 +303,21 @@
             <span class="kw">where
                 </span>V: MapAccess&lt;<span class="lifetime">&#39;de</span>&gt;,
             {
-                <span class="kw">let </span><span class="kw-2">mut </span>full: <span class="prelude-ty">Option</span>&lt;Arc&lt;FormatTemplate&gt;&gt; = <span class="prelude-val">None</span>;
-                <span class="kw">let </span><span class="kw-2">mut </span>short: <span class="prelude-ty">Option</span>&lt;Arc&lt;FormatTemplate&gt;&gt; = <span class="prelude-val">None</span>;
+                <span class="kw">let </span><span class="kw-2">mut </span>full: <span class="prelude-ty">Option</span>&lt;FormatTemplate&gt; = <span class="prelude-val">None</span>;
+                <span class="kw">let </span><span class="kw-2">mut </span>short: <span class="prelude-ty">Option</span>&lt;FormatTemplate&gt; = <span class="prelude-val">None</span>;
                 <span class="kw">while let </span><span class="prelude-val">Some</span>(key) = map.next_key()<span class="question-mark">? </span>{
                     <span class="kw">match </span>key {
                         Field::Full =&gt; {
                             <span class="kw">if </span>full.is_some() {
                                 <span class="kw">return </span><span class="prelude-val">Err</span>(de::Error::duplicate_field(<span class="string">&quot;full&quot;</span>));
                             }
-                            full =
-                                <span class="prelude-val">Some</span>(Arc::new(map.next_value::&lt;String&gt;()<span class="question-mark">?</span>.parse().serde_error()<span class="question-mark">?</span>));
+                            full = <span class="prelude-val">Some</span>(map.next_value::&lt;String&gt;()<span class="question-mark">?</span>.parse().serde_error()<span class="question-mark">?</span>);
                         }
                         Field::Short =&gt; {
                             <span class="kw">if </span>short.is_some() {
                                 <span class="kw">return </span><span class="prelude-val">Err</span>(de::Error::duplicate_field(<span class="string">&quot;short&quot;</span>));
                             }
-                            short =
-                                <span class="prelude-val">Some</span>(Arc::new(map.next_value::&lt;String&gt;()<span class="question-mark">?</span>.parse().serde_error()<span class="question-mark">?</span>));
+                            short = <span class="prelude-val">Some</span>(map.next_value::&lt;String&gt;()<span class="question-mark">?</span>.parse().serde_error()<span class="question-mark">?</span>);
                         }
                     }
                 }
