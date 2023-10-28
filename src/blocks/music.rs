@@ -19,6 +19,7 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `format` | A string to customise the output of this block. See below for available placeholders. | <code>" $icon {$combo.str(max_w:25,rot_interval:0.5) $play &vert;}"</code>
+//! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
 //! `player` | Name(s) of the music player(s) MPRIS interface. This can be either a music player name or an array of music player names. Run <code>busctl --user list &vert; grep "org.mpris.MediaPlayer2." &vert; cut -d' ' -f1</code> and the name is the part after "org.mpris.MediaPlayer2.". | `None`
 //! `interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore. | `["playerctld"]`
 //! `separator` | String to insert between artist and title. | `" - "`
@@ -53,6 +54,7 @@
 //! `seek_backward` | Wheel Down
 //! `volume_up`     | -
 //! `volume_down`   | -
+//! `toggle_format` | Left
 //!
 //! # Examples
 //!
@@ -84,14 +86,19 @@
 //! interface_name_exclude = [".*kdeconnect.*", "mpd"]
 //! ```
 //!
-//! Click anywhere to play/pause:
+//! Click anywhere to play/pause, middle click to toggle format:
 //!
 //! ```toml
 //! [[block]]
 //! block = "music"
+//! format = " format 1 "
+//! format_alt = " format 2 "
 //! [[block.click]]
 //! button = "left"
 //! action = "play_pause"
+//! [[block.click]]
+//! button = "middle"
+//! action = "toggle_format"
 //! ```
 //!
 //! Scroll to change the player volume, use the forward and back buttons to seek:
@@ -147,6 +154,7 @@ const PREV_BTN: &str = "prev_btn";
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
     pub format: FormatConfig,
+    pub format_alt: Option<FormatConfig>,
     pub player: PlayerName,
     #[default(vec!["playerctld".into()])]
     pub interface_name_exclude: Vec<String>,
@@ -175,13 +183,18 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         (MouseButton::Right, None, "next_player"),
         (MouseButton::WheelUp, None, "seek_forward"),
         (MouseButton::WheelDown, None, "seek_backward"),
+        (MouseButton::Left, None, "toggle_format"),
     ])?;
 
     let dbus_conn = new_dbus_connection().await?;
 
-    let format = config
+    let mut format = config
         .format
         .with_default(" $icon {$combo.str(max_w:25,rot_interval:0.5) $play |}")?;
+    let mut format_alt = match &config.format_alt {
+        Some(f) => Some(f.with_default("")?),
+        None => None,
+    };
 
     let volume_step = config.volume_step.clamp(0.0, 50.0) / 100.0;
 
@@ -452,6 +465,12 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                             }
                             "volume_down" => {
                                 player.set_volume(-volume_step).await?;
+                            }
+                            "toggle_format" => {
+                                if let Some(format_alt) = &mut format_alt {
+                                    std::mem::swap(format_alt, &mut format);
+                                    break;
+                                }
                             }
                             _ => (),
                         }
