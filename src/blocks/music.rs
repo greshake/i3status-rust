@@ -98,6 +98,7 @@
 //! action = "play_pause"
 //! [[block.click]]
 //! button = "middle"
+//! widget = "."
 //! action = "toggle_format"
 //! ```
 //!

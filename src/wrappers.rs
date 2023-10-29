@@ -192,6 +192,35 @@ where
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct SerdeRegex(pub regex::Regex);
+
+impl<'de> Deserialize<'de> for SerdeRegex {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct Visitor;
+
+        impl<'de> de::Visitor<'de> for Visitor {
+            type Value = SerdeRegex;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a regex")
+            }
+
+            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                regex::Regex::new(v).map(SerdeRegex).map_err(E::custom)
+            }
+        }
+
+        deserializer.deserialize_any(Visitor)
+    }
+}
+
 /// Display a slice. Similar to Debug impl for slice, but uses Display impl for elements.
 pub struct DisplaySlice<'a, T>(pub &'a [T]);
 
