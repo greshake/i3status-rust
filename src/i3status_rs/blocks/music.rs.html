@@ -659,6 +659,25 @@
 <a href="#659" id="659">659</a>
 <a href="#660" id="660">660</a>
 <a href="#661" id="661">661</a>
+<a href="#662" id="662">662</a>
+<a href="#663" id="663">663</a>
+<a href="#664" id="664">664</a>
+<a href="#665" id="665">665</a>
+<a href="#666" id="666">666</a>
+<a href="#667" id="667">667</a>
+<a href="#668" id="668">668</a>
+<a href="#669" id="669">669</a>
+<a href="#670" id="670">670</a>
+<a href="#671" id="671">671</a>
+<a href="#672" id="672">672</a>
+<a href="#673" id="673">673</a>
+<a href="#674" id="674">674</a>
+<a href="#675" id="675">675</a>
+<a href="#676" id="676">676</a>
+<a href="#677" id="677">677</a>
+<a href="#678" id="678">678</a>
+<a href="#679" id="679">679</a>
+<a href="#680" id="680">680</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! The current song title and artist
 //!
 //! Also provides buttons for play/pause, previous and next.
@@ -680,6 +699,7 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot; $icon {$combo.str(max_w:25,rot_interval:0.5) $play &amp;vert;}&quot;&lt;/code&gt;
+//! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
 //! `player` | Name(s) of the music player(s) MPRIS interface. This can be either a music player name or an array of music player names. Run &lt;code&gt;busctl --user list &amp;vert; grep &quot;org.mpris.MediaPlayer2.&quot; &amp;vert; cut -d&#39; &#39; -f1&lt;/code&gt; and the name is the part after &quot;org.mpris.MediaPlayer2.&quot;. | `None`
 //! `interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore. | `[&quot;playerctld&quot;]`
 //! `separator` | String to insert between artist and title. | `&quot; - &quot;`
@@ -714,6 +734,7 @@
 //! `seek_backward` | Wheel Down
 //! `volume_up`     | -
 //! `volume_down`   | -
+//! `toggle_format` | Left
 //!
 //! # Examples
 //!
@@ -745,14 +766,19 @@
 //! interface_name_exclude = [&quot;.*kdeconnect.*&quot;, &quot;mpd&quot;]
 //! ```
 //!
-//! Click anywhere to play/pause:
+//! Click anywhere to play/pause, middle click to toggle format:
 //!
 //! ```toml
 //! [[block]]
 //! block = &quot;music&quot;
+//! format = &quot; format 1 &quot;
+//! format_alt = &quot; format 2 &quot;
 //! [[block.click]]
 //! button = &quot;left&quot;
 //! action = &quot;play_pause&quot;
+//! [[block.click]]
+//! button = &quot;middle&quot;
+//! action = &quot;toggle_format&quot;
 //! ```
 //!
 //! Scroll to change the player volume, use the forward and back buttons to seek:
@@ -808,6 +834,7 @@
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
     <span class="kw">pub </span>format: FormatConfig,
+    <span class="kw">pub </span>format_alt: <span class="prelude-ty">Option</span>&lt;FormatConfig&gt;,
     <span class="kw">pub </span>player: PlayerName,
     <span class="attr">#[default(<span class="macro">vec!</span>[<span class="string">&quot;playerctld&quot;</span>.into()]</span>)]
     <span class="kw">pub </span>interface_name_exclude: Vec&lt;String&gt;,
@@ -836,13 +863,18 @@
         (MouseButton::Right, <span class="prelude-val">None</span>, <span class="string">&quot;next_player&quot;</span>),
         (MouseButton::WheelUp, <span class="prelude-val">None</span>, <span class="string">&quot;seek_forward&quot;</span>),
         (MouseButton::WheelDown, <span class="prelude-val">None</span>, <span class="string">&quot;seek_backward&quot;</span>),
+        (MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;toggle_format&quot;</span>),
     ])<span class="question-mark">?</span>;
 
     <span class="kw">let </span>dbus_conn = new_dbus_connection().<span class="kw">await</span><span class="question-mark">?</span>;
 
-    <span class="kw">let </span>format = config
+    <span class="kw">let </span><span class="kw-2">mut </span>format = config
         .format
         .with_default(<span class="string">&quot; $icon {$combo.str(max_w:25,rot_interval:0.5) $play |}&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>format_alt = <span class="kw">match </span><span class="kw-2">&amp;</span>config.format_alt {
+        <span class="prelude-val">Some</span>(f) =&gt; <span class="prelude-val">Some</span>(f.with_default(<span class="string">&quot;&quot;</span>)<span class="question-mark">?</span>),
+        <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
+    };
 
     <span class="kw">let </span>volume_step = config.volume_step.clamp(<span class="number">0.0</span>, <span class="number">50.0</span>) / <span class="number">100.0</span>;
 
@@ -1113,6 +1145,12 @@
                             }
                             <span class="string">&quot;volume_down&quot; </span>=&gt; {
                                 player.set_volume(-volume_step).<span class="kw">await</span><span class="question-mark">?</span>;
+                            }
+                            <span class="string">&quot;toggle_format&quot; </span>=&gt; {
+                                <span class="kw">if let </span><span class="prelude-val">Some</span>(format_alt) = <span class="kw-2">&amp;mut </span>format_alt {
+                                    std::mem::swap(format_alt, <span class="kw-2">&amp;mut </span>format);
+                                    <span class="kw">break</span>;
+                                }
                             }
                             <span class="kw">_ </span>=&gt; (),
                         }
