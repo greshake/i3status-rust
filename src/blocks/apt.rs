@@ -211,9 +211,7 @@ async fn get_update_count(
     for update_line in updates
         .lines()
         .filter(|line| line.contains("[upgradable"))
-        .filter(|line| {
-            ignore_updates_regex.is_none() || !ignore_updates_regex.unwrap().is_match(line)
-        })
+        .filter(|line| ignore_updates_regex.map_or(true, |re| !re.is_match(line)))
     {
         if !ignore_phased_updates || !is_phased_update(config_path, update_line).await? {
             cnt += 1;
