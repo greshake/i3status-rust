@@ -228,6 +228,25 @@
 <a href="#228" id="228">228</a>
 <a href="#229" id="229">229</a>
 <a href="#230" id="230">230</a>
+<a href="#231" id="231">231</a>
+<a href="#232" id="232">232</a>
+<a href="#233" id="233">233</a>
+<a href="#234" id="234">234</a>
+<a href="#235" id="235">235</a>
+<a href="#236" id="236">236</a>
+<a href="#237" id="237">237</a>
+<a href="#238" id="238">238</a>
+<a href="#239" id="239">239</a>
+<a href="#240" id="240">240</a>
+<a href="#241" id="241">241</a>
+<a href="#242" id="242">242</a>
+<a href="#243" id="243">243</a>
+<a href="#244" id="244">244</a>
+<a href="#245" id="245">245</a>
+<a href="#246" id="246">246</a>
+<a href="#247" id="247">247</a>
+<a href="#248" id="248">248</a>
+<a href="#249" id="249">249</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Pending updates available for your Debian/Ubuntu based system
 //!
 //! Behind the scenes this uses `apt`, and in order to run it without root privileges i3status-rust will create its own package database in `/tmp/i3rs-apt/` which may take up several MB or more. If you have a custom apt config then this block may not work as expected - in that case please open an issue.
@@ -244,6 +263,7 @@
 //! `format_up_to_date` | Same as `format`, but for when no updates are available. | `&quot; $icon $count.eng(w:1) &quot;`
 //! `warning_updates_regex` | Display block as warning if updates matching regex are available. | `None`
 //! `critical_updates_regex` | Display block as critical if updates matching regex are available. | `None`
+//! `ignore_updates_regex` | Doesn&#39;t include updates matching regex in the count. | `None`
 //! `ignore_phased_updates` | Doesn&#39;t include potentially held back phased updates in the count. | `false`
 //!
 //! Placeholder | Value                       | Type   | Unit
@@ -297,6 +317,7 @@
     <span class="kw">pub </span>format_up_to_date: FormatConfig,
     <span class="kw">pub </span>warning_updates_regex: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="kw">pub </span>critical_updates_regex: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    <span class="kw">pub </span>ignore_updates_regex: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="kw">pub </span>ignore_phased_updates: bool,
 }
 
@@ -321,6 +342,12 @@
         .map(Regex::new)
         .transpose()
         .error(<span class="string">&quot;invalid critical updates regex&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>ignore_updates_regex = config
+        .ignore_updates_regex
+        .as_deref()
+        .map(Regex::new)
+        .transpose()
+        .error(<span class="string">&quot;invalid ignore updates regex&quot;</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>cache_dir = env::temp_dir();
     cache_dir.push(<span class="string">&quot;i3rs-apt&quot;</span>);
@@ -354,7 +381,13 @@
     <span class="kw">loop </span>{
         <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new();
         <span class="kw">let </span>updates = get_updates_list(config_file).<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">let </span>count = get_update_count(config_file, config.ignore_phased_updates, <span class="kw-2">&amp;</span>updates).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let </span>count = get_update_count(
+            config_file,
+            config.ignore_phased_updates,
+            ignore_updates_regex.as_ref(),
+            <span class="kw-2">&amp;</span>updates,
+        )
+        .<span class="kw">await</span><span class="question-mark">?</span>;
 
         widget.set_format(<span class="kw">match </span>count {
             <span class="number">0 </span>=&gt; format_up_to_date.clone(),
@@ -419,11 +452,16 @@
 <span class="kw">async fn </span>get_update_count(
     config_path: <span class="kw-2">&amp;</span>str,
     ignore_phased_updates: bool,
+    ignore_updates_regex: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Regex&gt;,
     updates: <span class="kw-2">&amp;</span>str,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;usize&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>cnt = <span class="number">0</span>;
 
-    <span class="kw">for </span>update_line <span class="kw">in </span>updates.lines().filter(|line| line.contains(<span class="string">&quot;[upgradable&quot;</span>)) {
+    <span class="kw">for </span>update_line <span class="kw">in </span>updates
+        .lines()
+        .filter(|line| line.contains(<span class="string">&quot;[upgradable&quot;</span>))
+        .filter(|line| ignore_updates_regex.map_or(<span class="bool-val">true</span>, |re| !re.is_match(line)))
+    {
         <span class="kw">if </span>!ignore_phased_updates || !is_phased_update(config_path, update_line).<span class="kw">await</span><span class="question-mark">? </span>{
             cnt += <span class="number">1</span>;
         }
