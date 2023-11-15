@@ -14,6 +14,7 @@
 //! `format_up_to_date` | Same as `format`, but for when no updates are available. | `" $icon $count.eng(w:1) "`
 //! `warning_updates_regex` | Display block as warning if updates matching regex are available. | `None`
 //! `critical_updates_regex` | Display block as critical if updates matching regex are available. | `None`
+//! `ignore_updates_regex` | Doesn't include updates matching regex in the count. | `None`
 //! `ignore_phased_updates` | Doesn't include potentially held back phased updates in the count. | `false`
 //!
 //! Placeholder | Value                       | Type   | Unit
@@ -67,6 +68,7 @@ pub struct Config {
     pub format_up_to_date: FormatConfig,
     pub warning_updates_regex: Option<String>,
     pub critical_updates_regex: Option<String>,
+    pub ignore_updates_regex: Option<String>,
     pub ignore_phased_updates: bool,
 }
 
@@ -91,6 +93,12 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         .map(Regex::new)
         .transpose()
         .error("invalid critical updates regex")?;
+    let ignore_updates_regex = config
+        .ignore_updates_regex
+        .as_deref()
+        .map(Regex::new)
+        .transpose()
+        .error("invalid ignore updates regex")?;
 
     let mut cache_dir = env::temp_dir();
     cache_dir.push("i3rs-apt");
@@ -124,7 +132,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     loop {
         let mut widget = Widget::new();
         let updates = get_updates_list(config_file).await?;
-        let count = get_update_count(config_file, config.ignore_phased_updates, &updates).await?;
+        let count = get_update_count(
+            config_file,
+            config.ignore_phased_updates,
+            ignore_updates_regex.as_ref(),
+            &updates,
+        )
+        .await?;
 
         widget.set_format(match count {
             0 => format_up_to_date.clone(),
@@ -189,11 +203,16 @@ async fn get_updates_list(config_path: &str) -> Result<String> {
 async fn get_update_count(
     config_path: &str,
     ignore_phased_updates: bool,
+    ignore_updates_regex: Option<&Regex>,
     updates: &str,
 ) -> Result<usize> {
     let mut cnt = 0;
 
-    for update_line in updates.lines().filter(|line| line.contains("[upgradable")) {
+    for update_line in updates
+        .lines()
+        .filter(|line| line.contains("[upgradable"))
+        .filter(|line| ignore_updates_regex.map_or(true, |re| !re.is_match(line)))
+    {
         if !ignore_phased_updates || !is_phased_update(config_path, update_line).await? {
             cnt += 1;
         }
