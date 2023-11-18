@@ -1,10 +1,11 @@
 use chrono::format::{Item, StrftimeItems};
-use chrono::{Local, Locale};
+use chrono::{DateTime, Datelike, Local, Locale, TimeZone};
 use once_cell::sync::Lazy;
 use unicode_segmentation::UnicodeSegmentation;
 
-use std::fmt::Debug;
+use std::fmt::{Debug, Display};
 use std::iter::repeat;
+use std::str::FromStr;
 use std::time::{Duration, Instant};
 
 use super::parse::Arg;
@@ -53,7 +54,7 @@ pub const DEFAULT_NUMBER_FORMATTER: EngFormatter = EngFormatter(EngFixConfig {
 });
 
 pub static DEFAULT_DATETIME_FORMATTER: Lazy<DatetimeFormatter> =
-    Lazy::new(|| DatetimeFormatter::new(DEFAULT_DATETIME_FORMAT, None).unwrap());
+    Lazy::new(|| DatetimeFormatter::new(Some(DEFAULT_DATETIME_FORMAT), None).unwrap());
 
 pub const DEFAULT_FLAG_FORMATTER: FlagFormatter = FlagFormatter;
 
@@ -177,10 +178,7 @@ pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
                 }
             }
 
-            Ok(Box::new(DatetimeFormatter::new(
-                format.unwrap_or(DEFAULT_DATETIME_FORMAT),
-                locale,
-            )?))
+            Ok(Box::new(DatetimeFormatter::new(format, locale)?))
         }
         _ => Err(Error::new(format!("Unknown formatter: '{name}'"))),
     }
@@ -498,9 +496,15 @@ impl Formatter for FixFormatter {
 }
 
 #[derive(Debug)]
-pub struct DatetimeFormatter {
-    items: Vec<Item<'static>>,
-    locale: Option<Locale>,
+pub enum DatetimeFormatter {
+    Chrono {
+        items: Vec<Item<'static>>,
+        locale: Option<Locale>,
+    },
+    Icu {
+        length: icu_datetime::options::length::Date,
+        locale: icu_locid::Locale,
+    },
 }
 
 fn make_static_item(item: Item<'_>) -> Item<'static> {
@@ -516,16 +520,38 @@ fn make_static_item(item: Item<'_>) -> Item<'static> {
 }
 
 impl DatetimeFormatter {
-    fn new(format: &str, locale: Option<&str>) -> Result<Self> {
+    fn new(format: Option<&str>, locale: Option<&str>) -> Result<Self> {
         let (items, locale) = match locale {
             Some(locale) => {
-                let locale = locale.try_into().ok().error("invalid locale")?;
-                (StrftimeItems::new_with_locale(format, locale), Some(locale))
+                let Ok(locale) = locale.try_into() else {
+                    // try with icu4x
+                    let locale = icu_locid::Locale::from_str(locale)
+                        .ok()
+                        .error("invalid locale")?;
+                    let length = match format {
+                        Some("full") => icu_datetime::options::length::Date::Full,
+                        None | Some("long") => icu_datetime::options::length::Date::Long,
+                        Some("medium") => icu_datetime::options::length::Date::Medium,
+                        Some("short") => icu_datetime::options::length::Date::Short,
+                        _ => return Err(Error::new("Unknown format option for icu based locale")),
+                    };
+                    return Ok(Self::Icu { locale, length });
+                };
+                (
+                    StrftimeItems::new_with_locale(
+                        format.unwrap_or(DEFAULT_DATETIME_FORMAT),
+                        locale,
+                    ),
+                    Some(locale),
+                )
             }
-            None => (StrftimeItems::new(format), None),
+            None => (
+                StrftimeItems::new(format.unwrap_or(DEFAULT_DATETIME_FORMAT)),
+                None,
+            ),
         };
 
-        Ok(Self {
+        Ok(Self::Chrono {
             items: items.map(make_static_item).collect(),
             locale,
         })
@@ -534,26 +560,44 @@ impl DatetimeFormatter {
 
 impl Formatter for DatetimeFormatter {
     fn format(&self, val: &Value, _config: &SharedConfig) -> Result<String, FormatError> {
+        fn for_generic_datetime<T>(
+            this: &DatetimeFormatter,
+            datetime: DateTime<T>,
+        ) -> Result<String, FormatError>
+        where
+            T: TimeZone,
+            T::Offset: Display,
+        {
+            Ok(match this {
+                DatetimeFormatter::Chrono { items, locale } => match *locale {
+                    Some(locale) => datetime.format_localized_with_items(items.iter(), locale),
+                    None => datetime.format_with_items(items.iter()),
+                }
+                .to_string(),
+                DatetimeFormatter::Icu { locale, length } => {
+                    let date = icu_calendar::Date::try_new_iso_date(
+                        datetime.year_ce().1 as i32,
+                        datetime.month() as u8,
+                        datetime.day() as u8,
+                    )
+                    .ok()
+                    .error("Current date should be a valid date")?;
+                    let date = date.to_any();
+                    let dft =
+                        icu_datetime::DateFormatter::try_new_with_length(&locale.into(), *length)
+                            .ok()
+                            .error("locale should be present in compiled data")?;
+                    dft.format_to_string(&date)
+                        .ok()
+                        .error("formatting date using icu failed")?
+                }
+            })
+        }
         match val {
-            Value::Datetime(datetime, timezone) => Ok(match self.locale {
-                Some(locale) => match timezone {
-                    Some(tz) => datetime
-                        .with_timezone(tz)
-                        .format_localized_with_items(self.items.iter(), locale),
-                    None => datetime
-                        .with_timezone(&Local)
-                        .format_localized_with_items(self.items.iter(), locale),
-                },
-                None => match timezone {
-                    Some(tz) => datetime
-                        .with_timezone(tz)
-                        .format_with_items(self.items.iter()),
-                    None => datetime
-                        .with_timezone(&Local)
-                        .format_with_items(self.items.iter()),
-                },
-            }
-            .to_string()),
+            Value::Datetime(datetime, timezone) => match timezone {
+                Some(tz) => for_generic_datetime(self, datetime.with_timezone(tz)),
+                None => for_generic_datetime(self, datetime.with_timezone(&Local)),
+            },
             other => Err(FormatError::IncompatibleFormatter {
                 ty: other.type_name(),
                 fmt: "datetime",

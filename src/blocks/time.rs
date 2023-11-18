@@ -29,6 +29,21 @@
 //! short = " $icon $timestamp.datetime(f:%R) "
 //! ```
 //!
+//! # Non Gregorian calendars
+//!
+//! You can use calendars other than the Gregorian calendar by adding the calendar specifier in the locale string. When using
+//! this feature you can't use chrono style format string, and you should use one of the options provided by
+//! the `icu4x` crate: `short`, `medium`, `long`, `full`.
+//!
+//! ## Example
+//!
+//! ```toml
+//! [[block]]
+//! block = "time"
+//! interval = 60
+//! format = "$timestamp.datetime(locale:'fa_IR-u-ca-persian', f:'full')"
+//! ```
+//!
 //! # Icons Used
 //! - `time`
 
