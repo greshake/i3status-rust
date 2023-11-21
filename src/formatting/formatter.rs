@@ -1,11 +1,10 @@
 use chrono::format::{Item, StrftimeItems};
-use chrono::{DateTime, Datelike, Local, Locale, TimeZone};
+use chrono::{DateTime, Local, Locale, TimeZone};
 use once_cell::sync::Lazy;
 use unicode_segmentation::UnicodeSegmentation;
 
 use std::fmt::{Debug, Display};
 use std::iter::repeat;
-use std::str::FromStr;
 use std::time::{Duration, Instant};
 
 use super::parse::Arg;
@@ -501,6 +500,7 @@ pub enum DatetimeFormatter {
         items: Vec<Item<'static>>,
         locale: Option<Locale>,
     },
+    #[cfg(feature = "icu_calendar")]
     Icu {
         length: icu_datetime::options::length::Date,
         locale: icu_locid::Locale,
@@ -523,7 +523,9 @@ impl DatetimeFormatter {
     fn new(format: Option<&str>, locale: Option<&str>) -> Result<Self> {
         let (items, locale) = match locale {
             Some(locale) => {
+                #[cfg(feature = "icu_calendar")]
                 let Ok(locale) = locale.try_into() else {
+                    use std::str::FromStr as _;
                     // try with icu4x
                     let locale = icu_locid::Locale::from_str(locale)
                         .ok()
@@ -537,6 +539,8 @@ impl DatetimeFormatter {
                     };
                     return Ok(Self::Icu { locale, length });
                 };
+                #[cfg(not(feature = "icu_calendar"))]
+                let locale = locale.try_into().ok().error("invalid locale")?;
                 (
                     StrftimeItems::new_with_locale(
                         format.unwrap_or(DEFAULT_DATETIME_FORMAT),
@@ -574,7 +578,9 @@ impl Formatter for DatetimeFormatter {
                     None => datetime.format_with_items(items.iter()),
                 }
                 .to_string(),
+                #[cfg(feature = "icu_calendar")]
                 DatetimeFormatter::Icu { locale, length } => {
+                    use chrono::Datelike as _;
                     let date = icu_calendar::Date::try_new_iso_date(
                         datetime.year_ce().1 as i32,
                         datetime.month() as u8,

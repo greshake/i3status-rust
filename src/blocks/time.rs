@@ -35,6 +35,8 @@
 //! this feature you can't use chrono style format string, and you should use one of the options provided by
 //! the `icu4x` crate: `short`, `medium`, `long`, `full`.
 //!
+//! ** Only available using feature `icu_calendar`. **
+//!
 //! ## Example
 //!
 //! ```toml
