@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/formatting/formatter.rs`."><title>formatter.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-cb6f1f67f1bcd037.css" id="mainThemeStyle"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.73.0 (cc66ad468 2023-10-03)" data-channel="1.73.0" data-search-js="search-6dfdfced5eff6596.js" data-settings-js="settings-de11bff964e9d4e5.js" data-settings-css="settings-8c76f75bfb6bd192.css" data-theme-light-css="light-1596385f77d47ef2.css" data-theme-dark-css="dark-0a43001d3fc2282c.css" data-theme-ayu-css="ayu-fd19013d6ce078bf.css" ><script src="../../../static.files/storage-db41da1a38ea3cb8.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-0795b7d26be81095.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../../../static.files/light-1596385f77d47ef2.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../../../static.files/dark-0a43001d3fc2282c.css"><link rel="stylesheet" href="../../../static.files/noscript-cffde32267a19fd6.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/formatting/formatter.rs`."><title>formatter.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-fa3bb1812debf86c.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.74.0 (79e9716c9 2023-11-13)" data-channel="1.74.0" data-search-js="search-8be46b629f5f14a8.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-c5bd66d33317d69f.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../i3status_rs/index.html"><img class="rust-logo" src="../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -698,12 +698,62 @@
 <a href="#698" id="698">698</a>
 <a href="#699" id="699">699</a>
 <a href="#700" id="700">700</a>
+<a href="#701" id="701">701</a>
+<a href="#702" id="702">702</a>
+<a href="#703" id="703">703</a>
+<a href="#704" id="704">704</a>
+<a href="#705" id="705">705</a>
+<a href="#706" id="706">706</a>
+<a href="#707" id="707">707</a>
+<a href="#708" id="708">708</a>
+<a href="#709" id="709">709</a>
+<a href="#710" id="710">710</a>
+<a href="#711" id="711">711</a>
+<a href="#712" id="712">712</a>
+<a href="#713" id="713">713</a>
+<a href="#714" id="714">714</a>
+<a href="#715" id="715">715</a>
+<a href="#716" id="716">716</a>
+<a href="#717" id="717">717</a>
+<a href="#718" id="718">718</a>
+<a href="#719" id="719">719</a>
+<a href="#720" id="720">720</a>
+<a href="#721" id="721">721</a>
+<a href="#722" id="722">722</a>
+<a href="#723" id="723">723</a>
+<a href="#724" id="724">724</a>
+<a href="#725" id="725">725</a>
+<a href="#726" id="726">726</a>
+<a href="#727" id="727">727</a>
+<a href="#728" id="728">728</a>
+<a href="#729" id="729">729</a>
+<a href="#730" id="730">730</a>
+<a href="#731" id="731">731</a>
+<a href="#732" id="732">732</a>
+<a href="#733" id="733">733</a>
+<a href="#734" id="734">734</a>
+<a href="#735" id="735">735</a>
+<a href="#736" id="736">736</a>
+<a href="#737" id="737">737</a>
+<a href="#738" id="738">738</a>
+<a href="#739" id="739">739</a>
+<a href="#740" id="740">740</a>
+<a href="#741" id="741">741</a>
+<a href="#742" id="742">742</a>
+<a href="#743" id="743">743</a>
+<a href="#744" id="744">744</a>
+<a href="#745" id="745">745</a>
+<a href="#746" id="746">746</a>
+<a href="#747" id="747">747</a>
+<a href="#748" id="748">748</a>
+<a href="#749" id="749">749</a>
+<a href="#750" id="750">750</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>chrono::format::{Item, StrftimeItems};
-<span class="kw">use </span>chrono::{Local, Locale};
+<span class="kw">use </span>chrono::{DateTime, Local, Locale, TimeZone};
 <span class="kw">use </span>once_cell::sync::Lazy;
 <span class="kw">use </span>unicode_segmentation::UnicodeSegmentation;
 
-<span class="kw">use </span>std::fmt::Debug;
+<span class="kw">use </span>std::fmt::{Debug, Display};
 <span class="kw">use </span>std::iter::repeat;
 <span class="kw">use </span>std::time::{Duration, Instant};
 
@@ -753,7 +803,7 @@
 });
 
 <span class="kw">pub static </span>DEFAULT_DATETIME_FORMATTER: Lazy&lt;DatetimeFormatter&gt; =
-    Lazy::new(|| DatetimeFormatter::new(DEFAULT_DATETIME_FORMAT, <span class="prelude-val">None</span>).unwrap());
+    Lazy::new(|| DatetimeFormatter::new(<span class="prelude-val">Some</span>(DEFAULT_DATETIME_FORMAT), <span class="prelude-val">None</span>).unwrap());
 
 <span class="kw">pub const </span>DEFAULT_FLAG_FORMATTER: FlagFormatter = FlagFormatter;
 
@@ -877,10 +927,7 @@
                 }
             }
 
-            <span class="prelude-val">Ok</span>(Box::new(DatetimeFormatter::new(
-                format.unwrap_or(DEFAULT_DATETIME_FORMAT),
-                locale,
-            )<span class="question-mark">?</span>))
+            <span class="prelude-val">Ok</span>(Box::new(DatetimeFormatter::new(format, locale)<span class="question-mark">?</span>))
         }
         <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">&quot;Unknown formatter: &#39;{name}&#39;&quot;</span>))),
     }
@@ -1198,9 +1245,16 @@
 }
 
 <span class="attr">#[derive(Debug)]
-</span><span class="kw">pub struct </span>DatetimeFormatter {
-    items: Vec&lt;Item&lt;<span class="lifetime">&#39;static</span>&gt;&gt;,
-    locale: <span class="prelude-ty">Option</span>&lt;Locale&gt;,
+</span><span class="kw">pub enum </span>DatetimeFormatter {
+    Chrono {
+        items: Vec&lt;Item&lt;<span class="lifetime">&#39;static</span>&gt;&gt;,
+        locale: <span class="prelude-ty">Option</span>&lt;Locale&gt;,
+    },
+    <span class="attr">#[cfg(feature = <span class="string">&quot;icu_calendar&quot;</span>)]
+    </span>Icu {
+        length: icu_datetime::options::length::Date,
+        locale: icu_locid::Locale,
+    },
 }
 
 <span class="kw">fn </span>make_static_item(item: Item&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; Item&lt;<span class="lifetime">&#39;static</span>&gt; {
@@ -1216,16 +1270,42 @@
 }
 
 <span class="kw">impl </span>DatetimeFormatter {
-    <span class="kw">fn </span>new(format: <span class="kw-2">&amp;</span>str, locale: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
+    <span class="kw">fn </span>new(format: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt;, locale: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
         <span class="kw">let </span>(items, locale) = <span class="kw">match </span>locale {
             <span class="prelude-val">Some</span>(locale) =&gt; {
-                <span class="kw">let </span>locale = locale.try_into().ok().error(<span class="string">&quot;invalid locale&quot;</span>)<span class="question-mark">?</span>;
-                (StrftimeItems::new_with_locale(format, locale), <span class="prelude-val">Some</span>(locale))
+                <span class="attr">#[cfg(feature = <span class="string">&quot;icu_calendar&quot;</span>)]
+                </span><span class="kw">let </span><span class="prelude-val">Ok</span>(locale) = locale.try_into() <span class="kw">else </span>{
+                    <span class="kw">use </span>std::str::FromStr <span class="kw">as _</span>;
+                    <span class="comment">// try with icu4x
+                    </span><span class="kw">let </span>locale = icu_locid::Locale::from_str(locale)
+                        .ok()
+                        .error(<span class="string">&quot;invalid locale&quot;</span>)<span class="question-mark">?</span>;
+                    <span class="kw">let </span>length = <span class="kw">match </span>format {
+                        <span class="prelude-val">Some</span>(<span class="string">&quot;full&quot;</span>) =&gt; icu_datetime::options::length::Date::Full,
+                        <span class="prelude-val">None </span>| <span class="prelude-val">Some</span>(<span class="string">&quot;long&quot;</span>) =&gt; icu_datetime::options::length::Date::Long,
+                        <span class="prelude-val">Some</span>(<span class="string">&quot;medium&quot;</span>) =&gt; icu_datetime::options::length::Date::Medium,
+                        <span class="prelude-val">Some</span>(<span class="string">&quot;short&quot;</span>) =&gt; icu_datetime::options::length::Date::Short,
+                        <span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="string">&quot;Unknown format option for icu based locale&quot;</span>)),
+                    };
+                    <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="self">Self</span>::Icu { locale, length });
+                };
+                <span class="attr">#[cfg(not(feature = <span class="string">&quot;icu_calendar&quot;</span>))]
+                </span><span class="kw">let </span>locale = locale.try_into().ok().error(<span class="string">&quot;invalid locale&quot;</span>)<span class="question-mark">?</span>;
+                (
+                    StrftimeItems::new_with_locale(
+                        format.unwrap_or(DEFAULT_DATETIME_FORMAT),
+                        locale,
+                    ),
+                    <span class="prelude-val">Some</span>(locale),
+                )
             }
-            <span class="prelude-val">None </span>=&gt; (StrftimeItems::new(format), <span class="prelude-val">None</span>),
+            <span class="prelude-val">None </span>=&gt; (
+                StrftimeItems::new(format.unwrap_or(DEFAULT_DATETIME_FORMAT)),
+                <span class="prelude-val">None</span>,
+            ),
         };
 
-        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
+        <span class="prelude-val">Ok</span>(<span class="self">Self</span>::Chrono {
             items: items.map(make_static_item).collect(),
             locale,
         })
@@ -1234,26 +1314,46 @@
 
 <span class="kw">impl </span>Formatter <span class="kw">for </span>DatetimeFormatter {
     <span class="kw">fn </span>format(<span class="kw-2">&amp;</span><span class="self">self</span>, val: <span class="kw-2">&amp;</span>Value, _config: <span class="kw-2">&amp;</span>SharedConfig) -&gt; <span class="prelude-ty">Result</span>&lt;String, FormatError&gt; {
+        <span class="kw">fn </span>for_generic_datetime&lt;T&gt;(
+            this: <span class="kw-2">&amp;</span>DatetimeFormatter,
+            datetime: DateTime&lt;T&gt;,
+        ) -&gt; <span class="prelude-ty">Result</span>&lt;String, FormatError&gt;
+        <span class="kw">where
+            </span>T: TimeZone,
+            T::Offset: Display,
+        {
+            <span class="prelude-val">Ok</span>(<span class="kw">match </span>this {
+                DatetimeFormatter::Chrono { items, locale } =&gt; <span class="kw">match </span><span class="kw-2">*</span>locale {
+                    <span class="prelude-val">Some</span>(locale) =&gt; datetime.format_localized_with_items(items.iter(), locale),
+                    <span class="prelude-val">None </span>=&gt; datetime.format_with_items(items.iter()),
+                }
+                .to_string(),
+                <span class="attr">#[cfg(feature = <span class="string">&quot;icu_calendar&quot;</span>)]
+                </span>DatetimeFormatter::Icu { locale, length } =&gt; {
+                    <span class="kw">use </span>chrono::Datelike <span class="kw">as _</span>;
+                    <span class="kw">let </span>date = icu_calendar::Date::try_new_iso_date(
+                        datetime.year_ce().<span class="number">1 </span><span class="kw">as </span>i32,
+                        datetime.month() <span class="kw">as </span>u8,
+                        datetime.day() <span class="kw">as </span>u8,
+                    )
+                    .ok()
+                    .error(<span class="string">&quot;Current date should be a valid date&quot;</span>)<span class="question-mark">?</span>;
+                    <span class="kw">let </span>date = date.to_any();
+                    <span class="kw">let </span>dft =
+                        icu_datetime::DateFormatter::try_new_with_length(<span class="kw-2">&amp;</span>locale.into(), <span class="kw-2">*</span>length)
+                            .ok()
+                            .error(<span class="string">&quot;locale should be present in compiled data&quot;</span>)<span class="question-mark">?</span>;
+                    dft.format_to_string(<span class="kw-2">&amp;</span>date)
+                        .ok()
+                        .error(<span class="string">&quot;formatting date using icu failed&quot;</span>)<span class="question-mark">?
+                </span>}
+            })
+        }
         <span class="kw">match </span>val {
-            Value::Datetime(datetime, timezone) =&gt; <span class="prelude-val">Ok</span>(<span class="kw">match </span><span class="self">self</span>.locale {
-                <span class="prelude-val">Some</span>(locale) =&gt; <span class="kw">match </span>timezone {
-                    <span class="prelude-val">Some</span>(tz) =&gt; datetime
-                        .with_timezone(tz)
-                        .format_localized_with_items(<span class="self">self</span>.items.iter(), locale),
-                    <span class="prelude-val">None </span>=&gt; datetime
-                        .with_timezone(<span class="kw-2">&amp;</span>Local)
-                        .format_localized_with_items(<span class="self">self</span>.items.iter(), locale),
-                },
-                <span class="prelude-val">None </span>=&gt; <span class="kw">match </span>timezone {
-                    <span class="prelude-val">Some</span>(tz) =&gt; datetime
-                        .with_timezone(tz)
-                        .format_with_items(<span class="self">self</span>.items.iter()),
-                    <span class="prelude-val">None </span>=&gt; datetime
-                        .with_timezone(<span class="kw-2">&amp;</span>Local)
-                        .format_with_items(<span class="self">self</span>.items.iter()),
-                },
-            }
-            .to_string()),
+            Value::Datetime(datetime, timezone) =&gt; <span class="kw">match </span>timezone {
+                <span class="prelude-val">Some</span>(tz) =&gt; for_generic_datetime(<span class="self">self</span>, datetime.with_timezone(tz)),
+                <span class="prelude-val">None </span>=&gt; for_generic_datetime(<span class="self">self</span>, datetime.with_timezone(<span class="kw-2">&amp;</span>Local)),
+            },
             other =&gt; <span class="prelude-val">Err</span>(FormatError::IncompatibleFormatter {
                 ty: other.type_name(),
                 fmt: <span class="string">&quot;datetime&quot;</span>,
