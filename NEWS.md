@@ -1,3 +1,20 @@
+# i3status-rust 0.32.3 [unreleased]
+
+### New Blocks and Features
+
+* Weather: add `zip` option for OpenWeatherMap (#1948).
+* Weather: add `format_alt` option (#1944).
+* Weather: implement forecast (#1944).
+* Music: add `format_alt` (#1960).
+* Apt: added config option `ignore_updates_regex` to filter the list of updates (#1967).
+* Time: add basic support for non Gregorian calendars (#1968).
+
+### Bug Fixes and Improvements
+
+* Xrandr: support multiple outputs (#1949).
+* Fail if click handler config refers to unknown button.
+* Weather: `location` placeholder now works with Met.no if autolocate is enabled (#1950).
+
 # i3status-rust 0.32.2
 
 ### Bug Fixes and Improvements
