@@ -79,6 +79,7 @@ words:
   - kmon
   - libc
   - liquidctl
+  - locid
   - macchiato
   - maildir
   - mebi
