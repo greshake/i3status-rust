@@ -134,11 +134,25 @@
 <a href="#134" id="134">134</a>
 <a href="#135" id="135">135</a>
 <a href="#136" id="136">136</a>
+<a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a>
+<a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! A Toggle block
 //!
 //! You can add commands to be executed to disable the toggle (`command_off`), and to enable it
 //! (`command_on`). If these command exit with a non-zero status, the block will not be toggled and
-//! the block state will be changed to give a visual warning of the failure. You also need to
+//! the block state will be changed to `critical` to give a visual warning of the failure. You also need to
 //! specify a command to determine the state of the toggle (`command_state`). When the command outputs
 //! nothing, the toggle is disabled, otherwise enabled. By specifying the interval property you can
 //! let the command_state be executed continuously.
@@ -151,12 +165,14 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `format` | A string to customise the output of this block. See below for available placeholders | `&quot; $icon &quot;`
-//! `command_on` | Shell command to enable the toggle | Yes | N/A
-//! `command_off` | Shell command to disable the toggle | Yes | N/A
+//! `command_on` | Shell command to enable the toggle | **Required**
+//! `command_off` | Shell command to disable the toggle | **Required**
 //! `command_state` | Shell command to determine the state. Empty output =&gt; No, otherwise =&gt; Yes. | **Required**
 //! `icon_on` | Icon override for the toggle button while on | `&quot;toggle_on&quot;`
 //! `icon_off` | Icon override for the toggle button while off | `&quot;toggle_off&quot;`
 //! `interval` | Update interval in seconds. If not set, `command_state` will run only on click. | None
+//! `state_on` | [`State`] (color) of this block while on | [idle][State::Idle]
+//! `state_off` | [`State`] (color) of this block while off | [idle][State::Idle]
 //!
 //! Placeholder   | Value                                       | Type   | Unit
 //! --------------|---------------------------------------------|--------|-----
@@ -178,6 +194,8 @@
 //! command_on = &quot;~/.screenlayout/4kmon_default.sh&quot;
 //! command_off = &quot;~/.screenlayout/builtin.sh&quot;
 //! interval = 5
+//! state_on = &quot;good&quot;
+//! state_off = &quot;warning&quot;
 //! ```
 //!
 //! # Icons Used
@@ -201,6 +219,8 @@
     </span><span class="kw">pub </span>icon_off: <span class="prelude-ty">Option</span>&lt;String&gt;,
     <span class="attr">#[serde(default)]
     </span><span class="kw">pub </span>interval: <span class="prelude-ty">Option</span>&lt;u64&gt;,
+    <span class="kw">pub </span>state_on: <span class="prelude-ty">Option</span>&lt;State&gt;,
+    <span class="kw">pub </span>state_off: <span class="prelude-ty">Option</span>&lt;State&gt;,
 }
 
 <span class="kw">async fn </span>sleep_opt(dur: <span class="prelude-ty">Option</span>&lt;Duration&gt;) {
@@ -229,16 +249,23 @@
             .output()
             .<span class="kw">await
             </span>.error(<span class="string">&quot;Failed to run command_state&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">let </span>is_toggled = !std::str::from_utf8(<span class="kw-2">&amp;</span>output.stdout)
+        <span class="kw">let </span>is_on = !std::str::from_utf8(<span class="kw-2">&amp;</span>output.stdout)
             .error(<span class="string">&quot;The output of command_state is invalid UTF-8&quot;</span>)<span class="question-mark">?
             </span>.trim()
             .is_empty();
 
         widget.set_values(<span class="macro">map!</span>(
             <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(
-                <span class="kw">if </span>is_toggled { icon_on.to_string() } <span class="kw">else </span>{ icon_off.to_string() }
+                <span class="kw">if </span>is_on { icon_on.to_string() } <span class="kw">else </span>{ icon_off.to_string() }
             )
         ));
+        <span class="kw">if </span>widget.state != State::Critical {
+            widget.state = <span class="kw">if </span>is_on {
+                config.state_on.unwrap_or(State::Idle)
+            } <span class="kw">else </span>{
+                config.state_off.unwrap_or(State::Idle)
+            };
+        }
         api.set_widget(widget.clone())<span class="question-mark">?</span>;
 
         <span class="kw">loop </span>{
@@ -247,7 +274,7 @@
                 <span class="kw">_ </span>= api.wait_for_update_request() =&gt; <span class="kw">break</span>,
                 <span class="prelude-val">Some</span>(action) = actions.recv() =&gt; <span class="kw">match </span>action.as_ref() {
                     <span class="string">&quot;toggle&quot; </span>=&gt; {
-                        <span class="kw">let </span>cmd = <span class="kw">if </span>is_toggled {
+                        <span class="kw">let </span>cmd = <span class="kw">if </span>is_on {
                             <span class="kw-2">&amp;</span>config.command_off
                         } <span class="kw">else </span>{
                             <span class="kw-2">&amp;</span>config.command_on
@@ -258,7 +285,8 @@
                             .<span class="kw">await
                             </span>.error(<span class="string">&quot;Failed to run command&quot;</span>)<span class="question-mark">?</span>;
                         <span class="kw">if </span>output.status.success() {
-                            widget.state = State::Idle;
+                            <span class="comment">// Temporary; it will immediately be updated by the outer loop
+                            </span>widget.state = State::Idle;
                             <span class="kw">break</span>;
                         } <span class="kw">else </span>{
                             widget.state = State::Critical;
