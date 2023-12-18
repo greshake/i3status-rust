@@ -2,7 +2,7 @@
 //!
 //! You can add commands to be executed to disable the toggle (`command_off`), and to enable it
 //! (`command_on`). If these command exit with a non-zero status, the block will not be toggled and
-//! the block state will be changed to give a visual warning of the failure. You also need to
+//! the block state will be changed to `critical` to give a visual warning of the failure. You also need to
 //! specify a command to determine the state of the toggle (`command_state`). When the command outputs
 //! nothing, the toggle is disabled, otherwise enabled. By specifying the interval property you can
 //! let the command_state be executed continuously.
@@ -15,12 +15,14 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `format` | A string to customise the output of this block. See below for available placeholders | `" $icon "`
-//! `command_on` | Shell command to enable the toggle | Yes | N/A
-//! `command_off` | Shell command to disable the toggle | Yes | N/A
+//! `command_on` | Shell command to enable the toggle | **Required**
+//! `command_off` | Shell command to disable the toggle | **Required**
 //! `command_state` | Shell command to determine the state. Empty output => No, otherwise => Yes. | **Required**
 //! `icon_on` | Icon override for the toggle button while on | `"toggle_on"`
 //! `icon_off` | Icon override for the toggle button while off | `"toggle_off"`
 //! `interval` | Update interval in seconds. If not set, `command_state` will run only on click. | None
+//! `state_on` | [`State`] (color) of this block while on | [idle][State::Idle]
+//! `state_off` | [`State`] (color) of this block while off | [idle][State::Idle]
 //!
 //! Placeholder   | Value                                       | Type   | Unit
 //! --------------|---------------------------------------------|--------|-----
@@ -42,6 +44,8 @@
 //! command_on = "~/.screenlayout/4kmon_default.sh"
 //! command_off = "~/.screenlayout/builtin.sh"
 //! interval = 5
+//! state_on = "good"
+//! state_off = "warning"
 //! ```
 //!
 //! # Icons Used
@@ -65,6 +69,8 @@ pub struct Config {
     pub icon_off: Option<String>,
     #[serde(default)]
     pub interval: Option<u64>,
+    pub state_on: Option<State>,
+    pub state_off: Option<State>,
 }
 
 async fn sleep_opt(dur: Option<Duration>) {
@@ -93,16 +99,23 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             .output()
             .await
             .error("Failed to run command_state")?;
-        let is_toggled = !std::str::from_utf8(&output.stdout)
+        let is_on = !std::str::from_utf8(&output.stdout)
             .error("The output of command_state is invalid UTF-8")?
             .trim()
             .is_empty();
 
         widget.set_values(map!(
             "icon" => Value::icon(
-                if is_toggled { icon_on.to_string() } else { icon_off.to_string() }
+                if is_on { icon_on.to_string() } else { icon_off.to_string() }
             )
         ));
+        if widget.state != State::Critical {
+            widget.state = if is_on {
+                config.state_on.unwrap_or(State::Idle)
+            } else {
+                config.state_off.unwrap_or(State::Idle)
+            };
+        }
         api.set_widget(widget.clone())?;
 
         loop {
@@ -111,7 +124,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 _ = api.wait_for_update_request() => break,
                 Some(action) = actions.recv() => match action.as_ref() {
                     "toggle" => {
-                        let cmd = if is_toggled {
+                        let cmd = if is_on {
                             &config.command_off
                         } else {
                             &config.command_on
@@ -122,6 +135,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                             .await
                             .error("Failed to run command")?;
                         if output.status.success() {
+                            // Temporary; it will immediately be updated by the outer loop
                             widget.state = State::Idle;
                             break;
                         } else {
