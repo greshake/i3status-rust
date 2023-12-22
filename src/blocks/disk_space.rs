@@ -96,11 +96,19 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     };
 
     let unit = match config.alert_unit.as_deref() {
+        // Decimal
         Some("TB") => Some(Prefix::Tera),
         Some("GB") => Some(Prefix::Giga),
         Some("MB") => Some(Prefix::Mega),
         Some("KB") => Some(Prefix::Kilo),
+        // Binary
+        Some("TiB") => Some(Prefix::Tebi),
+        Some("GiB") => Some(Prefix::Gibi),
+        Some("MiB") => Some(Prefix::Mebi),
+        Some("KiB") => Some(Prefix::Kibi),
+        // Byte
         Some("B") => Some(Prefix::One),
+        // Unknown
         Some(x) => return Err(Error::new(format!("Unknown unit: '{x}'"))),
         None => None,
     };
@@ -144,10 +152,17 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         // Send percentage to alert check if we don't want absolute alerts
         let alert_val_in_config_units = match unit {
+            // Decimal
             Some(Prefix::Tera) => result * 1e-12,
             Some(Prefix::Giga) => result * 1e-9,
             Some(Prefix::Mega) => result * 1e-6,
             Some(Prefix::Kilo) => result * 1e-3,
+            // Binary
+            Some(Prefix::Tebi) => result / 1024.0 / 1024.0 / 1024.0 / 1024.0,
+            Some(Prefix::Gibi) => result / 1024.0 / 1024.0 / 1024.0,
+            Some(Prefix::Mebi) => result / 1024.0 / 1024.0,
+            Some(Prefix::Kibi) => result / 1024.0,
+            // Fallback
             Some(_) => result,
             None => percentage,
         };
