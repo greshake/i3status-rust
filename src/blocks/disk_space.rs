@@ -152,18 +152,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         // Send percentage to alert check if we don't want absolute alerts
         let alert_val_in_config_units = match unit {
-            // Decimal
-            Some(Prefix::Tera) => result * 1e-12,
-            Some(Prefix::Giga) => result * 1e-9,
-            Some(Prefix::Mega) => result * 1e-6,
-            Some(Prefix::Kilo) => result * 1e-3,
-            // Binary
-            Some(Prefix::Tebi) => result / 1024.0 / 1024.0 / 1024.0 / 1024.0,
-            Some(Prefix::Gibi) => result / 1024.0 / 1024.0 / 1024.0,
-            Some(Prefix::Mebi) => result / 1024.0 / 1024.0,
-            Some(Prefix::Kibi) => result / 1024.0,
-            // Fallback
-            Some(_) => result,
+            Some(p) => p.apply(result),
             None => percentage,
         };
 
