@@ -248,7 +248,7 @@
             .get(<span class="string">&quot;xesam:artist&quot;</span>)
             .and_then(|val| val.downcast_ref::&lt;zvariant::Array&gt;())
             .map(|val| val.get());
-        <span class="kw">let </span>artist = artists.and_then(|val| val.get(<span class="number">0</span>)).and_then(val_to_string);
+        <span class="kw">let </span>artist = artists.and_then(|val| val.first()).and_then(val_to_string);
 
         <span class="kw">let </span>url = map.get(<span class="string">&quot;xesam:url&quot;</span>).and_then(|val| val_to_string(val));
 
