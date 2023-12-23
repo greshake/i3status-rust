@@ -53,7 +53,7 @@ impl TryFrom<OwnedValue> for PlayerMetadata {
             .get("xesam:artist")
             .and_then(|val| val.downcast_ref::<zvariant::Array>())
             .map(|val| val.get());
-        let artist = artists.and_then(|val| val.get(0)).and_then(val_to_string);
+        let artist = artists.and_then(|val| val.first()).and_then(val_to_string);
 
         let url = map.get("xesam:url").and_then(|val| val_to_string(val));
 
