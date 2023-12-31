@@ -66,8 +66,8 @@ swayipc-async = "2.0"
 thiserror = "1.0"
 toml = "0.8"
 unicode-segmentation = "1.10.1"
-wayrs-client = { version = "0.12", features = ["tokio"] }
-wayrs-protocols = { version = "0.12", features = ["wlr-foreign-toplevel-management-unstable-v1"] }
+wayrs-client = { version = "1.0", features = ["tokio"] }
+wayrs-protocols = { version = "0.13", features = ["wlr-foreign-toplevel-management-unstable-v1"] }
 zbus = { version = "3.14", default-features = false, features = ["tokio"] }
 
 [dependencies.tokio]
