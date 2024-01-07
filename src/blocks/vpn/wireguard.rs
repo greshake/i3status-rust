@@ -18,9 +18,9 @@ impl WireguardDriver {
     }
 }
 
-const SUDO_CMD: &'static str = "/usr/bin/sudo";
-const WG_QUICK_CMD: &'static str = "/usr/bin/wg-quick";
-const WG_CMD: &'static str = "/usr/bin/wg";
+const SUDO_CMD: &str = "/usr/bin/sudo";
+const WG_QUICK_CMD: &str = "/usr/bin/wg-quick";
+const WG_CMD: &str = "/usr/bin/wg";
 
 #[async_trait]
 impl Driver for WireguardDriver {
