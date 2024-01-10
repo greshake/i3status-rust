@@ -185,6 +185,7 @@ define_blocks!(
     )]
     pacman,
     pomodoro,
+    privacy,
     rofication,
     service_status,
     sound,

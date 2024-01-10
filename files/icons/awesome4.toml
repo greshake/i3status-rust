@@ -87,4 +87,5 @@ weather_snow = "\uf2dc" # fa-snowflake-o
 weather_sun = "\uf185" # fa-sun-o
 weather_thunder = "\uf0e7" # fa-bolt
 weather_thunder_night = "\uf0e7" # fa-bolt
+webcam = "\uf03d" # fa-video-camera
 xrandr = "\uf26c" # fa-television

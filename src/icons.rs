@@ -109,6 +109,7 @@ impl Default for Icons {
             "weather_sun" => "SUNNY",
             "weather_thunder_night" => "STORM",
             "weather_thunder" => "STORM",
+            "webcam" => "CAM",
             "xrandr" => "SCREEN"
         })
     }

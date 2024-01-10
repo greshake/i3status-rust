@@ -128,4 +128,5 @@ weather_snow = "\ue36f" # nf-weather-snowflake_cold
 weather_sun = "\ue30d" # nf-weather-day_sunny
 weather_thunder = "\ue31d" # nf-weather-thunderstorm
 weather_thunder_night = "\ue32a" # nf-weather-night_alt_thunderstorm
+webcam = "\U000f0567" # nf-md-video
 xrandr = "\U000f037a" # nf-md-monitor_multiple

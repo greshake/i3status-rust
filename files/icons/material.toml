@@ -108,4 +108,5 @@ weather_snow = "\ueb3b" # ac_unit
 weather_sun = "\ue430" # wb_sunny
 weather_thunder = "\uebdb" # thunderstorm
 weather_thunder_night = "\uebdb" # thunderstorm
+webcam = "\ue04b" # videocam
 xrandr = "\ue31e" # laptop
