@@ -1176,6 +1176,7 @@ dependencies = [
  "async-trait",
  "backon",
  "base64",
+ "bitflags 2.9.1",
  "bytes",
  "calibright",
  "chrono",
