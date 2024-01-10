@@ -3,6 +3,8 @@
 # default icons/themes. If installed via a package manager you do not need to
 # run this script.
 
+set -x
+
 XDG_DATA_HOME=${XDG_DATA_HOME:-$HOME/.local/share}
 
 # Themes
