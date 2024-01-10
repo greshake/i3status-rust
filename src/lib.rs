@@ -16,6 +16,8 @@ pub mod formatting;
 pub mod geolocator;
 pub mod icons;
 mod netlink;
+#[cfg(feature = "pipewire")]
+pub mod pipewire;
 pub mod protocol;
 mod signals;
 mod subprocess;
