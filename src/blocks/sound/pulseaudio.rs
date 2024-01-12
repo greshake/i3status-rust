@@ -29,6 +29,15 @@ pub(super) static DEFAULT_SOURCE: Mutex<Cow<'static, str>> =
 pub(super) static DEFAULT_SINK: Mutex<Cow<'static, str>> =
     Mutex::new(Cow::Borrowed("@DEFAULT_SINK@"));
 
+impl DeviceKind {
+    pub fn default_name(self) -> Cow<'static, str> {
+        match self {
+            Self::Sink => DEFAULT_SINK.lock().unwrap().clone(),
+            Self::Source => DEFAULT_SOURCE.lock().unwrap().clone(),
+        }
+    }
+}
+
 pub(super) struct Device {
     name: Option<String>,
     description: Option<String>,

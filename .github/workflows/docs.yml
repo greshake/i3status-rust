@@ -12,14 +12,15 @@ jobs:
   default:
 
     runs-on: ubuntu-latest
-
+    container:
+      image: archlinux
     steps:
+    - name: Get required packages
+      run: pacman --noconfirm --noprogressbar -Syu base-devel clang git libpipewire libpulse lm_sensors notmuch openssl rsync
+    - uses: dtolnay/rust-toolchain@stable
     - name: Version information
       run: rustc --version; cargo --version
-    - name: Get required packages
-      run: sudo apt-get update && sudo apt-get install libsensors-dev libssl-dev libpulse-dev libnotmuch-dev
     - uses: actions/checkout@v4
-    - uses: dtolnay/rust-toolchain@stable
     - name: Generate docs
       run: cargo doc --all-features --no-deps
     - name: Create index.html

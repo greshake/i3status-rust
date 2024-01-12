@@ -338,16 +338,6 @@ pub enum DeviceKind {
     Source,
 }
 
-#[cfg(feature = "pulseaudio")]
-impl DeviceKind {
-    pub fn default_name(self) -> Cow<'static, str> {
-        match self {
-            Self::Sink => pulseaudio::DEFAULT_SINK.lock().unwrap().clone(),
-            Self::Source => pulseaudio::DEFAULT_SOURCE.lock().unwrap().clone(),
-        }
-    }
-}
-
 #[async_trait::async_trait]
 trait SoundDevice {
     fn volume(&self) -> u32;

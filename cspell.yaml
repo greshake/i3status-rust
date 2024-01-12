@@ -41,6 +41,7 @@ words:
   - dbus
   - ddcci
   - ddcutil
+  - devel
   - dmenu
   - docsrs
   - dtolnay
@@ -95,9 +96,11 @@ words:
   - NLMSG
   - nlmsghdr
   - nmtui
+  - noconfirm
   - NOFLAGS
   - noheader
   - NOPASSWD
+  - noprogressbar
   - notif
   - Noto
   - NZXT

@@ -8,6 +8,15 @@
 //! `format`   | Format string. | <code>"{ $icon_audio \|}{ $icon_audio_sink \|}{ $icon_video \|}{ $icon_webcam \|}{ $icon_unknown \|}"</code> |
 //! `format_alt`   | Format string. | <code>"{ $icon_audio $info_audio \|}{ $icon_audio_sink $info_audio_sink \|}{ $icon_video $info_video \|}{ $icon_webcam $info_webcam \|}{ $icon_unknown $info_unknown \|}"</code> |
 //!
+//! # pipewire Options (requires the pipewire feature to be enabled)
+//!
+//! Key | Values | Required | Default
+//! ----|--------|----------|--------
+//! `name` | `pipewire` | Yes | None
+//! `exclude_output` | An output node to ignore, example: `["HD Pro Webcam C920"]` | No | `[]`
+//! `exclude_input` | An input node to ignore, example: `["openrgb"]` | No | `[]`
+//! `display`   | Which node field should be used as a display name, options: `name`, `description`, `nickname` | No | `name`
+//!
 //! # vl4 Options
 //!
 //! Key | Values | Required | Default
@@ -44,8 +53,16 @@
 //! ```toml
 //! [[block]]
 //! block = "privacy"
+//! merge_with_next = true
 //! [block.driver]
 //! name = "v4l"
+//!
+//! [[block]]
+//! block = "privacy"
+//! [block.driver]
+//! name = "pipewire"
+//! exclude_input = ["openrgb"]
+//! display = "nickname"
 //! ```
 //!
 //! # Icons Used
@@ -61,6 +78,8 @@ use super::prelude::*;
 
 make_log_macro!(debug, "privacy");
 
+#[cfg(feature = "pipewire")]
+mod pipewire;
 mod v4l;
 
 #[derive(Deserialize, Debug)]
@@ -73,6 +92,15 @@ pub struct Config {
     pub driver: PrivacyDriver,
 }
 
+#[cfg(feature = "pipewire")]
+#[derive(Deserialize, Debug)]
+#[serde(tag = "name", rename_all = "snake_case")]
+pub enum PrivacyDriver {
+    Pipewire(pipewire::Config),
+    V4l(v4l::Config),
+}
+
+#[cfg(not(feature = "pipewire"))]
 #[derive(Deserialize, Debug)]
 #[serde(tag = "name", rename_all = "snake_case")]
 pub enum PrivacyDriver {
@@ -107,6 +135,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut format_alt = config.format_alt.with_default("{ $icon_audio $info_audio |}{ $icon_audio_sink $info_audio_sink |}{ $icon_video $info_video |}{ $icon_webcam $info_webcam |}{ $icon_unknown $info_unknown |}")?;
 
     let mut device: Box<dyn PrivacyMonitor + Send + Sync> = match &config.driver {
+        #[cfg(feature = "pipewire")]
+        PrivacyDriver::Pipewire(driver_config) => {
+            Box::new(pipewire::Monitor::new(driver_config).await?)
+        }
         PrivacyDriver::V4l(driver_config) => {
             Box::new(v4l::Monitor::new(driver_config, api.error_interval).await?)
         }
