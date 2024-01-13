@@ -7,6 +7,9 @@
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $utilization "`
 //! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
 //! `interval` | Update interval in seconds | `5`
+//! `info_cpu` | Percentage of CPU usage, where state is set to info | `0.3`
+//! `warning_cpu` | Percentage of CPU usage, where state is set to warning | `0.6`
+//! `critical_cpu` | Percentage of CPU usage, where state is set to critical | `0.9`
 //!
 //! Placeholder      | Value                                                                | Type   | Unit
 //! -----------------|----------------------------------------------------------------------|--------|---------------
@@ -31,6 +34,9 @@
 //! interval = 1
 //! format = " $icon $barchart $utilization "
 //! format_alt = " $icon $frequency{ $boost|} "
+//! info_cpu = 20
+//! warning_cpu = 50
+//! critical_cpu = 90
 //! ```
 //!
 //! # Icons Used
