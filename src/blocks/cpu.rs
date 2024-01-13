@@ -7,9 +7,9 @@
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $utilization "`
 //! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
 //! `interval` | Update interval in seconds | `5`
-//! `info_cpu` | Percentage of CPU usage, where state is set to info | `0.3`
-//! `warning_cpu` | Percentage of CPU usage, where state is set to warning | `0.6`
-//! `critical_cpu` | Percentage of CPU usage, where state is set to critical | `0.9`
+//! `info_cpu` | Percentage of CPU usage, where state is set to info | `30.0`
+//! `warning_cpu` | Percentage of CPU usage, where state is set to warning | `60.0`
+//! `critical_cpu` | Percentage of CPU usage, where state is set to critical | `90.0`
 //!
 //! Placeholder      | Value                                                                | Type   | Unit
 //! -----------------|----------------------------------------------------------------------|--------|---------------
