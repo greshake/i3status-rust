@@ -62,6 +62,12 @@ pub struct Config {
     pub format_alt: Option<FormatConfig>,
     #[default(5.into())]
     pub interval: Seconds,
+    #[default(30.0)]
+    pub info_cpu: f64,
+    #[default(60.0)]
+    pub warning_cpu: f64,
+    #[default(90.0)]
+    pub critical_cpu: f64,
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
@@ -132,10 +138,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         let mut widget = Widget::new().with_format(format.clone());
         widget.set_values(values);
-        widget.state = match utilization_avg {
-            x if x > 0.9 => State::Critical,
-            x if x > 0.6 => State::Warning,
-            x if x > 0.3 => State::Info,
+        widget.state = match utilization_avg * 100. {
+            x if x > config.critical_cpu => State::Critical,
+            x if x > config.warning_cpu => State::Warning,
+            x if x > config.info_cpu => State::Info,
             _ => State::Idle,
         };
         api.set_widget(widget)?;
