@@ -1,8 +1,15 @@
-# i3status-rust 0.32.4 [unreleased]
+# i3status-rust 0.33.0 [unreleased]
+
+### Breaking Changes
+
+* Kdeconnect: removed `hide_disconnected` option and `connected` formatting flag (#1860).
 
 ### New Blocks and Features
 
-* cpu: Add `critical_info`/`warning_info`/`info_info` options
+* cpu: Add `critical_info`/`warning_info`/`info_info` options (#1983).
+* Kdeconnect: add `format_disconnected` and `format_missing` options (#1860).
+* Toggle: allow customizing state/theming when on/off by adding `state_on` and `state_off` options (#1974).
+* Disk Space: add support for TiB, GiB, MiB and KiB in `alert_unit` (#1977).
 
 # i3status-rust 0.32.3
 
