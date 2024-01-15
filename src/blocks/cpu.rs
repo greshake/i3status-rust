@@ -7,6 +7,9 @@
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $utilization "`
 //! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
 //! `interval` | Update interval in seconds | `5`
+//! `info_cpu` | Percentage of CPU usage, where state is set to info | `30.0`
+//! `warning_cpu` | Percentage of CPU usage, where state is set to warning | `60.0`
+//! `critical_cpu` | Percentage of CPU usage, where state is set to critical | `90.0`
 //!
 //! Placeholder      | Value                                                                | Type   | Unit
 //! -----------------|----------------------------------------------------------------------|--------|---------------
@@ -31,6 +34,9 @@
 //! interval = 1
 //! format = " $icon $barchart $utilization "
 //! format_alt = " $icon $frequency{ $boost|} "
+//! info_cpu = 20
+//! warning_cpu = 50
+//! critical_cpu = 90
 //! ```
 //!
 //! # Icons Used
@@ -56,6 +62,12 @@ pub struct Config {
     pub format_alt: Option<FormatConfig>,
     #[default(5.into())]
     pub interval: Seconds,
+    #[default(30.0)]
+    pub info_cpu: f64,
+    #[default(60.0)]
+    pub warning_cpu: f64,
+    #[default(90.0)]
+    pub critical_cpu: f64,
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
@@ -126,10 +138,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         let mut widget = Widget::new().with_format(format.clone());
         widget.set_values(values);
-        widget.state = match utilization_avg {
-            x if x > 0.9 => State::Critical,
-            x if x > 0.6 => State::Warning,
-            x if x > 0.3 => State::Info,
+        widget.state = match utilization_avg * 100. {
+            x if x > config.critical_cpu => State::Critical,
+            x if x > config.warning_cpu => State::Warning,
+            x if x > config.info_cpu => State::Info,
             _ => State::Idle,
         };
         api.set_widget(widget)?;

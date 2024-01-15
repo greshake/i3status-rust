@@ -14,6 +14,9 @@ bat_charging = "|^| "
 
 [[block]]
 block = "cpu"
+info_cpu = 20
+warning_cpu = 50
+critical_cpu = 90
 
 [[block]]
 block = "disk_space"
