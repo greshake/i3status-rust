@@ -1,3 +1,9 @@
+# i3status-rust 0.32.4 [unreleased]
+
+### New Blocks and Features
+
+* cpu: Add `critical_info`/`warning_info`/`info_info` options
+
 # i3status-rust 0.32.3
 
 ### New Blocks and Features
