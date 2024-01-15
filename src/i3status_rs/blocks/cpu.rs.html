@@ -253,6 +253,18 @@
 <a href="#253" id="253">253</a>
 <a href="#254" id="254">254</a>
 <a href="#255" id="255">255</a>
+<a href="#256" id="256">256</a>
+<a href="#257" id="257">257</a>
+<a href="#258" id="258">258</a>
+<a href="#259" id="259">259</a>
+<a href="#260" id="260">260</a>
+<a href="#261" id="261">261</a>
+<a href="#262" id="262">262</a>
+<a href="#263" id="263">263</a>
+<a href="#264" id="264">264</a>
+<a href="#265" id="265">265</a>
+<a href="#266" id="266">266</a>
+<a href="#267" id="267">267</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! CPU statistics
 //!
 //! # Configuration
@@ -262,6 +274,9 @@
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $utilization &quot;`
 //! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
 //! `interval` | Update interval in seconds | `5`
+//! `info_cpu` | Percentage of CPU usage, where state is set to info | `30.0`
+//! `warning_cpu` | Percentage of CPU usage, where state is set to warning | `60.0`
+//! `critical_cpu` | Percentage of CPU usage, where state is set to critical | `90.0`
 //!
 //! Placeholder      | Value                                                                | Type   | Unit
 //! -----------------|----------------------------------------------------------------------|--------|---------------
@@ -286,6 +301,9 @@
 //! interval = 1
 //! format = &quot; $icon $barchart $utilization &quot;
 //! format_alt = &quot; $icon $frequency{ $boost|} &quot;
+//! info_cpu = 20
+//! warning_cpu = 50
+//! critical_cpu = 90
 //! ```
 //!
 //! # Icons Used
@@ -311,6 +329,12 @@
     <span class="kw">pub </span>format_alt: <span class="prelude-ty">Option</span>&lt;FormatConfig&gt;,
     <span class="attr">#[default(<span class="number">5</span>.into())]
     </span><span class="kw">pub </span>interval: Seconds,
+    <span class="attr">#[default(<span class="number">30.0</span>)]
+    </span><span class="kw">pub </span>info_cpu: f64,
+    <span class="attr">#[default(<span class="number">60.0</span>)]
+    </span><span class="kw">pub </span>warning_cpu: f64,
+    <span class="attr">#[default(<span class="number">90.0</span>)]
+    </span><span class="kw">pub </span>critical_cpu: f64,
 }
 
 <span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
@@ -381,10 +405,10 @@
 
         <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
         widget.set_values(values);
-        widget.state = <span class="kw">match </span>utilization_avg {
-            x <span class="kw">if </span>x &gt; <span class="number">0.9 </span>=&gt; State::Critical,
-            x <span class="kw">if </span>x &gt; <span class="number">0.6 </span>=&gt; State::Warning,
-            x <span class="kw">if </span>x &gt; <span class="number">0.3 </span>=&gt; State::Info,
+        widget.state = <span class="kw">match </span>utilization_avg * <span class="number">100. </span>{
+            x <span class="kw">if </span>x &gt; config.critical_cpu =&gt; State::Critical,
+            x <span class="kw">if </span>x &gt; config.warning_cpu =&gt; State::Warning,
+            x <span class="kw">if </span>x &gt; config.info_cpu =&gt; State::Info,
             <span class="kw">_ </span>=&gt; State::Idle,
         };
         api.set_widget(widget)<span class="question-mark">?</span>;
