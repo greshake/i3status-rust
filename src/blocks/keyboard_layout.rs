@@ -2,6 +2,7 @@
 //!
 //! Four drivers are available:
 //! - `setxkbmap` which polls setxkbmap to get the current layout
+//! - `xkbswitch` which utilizes [XkbSwitch](https://github.com/grwlf/xkb-switch) to monitor and retrieve the current layout and variant
 //! - `localebus` which can read asynchronous updates from the systemd `org.freedesktop.locale1` D-Bus path
 //! - `kbddbus` which uses [kbdd](https://github.com/qnikst/kbdd) to monitor per-window layout changes via DBus
 //! - `sway` which can read asynchronous updates from the sway IPC
@@ -12,7 +13,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `driver` | One of `"setxkbmap"`, `"localebus"`, `"kbddbus"` or `"sway"`, depending on your system. | `"setxkbmap"`
+//! `driver` | One of `"setxkbmap"`, `"xkbswitch"`, "localebus"`, `"kbddbus"` or `"sway"`, depending on your system. | `"setxkbmap"`
 //! `interval` | Update interval, in seconds. Only used by the `"setxkbmap"` driver. | `60`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `" $layout "`
 //! `sway_kb_identifier` | Identifier of the device you want to monitor, as found in the output of `swaymsg -t get_inputs`. | Defaults to first input found
@@ -31,6 +32,15 @@
 //! [[block]]
 //! block = "keyboard_layout"
 //! driver = "setxkbmap"
+//! interval = 15
+//! ```
+//!
+//! Check `xkbswitch` every 15 seconds
+//!
+//! ```toml
+//! [[block]]
+//! block = "keyboard_layout"
+//! driver = "xkbswitch"
 //! interval = 15
 //! ```
 //!
@@ -82,6 +92,9 @@
 mod set_xkb_map;
 use set_xkb_map::SetXkbMap;
 
+mod xkb_switch;
+use xkb_switch::XkbSwitch;
+
 mod locale_bus;
 use locale_bus::LocaleBus;
 
@@ -109,6 +122,7 @@ pub struct Config {
 pub enum KeyboardLayoutDriver {
     #[default]
     SetXkbMap,
+    XkbSwitch,
     LocaleBus,
     KbddBus,
     Sway,
@@ -119,6 +133,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     let mut backend: Box<dyn Backend> = match config.driver {
         KeyboardLayoutDriver::SetXkbMap => Box::new(SetXkbMap::new(config.interval)),
+        KeyboardLayoutDriver::XkbSwitch => Box::new(XkbSwitch::new(config.interval)),
         KeyboardLayoutDriver::LocaleBus => Box::new(LocaleBus::new().await?),
         KeyboardLayoutDriver::KbddBus => Box::new(KbddBus::new().await?),
         KeyboardLayoutDriver::Sway => Box::new(Sway::new(config.sway_kb_identifier.clone()).await?),
