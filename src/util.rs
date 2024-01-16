@@ -96,7 +96,6 @@ where
         .or_error(|| format!("Failed to read file: {}", path.display()))?;
 
     toml::from_str(&contents).map_err(|err| {
-        #[allow(deprecated)]
         let location_msg = err
             .span()
             .map(|span| {
