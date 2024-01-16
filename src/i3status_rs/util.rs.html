@@ -273,7 +273,6 @@
 <a href="#273" id="273">273</a>
 <a href="#274" id="274">274</a>
 <a href="#275" id="275">275</a>
-<a href="#276" id="276">276</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::path::{Path, PathBuf};
 
 <span class="kw">use </span>dirs::{config_dir, data_dir};
@@ -372,8 +371,7 @@
         .or_error(|| <span class="macro">format!</span>(<span class="string">&quot;Failed to read file: {}&quot;</span>, path.display()))<span class="question-mark">?</span>;
 
     toml::from_str(<span class="kw-2">&amp;</span>contents).map_err(|err| {
-        <span class="attr">#[allow(deprecated)]
-        </span><span class="kw">let </span>location_msg = err
+        <span class="kw">let </span>location_msg = err
             .span()
             .map(|span| {
                 <span class="kw">let </span>line = <span class="number">1 </span>+ contents.as_bytes()[..(span.start)]
