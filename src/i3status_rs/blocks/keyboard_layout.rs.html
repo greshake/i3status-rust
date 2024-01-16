@@ -179,10 +179,26 @@
 <a href="#179" id="179">179</a>
 <a href="#180" id="180">180</a>
 <a href="#181" id="181">181</a>
+<a href="#182" id="182">182</a>
+<a href="#183" id="183">183</a>
+<a href="#184" id="184">184</a>
+<a href="#185" id="185">185</a>
+<a href="#186" id="186">186</a>
+<a href="#187" id="187">187</a>
+<a href="#188" id="188">188</a>
+<a href="#189" id="189">189</a>
+<a href="#190" id="190">190</a>
+<a href="#191" id="191">191</a>
+<a href="#192" id="192">192</a>
+<a href="#193" id="193">193</a>
+<a href="#194" id="194">194</a>
+<a href="#195" id="195">195</a>
+<a href="#196" id="196">196</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Keyboard layout indicator
 //!
 //! Four drivers are available:
 //! - `setxkbmap` which polls setxkbmap to get the current layout
+//! - `xkbswitch` which utilizes [XkbSwitch](https://github.com/grwlf/xkb-switch) to monitor and retrieve the current layout and variant
 //! - `localebus` which can read asynchronous updates from the systemd `org.freedesktop.locale1` D-Bus path
 //! - `kbddbus` which uses [kbdd](https://github.com/qnikst/kbdd) to monitor per-window layout changes via DBus
 //! - `sway` which can read asynchronous updates from the sway IPC
@@ -193,7 +209,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `driver` | One of `&quot;setxkbmap&quot;`, `&quot;localebus&quot;`, `&quot;kbddbus&quot;` or `&quot;sway&quot;`, depending on your system. | `&quot;setxkbmap&quot;`
+//! `driver` | One of `&quot;setxkbmap&quot;`, `&quot;xkbswitch&quot;`, &quot;localebus&quot;`, `&quot;kbddbus&quot;` or `&quot;sway&quot;`, depending on your system. | `&quot;setxkbmap&quot;`
 //! `interval` | Update interval, in seconds. Only used by the `&quot;setxkbmap&quot;` driver. | `60`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $layout &quot;`
 //! `sway_kb_identifier` | Identifier of the device you want to monitor, as found in the output of `swaymsg -t get_inputs`. | Defaults to first input found
@@ -212,6 +228,15 @@
 //! [[block]]
 //! block = &quot;keyboard_layout&quot;
 //! driver = &quot;setxkbmap&quot;
+//! interval = 15
+//! ```
+//!
+//! Check `xkbswitch` every 15 seconds
+//!
+//! ```toml
+//! [[block]]
+//! block = &quot;keyboard_layout&quot;
+//! driver = &quot;xkbswitch&quot;
 //! interval = 15
 //! ```
 //!
@@ -263,6 +288,9 @@
 </span><span class="kw">mod </span>set_xkb_map;
 <span class="kw">use </span>set_xkb_map::SetXkbMap;
 
+<span class="kw">mod </span>xkb_switch;
+<span class="kw">use </span>xkb_switch::XkbSwitch;
+
 <span class="kw">mod </span>locale_bus;
 <span class="kw">use </span>locale_bus::LocaleBus;
 
@@ -290,6 +318,7 @@
 </span><span class="kw">pub enum </span>KeyboardLayoutDriver {
     <span class="attr">#[default]
     </span>SetXkbMap,
+    XkbSwitch,
     LocaleBus,
     KbddBus,
     Sway,
@@ -300,6 +329,7 @@
 
     <span class="kw">let </span><span class="kw-2">mut </span>backend: Box&lt;<span class="kw">dyn </span>Backend&gt; = <span class="kw">match </span>config.driver {
         KeyboardLayoutDriver::SetXkbMap =&gt; Box::new(SetXkbMap::new(config.interval)),
+        KeyboardLayoutDriver::XkbSwitch =&gt; Box::new(XkbSwitch::new(config.interval)),
         KeyboardLayoutDriver::LocaleBus =&gt; Box::new(LocaleBus::new().<span class="kw">await</span><span class="question-mark">?</span>),
         KeyboardLayoutDriver::KbddBus =&gt; Box::new(KbddBus::new().<span class="kw">await</span><span class="question-mark">?</span>),
         KeyboardLayoutDriver::Sway =&gt; Box::new(Sway::new(config.sway_kb_identifier.clone()).<span class="kw">await</span><span class="question-mark">?</span>),
