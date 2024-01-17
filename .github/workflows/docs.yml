@@ -25,6 +25,6 @@ jobs:
     - name: Create index.html
       run: echo "<meta http-equiv=\"Refresh\" content=\"0; url='/i3status-rust/i3status_rs'\" />" > target/doc/index.html
     - name: Deploy 🚀
-      uses: JamesIves/github-pages-deploy-action@4
+      uses: JamesIves/github-pages-deploy-action@v4
       with:
         folder: target/doc # The folder the action should deploy.
