@@ -43,6 +43,7 @@ words:
   - ddcutil
   - dmenu
   - docsrs
+  - dtolnay
   - dunst
   - execvp
   - favg
