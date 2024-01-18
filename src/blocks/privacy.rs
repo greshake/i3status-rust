@@ -53,13 +53,9 @@
 //! ```toml
 //! [[block]]
 //! block = "privacy"
-//! merge_with_next = true
-//! [block.driver]
+//! [[block.driver]]
 //! name = "v4l"
-//!
-//! [[block]]
-//! block = "privacy"
-//! [block.driver]
+//! [[block.driver]]
 //! name = "pipewire"
 //! exclude_input = ["openrgb"]
 //! display = "nickname"
@@ -73,6 +69,8 @@
 //! - `unknown`
 
 use std::collections::HashSet;
+
+use futures::future::{select_all, try_join_all};
 
 use super::prelude::*;
 
@@ -89,7 +87,7 @@ pub struct Config {
     pub format: FormatConfig,
     #[serde(default)]
     pub format_alt: FormatConfig,
-    pub driver: PrivacyDriver,
+    pub driver: Vec<PrivacyDriver>,
 }
 
 #[cfg(feature = "pipewire")]
@@ -134,20 +132,33 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     )?;
     let mut format_alt = config.format_alt.with_default("{ $icon_audio $info_audio |}{ $icon_audio_sink $info_audio_sink |}{ $icon_video $info_video |}{ $icon_webcam $info_webcam |}{ $icon_unknown $info_unknown |}")?;
 
-    let mut device: Box<dyn PrivacyMonitor + Send + Sync> = match &config.driver {
-        #[cfg(feature = "pipewire")]
-        PrivacyDriver::Pipewire(driver_config) => {
-            Box::new(pipewire::Monitor::new(driver_config).await?)
-        }
-        PrivacyDriver::V4l(driver_config) => {
-            Box::new(v4l::Monitor::new(driver_config, api.error_interval).await?)
-        }
-    };
+    let mut drivers: Vec<Box<dyn PrivacyMonitor + Send + Sync>> = Vec::new();
+
+    for driver in &config.driver {
+        drivers.push(match driver {
+            #[cfg(feature = "pipewire")]
+            PrivacyDriver::Pipewire(driver_config) => {
+                Box::new(pipewire::Monitor::new(driver_config).await?)
+            }
+            PrivacyDriver::V4l(driver_config) => {
+                Box::new(v4l::Monitor::new(driver_config, api.error_interval).await?)
+            }
+        });
+    }
 
     loop {
         let mut widget = Widget::new().with_format(format.clone());
 
-        let info = device.get_info().await?;
+        let mut info = PrivacyInfo::new();
+        //Merge driver info
+        for driver_info in try_join_all(drivers.iter_mut().map(|driver| driver.get_info())).await? {
+            for (type_, mapping) in driver_info {
+                let existing_mapping = info.entry(type_).or_default();
+                for (source, dest) in mapping {
+                    existing_mapping.entry(source).or_default().extend(dest);
+                }
+            }
+        }
         if !info.is_empty() {
             widget.state = State::Warning;
         }
@@ -191,7 +202,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         select! {
             _ = api.wait_for_update_request() => (),
-            _ = device.wait_for_change() =>(),
+            _ = select_all(drivers.iter_mut().map(|driver| driver.wait_for_change())) =>(),
             Some(action) = actions.recv() => match action.as_ref() {
                 "toggle_format" => {
                     std::mem::swap(&mut format_alt, &mut format);
