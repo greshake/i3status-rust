@@ -136,6 +136,8 @@ macro_rules! define_blocks {
 
 define_blocks!(
     amd_gpu,
+    apt,
+    pacman,
     packages,
     backlight,
     battery,
