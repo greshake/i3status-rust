@@ -71,6 +71,29 @@ impl Apt {
             ignore_updates_regex: Default::default(),
         }
     }
+
+    async fn is_phased_update(&self, package_line: &str) -> Result<bool> {
+        let package_name_regex = regex!(r#"(.*)/.*"#);
+        let package_name = &package_name_regex
+            .captures(package_line)
+            .error("Couldn't find package name")?[1];
+
+        let output = String::from_utf8(
+            Command::new("apt-cache")
+                .args(["-c", &self.config_file, "policy", package_name])
+                .output()
+                .await
+                .error("Problem running apt-cache command")?
+                .stdout,
+        )
+        .error("Problem capturing apt-cache command output")?;
+
+        let phased_regex = regex!(r".*\(phased (\d+)%\).*");
+        Ok(match phased_regex.captures(&output) {
+            Some(matches) => &matches[1] != "100",
+            None => false,
+        })
+    }
 }
 
 #[async_trait]
@@ -144,36 +167,11 @@ impl Backend for Apt {
                     .map_or(true, |re| !re.is_match(line))
             })
         {
-            if !self.ignore_phased_updates
-                || !is_phased_update(&self.config_file, update_line).await?
-            {
+            if !self.ignore_phased_updates || !self.is_phased_update(update_line).await? {
                 cnt += 1;
             }
         }
 
         Ok(cnt)
     }
-}
-
-async fn is_phased_update(config_path: &str, package_line: &str) -> Result<bool> {
-    let package_name_regex = regex!(r#"(.*)/.*"#);
-    let package_name = &package_name_regex
-        .captures(package_line)
-        .error("Couldn't find package name")?[1];
-
-    let output = String::from_utf8(
-        Command::new("apt-cache")
-            .args(["-c", config_path, "policy", package_name])
-            .output()
-            .await
-            .error("Problem running apt-cache command")?
-            .stdout,
-    )
-    .error("Problem capturing apt-cache command output")?;
-
-    let phased_regex = regex!(r".*\(phased (\d+)%\).*");
-    Ok(match phased_regex.captures(&output) {
-        Some(matches) => &matches[1] != "100",
-        None => false,
-    })
 }
