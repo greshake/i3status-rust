@@ -136,7 +136,7 @@ macro_rules! define_blocks {
 
 define_blocks!(
     amd_gpu,
-    apt,
+    packages,
     backlight,
     battery,
     bluetooth,
@@ -162,7 +162,6 @@ define_blocks!(
     #[cfg(feature = "notmuch")]
     notmuch,
     nvidia_gpu,
-    pacman,
     pomodoro,
     rofication,
     service_status,
