@@ -34,7 +34,7 @@ chrono = { version = "0.4", default-features = false, features = ["clock", "unst
 chrono-tz = { version = "0.8", features = ["serde"] }
 clap = { version = "4.0", default-features = false, features = ["std", "derive", "help", "usage"] }
 dirs = "5.0"
-env_logger = "0.10"
+env_logger = "0.11"
 futures = { version = "0.3", default-features = false }
 glob = { version = "0.3.1", optional = true }
 hyper = "0.14"
