@@ -46,7 +46,7 @@
 //! `critical_updates_regex` | Display block as critical if updates matching regex are available. | `None`
 //! `aur_command` | AUR command to check available updates, which outputs in the same format as pacman. e.g. `yay -Qua` | Required if `$both` or `$aur` are used
 //!
-//!  Placeholder | Value | Type | Unit
+//!  Placeholder | Value                                                                            | Type   | Unit
 //! -------------|----------------------------------------------------------------------------------|--------|-----
 //! `icon`       | A static icon                                                                    | Icon   | -
 //! `pacman`     | Number of updates available according to `pacman`                                | Number | -
@@ -59,6 +59,7 @@
 //! ```toml
 //! [[block]]
 //! block = "packages"
+//! package_manager = ["pacman"]
 //! interval = 600
 //! format = " $icon $pacman updates available "
 //! format_singular = " $icon $pacman update available "
@@ -79,6 +80,7 @@
 //! ```toml
 //! [[block]]
 //! block = "packages"
+//! package_manager = ["pacman"]
 //! interval = 600
 //! format = " $icon $pacman updates available "
 //! format_singular = " $icon $pacman update available "
@@ -95,7 +97,8 @@
 //!
 //! ```toml
 //! [[block]]
-//! block = "pacman"
+//! block = "packages"
+//! package_manager = ["pacman", "aur"]
 //! interval = 600
 //! error_interval = 300
 //! format = " $icon $pacman + $aur = $both updates available "

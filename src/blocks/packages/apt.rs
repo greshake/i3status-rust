@@ -30,6 +30,7 @@
 //! [[block]]
 //! block = "packages"
 //! interval = 1800
+//! package_manager = ["apt"]
 //! format = " $icon $apt updates available"
 //! format_singular = " $icon One update available "
 //! format_up_to_date = " $icon system up to date "

@@ -3,6 +3,7 @@
 //! Currently 2 package manager are avaliable:
 //! - `apt` for Debian/Ubuntu based system
 //! - `pacman` for Arch based system
+//! - `aur` for Arch based system
 //!
 //! # Configuration
 //!
@@ -22,7 +23,10 @@
 //!  Placeholder | Value                                                                            | Type   | Unit
 //! -------------|----------------------------------------------------------------------------------|--------|-----
 //! `icon`       | A static icon                                                                    | Icon   | -
-//! `count`      | Number of updates available                                                      | Number | -
+//! `apt`        | Number of updates available in Debian/Ubuntu based system                        | Number | -
+//! `pacman`     | Number of updates available in Arch based system                                 | Number | -
+//! `aur`        | Number of updates available in Arch based system                                 | Number | -
+//! `total`      | Number of updates available in all package manager listed                        | Number | -
 //!
 //! # Example
 //!
@@ -31,8 +35,9 @@
 //! ```toml
 //! [[block]]
 //! block = "packages"
+//! package_manager = ["apt", "pacman", "aur"]
 //! interval = 1800
-//! format = " $icon $count updates available "
+//! format = " $icon $apt + $pacman + $aur = $total updates available "
 //! format_singular = " $icon One update available "
 //! format_up_to_date = " $icon system up to date "
 //! ```
