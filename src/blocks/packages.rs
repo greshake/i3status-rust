@@ -1,6 +1,6 @@
 //! Shows pending updates for different package manager like apt, pacman, etc.
 //!
-//! Currently 2 package manager are avaliable:
+//! Currently 2 package manager are available:
 //! - `apt` for Debian/Ubuntu based system
 //! - `pacman` for Arch based system
 //! - `aur` for Arch based system
