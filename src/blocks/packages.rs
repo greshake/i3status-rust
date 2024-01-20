@@ -276,9 +276,12 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
             match package_manager.package_manager() {
                 PackageManager::Apt => {
-                    let mut apt = Apt::default();
-                    apt.ignore_updates_regex = ignore_updates_regex.clone();
-                    apt.ignore_phased_updates = config.ignore_phased_updates;
+                    let apt = Apt {
+                        // Config file not needed in counting updates
+                        config_file: String::new(),
+                        ignore_phased_updates: config.ignore_phased_updates,
+                        ignore_updates_regex: ignore_updates_regex.clone(),
+                    };
                     apt_count = apt.get_update_count(&updates).await?;
                 }
                 PackageManager::Pacman => {
