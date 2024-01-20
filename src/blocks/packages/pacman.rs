@@ -42,8 +42,10 @@ pub(super) struct Aur {
 }
 
 impl Pacman {
-    pub(super) fn new() -> Self {
-        Self
+    pub(super) async fn new() -> Result<Self> {
+        check_fakeroot_command_exists().await?;
+
+        Ok(Self)
     }
 }
 
@@ -59,12 +61,6 @@ impl Aur {
 impl Backend for Pacman {
     fn package_manager(&self) -> PackageManager {
         PackageManager::Pacman
-    }
-
-    async fn setup(&mut self) -> Result<()> {
-        check_fakeroot_command_exists().await?;
-
-        Ok(())
     }
 
     async fn get_updates_list(&self) -> Result<String> {
@@ -134,11 +130,6 @@ impl Backend for Pacman {
 impl Backend for Aur {
     fn package_manager(&self) -> PackageManager {
         PackageManager::Aur
-    }
-
-    async fn setup(&mut self) -> Result<()> {
-        // Nothing to setup here
-        Ok(())
     }
 
     async fn get_updates_list(&self) -> Result<String> {

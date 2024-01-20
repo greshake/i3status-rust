@@ -14,12 +14,16 @@ pub(super) struct Apt {
 }
 
 impl Apt {
-    pub(super) fn new() -> Self {
-        Apt {
+    pub(super) async fn new() -> Result<Self> {
+        let mut apt = Apt {
             config_file: String::new(),
             ignore_phased_updates: false,
             ignore_updates_regex: Default::default(),
-        }
+        };
+
+        apt.setup().await?;
+
+        Ok(apt)
     }
 
     async fn is_phased_update(&self, package_line: &str) -> Result<bool> {
@@ -43,13 +47,6 @@ impl Apt {
             Some(matches) => &matches[1] != "100",
             None => false,
         })
-    }
-}
-
-#[async_trait]
-impl Backend for Apt {
-    fn package_manager(&self) -> PackageManager {
-        PackageManager::Apt
     }
 
     async fn setup(&mut self) -> Result<()> {
@@ -85,6 +82,13 @@ impl Backend for Apt {
             .error("Failed to write to config file")?;
 
         Ok(())
+    }
+}
+
+#[async_trait]
+impl Backend for Apt {
+    fn package_manager(&self) -> PackageManager {
+        PackageManager::Apt
     }
 
     async fn get_updates_list(&self) -> Result<String> {

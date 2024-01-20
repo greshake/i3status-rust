@@ -253,15 +253,17 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         .transpose()
         .error("invalid ignore updates regex")?;
 
-    let package_manager_vec: Vec<Box<dyn Backend>> = config
-        .package_manager
-        .iter()
-        .map(|&package_manager| match package_manager {
-            PackageManager::Apt => Box::new(Apt::new()) as Box<dyn Backend>,
-            PackageManager::Pacman => Box::new(Pacman::new()) as Box<dyn Backend>,
+    let mut package_manager_vec = Vec::new();
+
+    for &package_manager in config.package_manager.iter() {
+        let backend = match package_manager {
+            PackageManager::Apt => Box::new(Apt::new().await?) as Box<dyn Backend>,
+            PackageManager::Pacman => Box::new(Pacman::new().await?) as Box<dyn Backend>,
             PackageManager::Aur => Box::new(Aur::new()) as Box<dyn Backend>,
-        })
-        .collect();
+        };
+
+        package_manager_vec.push(backend);
+    }
 
     loop {
         let (mut apt_count, mut pacman_count, mut aur_count) = (0, 0, 0);
@@ -340,8 +342,6 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 #[async_trait]
 trait Backend {
     fn package_manager(&self) -> PackageManager;
-
-    async fn setup(&mut self) -> Result<()>;
 
     async fn get_updates_list(&self) -> Result<String>;
 
