@@ -1,6 +1,6 @@
-//! Shows pending updates for different package manager like apt, pacman, etc.
+//! Pending updates for different package manager like apt, pacman, etc.
 //!
-//! Currently 2 package manager are available:
+//! Currently these package managers are available:
 //! - `apt` for Debian/Ubuntu based system
 //! - `pacman` for Arch based system
 //! - `aur` for Arch based system
@@ -18,7 +18,7 @@
 //! `critical_updates_regex` | Display block as critical if updates matching regex are available. | `None`
 //! `ignore_updates_regex` | Doesn't include updates matching regex in the count. | `None`
 //! `ignore_phased_updates` | Doesn't include potentially held back phased updates in the count. (For Debian/Ubuntu based system) | `false`
-//! `aur_command` | AUR command to check available updates, which outputs in the same format as pacman. e.g. `yay -Qua` (For Arch based system) | Required if `$both` or `$aur` are used
+//! `aur_command` | AUR command to check available updates, which outputs in the same format as pacman. e.g. `yay -Qua` (For Arch based system) | Required if `$aur` are used
 //!
 //!  Placeholder | Value                                                                            | Type   | Unit
 //! -------------|----------------------------------------------------------------------------------|--------|-----
@@ -28,7 +28,127 @@
 //! `aur`        | Number of updates available in Arch based system                                 | Number | -
 //! `total`      | Number of updates available in all package manager listed                        | Number | -
 //!
+//! # Apt
+//!
+//! Behind the scenes this uses `apt`, and in order to run it without root privileges i3status-rust will create its own package database in `/tmp/i3rs-apt/` which may take up several MB or more. If you have a custom apt config then this block may not work as expected - in that case please open an issue.
+//!
+//! Tip: You can grab the list of available updates using `APT_CONFIG=/tmp/i3rs-apt/apt.conf apt list --upgradable`
+//!
+//! # Pacman
+//!
+//! Requires fakeroot to be installed (only required for pacman).
+//!
+//! Tip: You can grab the list of available updates using `fakeroot pacman -Qu --dbpath /tmp/checkup-db-i3statusrs-$USER/`.
+//! If you have the `CHECKUPDATES_DB` env var set on your system then substitute that dir instead.
+//!
+//! Note: `pikaur` may hang the whole block if there is no internet connectivity [reference](https://github.com/actionless/pikaur/issues/595). In that case, try a different AUR helper.
+//!
+//! ### Pacman hook
+//!
+//! Tip: On Arch Linux you can setup a `pacman` hook to signal i3status-rs to update after packages
+//! have been upgraded, so you won't have stale info in your pacman block.
+//!
+//! In the block configuration, set `signal = 1` (or other number if `1` is being used by some
+//! other block):
+//!
+//! ```toml
+//! [[block]]
+//! block = "packages"
+//! signal = 1
+//! ```
+//!
+//! Create `/etc/pacman.d/hooks/i3status-rust.hook` with the below contents:
+//!
+//! ```ini
+//! [Trigger]
+//! Operation = Upgrade
+//! Type = Package
+//! Target = *
+//!
+//! [Action]
+//! When = PostTransaction
+//! Exec = /usr/bin/pkill -SIGRTMIN+1 i3status-rs
+//! ```
+//!
 //! # Example
+//!
+//! Apt only config
+//!
+//! ```toml
+//! [[block]]
+//! block = "packages"
+//! interval = 1800
+//! package_manager = ["apt"]
+//! format = " $icon $apt updates available"
+//! format_singular = " $icon One update available "
+//! format_up_to_date = " $icon system up to date "
+//! critical_updates_regex = "(linux|linux-lts|linux-zen)"
+//! [[block.click]]
+//! # shows dmenu with cached available updates. Any dmenu alternative should also work.
+//! button = "left"
+//! cmd = "APT_CONFIG=/tmp/i3rs-apt/apt.conf apt list --upgradable | tail -n +2 | rofi -dmenu"
+//! [[block.click]]
+//! # Updates the block on right click
+//! button = "right"
+//! update = true
+//! ```
+//!
+//! Pacman only config:
+//!
+//! ```toml
+//! [[block]]
+//! block = "packages"
+//! package_manager = ["pacman"]
+//! interval = 600
+//! format = " $icon $pacman updates available "
+//! format_singular = " $icon $pacman update available "
+//! format_up_to_date = " $icon system up to date "
+//! critical_updates_regex = "(linux|linux-lts|linux-zen)"
+//! [[block.click]]
+//! # pop-up a menu showing the available updates. Replace wofi with your favourite menu command.
+//! button = "left"
+//! cmd = "fakeroot pacman -Qu --dbpath /tmp/checkup-db-i3statusrs-$USER/ | wofi --show dmenu"
+//! [[block.click]]
+//! # Updates the block on right click
+//! button = "right"
+//! update = true
+//! ```
+//!
+//! Pacman only config using warnings with ZFS modules:
+//!
+//! ```toml
+//! [[block]]
+//! block = "packages
+//! package_manager = ["pacman"]
+//! interval = 600
+//! format = " $icon $pacman updates available "
+//! format_singular = " $icon $pacman update available "
+//! format_up_to_date = " $icon system up to date "
+//! # If a linux update is available, but no ZFS package, it won't be possible to
+//! # actually perform a system upgrade, so we show a warning.
+//! warning_updates_regex = "(linux|linux-lts|linux-zen)"
+//! # If ZFS is available, we know that we can and should do an upgrade, so we show
+//! # the status as critical.
+//! critical_updates_regex = "(zfs|zfs-lts)"
+//! ```
+//!
+//! Pacman and AUR helper config:
+//!
+//! ```toml
+//! [[block]]
+//! block = "packages"
+//! package_manager = ["pacman", "aur"]
+//! interval = 600
+//! error_interval = 300
+//! format = " $icon $pacman + $aur = $both updates available "
+//! format_singular = " $icon $both update available "
+//! format_up_to_date = " $icon system up to date "
+//! critical_updates_regex = "(linux|linux-lts|linux-zen)"
+//! # aur_command should output available updates to stdout (ie behave as echo -ne "update\n")
+//! aur_command = "yay -Qua"
+//! ```
+//!
+//! Multiple package managers config:
 //!
 //! Update the list of pending updates every thirty minutes (1800 seconds):
 //!
