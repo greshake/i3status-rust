@@ -253,16 +253,15 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         .transpose()
         .error("invalid ignore updates regex")?;
 
-    // Setup once everything it takes to check updates for every package manager
-    for package_manager in &config.package_manager {
-        let mut backend: Box<dyn Backend> = match package_manager {
-            PackageManager::Apt => Box::new(Apt::new()),
-            PackageManager::Pacman => Box::new(Pacman::new()),
-            PackageManager::Aur => Box::new(Aur::new()),
-        };
-
-        backend.setup().await?;
-    }
+    let package_manager_vec: Vec<Box<dyn Backend>> = config
+        .package_manager
+        .iter()
+        .map(|&package_manager| match package_manager {
+            PackageManager::Apt => Box::new(Apt::new()) as Box<dyn Backend>,
+            PackageManager::Pacman => Box::new(Pacman::new()) as Box<dyn Backend>,
+            PackageManager::Aur => Box::new(Aur::new()) as Box<dyn Backend>,
+        })
+        .collect();
 
     loop {
         let (mut apt_count, mut pacman_count, mut aur_count) = (0, 0, 0);
@@ -270,50 +269,32 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let mut warning_vec = vec![false];
 
         // Iterate over the all package manager listed in Config
-        for package_manager in config.package_manager.clone() {
-            match package_manager {
+        for package_manager in &package_manager_vec {
+            let updates = package_manager.get_updates_list().await?;
+
+            match package_manager.package_manager() {
                 PackageManager::Apt => {
-                    let mut apt = Apt::new();
+                    let mut apt = Apt::default();
                     apt.ignore_updates_regex = ignore_updates_regex.clone();
                     apt.ignore_phased_updates = config.ignore_phased_updates;
-                    let updates = apt.get_updates_list().await?;
                     apt_count = apt.get_update_count(&updates).await?;
-                    let warning = warning_updates_regex
-                        .as_ref()
-                        .is_some_and(|regex| apt.has_matching_update(&updates, regex));
-                    let critical = critical_updates_regex
-                        .as_ref()
-                        .is_some_and(|regex| apt.has_matching_update(&updates, regex));
-                    warning_vec.push(warning);
-                    critical_vec.push(critical);
                 }
                 PackageManager::Pacman => {
-                    let pacman = Pacman::new();
-                    let updates = pacman.get_updates_list().await?;
-                    pacman_count = pacman.get_update_count(&updates).await?;
-                    let warning = warning_updates_regex
-                        .as_ref()
-                        .is_some_and(|regex| pacman.has_matching_update(&updates, regex));
-                    let critical = critical_updates_regex
-                        .as_ref()
-                        .is_some_and(|regex| pacman.has_matching_update(&updates, regex));
-                    warning_vec.push(warning);
-                    critical_vec.push(critical);
+                    pacman_count = package_manager.get_update_count(&updates).await?;
                 }
                 PackageManager::Aur => {
-                    let aur = Aur::new();
-                    let updates = aur.get_updates_list().await?;
-                    aur_count = aur.get_update_count(&updates).await?;
-                    let warning = warning_updates_regex
-                        .as_ref()
-                        .is_some_and(|regex| aur.has_matching_update(&updates, regex));
-                    let critical = critical_updates_regex
-                        .as_ref()
-                        .is_some_and(|regex| aur.has_matching_update(&updates, regex));
-                    warning_vec.push(warning);
-                    critical_vec.push(critical);
+                    aur_count = package_manager.get_update_count(&updates).await?;
                 }
             }
+
+            let warning = warning_updates_regex
+                .as_ref()
+                .is_some_and(|regex| package_manager.has_matching_update(&updates, regex));
+            let critical = critical_updates_regex
+                .as_ref()
+                .is_some_and(|regex| package_manager.has_matching_update(&updates, regex));
+            warning_vec.push(warning);
+            critical_vec.push(critical);
         }
 
         let mut widget = Widget::new();
@@ -358,6 +339,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
 #[async_trait]
 trait Backend {
+    fn package_manager(&self) -> PackageManager;
+
     async fn setup(&mut self) -> Result<()>;
 
     async fn get_updates_list(&self) -> Result<String>;

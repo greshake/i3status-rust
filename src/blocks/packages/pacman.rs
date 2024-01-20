@@ -57,6 +57,10 @@ impl Aur {
 
 #[async_trait]
 impl Backend for Pacman {
+    fn package_manager(&self) -> PackageManager {
+        PackageManager::Pacman
+    }
+
     async fn setup(&mut self) -> Result<()> {
         check_fakeroot_command_exists().await?;
 
@@ -128,6 +132,10 @@ impl Backend for Pacman {
 
 #[async_trait]
 impl Backend for Aur {
+    fn package_manager(&self) -> PackageManager {
+        PackageManager::Aur
+    }
+
     async fn setup(&mut self) -> Result<()> {
         // Nothing to setup here
         Ok(())

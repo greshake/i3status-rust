@@ -6,6 +6,7 @@ use tokio::process::Command;
 
 use super::*;
 
+#[derive(Default)]
 pub(super) struct Apt {
     pub(super) config_file: String,
     pub(super) ignore_phased_updates: bool,
@@ -47,6 +48,10 @@ impl Apt {
 
 #[async_trait]
 impl Backend for Apt {
+    fn package_manager(&self) -> PackageManager {
+        PackageManager::Apt
+    }
+
     async fn setup(&mut self) -> Result<()> {
         let mut cache_dir = env::temp_dir();
         cache_dir.push("i3rs-apt");
