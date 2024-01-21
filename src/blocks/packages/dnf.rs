@@ -2,11 +2,12 @@ use tokio::process::Command;
 
 use super::super::packages::*;
 
+#[derive(Default)]
 pub struct Dnf;
 
 impl Dnf {
     pub fn new() -> Self {
-        Self
+        Default::default()
     }
 }
 
