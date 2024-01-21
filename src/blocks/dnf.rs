@@ -42,7 +42,7 @@
 use regex::Regex;
 
 use super::{
-    packages::{dnf::Dnf, Backend},
+    packages::{dnf::Dnf, has_matching_update, Backend},
     prelude::*,
 };
 
@@ -100,10 +100,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         let warning = warning_updates_regex
             .as_ref()
-            .is_some_and(|regex| backend.has_matching_update(&updates, regex));
+            .is_some_and(|regex| has_matching_update(&updates, regex));
         let critical = critical_updates_regex
             .as_ref()
-            .is_some_and(|regex| backend.has_matching_update(&updates, regex));
+            .is_some_and(|regex| has_matching_update(&updates, regex));
         widget.state = match count {
             0 => State::Idle,
             _ => {

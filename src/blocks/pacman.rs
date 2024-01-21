@@ -115,6 +115,7 @@ use regex::Regex;
 
 use super::{
     packages::{
+        has_matching_update,
         pacman::{Aur, Pacman},
         Backend,
     },
@@ -197,10 +198,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 let values = map!("pacman" => Value::number(count));
                 let warning = warning_updates_regex
                     .as_ref()
-                    .is_some_and(|regex| pacman_backend.has_matching_update(&updates, regex));
+                    .is_some_and(|regex| has_matching_update(&updates, regex));
                 let critical = critical_updates_regex
                     .as_ref()
-                    .is_some_and(|regex| pacman_backend.has_matching_update(&updates, regex));
+                    .is_some_and(|regex| has_matching_update(&updates, regex));
                 (values, warning, critical, count)
             }
             Watched::Aur(_) => {
@@ -211,10 +212,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 );
                 let warning = warning_updates_regex
                     .as_ref()
-                    .is_some_and(|regex| aur_backend.has_matching_update(&updates, regex));
+                    .is_some_and(|regex| has_matching_update(&updates, regex));
                 let critical = critical_updates_regex
                     .as_ref()
-                    .is_some_and(|regex| aur_backend.has_matching_update(&updates, regex));
+                    .is_some_and(|regex| has_matching_update(&updates, regex));
                 (values, warning, critical, count)
             }
             Watched::Both(_) => {
@@ -228,12 +229,12 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     "both" =>   Value::number(pacman_count + aur_count),
                 };
                 let warning = warning_updates_regex.as_ref().is_some_and(|regex| {
-                    pacman_backend.has_matching_update(&aur_updates, regex)
-                        || aur_backend.has_matching_update(&pacman_updates, regex)
+                    has_matching_update(&aur_updates, regex)
+                        || has_matching_update(&pacman_updates, regex)
                 });
                 let critical = critical_updates_regex.as_ref().is_some_and(|regex| {
-                    pacman_backend.has_matching_update(&aur_updates, regex)
-                        || aur_backend.has_matching_update(&pacman_updates, regex)
+                    has_matching_update(&aur_updates, regex)
+                        || has_matching_update(&pacman_updates, regex)
                 });
                 (values, warning, critical, pacman_count + aur_count)
             }

@@ -318,10 +318,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
             warning |= warning_updates_regex
                 .as_ref()
-                .is_some_and(|regex| package_manager.has_matching_update(&updates, regex));
+                .is_some_and(|regex| has_matching_update(&updates, regex));
             critical |= critical_updates_regex
                 .as_ref()
-                .is_some_and(|regex| package_manager.has_matching_update(&updates, regex));
+                .is_some_and(|regex| has_matching_update(&updates, regex));
         }
 
         let mut widget = Widget::new();
@@ -367,8 +367,8 @@ pub trait Backend {
     fn name(&self) -> &str;
 
     async fn get_updates_list(&self) -> Result<Vec<String>>;
+}
 
-    fn has_matching_update(&self, updates: &[String], regex: &Regex) -> bool {
-        updates.iter().any(|line| regex.is_match(line))
-    }
+pub fn has_matching_update(updates: &[String], regex: &Regex) -> bool {
+    updates.iter().any(|line| regex.is_match(line))
 }
