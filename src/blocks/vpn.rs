@@ -117,10 +117,9 @@ pub struct Config {
 }
 
 enum Status {
-    Connected,
-    ConnectedToCountry {
-        country: String,
-        country_flag: String,
+    Connected {
+        country: Option<String>,
+        country_flag: Option<String>,
     },
     Disconnected,
     Error,
@@ -129,7 +128,7 @@ enum Status {
 impl Status {
     fn icon(&self) -> Cow<'static, str> {
         match self {
-            Status::Connected | Status::ConnectedToCountry { .. } => "net_vpn".into(),
+            Status::Connected { .. } => "net_vpn".into(),
             Status::Disconnected => "net_wired".into(),
             Status::Error => "net_down".into(),
         }
@@ -157,22 +156,14 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let mut widget = Widget::new();
 
         widget.state = match &status {
-            Status::ConnectedToCountry {
+            Status::Connected {
                 country,
                 country_flag,
             } => {
                 widget.set_values(map!(
-                        "icon" => Value::icon(status.icon()),
-                        "country" => Value::text(country.to_string()),
-                        "flag" => Value::text(country_flag.to_string()),
-
-                ));
-                widget.set_format(format_connected.clone());
-                config.state_connected
-            }
-            Status::Connected => {
-                widget.set_values(map!(
-                        "icon" => Value::icon(status.icon()),
+                    "icon" => Value::icon(status.icon()),
+                    [if let Some(c) = country] "country" => Value::text(c.into()),
+                    [if let Some(f) = country_flag] "flag" => Value::text(f.into()),
                 ));
                 widget.set_format(format_connected.clone());
                 config.state_connected

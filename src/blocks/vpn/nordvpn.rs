@@ -76,9 +76,9 @@ impl Driver for NordVpnDriver {
                     .unwrap_or_default(),
                 None => String::default(),
             };
-            return Ok(Status::ConnectedToCountry {
-                country,
-                country_flag,
+            return Ok(Status::Connected {
+                country: Some(country),
+                country_flag: Some(country_flag),
             });
         }
         Ok(Status::Error)
@@ -86,7 +86,7 @@ impl Driver for NordVpnDriver {
 
     async fn toggle_connection(&self, status: &Status) -> Result<()> {
         match status {
-            Status::Connected | Status::ConnectedToCountry { .. } => {
+            Status::Connected { .. } => {
                 Self::run_network_command("disconnect").await?;
             }
             Status::Disconnected => Self::run_network_command("connect").await?,

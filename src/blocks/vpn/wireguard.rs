@@ -30,7 +30,10 @@ impl Driver for WireguardDriver {
         match status {
             Ok(status) => {
                 if status.contains(format!("interface: {}", self.interface).as_str()) {
-                    Ok(Status::Connected)
+                    Ok(Status::Connected {
+                        country: None,
+                        country_flag: None,
+                    })
                 } else {
                     Ok(Status::Disconnected)
                 }
@@ -41,7 +44,7 @@ impl Driver for WireguardDriver {
 
     async fn toggle_connection(&self, status: &Status) -> Result<()> {
         match status {
-            Status::Connected | Status::ConnectedToCountry { .. } => {
+            Status::Connected { .. } => {
                 run_wg_quick(&["down", self.interface.as_str()]).await?;
             }
             Status::Disconnected => {
