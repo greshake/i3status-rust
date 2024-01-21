@@ -97,12 +97,15 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         .transpose()
         .error("invalid ignore updates regex")?;
 
-    let backend = Apt::new(config.ignore_phased_updates, ignore_updates_regex.clone()).await?;
+    let backend = Apt::new(config.ignore_phased_updates).await?;
 
     loop {
         let mut widget = Widget::new();
-        let updates = backend.get_updates_list().await?;
-        let count = backend.get_update_count(&updates).await?;
+        let mut updates = backend.get_updates_list().await?;
+        if let Some(regex) = ignore_updates_regex.clone() {
+            updates.retain(|u| !regex.is_match(u));
+        }
+        let count = updates.len();
 
         widget.set_format(match count {
             0 => format_up_to_date.clone(),

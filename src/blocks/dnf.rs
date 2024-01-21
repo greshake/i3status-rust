@@ -86,7 +86,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let mut widget = Widget::new();
 
         let updates = backend.get_updates_list().await?;
-        let count = backend.get_update_count(&updates).await?;
+        let count = updates.len();
 
         widget.set_format(match count {
             0 => format_up_to_date.clone(),

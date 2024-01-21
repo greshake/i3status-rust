@@ -284,16 +284,14 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     for &package_manager in config.package_manager.iter() {
         let backend = match package_manager {
-            PackageManager::Apt => Box::new(
-                Apt::new(config.ignore_phased_updates, ignore_updates_regex.clone()).await?,
-            ) as Box<dyn Backend>,
-            PackageManager::Pacman => {
-                Box::new(Pacman::new(ignore_updates_regex.clone()).await?) as Box<dyn Backend>
+            PackageManager::Apt => {
+                Box::new(Apt::new(config.ignore_phased_updates).await?) as Box<dyn Backend>
             }
-            PackageManager::Aur => Box::new(Aur::new(
-                config.aur_command.clone().unwrap_or_default(),
-                ignore_updates_regex.clone(),
-            )) as Box<dyn Backend>,
+            PackageManager::Pacman => Box::new(Pacman::new().await?) as Box<dyn Backend>,
+            PackageManager::Aur => {
+                Box::new(Aur::new(config.aur_command.clone().unwrap_or_default()))
+                    as Box<dyn Backend>
+            }
             PackageManager::Dnf => Box::new(Dnf::new()) as Box<dyn Backend>,
         };
 
@@ -309,8 +307,12 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         // Iterate over the all package manager listed in Config
         for package_manager in &package_manager_vec {
-            let updates = package_manager.get_updates_list().await?;
-            let updates_count = package_manager.get_update_count(&updates).await?;
+            let mut updates = package_manager.get_updates_list().await?;
+            if let Some(regex) = ignore_updates_regex.clone() {
+                updates.retain(|u| !regex.is_match(u));
+            }
+
+            let updates_count = updates.len();
 
             package_manager_map.insert(package_manager.name(), updates_count as u32);
 
@@ -364,11 +366,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 pub trait Backend {
     fn name(&self) -> &str;
 
-    async fn get_updates_list(&self) -> Result<String>;
+    async fn get_updates_list(&self) -> Result<Vec<String>>;
 
-    async fn get_update_count(&self, updates: &str) -> Result<usize>;
-
-    fn has_matching_update(&self, updates: &str, regex: &Regex) -> bool {
-        updates.lines().any(|line| regex.is_match(line))
+    fn has_matching_update(&self, updates: &[String], regex: &Regex) -> bool {
+        updates.iter().any(|line| regex.is_match(line))
     }
 }

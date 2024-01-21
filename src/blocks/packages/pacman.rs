@@ -35,31 +35,23 @@ pub static PACMAN_DB: Lazy<PathBuf> = Lazy::new(|| {
     path
 });
 
-pub struct Pacman {
-    _ignore_updates_regex: Option<Regex>,
-}
+pub struct Pacman;
 
 pub struct Aur {
     aur_command: String,
-    _ignore_updates_regex: Option<Regex>,
 }
 
 impl Pacman {
-    pub async fn new(ignore_updates_regex: Option<Regex>) -> Result<Self> {
+    pub async fn new() -> Result<Self> {
         check_fakeroot_command_exists().await?;
 
-        Ok(Self {
-            _ignore_updates_regex: ignore_updates_regex,
-        })
+        Ok(Self)
     }
 }
 
 impl Aur {
-    pub fn new(aur_command: String, ignore_updates_regex: Option<Regex>) -> Self {
-        Aur {
-            aur_command,
-            _ignore_updates_regex: ignore_updates_regex,
-        }
+    pub fn new(aur_command: String) -> Self {
+        Aur { aur_command }
     }
 }
 
@@ -69,7 +61,7 @@ impl Backend for Pacman {
         "pacman"
     }
 
-    async fn get_updates_list(&self) -> Result<String> {
+    async fn get_updates_list(&self) -> Result<Vec<String>> {
         // Create the determined `checkup-db` path recursively
         create_dir_all(&*PACMAN_UPDATES_DB).await.or_error(|| {
             format!(
@@ -121,14 +113,15 @@ impl Backend for Pacman {
             .error("There was a problem running the pacman commands")?
             .stdout;
 
-        String::from_utf8(stdout).error("Pacman produced non-UTF8 output")
-    }
+        let updates = String::from_utf8(stdout).error("Pacman produced non-UTF8 output")?;
 
-    async fn get_update_count(&self, updates: &str) -> Result<usize> {
-        Ok(updates
+        let updates = updates
             .lines()
             .filter(|line| !line.contains("[ignored]"))
-            .count())
+            .map(|line| line.to_string())
+            .collect();
+
+        Ok(updates)
     }
 }
 
@@ -138,22 +131,23 @@ impl Backend for Aur {
         "aur"
     }
 
-    async fn get_updates_list(&self) -> Result<String> {
+    async fn get_updates_list(&self) -> Result<Vec<String>> {
         let stdout = Command::new("sh")
             .args(["-c", &self.aur_command])
             .output()
             .await
             .or_error(|| format!("aur command: {} failed", self.aur_command))?
             .stdout;
-        String::from_utf8(stdout)
-            .error("There was a problem while converting the aur command output to a string")
-    }
+        let updates = String::from_utf8(stdout)
+            .error("There was a problem while converting the aur command output to a string")?;
 
-    async fn get_update_count(&self, updates: &str) -> Result<usize> {
-        Ok(updates
+        let updates = updates
             .lines()
             .filter(|line| !line.contains("[ignored]"))
-            .count())
+            .map(|line| line.to_string())
+            .collect();
+
+        Ok(updates)
     }
 }
 

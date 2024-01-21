@@ -17,7 +17,7 @@ impl Backend for Dnf {
         "dnf"
     }
 
-    async fn get_updates_list(&self) -> Result<String> {
+    async fn get_updates_list(&self) -> Result<Vec<String>> {
         let stdout = Command::new("sh")
             .env("LC_LANG", "C")
             .args(["-c", "dnf check-update -q --skip-broken"])
@@ -25,10 +25,13 @@ impl Backend for Dnf {
             .await
             .error("Failed to run dnf check-update")?
             .stdout;
-        String::from_utf8(stdout).error("dnf produced non-UTF8 output")
-    }
+        let updates = String::from_utf8(stdout).error("dnf produced non-UTF8 output")?;
+        let updates: Vec<String> = updates
+            .lines()
+            .filter(|line| line.len() > 1)
+            .map(|lines| lines.to_string())
+            .collect();
 
-    async fn get_update_count(&self, updates: &str) -> Result<usize> {
-        Ok(updates.lines().filter(|line| line.len() > 1).count())
+        Ok(updates)
     }
 }

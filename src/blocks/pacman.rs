@@ -186,14 +186,14 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         .transpose()
         .error("invalid critical updates regex")?;
 
-    let pacman_backend = Pacman::new(None).await?;
-    let aur_backend = Aur::new(config.aur_command.clone().unwrap_or_default(), None);
+    let pacman_backend = Pacman::new().await?;
+    let aur_backend = Aur::new(config.aur_command.clone().unwrap_or_default());
 
     loop {
         let (mut values, warning, critical, total) = match &watched {
             Watched::Pacman => {
                 let updates = pacman_backend.get_updates_list().await?;
-                let count = pacman_backend.get_update_count(&updates).await?;
+                let count = updates.len();
                 let values = map!("pacman" => Value::number(count));
                 let warning = warning_updates_regex
                     .as_ref()
@@ -205,7 +205,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             }
             Watched::Aur(_) => {
                 let updates = aur_backend.get_updates_list().await?;
-                let count = aur_backend.get_update_count(&updates).await?;
+                let count = updates.len();
                 let values = map!(
                     "aur" => Value::number(count)
                 );
@@ -220,8 +220,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             Watched::Both(_) => {
                 let pacman_updates = pacman_backend.get_updates_list().await?;
                 let aur_updates = aur_backend.get_updates_list().await?;
-                let pacman_count = pacman_backend.get_update_count(&pacman_updates).await?;
-                let aur_count = aur_backend.get_update_count(&aur_updates).await?;
+                let pacman_count = pacman_updates.len();
+                let aur_count = aur_updates.len();
                 let values = map! {
                     "pacman" => Value::number(pacman_count),
                     "aur" =>    Value::number(aur_count),

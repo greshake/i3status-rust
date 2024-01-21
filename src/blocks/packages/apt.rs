@@ -10,18 +10,13 @@ use super::*;
 pub struct Apt {
     pub(super) config_file: String,
     pub(super) ignore_phased_updates: bool,
-    pub(super) ignore_updates_regex: Option<Regex>,
 }
 
 impl Apt {
-    pub async fn new(
-        ignore_phased_updates: bool,
-        ignore_updates_regex: Option<Regex>,
-    ) -> Result<Self> {
+    pub async fn new(ignore_phased_updates: bool) -> Result<Self> {
         let mut apt = Apt {
             config_file: String::new(),
             ignore_phased_updates,
-            ignore_updates_regex,
         };
 
         apt.setup().await?;
@@ -94,7 +89,7 @@ impl Backend for Apt {
         "apt"
     }
 
-    async fn get_updates_list(&self) -> Result<String> {
+    async fn get_updates_list(&self) -> Result<Vec<String>> {
         Command::new("apt")
             .env("APT_CONFIG", &self.config_file)
             .args(["update"])
@@ -113,26 +108,26 @@ impl Backend for Apt {
             .await
             .error("Problem running apt command")?
             .stdout;
-        String::from_utf8(stdout).error("apt produced non-UTF8 output")
-    }
 
-    async fn get_update_count(&self, updates: &str) -> Result<usize> {
-        let mut cnt = 0;
-
-        for update_line in updates
+        let updates = String::from_utf8(stdout).error("apt produced non-UTF8 output")?;
+        let updates: Vec<String> = updates
             .lines()
             .filter(|line| line.contains("[upgradable"))
-            .filter(|line| {
-                self.ignore_updates_regex
-                    .as_ref()
-                    .map_or(true, |re| !re.is_match(line))
-            })
-        {
-            if !self.ignore_phased_updates || !self.is_phased_update(update_line).await? {
-                cnt += 1;
-            }
-        }
+            .filter_map(|update_line| {
+                let is_phased_update =
+                    async { self.is_phased_update(update_line).await.unwrap_or(false) };
 
-        Ok(cnt)
+                Some(update_line.to_string()).filter(|_| {
+                    !self.ignore_phased_updates
+                        || !tokio::task::block_in_place(|| {
+                            tokio::runtime::Runtime::new()
+                                .unwrap()
+                                .block_on(is_phased_update)
+                        })
+                })
+            })
+            .collect();
+
+        Ok(updates)
     }
 }
