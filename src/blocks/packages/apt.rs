@@ -14,11 +14,14 @@ pub(super) struct Apt {
 }
 
 impl Apt {
-    pub(super) async fn new() -> Result<Self> {
+    pub(super) async fn new(
+        ignore_phased_updates: bool,
+        ignore_updates_regex: Option<Regex>,
+    ) -> Result<Self> {
         let mut apt = Apt {
             config_file: String::new(),
-            ignore_phased_updates: false,
-            ignore_updates_regex: Default::default(),
+            ignore_phased_updates,
+            ignore_updates_regex,
         };
 
         apt.setup().await?;

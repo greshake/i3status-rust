@@ -257,7 +257,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     for &package_manager in config.package_manager.iter() {
         let backend = match package_manager {
-            PackageManager::Apt => Box::new(Apt::new().await?) as Box<dyn Backend>,
+            PackageManager::Apt => Box::new(
+                Apt::new(config.ignore_phased_updates, ignore_updates_regex.clone()).await?,
+            ) as Box<dyn Backend>,
             PackageManager::Pacman => Box::new(Pacman::new().await?) as Box<dyn Backend>,
             PackageManager::Aur => Box::new(Aur::new()) as Box<dyn Backend>,
         };
@@ -276,13 +278,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
             match package_manager.package_manager() {
                 PackageManager::Apt => {
-                    let apt = Apt {
-                        // Config file not needed in counting updates
-                        config_file: String::new(),
-                        ignore_phased_updates: config.ignore_phased_updates,
-                        ignore_updates_regex: ignore_updates_regex.clone(),
-                    };
-                    apt_count = apt.get_update_count(&updates).await?;
+                    apt_count = package_manager.get_update_count(&updates).await?;
                 }
                 PackageManager::Pacman => {
                     pacman_count = package_manager.get_update_count(&updates).await?;
