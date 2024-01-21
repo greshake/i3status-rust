@@ -280,22 +280,17 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         .transpose()
         .error("invalid ignore updates regex")?;
 
-    let mut package_manager_vec = Vec::new();
+    let mut package_manager_vec: Vec<Box<dyn Backend>> = Vec::new();
 
     for &package_manager in config.package_manager.iter() {
-        let backend = match package_manager {
-            PackageManager::Apt => {
-                Box::new(Apt::new(config.ignore_phased_updates).await?) as Box<dyn Backend>
-            }
-            PackageManager::Pacman => Box::new(Pacman::new().await?) as Box<dyn Backend>,
+        package_manager_vec.push(match package_manager {
+            PackageManager::Apt => Box::new(Apt::new(config.ignore_phased_updates).await?),
+            PackageManager::Pacman => Box::new(Pacman::new().await?),
             PackageManager::Aur => {
                 Box::new(Aur::new(config.aur_command.clone().unwrap_or_default()))
-                    as Box<dyn Backend>
             }
-            PackageManager::Dnf => Box::new(Dnf::new()) as Box<dyn Backend>,
-        };
-
-        package_manager_vec.push(backend);
+            PackageManager::Dnf => Box::new(Dnf::new()),
+        });
     }
 
     loop {
