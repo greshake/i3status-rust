@@ -129,8 +129,7 @@ enum Status {
 impl Status {
     fn icon(&self) -> Cow<'static, str> {
         match self {
-            Status::Connected => "net_vpn".into(),
-            Status::ConnectedToCountry { .. } => "net_vpn".into(),
+            Status::Connected | Status::ConnectedToCountry { .. } => "net_vpn".into(),
             Status::Disconnected => "net_wired".into(),
             Status::Error => "net_down".into(),
         }
