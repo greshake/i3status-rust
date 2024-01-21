@@ -11,9 +11,9 @@
 //! ----|--------|--------
 //! `interval` | Update interval in seconds. | `600`
 //! `package_manager` | Package manager to check for updates | -
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $count.eng(w:1) "`
-//! `format_singular` | Same as `format`, but for when exactly one update is available. | `" $icon $count.eng(w:1) "`
-//! `format_up_to_date` | Same as `format`, but for when no updates are available. | `" $icon $count.eng(w:1) "`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $total.eng(w:1) "`
+//! `format_singular` | Same as `format`, but for when exactly one update is available. | `" $icon $total.eng(w:1) "`
+//! `format_up_to_date` | Same as `format`, but for when no updates are available. | `" $icon $total.eng(w:1) "`
 //! `warning_updates_regex` | Display block as warning if updates matching regex are available. | `None`
 //! `critical_updates_regex` | Display block as critical if updates matching regex are available. | `None`
 //! `ignore_updates_regex` | Doesn't include updates matching regex in the count. | `None`
@@ -260,8 +260,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             PackageManager::Apt => Box::new(
                 Apt::new(config.ignore_phased_updates, ignore_updates_regex.clone()).await?,
             ) as Box<dyn Backend>,
-            PackageManager::Pacman => Box::new(Pacman::new().await?) as Box<dyn Backend>,
-            PackageManager::Aur => Box::new(Aur::new()) as Box<dyn Backend>,
+            PackageManager::Pacman => {
+                Box::new(Pacman::new(ignore_updates_regex.clone()).await?) as Box<dyn Backend>
+            }
+            PackageManager::Aur => Box::new(Aur::new(
+                config.aur_command.clone().unwrap_or_default(),
+                ignore_updates_regex.clone(),
+            )) as Box<dyn Backend>,
         };
 
         package_manager_vec.push(backend);
@@ -325,7 +330,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 }
 
 #[async_trait]
-trait Backend {
+pub trait Backend {
     fn name(&self) -> &str;
 
     async fn get_updates_list(&self) -> Result<String>;

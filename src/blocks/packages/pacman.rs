@@ -10,7 +10,7 @@ use crate::util::has_command;
 
 make_log_macro!(debug, "pacman");
 
-static PACMAN_UPDATES_DB: Lazy<PathBuf> = Lazy::new(|| {
+pub static PACMAN_UPDATES_DB: Lazy<PathBuf> = Lazy::new(|| {
     let path = match env::var_os("CHECKUPDATES_DB") {
         Some(val) => val.into(),
         None => {
@@ -27,7 +27,7 @@ static PACMAN_UPDATES_DB: Lazy<PathBuf> = Lazy::new(|| {
     path
 });
 
-static PACMAN_DB: Lazy<PathBuf> = Lazy::new(|| {
+pub static PACMAN_DB: Lazy<PathBuf> = Lazy::new(|| {
     let path = env::var_os("DBPath")
         .map(Into::into)
         .unwrap_or_else(|| PathBuf::from("/var/lib/pacman/"));
@@ -35,24 +35,30 @@ static PACMAN_DB: Lazy<PathBuf> = Lazy::new(|| {
     path
 });
 
-pub(super) struct Pacman;
+pub struct Pacman {
+    _ignore_updates_regex: Option<Regex>,
+}
 
-pub(super) struct Aur {
+pub struct Aur {
     aur_command: String,
+    _ignore_updates_regex: Option<Regex>,
 }
 
 impl Pacman {
-    pub(super) async fn new() -> Result<Self> {
+    pub async fn new(ignore_updates_regex: Option<Regex>) -> Result<Self> {
         check_fakeroot_command_exists().await?;
 
-        Ok(Self)
+        Ok(Self {
+            _ignore_updates_regex: ignore_updates_regex,
+        })
     }
 }
 
 impl Aur {
-    pub(super) fn new() -> Self {
+    pub fn new(aur_command: String, ignore_updates_regex: Option<Regex>) -> Self {
         Aur {
-            aur_command: String::new(),
+            aur_command,
+            _ignore_updates_regex: ignore_updates_regex,
         }
     }
 }

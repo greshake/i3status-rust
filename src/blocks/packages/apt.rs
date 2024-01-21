@@ -7,14 +7,14 @@ use tokio::process::Command;
 use super::*;
 
 #[derive(Default)]
-pub(super) struct Apt {
+pub struct Apt {
     pub(super) config_file: String,
     pub(super) ignore_phased_updates: bool,
     pub(super) ignore_updates_regex: Option<Regex>,
 }
 
 impl Apt {
-    pub(super) async fn new(
+    pub async fn new(
         ignore_phased_updates: bool,
         ignore_updates_regex: Option<Regex>,
     ) -> Result<Self> {
