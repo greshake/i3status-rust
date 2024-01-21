@@ -13,8 +13,8 @@ impl Dnf {
 
 #[async_trait]
 impl Backend for Dnf {
-    fn name(&self) -> &str {
-        "dnf"
+    fn name(&self) -> Cow<'static, str> {
+        "dnf".into()
     }
 
     async fn get_updates_list(&self) -> Result<Vec<String>> {

@@ -57,8 +57,8 @@ impl Aur {
 
 #[async_trait]
 impl Backend for Pacman {
-    fn name(&self) -> &str {
-        "pacman"
+    fn name(&self) -> Cow<'static, str> {
+        "pacman".into()
     }
 
     async fn get_updates_list(&self) -> Result<Vec<String>> {
@@ -127,8 +127,8 @@ impl Backend for Pacman {
 
 #[async_trait]
 impl Backend for Aur {
-    fn name(&self) -> &str {
-        "aur"
+    fn name(&self) -> Cow<'static, str> {
+        "aur".into()
     }
 
     async fn get_updates_list(&self) -> Result<Vec<String>> {

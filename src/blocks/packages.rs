@@ -294,11 +294,11 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     }
 
     loop {
-        let mut package_manager_map: HashMap<&str, u32> =
-            [("apt", 0), ("pacman", 0), ("aur", 0), ("dnf", 0)].into();
+        let mut package_manager_map: HashMap<Cow<'static, str>, Value> = HashMap::new();
 
         let mut critical = false;
         let mut warning = false;
+        let mut total_count = 0;
 
         // Iterate over the all package manager listed in Config
         for package_manager in &package_manager_vec {
@@ -309,7 +309,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
             let updates_count = updates.len();
 
-            package_manager_map.insert(package_manager.name(), updates_count as u32);
+            package_manager_map.insert(package_manager.name(), Value::number(updates_count));
+            total_count += updates_count;
 
             warning |= warning_updates_regex
                 .as_ref()
@@ -321,20 +322,15 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         let mut widget = Widget::new();
 
-        let total_count = package_manager_map.values().sum();
+        package_manager_map.insert("icon".into(), Value::icon("update"));
+        package_manager_map.insert("total".into(), Value::number(total_count));
+
         widget.set_format(match total_count {
             0 => format_up_to_date.clone(),
             1 => format_singular.clone(),
             _ => format.clone(),
         });
-        widget.set_values(map!(
-            "icon" => Value::icon("update"),
-            "apt" => Value::number(package_manager_map["apt"]),
-            "pacman" => Value::number(package_manager_map["pacman"]),
-            "aur" => Value::number(package_manager_map["aur"]),
-            "dnf" => Value::number(package_manager_map["dnf"]),
-            "total" => Value::number(total_count),
-        ));
+        widget.set_values(package_manager_map);
 
         widget.state = match total_count {
             0 => State::Idle,
@@ -359,7 +355,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
 #[async_trait]
 pub trait Backend {
-    fn name(&self) -> &str;
+    fn name(&self) -> Cow<'static, str>;
 
     async fn get_updates_list(&self) -> Result<Vec<String>>;
 }

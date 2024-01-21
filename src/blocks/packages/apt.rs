@@ -85,8 +85,8 @@ impl Apt {
 
 #[async_trait]
 impl Backend for Apt {
-    fn name(&self) -> &str {
-        "apt"
+    fn name(&self) -> Cow<'static, str> {
+        "apt".into()
     }
 
     async fn get_updates_list(&self) -> Result<Vec<String>> {
