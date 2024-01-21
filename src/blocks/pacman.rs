@@ -113,9 +113,13 @@
 
 use regex::Regex;
 
-use super::packages::pacman::{Aur, Pacman};
-use super::prelude::*;
-use crate::blocks::packages::Backend;
+use super::{
+    packages::{
+        pacman::{Aur, Pacman},
+        Backend,
+    },
+    prelude::*,
+};
 
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]

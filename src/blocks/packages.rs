@@ -4,6 +4,7 @@
 //! - `apt` for Debian/Ubuntu based system
 //! - `pacman` for Arch based system
 //! - `aur` for Arch based system
+//! - `dnf` for Fedora based system
 //!
 //! # Configuration
 //!
@@ -26,6 +27,7 @@
 //! `apt`        | Number of updates available in Debian/Ubuntu based system                        | Number | -
 //! `pacman`     | Number of updates available in Arch based system                                 | Number | -
 //! `aur`        | Number of updates available in Arch based system                                 | Number | -
+//! `dnf`        | Number of updates available in Fedora based system                               | Number | -
 //! `total`      | Number of updates available in all package manager listed                        | Number | -
 //!
 //! # Apt
@@ -148,6 +150,24 @@
 //! aur_command = "yay -Qua"
 //! ```
 //!
+//!
+//! Dnf only config:
+//!
+//! ```toml
+//! [[block]]
+//! block = "packages"
+//! package_manager = ["dnf"]
+//! interval = 1800
+//! format = " $icon $dnf.eng(w:1) updates available "
+//! format_singular = " $icon One update available "
+//! format_up_to_date = " $icon system up to date "
+//! critical_updates_regex = "(linux|linux-lts|linux-zen)"
+//! [[block.click]]
+//! # shows dmenu with cached available updates. Any dmenu alternative should also work.
+//! button = "left"
+//! cmd = "dnf list -q --upgrades | tail -n +2 | rofi -dmenu"
+//! ```
+//!
 //! Multiple package managers config:
 //!
 //! Update the list of pending updates every thirty minutes (1800 seconds):
@@ -155,9 +175,9 @@
 //! ```toml
 //! [[block]]
 //! block = "packages"
-//! package_manager = ["apt", "pacman", "aur"]
+//! package_manager = ["apt", "pacman", "aur","dnf"]
 //! interval = 1800
-//! format = " $icon $apt + $pacman + $aur = $total updates available "
+//! format = " $icon $apt + $pacman + $aur + $dnf = $total updates available "
 //! format_singular = " $icon One update available "
 //! format_up_to_date = " $icon system up to date "
 //! ```
@@ -171,6 +191,9 @@ use apt::Apt;
 
 pub mod pacman;
 use pacman::{Aur, Pacman};
+
+pub mod dnf;
+use dnf::Dnf;
 
 use regex::Regex;
 
@@ -198,6 +221,7 @@ pub enum PackageManager {
     Apt,
     Pacman,
     Aur,
+    Dnf,
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
@@ -233,6 +257,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     if !config.package_manager.contains(&PackageManager::Aur) && aur {
         config.package_manager.push(PackageManager::Aur);
     }
+    if !config.package_manager.contains(&PackageManager::Dnf) && aur {
+        config.package_manager.push(PackageManager::Dnf);
+    }
 
     let warning_updates_regex = config
         .warning_updates_regex
@@ -267,13 +294,16 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 config.aur_command.clone().unwrap_or_default(),
                 ignore_updates_regex.clone(),
             )) as Box<dyn Backend>,
+            PackageManager::Dnf => Box::new(Dnf::new()) as Box<dyn Backend>,
         };
 
         package_manager_vec.push(backend);
     }
 
     loop {
-        let mut package_manager_map: HashMap<&str, u32> = HashMap::new();
+        let mut package_manager_map: HashMap<&str, u32> =
+            [("apt", 0), ("pacman", 0), ("aur", 0), ("dnf", 0)].into();
+
         let mut critical = false;
         let mut warning = false;
 
@@ -305,6 +335,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             "apt" => Value::number(package_manager_map["apt"]),
             "pacman" => Value::number(package_manager_map["pacman"]),
             "aur" => Value::number(package_manager_map["aur"]),
+            "dnf" => Value::number(package_manager_map["dnf"]),
             "total" => Value::number(total_count),
         ));
 

@@ -50,9 +50,10 @@
 
 use regex::Regex;
 
-use crate::blocks::packages::Backend;
-
-use super::{packages::apt::Apt, prelude::*};
+use super::{
+    packages::{apt::Apt, Backend},
+    prelude::*,
+};
 
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
