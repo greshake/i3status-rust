@@ -25,7 +25,7 @@ const WG_CMD: &str = "/usr/bin/wg";
 #[async_trait]
 impl Driver for WireguardDriver {
     async fn get_status(&self) -> Result<Status> {
-        let status = run_wg(vec!["show", self.interface.as_str()]).await;
+        let status = run_wg(&["show", self.interface.as_str()]).await;
 
         match status {
             Ok(status) => {
@@ -45,10 +45,10 @@ impl Driver for WireguardDriver {
     async fn toggle_connection(&self, status: &Status) -> Result<()> {
         match status {
             Status::Connected { .. } => {
-                run_wg_quick(vec!["down", self.interface.as_str()]).await?;
+                run_wg_quick(&["down", self.interface.as_str()]).await?;
             }
             Status::Disconnected => {
-                run_wg_quick(vec!["up", self.interface.as_str()]).await?;
+                run_wg_quick(&["up", self.interface.as_str()]).await?;
             }
             Status::Error => (),
         }
@@ -56,9 +56,9 @@ impl Driver for WireguardDriver {
     }
 }
 
-async fn run_wg(args: Vec<&str>) -> Result<String> {
+async fn run_wg(args: &[&str]) -> Result<String> {
     let stdout = make_command(should_use_sudo(), WG_CMD)
-        .args(&args)
+        .args(args)
         .output()
         .await
         .error(format!("Problem running wg command: {args:?}"))?
@@ -68,9 +68,9 @@ async fn run_wg(args: Vec<&str>) -> Result<String> {
     Ok(stdout)
 }
 
-async fn run_wg_quick(args: Vec<&str>) -> Result<()> {
+async fn run_wg_quick(args: &[&str]) -> Result<()> {
     make_command(should_use_sudo(), WG_QUICK_CMD)
-        .args(&args)
+        .args(args)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .spawn()
