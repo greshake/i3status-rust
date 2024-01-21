@@ -267,8 +267,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     loop {
         let (mut apt_count, mut pacman_count, mut aur_count) = (0, 0, 0);
-        let mut critical_vec = vec![false];
-        let mut warning_vec = vec![false];
+        let mut critical = false;
+        let mut warning = false;
 
         // Iterate over the all package manager listed in Config
         for package_manager in &package_manager_vec {
@@ -292,14 +292,12 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 }
             }
 
-            let warning = warning_updates_regex
+            warning |= warning_updates_regex
                 .as_ref()
                 .is_some_and(|regex| package_manager.has_matching_update(&updates, regex));
-            let critical = critical_updates_regex
+            critical |= critical_updates_regex
                 .as_ref()
                 .is_some_and(|regex| package_manager.has_matching_update(&updates, regex));
-            warning_vec.push(warning);
-            critical_vec.push(critical);
         }
 
         let mut widget = Widget::new();
@@ -317,9 +315,6 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             "aur" => Value::number(aur_count),
             "total" => Value::number(total_count),
         ));
-
-        let warning = warning_vec.iter().any(|&x| x);
-        let critical = critical_vec.iter().any(|&x| x);
 
         widget.state = match total_count {
             0 => State::Idle,
