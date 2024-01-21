@@ -46,7 +46,7 @@
 //! Be careful to include the interface name, and make sure that the config file is owned by root and not writable by others.
 //! Otherwise the PreUp and PostDown scripts can be used to run arbitrary commands as root.
 //!
-//! The country and flag placeholders are empty strings when connected to Wireguard.
+//! The country and flag placeholders are not available when connected to Wireguard.
 //!
 //! # Example
 //!
@@ -117,7 +117,8 @@ pub struct Config {
 }
 
 enum Status {
-    Connected {
+    Connected,
+    ConnectedToCountry {
         country: String,
         country_flag: String,
     },
@@ -128,7 +129,8 @@ enum Status {
 impl Status {
     fn icon(&self) -> Cow<'static, str> {
         match self {
-            Status::Connected { .. } => "net_vpn".into(),
+            Status::Connected => "net_vpn".into(),
+            Status::ConnectedToCountry { .. } => "net_vpn".into(),
             Status::Disconnected => "net_wired".into(),
             Status::Error => "net_down".into(),
         }
@@ -156,7 +158,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let mut widget = Widget::new();
 
         widget.state = match &status {
-            Status::Connected {
+            Status::ConnectedToCountry {
                 country,
                 country_flag,
             } => {
@@ -165,6 +167,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                         "country" => Value::text(country.to_string()),
                         "flag" => Value::text(country_flag.to_string()),
 
+                ));
+                widget.set_format(format_connected.clone());
+                config.state_connected
+            }
+            Status::Connected => {
+                widget.set_values(map!(
+                        "icon" => Value::icon(status.icon()),
                 ));
                 widget.set_format(format_connected.clone());
                 config.state_connected
