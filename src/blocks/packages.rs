@@ -268,25 +268,16 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     }
 
     loop {
-        let (mut apt_count, mut pacman_count, mut aur_count) = (0, 0, 0);
+        let mut package_manager_map: HashMap<&str, u32> = HashMap::new();
         let mut critical = false;
         let mut warning = false;
 
         // Iterate over the all package manager listed in Config
         for package_manager in &package_manager_vec {
             let updates = package_manager.get_updates_list().await?;
+            let updates_count = package_manager.get_update_count(&updates).await?;
 
-            match package_manager.package_manager() {
-                PackageManager::Apt => {
-                    apt_count = package_manager.get_update_count(&updates).await?;
-                }
-                PackageManager::Pacman => {
-                    pacman_count = package_manager.get_update_count(&updates).await?;
-                }
-                PackageManager::Aur => {
-                    aur_count = package_manager.get_update_count(&updates).await?;
-                }
-            }
+            package_manager_map.insert(package_manager.name(), updates_count as u32);
 
             warning |= warning_updates_regex
                 .as_ref()
@@ -298,7 +289,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         let mut widget = Widget::new();
 
-        let total_count = apt_count + pacman_count + aur_count;
+        let total_count = package_manager_map.values().sum();
         widget.set_format(match total_count {
             0 => format_up_to_date.clone(),
             1 => format_singular.clone(),
@@ -306,9 +297,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         });
         widget.set_values(map!(
             "icon" => Value::icon("update"),
-            "apt" => Value::number(apt_count),
-            "pacman" => Value::number(pacman_count),
-            "aur" => Value::number(aur_count),
+            "apt" => Value::number(package_manager_map["apt"]),
+            "pacman" => Value::number(package_manager_map["pacman"]),
+            "aur" => Value::number(package_manager_map["aur"]),
             "total" => Value::number(total_count),
         ));
 
@@ -335,7 +326,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
 #[async_trait]
 trait Backend {
-    fn package_manager(&self) -> PackageManager;
+    fn name(&self) -> &str;
 
     async fn get_updates_list(&self) -> Result<String>;
 

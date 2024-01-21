@@ -59,8 +59,8 @@ impl Aur {
 
 #[async_trait]
 impl Backend for Pacman {
-    fn package_manager(&self) -> PackageManager {
-        PackageManager::Pacman
+    fn name(&self) -> &str {
+        "pacman"
     }
 
     async fn get_updates_list(&self) -> Result<String> {
@@ -128,8 +128,8 @@ impl Backend for Pacman {
 
 #[async_trait]
 impl Backend for Aur {
-    fn package_manager(&self) -> PackageManager {
-        PackageManager::Aur
+    fn name(&self) -> &str {
+        "aur"
     }
 
     async fn get_updates_list(&self) -> Result<String> {

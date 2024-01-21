@@ -90,8 +90,8 @@ impl Apt {
 
 #[async_trait]
 impl Backend for Apt {
-    fn package_manager(&self) -> PackageManager {
-        PackageManager::Apt
+    fn name(&self) -> &str {
+        "apt"
     }
 
     async fn get_updates_list(&self) -> Result<String> {
