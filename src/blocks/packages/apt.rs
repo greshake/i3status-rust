@@ -110,24 +110,14 @@ impl Backend for Apt {
             .stdout;
 
         let updates = String::from_utf8(stdout).error("apt produced non-UTF8 output")?;
-        let updates: Vec<String> = updates
-            .lines()
-            .filter(|line| line.contains("[upgradable"))
-            .filter_map(|update_line| {
-                let is_phased_update =
-                    async { self.is_phased_update(update_line).await.unwrap_or(false) };
+        let mut updates_list: Vec<String> = Vec::new();
 
-                Some(update_line.to_string()).filter(|_| {
-                    !self.ignore_phased_updates
-                        || !tokio::task::block_in_place(|| {
-                            tokio::runtime::Runtime::new()
-                                .unwrap()
-                                .block_on(is_phased_update)
-                        })
-                })
-            })
-            .collect();
+        for update in updates.lines().filter(|line| line.contains("[upgradable")) {
+            if !self.ignore_phased_updates || !self.is_phased_update(update).await? {
+                updates_list.push(update.to_string());
+            }
+        }
 
-        Ok(updates)
+        Ok(updates_list)
     }
 }
