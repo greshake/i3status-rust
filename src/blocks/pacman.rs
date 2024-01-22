@@ -219,8 +219,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 (values, warning, critical, count)
             }
             Watched::Both(_) => {
-                let pacman_updates = pacman_backend.get_updates_list().await?;
-                let aur_updates = aur_backend.get_updates_list().await?;
+                let (pacman_updates, aur_updates) = tokio::try_join!(
+                    pacman_backend.get_updates_list(),
+                    aur_backend.get_updates_list(),
+                )?;
                 let pacman_count = pacman_updates.len();
                 let aur_count = aur_updates.len();
                 let values = map! {
