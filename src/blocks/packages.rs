@@ -84,7 +84,6 @@
 //! format = " $icon $apt updates available"
 //! format_singular = " $icon One update available "
 //! format_up_to_date = " $icon system up to date "
-//! critical_updates_regex = "(linux|linux-lts|linux-zen)"
 //! [[block.click]]
 //! # shows dmenu with cached available updates. Any dmenu alternative should also work.
 //! button = "left"
@@ -105,7 +104,6 @@
 //! format = " $icon $pacman updates available "
 //! format_singular = " $icon $pacman update available "
 //! format_up_to_date = " $icon system up to date "
-//! critical_updates_regex = "(linux|linux-lts|linux-zen)"
 //! [[block.click]]
 //! # pop-up a menu showing the available updates. Replace wofi with your favourite menu command.
 //! button = "left"
@@ -114,24 +112,6 @@
 //! # Updates the block on right click
 //! button = "right"
 //! update = true
-//! ```
-//!
-//! Pacman only config using warnings with ZFS modules:
-//!
-//! ```toml
-//! [[block]]
-//! block = "packages
-//! package_manager = ["pacman"]
-//! interval = 600
-//! format = " $icon $pacman updates available "
-//! format_singular = " $icon $pacman update available "
-//! format_up_to_date = " $icon system up to date "
-//! # If a linux update is available, but no ZFS package, it won't be possible to
-//! # actually perform a system upgrade, so we show a warning.
-//! warning_updates_regex = "(linux|linux-lts|linux-zen)"
-//! # If ZFS is available, we know that we can and should do an upgrade, so we show
-//! # the status as critical.
-//! critical_updates_regex = "(zfs|zfs-lts)"
 //! ```
 //!
 //! Pacman and AUR helper config:
@@ -145,7 +125,6 @@
 //! format = " $icon $pacman + $aur = $both updates available "
 //! format_singular = " $icon $both update available "
 //! format_up_to_date = " $icon system up to date "
-//! critical_updates_regex = "(linux|linux-lts|linux-zen)"
 //! # aur_command should output available updates to stdout (ie behave as echo -ne "update\n")
 //! aur_command = "yay -Qua"
 //! ```
@@ -161,7 +140,6 @@
 //! format = " $icon $dnf.eng(w:1) updates available "
 //! format_singular = " $icon One update available "
 //! format_up_to_date = " $icon system up to date "
-//! critical_updates_regex = "(linux|linux-lts|linux-zen)"
 //! [[block.click]]
 //! # shows dmenu with cached available updates. Any dmenu alternative should also work.
 //! button = "left"
@@ -180,6 +158,12 @@
 //! format = " $icon $apt + $pacman + $aur + $dnf = $total updates available "
 //! format_singular = " $icon One update available "
 //! format_up_to_date = " $icon system up to date "
+//! # If a linux update is available, but no ZFS package, it won't be possible to
+//! # actually perform a system upgrade, so we show a warning.
+//! warning_updates_regex = "(linux|linux-lts|linux-zen)"
+//! # If ZFS is available, we know that we can and should do an upgrade, so we show
+//! # the status as critical.
+//! critical_updates_regex = "(zfs|zfs-lts)"
 //! ```
 //!
 //! # Icons Used
