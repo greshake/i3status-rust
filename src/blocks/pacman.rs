@@ -111,44 +111,16 @@
 //!
 //! - `update`
 
-use std::env;
-use std::path::PathBuf;
-use std::process::Stdio;
-
 use regex::Regex;
 
-use tokio::fs::{create_dir_all, symlink};
-use tokio::process::Command;
-
-use super::prelude::*;
-use crate::util::has_command;
-
-make_log_macro!(debug, "pacman");
-
-static PACMAN_UPDATES_DB: Lazy<PathBuf> = Lazy::new(|| {
-    let path = match env::var_os("CHECKUPDATES_DB") {
-        Some(val) => val.into(),
-        None => {
-            let mut path = env::temp_dir();
-            let user = env::var("USER");
-            path.push(format!(
-                "checkup-db-i3statusrs-{}",
-                user.as_deref().unwrap_or("no-user")
-            ));
-            path
-        }
-    };
-    debug!("Using {} as updates DB path", path.display());
-    path
-});
-
-static PACMAN_DB: Lazy<PathBuf> = Lazy::new(|| {
-    let path = env::var_os("DBPath")
-        .map(Into::into)
-        .unwrap_or_else(|| PathBuf::from("/var/lib/pacman/"));
-    debug!("Using {} as pacman DB path", path.display());
-    path
-});
+use super::{
+    packages::{
+        has_matching_update,
+        pacman::{Aur, Pacman},
+        Backend,
+    },
+    prelude::*,
+};
 
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
@@ -202,10 +174,6 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         Watched::None
     };
 
-    if matches!(watched, Watched::Pacman | Watched::Both(_)) {
-        check_fakeroot_command_exists().await?;
-    }
-
     let warning_updates_regex = config
         .warning_updates_regex
         .as_deref()
@@ -219,11 +187,14 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         .transpose()
         .error("invalid critical updates regex")?;
 
+    let pacman_backend = Pacman::new().await?;
+    let aur_backend = Aur::new(config.aur_command.clone().unwrap_or_default());
+
     loop {
         let (mut values, warning, critical, total) = match &watched {
             Watched::Pacman => {
-                let updates = get_pacman_available_updates().await?;
-                let count = get_update_count(&updates);
+                let updates = pacman_backend.get_updates_list().await?;
+                let count = updates.len();
                 let values = map!("pacman" => Value::number(count));
                 let warning = warning_updates_regex
                     .as_ref()
@@ -233,9 +204,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     .is_some_and(|regex| has_matching_update(&updates, regex));
                 (values, warning, critical, count)
             }
-            Watched::Aur(aur_command) => {
-                let updates = get_aur_available_updates(aur_command).await?;
-                let count = get_update_count(&updates);
+            Watched::Aur(_) => {
+                let updates = aur_backend.get_updates_list().await?;
+                let count = updates.len();
                 let values = map!(
                     "aur" => Value::number(count)
                 );
@@ -247,13 +218,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     .is_some_and(|regex| has_matching_update(&updates, regex));
                 (values, warning, critical, count)
             }
-            Watched::Both(aur_command) => {
+            Watched::Both(_) => {
                 let (pacman_updates, aur_updates) = tokio::try_join!(
-                    get_pacman_available_updates(),
-                    get_aur_available_updates(aur_command)
+                    pacman_backend.get_updates_list(),
+                    aur_backend.get_updates_list(),
                 )?;
-                let pacman_count = get_update_count(&pacman_updates);
-                let aur_count = get_update_count(&aur_updates);
+                let pacman_count = pacman_updates.len();
+                let aur_count = aur_updates.len();
                 let values = map! {
                     "pacman" => Value::number(pacman_count),
                     "aur" =>    Value::number(aur_count),
@@ -307,89 +278,4 @@ enum Watched<'a> {
     Pacman,
     Aur(&'a str),
     Both(&'a str),
-}
-
-async fn check_fakeroot_command_exists() -> Result<()> {
-    if !has_command("fakeroot").await? {
-        Err(Error::new("fakeroot not found"))
-    } else {
-        Ok(())
-    }
-}
-
-async fn get_pacman_available_updates() -> Result<String> {
-    // Create the determined `checkup-db` path recursively
-    create_dir_all(&*PACMAN_UPDATES_DB).await.or_error(|| {
-        format!(
-            "Failed to create checkup-db directory at '{}'",
-            PACMAN_UPDATES_DB.display()
-        )
-    })?;
-
-    // Create symlink to local cache in `checkup-db` if required
-    let local_cache = PACMAN_UPDATES_DB.join("local");
-    if !local_cache.exists() {
-        symlink(PACMAN_DB.join("local"), local_cache)
-            .await
-            .error("Failed to created required symlink")?;
-    }
-
-    // Update database
-    let status = Command::new("fakeroot")
-        .env("LC_ALL", "C")
-        .args([
-            "--".as_ref(),
-            "pacman".as_ref(),
-            "-Sy".as_ref(),
-            "--dbpath".as_ref(),
-            PACMAN_UPDATES_DB.as_os_str(),
-            "--logfile".as_ref(),
-            "/dev/null".as_ref(),
-        ])
-        .stdout(Stdio::null())
-        .status()
-        .await
-        .error("Failed to run command")?;
-    if !status.success() {
-        debug!("{}", status);
-        return Err(Error::new("pacman -Sy exited with non zero exit status"));
-    }
-
-    let stdout = Command::new("fakeroot")
-        .env("LC_ALL", "C")
-        .args([
-            "--".as_ref(),
-            "pacman".as_ref(),
-            "-Qu".as_ref(),
-            "--dbpath".as_ref(),
-            PACMAN_UPDATES_DB.as_os_str(),
-        ])
-        .output()
-        .await
-        .error("There was a problem running the pacman commands")?
-        .stdout;
-
-    String::from_utf8(stdout).error("Pacman produced non-UTF8 output")
-}
-
-async fn get_aur_available_updates(aur_command: &str) -> Result<String> {
-    let stdout = Command::new("sh")
-        .args(["-c", aur_command])
-        .output()
-        .await
-        .or_error(|| format!("aur command: {aur_command} failed"))?
-        .stdout;
-    String::from_utf8(stdout)
-        .error("There was a problem while converting the aur command output to a string")
-}
-
-fn get_update_count(updates: &str) -> usize {
-    updates
-        .lines()
-        .filter(|line| !line.contains("[ignored]"))
-        .count()
-}
-
-fn has_matching_update(updates: &str, regex: &Regex) -> bool {
-    updates.lines().any(|line| regex.is_match(line))
 }

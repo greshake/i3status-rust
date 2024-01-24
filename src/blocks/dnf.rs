@@ -39,9 +39,12 @@
 //!
 //! - `update`
 
-use super::prelude::*;
 use regex::Regex;
-use tokio::process::Command;
+
+use super::{
+    packages::{dnf::Dnf, has_matching_update, Backend},
+    prelude::*,
+};
 
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
@@ -77,11 +80,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         .transpose()
         .error("invalid critical updates regex")?;
 
+    let backend = Dnf::new();
+
     loop {
         let mut widget = Widget::new();
 
-        let updates = get_updates_list().await?;
-        let count = get_update_count(&updates);
+        let updates = backend.get_updates_list().await?;
+        let count = updates.len();
 
         widget.set_format(match count {
             0 => format_up_to_date.clone(),
@@ -119,23 +124,4 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             _ = api.wait_for_update_request() => (),
         }
     }
-}
-
-async fn get_updates_list() -> Result<String> {
-    let stdout = Command::new("sh")
-        .env("LC_LANG", "C")
-        .args(["-c", "dnf check-update -q --skip-broken"])
-        .output()
-        .await
-        .error("Failed to run dnf check-update")?
-        .stdout;
-    String::from_utf8(stdout).error("dnf produced non-UTF8 output")
-}
-
-fn get_update_count(updates: &str) -> usize {
-    updates.lines().filter(|line| line.len() > 1).count()
-}
-
-fn has_matching_update(updates: &str, regex: &Regex) -> bool {
-    updates.lines().any(|line| regex.is_match(line))
 }

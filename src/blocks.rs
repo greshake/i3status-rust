@@ -45,11 +45,16 @@ use crate::{BoxedFuture, Request, RequestCmd};
 
 macro_rules! define_blocks {
     {
-        $( $(#[cfg(feature = $feat: literal)])? $block: ident $(,)? )*
+        $(
+            $(#[cfg(feature = $feat: literal)])?
+            $(#[deprecated($($dep_k: ident = $dep_v: literal),+)])?
+            $block: ident $(,)?
+        )*
     } => {
         $(
             $(#[cfg(feature = $feat)])?
             $(#[cfg_attr(docsrs, doc(cfg(feature = $feat)))])?
+            $(#[deprecated($($dep_k = $dep_v),+)])?
             pub mod $block;
         )*
 
@@ -58,6 +63,7 @@ macro_rules! define_blocks {
             $(
                 $(#[cfg(feature = $feat)])?
                 #[allow(non_camel_case_types)]
+                #[allow(deprecated)]
                 $block($block::Config),
             )*
             Err(&'static str, Error),
@@ -78,6 +84,7 @@ macro_rules! define_blocks {
                 match self {
                     $(
                         $(#[cfg(feature = $feat)])?
+                        #[allow(deprecated)]
                         Self::$block(config) => futures.push(async move {
                             while let Err(err) = $block::run(&config, &api).await {
                                 if api.set_error(err).is_err() {
@@ -114,6 +121,7 @@ macro_rules! define_blocks {
                 match block_name {
                     $(
                         $(#[cfg(feature = $feat)])?
+                        #[allow(deprecated)]
                         stringify!($block) => match $block::Config::deserialize(table) {
                             Ok(config) => Ok(BlockConfig::$block(config)),
                             Err(err) => Ok(BlockConfig::Err(stringify!($block), crate::errors::Error::new(err.to_string()))),
@@ -136,6 +144,10 @@ macro_rules! define_blocks {
 
 define_blocks!(
     amd_gpu,
+    #[deprecated(
+        since = "0.33.0",
+        note = "The block has been deprecated in favor of the the packages block"
+    )]
     apt,
     backlight,
     battery,
@@ -144,6 +156,10 @@ define_blocks!(
     custom,
     custom_dbus,
     disk_space,
+    #[deprecated(
+        since = "0.33.0",
+        note = "The block has been deprecated in favor of the the packages block"
+    )]
     dnf,
     docker,
     external_ip,
@@ -162,6 +178,11 @@ define_blocks!(
     #[cfg(feature = "notmuch")]
     notmuch,
     nvidia_gpu,
+    packages,
+    #[deprecated(
+        since = "0.33.0",
+        note = "The block has been deprecated in favor of the the packages block"
+    )]
     pacman,
     pomodoro,
     rofication,
