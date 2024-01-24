@@ -125,20 +125,6 @@
 <a href="#125" id="125">125</a>
 <a href="#126" id="126">126</a>
 <a href="#127" id="127">127</a>
-<a href="#128" id="128">128</a>
-<a href="#129" id="129">129</a>
-<a href="#130" id="130">130</a>
-<a href="#131" id="131">131</a>
-<a href="#132" id="132">132</a>
-<a href="#133" id="133">133</a>
-<a href="#134" id="134">134</a>
-<a href="#135" id="135">135</a>
-<a href="#136" id="136">136</a>
-<a href="#137" id="137">137</a>
-<a href="#138" id="138">138</a>
-<a href="#139" id="139">139</a>
-<a href="#140" id="140">140</a>
-<a href="#141" id="141">141</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Pending updates available for your Fedora system
 //!
 //!
@@ -180,9 +166,12 @@
 //!
 //! - `update`
 
-</span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
-<span class="kw">use </span>regex::Regex;
-<span class="kw">use </span>tokio::process::Command;
+</span><span class="kw">use </span>regex::Regex;
+
+<span class="kw">use super</span>::{
+    packages::{dnf::Dnf, has_matching_update, Backend},
+    prelude::<span class="kw-2">*</span>,
+};
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
@@ -218,11 +207,13 @@
         .transpose()
         .error(<span class="string">&quot;invalid critical updates regex&quot;</span>)<span class="question-mark">?</span>;
 
+    <span class="kw">let </span>backend = Dnf::new();
+
     <span class="kw">loop </span>{
         <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new();
 
-        <span class="kw">let </span>updates = get_updates_list().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">let </span>count = get_update_count(<span class="kw-2">&amp;</span>updates);
+        <span class="kw">let </span>updates = backend.get_updates_list().<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let </span>count = updates.len();
 
         widget.set_format(<span class="kw">match </span>count {
             <span class="number">0 </span>=&gt; format_up_to_date.clone(),
@@ -260,24 +251,5 @@
             <span class="kw">_ </span>= api.wait_for_update_request() =&gt; (),
         }
     }
-}
-
-<span class="kw">async fn </span>get_updates_list() -&gt; <span class="prelude-ty">Result</span>&lt;String&gt; {
-    <span class="kw">let </span>stdout = Command::new(<span class="string">&quot;sh&quot;</span>)
-        .env(<span class="string">&quot;LC_LANG&quot;</span>, <span class="string">&quot;C&quot;</span>)
-        .args([<span class="string">&quot;-c&quot;</span>, <span class="string">&quot;dnf check-update -q --skip-broken&quot;</span>])
-        .output()
-        .<span class="kw">await
-        </span>.error(<span class="string">&quot;Failed to run dnf check-update&quot;</span>)<span class="question-mark">?
-        </span>.stdout;
-    String::from_utf8(stdout).error(<span class="string">&quot;dnf produced non-UTF8 output&quot;</span>)
-}
-
-<span class="kw">fn </span>get_update_count(updates: <span class="kw-2">&amp;</span>str) -&gt; usize {
-    updates.lines().filter(|line| line.len() &gt; <span class="number">1</span>).count()
-}
-
-<span class="kw">fn </span>has_matching_update(updates: <span class="kw-2">&amp;</span>str, regex: <span class="kw-2">&amp;</span>Regex) -&gt; bool {
-    updates.lines().any(|line| regex.is_match(line))
 }
 </code></pre></div></section></main></body></html>

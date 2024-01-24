@@ -258,6 +258,27 @@
 <a href="#258" id="258">258</a>
 <a href="#259" id="259">259</a>
 <a href="#260" id="260">260</a>
+<a href="#261" id="261">261</a>
+<a href="#262" id="262">262</a>
+<a href="#263" id="263">263</a>
+<a href="#264" id="264">264</a>
+<a href="#265" id="265">265</a>
+<a href="#266" id="266">266</a>
+<a href="#267" id="267">267</a>
+<a href="#268" id="268">268</a>
+<a href="#269" id="269">269</a>
+<a href="#270" id="270">270</a>
+<a href="#271" id="271">271</a>
+<a href="#272" id="272">272</a>
+<a href="#273" id="273">273</a>
+<a href="#274" id="274">274</a>
+<a href="#275" id="275">275</a>
+<a href="#276" id="276">276</a>
+<a href="#277" id="277">277</a>
+<a href="#278" id="278">278</a>
+<a href="#279" id="279">279</a>
+<a href="#280" id="280">280</a>
+<a href="#281" id="281">281</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! The collection of blocks
 //!
 //! Blocks are defined as a [TOML array of tables](https://github.com/toml-lang/toml/blob/main/toml.md#user-content-array-of-tables): `[[block]]`
@@ -305,11 +326,16 @@
 
 <span class="macro">macro_rules! </span>define_blocks {
     {
-        $( $(<span class="attr">#[cfg(feature = <span class="macro-nonterminal">$feat</span>: literal)]</span>)<span class="question-mark">? </span><span class="macro-nonterminal">$block</span>: ident $(,)<span class="question-mark">? </span>)*
+        $(
+            $(<span class="attr">#[cfg(feature = <span class="macro-nonterminal">$feat</span>: literal)]</span>)<span class="question-mark">?
+            </span>$(<span class="attr">#[deprecated($(<span class="macro-nonterminal">$dep_k</span>: ident = <span class="macro-nonterminal">$dep_v</span>: literal),+)]</span>)<span class="question-mark">?
+            </span><span class="macro-nonterminal">$block</span>: ident $(,)<span class="question-mark">?
+        </span>)*
     } =&gt; {
         $(
             $(<span class="attr">#[cfg(feature = <span class="macro-nonterminal">$feat</span>)]</span>)<span class="question-mark">?
             </span>$(<span class="attr">#[cfg_attr(docsrs, doc(cfg(feature = <span class="macro-nonterminal">$feat</span>)))]</span>)<span class="question-mark">?
+            </span>$(<span class="attr">#[deprecated($(<span class="macro-nonterminal">$dep_k </span>= <span class="macro-nonterminal">$dep_v</span>),+)]</span>)<span class="question-mark">?
             </span><span class="kw">pub mod </span><span class="macro-nonterminal">$block</span>;
         )*
 
@@ -318,6 +344,7 @@
             $(
                 $(<span class="attr">#[cfg(feature = <span class="macro-nonterminal">$feat</span>)]</span>)<span class="question-mark">?
                 </span><span class="attr">#[allow(non_camel_case_types)]
+                #[allow(deprecated)]
                 </span><span class="macro-nonterminal">$block</span>(<span class="macro-nonterminal">$block::Config</span>),
             )*
             <span class="prelude-val">Err</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str, Error),
@@ -338,6 +365,7 @@
                 <span class="kw">match </span><span class="self">self </span>{
                     $(
                         $(<span class="attr">#[cfg(feature = <span class="macro-nonterminal">$feat</span>)]</span>)<span class="question-mark">?
+                        </span><span class="attr">#[allow(deprecated)]
                         </span><span class="self">Self</span>::<span class="macro-nonterminal">$block</span>(config) =&gt; futures.push(<span class="kw">async move </span>{
                             <span class="kw">while let </span><span class="prelude-val">Err</span>(err) = <span class="macro-nonterminal">$block::run</span>(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>api).<span class="kw">await </span>{
                                 <span class="kw">if </span>api.set_error(err).is_err() {
@@ -374,6 +402,7 @@
                 <span class="kw">match </span>block_name {
                     $(
                         $(<span class="attr">#[cfg(feature = <span class="macro-nonterminal">$feat</span>)]</span>)<span class="question-mark">?
+                        </span><span class="attr">#[allow(deprecated)]
                         </span><span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>) =&gt; <span class="kw">match </span><span class="macro-nonterminal">$block::Config::deserialize</span>(table) {
                             <span class="prelude-val">Ok</span>(config) =&gt; <span class="prelude-val">Ok</span>(BlockConfig::<span class="macro-nonterminal">$block</span>(config)),
                             <span class="prelude-val">Err</span>(err) =&gt; <span class="prelude-val">Ok</span>(BlockConfig::Err(<span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>), <span class="kw">crate</span>::errors::Error::new(err.to_string()))),
@@ -396,7 +425,11 @@
 
 <span class="macro">define_blocks!</span>(
     amd_gpu,
-    apt,
+    <span class="attr">#[deprecated(
+        since = <span class="string">&quot;0.33.0&quot;</span>,
+        note = <span class="string">&quot;The block has been deprecated in favor of the the packages block&quot;
+    </span>)]
+    </span>apt,
     backlight,
     battery,
     bluetooth,
@@ -404,7 +437,11 @@
     custom,
     custom_dbus,
     disk_space,
-    dnf,
+    <span class="attr">#[deprecated(
+        since = <span class="string">&quot;0.33.0&quot;</span>,
+        note = <span class="string">&quot;The block has been deprecated in favor of the the packages block&quot;
+    </span>)]
+    </span>dnf,
     docker,
     external_ip,
     focused_window,
@@ -422,7 +459,12 @@
     <span class="attr">#[cfg(feature = <span class="string">&quot;notmuch&quot;</span>)]
     </span>notmuch,
     nvidia_gpu,
-    pacman,
+    packages,
+    <span class="attr">#[deprecated(
+        since = <span class="string">&quot;0.33.0&quot;</span>,
+        note = <span class="string">&quot;The block has been deprecated in favor of the the packages block&quot;
+    </span>)]
+    </span>pacman,
     pomodoro,
     rofication,
     service_status,
