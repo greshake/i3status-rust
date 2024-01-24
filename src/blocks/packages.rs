@@ -122,8 +122,8 @@
 //! package_manager = ["pacman", "aur"]
 //! interval = 600
 //! error_interval = 300
-//! format = " $icon $pacman + $aur = $both updates available "
-//! format_singular = " $icon $both update available "
+//! format = " $icon $pacman + $aur = $total updates available "
+//! format_singular = " $icon $total update available "
 //! format_up_to_date = " $icon system up to date "
 //! # aur_command should output available updates to stdout (ie behave as echo -ne "update\n")
 //! aur_command = "yay -Qua"
