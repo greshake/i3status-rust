@@ -270,9 +270,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         package_manager_vec.push(match package_manager {
             PackageManager::Apt => Box::new(Apt::new(config.ignore_phased_updates).await?),
             PackageManager::Pacman => Box::new(Pacman::new().await?),
-            PackageManager::Aur => {
-                Box::new(Aur::new(config.aur_command.clone().unwrap_or_default()))
-            }
+            PackageManager::Aur => Box::new(Aur::new(
+                config.aur_command.clone().error("aur_command is not set")?,
+            )),
             PackageManager::Dnf => Box::new(Dnf::new()),
         });
     }
