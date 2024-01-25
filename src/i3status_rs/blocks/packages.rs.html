@@ -347,6 +347,7 @@
 <a href="#347" id="347">347</a>
 <a href="#348" id="348">348</a>
 <a href="#349" id="349">349</a>
+<a href="#350" id="350">350</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Pending updates for different package manager like apt, pacman, etc.
 //!
 //! Currently these package managers are available:
@@ -580,6 +581,7 @@
     <span class="kw">let </span>apt = <span class="macro">any_format_contains!</span>(<span class="string">&quot;apt&quot;</span>);
     <span class="kw">let </span>aur = <span class="macro">any_format_contains!</span>(<span class="string">&quot;aur&quot;</span>);
     <span class="kw">let </span>pacman = <span class="macro">any_format_contains!</span>(<span class="string">&quot;pacman&quot;</span>);
+    <span class="kw">let </span>dnf = <span class="macro">any_format_contains!</span>(<span class="string">&quot;dnf&quot;</span>);
 
     <span class="kw">if </span>!config.package_manager.contains(<span class="kw-2">&amp;</span>PackageManager::Apt) &amp;&amp; apt {
         config.package_manager.push(PackageManager::Apt);
@@ -590,7 +592,7 @@
     <span class="kw">if </span>!config.package_manager.contains(<span class="kw-2">&amp;</span>PackageManager::Aur) &amp;&amp; aur {
         config.package_manager.push(PackageManager::Aur);
     }
-    <span class="kw">if </span>!config.package_manager.contains(<span class="kw-2">&amp;</span>PackageManager::Dnf) &amp;&amp; aur {
+    <span class="kw">if </span>!config.package_manager.contains(<span class="kw-2">&amp;</span>PackageManager::Dnf) &amp;&amp; dnf {
         config.package_manager.push(PackageManager::Dnf);
     }
 
@@ -619,9 +621,9 @@
         package_manager_vec.push(<span class="kw">match </span>package_manager {
             PackageManager::Apt =&gt; Box::new(Apt::new(config.ignore_phased_updates).<span class="kw">await</span><span class="question-mark">?</span>),
             PackageManager::Pacman =&gt; Box::new(Pacman::new().<span class="kw">await</span><span class="question-mark">?</span>),
-            PackageManager::Aur =&gt; {
-                Box::new(Aur::new(config.aur_command.clone().unwrap_or_default()))
-            }
+            PackageManager::Aur =&gt; Box::new(Aur::new(
+                config.aur_command.clone().error(<span class="string">&quot;aur_command is not set&quot;</span>)<span class="question-mark">?</span>,
+            )),
             PackageManager::Dnf =&gt; Box::new(Dnf::new()),
         });
     }
