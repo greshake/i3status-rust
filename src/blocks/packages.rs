@@ -231,6 +231,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let apt = any_format_contains!("apt");
     let aur = any_format_contains!("aur");
     let pacman = any_format_contains!("pacman");
+    let dnf = any_format_contains!("dnf");
 
     if !config.package_manager.contains(&PackageManager::Apt) && apt {
         config.package_manager.push(PackageManager::Apt);
@@ -241,7 +242,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     if !config.package_manager.contains(&PackageManager::Aur) && aur {
         config.package_manager.push(PackageManager::Aur);
     }
-    if !config.package_manager.contains(&PackageManager::Dnf) && aur {
+    if !config.package_manager.contains(&PackageManager::Dnf) && dnf {
         config.package_manager.push(PackageManager::Dnf);
     }
 
