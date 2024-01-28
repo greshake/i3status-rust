@@ -141,29 +141,29 @@ impl LibvirtInfo {
 
                             if domain.is_active().unwrap_or(false) {
                                 info.memory_active += domain_info.memory as u32;
-                                info.cpu_active += domain_info.nr_virt_cpu as u32;
+                                info.cpu_active += domain_info.nr_virt_cpu;
                             } else {
-                                info.cpu_inactive += domain_info.nr_virt_cpu as u32;
+                                info.cpu_inactive += domain_info.nr_virt_cpu;
                             }
                         }
                     }
 
-                    return Ok(info);
+                    Ok(info)
                 }
                 else {
                     disconnect(con);
-                    return Err(Error::last_error());
+                     Err(Error::last_error())
                 }
                 
             }
             else {
                 disconnect(con);
-                return Err(Error::last_error());
+                Err(Error::last_error())
             }
         }
         else {
             disconnect(con);
-            return Err(Error::last_error());
+            Err(Error::last_error())
         }
     }
 }
