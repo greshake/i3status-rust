@@ -7,7 +7,7 @@
 //! uri | URI of the hypervisor | qemu:///system
 //! `interval` | Update interval, in seconds. | `5`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $running.eng(w:1) "`
-//! `uru` | The path to the virtualization domain.
+//! `uri` | The path to the virtualization domain.
 //!
 //! Key       | Value                                  | Type   | Unit
 //! ----------|----------------------------------------|--------|-----
@@ -26,7 +26,7 @@
 //! block = "virt"
 //! uri = "qemu:///system"
 //! interval = 2
-//! format = " $icon $active/$total ($memory_activey@$cpu_active) "
+//! format = " $icon $active/$total ($memory $active@$cpu_active) "
 //! ```
 //!
 
@@ -36,7 +36,7 @@ use virt::error::Error;
 use virt::sys;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[serde(deny_unknown_fields, default)]
 pub struct Config {
     #[default("qemu:///system".into())]
     pub uri: ShellString,
@@ -47,12 +47,9 @@ pub struct Config {
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let format = config.format.with_default("$icon $active/$total")?;
-    let mut widget = Widget::new().with_format(format.clone());
 
     let flags: sys::virConnectListAllDomainsFlags = sys::VIR_CONNECT_LIST_DOMAINS_ACTIVE | sys::VIR_CONNECT_LIST_DOMAINS_INACTIVE;
     let uri: &str = "qemu:///system";
-
-    dbg!(&widget);
 
     loop {
         println!("Connecting to hypervisor '{}'", &uri);
@@ -61,10 +58,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             Err(e) => panic!("No connection to hypervisor: {}", e),
         };
 
-        let info: LibvirtInfo = LibvirtInfo::new(&mut con, flags).unwrap();
+        let info: LibvirtInfo = LibvirtInfo::new(&mut con, flags)
+            .await
+            .unwrap();
+        let mut widget = Widget::new().with_format(format.clone());
 
         widget.set_values(map!(
-            "icon" => Value::icon("".to_string()),
+            // "icon" => Value::icon("".to_string()),
             // "total" => Value::number(virt_active_doms + virt_inactive_doms),
             "running" => Value::number(info.active),
             "stopped" => Value::number(info.inactive),
@@ -72,20 +72,20 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             "total" => Value::number(info.total),
         ));
 
-        api.set_widget(widget.clone())?;
-
-        println!("Disconnecting from hypervisor");
+        api.set_widget(widget)?;
         disconnect(&mut con);
         
         select! {
             _ = sleep(config.interval.0) => (),
+            _ = api.wait_for_update_request() => (),
         }
         
     }
 }
 
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, SmartDefault)]
+#[serde(deny_unknown_fields, default)]
 struct LibvirtInfo {
     #[serde(rename = "VMActive")]
     active:  u32,
@@ -111,7 +111,7 @@ fn disconnect(con: &mut Connect) {
 }
 
 impl LibvirtInfo {
-    pub fn new(con: &mut Connect, flags: sys::virConnectListAllDomainsFlags) -> Result<Self, Error> {
+    async fn new(con: &mut Connect, flags: sys::virConnectListAllDomainsFlags) -> Result<Self, Error> {
         println!("Connected to hypervisor");
         match con.get_uri() {
             Ok(u) => println!("Connected to hypervisor at '{}'", u),
