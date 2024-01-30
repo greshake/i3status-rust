@@ -72,7 +72,7 @@ fn generate_manpage() -> Result<()> {
     let doc_dir = root_dir.join("doc");
     let man_out_path = man_dir.join("i3status-rs.1");
 
-    let mut result: Vec<_> = fs::read_dir(&blocks_src_dir)
+    let mut result: Vec<_> = fs::read_dir(blocks_src_dir)
         .unwrap()
         .map(Result::unwrap)
         .filter(|e| e.file_type().unwrap().is_file())
@@ -156,7 +156,7 @@ fn generate_manpage() -> Result<()> {
     };
 
     fs::create_dir_all(&man_dir).unwrap();
-    let mut out = io::BufWriter::new(fs::File::create(&man_out_path).unwrap());
+    let mut out = io::BufWriter::new(fs::File::create(man_out_path).unwrap());
     let man = clap_mangen::Man::new(i3status_rs::CliArgs::command());
     man.render_title(&mut out).unwrap();
     man.render_name_section(&mut out).unwrap();

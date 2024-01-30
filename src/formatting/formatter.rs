@@ -475,6 +475,7 @@ impl Formatter for EngFormatter {
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct FixFormatter(EngFixConfig);
 
 impl Formatter for FixFormatter {
