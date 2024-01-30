@@ -10,35 +10,60 @@ use crate::formatting::config::Config as FormatConfig;
 use crate::icons::{Icon, Icons};
 use crate::themes::{Theme, ThemeOverrides, ThemeUserConfig};
 
-#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(default)]
+#[derive(Deserialize, Debug)]
 pub struct Config {
     #[serde(flatten)]
     pub shared: SharedConfig,
 
     /// Set to `true` to invert mouse wheel direction
+    #[serde(default)]
     pub invert_scrolling: bool,
 
     /// The maximum delay (ms) between two clicks that are considered as double click
+    #[serde(default)]
     pub double_click_delay: u64,
 
-    #[default(" {$short_error_message|X} ".parse().unwrap())]
+    #[serde(default = "default_error_format")]
     pub error_format: FormatConfig,
-    #[default(" $full_error_message ".parse().unwrap())]
+    #[serde(default = "default_error_fullscreen")]
     pub error_fullscreen_format: FormatConfig,
 
+    #[serde(default)]
     #[serde(rename = "block")]
     pub blocks: Vec<BlockConfigEntry>,
 }
 
-#[derive(Deserialize, Debug, Clone, SmartDefault)]
-#[serde(default)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct SharedConfig {
+    #[serde(default)]
     #[serde(deserialize_with = "deserialize_theme_config")]
     pub theme: Arc<Theme>,
+    #[serde(default)]
     pub icons: Arc<Icons>,
-    #[default(Arc::new("{icon}".into()))]
+    #[serde(default = "default_icons_format")]
     pub icons_format: Arc<String>,
+}
+
+impl Default for SharedConfig {
+    fn default() -> Self {
+        Self {
+            theme: Default::default(),
+            icons: Default::default(),
+            icons_format: default_icons_format(),
+        }
+    }
+}
+
+fn default_error_format() -> FormatConfig {
+    " {$short_error_message|X} ".parse().unwrap()
+}
+
+fn default_error_fullscreen() -> FormatConfig {
+    " $full_error_message ".parse().unwrap()
+}
+
+fn default_icons_format() -> Arc<String> {
+    Arc::new("{icon}".into())
 }
 
 impl SharedConfig {
