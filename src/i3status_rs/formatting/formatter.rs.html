@@ -748,6 +748,7 @@
 <a href="#748" id="748">748</a>
 <a href="#749" id="749">749</a>
 <a href="#750" id="750">750</a>
+<a href="#751" id="751">751</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>chrono::format::{Item, StrftimeItems};
 <span class="kw">use </span>chrono::{DateTime, Local, Locale, TimeZone};
 <span class="kw">use </span>once_cell::sync::Lazy;
@@ -1225,6 +1226,7 @@
 }
 
 <span class="attr">#[derive(Debug)]
+#[allow(dead_code)]
 </span><span class="kw">pub struct </span>FixFormatter(EngFixConfig);
 
 <span class="kw">impl </span>Formatter <span class="kw">for </span>FixFormatter {
