@@ -13,6 +13,7 @@ edition = "2021"
 
 [workspace]
 members = [".", "xtask"]
+resolver = "2"
 
 [features]
 default = ["pulseaudio"]
