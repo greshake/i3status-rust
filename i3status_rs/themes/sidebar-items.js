@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["ColorOrLink"],"mod":["color","separator"],"struct":["Theme","ThemeOverrides","ThemeUserConfig"]};
+window.SIDEBAR_ITEMS = {"enum":["ColorOrLink"],"mod":["color","separator"],"struct":["Theme","ThemeInner","ThemeOverrides","ThemeUserConfig"]};
