@@ -1296,6 +1296,7 @@ dependencies = [
  "icu_datetime",
  "icu_locid",
  "inotify 0.10.2",
+ "itertools",
  "libc",
  "libpulse-binding",
  "log",

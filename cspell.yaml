@@ -74,6 +74,7 @@ words:
   - inotify
   - iowait
   - ipapi
+  - itertools
   - iwctl
   - kbdd
   - kbddbus

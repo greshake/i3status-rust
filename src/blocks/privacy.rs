@@ -68,8 +68,6 @@
 //! - `webcam`
 //! - `unknown`
 
-use std::collections::HashSet;
-
 use futures::future::{select_all, try_join_all};
 
 use super::prelude::*;
@@ -114,8 +112,53 @@ enum Type {
     Unknown,
 }
 
-// {type: {name: {reader}}
-type PrivacyInfo = HashMap<Type, HashMap<String, HashSet<String>>>;
+// {type: {source: {destination: count}}
+type PrivacyInfo = HashMap<Type, PrivacyInfoInner>;
+
+type PrivacyInfoInnerType = HashMap<String, HashMap<String, usize>>;
+#[derive(Default, Debug)]
+struct PrivacyInfoInner(PrivacyInfoInnerType);
+
+impl std::ops::Deref for PrivacyInfoInner {
+    type Target = PrivacyInfoInnerType;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl std::ops::DerefMut for PrivacyInfoInner {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl std::fmt::Display for PrivacyInfoInner {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{{ {} }}",
+            itertools::join(
+                self.iter().map(|(source, destinations)| {
+                    format!(
+                        "{} => [ {} ]",
+                        source,
+                        itertools::join(
+                            destinations
+                                .iter()
+                                .map(|(destination, count)| if count == &1 {
+                                    destination.into()
+                                } else {
+                                    format!("{} (x{})", destination, count)
+                                }),
+                            ", "
+                        )
+                    )
+                }),
+                ", ",
+            )
+        )
+    }
+}
 
 #[async_trait]
 trait PrivacyMonitor {
@@ -149,12 +192,12 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     loop {
         let mut widget = Widget::new().with_format(format.clone());
 
-        let mut info = PrivacyInfo::new();
+        let mut info = PrivacyInfo::default();
         //Merge driver info
         for driver_info in try_join_all(drivers.iter_mut().map(|driver| driver.get_info())).await? {
             for (type_, mapping) in driver_info {
                 let existing_mapping = info.entry(type_).or_default();
-                for (source, dest) in mapping {
+                for (source, dest) in mapping.0 {
                     existing_mapping.entry(source).or_default().extend(dest);
                 }
             }
@@ -168,31 +211,31 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         if let Some(info_by_type) = info.get(&Type::Audio) {
             values.extend(map! {
                 "icon_audio" => Value::icon("microphone"),
-                "info_audio" => Value::text(format!("{:?}", info_by_type))
+                "info_audio" => Value::text(format!("{}", info_by_type))
             });
         }
         if let Some(info_by_type) = info.get(&Type::AudioSink) {
             values.extend(map! {
                 "icon_audio_sink" => Value::icon("volume"),
-                "info_audio_sink" => Value::text(format!("{:?}", info_by_type))
+                "info_audio_sink" => Value::text(format!("{}", info_by_type))
             });
         }
         if let Some(info_by_type) = info.get(&Type::Video) {
             values.extend(map! {
                 "icon_video" => Value::icon("xrandr"),
-                "info_video" => Value::text(format!("{:?}", info_by_type))
+                "info_video" => Value::text(format!("{}", info_by_type))
             });
         }
         if let Some(info_by_type) = info.get(&Type::Webcam) {
             values.extend(map! {
                 "icon_webcam" => Value::icon("webcam"),
-                "info_webcam" => Value::text(format!("{:?}", info_by_type))
+                "info_webcam" => Value::text(format!("{}", info_by_type))
             });
         }
         if let Some(info_by_type) = info.get(&Type::Unknown) {
             values.extend(map! {
                 "icon_unknown" => Value::icon("unknown"),
-                "info_unknown" => Value::text(format!("{:?}", info_by_type))
+                "info_unknown" => Value::text(format!("{}", info_by_type))
             });
         }
 

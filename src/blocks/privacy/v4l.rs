@@ -128,12 +128,13 @@ impl<'a> PrivacyMonitor for Monitor<'a> {
                             continue;
                         }
                         debug!("{} {:?}", reader, link_path);
-                        mapping
+                        *mapping
                             .entry(Type::Webcam)
                             .or_default()
                             .entry(link_path.to_string_lossy().to_string())
                             .or_default()
-                            .insert(reader);
+                            .entry(reader)
+                            .or_default() += 1;
                         debug!("{:?}", mapping);
                     }
                 }

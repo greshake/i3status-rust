@@ -2,6 +2,7 @@ use ::pipewire::{
     context::Context, core::PW_ID_CORE, keys, main_loop::MainLoop, properties::properties,
     spa::utils::dict::DictRef, types::ObjectType,
 };
+use itertools::Itertools;
 use tokio::sync::mpsc::{self, Receiver, Sender};
 
 use std::{collections::HashMap, sync::Mutex, thread};
@@ -35,7 +36,7 @@ impl Node {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, PartialOrd, Eq, Ord)]
 struct Link {
     link_output_node: u32,
     link_input_node: u32,
@@ -185,6 +186,16 @@ enum NodeDisplay {
     Nickname,
 }
 
+impl NodeDisplay {
+    fn map_node(&self, node: &Node) -> String {
+        match self {
+            NodeDisplay::Name => node.name.clone(),
+            NodeDisplay::Description => node.description.clone().unwrap_or(node.name.clone()),
+            NodeDisplay::Nickname => node.nick.clone().unwrap_or(node.name.clone()),
+        }
+    }
+}
+
 pub(super) struct Monitor<'a> {
     config: &'a Config,
     updates: Receiver<()>,
@@ -215,73 +226,45 @@ impl<'a> PrivacyMonitor for Monitor<'a> {
             debug! {"{:?}", node};
         }
 
+        // The links must be sorted and then dedup'ed since you can multiple links between any given pair of nodes
         for Link {
             link_output_node,
             link_input_node,
             ..
-        } in data.links.values()
+        } in data.links.values().sorted().dedup()
         {
-            if let (Some(output_node), Some(input_node)) = (
+            let (Some(output_node), Some(input_node)) = (
                 data.nodes.get(link_output_node),
                 data.nodes.get(link_input_node),
-            ) {
-                if input_node.media_class != Some("Audio/Sink".into())
-                    && !self.config.exclude_output.contains(&output_node.name)
-                    && !self.config.exclude_input.contains(&input_node.name)
-                {
-                    let type_ = if input_node.media_class == Some("Stream/Input/Video".into()) {
-                        if output_node.media_role == Some("Camera".into()) {
-                            Type::Webcam
-                        } else {
-                            Type::Video
-                        }
-                    } else if input_node.media_class == Some("Stream/Input/Audio".into()) {
-                        if output_node.media_class == Some("Audio/Sink".into()) {
-                            Type::AudioSink
-                        } else {
-                            Type::Audio
-                        }
+            ) else {
+                continue;
+            };
+            if input_node.media_class != Some("Audio/Sink".into())
+                && !self.config.exclude_output.contains(&output_node.name)
+                && !self.config.exclude_input.contains(&input_node.name)
+            {
+                let type_ = if input_node.media_class == Some("Stream/Input/Video".into()) {
+                    if output_node.media_role == Some("Camera".into()) {
+                        Type::Webcam
                     } else {
-                        Type::Unknown
-                    };
-                    use NodeDisplay::*;
-                    match self.config.display {
-                        Name => {
-                            mapping
-                                .entry(type_)
-                                .or_default()
-                                .entry(output_node.name.clone())
-                                .or_default()
-                                .insert(input_node.name.clone());
-                        }
-                        Description => {
-                            mapping
-                                .entry(type_)
-                                .or_default()
-                                .entry(
-                                    output_node
-                                        .description
-                                        .clone()
-                                        .unwrap_or(output_node.name.clone()),
-                                )
-                                .or_default()
-                                .insert(
-                                    input_node
-                                        .description
-                                        .clone()
-                                        .unwrap_or(input_node.name.clone()),
-                                );
-                        }
-                        Nickname => {
-                            mapping
-                                .entry(type_)
-                                .or_default()
-                                .entry(output_node.nick.clone().unwrap_or(output_node.name.clone()))
-                                .or_default()
-                                .insert(input_node.nick.clone().unwrap_or(input_node.name.clone()));
-                        }
+                        Type::Video
                     }
-                }
+                } else if input_node.media_class == Some("Stream/Input/Audio".into()) {
+                    if output_node.media_class == Some("Audio/Sink".into()) {
+                        Type::AudioSink
+                    } else {
+                        Type::Audio
+                    }
+                } else {
+                    Type::Unknown
+                };
+                *mapping
+                    .entry(type_)
+                    .or_default()
+                    .entry(self.config.display.map_node(output_node))
+                    .or_default()
+                    .entry(self.config.display.map_node(input_node))
+                    .or_default() += 1;
             }
         }
 
