@@ -1,6 +1,8 @@
 pub mod color;
 pub mod separator;
 
+use std::ops::{Deref, DerefMut};
+
 use serde::Deserialize;
 
 use crate::errors::*;
@@ -9,9 +11,32 @@ use crate::widget::State;
 use color::Color;
 use separator::Separator;
 
+#[derive(Debug, Clone)]
+pub struct Theme(pub ThemeInner);
+
+impl Default for Theme {
+    fn default() -> Self {
+        ThemeUserConfig::default()
+            .try_into()
+            .unwrap_or_else(|_| Self(ThemeInner::default()))
+    }
+}
+
+impl Deref for Theme {
+    type Target = ThemeInner;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl DerefMut for Theme {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 #[derive(Deserialize, Debug, Clone, Default)]
 #[serde(deny_unknown_fields, default)]
-pub struct Theme {
+pub struct ThemeInner {
     pub idle_bg: Color,
     pub idle_fg: Color,
     pub info_bg: Color,
@@ -111,7 +136,8 @@ impl TryFrom<ThemeUserConfig> for Theme {
         let name = user_config.theme.as_deref().unwrap_or("plain");
         let file = util::find_file(name, Some("themes"), Some("toml"))
             .or_error(|| format!("Theme '{name}' not found"))?;
-        let mut theme: Theme = util::deserialize_toml_file(file)?;
+        let theme: ThemeInner = util::deserialize_toml_file(file)?;
+        let mut theme = Theme(theme);
         if let Some(overrides) = user_config.overrides {
             theme.apply_overrides(overrides)?;
         }
