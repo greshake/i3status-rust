@@ -178,19 +178,10 @@ async fn get_current_timewarrior_task() -> Result<Option<TimewarriorData>> {
 
 /// Stop or continue a task
 async fn stop_continue() -> Result<()> {
-    let mut execute_continue: bool = true;
-    if let Some(tw) = get_current_timewarrior_task().await? {
-        // we only execute continue if the current task is stopped
-        // i.e. has an end defined
-        execute_continue = tw.end.is_some();
-    }
-
-    // is there a more rust way of doing this?
-    let args = match execute_continue {
-        true => "continue",
-        false => "stop",
-    };
-
+    let is_stopped = get_current_timewarrior_task()
+        .await?
+        .map_or(false, |tw| tw.end.is_some());
+    let args = if is_stopped { "continue" } else { "stop" };
     Command::new("timew")
         .args([args])
         .stdout(std::process::Stdio::null())
