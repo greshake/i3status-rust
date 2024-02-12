@@ -1,6 +1,6 @@
 # With a focus on spell checking source code, most text will be in the form of
 # identifiers that are made up of words conjoined via snake_case, CamelCase,
-# etc. A typo at the word level might not be a typo as part of an identifier, 
+# etc. A typo at the word level might not be a typo as part of an identifier,
 # so identifiers get checked and, if not in a dictionary, will then be split
 #  into words to be checked.
 
@@ -15,7 +15,7 @@ extend-exclude = [
 hellow554 = "hellow554"
 
 # Words are split from identifiers on case changes as well as breaks in [a-zA-Z]
-# with a special case to handle acronyms. For example, First10HTMLTokens 
+# with a special case to handle acronyms. For example, First10HTMLTokens
 # would be split as first, html, tokens.
 [default.extend-words]
 # ue is used in a test to make sure that 'val ue' was parsed correctly

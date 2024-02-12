@@ -70,13 +70,13 @@ unfortunately does not format files which are included via macros (in our case t
 so if you don't use `rust_analyzer`, you have to run `rustfmt --edition 2021 <file>`.
 
 We also include a configuration file for [pre-commit](https://pre-commit.com/),
-which you can use locally to run several checks including looking for spelling errors 
+which you can use locally to run several checks including looking for spelling errors
 and making sure that `cargo fmt` has been run.
 These same checks will be run as a github action, but it may save time to run them locally first.
 
 ## Maintainership
 
-If you are interested in taking on a more active community role -- e.g. triaging 
+If you are interested in taking on a more active community role -- e.g. triaging
 issues or reviewing pull requests -- please feel free to reach out to us.
 
 ## License

@@ -14,11 +14,11 @@ swaymsg fullscreen toggle
 
 for theme in ../files/themes/*
      set theme_name (string replace '.toml' '' -- (string replace '../files/themes/' '' -- $theme))
-     sed -i -r "s/theme = .*/theme = \"$theme_name\"/" screenshot_config.toml 
+     sed -i -r "s/theme = .*/theme = \"$theme_name\"/" screenshot_config.toml
      pkill -SIGUSR2 i3status-rs
      sleep 1
      grim -g $BAR_COORDS ../img/themes/"$theme_name".png
-end 
+end
 
 swaymsg fullscreen toggle
 swaymsg --socket ./sway_i3rs.sock exit

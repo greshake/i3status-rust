@@ -6,7 +6,7 @@ theme = "solarized-dark"
 [icons]
 icons = "awesome6"
 ```
-Both the theme and icon set can be loaded from a separate file. 
+Both the theme and icon set can be loaded from a separate file.
 ```toml
 [theme]
 theme = "<file>"

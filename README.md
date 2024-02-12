@@ -114,7 +114,7 @@ Finally, reload i3: `i3 reload`.
 
 Each block has a `State` that defines its colors: one of "Idle", "Info", "Good", "Warning", "Critical" or "Error". The state is determined by the logic in each block, for example, the Music block state is "Info" when there is an active player.
 
-When the state is "Error", a short error will be displayed in the block. The full message can be toggled by clicking on the block (overrides any click actions defined in the config). The block will be restarted after `error_interval` has elapsed. 
+When the state is "Error", a short error will be displayed in the block. The full message can be toggled by clicking on the block (overrides any click actions defined in the config). The block will be restarted after `error_interval` has elapsed.
 
 i3bar has a "power savings" feature that pauses the bar via SIGSTOP when it is hidden or obscured by a fullscreen container. If this causes [issues](https://github.com/i3/i3/issues/4110) with your bar, try running i3status-rs with the `--never-stop` argument, which changes the signal sent by i3 from SIGSTOP to SIGCONT.
 
