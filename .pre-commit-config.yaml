@@ -4,7 +4,7 @@
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.3.0
+    rev: v4.5.0
     hooks:
     - id: check-toml
       stages: [commit]
@@ -16,34 +16,48 @@ repos:
       stages: [commit]
     - id: detect-private-key
       stages: [commit]
+    - id: mixed-line-ending
+      stages: [commit]
+      args: ["--fix=lf"]
+    - id: trailing-whitespace
+      stages: [commit]
+      args: [--markdown-linebreak-ext=md]
   - repo: https://github.com/crate-ci/committed
-    rev: v1.0.1
+    rev: v1.0.20
     hooks:
     - id: committed
       stages: [commit-msg]
   # cspell is dictionary based
   # Dictionary: A confidence rating is given for how close a word is to one in a dictionary
   - repo: https://github.com/streetsidesoftware/cspell-cli
-    rev: v6.2.0
+    rev: v8.3.0
     hooks:
     - id: cspell
   # typos is corrections based
   # Corrections: Known misspellings that map to their corresponding dictionary word
   - repo: https://github.com/crate-ci/typos
-    rev: v1.16.17
+    rev: v1.18.2
     hooks:
     - id: typos
       pass_filenames: false
       args: [] # this prevents typos from being autocorrected (so you have a chance to review them)
-  - repo: https://github.com/doublify/pre-commit-rust
-    rev: v1.0
-    hooks:
-    - id: fmt
-      args: ["--check", "--"]
-    - id: clippy
-      args: ["--all-features", "--", "-D", "warnings", "-A", "unknown-lints"]
   - repo: local
     hooks:
+    - id: cargo-fmt
+      name: cargo fmt
+      description: Run cargo fmt
+      entry: cargo fmt
+      language: system
+      types: [rust]
+      args: ["--"]
+    - id: cargo-clippy
+      name: cargo clippy
+      description: Run cargo clippy
+      entry: cargo clippy
+      language: system
+      types: [rust]
+      pass_filenames: false
+      args: ["--all-features", "--", "-D", "warnings", "-A", "unknown-lints"]
     - id: cargo-test
       name: cargo test
       description: Run cargo test
