@@ -177,7 +177,7 @@ async fn get_current_timewarrior_task() -> Result<Option<TimewarriorData>> {
 async fn stop_continue() -> Result<()> {
     let is_stopped = get_current_timewarrior_task()
         .await?
-        .map_or(false, |tw| tw.end.is_some());
+        .map_or(true, |tw| tw.end.is_some());
     let args = if is_stopped { "continue" } else { "stop" };
     Command::new("timew")
         .args([args])
