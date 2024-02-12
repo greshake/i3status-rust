@@ -51,15 +51,15 @@ pub struct Config {
     critical: Option<u64>,
 }
 
-pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
-    api.set_default_actions(&[(MouseButton::Left, None, "stop_continue")])
-        .await?;
+pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+    let mut actions = api.get_actions()?;
+    api.set_default_actions(&[(MouseButton::Left, None, "stop_continue")])?;
 
     let widget = Widget::new().with_format(config.format.with_default(" $icon {$elapsed|}")?);
 
     loop {
         let mut values = map! {
-            "icon" => Value::icon(api.get_icon("tasks")?),
+            "icon" => Value::icon("tasks"),
         };
         let mut state = State::Idle;
         let mut widget = widget.clone();
@@ -99,17 +99,14 @@ pub async fn run(config: Config, mut api: CommonApi) -> Result<()> {
 
         widget.state = state;
         widget.set_values(values);
-        api.set_widget(widget).await?;
+        api.set_widget(widget)?;
 
         select! {
             _ = sleep(config.interval.0) => (),
-            event = api.event() => match event {
-                UpdateRequest => (),
-                Action(a) => {
-                    if a == "stop_continue" {
-                        stop_continue().await?;
-                    }
-                },
+            _ = api.wait_for_update_request() => (),
+            Some(action) = actions.recv() => match action.as_ref() {
+                "stop_continue" => { stop_continue().await?; }
+                _ => (),
             }
         }
     }
