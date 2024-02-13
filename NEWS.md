@@ -10,6 +10,11 @@
 * Kdeconnect: add `format_disconnected` and `format_missing` options (#1860).
 * Toggle: allow customizing state/theming when on/off by adding `state_on` and `state_off` options (#1974).
 * Disk Space: add support for TiB, GiB, MiB and KiB in `alert_unit` (#1977).
+* Add new `privacy` block which can detect if your webcam, screen/monitor, microphone, or audio monitor is being captured by another application. Note: only webcams that use v4l can be detected by default, enable the `pipewire` to monitor the use of the other listed kinds of media.
+* Add new `packages` block which supports `apt`, `dnf`, and `pacman/aur`
+
+### Deprecation Warnings
+* `apt`, `dnf`, and `pacman` blocks removed in a future release.
 
 # i3status-rust 0.32.3
 
