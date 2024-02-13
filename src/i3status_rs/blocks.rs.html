@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks.rs`."><title>blocks.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0 (82e1608df 2023-12-21)" data-channel="1.75.0" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks.rs`."><title>blocks.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-ac92e1bbe349e143.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0 (07dca489a 2024-02-04)" data-channel="1.76.0" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -347,11 +348,11 @@
                 #[allow(deprecated)]
                 </span><span class="macro-nonterminal">$block</span>(<span class="macro-nonterminal">$block::Config</span>),
             )*
-            <span class="prelude-val">Err</span>(<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str, Error),
+            <span class="prelude-val">Err</span>(<span class="kw-2">&amp;</span><span class="lifetime">'static </span>str, Error),
         }
 
         <span class="kw">impl </span>BlockConfig {
-            <span class="kw">pub fn </span>name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str {
+            <span class="kw">pub fn </span>name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str {
                 <span class="kw">match </span><span class="self">self </span>{
                     $(
                         $(<span class="attr">#[cfg(feature = <span class="macro-nonterminal">$feat</span>)]</span>)<span class="question-mark">?
@@ -380,7 +381,7 @@
                     )*
                     <span class="self">Self</span>::Err(_name, err) =&gt; {
                         <span class="kw">let _ </span>= api.set_error(Error {
-                            message: <span class="prelude-val">Some</span>(<span class="string">&quot;Configuration error&quot;</span>.into()),
+                            message: <span class="prelude-val">Some</span>(<span class="string">"Configuration error"</span>.into()),
                             cause: <span class="prelude-val">Some</span>(Arc::new(err)),
                         });
                     },
@@ -388,16 +389,16 @@
             }
         }
 
-        <span class="kw">impl</span>&lt;<span class="lifetime">&#39;de</span>&gt; Deserialize&lt;<span class="lifetime">&#39;de</span>&gt; <span class="kw">for </span>BlockConfig {
+        <span class="kw">impl</span>&lt;<span class="lifetime">'de</span>&gt; Deserialize&lt;<span class="lifetime">'de</span>&gt; <span class="kw">for </span>BlockConfig {
             <span class="kw">fn </span>deserialize&lt;D&gt;(deserializer: D) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, D::Error&gt;
             <span class="kw">where
-                </span>D: de::Deserializer&lt;<span class="lifetime">&#39;de</span>&gt;,
+                </span>D: de::Deserializer&lt;<span class="lifetime">'de</span>&gt;,
             {
                 <span class="kw">use </span>de::Error;
 
                 <span class="kw">let </span><span class="kw-2">mut </span>table = toml::Table::deserialize(deserializer)<span class="question-mark">?</span>;
-                <span class="kw">let </span>block_name = table.remove(<span class="string">&quot;block&quot;</span>).ok_or_else(|| D::Error::missing_field(<span class="string">&quot;block&quot;</span>))<span class="question-mark">?</span>;
-                <span class="kw">let </span>block_name = block_name.as_str().ok_or_else(|| D::Error::custom(<span class="string">&quot;block must be a string&quot;</span>))<span class="question-mark">?</span>;
+                <span class="kw">let </span>block_name = table.remove(<span class="string">"block"</span>).ok_or_else(|| D::Error::missing_field(<span class="string">"block"</span>))<span class="question-mark">?</span>;
+                <span class="kw">let </span>block_name = block_name.as_str().ok_or_else(|| D::Error::custom(<span class="string">"block must be a string"</span>))<span class="question-mark">?</span>;
 
                 <span class="kw">match </span>block_name {
                     $(
@@ -410,13 +411,13 @@
                         $(
                             <span class="attr">#[cfg(not(feature = <span class="macro-nonterminal">$feat</span>))]
                             </span><span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>) =&gt; <span class="prelude-val">Err</span>(D::Error::custom(<span class="macro">format!</span>(
-                                <span class="string">&quot;block {} is behind a feature gate &#39;{}&#39; which must be enabled at compile time&quot;</span>,
+                                <span class="string">"block {} is behind a feature gate '{}' which must be enabled at compile time"</span>,
                                 <span class="macro">stringify!</span>(<span class="macro-nonterminal">$block</span>),
                                 <span class="macro-nonterminal">$feat</span>,
                             ))),
                         )<span class="question-mark">?
                     </span>)*
-                    other =&gt; <span class="prelude-val">Err</span>(D::Error::custom(<span class="macro">format!</span>(<span class="string">&quot;unknown block &#39;{other}&#39;&quot;</span>)))
+                    other =&gt; <span class="prelude-val">Err</span>(D::Error::custom(<span class="macro">format!</span>(<span class="string">"unknown block '{other}'"</span>)))
                 }
             }
         }
@@ -426,8 +427,8 @@
 <span class="macro">define_blocks!</span>(
     amd_gpu,
     <span class="attr">#[deprecated(
-        since = <span class="string">&quot;0.33.0&quot;</span>,
-        note = <span class="string">&quot;The block has been deprecated in favor of the the packages block&quot;
+        since = <span class="string">"0.33.0"</span>,
+        note = <span class="string">"The block has been deprecated in favor of the the packages block"
     </span>)]
     </span>apt,
     backlight,
@@ -438,8 +439,8 @@
     custom_dbus,
     disk_space,
     <span class="attr">#[deprecated(
-        since = <span class="string">&quot;0.33.0&quot;</span>,
-        note = <span class="string">&quot;The block has been deprecated in favor of the the packages block&quot;
+        since = <span class="string">"0.33.0"</span>,
+        note = <span class="string">"The block has been deprecated in favor of the the packages block"
     </span>)]
     </span>dnf,
     docker,
@@ -449,20 +450,20 @@
     hueshift,
     kdeconnect,
     load,
-    <span class="attr">#[cfg(feature = <span class="string">&quot;maildir&quot;</span>)]
+    <span class="attr">#[cfg(feature = <span class="string">"maildir"</span>)]
     </span>maildir,
     menu,
     memory,
     music,
     net,
     notify,
-    <span class="attr">#[cfg(feature = <span class="string">&quot;notmuch&quot;</span>)]
+    <span class="attr">#[cfg(feature = <span class="string">"notmuch"</span>)]
     </span>notmuch,
     nvidia_gpu,
     packages,
     <span class="attr">#[deprecated(
-        since = <span class="string">&quot;0.33.0&quot;</span>,
-        note = <span class="string">&quot;The block has been deprecated in favor of the the packages block&quot;
+        since = <span class="string">"0.33.0"</span>,
+        note = <span class="string">"The block has been deprecated in favor of the the packages block"
     </span>)]
     </span>pacman,
     pomodoro,
@@ -485,14 +486,14 @@
 
 <span class="doccomment">/// An error which originates from a block
 </span><span class="attr">#[derive(Debug, thiserror::Error)]
-#[error(<span class="string">&quot;In block {}: {}&quot;</span>, .block_name, .error)]
+#[error(<span class="string">"In block {}: {}"</span>, .block_name, .error)]
 </span><span class="kw">pub struct </span>BlockError {
     <span class="kw">pub </span>block_id: usize,
-    <span class="kw">pub </span>block_name: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str,
+    <span class="kw">pub </span>block_name: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str,
     <span class="kw">pub </span>error: Error,
 }
 
-<span class="kw">pub type </span>BlockAction = Cow&lt;<span class="lifetime">&#39;static</span>, str&gt;;
+<span class="kw">pub type </span>BlockAction = Cow&lt;<span class="lifetime">'static</span>, str&gt;;
 
 <span class="attr">#[derive(Clone)]
 </span><span class="kw">pub struct </span>CommonApi {
@@ -510,7 +511,7 @@
                 block_id: <span class="self">self</span>.id,
                 cmd: RequestCmd::SetWidget(widget),
             })
-            .error(<span class="string">&quot;Failed to send Request&quot;</span>)
+            .error(<span class="string">"Failed to send Request"</span>)
     }
 
     <span class="doccomment">/// Hides the block. Send new widget to make it visible again.
@@ -520,7 +521,7 @@
                 block_id: <span class="self">self</span>.id,
                 cmd: RequestCmd::UnsetWidget,
             })
-            .error(<span class="string">&quot;Failed to send Request&quot;</span>)
+            .error(<span class="string">"Failed to send Request"</span>)
     }
 
     <span class="doccomment">/// Sends the error to be displayed.
@@ -530,19 +531,19 @@
                 block_id: <span class="self">self</span>.id,
                 cmd: RequestCmd::SetError(error),
             })
-            .error(<span class="string">&quot;Failed to send Request&quot;</span>)
+            .error(<span class="string">"Failed to send Request"</span>)
     }
 
     <span class="kw">pub fn </span>set_default_actions(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        actions: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>[(MouseButton, <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt;, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str)],
+        actions: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>[(MouseButton, <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'static </span>str&gt;, <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str)],
     ) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="self">self</span>.request_sender
             .send(Request {
                 block_id: <span class="self">self</span>.id,
                 cmd: RequestCmd::SetDefaultActions(actions),
             })
-            .error(<span class="string">&quot;Failed to send Request&quot;</span>)
+            .error(<span class="string">"Failed to send Request"</span>)
     }
 
     <span class="kw">pub fn </span>get_actions(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;mpsc::UnboundedReceiver&lt;BlockAction&gt;&gt; {
@@ -552,7 +553,7 @@
                 block_id: <span class="self">self</span>.id,
                 cmd: RequestCmd::SubscribeToActions(tx),
             })
-            .error(<span class="string">&quot;Failed to send Request&quot;</span>)<span class="question-mark">?</span>;
+            .error(<span class="string">"Failed to send Request"</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(rx)
     }
 

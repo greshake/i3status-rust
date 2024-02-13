@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/tea_timer.rs`."><title>tea_timer.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0 (82e1608df 2023-12-21)" data-channel="1.75.0" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/tea_timer.rs`."><title>tea_timer.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-ac92e1bbe349e143.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0 (07dca489a 2024-02-04)" data-channel="1.76.0" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -120,7 +121,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot; $icon {$minutes:$seconds &amp;vert;}&quot;&lt;/code&gt;
+//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;" $icon {$minutes:$seconds &amp;vert;}"&lt;/code&gt;
 //! `increment` | The numbers of seconds to add each time the block is clicked. | 30
 //! `done_cmd` | A command to run in `sh` when timer finishes. | None
 //!
@@ -143,9 +144,9 @@
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;tea_timer&quot;
-//! format = &quot; $icon {$minutes:$seconds |}&quot;
-//! done_cmd = &quot;notify-send &#39;Timer Finished&#39;&quot;
+//! block = "tea_timer"
+//! format = " $icon {$minutes:$seconds |}"
+//! done_cmd = "notify-send 'Timer Finished'"
 //! ```
 //!
 //! # Icons Used
@@ -166,16 +167,16 @@
 <span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions()<span class="question-mark">?</span>;
     api.set_default_actions(<span class="kw-2">&amp;</span>[
-        (MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;increment&quot;</span>),
-        (MouseButton::WheelUp, <span class="prelude-val">None</span>, <span class="string">&quot;increment&quot;</span>),
-        (MouseButton::WheelDown, <span class="prelude-val">None</span>, <span class="string">&quot;decrement&quot;</span>),
-        (MouseButton::Right, <span class="prelude-val">None</span>, <span class="string">&quot;reset&quot;</span>),
+        (MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">"increment"</span>),
+        (MouseButton::WheelUp, <span class="prelude-val">None</span>, <span class="string">"increment"</span>),
+        (MouseButton::WheelDown, <span class="prelude-val">None</span>, <span class="string">"decrement"</span>),
+        (MouseButton::Right, <span class="prelude-val">None</span>, <span class="string">"reset"</span>),
     ])<span class="question-mark">?</span>;
 
     <span class="kw">let </span>interval: Seconds = <span class="number">1</span>.into();
     <span class="kw">let </span><span class="kw-2">mut </span>timer = interval.timer();
 
-    <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon {$minutes:$seconds |}&quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>format = config.format.with_default(<span class="string">" $icon {$minutes:$seconds |}"</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span>increment = Duration::seconds(config.increment.unwrap_or(<span class="number">30</span>));
     <span class="kw">let </span><span class="kw-2">mut </span>timer_end = Utc::now();
@@ -188,7 +189,7 @@
 
         <span class="kw">if </span>!is_timer_active &amp;&amp; timer_was_active {
             <span class="kw">if let </span><span class="prelude-val">Some</span>(cmd) = <span class="kw-2">&amp;</span>config.done_cmd {
-                spawn_shell(cmd).error(<span class="string">&quot;done_cmd error&quot;</span>)<span class="question-mark">?</span>;
+                spawn_shell(cmd).error(<span class="string">"done_cmd error"</span>)<span class="question-mark">?</span>;
             }
         }
         timer_was_active = is_timer_active;
@@ -206,10 +207,10 @@
         <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
 
         widget.set_values(<span class="macro">map!</span>(
-            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(<span class="string">&quot;tea&quot;</span>),
-            [<span class="kw">if </span>is_timer_active] <span class="string">&quot;hours&quot; </span>=&gt; Value::text(<span class="macro">format!</span>(<span class="string">&quot;{hours:02}&quot;</span>)),
-            [<span class="kw">if </span>is_timer_active] <span class="string">&quot;minutes&quot; </span>=&gt; Value::text(<span class="macro">format!</span>(<span class="string">&quot;{minutes:02}&quot;</span>)),
-            [<span class="kw">if </span>is_timer_active] <span class="string">&quot;seconds&quot; </span>=&gt; Value::text(<span class="macro">format!</span>(<span class="string">&quot;{seconds:02}&quot;</span>)),
+            <span class="string">"icon" </span>=&gt; Value::icon(<span class="string">"tea"</span>),
+            [<span class="kw">if </span>is_timer_active] <span class="string">"hours" </span>=&gt; Value::text(<span class="macro">format!</span>(<span class="string">"{hours:02}"</span>)),
+            [<span class="kw">if </span>is_timer_active] <span class="string">"minutes" </span>=&gt; Value::text(<span class="macro">format!</span>(<span class="string">"{minutes:02}"</span>)),
+            [<span class="kw">if </span>is_timer_active] <span class="string">"seconds" </span>=&gt; Value::text(<span class="macro">format!</span>(<span class="string">"{seconds:02}"</span>)),
         ));
 
         api.set_widget(widget)<span class="question-mark">?</span>;
@@ -220,10 +221,10 @@
             <span class="prelude-val">Some</span>(action) = actions.recv() =&gt; {
                 <span class="kw">let </span>now = Utc::now();
                 <span class="kw">match </span>action.as_ref() {
-                    <span class="string">&quot;increment&quot; </span><span class="kw">if </span>is_timer_active =&gt; timer_end += increment,
-                    <span class="string">&quot;increment&quot; </span>=&gt; timer_end = now + increment,
-                    <span class="string">&quot;decrement&quot; </span><span class="kw">if </span>is_timer_active =&gt; timer_end -= increment,
-                    <span class="string">&quot;reset&quot; </span>=&gt; timer_end = now,
+                    <span class="string">"increment" </span><span class="kw">if </span>is_timer_active =&gt; timer_end += increment,
+                    <span class="string">"increment" </span>=&gt; timer_end = now + increment,
+                    <span class="string">"decrement" </span><span class="kw">if </span>is_timer_active =&gt; timer_end -= increment,
+                    <span class="string">"reset" </span>=&gt; timer_end = now,
                     <span class="kw">_ </span>=&gt; (),
                 }
             }

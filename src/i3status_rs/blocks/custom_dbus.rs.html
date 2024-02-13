@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/custom_dbus.rs`."><title>custom_dbus.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0 (82e1608df 2023-12-21)" data-channel="1.75.0" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/custom_dbus.rs`."><title>custom_dbus.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-ac92e1bbe349e143.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0 (07dca489a 2024-02-04)" data-channel="1.76.0" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -164,7 +165,7 @@
 </pre></div><pre class="rust"><code><span class="doccomment">//! A block controlled by the DBus
 //!
 //! This block creates a new DBus object in `rs.i3status` service. This object implements
-//! `rs.i3status.custom` interface which allows you to set block&#39;s icon, text and state.
+//! `rs.i3status.custom` interface which allows you to set block's icon, text and state.
 //!
 //! Output of `busctl --user introspect rs.i3status /&lt;path&gt; rs.i3status.custom`:
 //! ```text
@@ -179,7 +180,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. | &lt;code&gt;&quot;{ $icon&amp;vert;}{ $text.pango-str()&amp;vert;} &quot;&lt;/code&gt;
+//! `format` | A string to customise the output of this block. | &lt;code&gt;"{ $icon&amp;vert;}{ $text.pango-str()&amp;vert;} "&lt;/code&gt;
 //!
 //! Placeholder  | Value                                  | Type   | Unit
 //! -------------|-------------------------------------------------------------------|--------|---------------
@@ -192,24 +193,24 @@
 //! Config:
 //! ```toml
 //! [[block]]
-//! block = &quot;custom_dbus&quot;
-//! path = &quot;/my_path&quot;
+//! block = "custom_dbus"
+//! path = "/my_path"
 //! ```
 //!
 //! Usage:
 //! ```sh
-//! # set full text to &#39;hello&#39; and short text to &#39;hi&#39;
+//! # set full text to 'hello' and short text to 'hi'
 //! busctl --user call rs.i3status /my_path rs.i3status.custom SetText ss hello hi
-//! # set icon to &#39;music&#39;
+//! # set icon to 'music'
 //! busctl --user call rs.i3status /my_path rs.i3status.custom SetIcon s music
-//! # set state to &#39;good&#39;
+//! # set state to 'good'
 //! busctl --user call rs.i3status /my_path rs.i3status.custom SetState s good
 //! ```
 //!
-//! Because it&#39;s impossible to publish objects to the same name from different
-//! processes, having multiple dbus blocks in different bars won&#39;t work. As a workaround,
+//! Because it's impossible to publish objects to the same name from different
+//! processes, having multiple dbus blocks in different bars won't work. As a workaround,
 //! you can set the env var `I3RS_DBUS_NAME` to set the interface a bar works on to
-//! differentiate between different processes. For example, setting this to &#39;top&#39;, will allow you
+//! differentiate between different processes. For example, setting this to 'top', will allow you
 //! to use `rs.i3status.top`.
 //!
 //! # TODO
@@ -223,7 +224,7 @@
 </span><span class="kw">static </span>DBUS_CONNECTION: async_once_cell::OnceCell&lt;<span class="prelude-ty">Result</span>&lt;zbus::Connection&gt;&gt; =
     async_once_cell::OnceCell::new();
 
-<span class="kw">const </span>DBUS_NAME: <span class="kw-2">&amp;</span>str = <span class="string">&quot;rs.i3status&quot;</span>;
+<span class="kw">const </span>DBUS_NAME: <span class="kw-2">&amp;</span>str = <span class="string">"rs.i3status"</span>;
 
 <span class="attr">#[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
@@ -241,15 +242,15 @@
     short_text: <span class="prelude-ty">Option</span>&lt;String&gt;,
 }
 
-<span class="kw">fn </span>block_values(block: <span class="kw-2">&amp;</span>Block) -&gt; HashMap&lt;Cow&lt;<span class="lifetime">&#39;static</span>, str&gt;, Value&gt; {
+<span class="kw">fn </span>block_values(block: <span class="kw-2">&amp;</span>Block) -&gt; HashMap&lt;Cow&lt;<span class="lifetime">'static</span>, str&gt;, Value&gt; {
     <span class="macro">map! </span>{
-        [<span class="kw">if let </span><span class="prelude-val">Some</span>(icon) = <span class="kw-2">&amp;</span>block.icon] <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(icon.to_string()),
-        [<span class="kw">if let </span><span class="prelude-val">Some</span>(text) = <span class="kw-2">&amp;</span>block.text] <span class="string">&quot;text&quot; </span>=&gt; Value::text(text.to_string()),
-        [<span class="kw">if let </span><span class="prelude-val">Some</span>(short_text) = <span class="kw-2">&amp;</span>block.short_text] <span class="string">&quot;short_text&quot; </span>=&gt; Value::text(short_text.to_string()),
+        [<span class="kw">if let </span><span class="prelude-val">Some</span>(icon) = <span class="kw-2">&amp;</span>block.icon] <span class="string">"icon" </span>=&gt; Value::icon(icon.to_string()),
+        [<span class="kw">if let </span><span class="prelude-val">Some</span>(text) = <span class="kw-2">&amp;</span>block.text] <span class="string">"text" </span>=&gt; Value::text(text.to_string()),
+        [<span class="kw">if let </span><span class="prelude-val">Some</span>(short_text) = <span class="kw-2">&amp;</span>block.short_text] <span class="string">"short_text" </span>=&gt; Value::text(short_text.to_string()),
     }
 }
 
-<span class="attr">#[dbus_interface(name = <span class="string">&quot;rs.i3status.custom&quot;</span>)]
+<span class="attr">#[dbus_interface(name = <span class="string">"rs.i3status.custom"</span>)]
 </span><span class="kw">impl </span>Block {
     <span class="kw">async fn </span>set_icon(<span class="kw-2">&amp;mut </span><span class="self">self</span>, icon: <span class="kw-2">&amp;</span>str) -&gt; fdo::Result&lt;()&gt; {
         <span class="self">self</span>.icon = <span class="kw">if </span>icon.is_empty() {
@@ -272,12 +273,12 @@
 
     <span class="kw">async fn </span>set_state(<span class="kw-2">&amp;mut </span><span class="self">self</span>, state: <span class="kw-2">&amp;</span>str) -&gt; fdo::Result&lt;()&gt; {
         <span class="self">self</span>.widget.state = <span class="kw">match </span>state {
-            <span class="string">&quot;idle&quot; </span>=&gt; State::Idle,
-            <span class="string">&quot;info&quot; </span>=&gt; State::Info,
-            <span class="string">&quot;good&quot; </span>=&gt; State::Good,
-            <span class="string">&quot;warning&quot; </span>=&gt; State::Warning,
-            <span class="string">&quot;critical&quot; </span>=&gt; State::Critical,
-            <span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">&quot;&#39;{state}&#39; is not a valid state&quot;</span>)).into()),
+            <span class="string">"idle" </span>=&gt; State::Idle,
+            <span class="string">"info" </span>=&gt; State::Info,
+            <span class="string">"good" </span>=&gt; State::Good,
+            <span class="string">"warning" </span>=&gt; State::Warning,
+            <span class="string">"critical" </span>=&gt; State::Critical,
+            <span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">"'{state}' is not a valid state"</span>)).into()),
         };
         <span class="self">self</span>.api.set_widget(<span class="self">self</span>.widget.clone())<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
@@ -286,8 +287,8 @@
 
 <span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span>widget = Widget::new().with_format(config.format.with_defaults(
-        <span class="string">&quot;{ $icon|}{ $text.pango-str()|} &quot;</span>,
-        <span class="string">&quot;{ $icon|} $short_text.pango-str() | &quot;</span>,
+        <span class="string">"{ $icon|}{ $text.pango-str()|} "</span>,
+        <span class="string">"{ $icon|} $short_text.pango-str() | "</span>,
     )<span class="question-mark">?</span>);
 
     <span class="kw">let </span>dbus_conn = DBUS_CONNECTION
@@ -308,20 +309,20 @@
             },
         )
         .<span class="kw">await
-        </span>.error(<span class="string">&quot;Failed to setup DBus server&quot;</span>)<span class="question-mark">?</span>;
+        </span>.error(<span class="string">"Failed to setup DBus server"</span>)<span class="question-mark">?</span>;
     <span class="prelude-val">Ok</span>(())
 }
 
 <span class="kw">async fn </span>dbus_conn() -&gt; <span class="prelude-ty">Result</span>&lt;zbus::Connection&gt; {
-    <span class="kw">let </span>dbus_interface_name = <span class="kw">match </span>env::var(<span class="string">&quot;I3RS_DBUS_NAME&quot;</span>) {
-        <span class="prelude-val">Ok</span>(v) =&gt; <span class="macro">format!</span>(<span class="string">&quot;{DBUS_NAME}.{v}&quot;</span>),
+    <span class="kw">let </span>dbus_interface_name = <span class="kw">match </span>env::var(<span class="string">"I3RS_DBUS_NAME"</span>) {
+        <span class="prelude-val">Ok</span>(v) =&gt; <span class="macro">format!</span>(<span class="string">"{DBUS_NAME}.{v}"</span>),
         <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; DBUS_NAME.to_string(),
     };
 
     <span class="kw">let </span>conn = new_dbus_connection().<span class="kw">await</span><span class="question-mark">?</span>;
     conn.request_name(dbus_interface_name)
         .<span class="kw">await
-        </span>.error(<span class="string">&quot;Failed to request DBus name&quot;</span>)<span class="question-mark">?</span>;
+        </span>.error(<span class="string">"Failed to request DBus name"</span>)<span class="question-mark">?</span>;
     <span class="prelude-val">Ok</span>(conn)
 }
 </code></pre></div></section></main></body></html>

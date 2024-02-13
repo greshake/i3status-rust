@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/battery/sysfs.rs`."><title>sysfs.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0 (82e1608df 2023-12-21)" data-channel="1.75.0" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/battery/sysfs.rs`."><title>sysfs.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-ac92e1bbe349e143.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0 (07dca489a 2024-02-04)" data-channel="1.76.0" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -295,10 +296,10 @@
 <span class="kw">use </span><span class="kw">crate</span>::blocks::prelude::<span class="kw-2">*</span>;
 <span class="kw">use </span><span class="kw">crate</span>::util::read_file;
 
-<span class="macro">make_log_macro!</span>(debug, <span class="string">&quot;battery&quot;</span>);
+<span class="macro">make_log_macro!</span>(debug, <span class="string">"battery"</span>);
 
 <span class="doccomment">/// Path for the power supply devices
-</span><span class="kw">const </span>POWER_SUPPLY_DEVICES_PATH: <span class="kw-2">&amp;</span>str = <span class="string">&quot;/sys/class/power_supply&quot;</span>;
+</span><span class="kw">const </span>POWER_SUPPLY_DEVICES_PATH: <span class="kw-2">&amp;</span>str = <span class="string">"/sys/class/power_supply"</span>;
 
 <span class="attr">#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 </span><span class="kw">enum </span>CapacityLevel {
@@ -315,11 +316,11 @@
 
     <span class="kw">fn </span>from_str(s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Err&gt; {
         <span class="prelude-val">Ok</span>(<span class="kw">match </span>s {
-            <span class="string">&quot;Full&quot; </span>=&gt; <span class="self">Self</span>::Full,
-            <span class="string">&quot;High&quot; </span>=&gt; <span class="self">Self</span>::High,
-            <span class="string">&quot;Normal&quot; </span>=&gt; <span class="self">Self</span>::Normal,
-            <span class="string">&quot;Low&quot; </span>=&gt; <span class="self">Self</span>::Low,
-            <span class="string">&quot;Critical&quot; </span>=&gt; <span class="self">Self</span>::Critical,
+            <span class="string">"Full" </span>=&gt; <span class="self">Self</span>::Full,
+            <span class="string">"High" </span>=&gt; <span class="self">Self</span>::High,
+            <span class="string">"Normal" </span>=&gt; <span class="self">Self</span>::Normal,
+            <span class="string">"Low" </span>=&gt; <span class="self">Self</span>::Low,
+            <span class="string">"Critical" </span>=&gt; <span class="self">Self</span>::Critical,
             <span class="kw">_ </span>=&gt; <span class="self">Self</span>::Unknown,
         })
     }
@@ -362,7 +363,7 @@
     </span><span class="kw">async fn </span>get_device_path(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Path&gt;&gt; {
         <span class="kw">if let </span><span class="prelude-val">Some</span>(path) = <span class="kw-2">&amp;</span><span class="self">self</span>.dev_path {
             <span class="kw">if </span><span class="self">Self</span>::device_available(path).<span class="kw">await </span>{
-                <span class="macro">debug!</span>(<span class="string">&quot;battery &#39;{}&#39; is still available&quot;</span>, path.display());
+                <span class="macro">debug!</span>(<span class="string">"battery '{}' is still available"</span>, path.display());
                 <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="self">self</span>.dev_path.as_deref());
             }
         }
@@ -371,51 +372,51 @@
 
         <span class="kw">let </span><span class="kw-2">mut </span>sysfs_dir = read_dir(POWER_SUPPLY_DEVICES_PATH)
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;failed to read /sys/class/power_supply directory&quot;</span>)<span class="question-mark">?</span>;
+            </span>.error(<span class="string">"failed to read /sys/class/power_supply directory"</span>)<span class="question-mark">?</span>;
         <span class="kw">while let </span><span class="prelude-val">Some</span>(dir) = sysfs_dir
             .next_entry()
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;failed to read /sys/class/power_supply directory&quot;</span>)<span class="question-mark">?
+            </span>.error(<span class="string">"failed to read /sys/class/power_supply directory"</span>)<span class="question-mark">?
         </span>{
             <span class="kw">let </span>name = dir.file_name();
-            <span class="kw">let </span>name = name.to_str().error(<span class="string">&quot;non UTF-8 battery path&quot;</span>)<span class="question-mark">?</span>;
+            <span class="kw">let </span>name = name.to_str().error(<span class="string">"non UTF-8 battery path"</span>)<span class="question-mark">?</span>;
 
             <span class="kw">let </span>path = dir.path();
 
             <span class="kw">if </span>!<span class="self">self</span>.dev_name.matches(name)
-                || <span class="self">Self</span>::read_prop::&lt;String&gt;(<span class="kw-2">&amp;</span>path, <span class="string">&quot;type&quot;</span>).<span class="kw">await</span>.as_deref() != <span class="prelude-val">Some</span>(<span class="string">&quot;Battery&quot;</span>)
+                || <span class="self">Self</span>::read_prop::&lt;String&gt;(<span class="kw-2">&amp;</span>path, <span class="string">"type"</span>).<span class="kw">await</span>.as_deref() != <span class="prelude-val">Some</span>(<span class="string">"Battery"</span>)
                 || !<span class="self">Self</span>::device_available(<span class="kw-2">&amp;</span>path).<span class="kw">await
             </span>{
                 <span class="kw">continue</span>;
             }
 
             <span class="macro">debug!</span>(
-                <span class="string">&quot;battery &#39;{}&#39;, model={:?}&quot;</span>,
+                <span class="string">"battery '{}', model={:?}"</span>,
                 path.display(),
-                <span class="self">Self</span>::read_prop::&lt;String&gt;(<span class="kw-2">&amp;</span>path, <span class="string">&quot;model_name&quot;</span>)
+                <span class="self">Self</span>::read_prop::&lt;String&gt;(<span class="kw-2">&amp;</span>path, <span class="string">"model_name"</span>)
                     .<span class="kw">await
                     </span>.as_deref()
             );
             <span class="kw">if let </span><span class="prelude-val">Some</span>(dev_model) = <span class="kw-2">&amp;</span><span class="self">self</span>.dev_model {
-                <span class="kw">if </span><span class="self">Self</span>::read_prop::&lt;String&gt;(<span class="kw-2">&amp;</span>path, <span class="string">&quot;model_name&quot;</span>)
+                <span class="kw">if </span><span class="self">Self</span>::read_prop::&lt;String&gt;(<span class="kw-2">&amp;</span>path, <span class="string">"model_name"</span>)
                     .<span class="kw">await
                     </span>.as_deref()
                     != <span class="prelude-val">Some</span>(dev_model.as_str())
                 {
-                    <span class="macro">debug!</span>(<span class="string">&quot;Skipping based on model.&quot;</span>);
+                    <span class="macro">debug!</span>(<span class="string">"Skipping based on model."</span>);
                     <span class="kw">continue</span>;
                 }
             }
 
             <span class="macro">debug!</span>(
-                <span class="string">&quot;Found matching battery: &#39;{}&#39; matches {:?}&quot;</span>,
+                <span class="string">"Found matching battery: '{}' matches {:?}"</span>,
                 path.display(),
                 <span class="self">self</span>.dev_name
             );
 
             <span class="comment">// Better to default to the system battery, rather than possibly a keyboard or mouse battery.
             // System batteries usually start with BAT or CMB.
-            </span><span class="kw">if </span>name.starts_with(<span class="string">&quot;BAT&quot;</span>) || name.starts_with(<span class="string">&quot;CMB&quot;</span>) {
+            </span><span class="kw">if </span>name.starts_with(<span class="string">"BAT"</span>) || name.starts_with(<span class="string">"CMB"</span>) {
                 <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="self">self</span>.dev_path.insert(path)));
             } <span class="kw">else </span>{
                 matching_battery = <span class="prelude-val">Some</span>(path);
@@ -425,7 +426,7 @@
         <span class="prelude-val">Ok</span>(<span class="kw">match </span>matching_battery {
             <span class="prelude-val">Some</span>(path) =&gt; <span class="prelude-val">Some</span>(<span class="self">self</span>.dev_path.insert(path)),
             <span class="prelude-val">None </span>=&gt; {
-                <span class="macro">debug!</span>(<span class="string">&quot;No batteries found&quot;</span>);
+                <span class="macro">debug!</span>(<span class="string">"No batteries found"</span>);
                 <span class="prelude-val">None
             </span>}
         })
@@ -439,11 +440,11 @@
     }
 
     <span class="kw">async fn </span>device_available(path: <span class="kw-2">&amp;</span>Path) -&gt; bool {
-        <span class="comment">// If `scope` is `Device`, then this is HID, in which case we don&#39;t have to check the
+        <span class="comment">// If `scope` is `Device`, then this is HID, in which case we don't have to check the
         // `present` property, because the existence of the device directory implies that the device
         // is available
-        </span><span class="self">Self</span>::read_prop::&lt;String&gt;(path, <span class="string">&quot;scope&quot;</span>).<span class="kw">await</span>.as_deref() == <span class="prelude-val">Some</span>(<span class="string">&quot;Device&quot;</span>)
-            || <span class="self">Self</span>::read_prop::&lt;u8&gt;(path, <span class="string">&quot;present&quot;</span>).<span class="kw">await </span>== <span class="prelude-val">Some</span>(<span class="number">1</span>)
+        </span><span class="self">Self</span>::read_prop::&lt;String&gt;(path, <span class="string">"scope"</span>).<span class="kw">await</span>.as_deref() == <span class="prelude-val">Some</span>(<span class="string">"Device"</span>)
+            || <span class="self">Self</span>::read_prop::&lt;u8&gt;(path, <span class="string">"present"</span>).<span class="kw">await </span>== <span class="prelude-val">Some</span>(<span class="number">1</span>)
     }
 }
 
@@ -471,39 +472,39 @@
             time_to_empty,
             time_to_full,
         ) = <span class="macro">tokio::join!</span>(
-            <span class="self">Self</span>::read_prop::&lt;BatteryStatus&gt;(path, <span class="string">&quot;status&quot;</span>),
-            <span class="self">Self</span>::read_prop::&lt;CapacityLevel&gt;(path, <span class="string">&quot;capacity_level&quot;</span>),
-            <span class="self">Self</span>::read_prop::&lt;f64&gt;(path, <span class="string">&quot;capacity&quot;</span>),
-            <span class="self">Self</span>::read_prop::&lt;f64&gt;(path, <span class="string">&quot;charge_now&quot;</span>), <span class="comment">// uAh
-            </span><span class="self">Self</span>::read_prop::&lt;f64&gt;(path, <span class="string">&quot;charge_full&quot;</span>), <span class="comment">// uAh
-            </span><span class="self">Self</span>::read_prop::&lt;f64&gt;(path, <span class="string">&quot;energy_now&quot;</span>), <span class="comment">// uWh
-            </span><span class="self">Self</span>::read_prop::&lt;f64&gt;(path, <span class="string">&quot;energy_full&quot;</span>), <span class="comment">// uWh
-            </span><span class="self">Self</span>::read_prop::&lt;f64&gt;(path, <span class="string">&quot;power_now&quot;</span>),  <span class="comment">// uW
-            </span><span class="self">Self</span>::read_prop::&lt;f64&gt;(path, <span class="string">&quot;current_now&quot;</span>), <span class="comment">// uA
-            </span><span class="self">Self</span>::read_prop::&lt;f64&gt;(path, <span class="string">&quot;voltage_now&quot;</span>), <span class="comment">// uV
-            </span><span class="self">Self</span>::read_prop::&lt;f64&gt;(path, <span class="string">&quot;time_to_empty&quot;</span>), <span class="comment">// seconds
-            </span><span class="self">Self</span>::read_prop::&lt;f64&gt;(path, <span class="string">&quot;time_to_full&quot;</span>), <span class="comment">// seconds
+            <span class="self">Self</span>::read_prop::&lt;BatteryStatus&gt;(path, <span class="string">"status"</span>),
+            <span class="self">Self</span>::read_prop::&lt;CapacityLevel&gt;(path, <span class="string">"capacity_level"</span>),
+            <span class="self">Self</span>::read_prop::&lt;f64&gt;(path, <span class="string">"capacity"</span>),
+            <span class="self">Self</span>::read_prop::&lt;f64&gt;(path, <span class="string">"charge_now"</span>), <span class="comment">// uAh
+            </span><span class="self">Self</span>::read_prop::&lt;f64&gt;(path, <span class="string">"charge_full"</span>), <span class="comment">// uAh
+            </span><span class="self">Self</span>::read_prop::&lt;f64&gt;(path, <span class="string">"energy_now"</span>), <span class="comment">// uWh
+            </span><span class="self">Self</span>::read_prop::&lt;f64&gt;(path, <span class="string">"energy_full"</span>), <span class="comment">// uWh
+            </span><span class="self">Self</span>::read_prop::&lt;f64&gt;(path, <span class="string">"power_now"</span>),  <span class="comment">// uW
+            </span><span class="self">Self</span>::read_prop::&lt;f64&gt;(path, <span class="string">"current_now"</span>), <span class="comment">// uA
+            </span><span class="self">Self</span>::read_prop::&lt;f64&gt;(path, <span class="string">"voltage_now"</span>), <span class="comment">// uV
+            </span><span class="self">Self</span>::read_prop::&lt;f64&gt;(path, <span class="string">"time_to_empty"</span>), <span class="comment">// seconds
+            </span><span class="self">Self</span>::read_prop::&lt;f64&gt;(path, <span class="string">"time_to_full"</span>), <span class="comment">// seconds
         </span>);
 
         <span class="kw">if </span>!<span class="self">Self</span>::device_available(path).<span class="kw">await </span>{
             <span class="comment">// Device became unavailable while we were reading data from it. The simplest thing we
-            // can do now is to pretend it wasn&#39;t available to begin with.
-            </span><span class="macro">debug!</span>(<span class="string">&quot;battery suddenly unavailable&quot;</span>);
+            // can do now is to pretend it wasn't available to begin with.
+            </span><span class="macro">debug!</span>(<span class="string">"battery suddenly unavailable"</span>);
             <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
         }
 
-        <span class="macro">debug!</span>(<span class="string">&quot;status = {:?}&quot;</span>, status);
-        <span class="macro">debug!</span>(<span class="string">&quot;capacity_level = {:?}&quot;</span>, capacity_level);
-        <span class="macro">debug!</span>(<span class="string">&quot;capacity = {:?}&quot;</span>, capacity);
-        <span class="macro">debug!</span>(<span class="string">&quot;charge_now = {:?}&quot;</span>, charge_now);
-        <span class="macro">debug!</span>(<span class="string">&quot;charge_full = {:?}&quot;</span>, charge_full);
-        <span class="macro">debug!</span>(<span class="string">&quot;energy_now = {:?}&quot;</span>, energy_now);
-        <span class="macro">debug!</span>(<span class="string">&quot;energy_full = {:?}&quot;</span>, energy_full);
-        <span class="macro">debug!</span>(<span class="string">&quot;power_now = {:?}&quot;</span>, power_now);
-        <span class="macro">debug!</span>(<span class="string">&quot;current_now = {:?}&quot;</span>, current_now);
-        <span class="macro">debug!</span>(<span class="string">&quot;voltage_now = {:?}&quot;</span>, voltage_now);
-        <span class="macro">debug!</span>(<span class="string">&quot;time_to_empty = {:?}&quot;</span>, time_to_empty);
-        <span class="macro">debug!</span>(<span class="string">&quot;time_to_full = {:?}&quot;</span>, time_to_full);
+        <span class="macro">debug!</span>(<span class="string">"status = {:?}"</span>, status);
+        <span class="macro">debug!</span>(<span class="string">"capacity_level = {:?}"</span>, capacity_level);
+        <span class="macro">debug!</span>(<span class="string">"capacity = {:?}"</span>, capacity);
+        <span class="macro">debug!</span>(<span class="string">"charge_now = {:?}"</span>, charge_now);
+        <span class="macro">debug!</span>(<span class="string">"charge_full = {:?}"</span>, charge_full);
+        <span class="macro">debug!</span>(<span class="string">"energy_now = {:?}"</span>, energy_now);
+        <span class="macro">debug!</span>(<span class="string">"energy_full = {:?}"</span>, energy_full);
+        <span class="macro">debug!</span>(<span class="string">"power_now = {:?}"</span>, power_now);
+        <span class="macro">debug!</span>(<span class="string">"current_now = {:?}"</span>, current_now);
+        <span class="macro">debug!</span>(<span class="string">"voltage_now = {:?}"</span>, voltage_now);
+        <span class="macro">debug!</span>(<span class="string">"time_to_empty = {:?}"</span>, time_to_empty);
+        <span class="macro">debug!</span>(<span class="string">"time_to_full = {:?}"</span>, time_to_full);
 
         <span class="kw">let </span>charge_now = charge_now.map(|c| c * <span class="number">1e-6</span>); <span class="comment">// uAh -&gt; Ah
         </span><span class="kw">let </span>charge_full = charge_full.map(|c| c * <span class="number">1e-6</span>); <span class="comment">// uAh -&gt; Ah
@@ -522,7 +523,7 @@
             .or_else(|| calc_capacity(energy_now, energy_full))
             .or(capacity)
             .or_else(|| capacity_level.and_then(CapacityLevel::percentage))
-            .error(<span class="string">&quot;Failed to get capacity&quot;</span>)<span class="question-mark">?</span>;
+            .error(<span class="string">"Failed to get capacity"</span>)<span class="question-mark">?</span>;
 
         <span class="comment">// A * V = W
         </span><span class="kw">let </span>power = power_now

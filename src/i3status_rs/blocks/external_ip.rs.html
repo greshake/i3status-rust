@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/external_ip.rs`."><title>external_ip.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0 (82e1608df 2023-12-21)" data-channel="1.75.0" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/external_ip.rs`."><title>external_ip.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-ac92e1bbe349e143.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0 (07dca489a 2024-02-04)" data-channel="1.76.0" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -246,18 +247,18 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $ip $country_flag &quot;`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $ip $country_flag "`
 //! `interval` | Interval in seconds for automatic updates | `300`
-//! `with_network_manager` | If &#39;true&#39;, listen for NetworkManager events and update the IP immediately if there was a change | `true`
-//! `use_ipv4` | If &#39;true&#39;, use IPv4 for obtaining all info | `false`
+//! `with_network_manager` | If 'true', listen for NetworkManager events and update the IP immediately if there was a change | `true`
+//! `use_ipv4` | If 'true', use IPv4 for obtaining all info | `false`
 //!
 //!  Key | Value | Type | Unit
 //! -----|-------|------|------
 //! `ip` | The external IP address, as seen from a remote server | Text | -
 //! `version` | IPv4 or IPv6 | Text | -
-//! `city` | City name, such as &quot;San Francisco&quot; | Text | -
-//! `region` | Region name, such as &quot;California&quot; | Text | -
-//! `region_code` | Region code, such as &quot;CA&quot; for California | Text | -
+//! `city` | City name, such as "San Francisco" | Text | -
+//! `region` | Region name, such as "California" | Text | -
+//! `region_code` | Region code, such as "CA" for California | Text | -
 //! `country` | Country code (2 letter, ISO 3166-1 alpha-2) | Text | -
 //! `country_name` | Short country name | Text | -
 //! `country_code` | Country code (2 letter, ISO 3166-1 alpha-2) | Text | -
@@ -265,7 +266,7 @@
 //! `country_capital` | Capital of the country | Text | -
 //! `country_tld` | Country specific TLD (top-level domain) | Text | -
 //! `continent_code` | Continent code | Text | -
-//! `in_eu` | Region code, such as &quot;CA&quot; | Flag | -
+//! `in_eu` | Region code, such as "CA" | Flag | -
 //! `postal` | ZIP / Postal code | Text | -
 //! `latitude` | Latitude | Number | - (TODO: make degrees?)
 //! `longitude` | Longitude | Number | - (TODO: make degrees?)
@@ -286,8 +287,8 @@
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;external_ip&quot;
-//! format = &quot; $ip $country_code &quot;
+//! block = "external_ip"
+//! format = " $ip $country_code "
 //! ```
 //!
 //! # Notes
@@ -296,7 +297,7 @@
 //!
 //! The IP is queried, 1) When i3status-rs starts, 2) When a signal is received
 //! on D-Bus about a network configuration change, 3) Every 5 minutes. This
-//! periodic refresh exists to catch IP updates that don&#39;t trigger a notification,
+//! periodic refresh exists to catch IP updates that don't trigger a notification,
 //! for example due to a IP refresh at the router.
 //!
 //! Flags: They are not icons but unicode glyphs. You will need a font that
@@ -307,7 +308,7 @@
 <span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
 <span class="kw">use </span><span class="kw">crate</span>::util::{country_flag_from_iso_code, new_system_dbus_connection};
 
-<span class="kw">const </span>API_ENDPOINT: <span class="kw-2">&amp;</span>str = <span class="string">&quot;https://ipapi.co/json/&quot;</span>;
+<span class="kw">const </span>API_ENDPOINT: <span class="kw-2">&amp;</span>str = <span class="string">"https://ipapi.co/json/"</span>;
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
@@ -322,50 +323,50 @@
 }
 
 <span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $ip $country_flag &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>format = config.format.with_default(<span class="string">" $ip $country_flag "</span>)<span class="question-mark">?</span>;
 
     <span class="kw">type </span>UpdatesStream = Pin&lt;Box&lt;<span class="kw">dyn </span>Stream&lt;Item = ()&gt;&gt;&gt;;
     <span class="kw">let </span><span class="kw-2">mut </span>stream: UpdatesStream = <span class="kw">if </span>config.with_network_manager {
         <span class="kw">let </span>dbus = new_system_dbus_connection().<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">let </span>proxy = zbus::fdo::DBusProxy::new(<span class="kw-2">&amp;</span>dbus)
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to create DBusProxy&quot;</span>)<span class="question-mark">?</span>;
+            </span>.error(<span class="string">"Failed to create DBusProxy"</span>)<span class="question-mark">?</span>;
         proxy
             .add_match_rule(
                 MatchRule::builder()
                     .msg_type(zbus::MessageType::Signal)
-                    .path(<span class="string">&quot;/org/freedesktop/NetworkManager&quot;</span>)
-                    .and_then(|x| x.interface(<span class="string">&quot;org.freedesktop.DBus.Properties&quot;</span>))
-                    .and_then(|x| x.member(<span class="string">&quot;PropertiesChanged&quot;</span>))
+                    .path(<span class="string">"/org/freedesktop/NetworkManager"</span>)
+                    .and_then(|x| x.interface(<span class="string">"org.freedesktop.DBus.Properties"</span>))
+                    .and_then(|x| x.member(<span class="string">"PropertiesChanged"</span>))
                     .unwrap()
                     .build(),
             )
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to add match&quot;</span>)<span class="question-mark">?</span>;
+            </span>.error(<span class="string">"Failed to add match"</span>)<span class="question-mark">?</span>;
         proxy
             .add_match_rule(
                 MatchRule::builder()
                     .msg_type(zbus::MessageType::Signal)
-                    .path_namespace(<span class="string">&quot;/org/freedesktop/NetworkManager/ActiveConnection&quot;</span>)
-                    .and_then(|x| x.interface(<span class="string">&quot;org.freedesktop.DBus.Properties&quot;</span>))
-                    .and_then(|x| x.member(<span class="string">&quot;PropertiesChanged&quot;</span>))
+                    .path_namespace(<span class="string">"/org/freedesktop/NetworkManager/ActiveConnection"</span>)
+                    .and_then(|x| x.interface(<span class="string">"org.freedesktop.DBus.Properties"</span>))
+                    .and_then(|x| x.member(<span class="string">"PropertiesChanged"</span>))
                     .unwrap()
                     .build(),
             )
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to add match&quot;</span>)<span class="question-mark">?</span>;
+            </span>.error(<span class="string">"Failed to add match"</span>)<span class="question-mark">?</span>;
         proxy
             .add_match_rule(
                 MatchRule::builder()
                     .msg_type(zbus::MessageType::Signal)
-                    .path_namespace(<span class="string">&quot;/org/freedesktop/NetworkManager/IP4Config&quot;</span>)
-                    .and_then(|x| x.interface(<span class="string">&quot;org.freedesktop.DBus.Properties&quot;</span>))
-                    .and_then(|x| x.member(<span class="string">&quot;PropertiesChanged&quot;</span>))
+                    .path_namespace(<span class="string">"/org/freedesktop/NetworkManager/IP4Config"</span>)
+                    .and_then(|x| x.interface(<span class="string">"org.freedesktop.DBus.Properties"</span>))
+                    .and_then(|x| x.member(<span class="string">"PropertiesChanged"</span>))
                     .unwrap()
                     .build(),
             )
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to add match&quot;</span>)<span class="question-mark">?</span>;
+            </span>.error(<span class="string">"Failed to add match"</span>)<span class="question-mark">?</span>;
         <span class="kw">let </span>stream: zbus::MessageStream = dbus.into();
         Box::pin(stream.map(|<span class="kw">_</span>| ()))
     } <span class="kw">else </span>{
@@ -383,36 +384,36 @@
         <span class="kw">let </span>info = fetch_info.retry(<span class="kw-2">&amp;</span>ExponentialBuilder::default()).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="kw">let </span><span class="kw-2">mut </span>values = <span class="macro">map! </span>{
-            <span class="string">&quot;ip&quot; </span>=&gt; Value::text(info.ip),
-            <span class="string">&quot;version&quot; </span>=&gt; Value::text(info.version),
-            <span class="string">&quot;city&quot; </span>=&gt; Value::text(info.city),
-            <span class="string">&quot;region&quot; </span>=&gt; Value::text(info.region),
-            <span class="string">&quot;region_code&quot; </span>=&gt; Value::text(info.region_code),
-            <span class="string">&quot;country&quot; </span>=&gt; Value::text(info.country),
-            <span class="string">&quot;country_name&quot; </span>=&gt; Value::text(info.country_name),
-            <span class="string">&quot;country_flag&quot; </span>=&gt; Value::text(country_flag_from_iso_code(<span class="kw-2">&amp;</span>info.country_code)),
-            <span class="string">&quot;country_code&quot; </span>=&gt; Value::text(info.country_code),
-            <span class="string">&quot;country_code_iso3&quot; </span>=&gt; Value::text(info.country_code_iso3),
-            <span class="string">&quot;country_capital&quot; </span>=&gt; Value::text(info.country_capital),
-            <span class="string">&quot;country_tld&quot; </span>=&gt; Value::text(info.country_tld),
-            <span class="string">&quot;continent_code&quot; </span>=&gt; Value::text(info.continent_code),
-            <span class="string">&quot;latitude&quot; </span>=&gt; Value::number(info.latitude),
-            <span class="string">&quot;longitude&quot; </span>=&gt; Value::number(info.longitude),
-            <span class="string">&quot;timezone&quot; </span>=&gt; Value::text(info.timezone),
-            <span class="string">&quot;utc_offset&quot; </span>=&gt; Value::text(info.utc_offset),
-            <span class="string">&quot;country_calling_code&quot; </span>=&gt; Value::text(info.country_calling_code),
-            <span class="string">&quot;currency&quot; </span>=&gt; Value::text(info.currency),
-            <span class="string">&quot;currency_name&quot; </span>=&gt; Value::text(info.currency_name),
-            <span class="string">&quot;languages&quot; </span>=&gt; Value::text(info.languages),
-            <span class="string">&quot;country_area&quot; </span>=&gt; Value::number(info.country_area),
-            <span class="string">&quot;country_population&quot; </span>=&gt; Value::number(info.country_population),
-            <span class="string">&quot;asn&quot; </span>=&gt; Value::text(info.asn),
-            <span class="string">&quot;org&quot; </span>=&gt; Value::text(info.org),
+            <span class="string">"ip" </span>=&gt; Value::text(info.ip),
+            <span class="string">"version" </span>=&gt; Value::text(info.version),
+            <span class="string">"city" </span>=&gt; Value::text(info.city),
+            <span class="string">"region" </span>=&gt; Value::text(info.region),
+            <span class="string">"region_code" </span>=&gt; Value::text(info.region_code),
+            <span class="string">"country" </span>=&gt; Value::text(info.country),
+            <span class="string">"country_name" </span>=&gt; Value::text(info.country_name),
+            <span class="string">"country_flag" </span>=&gt; Value::text(country_flag_from_iso_code(<span class="kw-2">&amp;</span>info.country_code)),
+            <span class="string">"country_code" </span>=&gt; Value::text(info.country_code),
+            <span class="string">"country_code_iso3" </span>=&gt; Value::text(info.country_code_iso3),
+            <span class="string">"country_capital" </span>=&gt; Value::text(info.country_capital),
+            <span class="string">"country_tld" </span>=&gt; Value::text(info.country_tld),
+            <span class="string">"continent_code" </span>=&gt; Value::text(info.continent_code),
+            <span class="string">"latitude" </span>=&gt; Value::number(info.latitude),
+            <span class="string">"longitude" </span>=&gt; Value::number(info.longitude),
+            <span class="string">"timezone" </span>=&gt; Value::text(info.timezone),
+            <span class="string">"utc_offset" </span>=&gt; Value::text(info.utc_offset),
+            <span class="string">"country_calling_code" </span>=&gt; Value::text(info.country_calling_code),
+            <span class="string">"currency" </span>=&gt; Value::text(info.currency),
+            <span class="string">"currency_name" </span>=&gt; Value::text(info.currency_name),
+            <span class="string">"languages" </span>=&gt; Value::text(info.languages),
+            <span class="string">"country_area" </span>=&gt; Value::number(info.country_area),
+            <span class="string">"country_population" </span>=&gt; Value::number(info.country_population),
+            <span class="string">"asn" </span>=&gt; Value::text(info.asn),
+            <span class="string">"org" </span>=&gt; Value::text(info.org),
         };
         info.postal
-            .map(|x| values.insert(<span class="string">&quot;postal&quot;</span>.into(), Value::text(x)));
+            .map(|x| values.insert(<span class="string">"postal"</span>.into(), Value::text(x)));
         <span class="kw">if </span>info.in_eu {
-            values.insert(<span class="string">&quot;in_eu&quot;</span>.into(), Value::flag());
+            values.insert(<span class="string">"in_eu"</span>.into(), Value::flag());
         }
 
         <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
@@ -471,10 +472,10 @@
             .get(API_ENDPOINT)
             .send()
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to request current location&quot;</span>)<span class="question-mark">?
+            </span>.error(<span class="string">"Failed to request current location"</span>)<span class="question-mark">?
             </span>.json::&lt;<span class="self">Self</span>&gt;()
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to parse JSON&quot;</span>)<span class="question-mark">?</span>;
+            </span>.error(<span class="string">"Failed to parse JSON"</span>)<span class="question-mark">?</span>;
         <span class="kw">if </span>info.error {
             <span class="prelude-val">Err</span>(Error::new(info.reason))
         } <span class="kw">else </span>{

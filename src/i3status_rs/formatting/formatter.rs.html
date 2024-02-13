@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/formatting/formatter.rs`."><title>formatter.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0 (82e1608df 2023-12-21)" data-channel="1.75.0" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/formatting/formatter.rs`."><title>formatter.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-ac92e1bbe349e143.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0 (07dca489a 2024-02-04)" data-channel="1.76.0" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -778,9 +779,9 @@
 <span class="kw">const </span>DEFAULT_BAR_MAX_VAL: f64 = <span class="number">100.0</span>;
 
 <span class="kw">const </span>DEFAULT_NUMBER_WIDTH: usize = <span class="number">2</span>;
-<span class="kw">const </span>DEFAULT_NUMBER_PAD_WITH: char = <span class="string">&#39; &#39;</span>;
+<span class="kw">const </span>DEFAULT_NUMBER_PAD_WITH: char = <span class="string">' '</span>;
 
-<span class="kw">const </span>DEFAULT_DATETIME_FORMAT: <span class="kw-2">&amp;</span>str = <span class="string">&quot;%a %d/%m %R&quot;</span>;
+<span class="kw">const </span>DEFAULT_DATETIME_FORMAT: <span class="kw-2">&amp;</span>str = <span class="string">"%a %d/%m %R"</span>;
 
 <span class="kw">pub const </span>DEFAULT_STRING_FORMATTER: StrFormatter = StrFormatter {
     min_width: DEFAULT_STR_MIN_WIDTH,
@@ -818,46 +819,46 @@
 
 <span class="kw">pub fn </span>new_formatter(name: <span class="kw-2">&amp;</span>str, args: <span class="kw-2">&amp;</span>[Arg]) -&gt; <span class="prelude-ty">Result</span>&lt;Box&lt;<span class="kw">dyn </span>Formatter&gt;&gt; {
     <span class="kw">match </span>name {
-        <span class="string">&quot;str&quot; </span>=&gt; {
+        <span class="string">"str" </span>=&gt; {
             <span class="kw">let </span><span class="kw-2">mut </span>min_width = DEFAULT_STR_MIN_WIDTH;
             <span class="kw">let </span><span class="kw-2">mut </span>max_width = DEFAULT_STR_MAX_WIDTH;
             <span class="kw">let </span><span class="kw-2">mut </span>rot_interval = DEFAULT_STR_ROT_INTERVAL;
             <span class="kw">let </span><span class="kw-2">mut </span>rot_separator = DEFAULT_STR_ROT_SEP;
             <span class="kw">for </span>arg <span class="kw">in </span>args {
                 <span class="kw">match </span>arg.key {
-                    <span class="string">&quot;min_width&quot; </span>| <span class="string">&quot;min_w&quot; </span>=&gt; {
-                        min_width = arg.val.parse().error(<span class="string">&quot;Width must be a positive integer&quot;</span>)<span class="question-mark">?</span>;
+                    <span class="string">"min_width" </span>| <span class="string">"min_w" </span>=&gt; {
+                        min_width = arg.val.parse().error(<span class="string">"Width must be a positive integer"</span>)<span class="question-mark">?</span>;
                     }
-                    <span class="string">&quot;max_width&quot; </span>| <span class="string">&quot;max_w&quot; </span>=&gt; {
-                        max_width = arg.val.parse().error(<span class="string">&quot;Width must be a positive integer&quot;</span>)<span class="question-mark">?</span>;
+                    <span class="string">"max_width" </span>| <span class="string">"max_w" </span>=&gt; {
+                        max_width = arg.val.parse().error(<span class="string">"Width must be a positive integer"</span>)<span class="question-mark">?</span>;
                     }
-                    <span class="string">&quot;width&quot; </span>| <span class="string">&quot;w&quot; </span>=&gt; {
-                        min_width = arg.val.parse().error(<span class="string">&quot;Width must be a positive integer&quot;</span>)<span class="question-mark">?</span>;
+                    <span class="string">"width" </span>| <span class="string">"w" </span>=&gt; {
+                        min_width = arg.val.parse().error(<span class="string">"Width must be a positive integer"</span>)<span class="question-mark">?</span>;
                         max_width = min_width;
                     }
-                    <span class="string">&quot;rot_interval&quot; </span>=&gt; {
+                    <span class="string">"rot_interval" </span>=&gt; {
                         rot_interval = <span class="prelude-val">Some</span>(
                             arg.val
                                 .parse()
-                                .error(<span class="string">&quot;Interval must be a positive number&quot;</span>)<span class="question-mark">?</span>,
+                                .error(<span class="string">"Interval must be a positive number"</span>)<span class="question-mark">?</span>,
                         );
                     }
-                    <span class="string">&quot;rot_separator&quot; </span>=&gt; {
+                    <span class="string">"rot_separator" </span>=&gt; {
                         rot_separator = <span class="prelude-val">Some</span>(arg.val.to_string());
                     }
                     other =&gt; {
-                        <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">&quot;Unknown argument for &#39;str&#39;: &#39;{other}&#39;&quot;</span>)));
+                        <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">"Unknown argument for 'str': '{other}'"</span>)));
                     }
                 }
             }
             <span class="kw">if </span>max_width &lt; min_width {
                 <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(
-                    <span class="string">&quot;Max width must be greater of equal to min width&quot;</span>,
+                    <span class="string">"Max width must be greater of equal to min width"</span>,
                 ));
             }
             <span class="kw">if let </span><span class="prelude-val">Some</span>(rot_interval) = rot_interval {
                 <span class="kw">if </span>rot_interval &lt; <span class="number">0.1 </span>{
-                    <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="string">&quot;Interval must be greater than 0.1&quot;</span>));
+                    <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="string">"Interval must be greater than 0.1"</span>));
                 }
             }
             <span class="prelude-val">Ok</span>(Box::new(StrFormatter {
@@ -868,33 +869,33 @@
                 rot_separator,
             }))
         }
-        <span class="string">&quot;pango-str&quot; </span>=&gt; {
+        <span class="string">"pango-str" </span>=&gt; {
             <span class="attr">#[allow(clippy::never_loop)]
             </span><span class="kw">for </span>arg <span class="kw">in </span>args {
                 <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(
-                    <span class="string">&quot;Unknown argument for &#39;pango-str&#39;: &#39;{}&#39;&quot;</span>,
+                    <span class="string">"Unknown argument for 'pango-str': '{}'"</span>,
                     arg.key
                 )));
             }
             <span class="prelude-val">Ok</span>(Box::new(PangoStrFormatter))
         }
-        <span class="string">&quot;bar&quot; </span>=&gt; {
+        <span class="string">"bar" </span>=&gt; {
             <span class="kw">let </span><span class="kw-2">mut </span>vertical = DEFAULT_BAR_VERTICAL;
             <span class="kw">let </span><span class="kw-2">mut </span>width = <span class="prelude-val">None</span>;
             <span class="kw">let </span><span class="kw-2">mut </span>max_value = DEFAULT_BAR_MAX_VAL;
             <span class="kw">for </span>arg <span class="kw">in </span>args {
                 <span class="kw">match </span>arg.key {
-                    <span class="string">&quot;width&quot; </span>| <span class="string">&quot;w&quot; </span>=&gt; {
-                        width = <span class="prelude-val">Some</span>(arg.val.parse().error(<span class="string">&quot;Width must be a positive integer&quot;</span>)<span class="question-mark">?</span>);
+                    <span class="string">"width" </span>| <span class="string">"w" </span>=&gt; {
+                        width = <span class="prelude-val">Some</span>(arg.val.parse().error(<span class="string">"Width must be a positive integer"</span>)<span class="question-mark">?</span>);
                     }
-                    <span class="string">&quot;max_value&quot; </span>=&gt; {
-                        max_value = arg.val.parse().error(<span class="string">&quot;Max value must be a number&quot;</span>)<span class="question-mark">?</span>;
+                    <span class="string">"max_value" </span>=&gt; {
+                        max_value = arg.val.parse().error(<span class="string">"Max value must be a number"</span>)<span class="question-mark">?</span>;
                     }
-                    <span class="string">&quot;vertical&quot; </span>| <span class="string">&quot;v&quot; </span>=&gt; {
-                        vertical = arg.val.parse().error(<span class="string">&quot;Vertical value must be a bool&quot;</span>)<span class="question-mark">?</span>;
+                    <span class="string">"vertical" </span>| <span class="string">"v" </span>=&gt; {
+                        vertical = arg.val.parse().error(<span class="string">"Vertical value must be a bool"</span>)<span class="question-mark">?</span>;
                     }
                     other =&gt; {
-                        <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">&quot;Unknown argument for &#39;bar&#39;: &#39;{other}&#39;&quot;</span>)));
+                        <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">"Unknown argument for 'bar': '{other}'"</span>)));
                     }
                 }
             }
@@ -907,22 +908,22 @@
                 vertical,
             }))
         }
-        <span class="string">&quot;eng&quot; </span>=&gt; <span class="prelude-val">Ok</span>(Box::new(EngFormatter(EngFixConfig::from_args(args)<span class="question-mark">?</span>))),
-        <span class="string">&quot;fix&quot; </span>=&gt; <span class="prelude-val">Ok</span>(Box::new(FixFormatter(EngFixConfig::from_args(args)<span class="question-mark">?</span>))),
-        <span class="string">&quot;datetime&quot; </span>=&gt; {
+        <span class="string">"eng" </span>=&gt; <span class="prelude-val">Ok</span>(Box::new(EngFormatter(EngFixConfig::from_args(args)<span class="question-mark">?</span>))),
+        <span class="string">"fix" </span>=&gt; <span class="prelude-val">Ok</span>(Box::new(FixFormatter(EngFixConfig::from_args(args)<span class="question-mark">?</span>))),
+        <span class="string">"datetime" </span>=&gt; {
             <span class="kw">let </span><span class="kw-2">mut </span>format = <span class="prelude-val">None</span>;
             <span class="kw">let </span><span class="kw-2">mut </span>locale = <span class="prelude-val">None</span>;
             <span class="kw">for </span>arg <span class="kw">in </span>args {
                 <span class="kw">match </span>arg.key {
-                    <span class="string">&quot;format&quot; </span>| <span class="string">&quot;f&quot; </span>=&gt; {
+                    <span class="string">"format" </span>| <span class="string">"f" </span>=&gt; {
                         format = <span class="prelude-val">Some</span>(arg.val);
                     }
-                    <span class="string">&quot;locale&quot; </span>| <span class="string">&quot;l&quot; </span>=&gt; {
+                    <span class="string">"locale" </span>| <span class="string">"l" </span>=&gt; {
                         locale = <span class="prelude-val">Some</span>(arg.val);
                     }
                     other =&gt; {
                         <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(
-                            <span class="string">&quot;Unknown argument for &#39;datetime&#39;: &#39;{other}&#39;&quot;
+                            <span class="string">"Unknown argument for 'datetime': '{other}'"
                         </span>)));
                     }
                 }
@@ -930,7 +931,7 @@
 
             <span class="prelude-val">Ok</span>(Box::new(DatetimeFormatter::new(format, locale)<span class="question-mark">?</span>))
         }
-        <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">&quot;Unknown formatter: &#39;{name}&#39;&quot;</span>))),
+        <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">"Unknown formatter: '{name}'"</span>))),
     }
 }
 
@@ -954,7 +955,7 @@
                         <span class="kw">let </span>rot_separator: Vec&lt;<span class="kw-2">&amp;</span>str&gt; = <span class="self">self
                             </span>.rot_separator
                             .as_deref()
-                            .unwrap_or(<span class="string">&quot;|&quot;</span>)
+                            .unwrap_or(<span class="string">"|"</span>)
                             .graphemes(<span class="bool-val">true</span>)
                             .collect();
                         <span class="kw">let </span>width = width + rot_separator.len(); <span class="comment">// Now we include `rot_separator` at the end
@@ -972,7 +973,7 @@
                     }
                     <span class="kw">_ </span>=&gt; text
                         .iter()
-                        .chain(repeat(<span class="kw-2">&amp;</span><span class="string">&quot; &quot;</span>).take(<span class="self">self</span>.min_width.saturating_sub(width)))
+                        .chain(repeat(<span class="kw-2">&amp;</span><span class="string">" "</span>).take(<span class="self">self</span>.min_width.saturating_sub(width)))
                         .take(<span class="self">self</span>.max_width)
                         .collect_pango_escaped(),
                 })
@@ -980,7 +981,7 @@
             Value::Icon(icon, value) =&gt; config.get_icon(icon, <span class="kw-2">*</span>value).map_err(Into::into),
             other =&gt; <span class="prelude-val">Err</span>(FormatError::IncompatibleFormatter {
                 ty: other.type_name(),
-                fmt: <span class="string">&quot;str&quot;</span>,
+                fmt: <span class="string">"str"</span>,
             }),
         }
     }
@@ -1000,7 +1001,7 @@
             </span>Value::Icon(icon, value) =&gt; config.get_icon(icon, <span class="kw-2">*</span>value).map_err(Into::into),
             other =&gt; <span class="prelude-val">Err</span>(FormatError::IncompatibleFormatter {
                 ty: other.type_name(),
-                fmt: <span class="string">&quot;pango-str&quot;</span>,
+                fmt: <span class="string">"pango-str"</span>,
             }),
         }
     }
@@ -1014,13 +1015,13 @@
 }
 
 <span class="kw">const </span>HORIZONTAL_BAR_CHARS: [char; <span class="number">9</span>] = [
-    <span class="string">&#39; &#39;</span>, <span class="string">&#39;\u{258f}&#39;</span>, <span class="string">&#39;\u{258e}&#39;</span>, <span class="string">&#39;\u{258d}&#39;</span>, <span class="string">&#39;\u{258c}&#39;</span>, <span class="string">&#39;\u{258b}&#39;</span>, <span class="string">&#39;\u{258a}&#39;</span>, <span class="string">&#39;\u{2589}&#39;</span>,
-    <span class="string">&#39;\u{2588}&#39;</span>,
+    <span class="string">' '</span>, <span class="string">'\u{258f}'</span>, <span class="string">'\u{258e}'</span>, <span class="string">'\u{258d}'</span>, <span class="string">'\u{258c}'</span>, <span class="string">'\u{258b}'</span>, <span class="string">'\u{258a}'</span>, <span class="string">'\u{2589}'</span>,
+    <span class="string">'\u{2588}'</span>,
 ];
 
 <span class="kw">const </span>VERTICAL_BAR_CHARS: [char; <span class="number">9</span>] = [
-    <span class="string">&#39; &#39;</span>, <span class="string">&#39;\u{2581}&#39;</span>, <span class="string">&#39;\u{2582}&#39;</span>, <span class="string">&#39;\u{2583}&#39;</span>, <span class="string">&#39;\u{2584}&#39;</span>, <span class="string">&#39;\u{2585}&#39;</span>, <span class="string">&#39;\u{2586}&#39;</span>, <span class="string">&#39;\u{2587}&#39;</span>,
-    <span class="string">&#39;\u{2588}&#39;</span>,
+    <span class="string">' '</span>, <span class="string">'\u{2581}'</span>, <span class="string">'\u{2582}'</span>, <span class="string">'\u{2583}'</span>, <span class="string">'\u{2584}'</span>, <span class="string">'\u{2585}'</span>, <span class="string">'\u{2586}'</span>, <span class="string">'\u{2587}'</span>,
+    <span class="string">'\u{2588}'</span>,
 ];
 
 <span class="kw">impl </span>Formatter <span class="kw">for </span>BarFormatter {
@@ -1043,7 +1044,7 @@
             }
             other =&gt; <span class="prelude-val">Err</span>(FormatError::IncompatibleFormatter {
                 ty: other.type_name(),
-                fmt: <span class="string">&quot;bar&quot;</span>,
+                fmt: <span class="string">"bar"</span>,
             }),
         }
     }
@@ -1076,59 +1077,59 @@
 
         <span class="kw">for </span>arg <span class="kw">in </span>args {
             <span class="kw">match </span>arg.key {
-                <span class="string">&quot;width&quot; </span>| <span class="string">&quot;w&quot; </span>=&gt; {
-                    width = arg.val.parse().error(<span class="string">&quot;Width must be a positive integer&quot;</span>)<span class="question-mark">?</span>;
+                <span class="string">"width" </span>| <span class="string">"w" </span>=&gt; {
+                    width = arg.val.parse().error(<span class="string">"Width must be a positive integer"</span>)<span class="question-mark">?</span>;
                 }
-                <span class="string">&quot;unit&quot; </span>| <span class="string">&quot;u&quot; </span>=&gt; {
+                <span class="string">"unit" </span>| <span class="string">"u" </span>=&gt; {
                     unit = <span class="prelude-val">Some</span>(arg.val.parse()<span class="question-mark">?</span>);
                 }
-                <span class="string">&quot;hide_unit&quot; </span>=&gt; {
+                <span class="string">"hide_unit" </span>=&gt; {
                     unit_hidden = arg
                         .val
                         .parse()
                         .ok()
-                        .error(<span class="string">&quot;hide_unit must be true or false&quot;</span>)<span class="question-mark">?</span>;
+                        .error(<span class="string">"hide_unit must be true or false"</span>)<span class="question-mark">?</span>;
                 }
-                <span class="string">&quot;unit_space&quot; </span>=&gt; {
+                <span class="string">"unit_space" </span>=&gt; {
                     unit_has_space = arg
                         .val
                         .parse()
                         .ok()
-                        .error(<span class="string">&quot;unit_space must be true or false&quot;</span>)<span class="question-mark">?</span>;
+                        .error(<span class="string">"unit_space must be true or false"</span>)<span class="question-mark">?</span>;
                 }
-                <span class="string">&quot;prefix&quot; </span>| <span class="string">&quot;p&quot; </span>=&gt; {
+                <span class="string">"prefix" </span>| <span class="string">"p" </span>=&gt; {
                     prefix = <span class="prelude-val">Some</span>(arg.val.parse()<span class="question-mark">?</span>);
                 }
-                <span class="string">&quot;hide_prefix&quot; </span>=&gt; {
+                <span class="string">"hide_prefix" </span>=&gt; {
                     prefix_hidden = arg
                         .val
                         .parse()
                         .ok()
-                        .error(<span class="string">&quot;hide_prefix must be true or false&quot;</span>)<span class="question-mark">?</span>;
+                        .error(<span class="string">"hide_prefix must be true or false"</span>)<span class="question-mark">?</span>;
                 }
-                <span class="string">&quot;prefix_space&quot; </span>=&gt; {
+                <span class="string">"prefix_space" </span>=&gt; {
                     prefix_has_space = arg
                         .val
                         .parse()
                         .ok()
-                        .error(<span class="string">&quot;prefix_space must be true or false&quot;</span>)<span class="question-mark">?</span>;
+                        .error(<span class="string">"prefix_space must be true or false"</span>)<span class="question-mark">?</span>;
                 }
-                <span class="string">&quot;force_prefix&quot; </span>=&gt; {
+                <span class="string">"force_prefix" </span>=&gt; {
                     prefix_forced = arg
                         .val
                         .parse()
                         .ok()
-                        .error(<span class="string">&quot;force_prefix must be true or false&quot;</span>)<span class="question-mark">?</span>;
+                        .error(<span class="string">"force_prefix must be true or false"</span>)<span class="question-mark">?</span>;
                 }
-                <span class="string">&quot;pad_with&quot; </span>=&gt; {
+                <span class="string">"pad_with" </span>=&gt; {
                     pad_with = arg
                         .val
                         .parse()
-                        .error(<span class="string">&quot;pad_with must be a single character&quot;</span>)<span class="question-mark">?</span>;
+                        .error(<span class="string">"pad_with must be a single character"</span>)<span class="question-mark">?</span>;
                 }
                 other =&gt; {
                     <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(
-                        <span class="string">&quot;Unknown argument for &#39;fix&#39;/&#39;eng&#39;: &#39;{other}&#39;&quot;
+                        <span class="string">"Unknown argument for 'fix'/'eng': '{other}'"
                     </span>)));
                 }
             }
@@ -1190,11 +1191,11 @@
                     digits = (val.max(<span class="number">1.</span>).log10().floor() + <span class="number">1.0</span>) <span class="kw">as </span>i32 + is_negative <span class="kw">as </span>i32;
                 }
 
-                <span class="kw">let </span>sign = <span class="kw">if </span>is_negative { <span class="string">&quot;-&quot; </span>} <span class="kw">else </span>{ <span class="string">&quot;&quot; </span>};
+                <span class="kw">let </span>sign = <span class="kw">if </span>is_negative { <span class="string">"-" </span>} <span class="kw">else </span>{ <span class="string">"" </span>};
                 <span class="kw">let </span><span class="kw-2">mut </span>retval = <span class="kw">match </span><span class="self">self</span>.<span class="number">0</span>.width <span class="kw">as </span>i32 - digits {
-                    i32::MIN..=<span class="number">0 </span>=&gt; <span class="macro">format!</span>(<span class="string">&quot;{sign}{}&quot;</span>, val.round()),
-                    <span class="number">1 </span>=&gt; <span class="macro">format!</span>(<span class="string">&quot;{}{sign}{}&quot;</span>, <span class="self">self</span>.<span class="number">0</span>.pad_with, val.round() <span class="kw">as </span>i64),
-                    rest =&gt; <span class="macro">format!</span>(<span class="string">&quot;{sign}{val:.*}&quot;</span>, rest <span class="kw">as </span>usize - <span class="number">1</span>),
+                    i32::MIN..=<span class="number">0 </span>=&gt; <span class="macro">format!</span>(<span class="string">"{sign}{}"</span>, val.round()),
+                    <span class="number">1 </span>=&gt; <span class="macro">format!</span>(<span class="string">"{}{sign}{}"</span>, <span class="self">self</span>.<span class="number">0</span>.pad_with, val.round() <span class="kw">as </span>i64),
+                    rest =&gt; <span class="macro">format!</span>(<span class="string">"{sign}{val:.*}"</span>, rest <span class="kw">as </span>usize - <span class="number">1</span>),
                 };
 
                 <span class="kw">let </span>display_prefix = !<span class="self">self</span>.<span class="number">0</span>.prefix_hidden
@@ -1204,13 +1205,13 @@
 
                 <span class="kw">if </span>display_prefix {
                     <span class="kw">if </span><span class="self">self</span>.<span class="number">0</span>.prefix_has_space {
-                        retval.push(<span class="string">&#39; &#39;</span>);
+                        retval.push(<span class="string">' '</span>);
                     }
                     retval.push_str(<span class="kw-2">&amp;</span>prefix.to_string());
                 }
                 <span class="kw">if </span>display_unit {
                     <span class="kw">if </span><span class="self">self</span>.<span class="number">0</span>.unit_has_space || (<span class="self">self</span>.<span class="number">0</span>.prefix_has_space &amp;&amp; !display_prefix) {
-                        retval.push(<span class="string">&#39; &#39;</span>);
+                        retval.push(<span class="string">' '</span>);
                     }
                     retval.push_str(<span class="kw-2">&amp;</span>unit.to_string());
                 }
@@ -1219,7 +1220,7 @@
             }
             other =&gt; <span class="prelude-val">Err</span>(FormatError::IncompatibleFormatter {
                 ty: other.type_name(),
-                fmt: <span class="string">&quot;eng&quot;</span>,
+                fmt: <span class="string">"eng"</span>,
             }),
         }
     }
@@ -1237,10 +1238,10 @@
                 <span class="comment">// mut val,
                 // unit,
                 // icon,
-            </span>} =&gt; <span class="prelude-val">Err</span>(Error::new(<span class="string">&quot;&#39;fix&#39; formatter is not implemented yet&quot;</span>).into()),
+            </span>} =&gt; <span class="prelude-val">Err</span>(Error::new(<span class="string">"'fix' formatter is not implemented yet"</span>).into()),
             other =&gt; <span class="prelude-val">Err</span>(FormatError::IncompatibleFormatter {
                 ty: other.type_name(),
-                fmt: <span class="string">&quot;fix&quot;</span>,
+                fmt: <span class="string">"fix"</span>,
             }),
         }
     }
@@ -1249,17 +1250,17 @@
 <span class="attr">#[derive(Debug)]
 </span><span class="kw">pub enum </span>DatetimeFormatter {
     Chrono {
-        items: Vec&lt;Item&lt;<span class="lifetime">&#39;static</span>&gt;&gt;,
+        items: Vec&lt;Item&lt;<span class="lifetime">'static</span>&gt;&gt;,
         locale: <span class="prelude-ty">Option</span>&lt;Locale&gt;,
     },
-    <span class="attr">#[cfg(feature = <span class="string">&quot;icu_calendar&quot;</span>)]
+    <span class="attr">#[cfg(feature = <span class="string">"icu_calendar"</span>)]
     </span>Icu {
         length: icu_datetime::options::length::Date,
         locale: icu_locid::Locale,
     },
 }
 
-<span class="kw">fn </span>make_static_item(item: Item&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; Item&lt;<span class="lifetime">&#39;static</span>&gt; {
+<span class="kw">fn </span>make_static_item(item: Item&lt;<span class="lifetime">'_</span>&gt;) -&gt; Item&lt;<span class="lifetime">'static</span>&gt; {
     <span class="kw">match </span>item {
         Item::Literal(str) =&gt; Item::OwnedLiteral(str.into()),
         Item::OwnedLiteral(boxed) =&gt; Item::OwnedLiteral(boxed),
@@ -1275,24 +1276,24 @@
     <span class="kw">fn </span>new(format: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt;, locale: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
         <span class="kw">let </span>(items, locale) = <span class="kw">match </span>locale {
             <span class="prelude-val">Some</span>(locale) =&gt; {
-                <span class="attr">#[cfg(feature = <span class="string">&quot;icu_calendar&quot;</span>)]
+                <span class="attr">#[cfg(feature = <span class="string">"icu_calendar"</span>)]
                 </span><span class="kw">let </span><span class="prelude-val">Ok</span>(locale) = locale.try_into() <span class="kw">else </span>{
                     <span class="kw">use </span>std::str::FromStr <span class="kw">as _</span>;
                     <span class="comment">// try with icu4x
                     </span><span class="kw">let </span>locale = icu_locid::Locale::from_str(locale)
                         .ok()
-                        .error(<span class="string">&quot;invalid locale&quot;</span>)<span class="question-mark">?</span>;
+                        .error(<span class="string">"invalid locale"</span>)<span class="question-mark">?</span>;
                     <span class="kw">let </span>length = <span class="kw">match </span>format {
-                        <span class="prelude-val">Some</span>(<span class="string">&quot;full&quot;</span>) =&gt; icu_datetime::options::length::Date::Full,
-                        <span class="prelude-val">None </span>| <span class="prelude-val">Some</span>(<span class="string">&quot;long&quot;</span>) =&gt; icu_datetime::options::length::Date::Long,
-                        <span class="prelude-val">Some</span>(<span class="string">&quot;medium&quot;</span>) =&gt; icu_datetime::options::length::Date::Medium,
-                        <span class="prelude-val">Some</span>(<span class="string">&quot;short&quot;</span>) =&gt; icu_datetime::options::length::Date::Short,
-                        <span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="string">&quot;Unknown format option for icu based locale&quot;</span>)),
+                        <span class="prelude-val">Some</span>(<span class="string">"full"</span>) =&gt; icu_datetime::options::length::Date::Full,
+                        <span class="prelude-val">None </span>| <span class="prelude-val">Some</span>(<span class="string">"long"</span>) =&gt; icu_datetime::options::length::Date::Long,
+                        <span class="prelude-val">Some</span>(<span class="string">"medium"</span>) =&gt; icu_datetime::options::length::Date::Medium,
+                        <span class="prelude-val">Some</span>(<span class="string">"short"</span>) =&gt; icu_datetime::options::length::Date::Short,
+                        <span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="string">"Unknown format option for icu based locale"</span>)),
                     };
                     <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="self">Self</span>::Icu { locale, length });
                 };
-                <span class="attr">#[cfg(not(feature = <span class="string">&quot;icu_calendar&quot;</span>))]
-                </span><span class="kw">let </span>locale = locale.try_into().ok().error(<span class="string">&quot;invalid locale&quot;</span>)<span class="question-mark">?</span>;
+                <span class="attr">#[cfg(not(feature = <span class="string">"icu_calendar"</span>))]
+                </span><span class="kw">let </span>locale = locale.try_into().ok().error(<span class="string">"invalid locale"</span>)<span class="question-mark">?</span>;
                 (
                     StrftimeItems::new_with_locale(
                         format.unwrap_or(DEFAULT_DATETIME_FORMAT),
@@ -1330,7 +1331,7 @@
                     <span class="prelude-val">None </span>=&gt; datetime.format_with_items(items.iter()),
                 }
                 .to_string(),
-                <span class="attr">#[cfg(feature = <span class="string">&quot;icu_calendar&quot;</span>)]
+                <span class="attr">#[cfg(feature = <span class="string">"icu_calendar"</span>)]
                 </span>DatetimeFormatter::Icu { locale, length } =&gt; {
                     <span class="kw">use </span>chrono::Datelike <span class="kw">as _</span>;
                     <span class="kw">let </span>date = icu_calendar::Date::try_new_iso_date(
@@ -1339,15 +1340,15 @@
                         datetime.day() <span class="kw">as </span>u8,
                     )
                     .ok()
-                    .error(<span class="string">&quot;Current date should be a valid date&quot;</span>)<span class="question-mark">?</span>;
+                    .error(<span class="string">"Current date should be a valid date"</span>)<span class="question-mark">?</span>;
                     <span class="kw">let </span>date = date.to_any();
                     <span class="kw">let </span>dft =
                         icu_datetime::DateFormatter::try_new_with_length(<span class="kw-2">&amp;</span>locale.into(), <span class="kw-2">*</span>length)
                             .ok()
-                            .error(<span class="string">&quot;locale should be present in compiled data&quot;</span>)<span class="question-mark">?</span>;
+                            .error(<span class="string">"locale should be present in compiled data"</span>)<span class="question-mark">?</span>;
                     dft.format_to_string(<span class="kw-2">&amp;</span>date)
                         .ok()
-                        .error(<span class="string">&quot;formatting date using icu failed&quot;</span>)<span class="question-mark">?
+                        .error(<span class="string">"formatting date using icu failed"</span>)<span class="question-mark">?
                 </span>}
             })
         }
@@ -1358,7 +1359,7 @@
             },
             other =&gt; <span class="prelude-val">Err</span>(FormatError::IncompatibleFormatter {
                 ty: other.type_name(),
-                fmt: <span class="string">&quot;datetime&quot;</span>,
+                fmt: <span class="string">"datetime"</span>,
             }),
         }
     }
@@ -1404,7 +1405,7 @@
                 <span class="kw-2">&amp;</span>config,
             )
             .unwrap();
-        <span class="macro">assert_eq!</span>(result, <span class="string">&quot; -1&quot;</span>);
+        <span class="macro">assert_eq!</span>(result, <span class="string">" -1"</span>);
 
         <span class="kw">let </span>result = fmt
             .format(
@@ -1415,7 +1416,7 @@
                 <span class="kw-2">&amp;</span>config,
             )
             .unwrap();
-        <span class="macro">assert_eq!</span>(result, <span class="string">&quot; 10&quot;</span>);
+        <span class="macro">assert_eq!</span>(result, <span class="string">" 10"</span>);
 
         <span class="kw">let </span>result = fmt
             .format(
@@ -1426,7 +1427,7 @@
                 <span class="kw-2">&amp;</span>config,
             )
             .unwrap();
-        <span class="macro">assert_eq!</span>(result, <span class="string">&quot;1.0KB&quot;</span>);
+        <span class="macro">assert_eq!</span>(result, <span class="string">"1.0KB"</span>);
 
         <span class="kw">let </span>result = fmt
             .format(
@@ -1437,7 +1438,7 @@
                 <span class="kw-2">&amp;</span>config,
             )
             .unwrap();
-        <span class="macro">assert_eq!</span>(result, <span class="string">&quot;-10&quot;</span>);
+        <span class="macro">assert_eq!</span>(result, <span class="string">"-10"</span>);
 
         <span class="kw">let </span>result = fmt
             .format(
@@ -1448,7 +1449,7 @@
                 <span class="kw-2">&amp;</span>config,
             )
             .unwrap();
-        <span class="macro">assert_eq!</span>(result, <span class="string">&quot;9.9&quot;</span>);
+        <span class="macro">assert_eq!</span>(result, <span class="string">"9.9"</span>);
 
         <span class="kw">let </span>result = fmt
             .format(
@@ -1459,7 +1460,7 @@
                 <span class="kw-2">&amp;</span>config,
             )
             .unwrap();
-        <span class="macro">assert_eq!</span>(result, <span class="string">&quot; 10&quot;</span>);
+        <span class="macro">assert_eq!</span>(result, <span class="string">" 10"</span>);
 
         <span class="kw">let </span>fmt = <span class="macro">fmt!</span>(eng, w: <span class="number">5</span>, p: <span class="number">1</span>);
         <span class="kw">let </span>result = fmt
@@ -1471,7 +1472,7 @@
                 <span class="kw-2">&amp;</span>config,
             )
             .unwrap();
-        <span class="macro">assert_eq!</span>(result, <span class="string">&quot;321.6GB&quot;</span>);
+        <span class="macro">assert_eq!</span>(result, <span class="string">"321.6GB"</span>);
     }
 
     <span class="attr">#[test]
@@ -1485,19 +1486,19 @@
 
         <span class="kw">let </span>fmt = <span class="macro">fmt!</span>(eng, w: <span class="number">5</span>, p: Mi);
         <span class="kw">let </span>result = fmt.format(<span class="kw-2">&amp;</span>val, <span class="kw-2">&amp;</span>config).unwrap();
-        <span class="macro">assert_eq!</span>(result, <span class="string">&quot;14.96GiB&quot;</span>);
+        <span class="macro">assert_eq!</span>(result, <span class="string">"14.96GiB"</span>);
 
         <span class="kw">let </span>fmt = <span class="macro">fmt!</span>(eng, w: <span class="number">4</span>, p: Mi);
         <span class="kw">let </span>result = fmt.format(<span class="kw-2">&amp;</span>val, <span class="kw-2">&amp;</span>config).unwrap();
-        <span class="macro">assert_eq!</span>(result, <span class="string">&quot;15.0GiB&quot;</span>);
+        <span class="macro">assert_eq!</span>(result, <span class="string">"15.0GiB"</span>);
 
         <span class="kw">let </span>fmt = <span class="macro">fmt!</span>(eng, w: <span class="number">3</span>, p: Mi);
         <span class="kw">let </span>result = fmt.format(<span class="kw-2">&amp;</span>val, <span class="kw-2">&amp;</span>config).unwrap();
-        <span class="macro">assert_eq!</span>(result, <span class="string">&quot; 15GiB&quot;</span>);
+        <span class="macro">assert_eq!</span>(result, <span class="string">" 15GiB"</span>);
 
         <span class="kw">let </span>fmt = <span class="macro">fmt!</span>(eng, w: <span class="number">2</span>, p: Mi);
         <span class="kw">let </span>result = fmt.format(<span class="kw-2">&amp;</span>val, <span class="kw-2">&amp;</span>config).unwrap();
-        <span class="macro">assert_eq!</span>(result, <span class="string">&quot;15GiB&quot;</span>);
+        <span class="macro">assert_eq!</span>(result, <span class="string">"15GiB"</span>);
     }
 }
 </code></pre></div></section></main></body></html>

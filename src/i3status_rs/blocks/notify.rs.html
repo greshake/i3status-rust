@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/notify.rs`."><title>notify.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0 (82e1608df 2023-12-21)" data-channel="1.75.0" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/notify.rs`."><title>notify.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-ac92e1bbe349e143.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0 (07dca489a 2024-02-04)" data-channel="1.76.0" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -298,12 +299,12 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `driver` | Which notifications daemon is running. Available drivers are: `&quot;dunst&quot;` and `&quot;swaync&quot;` | `&quot;dunst&quot;`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon &quot;`
+//! `driver` | Which notifications daemon is running. Available drivers are: `"dunst"` and `"swaync"` | `"dunst"`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon "`
 //!
 //! Placeholder                               | Value                                      | Type   | Unit
 //! ------------------------------------------|--------------------------------------------|--------|-----
-//! `icon`                                    | Icon based on notification&#39;s state         | Icon   | -
+//! `icon`                                    | Icon based on notification's state         | Icon   | -
 //! `notification_count`[^dunst_version_note] | The number of notification (omitted if 0)  | Number | -
 //! `paused`                                  | Present only if notifications are disabled | Flag   | -
 //!
@@ -318,28 +319,28 @@
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;notify&quot;
-//! format = &quot; $icon {$paused{Off}|On} &quot;
+//! block = "notify"
+//! format = " $icon {$paused{Off}|On} "
 //! ```
 //! How to use `notification_count`
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;notify&quot;
-//! format = &quot; $icon {($notification_count.eng(w:1)) |}&quot;
+//! block = "notify"
+//! format = " $icon {($notification_count.eng(w:1)) |}"
 //! ```
 //! How to remap actions
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;notify&quot;
-//! driver = &quot;swaync&quot;
+//! block = "notify"
+//! driver = "swaync"
 //! [[block.click]]
-//! button = &quot;left&quot;
-//! action = &quot;show&quot;
+//! button = "left"
+//! action = "show"
 //! [[block.click]]
-//! button = &quot;right&quot;
-//! action = &quot;toggle_paused&quot;
+//! button = "right"
+//! action = "toggle_paused"
 //! ```
 //!
 //! # Icons Used
@@ -353,8 +354,8 @@
 <span class="kw">use </span>zbus::dbus_proxy;
 <span class="kw">use </span>zbus::PropertyStream;
 
-<span class="kw">const </span>ICON_ON: <span class="kw-2">&amp;</span>str = <span class="string">&quot;bell&quot;</span>;
-<span class="kw">const </span>ICON_OFF: <span class="kw-2">&amp;</span>str = <span class="string">&quot;bell-slash&quot;</span>;
+<span class="kw">const </span>ICON_ON: <span class="kw-2">&amp;</span>str = <span class="string">"bell"</span>;
+<span class="kw">const </span>ICON_OFF: <span class="kw-2">&amp;</span>str = <span class="string">"bell-slash"</span>;
 
 <span class="attr">#[derive(Deserialize, Debug, Default)]
 #[serde(deny_unknown_fields, default)]
@@ -364,7 +365,7 @@
 }
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(rename_all = <span class="string">&quot;lowercase&quot;</span>)]
+#[serde(rename_all = <span class="string">"lowercase"</span>)]
 </span><span class="kw">pub enum </span>DriverType {
     <span class="attr">#[default]
     </span>Dunst,
@@ -373,9 +374,9 @@
 
 <span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions()<span class="question-mark">?</span>;
-    api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;toggle_paused&quot;</span>)])<span class="question-mark">?</span>;
+    api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">"toggle_paused"</span>)])<span class="question-mark">?</span>;
 
-    <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>format = config.format.with_default(<span class="string">" $icon "</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>driver: Box&lt;<span class="kw">dyn </span>Driver&gt; = <span class="kw">match </span>config.driver {
         DriverType::Dunst =&gt; Box::new(DunstDriver::new().<span class="kw">await</span><span class="question-mark">?</span>),
@@ -388,9 +389,9 @@
 
         <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
         widget.set_values(<span class="macro">map!</span>(
-            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(<span class="kw">if </span>is_paused { ICON_OFF } <span class="kw">else </span>{ ICON_ON }),
-            [<span class="kw">if </span>notification_count != <span class="number">0</span>] <span class="string">&quot;notification_count&quot; </span>=&gt; Value::number(notification_count),
-            [<span class="kw">if </span>is_paused] <span class="string">&quot;paused&quot; </span>=&gt; Value::flag(),
+            <span class="string">"icon" </span>=&gt; Value::icon(<span class="kw">if </span>is_paused { ICON_OFF } <span class="kw">else </span>{ ICON_ON }),
+            [<span class="kw">if </span>notification_count != <span class="number">0</span>] <span class="string">"notification_count" </span>=&gt; Value::number(notification_count),
+            [<span class="kw">if </span>is_paused] <span class="string">"paused" </span>=&gt; Value::flag(),
         ));
         widget.state = <span class="kw">if </span>notification_count == <span class="number">0 </span>{
             State::Idle
@@ -402,10 +403,10 @@
         <span class="macro">select! </span>{
             x = driver.wait_for_change() =&gt; x<span class="question-mark">?</span>,
             <span class="prelude-val">Some</span>(action) = actions.recv() =&gt; <span class="kw">match </span>action.as_ref() {
-                <span class="string">&quot;toggle_paused&quot; </span>=&gt; {
+                <span class="string">"toggle_paused" </span>=&gt; {
                     driver.set_paused(!is_paused).<span class="kw">await</span><span class="question-mark">?</span>;
                 }
-                <span class="string">&quot;show&quot; </span>=&gt; {
+                <span class="string">"show" </span>=&gt; {
                     driver.notification_show().<span class="kw">await</span><span class="question-mark">?</span>;
                 }
                 <span class="kw">_ </span>=&gt; (),
@@ -424,10 +425,10 @@
 }
 
 <span class="kw">struct </span>DunstDriver {
-    proxy: DunstDbusProxy&lt;<span class="lifetime">&#39;static</span>&gt;,
-    paused_changes: PropertyStream&lt;<span class="lifetime">&#39;static</span>, bool&gt;,
-    displayed_length_changes: PropertyStream&lt;<span class="lifetime">&#39;static</span>, u32&gt;,
-    waiting_length_changes: PropertyStream&lt;<span class="lifetime">&#39;static</span>, u32&gt;,
+    proxy: DunstDbusProxy&lt;<span class="lifetime">'static</span>&gt;,
+    paused_changes: PropertyStream&lt;<span class="lifetime">'static</span>, bool&gt;,
+    displayed_length_changes: PropertyStream&lt;<span class="lifetime">'static</span>, u32&gt;,
+    waiting_length_changes: PropertyStream&lt;<span class="lifetime">'static</span>, u32&gt;,
 }
 
 <span class="kw">impl </span>DunstDriver {
@@ -435,7 +436,7 @@
         <span class="kw">let </span>dbus_conn = new_dbus_connection().<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">let </span>proxy = DunstDbusProxy::new(<span class="kw-2">&amp;</span>dbus_conn)
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to create DunstDbusProxy&quot;</span>)<span class="question-mark">?</span>;
+            </span>.error(<span class="string">"Failed to create DunstDbusProxy"</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
             paused_changes: proxy.receive_paused_changed().<span class="kw">await</span>,
             displayed_length_changes: proxy.receive_displayed_length_changed().<span class="kw">await</span>,
@@ -448,27 +449,27 @@
 <span class="attr">#[async_trait]
 </span><span class="kw">impl </span>Driver <span class="kw">for </span>DunstDriver {
     <span class="kw">async fn </span>is_paused(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;bool&gt; {
-        <span class="self">self</span>.proxy.paused().<span class="kw">await</span>.error(<span class="string">&quot;Failed to get &#39;paused&#39;&quot;</span>)
+        <span class="self">self</span>.proxy.paused().<span class="kw">await</span>.error(<span class="string">"Failed to get 'paused'"</span>)
     }
 
     <span class="kw">async fn </span>set_paused(<span class="kw-2">&amp;</span><span class="self">self</span>, paused: bool) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="self">self</span>.proxy
             .set_paused(paused)
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to set &#39;paused&#39;&quot;</span>)
+            </span>.error(<span class="string">"Failed to set 'paused'"</span>)
     }
 
     <span class="kw">async fn </span>notification_show(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="self">self</span>.proxy
             .notification_show()
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Could not call &#39;NotificationShow&#39;&quot;</span>)
+            </span>.error(<span class="string">"Could not call 'NotificationShow'"</span>)
     }
 
     <span class="kw">async fn </span>notification_count(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;u32&gt; {
         <span class="kw">let </span>(displayed_length, waiting_length) =
             <span class="macro">try_join!</span>(<span class="self">self</span>.proxy.displayed_length(), <span class="self">self</span>.proxy.waiting_length())
-                .error(<span class="string">&quot;Failed to get property&quot;</span>)<span class="question-mark">?</span>;
+                .error(<span class="string">"Failed to get property"</span>)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(displayed_length + waiting_length)
     }
@@ -484,25 +485,25 @@
 }
 
 <span class="attr">#[dbus_proxy(
-    interface = <span class="string">&quot;org.dunstproject.cmd0&quot;</span>,
-    default_service = <span class="string">&quot;org.freedesktop.Notifications&quot;</span>,
-    default_path = <span class="string">&quot;/org/freedesktop/Notifications&quot;
+    interface = <span class="string">"org.dunstproject.cmd0"</span>,
+    default_service = <span class="string">"org.freedesktop.Notifications"</span>,
+    default_path = <span class="string">"/org/freedesktop/Notifications"
 </span>)]
 </span><span class="kw">trait </span>DunstDbus {
-    <span class="attr">#[dbus_proxy(property, name = <span class="string">&quot;paused&quot;</span>)]
+    <span class="attr">#[dbus_proxy(property, name = <span class="string">"paused"</span>)]
     </span><span class="kw">fn </span>paused(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;
-    <span class="attr">#[dbus_proxy(property, name = <span class="string">&quot;paused&quot;</span>)]
+    <span class="attr">#[dbus_proxy(property, name = <span class="string">"paused"</span>)]
     </span><span class="kw">fn </span>set_paused(<span class="kw-2">&amp;</span><span class="self">self</span>, value: bool) -&gt; zbus::Result&lt;()&gt;;
     <span class="kw">fn </span>notification_show(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;()&gt;;
-    <span class="attr">#[dbus_proxy(property, name = <span class="string">&quot;displayedLength&quot;</span>)]
+    <span class="attr">#[dbus_proxy(property, name = <span class="string">"displayedLength"</span>)]
     </span><span class="kw">fn </span>displayed_length(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;u32&gt;;
-    <span class="attr">#[dbus_proxy(property, name = <span class="string">&quot;waitingLength&quot;</span>)]
+    <span class="attr">#[dbus_proxy(property, name = <span class="string">"waitingLength"</span>)]
     </span><span class="kw">fn </span>waiting_length(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;u32&gt;;
 }
 <span class="kw">struct </span>SwayNCDriver {
-    proxy: SwayNCDbusProxy&lt;<span class="lifetime">&#39;static</span>&gt;,
-    changes: SubscribeStream&lt;<span class="lifetime">&#39;static</span>&gt;,
-    changes_v2: SubscribeV2Stream&lt;<span class="lifetime">&#39;static</span>&gt;,
+    proxy: SwayNCDbusProxy&lt;<span class="lifetime">'static</span>&gt;,
+    changes: SubscribeStream&lt;<span class="lifetime">'static</span>&gt;,
+    changes_v2: SubscribeV2Stream&lt;<span class="lifetime">'static</span>&gt;,
 }
 
 <span class="kw">impl </span>SwayNCDriver {
@@ -510,16 +511,16 @@
         <span class="kw">let </span>dbus_conn = new_dbus_connection().<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">let </span>proxy = SwayNCDbusProxy::new(<span class="kw-2">&amp;</span>dbus_conn)
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to create SwayNCDbusProxy&quot;</span>)<span class="question-mark">?</span>;
+            </span>.error(<span class="string">"Failed to create SwayNCDbusProxy"</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
             changes: proxy
                 .receive_subscribe()
                 .<span class="kw">await
-                </span>.error(<span class="string">&quot;Failed to create SubscribeStream&quot;</span>)<span class="question-mark">?</span>,
+                </span>.error(<span class="string">"Failed to create SubscribeStream"</span>)<span class="question-mark">?</span>,
             changes_v2: proxy
                 .receive_subscribe_v2()
                 .<span class="kw">await
-                </span>.error(<span class="string">&quot;Failed to create SubscribeV2Stream&quot;</span>)<span class="question-mark">?</span>,
+                </span>.error(<span class="string">"Failed to create SubscribeV2Stream"</span>)<span class="question-mark">?</span>,
             proxy,
         })
     }
@@ -528,28 +529,28 @@
 <span class="attr">#[async_trait]
 </span><span class="kw">impl </span>Driver <span class="kw">for </span>SwayNCDriver {
     <span class="kw">async fn </span>is_paused(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;bool&gt; {
-        <span class="self">self</span>.proxy.get_dnd().<span class="kw">await</span>.error(<span class="string">&quot;Failed to call &#39;GetDnd&#39;&quot;</span>)
+        <span class="self">self</span>.proxy.get_dnd().<span class="kw">await</span>.error(<span class="string">"Failed to call 'GetDnd'"</span>)
     }
 
     <span class="kw">async fn </span>set_paused(<span class="kw-2">&amp;</span><span class="self">self</span>, paused: bool) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="self">self</span>.proxy
             .set_dnd(paused)
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to call &#39;SetDnd&#39;&quot;</span>)
+            </span>.error(<span class="string">"Failed to call 'SetDnd'"</span>)
     }
 
     <span class="kw">async fn </span>notification_show(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="self">self</span>.proxy
             .toggle_visibility()
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to call &#39;ToggleVisibility&#39;&quot;</span>)
+            </span>.error(<span class="string">"Failed to call 'ToggleVisibility'"</span>)
     }
 
     <span class="kw">async fn </span>notification_count(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;u32&gt; {
         <span class="self">self</span>.proxy
             .notification_count()
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to call &#39;NotificationCount&#39;&quot;</span>)
+            </span>.error(<span class="string">"Failed to call 'NotificationCount'"</span>)
     }
 
     <span class="kw">async fn </span>wait_for_change(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
@@ -562,9 +563,9 @@
 }
 
 <span class="attr">#[dbus_proxy(
-    interface = <span class="string">&quot;org.erikreider.swaync.cc&quot;</span>,
-    default_service = <span class="string">&quot;org.freedesktop.Notifications&quot;</span>,
-    default_path = <span class="string">&quot;/org/erikreider/swaync/cc&quot;
+    interface = <span class="string">"org.erikreider.swaync.cc"</span>,
+    default_service = <span class="string">"org.freedesktop.Notifications"</span>,
+    default_path = <span class="string">"/org/erikreider/swaync/cc"
 </span>)]
 </span><span class="kw">trait </span>SwayNCDbus {
     <span class="kw">fn </span>get_dnd(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;

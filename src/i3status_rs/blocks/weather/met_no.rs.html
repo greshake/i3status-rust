@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/weather/met_no.rs`."><title>met_no.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0 (82e1608df 2023-12-21)" data-channel="1.75.0" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/weather/met_no.rs`."><title>met_no.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-ac92e1bbe349e143.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0 (07dca489a 2024-02-04)" data-channel="1.76.0" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -330,7 +331,7 @@
 <span class="kw">type </span>LegendsStore = HashMap&lt;String, LegendsResult&gt;;
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(tag = <span class="string">&quot;name&quot;</span>, rename_all = <span class="string">&quot;lowercase&quot;</span>, deny_unknown_fields, default)]
+#[serde(tag = <span class="string">"name"</span>, rename_all = <span class="string">"lowercase"</span>, deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
     coordinates: <span class="prelude-ty">Option</span>&lt;(String, String)&gt;,
     altitude: <span class="prelude-ty">Option</span>&lt;String&gt;,
@@ -340,16 +341,16 @@
     </span>forecast_hours: usize,
 }
 
-<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct </span>Service&lt;<span class="lifetime">&#39;a</span>&gt; {
-    config: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>Config,
-    legend: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>LegendsStore,
+<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct </span>Service&lt;<span class="lifetime">'a</span>&gt; {
+    config: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>Config,
+    legend: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>LegendsStore,
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>&gt; Service&lt;<span class="lifetime">&#39;a</span>&gt; {
-    <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>new(config: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>Config) -&gt; <span class="prelude-ty">Result</span>&lt;Service&lt;<span class="lifetime">&#39;a</span>&gt;&gt; {
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; Service&lt;<span class="lifetime">'a</span>&gt; {
+    <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>new(config: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>Config) -&gt; <span class="prelude-ty">Result</span>&lt;Service&lt;<span class="lifetime">'a</span>&gt;&gt; {
         <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
             config,
-            legend: LEGENDS.as_ref().error(<span class="string">&quot;Invalid legends file&quot;</span>)<span class="question-mark">?</span>,
+            legend: LEGENDS.as_ref().error(<span class="string">"Invalid legends file"</span>)<span class="question-mark">?</span>,
         })
     }
 
@@ -362,14 +363,14 @@
             .unwrap()
             .summary
             .symbol_code
-            .split(<span class="string">&#39;_&#39;</span>);
+            .split(<span class="string">'_'</span>);
 
         <span class="kw">let </span>summary = symbol_code_split.next().unwrap();
 
         <span class="comment">// Times of day can be day, night, and polartwilight
         </span><span class="kw">let </span>is_night = symbol_code_split
             .next()
-            .map_or(<span class="bool-val">false</span>, |time_of_day| time_of_day == <span class="string">&quot;night&quot;</span>);
+            .map_or(<span class="bool-val">false</span>, |time_of_day| time_of_day == <span class="string">"night"</span>);
 
         <span class="kw">let </span>translated = translate(<span class="self">self</span>.legend, summary, <span class="kw-2">&amp;</span><span class="self">self</span>.config.lang);
 
@@ -400,12 +401,12 @@
 
 <span class="attr">#[derive(Deserialize, Debug, Clone, Default)]
 </span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">enum </span>ApiLanguage {
-    <span class="attr">#[serde(rename = <span class="string">&quot;en&quot;</span>)]
+    <span class="attr">#[serde(rename = <span class="string">"en"</span>)]
     #[default]
     </span>English,
-    <span class="attr">#[serde(rename = <span class="string">&quot;nn&quot;</span>)]
+    <span class="attr">#[serde(rename = <span class="string">"nn"</span>)]
     </span>NorwegianNynorsk,
-    <span class="attr">#[serde(rename = <span class="string">&quot;nb&quot;</span>)]
+    <span class="attr">#[serde(rename = <span class="string">"nb"</span>)]
     </span>NorwegianBokmaal,
 }
 
@@ -457,9 +458,9 @@
 }
 
 <span class="kw">static </span>LEGENDS: Lazy&lt;<span class="prelude-ty">Option</span>&lt;LegendsStore&gt;&gt; =
-    Lazy::new(|| serde_json::from_str(<span class="macro">include_str!</span>(<span class="string">&quot;met_no_legends.json&quot;</span>)).ok());
+    Lazy::new(|| serde_json::from_str(<span class="macro">include_str!</span>(<span class="string">"met_no_legends.json"</span>)).ok());
 
-<span class="kw">const </span>FORECAST_URL: <span class="kw-2">&amp;</span>str = <span class="string">&quot;https://api.met.no/weatherapi/locationforecast/2.0/compact&quot;</span>;
+<span class="kw">const </span>FORECAST_URL: <span class="kw-2">&amp;</span>str = <span class="string">"https://api.met.no/weatherapi/locationforecast/2.0/compact"</span>;
 
 <span class="kw">fn </span>translate(legend: <span class="kw-2">&amp;</span>LegendsStore, summary: <span class="kw-2">&amp;</span>str, lang: <span class="kw-2">&amp;</span>ApiLanguage) -&gt; String {
     legend
@@ -474,7 +475,7 @@
 }
 
 <span class="attr">#[async_trait]
-</span><span class="kw">impl </span>WeatherProvider <span class="kw">for </span>Service&lt;<span class="lifetime">&#39;_</span>&gt; {
+</span><span class="kw">impl </span>WeatherProvider <span class="kw">for </span>Service&lt;<span class="lifetime">'_</span>&gt; {
     <span class="kw">async fn </span>get_weather(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         location: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Coordinates&gt;,
@@ -484,24 +485,24 @@
             .as_ref()
             .map(|loc| (loc.latitude.to_string(), loc.longitude.to_string()))
             .or_else(|| <span class="self">self</span>.config.coordinates.clone())
-            .error(<span class="string">&quot;No location given&quot;</span>)<span class="question-mark">?</span>;
+            .error(<span class="string">"No location given"</span>)<span class="question-mark">?</span>;
 
         <span class="kw">let </span>querystr: HashMap&lt;<span class="kw-2">&amp;</span>str, String&gt; = <span class="macro">map! </span>{
-            <span class="string">&quot;lat&quot; </span>=&gt; lat,
-            <span class="string">&quot;lon&quot; </span>=&gt; lon,
-            [<span class="kw">if let </span><span class="prelude-val">Some</span>(alt) = <span class="kw-2">&amp;</span><span class="self">self</span>.config.altitude] <span class="string">&quot;altitude&quot; </span>=&gt; alt,
+            <span class="string">"lat" </span>=&gt; lat,
+            <span class="string">"lon" </span>=&gt; lon,
+            [<span class="kw">if let </span><span class="prelude-val">Some</span>(alt) = <span class="kw-2">&amp;</span><span class="self">self</span>.config.altitude] <span class="string">"altitude" </span>=&gt; alt,
         };
 
         <span class="kw">let </span>data: ForecastResponse = REQWEST_CLIENT
             .get(FORECAST_URL)
             .query(<span class="kw-2">&amp;</span>querystr)
-            .header(reqwest::header::CONTENT_TYPE, <span class="string">&quot;application/json&quot;</span>)
+            .header(reqwest::header::CONTENT_TYPE, <span class="string">"application/json"</span>)
             .send()
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Forecast request failed&quot;</span>)<span class="question-mark">?
+            </span>.error(<span class="string">"Forecast request failed"</span>)<span class="question-mark">?
             </span>.json()
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Forecast request failed&quot;</span>)<span class="question-mark">?</span>;
+            </span>.error(<span class="string">"Forecast request failed"</span>)<span class="question-mark">?</span>;
 
         <span class="kw">let </span>forecast_hours = <span class="self">self</span>.config.forecast_hours;
 
@@ -523,7 +524,7 @@
             <span class="kw">let </span><span class="kw-2">mut </span>apparent_count = <span class="number">0.0</span>;
             <span class="kw">if </span>data.properties.timeseries.len() &lt; forecast_hours {
                 <span class="prelude-val">Err</span>(Error::new(
-                <span class="macro">format!</span>(<span class="string">&quot;Unable to fetch the specified number of forecast_hours specified {}, only {} hours available&quot;</span>, forecast_hours, data.properties.timeseries.len()),
+                <span class="macro">format!</span>(<span class="string">"Unable to fetch the specified number of forecast_hours specified {}, only {} hours available"</span>, forecast_hours, data.properties.timeseries.len()),
             ))<span class="question-mark">?</span>;
             }
             <span class="kw">for </span>forecast_time_step <span class="kw">in </span>data.properties.timeseries.iter().take(forecast_hours) {
@@ -572,14 +573,14 @@
             } = wind_forecasts
                 .iter()
                 .min_by(|x, y| x.speed.total_cmp(<span class="kw-2">&amp;</span>y.speed))
-                .error(<span class="string">&quot;No min wind&quot;</span>)<span class="question-mark">?</span>;
+                .error(<span class="string">"No min wind"</span>)<span class="question-mark">?</span>;
             <span class="kw">let </span>Wind {
                 speed: wind_max,
                 degrees: direction_max,
             } = wind_forecasts
                 .iter()
                 .min_by(|x, y| x.speed.total_cmp(<span class="kw-2">&amp;</span>y.speed))
-                .error(<span class="string">&quot;No max wind&quot;</span>)<span class="question-mark">?</span>;
+                .error(<span class="string">"No max wind"</span>)<span class="question-mark">?</span>;
 
             <span class="prelude-val">Some</span>(Forecast {
                 avg: ForecastAggregate {
@@ -611,7 +612,7 @@
         };
 
         <span class="prelude-val">Ok</span>(WeatherResult {
-            location: location.map_or(<span class="string">&quot;Unknown&quot;</span>.to_string(), |c| c.city.clone()),
+            location: location.map_or(<span class="string">"Unknown"</span>.to_string(), |c| c.city.clone()),
             current_weather: <span class="self">self
                 </span>.get_weather_instant(<span class="kw-2">&amp;</span>data.properties.timeseries.first().unwrap().data),
             forecast,
@@ -621,34 +622,34 @@
 
 <span class="kw">fn </span>weather_to_icon(weather: <span class="kw-2">&amp;</span>str, is_night: bool) -&gt; WeatherIcon {
     <span class="kw">match </span>weather {
-        <span class="string">&quot;cloudy&quot; </span>| <span class="string">&quot;partlycloudy&quot; </span>| <span class="string">&quot;fair&quot; </span>=&gt; WeatherIcon::Clouds{is_night},
-        <span class="string">&quot;fog&quot; </span>=&gt; WeatherIcon::Fog{is_night},
-        <span class="string">&quot;clearsky&quot; </span>=&gt; WeatherIcon::Clear{is_night},
-        <span class="string">&quot;heavyrain&quot; </span>| <span class="string">&quot;heavyrainshowers&quot; </span>| <span class="string">&quot;lightrain&quot; </span>| <span class="string">&quot;lightrainshowers&quot; </span>| <span class="string">&quot;rain&quot;
-        </span>| <span class="string">&quot;rainshowers&quot; </span>=&gt; WeatherIcon::Rain{is_night},
-        <span class="string">&quot;rainandthunder&quot;
-        </span>| <span class="string">&quot;heavyrainandthunder&quot;
-        </span>| <span class="string">&quot;rainshowersandthunder&quot;
-        </span>| <span class="string">&quot;sleetandthunder&quot;
-        </span>| <span class="string">&quot;sleetshowersandthunder&quot;
-        </span>| <span class="string">&quot;snowandthunder&quot;
-        </span>| <span class="string">&quot;snowshowersandthunder&quot;
-        </span>| <span class="string">&quot;heavyrainshowersandthunder&quot;
-        </span>| <span class="string">&quot;heavysleetandthunder&quot;
-        </span>| <span class="string">&quot;heavysleetshowersandthunder&quot;
-        </span>| <span class="string">&quot;heavysnowandthunder&quot;
-        </span>| <span class="string">&quot;heavysnowshowersandthunder&quot;
-        </span>| <span class="string">&quot;lightsleetandthunder&quot;
-        </span>| <span class="string">&quot;lightrainandthunder&quot;
-        </span>| <span class="string">&quot;lightsnowandthunder&quot;
-        </span>| <span class="string">&quot;lightssleetshowersandthunder&quot; </span><span class="comment">// There&#39;s a typo in the api it will be fixed in the next version to the following entry
-        </span>| <span class="string">&quot;lightsleetshowersandthunder&quot;
-        </span>| <span class="string">&quot;lightssnowshowersandthunder&quot;</span><span class="comment">// There&#39;s a typo in the api it will be fixed in the next version to the following entry
-        </span>| <span class="string">&quot;lightsnowshowersandthunder&quot;
-        </span>| <span class="string">&quot;lightrainshowersandthunder&quot; </span>=&gt; WeatherIcon::Thunder{is_night},
-        <span class="string">&quot;heavysleet&quot; </span>| <span class="string">&quot;heavysleetshowers&quot; </span>| <span class="string">&quot;heavysnow&quot; </span>| <span class="string">&quot;heavysnowshowers&quot; </span>| <span class="string">&quot;lightsleet&quot;
-        </span>| <span class="string">&quot;lightsleetshowers&quot; </span>| <span class="string">&quot;lightsnow&quot; </span>| <span class="string">&quot;lightsnowshowers&quot; </span>| <span class="string">&quot;sleet&quot; </span>| <span class="string">&quot;sleetshowers&quot;
-        </span>| <span class="string">&quot;snow&quot; </span>| <span class="string">&quot;snowshowers&quot; </span>=&gt; WeatherIcon::Snow,
+        <span class="string">"cloudy" </span>| <span class="string">"partlycloudy" </span>| <span class="string">"fair" </span>=&gt; WeatherIcon::Clouds{is_night},
+        <span class="string">"fog" </span>=&gt; WeatherIcon::Fog{is_night},
+        <span class="string">"clearsky" </span>=&gt; WeatherIcon::Clear{is_night},
+        <span class="string">"heavyrain" </span>| <span class="string">"heavyrainshowers" </span>| <span class="string">"lightrain" </span>| <span class="string">"lightrainshowers" </span>| <span class="string">"rain"
+        </span>| <span class="string">"rainshowers" </span>=&gt; WeatherIcon::Rain{is_night},
+        <span class="string">"rainandthunder"
+        </span>| <span class="string">"heavyrainandthunder"
+        </span>| <span class="string">"rainshowersandthunder"
+        </span>| <span class="string">"sleetandthunder"
+        </span>| <span class="string">"sleetshowersandthunder"
+        </span>| <span class="string">"snowandthunder"
+        </span>| <span class="string">"snowshowersandthunder"
+        </span>| <span class="string">"heavyrainshowersandthunder"
+        </span>| <span class="string">"heavysleetandthunder"
+        </span>| <span class="string">"heavysleetshowersandthunder"
+        </span>| <span class="string">"heavysnowandthunder"
+        </span>| <span class="string">"heavysnowshowersandthunder"
+        </span>| <span class="string">"lightsleetandthunder"
+        </span>| <span class="string">"lightrainandthunder"
+        </span>| <span class="string">"lightsnowandthunder"
+        </span>| <span class="string">"lightssleetshowersandthunder" </span><span class="comment">// There's a typo in the api it will be fixed in the next version to the following entry
+        </span>| <span class="string">"lightsleetshowersandthunder"
+        </span>| <span class="string">"lightssnowshowersandthunder"</span><span class="comment">// There's a typo in the api it will be fixed in the next version to the following entry
+        </span>| <span class="string">"lightsnowshowersandthunder"
+        </span>| <span class="string">"lightrainshowersandthunder" </span>=&gt; WeatherIcon::Thunder{is_night},
+        <span class="string">"heavysleet" </span>| <span class="string">"heavysleetshowers" </span>| <span class="string">"heavysnow" </span>| <span class="string">"heavysnowshowers" </span>| <span class="string">"lightsleet"
+        </span>| <span class="string">"lightsleetshowers" </span>| <span class="string">"lightsnow" </span>| <span class="string">"lightsnowshowers" </span>| <span class="string">"sleet" </span>| <span class="string">"sleetshowers"
+        </span>| <span class="string">"snow" </span>| <span class="string">"snowshowers" </span>=&gt; WeatherIcon::Snow,
         <span class="kw">_ </span>=&gt; WeatherIcon::Default,
     }
 }

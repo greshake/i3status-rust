@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/disk_space.rs`."><title>disk_space.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0 (82e1608df 2023-12-21)" data-channel="1.75.0" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/disk_space.rs`."><title>disk_space.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-ac92e1bbe349e143.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0 (07dca489a 2024-02-04)" data-channel="1.76.0" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -203,14 +204,14 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `path` | Path to collect information from. Supports path expansions e.g. `~`. | `&quot;/&quot;`
+//! `path` | Path to collect information from. Supports path expansions e.g. `~`. | `"/"`
 //! `interval` | Update time in seconds | `20`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $available &quot;`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $available "`
 //! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
 //! `warning` | A value which will trigger warning block state | `20.0`
 //! `alert` | A value which will trigger critical block state | `10.0`
-//! `info_type` | Determines which information will affect the block state. Possible values are `&quot;available&quot;`, `&quot;free&quot;` and `&quot;used&quot;` | `&quot;available&quot;`
-//! `alert_unit` | The unit of `alert` and `warning` options. If not set, percents are used. Possible values are `&quot;B&quot;`, `&quot;KB&quot;`, `&quot;KiB&quot;`, `&quot;MB&quot;`, `&quot;MiB&quot;`, `&quot;GB&quot;`, `&quot;Gib&quot;`, `&quot;TB&quot;` and `&quot;TiB&quot;` | `None`
+//! `info_type` | Determines which information will affect the block state. Possible values are `"available"`, `"free"` and `"used"` | `"available"`
+//! `alert_unit` | The unit of `alert` and `warning` options. If not set, percents are used. Possible values are `"B"`, `"KB"`, `"KiB"`, `"MB"`, `"MiB"`, `"GB"`, `"Gib"`, `"TB"` and `"TiB"` | `None`
 //!
 //! Placeholder  | Value                                                              | Type   | Unit
 //! -------------|--------------------------------------------------------------------|--------|-------
@@ -230,36 +231,36 @@
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;disk_space&quot;
-//! info_type = &quot;available&quot;
-//! alert_unit = &quot;GB&quot;
+//! block = "disk_space"
+//! info_type = "available"
+//! alert_unit = "GB"
 //! alert = 10.0
 //! warning = 15.0
-//! format = &quot; $icon $available &quot;
-//! format_alt = &quot; $icon $available / $total &quot;
+//! format = " $icon $available "
+//! format_alt = " $icon $available / $total "
 //! ```
 //!
 //! Update block on right click:
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;disk_space&quot;
+//! block = "disk_space"
 //! [[block.click]]
-//! button = &quot;right&quot;
+//! button = "right"
 //! update = true
 //! ```
 //!
 //! # Icons Used
 //! - `disk_drive`
 
-</span><span class="comment">// make_log_macro!(debug, &quot;disk_space&quot;);
+</span><span class="comment">// make_log_macro!(debug, "disk_space");
 
 </span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
 <span class="kw">use </span><span class="kw">crate</span>::formatting::prefix::Prefix;
 <span class="kw">use </span>nix::sys::statvfs::statvfs;
 
 <span class="attr">#[derive(Copy, Clone, Debug, Deserialize, SmartDefault)]
-#[serde(rename_all = <span class="string">&quot;lowercase&quot;</span>)]
+#[serde(rename_all = <span class="string">"lowercase"</span>)]
 </span><span class="kw">pub enum </span>InfoType {
     <span class="attr">#[default]
     </span>Available,
@@ -270,7 +271,7 @@
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
-    <span class="attr">#[default(<span class="string">&quot;/&quot;</span>.into())]
+    <span class="attr">#[default(<span class="string">"/"</span>.into())]
     </span><span class="kw">pub </span>path: ShellString,
     <span class="kw">pub </span>info_type: InfoType,
     <span class="kw">pub </span>format: FormatConfig,
@@ -286,29 +287,29 @@
 
 <span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions()<span class="question-mark">?</span>;
-    api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;toggle_format&quot;</span>)])<span class="question-mark">?</span>;
+    api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">"toggle_format"</span>)])<span class="question-mark">?</span>;
 
-    <span class="kw">let </span><span class="kw-2">mut </span>format = config.format.with_default(<span class="string">&quot; $icon $available &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span><span class="kw-2">mut </span>format = config.format.with_default(<span class="string">" $icon $available "</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>format_alt = <span class="kw">match </span><span class="kw-2">&amp;</span>config.format_alt {
-        <span class="prelude-val">Some</span>(f) =&gt; <span class="prelude-val">Some</span>(f.with_default(<span class="string">&quot;&quot;</span>)<span class="question-mark">?</span>),
+        <span class="prelude-val">Some</span>(f) =&gt; <span class="prelude-val">Some</span>(f.with_default(<span class="string">""</span>)<span class="question-mark">?</span>),
         <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
     };
 
     <span class="kw">let </span>unit = <span class="kw">match </span>config.alert_unit.as_deref() {
         <span class="comment">// Decimal
-        </span><span class="prelude-val">Some</span>(<span class="string">&quot;TB&quot;</span>) =&gt; <span class="prelude-val">Some</span>(Prefix::Tera),
-        <span class="prelude-val">Some</span>(<span class="string">&quot;GB&quot;</span>) =&gt; <span class="prelude-val">Some</span>(Prefix::Giga),
-        <span class="prelude-val">Some</span>(<span class="string">&quot;MB&quot;</span>) =&gt; <span class="prelude-val">Some</span>(Prefix::Mega),
-        <span class="prelude-val">Some</span>(<span class="string">&quot;KB&quot;</span>) =&gt; <span class="prelude-val">Some</span>(Prefix::Kilo),
+        </span><span class="prelude-val">Some</span>(<span class="string">"TB"</span>) =&gt; <span class="prelude-val">Some</span>(Prefix::Tera),
+        <span class="prelude-val">Some</span>(<span class="string">"GB"</span>) =&gt; <span class="prelude-val">Some</span>(Prefix::Giga),
+        <span class="prelude-val">Some</span>(<span class="string">"MB"</span>) =&gt; <span class="prelude-val">Some</span>(Prefix::Mega),
+        <span class="prelude-val">Some</span>(<span class="string">"KB"</span>) =&gt; <span class="prelude-val">Some</span>(Prefix::Kilo),
         <span class="comment">// Binary
-        </span><span class="prelude-val">Some</span>(<span class="string">&quot;TiB&quot;</span>) =&gt; <span class="prelude-val">Some</span>(Prefix::Tebi),
-        <span class="prelude-val">Some</span>(<span class="string">&quot;GiB&quot;</span>) =&gt; <span class="prelude-val">Some</span>(Prefix::Gibi),
-        <span class="prelude-val">Some</span>(<span class="string">&quot;MiB&quot;</span>) =&gt; <span class="prelude-val">Some</span>(Prefix::Mebi),
-        <span class="prelude-val">Some</span>(<span class="string">&quot;KiB&quot;</span>) =&gt; <span class="prelude-val">Some</span>(Prefix::Kibi),
+        </span><span class="prelude-val">Some</span>(<span class="string">"TiB"</span>) =&gt; <span class="prelude-val">Some</span>(Prefix::Tebi),
+        <span class="prelude-val">Some</span>(<span class="string">"GiB"</span>) =&gt; <span class="prelude-val">Some</span>(Prefix::Gibi),
+        <span class="prelude-val">Some</span>(<span class="string">"MiB"</span>) =&gt; <span class="prelude-val">Some</span>(Prefix::Mebi),
+        <span class="prelude-val">Some</span>(<span class="string">"KiB"</span>) =&gt; <span class="prelude-val">Some</span>(Prefix::Kibi),
         <span class="comment">// Byte
-        </span><span class="prelude-val">Some</span>(<span class="string">&quot;B&quot;</span>) =&gt; <span class="prelude-val">Some</span>(Prefix::One),
+        </span><span class="prelude-val">Some</span>(<span class="string">"B"</span>) =&gt; <span class="prelude-val">Some</span>(Prefix::One),
         <span class="comment">// Unknown
-        </span><span class="prelude-val">Some</span>(x) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">&quot;Unknown unit: &#39;{x}&#39;&quot;</span>))),
+        </span><span class="prelude-val">Some</span>(x) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">"Unknown unit: '{x}'"</span>))),
         <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
     };
 
@@ -319,7 +320,7 @@
     <span class="kw">loop </span>{
         <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
 
-        <span class="kw">let </span>statvfs = statvfs(<span class="kw-2">&amp;*</span>path).error(<span class="string">&quot;failed to retrieve statvfs&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>statvfs = statvfs(<span class="kw-2">&amp;*</span>path).error(<span class="string">"failed to retrieve statvfs"</span>)<span class="question-mark">?</span>;
 
         <span class="comment">// Casting to be compatible with 32-bit systems
         </span><span class="attr">#[allow(clippy::unnecessary_cast)]
@@ -340,16 +341,16 @@
 
         <span class="kw">let </span>percentage = result / (total <span class="kw">as </span>f64) * <span class="number">100.</span>;
         widget.set_values(<span class="macro">map! </span>{
-            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(<span class="string">&quot;disk_drive&quot;</span>),
-            <span class="string">&quot;path&quot; </span>=&gt; Value::text(path.to_string()),
-            <span class="string">&quot;percentage&quot; </span>=&gt; Value::percents(percentage),
-            <span class="string">&quot;total&quot; </span>=&gt; Value::bytes(total <span class="kw">as </span>f64),
-            <span class="string">&quot;used&quot; </span>=&gt; Value::bytes(used <span class="kw">as </span>f64),
-            <span class="string">&quot;available&quot; </span>=&gt; Value::bytes(available <span class="kw">as </span>f64),
-            <span class="string">&quot;free&quot; </span>=&gt; Value::bytes(free <span class="kw">as </span>f64),
+            <span class="string">"icon" </span>=&gt; Value::icon(<span class="string">"disk_drive"</span>),
+            <span class="string">"path" </span>=&gt; Value::text(path.to_string()),
+            <span class="string">"percentage" </span>=&gt; Value::percents(percentage),
+            <span class="string">"total" </span>=&gt; Value::bytes(total <span class="kw">as </span>f64),
+            <span class="string">"used" </span>=&gt; Value::bytes(used <span class="kw">as </span>f64),
+            <span class="string">"available" </span>=&gt; Value::bytes(available <span class="kw">as </span>f64),
+            <span class="string">"free" </span>=&gt; Value::bytes(free <span class="kw">as </span>f64),
         });
 
-        <span class="comment">// Send percentage to alert check if we don&#39;t want absolute alerts
+        <span class="comment">// Send percentage to alert check if we don't want absolute alerts
         </span><span class="kw">let </span>alert_val_in_config_units = <span class="kw">match </span>unit {
             <span class="prelude-val">Some</span>(p) =&gt; p.apply(result),
             <span class="prelude-val">None </span>=&gt; percentage,
@@ -384,7 +385,7 @@
                 <span class="kw">_ </span>= timer.tick() =&gt; <span class="kw">break</span>,
                 <span class="kw">_ </span>= api.wait_for_update_request() =&gt; <span class="kw">break</span>,
                 <span class="prelude-val">Some</span>(action) = actions.recv() =&gt; <span class="kw">match </span>action.as_ref() {
-                    <span class="string">&quot;toggle_format&quot; </span>=&gt; {
+                    <span class="string">"toggle_format" </span>=&gt; {
                         <span class="kw">if let </span><span class="prelude-val">Some</span>(format_alt) = <span class="kw-2">&amp;mut </span>format_alt {
                             std::mem::swap(format_alt, <span class="kw-2">&amp;mut </span>format);
                             <span class="kw">break</span>;

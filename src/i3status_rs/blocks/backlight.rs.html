@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/backlight.rs`."><title>backlight.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0 (82e1608df 2023-12-21)" data-channel="1.75.0" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/backlight.rs`."><title>backlight.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-ac92e1bbe349e143.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0 (07dca489a 2024-02-04)" data-channel="1.76.0" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -242,7 +243,7 @@
 </pre></div><pre class="rust"><code><span class="doccomment">//! The brightness of a backlight device
 //!
 //! This block reads brightness information directly from the filesystem, so it works under both
-//! X11 and Wayland. The block uses `inotify` to listen for changes in the device&#39;s brightness
+//! X11 and Wayland. The block uses `inotify` to listen for changes in the device's brightness
 //! directly, so there is no need to set an update interval. This block uses DBus to set brightness
 //! level using the mouse wheel, but will [fallback to sysfs](#d-bus-fallback) if `systemd-logind` is not used.
 //!
@@ -255,20 +256,20 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `device` | A regex to match against `/sys/class/backlight` devices to read brightness information from (can match 1 or more devices). When there is no `device` specified, this block will display information for all devices found in the `/sys/class/backlight` directory. | Default device
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $brightness &quot;`
-//! `missing_format` | A string to customise the output of this block. No placeholders available | `&quot; no backlight devices &quot;`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $brightness "`
+//! `missing_format` | A string to customise the output of this block. No placeholders available | `" no backlight devices "`
 //! `step_width` | The brightness increment to use when scrolling, in percent | `5`
 //! `minimum` | The minimum brightness that can be scrolled down to | `5`
 //! `maximum` | The maximum brightness that can be scrolled up to | `100`
 //! `cycle` | The brightnesses to cycle through on each click | `[minimum, maximum]`
 //! `root_scaling` | Scaling exponent reciprocal (ie. root) | `1.0`
-//! `invert_icons` | Invert icons&#39; ordering, useful if you have colorful emoji | `false`
+//! `invert_icons` | Invert icons' ordering, useful if you have colorful emoji | `false`
 //! `ddcci_sleep_multiplier` | [See ddcutil documentation](https://www.ddcutil.com/performance_options/#option-sleep-multiplier) | `1.0`
 //! `ddcci_max_tries_write_read` | The maximum number of times to attempt writing to  or reading from a ddcci monitor | `10`
 //!
 //! Placeholder  | Value                                     | Type   | Unit
 //! -------------|-------------------------------------------|--------|---------------
-//! `icon`       | Icon based on backlight&#39;s state           | Icon   | -
+//! `icon`       | Icon based on backlight's state           | Icon   | -
 //! `brightness` | Current brightness                        | Number | %
 //!
 //! Action            | Default button
@@ -281,16 +282,16 @@
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;backlight&quot;
-//! device = &quot;intel_backlight&quot;
+//! block = "backlight"
+//! device = "intel_backlight"
 //! ```
 //!
 //! Hide missing backlight:
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;backlight&quot;
-//! missing_format = &quot;&quot;
+//! block = "backlight"
+//! missing_format = ""
 //! ```
 //!
 //! # calibright
@@ -301,16 +302,16 @@
 //!
 //! # D-Bus Fallback
 //!
-//! If you don&#39;t use `systemd-logind` i3status-rust will attempt to set the brightness
-//! using sysfs. In order to do this you&#39;ll need to have write permission.
+//! If you don't use `systemd-logind` i3status-rust will attempt to set the brightness
+//! using sysfs. In order to do this you'll need to have write permission.
 //! You can do this by writing a `udev` rule for your system.
 //!
-//! First, check that your user is a member of the &quot;video&quot; group using the
+//! First, check that your user is a member of the "video" group using the
 //! `groups` command. Then add a rule in the `/etc/udev/rules.d/` directory
 //! containing the following, for example in `backlight.rules`:
 //!
 //! ```text
-//! ACTION==&quot;add&quot;, SUBSYSTEM==&quot;backlight&quot;, GROUP=&quot;video&quot;, MODE=&quot;0664&quot;
+//! ACTION=="add", SUBSYSTEM=="backlight", GROUP="video", MODE="0664"
 //! ```
 //!
 //! This will allow the video group to modify all backlight devices. You will
@@ -348,15 +349,15 @@
 <span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions()<span class="question-mark">?</span>;
     api.set_default_actions(<span class="kw-2">&amp;</span>[
-        (MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;cycle&quot;</span>),
-        (MouseButton::WheelUp, <span class="prelude-val">None</span>, <span class="string">&quot;brightness_up&quot;</span>),
-        (MouseButton::WheelDown, <span class="prelude-val">None</span>, <span class="string">&quot;brightness_down&quot;</span>),
+        (MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">"cycle"</span>),
+        (MouseButton::WheelUp, <span class="prelude-val">None</span>, <span class="string">"brightness_up"</span>),
+        (MouseButton::WheelDown, <span class="prelude-val">None</span>, <span class="string">"brightness_down"</span>),
     ])<span class="question-mark">?</span>;
 
-    <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $brightness &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>format = config.format.with_default(<span class="string">" $icon $brightness "</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>missing_format = config
         .missing_format
-        .with_default(<span class="string">&quot; no backlight devices &quot;</span>)<span class="question-mark">?</span>;
+        .with_default(<span class="string">" no backlight devices "</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span>default_cycle = <span class="kw-2">&amp;</span>[config.minimum, config.maximum];
     <span class="kw">let </span><span class="kw-2">mut </span>cycle = config
@@ -387,15 +388,15 @@
 
     <span class="kw">let </span>calibright_config = CalibrightConfig::new_with_defaults(<span class="kw-2">&amp;</span>calibright_defaults)
         .<span class="kw">await
-        </span>.error(<span class="string">&quot;calibright config error&quot;</span>)<span class="question-mark">?</span>;
+        </span>.error(<span class="string">"calibright config error"</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>calibright = CalibrightBuilder::new()
-        .with_device_regex(config.device.as_deref().unwrap_or(<span class="string">&quot;.&quot;</span>))
+        .with_device_regex(config.device.as_deref().unwrap_or(<span class="string">"."</span>))
         .with_config(calibright_config)
         .with_poll_interval(api.error_interval)
         .build()
         .<span class="kw">await
-        </span>.error(<span class="string">&quot;Failed to init calibright&quot;</span>)<span class="question-mark">?</span>;
+        </span>.error(<span class="string">"Failed to init calibright"</span>)<span class="question-mark">?</span>;
 
     <span class="comment">// This is used to display the error, if there is one
     </span><span class="kw">let </span><span class="kw-2">mut </span>block_error: <span class="prelude-ty">Option</span>&lt;CalibrightError&gt; = <span class="prelude-val">None</span>;
@@ -427,8 +428,8 @@
                     icon_value = <span class="number">1.0 </span>- icon_value;
                 }
                 widget.set_values(<span class="macro">map! </span>{
-                    <span class="string">&quot;icon&quot; </span>=&gt; Value::icon_progression(<span class="string">&quot;backlight&quot;</span>, icon_value),
-                    <span class="string">&quot;brightness&quot; </span>=&gt; Value::percents((brightness * <span class="number">100.0</span>).round())
+                    <span class="string">"icon" </span>=&gt; Value::icon_progression(<span class="string">"backlight"</span>, icon_value),
+                    <span class="string">"brightness" </span>=&gt; Value::percents((brightness * <span class="number">100.0</span>).round())
                 });
                 api.set_widget(widget)<span class="question-mark">?</span>;
             }
@@ -447,7 +448,7 @@
                     <span class="kw">break</span>;
                 },
                 <span class="prelude-val">Some</span>(action) = actions.recv() =&gt; <span class="kw">match </span>action.as_ref() {
-                    <span class="string">&quot;cycle&quot; </span>=&gt; {
+                    <span class="string">"cycle" </span>=&gt; {
                         <span class="kw">if let </span><span class="prelude-val">Some</span>(cycle_brightness) = cycle.next() {
                             brightness = cycle_brightness;
                             block_error = calibright
@@ -458,7 +459,7 @@
 
                         }
                     }
-                    <span class="string">&quot;brightness_up&quot; </span>=&gt; {
+                    <span class="string">"brightness_up" </span>=&gt; {
                         brightness = (brightness + step_width).clamp(minimum, maximum);
                         block_error = calibright
                             .set_brightness(brightness)
@@ -466,7 +467,7 @@
                             </span>.err();
                         <span class="kw">break</span>;
                     }
-                    <span class="string">&quot;brightness_down&quot; </span>=&gt; {
+                    <span class="string">"brightness_down" </span>=&gt; {
                         brightness = (brightness - step_width).clamp(minimum, maximum);
                         block_error = calibright
                             .set_brightness(brightness)

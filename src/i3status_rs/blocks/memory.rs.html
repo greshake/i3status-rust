@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/memory.rs`."><title>memory.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0 (82e1608df 2023-12-21)" data-channel="1.75.0" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/memory.rs`."><title>memory.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-ac92e1bbe349e143.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0 (07dca489a 2024-02-04)" data-channel="1.76.0" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -300,7 +301,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block when in &quot;Memory&quot; view. See below for available placeholders. | `&quot; $icon $mem_used.eng(prefix:Mi)/$mem_total.eng(prefix:Mi)($mem_used_percents.eng(w:2)) &quot;`
+//! `format` | A string to customise the output of this block when in "Memory" view. See below for available placeholders. | `" $icon $mem_used.eng(prefix:Mi)/$mem_total.eng(prefix:Mi)($mem_used_percents.eng(w:2)) "`
 //! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
 //! `interval` | Update interval in seconds | `5`
 //! `warning_mem` | Percentage of memory usage, where state is set to warning | `80.0`
@@ -319,11 +320,11 @@
 //! `mem_avail_percents`      | as above but as a percentage of total memory                                    | Number | Percents
 //! `mem_total_used`          | mem_total - mem_free                                                            | Number | Bytes
 //! `mem_total_used_percents` | as above but as a percentage of total memory                                    | Number | Percents
-//! `mem_used`                | Memory used, excluding cached memory and buffers; same as htop&#39;s green bar      | Number | Bytes
+//! `mem_used`                | Memory used, excluding cached memory and buffers; same as htop's green bar      | Number | Bytes
 //! `mem_used_percents`       | as above but as a percentage of total memory                                    | Number | Percents
-//! `buffers`                 | Buffers, similar to htop&#39;s blue bar                                             | Number | Bytes
+//! `buffers`                 | Buffers, similar to htop's blue bar                                             | Number | Bytes
 //! `buffers_percent`         | as above but as a percentage of total memory                                    | Number | Percents
-//! `cached`                  | Cached memory (taking into account ZFS ARC cache), similar to htop&#39;s yellow bar | Number | Bytes
+//! `cached`                  | Cached memory (taking into account ZFS ARC cache), similar to htop's yellow bar | Number | Bytes
 //! `cached_percent`          | as above but as a percentage of total memory                                    | Number | Percents
 //! `swap_total`              | Swap total                                                                      | Number | Bytes
 //! `swap_free`               | Swap free                                                                       | Number | Bytes
@@ -339,9 +340,9 @@
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;memory&quot;
-//! format = &quot; $icon $mem_used_percents.eng(w:1) &quot;
-//! format_alt = &quot; $icon_swap $swap_free.eng(w:3,u:B,p:Mi)/$swap_total.eng(w:3,u:B,p:Mi)($swap_used_percents.eng(w:2)) &quot;
+//! block = "memory"
+//! format = " $icon $mem_used_percents.eng(w:1) "
+//! format_alt = " $icon_swap $swap_free.eng(w:3,u:B,p:Mi)/$swap_total.eng(w:3,u:B,p:Mi)($swap_used_percents.eng(w:2)) "
 //! interval = 30
 //! warning_mem = 70
 //! critical_mem = 90
@@ -378,13 +379,13 @@
 
 <span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions()<span class="question-mark">?</span>;
-    api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;toggle_format&quot;</span>)])<span class="question-mark">?</span>;
+    api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">"toggle_format"</span>)])<span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>format = config.format.with_default(
-        <span class="string">&quot; $icon $mem_used.eng(prefix:Mi)/$mem_total.eng(prefix:Mi)($mem_used_percents.eng(w:2)) &quot;</span>,
+        <span class="string">" $icon $mem_used.eng(prefix:Mi)/$mem_total.eng(prefix:Mi)($mem_used_percents.eng(w:2)) "</span>,
     )<span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>format_alt = <span class="kw">match </span><span class="kw-2">&amp;</span>config.format_alt {
-        <span class="prelude-val">Some</span>(f) =&gt; <span class="prelude-val">Some</span>(f.with_default(<span class="string">&quot;&quot;</span>)<span class="question-mark">?</span>),
+        <span class="prelude-val">Some</span>(f) =&gt; <span class="prelude-val">Some</span>(f.with_default(<span class="string">""</span>)<span class="question-mark">?</span>),
         <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
     };
 
@@ -410,7 +411,7 @@
         } <span class="kw">as </span>f64
             * <span class="number">1024.</span>;
 
-        <span class="comment">// While zfs_arc_cache can be considered &quot;available&quot; memory,
+        <span class="comment">// While zfs_arc_cache can be considered "available" memory,
         // it can only free a maximum of (zfs_arc_cache - zfs_arc_min) amount.
         // see https://github.com/htop-dev/htop/pull/1003
         </span><span class="kw">let </span>zfs_shrinkable_size = mem_state
@@ -445,26 +446,26 @@
 
         <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
         widget.set_values(<span class="macro">map! </span>{
-            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(<span class="string">&quot;memory_mem&quot;</span>),
-            <span class="string">&quot;icon_swap&quot; </span>=&gt; Value::icon(<span class="string">&quot;memory_swap&quot;</span>),
-            <span class="string">&quot;mem_total&quot; </span>=&gt; Value::bytes(mem_total),
-            <span class="string">&quot;mem_free&quot; </span>=&gt; Value::bytes(mem_free),
-            <span class="string">&quot;mem_free_percents&quot; </span>=&gt; Value::percents(mem_free / mem_total * <span class="number">100.</span>),
-            <span class="string">&quot;mem_total_used&quot; </span>=&gt; Value::bytes(mem_total_used),
-            <span class="string">&quot;mem_total_used_percents&quot; </span>=&gt; Value::percents(mem_total_used / mem_total * <span class="number">100.</span>),
-            <span class="string">&quot;mem_used&quot; </span>=&gt; Value::bytes(mem_used),
-            <span class="string">&quot;mem_used_percents&quot; </span>=&gt; Value::percents(mem_used / mem_total * <span class="number">100.</span>),
-            <span class="string">&quot;mem_avail&quot; </span>=&gt; Value::bytes(mem_avail),
-            <span class="string">&quot;mem_avail_percents&quot; </span>=&gt; Value::percents(mem_avail / mem_total * <span class="number">100.</span>),
-            <span class="string">&quot;swap_total&quot; </span>=&gt; Value::bytes(swap_total),
-            <span class="string">&quot;swap_free&quot; </span>=&gt; Value::bytes(swap_free),
-            <span class="string">&quot;swap_free_percents&quot; </span>=&gt; Value::percents(swap_free / swap_total * <span class="number">100.</span>),
-            <span class="string">&quot;swap_used&quot; </span>=&gt; Value::bytes(swap_used),
-            <span class="string">&quot;swap_used_percents&quot; </span>=&gt; Value::percents(swap_used / swap_total * <span class="number">100.</span>),
-            <span class="string">&quot;buffers&quot; </span>=&gt; Value::bytes(buffers),
-            <span class="string">&quot;buffers_percent&quot; </span>=&gt; Value::percents(buffers / mem_total * <span class="number">100.</span>),
-            <span class="string">&quot;cached&quot; </span>=&gt; Value::bytes(cached),
-            <span class="string">&quot;cached_percent&quot; </span>=&gt; Value::percents(cached / mem_total * <span class="number">100.</span>)
+            <span class="string">"icon" </span>=&gt; Value::icon(<span class="string">"memory_mem"</span>),
+            <span class="string">"icon_swap" </span>=&gt; Value::icon(<span class="string">"memory_swap"</span>),
+            <span class="string">"mem_total" </span>=&gt; Value::bytes(mem_total),
+            <span class="string">"mem_free" </span>=&gt; Value::bytes(mem_free),
+            <span class="string">"mem_free_percents" </span>=&gt; Value::percents(mem_free / mem_total * <span class="number">100.</span>),
+            <span class="string">"mem_total_used" </span>=&gt; Value::bytes(mem_total_used),
+            <span class="string">"mem_total_used_percents" </span>=&gt; Value::percents(mem_total_used / mem_total * <span class="number">100.</span>),
+            <span class="string">"mem_used" </span>=&gt; Value::bytes(mem_used),
+            <span class="string">"mem_used_percents" </span>=&gt; Value::percents(mem_used / mem_total * <span class="number">100.</span>),
+            <span class="string">"mem_avail" </span>=&gt; Value::bytes(mem_avail),
+            <span class="string">"mem_avail_percents" </span>=&gt; Value::percents(mem_avail / mem_total * <span class="number">100.</span>),
+            <span class="string">"swap_total" </span>=&gt; Value::bytes(swap_total),
+            <span class="string">"swap_free" </span>=&gt; Value::bytes(swap_free),
+            <span class="string">"swap_free_percents" </span>=&gt; Value::percents(swap_free / swap_total * <span class="number">100.</span>),
+            <span class="string">"swap_used" </span>=&gt; Value::bytes(swap_used),
+            <span class="string">"swap_used_percents" </span>=&gt; Value::percents(swap_used / swap_total * <span class="number">100.</span>),
+            <span class="string">"buffers" </span>=&gt; Value::bytes(buffers),
+            <span class="string">"buffers_percent" </span>=&gt; Value::percents(buffers / mem_total * <span class="number">100.</span>),
+            <span class="string">"cached" </span>=&gt; Value::bytes(cached),
+            <span class="string">"cached_percent" </span>=&gt; Value::percents(cached / mem_total * <span class="number">100.</span>)
         });
 
         <span class="kw">let </span>mem_state = <span class="kw">match </span>mem_used / mem_total * <span class="number">100. </span>{
@@ -494,7 +495,7 @@
                 <span class="kw">_ </span>= timer.tick() =&gt; <span class="kw">break</span>,
                 <span class="kw">_ </span>= api.wait_for_update_request() =&gt; <span class="kw">break</span>,
                 <span class="prelude-val">Some</span>(action) = actions.recv() =&gt; <span class="kw">match </span>action.as_ref() {
-                    <span class="string">&quot;toggle_format&quot; </span>=&gt; {
+                    <span class="string">"toggle_format" </span>=&gt; {
                         <span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">ref mut </span>format_alt) = format_alt {
                             std::mem::swap(format_alt, <span class="kw-2">&amp;mut </span>format);
                             <span class="kw">break</span>;
@@ -528,9 +529,9 @@
         <span class="comment">// Reference: https://www.kernel.org/doc/Documentation/filesystems/proc.txt
 
         </span><span class="kw">let </span><span class="kw-2">mut </span>file = BufReader::new(
-            File::open(<span class="string">&quot;/proc/meminfo&quot;</span>)
+            File::open(<span class="string">"/proc/meminfo"</span>)
                 .<span class="kw">await
-                </span>.error(<span class="string">&quot;/proc/meminfo does not exist&quot;</span>)<span class="question-mark">?</span>,
+                </span>.error(<span class="string">"/proc/meminfo does not exist"</span>)<span class="question-mark">?</span>,
         );
 
         <span class="kw">let </span><span class="kw-2">mut </span>mem_state = Memstate::default();
@@ -539,7 +540,7 @@
         <span class="kw">while </span>file
             .read_line(<span class="kw-2">&amp;mut </span>line)
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;failed to read /proc/meminfo&quot;</span>)<span class="question-mark">?
+            </span>.error(<span class="string">"failed to read /proc/meminfo"</span>)<span class="question-mark">?
             </span>!= <span class="number">0
         </span>{
             <span class="kw">let </span><span class="kw-2">mut </span>words = line.split_whitespace();
@@ -554,19 +555,19 @@
             <span class="kw">let </span>val = words
                 .next()
                 .and_then(|x| u64::from_str(x).ok())
-                .error(<span class="string">&quot;failed to parse /proc/meminfo&quot;</span>)<span class="question-mark">?</span>;
+                .error(<span class="string">"failed to parse /proc/meminfo"</span>)<span class="question-mark">?</span>;
 
             <span class="kw">match </span>name {
-                <span class="string">&quot;MemTotal:&quot; </span>=&gt; mem_state.mem_total = val,
-                <span class="string">&quot;MemFree:&quot; </span>=&gt; mem_state.mem_free = val,
-                <span class="string">&quot;MemAvailable:&quot; </span>=&gt; mem_state.mem_available = val,
-                <span class="string">&quot;Buffers:&quot; </span>=&gt; mem_state.buffers = val,
-                <span class="string">&quot;Cached:&quot; </span>=&gt; mem_state.pagecache = val,
-                <span class="string">&quot;SReclaimable:&quot; </span>=&gt; mem_state.s_reclaimable = val,
-                <span class="string">&quot;Shmem:&quot; </span>=&gt; mem_state.shmem = val,
-                <span class="string">&quot;SwapTotal:&quot; </span>=&gt; mem_state.swap_total = val,
-                <span class="string">&quot;SwapFree:&quot; </span>=&gt; mem_state.swap_free = val,
-                <span class="string">&quot;SwapCached:&quot; </span>=&gt; mem_state.swap_cached = val,
+                <span class="string">"MemTotal:" </span>=&gt; mem_state.mem_total = val,
+                <span class="string">"MemFree:" </span>=&gt; mem_state.mem_free = val,
+                <span class="string">"MemAvailable:" </span>=&gt; mem_state.mem_available = val,
+                <span class="string">"Buffers:" </span>=&gt; mem_state.buffers = val,
+                <span class="string">"Cached:" </span>=&gt; mem_state.pagecache = val,
+                <span class="string">"SReclaimable:" </span>=&gt; mem_state.s_reclaimable = val,
+                <span class="string">"Shmem:" </span>=&gt; mem_state.shmem = val,
+                <span class="string">"SwapTotal:" </span>=&gt; mem_state.swap_total = val,
+                <span class="string">"SwapFree:" </span>=&gt; mem_state.swap_free = val,
+                <span class="string">"SwapCached:" </span>=&gt; mem_state.swap_cached = val,
                 <span class="kw">_ </span>=&gt; (),
             }
 
@@ -574,17 +575,17 @@
         }
 
         <span class="comment">// For ZFS
-        </span><span class="kw">if let </span><span class="prelude-val">Ok</span>(arcstats) = read_file(<span class="string">&quot;/proc/spl/kstat/zfs/arcstats&quot;</span>).<span class="kw">await </span>{
-            <span class="kw">let </span>size_re = <span class="macro">regex!</span>(<span class="string">r&quot;size\s+\d+\s+(\d+)&quot;</span>);
+        </span><span class="kw">if let </span><span class="prelude-val">Ok</span>(arcstats) = read_file(<span class="string">"/proc/spl/kstat/zfs/arcstats"</span>).<span class="kw">await </span>{
+            <span class="kw">let </span>size_re = <span class="macro">regex!</span>(<span class="string">r"size\s+\d+\s+(\d+)"</span>);
             <span class="kw">let </span>size = <span class="kw-2">&amp;</span>size_re
                 .captures(<span class="kw-2">&amp;</span>arcstats)
-                .error(<span class="string">&quot;failed to find zfs_arc_cache size&quot;</span>)<span class="question-mark">?</span>[<span class="number">1</span>];
-            mem_state.zfs_arc_cache = size.parse().error(<span class="string">&quot;failed to parse zfs_arc_cache size&quot;</span>)<span class="question-mark">?</span>;
-            <span class="kw">let </span>c_min_re = <span class="macro">regex!</span>(<span class="string">r&quot;c_min\s+\d+\s+(\d+)&quot;</span>);
+                .error(<span class="string">"failed to find zfs_arc_cache size"</span>)<span class="question-mark">?</span>[<span class="number">1</span>];
+            mem_state.zfs_arc_cache = size.parse().error(<span class="string">"failed to parse zfs_arc_cache size"</span>)<span class="question-mark">?</span>;
+            <span class="kw">let </span>c_min_re = <span class="macro">regex!</span>(<span class="string">r"c_min\s+\d+\s+(\d+)"</span>);
             <span class="kw">let </span>c_min = <span class="kw-2">&amp;</span>c_min_re
                 .captures(<span class="kw-2">&amp;</span>arcstats)
-                .error(<span class="string">&quot;failed to find zfs_arc_min size&quot;</span>)<span class="question-mark">?</span>[<span class="number">1</span>];
-            mem_state.zfs_arc_min = c_min.parse().error(<span class="string">&quot;failed to parse zfs_arc_min size&quot;</span>)<span class="question-mark">?</span>;
+                .error(<span class="string">"failed to find zfs_arc_min size"</span>)<span class="question-mark">?</span>[<span class="number">1</span>];
+            mem_state.zfs_arc_min = c_min.parse().error(<span class="string">"failed to parse zfs_arc_min size"</span>)<span class="question-mark">?</span>;
         }
 
         <span class="prelude-val">Ok</span>(mem_state)

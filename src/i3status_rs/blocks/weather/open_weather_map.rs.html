@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/weather/open_weather_map.rs`."><title>open_weather_map.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0 (82e1608df 2023-12-21)" data-channel="1.75.0" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/weather/open_weather_map.rs`."><title>open_weather_map.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-ac92e1bbe349e143.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0 (07dca489a 2024-02-04)" data-channel="1.76.0" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -408,66 +409,66 @@
 </pre></div><pre class="rust"><code><span class="kw">use super</span>::<span class="kw-2">*</span>;
 <span class="kw">use </span>serde::{de, Deserializer};
 
-<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">const </span>GEO_URL: <span class="kw-2">&amp;</span>str = <span class="string">&quot;https://api.openweathermap.org/geo/1.0&quot;</span>;
-<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">const </span>CURRENT_URL: <span class="kw-2">&amp;</span>str = <span class="string">&quot;https://api.openweathermap.org/data/2.5/weather&quot;</span>;
-<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">const </span>FORECAST_URL: <span class="kw-2">&amp;</span>str = <span class="string">&quot;https://api.openweathermap.org/data/2.5/forecast&quot;</span>;
-<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">const </span>API_KEY_ENV: <span class="kw-2">&amp;</span>str = <span class="string">&quot;OPENWEATHERMAP_API_KEY&quot;</span>;
-<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">const </span>CITY_ID_ENV: <span class="kw-2">&amp;</span>str = <span class="string">&quot;OPENWEATHERMAP_CITY_ID&quot;</span>;
-<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">const </span>PLACE_ENV: <span class="kw-2">&amp;</span>str = <span class="string">&quot;OPENWEATHERMAP_PLACE&quot;</span>;
-<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">const </span>ZIP_ENV: <span class="kw-2">&amp;</span>str = <span class="string">&quot;OPENWEATHERMAP_ZIP&quot;</span>;
+<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">const </span>GEO_URL: <span class="kw-2">&amp;</span>str = <span class="string">"https://api.openweathermap.org/geo/1.0"</span>;
+<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">const </span>CURRENT_URL: <span class="kw-2">&amp;</span>str = <span class="string">"https://api.openweathermap.org/data/2.5/weather"</span>;
+<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">const </span>FORECAST_URL: <span class="kw-2">&amp;</span>str = <span class="string">"https://api.openweathermap.org/data/2.5/forecast"</span>;
+<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">const </span>API_KEY_ENV: <span class="kw-2">&amp;</span>str = <span class="string">"OPENWEATHERMAP_API_KEY"</span>;
+<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">const </span>CITY_ID_ENV: <span class="kw-2">&amp;</span>str = <span class="string">"OPENWEATHERMAP_CITY_ID"</span>;
+<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">const </span>PLACE_ENV: <span class="kw-2">&amp;</span>str = <span class="string">"OPENWEATHERMAP_PLACE"</span>;
+<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">const </span>ZIP_ENV: <span class="kw-2">&amp;</span>str = <span class="string">"OPENWEATHERMAP_ZIP"</span>;
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(tag = <span class="string">&quot;name&quot;</span>, rename_all = <span class="string">&quot;lowercase&quot;</span>, deny_unknown_fields, default)]
+#[serde(tag = <span class="string">"name"</span>, rename_all = <span class="string">"lowercase"</span>, deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
-    <span class="attr">#[serde(default = <span class="string">&quot;getenv_openweathermap_api_key&quot;</span>)]
+    <span class="attr">#[serde(default = <span class="string">"getenv_openweathermap_api_key"</span>)]
     </span>api_key: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    <span class="attr">#[serde(default = <span class="string">&quot;getenv_openweathermap_city_id&quot;</span>)]
+    <span class="attr">#[serde(default = <span class="string">"getenv_openweathermap_city_id"</span>)]
     </span>city_id: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    <span class="attr">#[serde(default = <span class="string">&quot;getenv_openweathermap_place&quot;</span>)]
+    <span class="attr">#[serde(default = <span class="string">"getenv_openweathermap_place"</span>)]
     </span>place: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    <span class="attr">#[serde(default = <span class="string">&quot;getenv_openweathermap_zip&quot;</span>)]
+    <span class="attr">#[serde(default = <span class="string">"getenv_openweathermap_zip"</span>)]
     </span>zip: <span class="prelude-ty">Option</span>&lt;String&gt;,
     coordinates: <span class="prelude-ty">Option</span>&lt;(String, String)&gt;,
     <span class="attr">#[serde(default)]
     </span>units: UnitSystem,
-    <span class="attr">#[default(<span class="string">&quot;en&quot;</span>)]
+    <span class="attr">#[default(<span class="string">"en"</span>)]
     </span>lang: String,
     <span class="attr">#[default(<span class="number">12</span>)]
-    #[serde(deserialize_with = <span class="string">&quot;deserialize_forecast_hours&quot;</span>)]
+    #[serde(deserialize_with = <span class="string">"deserialize_forecast_hours"</span>)]
     </span>forecast_hours: usize,
 }
 
-<span class="kw">pub fn </span>deserialize_forecast_hours&lt;<span class="lifetime">&#39;de</span>, D&gt;(deserializer: D) -&gt; <span class="prelude-ty">Result</span>&lt;usize, D::Error&gt;
+<span class="kw">pub fn </span>deserialize_forecast_hours&lt;<span class="lifetime">'de</span>, D&gt;(deserializer: D) -&gt; <span class="prelude-ty">Result</span>&lt;usize, D::Error&gt;
 <span class="kw">where
-    </span>D: Deserializer&lt;<span class="lifetime">&#39;de</span>&gt;,
+    </span>D: Deserializer&lt;<span class="lifetime">'de</span>&gt;,
 {
     usize::deserialize(deserializer).and_then(|hours| {
         <span class="kw">if </span>hours % <span class="number">3 </span>!= <span class="number">0 </span>&amp;&amp; hours &gt; <span class="number">120 </span>{
             <span class="prelude-val">Err</span>(de::Error::custom(
-                <span class="string">&quot;&#39;forecast_hours&#39; is not divisible by 3 and must be &lt;= 120&quot;</span>,
+                <span class="string">"'forecast_hours' is not divisible by 3 and must be &lt;= 120"</span>,
             ))
         } <span class="kw">else if </span>hours % <span class="number">3 </span>!= <span class="number">0 </span>{
-            <span class="prelude-val">Err</span>(de::Error::custom(<span class="string">&quot;&#39;forecast_hours&#39; is not divisible by 3&quot;</span>))
+            <span class="prelude-val">Err</span>(de::Error::custom(<span class="string">"'forecast_hours' is not divisible by 3"</span>))
         } <span class="kw">else if </span>hours &gt; <span class="number">120 </span>{
-            <span class="prelude-val">Err</span>(de::Error::custom(<span class="string">&quot;&#39;forecast_hours&#39; must be &lt;= 120&quot;</span>))
+            <span class="prelude-val">Err</span>(de::Error::custom(<span class="string">"'forecast_hours' must be &lt;= 120"</span>))
         } <span class="kw">else </span>{
             <span class="prelude-val">Ok</span>(hours)
         }
     })
 }
 
-<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct </span>Service&lt;<span class="lifetime">&#39;a</span>&gt; {
-    api_key: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>String,
-    units: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>UnitSystem,
-    lang: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>String,
+<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct </span>Service&lt;<span class="lifetime">'a</span>&gt; {
+    api_key: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>String,
+    units: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>UnitSystem,
+    lang: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>String,
     location_query: <span class="prelude-ty">Option</span>&lt;String&gt;,
     forecast_hours: usize,
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>&gt; Service&lt;<span class="lifetime">&#39;a</span>&gt; {
-    <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">async fn </span>new(autolocate: bool, config: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>Config) -&gt; <span class="prelude-ty">Result</span>&lt;Service&lt;<span class="lifetime">&#39;a</span>&gt;&gt; {
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; Service&lt;<span class="lifetime">'a</span>&gt; {
+    <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">async fn </span>new(autolocate: bool, config: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>Config) -&gt; <span class="prelude-ty">Result</span>&lt;Service&lt;<span class="lifetime">'a</span>&gt;&gt; {
         <span class="kw">let </span>api_key = config.api_key.as_ref().or_error(|| {
-            <span class="macro">format!</span>(<span class="string">&quot;missing key &#39;service.api_key&#39; and environment variable {API_KEY_ENV}&quot;</span>,)
+            <span class="macro">format!</span>(<span class="string">"missing key 'service.api_key' and environment variable {API_KEY_ENV}"</span>,)
         })<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
             api_key,
@@ -490,25 +491,25 @@
         <span class="kw">let </span><span class="kw-2">mut </span>location_query = config
             .coordinates
             .as_ref()
-            .map(|(lat, lon)| <span class="macro">format!</span>(<span class="string">&quot;lat={lat}&amp;lon={lon}&quot;</span>))
-            .or_else(|| config.city_id.as_ref().map(|x| <span class="macro">format!</span>(<span class="string">&quot;id={x}&quot;</span>)));
+            .map(|(lat, lon)| <span class="macro">format!</span>(<span class="string">"lat={lat}&amp;lon={lon}"</span>))
+            .or_else(|| config.city_id.as_ref().map(|x| <span class="macro">format!</span>(<span class="string">"id={x}"</span>)));
 
         location_query = <span class="kw">match </span>location_query {
             <span class="prelude-val">Some</span>(x) =&gt; <span class="prelude-val">Some</span>(x),
             <span class="prelude-val">None </span>=&gt; <span class="kw">match </span>config.place.as_ref() {
                 <span class="prelude-val">Some</span>(place) =&gt; {
-                    <span class="kw">let </span>url = <span class="macro">format!</span>(<span class="string">&quot;{GEO_URL}/direct?q={place}&amp;appid={api_key}&quot;</span>);
+                    <span class="kw">let </span>url = <span class="macro">format!</span>(<span class="string">"{GEO_URL}/direct?q={place}&amp;appid={api_key}"</span>);
 
                     REQWEST_CLIENT
                         .get(url)
                         .send()
                         .<span class="kw">await
-                        </span>.error(<span class="string">&quot;Geo request failed&quot;</span>)<span class="question-mark">?
+                        </span>.error(<span class="string">"Geo request failed"</span>)<span class="question-mark">?
                         </span>.json::&lt;Vec&lt;CityCoord&gt;&gt;()
                         .<span class="kw">await
-                        </span>.error(<span class="string">&quot;Geo failed to parse json&quot;</span>)<span class="question-mark">?
+                        </span>.error(<span class="string">"Geo failed to parse json"</span>)<span class="question-mark">?
                         </span>.first()
-                        .map(|city| <span class="macro">format!</span>(<span class="string">&quot;lat={}&amp;lon={}&quot;</span>, city.lat, city.lon))
+                        .map(|city| <span class="macro">format!</span>(<span class="string">"lat={}&amp;lon={}"</span>, city.lat, city.lon))
                 }
                 <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
             },
@@ -518,17 +519,17 @@
             <span class="prelude-val">Some</span>(x) =&gt; <span class="prelude-val">Some</span>(x),
             <span class="prelude-val">None </span>=&gt; <span class="kw">match </span>config.zip.as_ref() {
                 <span class="prelude-val">Some</span>(zip) =&gt; {
-                    <span class="kw">let </span>url = <span class="macro">format!</span>(<span class="string">&quot;{GEO_URL}/zip?zip={zip}&amp;appid={api_key}&quot;</span>);
+                    <span class="kw">let </span>url = <span class="macro">format!</span>(<span class="string">"{GEO_URL}/zip?zip={zip}&amp;appid={api_key}"</span>);
                     <span class="kw">let </span>city: CityCoord = REQWEST_CLIENT
                         .get(url)
                         .send()
                         .<span class="kw">await
-                        </span>.error(<span class="string">&quot;Geo request failed&quot;</span>)<span class="question-mark">?
+                        </span>.error(<span class="string">"Geo request failed"</span>)<span class="question-mark">?
                         </span>.json()
                         .<span class="kw">await
-                        </span>.error(<span class="string">&quot;Geo failed to parse json&quot;</span>)<span class="question-mark">?</span>;
+                        </span>.error(<span class="string">"Geo failed to parse json"</span>)<span class="question-mark">?</span>;
 
-                    <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">&quot;lat={}&amp;lon={}&quot;</span>, city.lat, city.lon))
+                    <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"lat={}&amp;lon={}"</span>, city.lat, city.lon))
                 }
                 <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
             },
@@ -606,7 +607,7 @@
 }
 
 <span class="attr">#[async_trait]
-</span><span class="kw">impl </span>WeatherProvider <span class="kw">for </span>Service&lt;<span class="lifetime">&#39;_</span>&gt; {
+</span><span class="kw">impl </span>WeatherProvider <span class="kw">for </span>Service&lt;<span class="lifetime">'_</span>&gt; {
     <span class="kw">async fn </span>get_weather(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         autolocated: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Coordinates&gt;,
@@ -614,17 +615,17 @@
     ) -&gt; <span class="prelude-ty">Result</span>&lt;WeatherResult&gt; {
         <span class="kw">let </span>location_query = autolocated
             .as_ref()
-            .map(|al| <span class="macro">format!</span>(<span class="string">&quot;lat={}&amp;lon={}&quot;</span>, al.latitude, al.longitude))
+            .map(|al| <span class="macro">format!</span>(<span class="string">"lat={}&amp;lon={}"</span>, al.latitude, al.longitude))
             .or_else(|| <span class="self">self</span>.location_query.clone())
-            .error(<span class="string">&quot;no location was provided&quot;</span>)<span class="question-mark">?</span>;
+            .error(<span class="string">"no location was provided"</span>)<span class="question-mark">?</span>;
 
         <span class="comment">// Refer to https://openweathermap.org/current
         </span><span class="kw">let </span>current_url = <span class="macro">format!</span>(
-            <span class="string">&quot;{CURRENT_URL}?{location_query}&amp;appid={api_key}&amp;units={units}&amp;lang={lang}&quot;</span>,
+            <span class="string">"{CURRENT_URL}?{location_query}&amp;appid={api_key}&amp;units={units}&amp;lang={lang}"</span>,
             api_key = <span class="self">self</span>.api_key,
             units = <span class="kw">match </span><span class="self">self</span>.units {
-                UnitSystem::Metric =&gt; <span class="string">&quot;metric&quot;</span>,
-                UnitSystem::Imperial =&gt; <span class="string">&quot;imperial&quot;</span>,
+                UnitSystem::Metric =&gt; <span class="string">"metric"</span>,
+                UnitSystem::Imperial =&gt; <span class="string">"imperial"</span>,
             },
             lang = <span class="self">self</span>.lang,
         );
@@ -633,10 +634,10 @@
             .get(current_url)
             .send()
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Current weather request failed&quot;</span>)<span class="question-mark">?
+            </span>.error(<span class="string">"Current weather request failed"</span>)<span class="question-mark">?
             </span>.json()
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Current weather request failed&quot;</span>)<span class="question-mark">?</span>;
+            </span>.error(<span class="string">"Current weather request failed"</span>)<span class="question-mark">?</span>;
 
         <span class="kw">let </span>current_weather = {
             <span class="kw">let </span>is_night = current_data.sys.sunrise &gt;= current_data.dt
@@ -663,11 +664,11 @@
         </span>} <span class="kw">else </span>{
             <span class="comment">// Refer to https://openweathermap.org/forecast5
             </span><span class="kw">let </span>forecast_url = <span class="macro">format!</span>(
-                <span class="string">&quot;{FORECAST_URL}?{location_query}&amp;appid={api_key}&amp;units={units}&amp;lang={lang}&amp;cnt={cnt}&quot;</span>,
+                <span class="string">"{FORECAST_URL}?{location_query}&amp;appid={api_key}&amp;units={units}&amp;lang={lang}&amp;cnt={cnt}"</span>,
                 api_key = <span class="self">self</span>.api_key,
                 units = <span class="kw">match </span><span class="self">self</span>.units {
-                    UnitSystem::Metric =&gt; <span class="string">&quot;metric&quot;</span>,
-                    UnitSystem::Imperial =&gt; <span class="string">&quot;imperial&quot;</span>,
+                    UnitSystem::Metric =&gt; <span class="string">"metric"</span>,
+                    UnitSystem::Imperial =&gt; <span class="string">"imperial"</span>,
                 },
                 lang = <span class="self">self</span>.lang,
                 cnt = <span class="self">self</span>.forecast_hours / <span class="number">3</span>,
@@ -677,10 +678,10 @@
                 .get(forecast_url)
                 .send()
                 .<span class="kw">await
-                </span>.error(<span class="string">&quot;Forecast weather request failed&quot;</span>)<span class="question-mark">?
+                </span>.error(<span class="string">"Forecast weather request failed"</span>)<span class="question-mark">?
                 </span>.json()
                 .<span class="kw">await
-                </span>.error(<span class="string">&quot;Forecast weather request failed&quot;</span>)<span class="question-mark">?</span>;
+                </span>.error(<span class="string">"Forecast weather request failed"</span>)<span class="question-mark">?</span>;
 
             <span class="kw">let </span><span class="kw-2">mut </span>temp_avg = <span class="number">0.0</span>;
             <span class="kw">let </span><span class="kw-2">mut </span>temp_min = f64::MAX;
@@ -725,14 +726,14 @@
             } = wind_forecasts
                 .iter()
                 .min_by(|x, y| x.speed.total_cmp(<span class="kw-2">&amp;</span>y.speed))
-                .error(<span class="string">&quot;No min wind&quot;</span>)<span class="question-mark">?</span>;
+                .error(<span class="string">"No min wind"</span>)<span class="question-mark">?</span>;
             <span class="kw">let </span>Wind {
                 speed: wind_max,
                 degrees: direction_max,
             } = wind_forecasts
                 .iter()
                 .min_by(|x, y| x.speed.total_cmp(<span class="kw-2">&amp;</span>y.speed))
-                .error(<span class="string">&quot;No max wind&quot;</span>)<span class="question-mark">?</span>;
+                .error(<span class="string">"No max wind"</span>)<span class="question-mark">?</span>;
 
             <span class="kw">let </span>fin_data = forecast_data.list.last().unwrap();
             <span class="kw">let </span>fin_is_night =
@@ -803,12 +804,12 @@
 
 <span class="kw">fn </span>weather_to_icon(weather: <span class="kw-2">&amp;</span>str, is_night: bool) -&gt; WeatherIcon {
     <span class="kw">match </span>weather {
-        <span class="string">&quot;Clear&quot; </span>=&gt; WeatherIcon::Clear { is_night },
-        <span class="string">&quot;Rain&quot; </span>| <span class="string">&quot;Drizzle&quot; </span>=&gt; WeatherIcon::Rain { is_night },
-        <span class="string">&quot;Clouds&quot; </span>=&gt; WeatherIcon::Clouds { is_night },
-        <span class="string">&quot;Fog&quot; </span>| <span class="string">&quot;Mist&quot; </span>=&gt; WeatherIcon::Fog { is_night },
-        <span class="string">&quot;Thunderstorm&quot; </span>=&gt; WeatherIcon::Thunder { is_night },
-        <span class="string">&quot;Snow&quot; </span>=&gt; WeatherIcon::Snow,
+        <span class="string">"Clear" </span>=&gt; WeatherIcon::Clear { is_night },
+        <span class="string">"Rain" </span>| <span class="string">"Drizzle" </span>=&gt; WeatherIcon::Rain { is_night },
+        <span class="string">"Clouds" </span>=&gt; WeatherIcon::Clouds { is_night },
+        <span class="string">"Fog" </span>| <span class="string">"Mist" </span>=&gt; WeatherIcon::Fog { is_night },
+        <span class="string">"Thunderstorm" </span>=&gt; WeatherIcon::Thunder { is_night },
+        <span class="string">"Snow" </span>=&gt; WeatherIcon::Snow,
         <span class="kw">_ </span>=&gt; WeatherIcon::Default,
     }
 }

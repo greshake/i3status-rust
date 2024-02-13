@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/packages.rs`."><title>packages.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0 (82e1608df 2023-12-21)" data-channel="1.75.0" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/packages.rs`."><title>packages.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-ac92e1bbe349e143.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0 (07dca489a 2024-02-04)" data-channel="1.76.0" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -362,13 +363,13 @@
 //! ----|--------|--------
 //! `interval` | Update interval in seconds. | `600`
 //! `package_manager` | Package manager to check for updates | Automatically derived from format templates, but can be used to influence the `$total` value
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $total.eng(w:1) &quot;`
-//! `format_singular` | Same as `format`, but for when exactly one update is available. | `&quot; $icon $total.eng(w:1) &quot;`
-//! `format_up_to_date` | Same as `format`, but for when no updates are available. | `&quot; $icon $total.eng(w:1) &quot;`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $total.eng(w:1) "`
+//! `format_singular` | Same as `format`, but for when exactly one update is available. | `" $icon $total.eng(w:1) "`
+//! `format_up_to_date` | Same as `format`, but for when no updates are available. | `" $icon $total.eng(w:1) "`
 //! `warning_updates_regex` | Display block as warning if updates matching regex are available. | `None`
 //! `critical_updates_regex` | Display block as critical if updates matching regex are available. | `None`
-//! `ignore_updates_regex` | Doesn&#39;t include updates matching regex in the count. | `None`
-//! `ignore_phased_updates` | Doesn&#39;t include potentially held back phased updates in the count. (For Debian/Ubuntu based system) | `false`
+//! `ignore_updates_regex` | Doesn't include updates matching regex in the count. | `None`
+//! `ignore_phased_updates` | Doesn't include potentially held back phased updates in the count. (For Debian/Ubuntu based system) | `false`
 //! `aur_command` | AUR command to check available updates, which outputs in the same format as pacman. e.g. `yay -Qua` (For Arch based system) | Required if `$aur` are used
 //!
 //!  Placeholder | Value                                                                            | Type   | Unit
@@ -398,14 +399,14 @@
 //! ### Pacman hook
 //!
 //! Tip: On Arch Linux you can setup a `pacman` hook to signal i3status-rs to update after packages
-//! have been upgraded, so you won&#39;t have stale info in your pacman block.
+//! have been upgraded, so you won't have stale info in your pacman block.
 //!
 //! In the block configuration, set `signal = 1` (or other number if `1` is being used by some
 //! other block):
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;packages&quot;
+//! block = "packages"
 //! signal = 1
 //! ```
 //!
@@ -428,19 +429,19 @@
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;packages&quot;
+//! block = "packages"
 //! interval = 1800
-//! package_manager = [&quot;apt&quot;]
-//! format = &quot; $icon $apt updates available&quot;
-//! format_singular = &quot; $icon One update available &quot;
-//! format_up_to_date = &quot; $icon system up to date &quot;
+//! package_manager = ["apt"]
+//! format = " $icon $apt updates available"
+//! format_singular = " $icon One update available "
+//! format_up_to_date = " $icon system up to date "
 //! [[block.click]]
 //! # shows dmenu with cached available updates. Any dmenu alternative should also work.
-//! button = &quot;left&quot;
-//! cmd = &quot;APT_CONFIG=/tmp/i3rs-apt/apt.conf apt list --upgradable | tail -n +2 | rofi -dmenu&quot;
+//! button = "left"
+//! cmd = "APT_CONFIG=/tmp/i3rs-apt/apt.conf apt list --upgradable | tail -n +2 | rofi -dmenu"
 //! [[block.click]]
 //! # Updates the block on right click
-//! button = &quot;right&quot;
+//! button = "right"
 //! update = true
 //! ```
 //!
@@ -448,19 +449,19 @@
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;packages&quot;
-//! package_manager = [&quot;pacman&quot;]
+//! block = "packages"
+//! package_manager = ["pacman"]
 //! interval = 600
-//! format = &quot; $icon $pacman updates available &quot;
-//! format_singular = &quot; $icon $pacman update available &quot;
-//! format_up_to_date = &quot; $icon system up to date &quot;
+//! format = " $icon $pacman updates available "
+//! format_singular = " $icon $pacman update available "
+//! format_up_to_date = " $icon system up to date "
 //! [[block.click]]
 //! # pop-up a menu showing the available updates. Replace wofi with your favourite menu command.
-//! button = &quot;left&quot;
-//! cmd = &quot;fakeroot pacman -Qu --dbpath /tmp/checkup-db-i3statusrs-$USER/ | wofi --show dmenu&quot;
+//! button = "left"
+//! cmd = "fakeroot pacman -Qu --dbpath /tmp/checkup-db-i3statusrs-$USER/ | wofi --show dmenu"
 //! [[block.click]]
 //! # Updates the block on right click
-//! button = &quot;right&quot;
+//! button = "right"
 //! update = true
 //! ```
 //!
@@ -468,15 +469,15 @@
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;packages&quot;
-//! package_manager = [&quot;pacman&quot;, &quot;aur&quot;]
+//! block = "packages"
+//! package_manager = ["pacman", "aur"]
 //! interval = 600
 //! error_interval = 300
-//! format = &quot; $icon $pacman + $aur = $total updates available &quot;
-//! format_singular = &quot; $icon $total update available &quot;
-//! format_up_to_date = &quot; $icon system up to date &quot;
-//! # aur_command should output available updates to stdout (ie behave as echo -ne &quot;update\n&quot;)
-//! aur_command = &quot;yay -Qua&quot;
+//! format = " $icon $pacman + $aur = $total updates available "
+//! format_singular = " $icon $total update available "
+//! format_up_to_date = " $icon system up to date "
+//! # aur_command should output available updates to stdout (ie behave as echo -ne "update\n")
+//! aur_command = "yay -Qua"
 //! ```
 //!
 //!
@@ -484,16 +485,16 @@
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;packages&quot;
-//! package_manager = [&quot;dnf&quot;]
+//! block = "packages"
+//! package_manager = ["dnf"]
 //! interval = 1800
-//! format = &quot; $icon $dnf.eng(w:1) updates available &quot;
-//! format_singular = &quot; $icon One update available &quot;
-//! format_up_to_date = &quot; $icon system up to date &quot;
+//! format = " $icon $dnf.eng(w:1) updates available "
+//! format_singular = " $icon One update available "
+//! format_up_to_date = " $icon system up to date "
 //! [[block.click]]
 //! # shows dmenu with cached available updates. Any dmenu alternative should also work.
-//! button = &quot;left&quot;
-//! cmd = &quot;dnf list -q --upgrades | tail -n +2 | rofi -dmenu&quot;
+//! button = "left"
+//! cmd = "dnf list -q --upgrades | tail -n +2 | rofi -dmenu"
 //! ```
 //!
 //! Multiple package managers config:
@@ -502,18 +503,18 @@
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;packages&quot;
-//! package_manager = [&quot;apt&quot;, &quot;pacman&quot;, &quot;aur&quot;,&quot;dnf&quot;]
+//! block = "packages"
+//! package_manager = ["apt", "pacman", "aur","dnf"]
 //! interval = 1800
-//! format = &quot; $icon $apt + $pacman + $aur + $dnf = $total updates available &quot;
-//! format_singular = &quot; $icon One update available &quot;
-//! format_up_to_date = &quot; $icon system up to date &quot;
-//! # If a linux update is available, but no ZFS package, it won&#39;t be possible to
+//! format = " $icon $apt + $pacman + $aur + $dnf = $total updates available "
+//! format_singular = " $icon One update available "
+//! format_up_to_date = " $icon system up to date "
+//! # If a linux update is available, but no ZFS package, it won't be possible to
 //! # actually perform a system upgrade, so we show a warning.
-//! warning_updates_regex = &quot;(linux|linux-lts|linux-zen)&quot;
+//! warning_updates_regex = "(linux|linux-lts|linux-zen)"
 //! # If ZFS is available, we know that we can and should do an upgrade, so we show
 //! # the status as critical.
-//! critical_updates_regex = &quot;(zfs|zfs-lts)&quot;
+//! critical_updates_regex = "(zfs|zfs-lts)"
 //! ```
 //!
 //! # Icons Used
@@ -550,7 +551,7 @@
 }
 
 <span class="attr">#[derive(Deserialize, Debug, Clone, Copy, PartialEq)]
-#[serde(rename_all = <span class="string">&quot;lowercase&quot;</span>)]
+#[serde(rename_all = <span class="string">"lowercase"</span>)]
 </span><span class="kw">pub enum </span>PackageManager {
     Apt,
     Pacman,
@@ -561,13 +562,13 @@
 <span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>config: Config = config.clone();
 
-    <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $total.eng(w:1) &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>format = config.format.with_default(<span class="string">" $icon $total.eng(w:1) "</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>format_singular = config
         .format_singular
-        .with_default(<span class="string">&quot; $icon $total.eng(w:1) &quot;</span>)<span class="question-mark">?</span>;
+        .with_default(<span class="string">" $icon $total.eng(w:1) "</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>format_up_to_date = config
         .format_up_to_date
-        .with_default(<span class="string">&quot; $icon $total.eng(w:1) &quot;</span>)<span class="question-mark">?</span>;
+        .with_default(<span class="string">" $icon $total.eng(w:1) "</span>)<span class="question-mark">?</span>;
 
     <span class="comment">// If user provide package manager in any of the formats then consider that also
     </span><span class="macro">macro_rules! </span>any_format_contains {
@@ -578,10 +579,10 @@
         };
     }
 
-    <span class="kw">let </span>apt = <span class="macro">any_format_contains!</span>(<span class="string">&quot;apt&quot;</span>);
-    <span class="kw">let </span>aur = <span class="macro">any_format_contains!</span>(<span class="string">&quot;aur&quot;</span>);
-    <span class="kw">let </span>pacman = <span class="macro">any_format_contains!</span>(<span class="string">&quot;pacman&quot;</span>);
-    <span class="kw">let </span>dnf = <span class="macro">any_format_contains!</span>(<span class="string">&quot;dnf&quot;</span>);
+    <span class="kw">let </span>apt = <span class="macro">any_format_contains!</span>(<span class="string">"apt"</span>);
+    <span class="kw">let </span>aur = <span class="macro">any_format_contains!</span>(<span class="string">"aur"</span>);
+    <span class="kw">let </span>pacman = <span class="macro">any_format_contains!</span>(<span class="string">"pacman"</span>);
+    <span class="kw">let </span>dnf = <span class="macro">any_format_contains!</span>(<span class="string">"dnf"</span>);
 
     <span class="kw">if </span>!config.package_manager.contains(<span class="kw-2">&amp;</span>PackageManager::Apt) &amp;&amp; apt {
         config.package_manager.push(PackageManager::Apt);
@@ -601,19 +602,19 @@
         .as_deref()
         .map(Regex::new)
         .transpose()
-        .error(<span class="string">&quot;invalid warning updates regex&quot;</span>)<span class="question-mark">?</span>;
+        .error(<span class="string">"invalid warning updates regex"</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>critical_updates_regex = config
         .critical_updates_regex
         .as_deref()
         .map(Regex::new)
         .transpose()
-        .error(<span class="string">&quot;invalid critical updates regex&quot;</span>)<span class="question-mark">?</span>;
+        .error(<span class="string">"invalid critical updates regex"</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>ignore_updates_regex = config
         .ignore_updates_regex
         .as_deref()
         .map(Regex::new)
         .transpose()
-        .error(<span class="string">&quot;invalid ignore updates regex&quot;</span>)<span class="question-mark">?</span>;
+        .error(<span class="string">"invalid ignore updates regex"</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>package_manager_vec: Vec&lt;Box&lt;<span class="kw">dyn </span>Backend&gt;&gt; = Vec::new();
 
@@ -622,14 +623,14 @@
             PackageManager::Apt =&gt; Box::new(Apt::new(config.ignore_phased_updates).<span class="kw">await</span><span class="question-mark">?</span>),
             PackageManager::Pacman =&gt; Box::new(Pacman::new().<span class="kw">await</span><span class="question-mark">?</span>),
             PackageManager::Aur =&gt; Box::new(Aur::new(
-                config.aur_command.clone().error(<span class="string">&quot;aur_command is not set&quot;</span>)<span class="question-mark">?</span>,
+                config.aur_command.clone().error(<span class="string">"aur_command is not set"</span>)<span class="question-mark">?</span>,
             )),
             PackageManager::Dnf =&gt; Box::new(Dnf::new()),
         });
     }
 
     <span class="kw">loop </span>{
-        <span class="kw">let </span><span class="kw-2">mut </span>package_manager_map: HashMap&lt;Cow&lt;<span class="lifetime">&#39;static</span>, str&gt;, Value&gt; = HashMap::new();
+        <span class="kw">let </span><span class="kw-2">mut </span>package_manager_map: HashMap&lt;Cow&lt;<span class="lifetime">'static</span>, str&gt;, Value&gt; = HashMap::new();
 
         <span class="kw">let </span><span class="kw-2">mut </span>critical = <span class="bool-val">false</span>;
         <span class="kw">let </span><span class="kw-2">mut </span>warning = <span class="bool-val">false</span>;
@@ -657,8 +658,8 @@
 
         <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new();
 
-        package_manager_map.insert(<span class="string">&quot;icon&quot;</span>.into(), Value::icon(<span class="string">&quot;update&quot;</span>));
-        package_manager_map.insert(<span class="string">&quot;total&quot;</span>.into(), Value::number(total_count));
+        package_manager_map.insert(<span class="string">"icon"</span>.into(), Value::icon(<span class="string">"update"</span>));
+        package_manager_map.insert(<span class="string">"total"</span>.into(), Value::number(total_count));
 
         widget.set_format(<span class="kw">match </span>total_count {
             <span class="number">0 </span>=&gt; format_up_to_date.clone(),
@@ -690,7 +691,7 @@
 
 <span class="attr">#[async_trait]
 </span><span class="kw">pub trait </span>Backend {
-    <span class="kw">fn </span>name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Cow&lt;<span class="lifetime">&#39;static</span>, str&gt;;
+    <span class="kw">fn </span>name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Cow&lt;<span class="lifetime">'static</span>, str&gt;;
 
     <span class="kw">async fn </span>get_updates_list(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;String&gt;&gt;;
 }

@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/formatting.rs`."><title>formatting.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0 (82e1608df 2023-12-21)" data-channel="1.75.0" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/formatting.rs`."><title>formatting.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-ac92e1bbe349e143.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0 (07dca489a 2024-02-04)" data-channel="1.76.0" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -196,14 +197,14 @@
 <a href="#196" id="196">196</a>
 <a href="#197" id="197">197</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! # Formatting system
-//! Many blocks have a `format` configuration option, which allows to heavily customize the block&#39;s
+//! Many blocks have a `format` configuration option, which allows to heavily customize the block's
 //! appearance. In short, each block with `format` option provides a set of values, which are
-//! displayed according to `format`. `format`&#39;s value is just a text with embedded variables.
+//! displayed according to `format`. `format`'s value is just a text with embedded variables.
 //! Similarly to PHP and shell, variable name must start with a `$`:
 //! `this is a variable: -&gt; $var &lt;-`.
 //!
-//! Also, format strings can embed icons. For example, `^icon_ping` in `&quot; ^icon_ping $ping &quot;` gets
-//! substituted with a &quot;ping&quot; icon from your icon set. For a complete list of icons, see
+//! Also, format strings can embed icons. For example, `^icon_ping` in `" ^icon_ping $ping "` gets
+//! substituted with a "ping" icon from your icon set. For a complete list of icons, see
 //! [this](https://github.com/greshake/i3status-rust/blob/master/doc/themes.md#available-icon-overrides).
 //!
 //! # Types
@@ -231,10 +232,10 @@
 //! `max_width` or `max_w` | if text is longer it will be truncated            | Infinity
 //! `width` or `w`         | Text will be exactly this length by padding or truncating as needed | N/A
 //! `rot_interval`         | if text is longer than `max_width` it will be rotated every `rot_interval` seconds, if set | None
-//! `rot_separator`        | if text is longer than `max_width` it will be rotated with this seporator | &lt;code&gt;&quot;\|&quot;&lt;/code&gt;
+//! `rot_separator`        | if text is longer than `max_width` it will be rotated with this seporator | &lt;code&gt;"\|"&lt;/code&gt;
 //!
 //! Note: width just changes the values of both min_width and max_width to be the same. Use width
-//! if you want the values to be the same, or the other two otherwise. Don&#39;t mix width with
+//! if you want the values to be the same, or the other two otherwise. Don't mix width with
 //! min_width or max_width.
 //!
 //! ## `eng` - Format numbers using engineering notation
@@ -248,7 +249,7 @@
 //! `prefix` or `p` | specify this argument if you want to set the minimal [SI prefix](prefix::Prefix)                 | N/A
 //! `hide_prefix`   | hide the prefix symbol                                                                           | `false`
 //! `prefix_space`  | have a whitespace before prefix symbol                                                           | `false`
-//! `force_prefix`  | force the prefix value instead of setting a &quot;minimal prefix&quot;                                     | `false`
+//! `force_prefix`  | force the prefix value instead of setting a "minimal prefix"                                     | `false`
 //! `pad_with`      | the character that is used to pad the number to be `width` long                                  | ` ` (a space)
 //!
 //! ## `bar` - Display numbers as progress bars
@@ -256,7 +257,7 @@
 //! Argument               | Description                                                                     |Default value
 //! -----------------------|---------------------------------------------------------------------------------|-------------------------
 //! `width` or `w`         | the width of the bar (in characters)                                            | `5` (`1` for `vertical`)
-//! `max_value`            | which value is treated as &quot;full&quot;. For example, for battery level `100` is full. | `100`
+//! `max_value`            | which value is treated as "full". For example, for battery level `100` is full. | `100`
 //! `vertical` or `v`      | whether to render the bar vertically or not                                     | `false`
 //!
 //! ## `pango-str` - Just display the text without pango markup escaping
@@ -267,19 +268,19 @@
 //!
 //! Argument               | Description                                                                                               |Default value
 //! -----------------------|-----------------------------------------------------------------------------------------------------------|-------------
-//! `format` or `f`        | [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. | `&#39;%a %d/%m %R&#39;`
+//! `format` or `f`        | [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. | `'%a %d/%m %R'`
 //! `locale` or `l`        | Locale to apply when formatting the time                                                                  | System locale
 //!
 //! # Handling missing placeholders and incorrect types
 //!
-//! Some blocks allow missing placeholders, for example [bluetooth](crate::blocks::bluetooth)&#39;s
-//! &quot;percentage&quot; may be absent if the device is not supported. To handle such cases it is possible
+//! Some blocks allow missing placeholders, for example [bluetooth](crate::blocks::bluetooth)'s
+//! "percentage" may be absent if the device is not supported. To handle such cases it is possible
 //! to queue multiple formats together by using `|` symbol: `&lt;something that can fail&gt;|&lt;otherwise
 //! try this&gt;|&lt;or this&gt;`.
 //!
 //! In addition, formats can be recursive. To set a format inside of another format, place it
-//! inside of `{}`. For example, in `Percentage: {$percentage|N/A}` the text &quot;Percentage: &quot; will be
-//! always displayed, followed by the actual percentage or &quot;N/A&quot; in case percentage is not
+//! inside of `{}`. For example, in `Percentage: {$percentage|N/A}` the text "Percentage: " will be
+//! always displayed, followed by the actual percentage or "N/A" in case percentage is not
 //! available. This example does exactly the same thing as `Percentage: $percentage|Percentage: N/A`
 //!
 //! # How to use flags
@@ -309,14 +310,14 @@
 <span class="kw">use </span>template::FormatTemplate;
 <span class="kw">use </span>value::Value;
 
-<span class="kw">pub type </span>Values = HashMap&lt;Cow&lt;<span class="lifetime">&#39;static</span>, str&gt;, Value&gt;;
+<span class="kw">pub type </span>Values = HashMap&lt;Cow&lt;<span class="lifetime">'static</span>, str&gt;, Value&gt;;
 
 <span class="attr">#[derive(Debug, thiserror::Error)]
 </span><span class="kw">pub enum </span>FormatError {
-    <span class="attr">#[error(<span class="string">&quot;Placeholder &#39;{0}&#39; not found&quot;</span>)]
+    <span class="attr">#[error(<span class="string">"Placeholder '{0}' not found"</span>)]
     </span>PlaceholderNotFound(String),
-    <span class="attr">#[error(<span class="string">&quot;{} cannot be formatted with &#39;{}&#39; formatter&quot;</span>, .ty, .fmt)]
-    </span>IncompatibleFormatter { ty: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str, fmt: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str },
+    <span class="attr">#[error(<span class="string">"{} cannot be formatted with '{}' formatter"</span>, .ty, .fmt)]
+    </span>IncompatibleFormatter { ty: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str, fmt: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str },
     <span class="attr">#[error(transparent)]
     </span>Other(<span class="attr">#[from] </span>Error),
 }
@@ -345,11 +346,11 @@
         <span class="kw">let </span>full = <span class="self">self
             </span>.full
             .render(values, config)
-            .error(<span class="string">&quot;Failed to render full text&quot;</span>)<span class="question-mark">?</span>;
+            .error(<span class="string">"Failed to render full text"</span>)<span class="question-mark">?</span>;
         <span class="kw">let </span>short = <span class="self">self
             </span>.short
             .render(values, config)
-            .error(<span class="string">&quot;Failed to render short text&quot;</span>)<span class="question-mark">?</span>;
+            .error(<span class="string">"Failed to render short text"</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>((full, short))
     }
 }
@@ -372,9 +373,9 @@
 <span class="kw">impl </span>Fragment {
     <span class="kw">pub fn </span>formatted_text(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String {
         <span class="kw">match </span>(<span class="self">self</span>.metadata.italic, <span class="self">self</span>.metadata.underline) {
-            (<span class="bool-val">true</span>, <span class="bool-val">true</span>) =&gt; <span class="macro">format!</span>(<span class="string">&quot;&lt;i&gt;&lt;u&gt;{}&lt;/u&gt;&lt;/i&gt;&quot;</span>, <span class="self">self</span>.text),
-            (<span class="bool-val">false</span>, <span class="bool-val">true</span>) =&gt; <span class="macro">format!</span>(<span class="string">&quot;&lt;u&gt;{}&lt;/u&gt;&quot;</span>, <span class="self">self</span>.text),
-            (<span class="bool-val">true</span>, <span class="bool-val">false</span>) =&gt; <span class="macro">format!</span>(<span class="string">&quot;&lt;i&gt;{}&lt;/i&gt;&quot;</span>, <span class="self">self</span>.text),
+            (<span class="bool-val">true</span>, <span class="bool-val">true</span>) =&gt; <span class="macro">format!</span>(<span class="string">"&lt;i&gt;&lt;u&gt;{}&lt;/u&gt;&lt;/i&gt;"</span>, <span class="self">self</span>.text),
+            (<span class="bool-val">false</span>, <span class="bool-val">true</span>) =&gt; <span class="macro">format!</span>(<span class="string">"&lt;u&gt;{}&lt;/u&gt;"</span>, <span class="self">self</span>.text),
+            (<span class="bool-val">true</span>, <span class="bool-val">false</span>) =&gt; <span class="macro">format!</span>(<span class="string">"&lt;i&gt;{}&lt;/i&gt;"</span>, <span class="self">self</span>.text),
             (<span class="bool-val">false</span>, <span class="bool-val">false</span>) =&gt; <span class="self">self</span>.text.clone(),
         }
     }
@@ -382,7 +383,7 @@
 
 <span class="attr">#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 </span><span class="kw">pub struct </span>Metadata {
-    <span class="kw">pub </span>instance: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt;,
+    <span class="kw">pub </span>instance: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'static </span>str&gt;,
     <span class="kw">pub </span>underline: bool,
     <span class="kw">pub </span>italic: bool,
 }

@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/xrandr.rs`."><title>xrandr.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0 (82e1608df 2023-12-21)" data-channel="1.75.0" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/xrandr.rs`."><title>xrandr.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-ac92e1bbe349e143.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0 (07dca489a 2024-02-04)" data-channel="1.76.0" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -207,7 +208,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $display $brightness_icon $brightness &quot;`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $display $brightness_icon $brightness "`
 //! `step_width` | The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50). | `5`
 //! `interval` | Update interval in seconds. | `5`
 //!
@@ -230,8 +231,8 @@
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;xrandr&quot;
-//! format = &quot; $icon $brightness $resolution &quot;
+//! block = "xrandr"
+//! format = " $icon $brightness $resolution "
 //! ```
 //!
 //! # Used Icons
@@ -257,14 +258,14 @@
 <span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions()<span class="question-mark">?</span>;
     api.set_default_actions(<span class="kw-2">&amp;</span>[
-        (MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;cycle_outputs&quot;</span>),
-        (MouseButton::WheelUp, <span class="prelude-val">None</span>, <span class="string">&quot;brightness_up&quot;</span>),
-        (MouseButton::WheelDown, <span class="prelude-val">None</span>, <span class="string">&quot;brightness_down&quot;</span>),
+        (MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">"cycle_outputs"</span>),
+        (MouseButton::WheelUp, <span class="prelude-val">None</span>, <span class="string">"brightness_up"</span>),
+        (MouseButton::WheelDown, <span class="prelude-val">None</span>, <span class="string">"brightness_down"</span>),
     ])<span class="question-mark">?</span>;
 
     <span class="kw">let </span>format = config
         .format
-        .with_default(<span class="string">&quot; $icon $display $brightness_icon $brightness &quot;</span>)<span class="question-mark">?</span>;
+        .with_default(<span class="string">" $icon $display $brightness_icon $brightness "</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>cur_indx = <span class="number">0</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>timer = config.interval.timer();
@@ -280,13 +281,13 @@
 
             <span class="kw">if let </span><span class="prelude-val">Some</span>(mon) = monitors.get(cur_indx) {
                 widget.set_values(<span class="macro">map! </span>{
-                    <span class="string">&quot;display&quot; </span>=&gt; Value::text(mon.name.clone()),
-                    <span class="string">&quot;brightness&quot; </span>=&gt; Value::percents(mon.brightness),
+                    <span class="string">"display" </span>=&gt; Value::text(mon.name.clone()),
+                    <span class="string">"brightness" </span>=&gt; Value::percents(mon.brightness),
                     <span class="comment">//TODO: change `brightness_icon` based on `brightness`
-                    </span><span class="string">&quot;brightness_icon&quot; </span>=&gt; Value::icon(<span class="string">&quot;backlight&quot;</span>),
-                    <span class="string">&quot;resolution&quot; </span>=&gt; Value::text(mon.resolution.clone()),
-                    <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(<span class="string">&quot;xrandr&quot;</span>),
-                    <span class="string">&quot;res_icon&quot; </span>=&gt; Value::icon(<span class="string">&quot;resolution&quot;</span>),
+                    </span><span class="string">"brightness_icon" </span>=&gt; Value::icon(<span class="string">"backlight"</span>),
+                    <span class="string">"resolution" </span>=&gt; Value::text(mon.resolution.clone()),
+                    <span class="string">"icon" </span>=&gt; Value::icon(<span class="string">"xrandr"</span>),
+                    <span class="string">"res_icon" </span>=&gt; Value::icon(<span class="string">"resolution"</span>),
                 });
             }
             api.set_widget(widget)<span class="question-mark">?</span>;
@@ -295,16 +296,16 @@
                 <span class="kw">_ </span>= timer.tick() =&gt; <span class="kw">break</span>,
                 <span class="kw">_ </span>= api.wait_for_update_request() =&gt; <span class="kw">break</span>,
                 <span class="prelude-val">Some</span>(action) = actions.recv() =&gt; <span class="kw">match </span>action.as_ref() {
-                    <span class="string">&quot;cycle_outputs&quot; </span>=&gt; {
+                    <span class="string">"cycle_outputs" </span>=&gt; {
                         cur_indx = (cur_indx + <span class="number">1</span>) % monitors.len();
                     }
-                    <span class="string">&quot;brightness_up&quot; </span>=&gt; {
+                    <span class="string">"brightness_up" </span>=&gt; {
                         <span class="kw">if let </span><span class="prelude-val">Some</span>(monitor) = monitors.get_mut(cur_indx) {
                             <span class="kw">let </span>bright = (monitor.brightness + config.step_width).min(<span class="number">100</span>);
                             monitor.set_brightness(bright);
                         }
                     }
-                    <span class="string">&quot;brightness_down&quot; </span>=&gt; {
+                    <span class="string">"brightness_down" </span>=&gt; {
                         <span class="kw">if let </span><span class="prelude-val">Some</span>(monitor) = monitors.get_mut(cur_indx) {
                             <span class="kw">let </span>bright = monitor.brightness.saturating_sub(config.step_width);
                             monitor.set_brightness(bright);
@@ -326,7 +327,7 @@
 <span class="kw">impl </span>Monitor {
     <span class="kw">fn </span>set_brightness(<span class="kw-2">&amp;mut </span><span class="self">self</span>, brightness: u32) {
         <span class="kw">let _ </span>= spawn_shell(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
-            <span class="string">&quot;xrandr --output {} --brightness  {}&quot;</span>,
+            <span class="string">"xrandr --output {} --brightness  {}"</span>,
             <span class="self">self</span>.name,
             brightness <span class="kw">as </span>f64 / <span class="number">100.0
         </span>));
@@ -337,54 +338,54 @@
 <span class="kw">async fn </span>get_monitors() -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;Monitor&gt;&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>monitors = Vec::new();
 
-    <span class="kw">let </span>active_monitors = Command::new(<span class="string">&quot;xrandr&quot;</span>)
-        .arg(<span class="string">&quot;--listactivemonitors&quot;</span>)
+    <span class="kw">let </span>active_monitors = Command::new(<span class="string">"xrandr"</span>)
+        .arg(<span class="string">"--listactivemonitors"</span>)
         .output()
         .<span class="kw">await
-        </span>.error(<span class="string">&quot;Failed to collect active xrandr monitors&quot;</span>)<span class="question-mark">?
+        </span>.error(<span class="string">"Failed to collect active xrandr monitors"</span>)<span class="question-mark">?
         </span>.stdout;
     <span class="kw">let </span>active_monitors =
-        String::from_utf8(active_monitors).error(<span class="string">&quot;xrandr produced non-UTF8 output&quot;</span>)<span class="question-mark">?</span>;
+        String::from_utf8(active_monitors).error(<span class="string">"xrandr produced non-UTF8 output"</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span>regex = active_monitors
         .lines()
         .filter_map(|line| line.split_ascii_whitespace().last())
-        .map(|name| <span class="macro">format!</span>(<span class="string">&quot;{name} connected&quot;</span>))
-        .chain(<span class="prelude-val">Some</span>(<span class="string">&quot;Brightness:&quot;</span>.into()));
-    <span class="kw">let </span>regex = RegexSet::new(regex).error(<span class="string">&quot;Failed to create RegexSet&quot;</span>)<span class="question-mark">?</span>;
+        .map(|name| <span class="macro">format!</span>(<span class="string">"{name} connected"</span>))
+        .chain(<span class="prelude-val">Some</span>(<span class="string">"Brightness:"</span>.into()));
+    <span class="kw">let </span>regex = RegexSet::new(regex).error(<span class="string">"Failed to create RegexSet"</span>)<span class="question-mark">?</span>;
 
-    <span class="kw">let </span>monitors_info = Command::new(<span class="string">&quot;xrandr&quot;</span>)
-        .arg(<span class="string">&quot;--verbose&quot;</span>)
+    <span class="kw">let </span>monitors_info = Command::new(<span class="string">"xrandr"</span>)
+        .arg(<span class="string">"--verbose"</span>)
         .output()
         .<span class="kw">await
-        </span>.error(<span class="string">&quot;Failed to collect xrandr monitors info&quot;</span>)<span class="question-mark">?
+        </span>.error(<span class="string">"Failed to collect xrandr monitors info"</span>)<span class="question-mark">?
         </span>.stdout;
     <span class="kw">let </span>monitors_info =
-        String::from_utf8(monitors_info).error(<span class="string">&quot;xrandr produced non-UTF8 output&quot;</span>)<span class="question-mark">?</span>;
+        String::from_utf8(monitors_info).error(<span class="string">"xrandr produced non-UTF8 output"</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>it = monitors_info.lines().filter(|line| regex.is_match(line));
 
     <span class="kw">while let </span>(<span class="prelude-val">Some</span>(line1), <span class="prelude-val">Some</span>(line2)) = (it.next(), it.next()) {
         <span class="kw">let </span><span class="kw-2">mut </span>tokens = line1.split_ascii_whitespace().peekable();
-        <span class="kw">let </span>name = tokens.next().error(<span class="string">&quot;Failed to parse xrandr output&quot;</span>)<span class="question-mark">?</span>.into();
+        <span class="kw">let </span>name = tokens.next().error(<span class="string">"Failed to parse xrandr output"</span>)<span class="question-mark">?</span>.into();
         <span class="kw">let _ </span>= tokens.next();
 
-        <span class="comment">// The output may be &quot;&lt;name&gt; connected &lt;resolution&gt;&quot; or &quot;&lt;name&gt; connected primary &lt;resolution&gt;&quot;
-        </span><span class="kw">let _ </span>= tokens.next_if_eq(<span class="kw-2">&amp;</span><span class="string">&quot;primary&quot;</span>);
+        <span class="comment">// The output may be "&lt;name&gt; connected &lt;resolution&gt;" or "&lt;name&gt; connected primary &lt;resolution&gt;"
+        </span><span class="kw">let _ </span>= tokens.next_if_eq(<span class="kw-2">&amp;</span><span class="string">"primary"</span>);
 
         <span class="kw">let </span>resolution = tokens
             .next()
-            .and_then(|x| x.split(<span class="string">&#39;+&#39;</span>).next())
-            .error(<span class="string">&quot;Failed to parse xrandr output&quot;</span>)<span class="question-mark">?
+            .and_then(|x| x.split(<span class="string">'+'</span>).next())
+            .error(<span class="string">"Failed to parse xrandr output"</span>)<span class="question-mark">?
             </span>.into();
 
         <span class="kw">let </span>brightness = (line2
-            .split(<span class="string">&#39;:&#39;</span>)
+            .split(<span class="string">':'</span>)
             .nth(<span class="number">1</span>)
-            .error(<span class="string">&quot;Failed to parse xrandr output&quot;</span>)<span class="question-mark">?
+            .error(<span class="string">"Failed to parse xrandr output"</span>)<span class="question-mark">?
             </span>.trim()
             .parse::&lt;f64&gt;()
-            .error(<span class="string">&quot;Failed to parse xrandr output&quot;</span>)<span class="question-mark">?
+            .error(<span class="string">"Failed to parse xrandr output"</span>)<span class="question-mark">?
             </span>* <span class="number">100.0</span>) <span class="kw">as </span>u32;
 
         monitors.push(Monitor {

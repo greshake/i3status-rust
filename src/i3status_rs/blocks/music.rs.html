@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/music.rs`."><title>music.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0 (82e1608df 2023-12-21)" data-channel="1.75.0" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/music.rs`."><title>music.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-ac92e1bbe349e143.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0 (07dca489a 2024-02-04)" data-channel="1.76.0" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -691,18 +692,18 @@
 //! and many others.
 //!
 //! By default the block tracks all players available on the MPRIS bus. Right clicking on the block
-//! will cycle it to the next player. You can pin the widget to a given player via the &quot;player&quot;
+//! will cycle it to the next player. You can pin the widget to a given player via the "player"
 //! setting.
 //!
 //! # Configuration
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot; $icon {$combo.str(max_w:25,rot_interval:0.5) $play &amp;vert;}&quot;&lt;/code&gt;
+//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;" $icon {$combo.str(max_w:25,rot_interval:0.5) $play &amp;vert;}"&lt;/code&gt;
 //! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
-//! `player` | Name(s) of the music player(s) MPRIS interface. This can be either a music player name or an array of music player names. Run &lt;code&gt;busctl --user list &amp;vert; grep &quot;org.mpris.MediaPlayer2.&quot; &amp;vert; cut -d&#39; &#39; -f1&lt;/code&gt; and the name is the part after &quot;org.mpris.MediaPlayer2.&quot;. | `None`
-//! `interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore. | `[&quot;playerctld&quot;]`
-//! `separator` | String to insert between artist and title. | `&quot; - &quot;`
+//! `player` | Name(s) of the music player(s) MPRIS interface. This can be either a music player name or an array of music player names. Run &lt;code&gt;busctl --user list &amp;vert; grep "org.mpris.MediaPlayer2." &amp;vert; cut -d' ' -f1&lt;/code&gt; and the name is the part after "org.mpris.MediaPlayer2.". | `None`
+//! `interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore. | `["playerctld"]`
+//! `separator` | String to insert between artist and title. | `" - "`
 //! `seek_step_secs` | Positive number of seconds to seek forward/backward when scrolling on the bar. Does not need to be an integer. | `1`
 //! `volume_step` | The percent volume level is increased/decreased for the selected audio device when scrolling. Capped automatically at 50. | `5`
 //!
@@ -714,7 +715,7 @@
 //! `artist`      | Current artist | Text
 //! `title`       | Current title  | Text
 //! `url`         | Current song url | Text
-//! `combo`       | Resolves to &quot;`$artist[sep]$title&quot;`, `&quot;$artist&quot;`, `&quot;$title&quot;`, or `&quot;$url&quot;` depending on what information is available. `[sep]` is set by `separator` option. | Text
+//! `combo`       | Resolves to "`$artist[sep]$title"`, `"$artist"`, `"$title"`, or `"$url"` depending on what information is available. `[sep]` is set by `separator` option. | Text
 //! `player`      | Name of the current player (taken from the last part of its MPRIS bus name) | Text
 //! `avail`       | Total number of players available to switch between | Number
 //! `cur`         | Total number of players available to switch between | Number
@@ -743,63 +744,63 @@
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;music&quot;
-//! format = &quot; $icon {$combo.str(max_w:20) $play $next |}&quot;
-//! player = &quot;spotify&quot;
+//! block = "music"
+//! format = " $icon {$combo.str(max_w:20) $play $next |}"
+//! player = "spotify"
 //! ```
 //!
-//! Same thing for any compatible player, takes the first active on the bus, but ignores &quot;mpd&quot; or anything with &quot;kdeconnect&quot; in the name:
+//! Same thing for any compatible player, takes the first active on the bus, but ignores "mpd" or anything with "kdeconnect" in the name:
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;music&quot;
-//! format = &quot; $icon {$combo.str(max_w:20) $play $next |}&quot;
-//! interface_name_exclude = [&quot;.*kdeconnect.*&quot;, &quot;mpd&quot;]
+//! block = "music"
+//! format = " $icon {$combo.str(max_w:20) $play $next |}"
+//! interface_name_exclude = [".*kdeconnect.*", "mpd"]
 //! ```
 //!
 //! Same as above, but displays with rotating text
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;music&quot;
-//! format = &quot; $icon {$combo.str(max_w:20,rot_interval:0.5) $play $next |}&quot;
-//! interface_name_exclude = [&quot;.*kdeconnect.*&quot;, &quot;mpd&quot;]
+//! block = "music"
+//! format = " $icon {$combo.str(max_w:20,rot_interval:0.5) $play $next |}"
+//! interface_name_exclude = [".*kdeconnect.*", "mpd"]
 //! ```
 //!
 //! Click anywhere to play/pause, middle click to toggle format:
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;music&quot;
-//! format = &quot; format 1 &quot;
-//! format_alt = &quot; format 2 &quot;
+//! block = "music"
+//! format = " format 1 "
+//! format_alt = " format 2 "
 //! [[block.click]]
-//! button = &quot;left&quot;
-//! action = &quot;play_pause&quot;
+//! button = "left"
+//! action = "play_pause"
 //! [[block.click]]
-//! button = &quot;middle&quot;
-//! action = &quot;toggle_format&quot;
+//! button = "middle"
+//! action = "toggle_format"
 //! ```
 //!
 //! Scroll to change the player volume, use the forward and back buttons to seek:
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;music&quot;
-//! format = &quot; $icon $volume_icon $combo $play $next| &quot;
+//! block = "music"
+//! format = " $icon $volume_icon $combo $play $next| "
 //! seek_step_secs = 10
 //! [[block.click]]
-//! button = &quot;up&quot;
-//! action = &quot;volume_up&quot;
+//! button = "up"
+//! action = "volume_up"
 //! [[block.click]]
-//! button = &quot;down&quot;
-//! action = &quot;volume_down&quot;
+//! button = "down"
+//! action = "volume_down"
 //! [[block.click]]
-//! button = &quot;forward&quot;
-//! action = &quot;seek_forward&quot;
+//! button = "forward"
+//! action = "seek_forward"
 //! [[block.click]]
-//! button = &quot;back&quot;
-//! action = &quot;seek_backward&quot;
+//! button = "back"
+//! action = "seek_backward"
 //! ```
 //!
 //! # Icons Used
@@ -824,11 +825,11 @@
 <span class="kw">mod </span>zbus_mpris;
 <span class="kw">mod </span>zbus_playerctld;
 
-<span class="macro">make_log_macro!</span>(debug, <span class="string">&quot;music&quot;</span>);
+<span class="macro">make_log_macro!</span>(debug, <span class="string">"music"</span>);
 
-<span class="kw">const </span>PLAY_PAUSE_BTN: <span class="kw-2">&amp;</span>str = <span class="string">&quot;play_pause_btn&quot;</span>;
-<span class="kw">const </span>NEXT_BTN: <span class="kw-2">&amp;</span>str = <span class="string">&quot;next_btn&quot;</span>;
-<span class="kw">const </span>PREV_BTN: <span class="kw-2">&amp;</span>str = <span class="string">&quot;prev_btn&quot;</span>;
+<span class="kw">const </span>PLAY_PAUSE_BTN: <span class="kw-2">&amp;</span>str = <span class="string">"play_pause_btn"</span>;
+<span class="kw">const </span>NEXT_BTN: <span class="kw-2">&amp;</span>str = <span class="string">"next_btn"</span>;
+<span class="kw">const </span>PREV_BTN: <span class="kw-2">&amp;</span>str = <span class="string">"prev_btn"</span>;
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
@@ -836,9 +837,9 @@
     <span class="kw">pub </span>format: FormatConfig,
     <span class="kw">pub </span>format_alt: <span class="prelude-ty">Option</span>&lt;FormatConfig&gt;,
     <span class="kw">pub </span>player: PlayerName,
-    <span class="attr">#[default(<span class="macro">vec!</span>[<span class="string">&quot;playerctld&quot;</span>.into()]</span>)]
+    <span class="attr">#[default(<span class="macro">vec!</span>[<span class="string">"playerctld"</span>.into()]</span>)]
     <span class="kw">pub </span>interface_name_exclude: Vec&lt;String&gt;,
-    <span class="attr">#[default(<span class="string">&quot; - &quot;</span>.into())]
+    <span class="attr">#[default(<span class="string">" - "</span>.into())]
     </span><span class="kw">pub </span>separator: String,
     <span class="attr">#[default(<span class="number">1</span>.into())]
     </span><span class="kw">pub </span>seek_step_secs: Seconds&lt;<span class="bool-val">false</span>&gt;,
@@ -857,35 +858,35 @@
 <span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions()<span class="question-mark">?</span>;
     api.set_default_actions(<span class="kw-2">&amp;</span>[
-        (MouseButton::Left, <span class="prelude-val">Some</span>(PLAY_PAUSE_BTN), <span class="string">&quot;play_pause&quot;</span>),
-        (MouseButton::Left, <span class="prelude-val">Some</span>(NEXT_BTN), <span class="string">&quot;next&quot;</span>),
-        (MouseButton::Left, <span class="prelude-val">Some</span>(PREV_BTN), <span class="string">&quot;prev&quot;</span>),
-        (MouseButton::Right, <span class="prelude-val">None</span>, <span class="string">&quot;next_player&quot;</span>),
-        (MouseButton::WheelUp, <span class="prelude-val">None</span>, <span class="string">&quot;seek_forward&quot;</span>),
-        (MouseButton::WheelDown, <span class="prelude-val">None</span>, <span class="string">&quot;seek_backward&quot;</span>),
-        (MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;toggle_format&quot;</span>),
+        (MouseButton::Left, <span class="prelude-val">Some</span>(PLAY_PAUSE_BTN), <span class="string">"play_pause"</span>),
+        (MouseButton::Left, <span class="prelude-val">Some</span>(NEXT_BTN), <span class="string">"next"</span>),
+        (MouseButton::Left, <span class="prelude-val">Some</span>(PREV_BTN), <span class="string">"prev"</span>),
+        (MouseButton::Right, <span class="prelude-val">None</span>, <span class="string">"next_player"</span>),
+        (MouseButton::WheelUp, <span class="prelude-val">None</span>, <span class="string">"seek_forward"</span>),
+        (MouseButton::WheelDown, <span class="prelude-val">None</span>, <span class="string">"seek_backward"</span>),
+        (MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">"toggle_format"</span>),
     ])<span class="question-mark">?</span>;
 
     <span class="kw">let </span>dbus_conn = new_dbus_connection().<span class="kw">await</span><span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>format = config
         .format
-        .with_default(<span class="string">&quot; $icon {$combo.str(max_w:25,rot_interval:0.5) $play |}&quot;</span>)<span class="question-mark">?</span>;
+        .with_default(<span class="string">" $icon {$combo.str(max_w:25,rot_interval:0.5) $play |}"</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>format_alt = <span class="kw">match </span><span class="kw-2">&amp;</span>config.format_alt {
-        <span class="prelude-val">Some</span>(f) =&gt; <span class="prelude-val">Some</span>(f.with_default(<span class="string">&quot;&quot;</span>)<span class="question-mark">?</span>),
+        <span class="prelude-val">Some</span>(f) =&gt; <span class="prelude-val">Some</span>(f.with_default(<span class="string">""</span>)<span class="question-mark">?</span>),
         <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
     };
 
     <span class="kw">let </span>volume_step = config.volume_step.clamp(<span class="number">0.0</span>, <span class="number">50.0</span>) / <span class="number">100.0</span>;
 
-    <span class="kw">let </span>new_btn = |icon: <span class="kw-2">&amp;</span>str, instance: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str| -&gt; <span class="prelude-ty">Result</span>&lt;Value&gt; {
+    <span class="kw">let </span>new_btn = |icon: <span class="kw-2">&amp;</span>str, instance: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str| -&gt; <span class="prelude-ty">Result</span>&lt;Value&gt; {
         <span class="prelude-val">Ok</span>(Value::icon(icon.to_string()).with_instance(instance))
     };
 
     <span class="kw">let </span>values = <span class="macro">map! </span>{
-        <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(<span class="string">&quot;music&quot;</span>),
-        <span class="string">&quot;next&quot; </span>=&gt; new_btn(<span class="string">&quot;music_next&quot;</span>, NEXT_BTN)<span class="question-mark">?</span>,
-        <span class="string">&quot;prev&quot; </span>=&gt; new_btn(<span class="string">&quot;music_prev&quot;</span>, PREV_BTN)<span class="question-mark">?</span>,
+        <span class="string">"icon" </span>=&gt; Value::icon(<span class="string">"music"</span>),
+        <span class="string">"next" </span>=&gt; new_btn(<span class="string">"music_next"</span>, NEXT_BTN)<span class="question-mark">?</span>,
+        <span class="string">"prev" </span>=&gt; new_btn(<span class="string">"music_prev"</span>, PREV_BTN)<span class="question-mark">?</span>,
     };
 
     <span class="kw">let </span>preferred_players = <span class="kw">match </span>config.player.clone() {
@@ -897,11 +898,11 @@
         .iter()
         .map(|r| Regex::new(r))
         .collect::&lt;<span class="prelude-ty">Result</span>&lt;Vec&lt;<span class="kw">_</span>&gt;, <span class="kw">_</span>&gt;&gt;()
-        .error(<span class="string">&quot;Invalid regex&quot;</span>)<span class="question-mark">?</span>;
+        .error(<span class="string">"Invalid regex"</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span>playerctld_proxy = zbus_playerctld::PlayerctldProxy::new(<span class="kw-2">&amp;</span>dbus_conn)
         .<span class="kw">await
-        </span>.error(<span class="string">&quot;Failed to create PlayerctldProxy&quot;</span>)<span class="question-mark">?</span>;
+        </span>.error(<span class="string">"Failed to create PlayerctldProxy"</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>players = get_players(<span class="kw-2">&amp;</span>dbus_conn, <span class="kw-2">&amp;</span>preferred_players, <span class="kw-2">&amp;</span>exclude_regex).<span class="kw">await</span><span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>cur_player = <span class="prelude-val">None</span>;
@@ -918,7 +919,7 @@
             }
         }
     } <span class="kw">else </span>{
-        <span class="comment">// If we couldn&#39;t get the players from playerctld then fall back to walking over
+        <span class="comment">// If we couldn't get the players from playerctld then fall back to walking over
         // the players and select the first one found playing something, or the last one
         // in the list (the most recently opened)
         </span><span class="kw">for </span>(i, player) <span class="kw">in </span>players.iter().enumerate() {
@@ -932,48 +933,48 @@
     <span class="kw">let </span><span class="kw-2">mut </span>properties_stream = MessageStream::for_match_rule(
         MatchRule::builder()
             .msg_type(zbus::MessageType::Signal)
-            .interface(<span class="string">&quot;org.freedesktop.DBus.Properties&quot;</span>)
-            .and_then(|x| x.member(<span class="string">&quot;PropertiesChanged&quot;</span>))
-            .and_then(|x| x.path(<span class="string">&quot;/org/mpris/MediaPlayer2&quot;</span>))
+            .interface(<span class="string">"org.freedesktop.DBus.Properties"</span>)
+            .and_then(|x| x.member(<span class="string">"PropertiesChanged"</span>))
+            .and_then(|x| x.path(<span class="string">"/org/mpris/MediaPlayer2"</span>))
             .unwrap()
             .build(),
         <span class="kw-2">&amp;</span>dbus_conn,
         <span class="prelude-val">None</span>,
     )
     .<span class="kw">await
-    </span>.error(<span class="string">&quot;Failed to add match rule&quot;</span>)<span class="question-mark">?</span>;
+    </span>.error(<span class="string">"Failed to add match rule"</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>name_owner_changed_stream = MessageStream::for_match_rule(
         MatchRule::builder()
             .msg_type(zbus::MessageType::Signal)
-            .interface(<span class="string">&quot;org.freedesktop.DBus&quot;</span>)
-            .and_then(|x| x.member(<span class="string">&quot;NameOwnerChanged&quot;</span>))
-            .and_then(|x| x.arg0ns(<span class="string">&quot;org.mpris.MediaPlayer2&quot;</span>))
+            .interface(<span class="string">"org.freedesktop.DBus"</span>)
+            .and_then(|x| x.member(<span class="string">"NameOwnerChanged"</span>))
+            .and_then(|x| x.arg0ns(<span class="string">"org.mpris.MediaPlayer2"</span>))
             .unwrap()
             .build(),
         <span class="kw-2">&amp;</span>dbus_conn,
         <span class="prelude-val">None</span>,
     )
     .<span class="kw">await
-    </span>.error(<span class="string">&quot;Failed to add match rule&quot;</span>)<span class="question-mark">?</span>;
+    </span>.error(<span class="string">"Failed to add match rule"</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>active_player_change_end_stream = playerctld_proxy
         .receive_active_player_change_end()
         .<span class="kw">await
-        </span>.error(<span class="string">&quot;Failed to create ActivePlayerChangeEndStream&quot;</span>)<span class="question-mark">?</span>;
+        </span>.error(<span class="string">"Failed to create ActivePlayerChangeEndStream"</span>)<span class="question-mark">?</span>;
 
     <span class="kw">loop </span>{
-        <span class="macro">debug!</span>(<span class="string">&quot;available players: {}&quot;</span>, DisplaySlice(<span class="kw-2">&amp;</span>players));
+        <span class="macro">debug!</span>(<span class="string">"available players: {}"</span>, DisplaySlice(<span class="kw-2">&amp;</span>players));
 
         <span class="kw">let </span>avail = players.len();
         <span class="kw">let </span>player = cur_player.map(|c| players.get_mut(c).unwrap());
         <span class="kw">match </span>player {
             <span class="prelude-val">Some</span>(player) =&gt; {
                 <span class="kw">let </span><span class="kw-2">mut </span>values = values.clone();
-                values.insert(<span class="string">&quot;avail&quot;</span>.into(), Value::number(avail));
-                values.insert(<span class="string">&quot;cur&quot;</span>.into(), Value::number(cur_player.unwrap() + <span class="number">1</span>));
+                values.insert(<span class="string">"avail"</span>.into(), Value::number(avail));
+                values.insert(<span class="string">"cur"</span>.into(), Value::number(cur_player.unwrap() + <span class="number">1</span>));
                 values.insert(
-                    <span class="string">&quot;player&quot;</span>.into(),
+                    <span class="string">"player"</span>.into(),
                     Value::text(
                         extract_player_name(player.bus_name.as_str())
                             .unwrap()
@@ -981,12 +982,12 @@
                     ),
                 );
                 <span class="kw">let </span>(state, play_icon) = <span class="kw">match </span>player.status {
-                    <span class="prelude-val">Some</span>(PlaybackStatus::Playing) =&gt; (State::Info, <span class="string">&quot;music_pause&quot;</span>),
-                    <span class="kw">_ </span>=&gt; (State::Idle, <span class="string">&quot;music_play&quot;</span>),
+                    <span class="prelude-val">Some</span>(PlaybackStatus::Playing) =&gt; (State::Info, <span class="string">"music_pause"</span>),
+                    <span class="kw">_ </span>=&gt; (State::Idle, <span class="string">"music_play"</span>),
                 };
-                values.insert(<span class="string">&quot;play&quot;</span>.into(), new_btn(play_icon, PLAY_PAUSE_BTN)<span class="question-mark">?</span>);
+                values.insert(<span class="string">"play"</span>.into(), new_btn(play_icon, PLAY_PAUSE_BTN)<span class="question-mark">?</span>);
                 <span class="kw">if let </span><span class="prelude-val">Some</span>(url) = <span class="kw-2">&amp;</span>player.metadata.url {
-                    values.insert(<span class="string">&quot;url&quot;</span>.into(), Value::text(url.clone()));
+                    values.insert(<span class="string">"url"</span>.into(), Value::text(url.clone()));
                 }
                 <span class="kw">match </span>(
                     <span class="kw-2">&amp;</span>player.metadata.title,
@@ -994,32 +995,32 @@
                     <span class="kw-2">&amp;</span>player.metadata.url,
                 ) {
                     (<span class="prelude-val">Some</span>(t), <span class="prelude-val">None</span>, <span class="kw">_</span>) =&gt; {
-                        values.insert(<span class="string">&quot;combo&quot;</span>.into(), Value::text(t.clone()));
-                        values.insert(<span class="string">&quot;title&quot;</span>.into(), Value::text(t.clone()));
+                        values.insert(<span class="string">"combo"</span>.into(), Value::text(t.clone()));
+                        values.insert(<span class="string">"title"</span>.into(), Value::text(t.clone()));
                     }
                     (<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(a), <span class="kw">_</span>) =&gt; {
-                        values.insert(<span class="string">&quot;combo&quot;</span>.into(), Value::text(a.clone()));
-                        values.insert(<span class="string">&quot;artist&quot;</span>.into(), Value::text(a.clone()));
+                        values.insert(<span class="string">"combo"</span>.into(), Value::text(a.clone()));
+                        values.insert(<span class="string">"artist"</span>.into(), Value::text(a.clone()));
                     }
                     (<span class="prelude-val">Some</span>(t), <span class="prelude-val">Some</span>(a), <span class="kw">_</span>) =&gt; {
                         values.insert(
-                            <span class="string">&quot;combo&quot;</span>.into(),
-                            Value::text(<span class="macro">format!</span>(<span class="string">&quot;{t}{}{a}&quot;</span>, config.separator)),
+                            <span class="string">"combo"</span>.into(),
+                            Value::text(<span class="macro">format!</span>(<span class="string">"{t}{}{a}"</span>, config.separator)),
                         );
-                        values.insert(<span class="string">&quot;title&quot;</span>.into(), Value::text(t.clone()));
-                        values.insert(<span class="string">&quot;artist&quot;</span>.into(), Value::text(a.clone()));
+                        values.insert(<span class="string">"title"</span>.into(), Value::text(t.clone()));
+                        values.insert(<span class="string">"artist"</span>.into(), Value::text(a.clone()));
                     }
                     (<span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(url)) =&gt; {
-                        values.insert(<span class="string">&quot;combo&quot;</span>.into(), Value::text(url.clone()));
+                        values.insert(<span class="string">"combo"</span>.into(), Value::text(url.clone()));
                     }
                     <span class="kw">_ </span>=&gt; (),
                 }
                 <span class="kw">if let </span><span class="prelude-val">Some</span>(volume) = player.volume {
                     values.insert(
-                        <span class="string">&quot;volume_icon&quot;</span>.into(),
-                        Value::icon_progression(<span class="string">&quot;volume&quot;</span>, volume),
+                        <span class="string">"volume_icon"</span>.into(),
+                        Value::icon_progression(<span class="string">"volume"</span>, volume),
                     );
-                    values.insert(<span class="string">&quot;volume&quot;</span>.into(), Value::percents(volume * <span class="number">100.0</span>));
+                    values.insert(<span class="string">"volume"</span>.into(), Value::percents(volume * <span class="number">100.0</span>));
                 }
                 <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
                 widget.set_values(values);
@@ -1028,7 +1029,7 @@
             }
             <span class="prelude-val">None </span>=&gt; {
                 <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
-                widget.set_values(<span class="macro">map!</span>(<span class="string">&quot;icon&quot; </span>=&gt; Value::icon(<span class="string">&quot;music&quot;</span>)));
+                widget.set_values(<span class="macro">map!</span>(<span class="string">"icon" </span>=&gt; Value::icon(<span class="string">"music"</span>)));
                 api.set_widget(widget)<span class="question-mark">?</span>;
             }
         }
@@ -1043,15 +1044,15 @@
                     <span class="kw">let </span>sender = header.sender().unwrap().unwrap();
                     <span class="kw">if let </span><span class="prelude-val">Some</span>((pos, player)) = players.iter_mut().enumerate().find(|p| <span class="kw-2">&amp;*</span>p.<span class="number">1</span>.owner == sender) {
                         <span class="kw">let </span>props = args.changed_properties;
-                        <span class="kw">if let </span><span class="prelude-val">Some</span>(status) = props.get(<span class="string">&quot;PlaybackStatus&quot;</span>) {
+                        <span class="kw">if let </span><span class="prelude-val">Some</span>(status) = props.get(<span class="string">"PlaybackStatus"</span>) {
                             <span class="kw">let </span>status: <span class="kw-2">&amp;</span>str = status.downcast_ref().unwrap();
                             player.status = PlaybackStatus::from_str(status);
                         }
-                        <span class="kw">if let </span><span class="prelude-val">Some</span>(metadata) = props.get(<span class="string">&quot;Metadata&quot;</span>) {
+                        <span class="kw">if let </span><span class="prelude-val">Some</span>(metadata) = props.get(<span class="string">"Metadata"</span>) {
                             player.metadata =
                                 zbus_mpris::PlayerMetadata::try_from(metadata.to_owned()).unwrap();
                         }
-                        <span class="kw">if let </span><span class="prelude-val">Some</span>(volume) = props.get(<span class="string">&quot;Volume&quot;</span>) {
+                        <span class="kw">if let </span><span class="prelude-val">Some</span>(volume) = props.get(<span class="string">"Volume"</span>) {
                             player.volume = <span class="prelude-val">Some</span>(<span class="kw-2">*</span>volume.downcast_ref().unwrap());
                         }
                         <span class="kw">if </span>player.status == <span class="prelude-val">Some</span>(PlaybackStatus::Playing)
@@ -1071,19 +1072,19 @@
                     <span class="kw">let </span>args = msg.args().unwrap();
                     <span class="kw">match </span>(args.old_owner.as_ref(), args.new_owner.as_ref()) {
                         (<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(new)) =&gt; {
-                            <span class="macro">debug!</span>(<span class="string">&quot;new player {} owned by {new}&quot;</span>, args.name);
+                            <span class="macro">debug!</span>(<span class="string">"new player {} owned by {new}"</span>, args.name);
                             <span class="kw">if </span>player_matches(args.name.as_str(), <span class="kw-2">&amp;</span>preferred_players, <span class="kw-2">&amp;</span>exclude_regex) {
                                 <span class="kw">match </span>Player::new(<span class="kw-2">&amp;</span>dbus_conn, args.name.to_owned().into(), new.to_owned().into()).<span class="kw">await </span>{
                                     <span class="prelude-val">Ok</span>(player) =&gt; players.push(player),
                                     <span class="prelude-val">Err</span>(e) =&gt; {
-                                        <span class="macro">debug!</span>(<span class="string">&quot;{e}&quot;</span>);
+                                        <span class="macro">debug!</span>(<span class="string">"{e}"</span>);
                                     },
                                 }
                             }
                         }
                         (<span class="prelude-val">Some</span>(old), <span class="prelude-val">None</span>) =&gt; {
                             <span class="kw">if let </span><span class="prelude-val">Some</span>(pos) = players.iter().position(|p| <span class="kw-2">&amp;*</span>p.owner == old) {
-                                <span class="macro">debug!</span>(<span class="string">&quot;removed player {} owned by {old}&quot;</span>, args.name);
+                                <span class="macro">debug!</span>(<span class="string">"removed player {} owned by {old}"</span>, args.name);
                                 players.remove(pos);
                                 <span class="kw">if let </span><span class="prelude-val">Some</span>(cur) = cur_player {
                                     <span class="kw">if </span>players.is_empty() {
@@ -1107,9 +1108,9 @@
                     }
                     <span class="kw">else</span>{
                         <span class="comment">// We must have shifted to a player we wanted to skip (on the interface_name_exclude list).
-                        // Let&#39;s shift again
+                        // Let's shift again
                         </span><span class="kw">if let </span><span class="prelude-val">Err</span>(e) = playerctld_proxy.shift().<span class="kw">await</span>{
-                            <span class="macro">debug!</span>(<span class="string">&quot;{e}&quot;</span>);
+                            <span class="macro">debug!</span>(<span class="string">"{e}"</span>);
                         }
                     }
                     <span class="kw">break</span>;
@@ -1118,35 +1119,35 @@
                     <span class="kw">if let </span><span class="prelude-val">Some</span>(i) = cur_player {
                         <span class="kw">let </span>player = <span class="kw-2">&amp;</span>players[i];
                         <span class="kw">match </span>action.as_ref() {
-                            <span class="string">&quot;play_pause&quot; </span>=&gt; {
+                            <span class="string">"play_pause" </span>=&gt; {
                                 player.play_pause().<span class="kw">await</span><span class="question-mark">?</span>;
                             }
-                            <span class="string">&quot;next&quot; </span>=&gt; {
+                            <span class="string">"next" </span>=&gt; {
                                 player.next().<span class="kw">await</span><span class="question-mark">?</span>;
                             }
-                            <span class="string">&quot;prev&quot; </span>=&gt; {
+                            <span class="string">"prev" </span>=&gt; {
                                 player.prev().<span class="kw">await</span><span class="question-mark">?</span>;
                             }
-                            <span class="string">&quot;next_player&quot; </span>=&gt; {
+                            <span class="string">"next_player" </span>=&gt; {
                                 cur_player = <span class="prelude-val">Some</span>((i + <span class="number">1</span>) % players.len());
                                 <span class="kw">if let </span><span class="prelude-val">Err</span>(e) = playerctld_proxy.shift().<span class="kw">await</span>{
-                                    <span class="macro">debug!</span>(<span class="string">&quot;{e}&quot;</span>);
+                                    <span class="macro">debug!</span>(<span class="string">"{e}"</span>);
                                 }
                                 <span class="kw">break</span>;
                             }
-                            <span class="string">&quot;seek_forward&quot; </span>=&gt; {
+                            <span class="string">"seek_forward" </span>=&gt; {
                                 player.seek(config.seek_step_secs.<span class="number">0</span>.as_micros() <span class="kw">as </span>i64).<span class="kw">await</span><span class="question-mark">?</span>;
                             }
-                            <span class="string">&quot;seek_backward&quot; </span>=&gt; {
+                            <span class="string">"seek_backward" </span>=&gt; {
                                 player.seek(-(config.seek_step_secs.<span class="number">0</span>.as_micros() <span class="kw">as </span>i64)).<span class="kw">await</span><span class="question-mark">?</span>;
                             }
-                            <span class="string">&quot;volume_up&quot; </span>=&gt; {
+                            <span class="string">"volume_up" </span>=&gt; {
                                 player.set_volume(volume_step).<span class="kw">await</span><span class="question-mark">?</span>;
                             }
-                            <span class="string">&quot;volume_down&quot; </span>=&gt; {
+                            <span class="string">"volume_down" </span>=&gt; {
                                 player.set_volume(-volume_step).<span class="kw">await</span><span class="question-mark">?</span>;
                             }
-                            <span class="string">&quot;toggle_format&quot; </span>=&gt; {
+                            <span class="string">"toggle_format" </span>=&gt; {
                                 <span class="kw">if let </span><span class="prelude-val">Some</span>(format_alt) = <span class="kw-2">&amp;mut </span>format_alt {
                                     std::mem::swap(format_alt, <span class="kw-2">&amp;mut </span>format);
                                     <span class="kw">break</span>;
@@ -1168,11 +1169,11 @@
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;Player&gt;&gt; {
     <span class="kw">let </span>proxy = DBusProxy::new(dbus_conn)
         .<span class="kw">await
-        </span>.error(<span class="string">&quot;failed to create DBusProxy&quot;</span>)<span class="question-mark">?</span>;
+        </span>.error(<span class="string">"failed to create DBusProxy"</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>names = proxy
         .list_names()
         .<span class="kw">await
-        </span>.error(<span class="string">&quot;failed to list dbus names&quot;</span>)<span class="question-mark">?</span>;
+        </span>.error(<span class="string">"failed to list dbus names"</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>players = Vec::new();
     <span class="kw">for </span>name <span class="kw">in </span>names {
         <span class="kw">if </span>player_matches(name.as_str(), preferred_players, exclude_regex) {
@@ -1180,7 +1181,7 @@
             <span class="kw">match </span>Player::new(dbus_conn, name, owner).<span class="kw">await </span>{
                 <span class="prelude-val">Ok</span>(player) =&gt; players.push(player),
                 <span class="prelude-val">Err</span>(e) =&gt; {
-                    <span class="macro">debug!</span>(<span class="string">&quot;{e}&quot;</span>);
+                    <span class="macro">debug!</span>(<span class="string">"{e}"</span>);
                 }
             }
         }
@@ -1193,7 +1194,7 @@
     status: <span class="prelude-ty">Option</span>&lt;PlaybackStatus&gt;,
     owner: OwnedUniqueName,
     bus_name: OwnedBusName,
-    player_proxy: zbus_mpris::PlayerProxy&lt;<span class="lifetime">&#39;static</span>&gt;,
+    player_proxy: zbus_mpris::PlayerProxy&lt;<span class="lifetime">'static</span>&gt;,
     metadata: zbus_mpris::PlayerMetadata,
     volume: <span class="prelude-ty">Option</span>&lt;f64&gt;,
 }
@@ -1204,29 +1205,29 @@
         bus_name: OwnedBusName,
         owner: OwnedUniqueName,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;Player&gt; {
-        <span class="macro">debug!</span>(<span class="string">&quot;creating Player for {bus_name}&quot;</span>);
+        <span class="macro">debug!</span>(<span class="string">"creating Player for {bus_name}"</span>);
 
         <span class="kw">let </span>proxy = zbus_mpris::PlayerProxy::builder(dbus_conn)
             .destination(bus_name.clone())
-            .error(<span class="string">&quot;failed to set proxy destination&quot;</span>)<span class="question-mark">?
+            .error(<span class="string">"failed to set proxy destination"</span>)<span class="question-mark">?
             </span>.build()
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;failed to open player proxy&quot;</span>)<span class="question-mark">?</span>;
+            </span>.error(<span class="string">"failed to open player proxy"</span>)<span class="question-mark">?</span>;
 
-        <span class="comment">// debug!(&quot;querying player info&quot;);
+        <span class="comment">// debug!("querying player info");
         // let (metadata, status, volume) =
         //     tokio::join!(proxy.metadata(), proxy.playback_status(), proxy.volume());
-        </span><span class="macro">debug!</span>(<span class="string">&quot;querying player metadata&quot;</span>);
+        </span><span class="macro">debug!</span>(<span class="string">"querying player metadata"</span>);
         <span class="kw">let </span>metadata = proxy.metadata().<span class="kw">await</span>;
-        <span class="macro">debug!</span>(<span class="string">&quot;querying player status&quot;</span>);
+        <span class="macro">debug!</span>(<span class="string">"querying player status"</span>);
         <span class="kw">let </span>status = proxy.playback_status().<span class="kw">await</span>;
-        <span class="macro">debug!</span>(<span class="string">&quot;querying player volume&quot;</span>);
+        <span class="macro">debug!</span>(<span class="string">"querying player volume"</span>);
         <span class="kw">let </span>volume = proxy.volume().<span class="kw">await</span>;
 
-        <span class="kw">let </span>metadata = metadata.error(<span class="string">&quot;failed to obtain player metadata&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">let </span>status = status.error(<span class="string">&quot;failed to obtain player status&quot;</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>metadata = metadata.error(<span class="string">"failed to obtain player metadata"</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>status = status.error(<span class="string">"failed to obtain player status"</span>)<span class="question-mark">?</span>;
 
-        <span class="macro">debug!</span>(<span class="string">&quot;Player created&quot;</span>);
+        <span class="macro">debug!</span>(<span class="string">"Player created"</span>);
 
         <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
             status: PlaybackStatus::from_str(<span class="kw-2">&amp;</span>status),
@@ -1242,26 +1243,26 @@
         <span class="self">self</span>.player_proxy
             .play_pause()
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;play_pause() failed&quot;</span>)
+            </span>.error(<span class="string">"play_pause() failed"</span>)
     }
 
     <span class="kw">async fn </span>prev(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-        <span class="self">self</span>.player_proxy.previous().<span class="kw">await</span>.error(<span class="string">&quot;prev() failed&quot;</span>)
+        <span class="self">self</span>.player_proxy.previous().<span class="kw">await</span>.error(<span class="string">"prev() failed"</span>)
     }
 
     <span class="kw">async fn </span>next(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-        <span class="self">self</span>.player_proxy.next().<span class="kw">await</span>.error(<span class="string">&quot;next() failed&quot;</span>)
+        <span class="self">self</span>.player_proxy.next().<span class="kw">await</span>.error(<span class="string">"next() failed"</span>)
     }
 
     <span class="kw">async fn </span>seek(<span class="kw-2">&amp;</span><span class="self">self</span>, offset: i64) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="kw">match </span><span class="self">self</span>.player_proxy.seek(offset).<span class="kw">await </span>{
             <span class="prelude-val">Err</span>(zbus::Error::MethodError(e, <span class="kw">_</span>, <span class="kw">_</span>))
-                <span class="kw">if </span>e == <span class="string">&quot;org.freedesktop.DBus.Error.NotSupported&quot; </span>=&gt;
+                <span class="kw">if </span>e == <span class="string">"org.freedesktop.DBus.Error.NotSupported" </span>=&gt;
             {
                 <span class="comment">// TODO show this error somehow
                 </span><span class="prelude-val">Ok</span>(())
             }
-            other =&gt; <span class="macro">dbg!</span>(other).error(<span class="string">&quot;seek() failed&quot;</span>),
+            other =&gt; <span class="macro">dbg!</span>(other).error(<span class="string">"seek() failed"</span>),
         }
     }
 
@@ -1270,14 +1271,14 @@
             <span class="self">self</span>.player_proxy
                 .set_volume(volume + step_size)
                 .<span class="kw">await
-                </span>.error(<span class="string">&quot;set_volume() failed&quot;</span>)<span class="question-mark">?</span>;
+                </span>.error(<span class="string">"set_volume() failed"</span>)<span class="question-mark">?</span>;
         }
         <span class="prelude-val">Ok</span>(())
     }
 }
 
 <span class="kw">impl </span>fmt::Display <span class="kw">for </span>Player {
-    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
+    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; fmt::Result {
         extract_player_name(<span class="kw-2">&amp;</span><span class="self">self</span>.bus_name).unwrap().fmt(f)
     }
 }
@@ -1292,16 +1293,16 @@
 <span class="kw">impl </span>PlaybackStatus {
     <span class="kw">fn </span>from_str(s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>&gt; {
         <span class="kw">match </span>s {
-            <span class="string">&quot;Paused&quot; </span>=&gt; <span class="prelude-val">Some</span>(<span class="self">Self</span>::Paused),
-            <span class="string">&quot;Playing&quot; </span>=&gt; <span class="prelude-val">Some</span>(<span class="self">Self</span>::Playing),
-            <span class="string">&quot;Stopped&quot; </span>=&gt; <span class="prelude-val">Some</span>(<span class="self">Self</span>::Stopped),
+            <span class="string">"Paused" </span>=&gt; <span class="prelude-val">Some</span>(<span class="self">Self</span>::Paused),
+            <span class="string">"Playing" </span>=&gt; <span class="prelude-val">Some</span>(<span class="self">Self</span>::Playing),
+            <span class="string">"Stopped" </span>=&gt; <span class="prelude-val">Some</span>(<span class="self">Self</span>::Stopped),
             <span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
         }
     }
 }
 
 <span class="kw">fn </span>extract_player_name(full_name: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt; {
-    <span class="kw">const </span>NAME_PREFIX: <span class="kw-2">&amp;</span>str = <span class="string">&quot;org.mpris.MediaPlayer2.&quot;</span>;
+    <span class="kw">const </span>NAME_PREFIX: <span class="kw-2">&amp;</span>str = <span class="string">"org.mpris.MediaPlayer2."</span>;
     full_name
         .starts_with(NAME_PREFIX)
         .then(|| <span class="kw-2">&amp;</span>full_name[NAME_PREFIX.len()..])
@@ -1325,34 +1326,34 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>extract_player_name_test() {
         <span class="macro">assert_eq!</span>(
-            extract_player_name(<span class="string">&quot;org.mpris.MediaPlayer2.firefox.instance852&quot;</span>),
-            <span class="prelude-val">Some</span>(<span class="string">&quot;firefox.instance852&quot;</span>)
+            extract_player_name(<span class="string">"org.mpris.MediaPlayer2.firefox.instance852"</span>),
+            <span class="prelude-val">Some</span>(<span class="string">"firefox.instance852"</span>)
         );
         <span class="macro">assert_eq!</span>(
-            extract_player_name(<span class="string">&quot;not.org.mpris.MediaPlayer2.firefox.instance852&quot;</span>),
+            extract_player_name(<span class="string">"not.org.mpris.MediaPlayer2.firefox.instance852"</span>),
             <span class="prelude-val">None</span>,
         );
         <span class="macro">assert_eq!</span>(
-            extract_player_name(<span class="string">&quot;org.mpris.MediaPlayer3.firefox.instance852&quot;</span>),
+            extract_player_name(<span class="string">"org.mpris.MediaPlayer3.firefox.instance852"</span>),
             <span class="prelude-val">None</span>,
         );
     }
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>player_matches_test() {
-        <span class="kw">let </span>exclude = <span class="macro">vec!</span>[Regex::new(<span class="string">&quot;mpd&quot;</span>).unwrap(), Regex::new(<span class="string">&quot;firefox.*&quot;</span>).unwrap()];
+        <span class="kw">let </span>exclude = <span class="macro">vec!</span>[Regex::new(<span class="string">"mpd"</span>).unwrap(), Regex::new(<span class="string">"firefox.*"</span>).unwrap()];
         <span class="macro">assert!</span>(player_matches(
-            <span class="string">&quot;org.mpris.MediaPlayer2.playerctld&quot;</span>,
+            <span class="string">"org.mpris.MediaPlayer2.playerctld"</span>,
             <span class="kw-2">&amp;</span>[],
             <span class="kw-2">&amp;</span>exclude
         ));
         <span class="macro">assert!</span>(!player_matches(
-            <span class="string">&quot;org.mpris.MediaPlayer2.playerctld&quot;</span>,
-            <span class="kw-2">&amp;</span>[<span class="string">&quot;spotify&quot;</span>.into()],
+            <span class="string">"org.mpris.MediaPlayer2.playerctld"</span>,
+            <span class="kw-2">&amp;</span>[<span class="string">"spotify"</span>.into()],
             <span class="kw-2">&amp;</span>exclude
         ));
         <span class="macro">assert!</span>(!player_matches(
-            <span class="string">&quot;org.mpris.MediaPlayer2.firefox.instance852&quot;</span>,
+            <span class="string">"org.mpris.MediaPlayer2.firefox.instance852"</span>,
             <span class="kw-2">&amp;</span>[],
             <span class="kw-2">&amp;</span>exclude
         ));

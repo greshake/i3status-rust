@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/vpn/nordvpn.rs`."><title>nordvpn.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0 (82e1608df 2023-12-21)" data-channel="1.75.0" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/vpn/nordvpn.rs`."><title>nordvpn.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-ac92e1bbe349e143.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0 (07dca489a 2024-02-04)" data-channel="1.76.0" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -109,20 +110,20 @@
 <span class="kw">impl </span>NordVpnDriver {
     <span class="kw">pub async fn </span>new() -&gt; NordVpnDriver {
         NordVpnDriver {
-            regex_country_code: Regex::new(<span class="string">&quot;^.*Hostname:\\s+([a-z]{2}).*$&quot;</span>).unwrap(),
+            regex_country_code: Regex::new(<span class="string">"^.*Hostname:\\s+([a-z]{2}).*$"</span>).unwrap(),
         }
     }
 
     <span class="kw">async fn </span>run_network_command(arg: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-        Command::new(<span class="string">&quot;nordvpn&quot;</span>)
+        Command::new(<span class="string">"nordvpn"</span>)
             .args([arg])
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .spawn()
-            .error(<span class="macro">format!</span>(<span class="string">&quot;Problem running nordvpn command: {arg}&quot;</span>))<span class="question-mark">?
+            .error(<span class="macro">format!</span>(<span class="string">"Problem running nordvpn command: {arg}"</span>))<span class="question-mark">?
             </span>.wait()
             .<span class="kw">await
-            </span>.error(<span class="macro">format!</span>(<span class="string">&quot;Problem running nordvpn command: {arg}&quot;</span>))<span class="question-mark">?</span>;
+            </span>.error(<span class="macro">format!</span>(<span class="string">"Problem running nordvpn command: {arg}"</span>))<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
     }
 
@@ -137,27 +138,27 @@
 <span class="attr">#[async_trait]
 </span><span class="kw">impl </span>Driver <span class="kw">for </span>NordVpnDriver {
     <span class="kw">async fn </span>get_status(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;Status&gt; {
-        <span class="kw">let </span>stdout = Command::new(<span class="string">&quot;nordvpn&quot;</span>)
-            .args([<span class="string">&quot;status&quot;</span>])
+        <span class="kw">let </span>stdout = Command::new(<span class="string">"nordvpn"</span>)
+            .args([<span class="string">"status"</span>])
             .output()
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Problem running nordvpn command&quot;</span>)<span class="question-mark">?
+            </span>.error(<span class="string">"Problem running nordvpn command"</span>)<span class="question-mark">?
             </span>.stdout;
 
-        <span class="kw">let </span>stdout = String::from_utf8(stdout).error(<span class="string">&quot;nordvpn produced non-UTF8 output&quot;</span>)<span class="question-mark">?</span>;
-        <span class="kw">let </span>line_status = <span class="self">Self</span>::find_line(<span class="kw-2">&amp;</span>stdout, <span class="string">&quot;Status:&quot;</span>).<span class="kw">await</span>;
-        <span class="kw">let </span>line_country = <span class="self">Self</span>::find_line(<span class="kw-2">&amp;</span>stdout, <span class="string">&quot;Country:&quot;</span>).<span class="kw">await</span>;
-        <span class="kw">let </span>line_country_flag = <span class="self">Self</span>::find_line(<span class="kw-2">&amp;</span>stdout, <span class="string">&quot;Hostname:&quot;</span>).<span class="kw">await</span>;
+        <span class="kw">let </span>stdout = String::from_utf8(stdout).error(<span class="string">"nordvpn produced non-UTF8 output"</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>line_status = <span class="self">Self</span>::find_line(<span class="kw-2">&amp;</span>stdout, <span class="string">"Status:"</span>).<span class="kw">await</span>;
+        <span class="kw">let </span>line_country = <span class="self">Self</span>::find_line(<span class="kw-2">&amp;</span>stdout, <span class="string">"Country:"</span>).<span class="kw">await</span>;
+        <span class="kw">let </span>line_country_flag = <span class="self">Self</span>::find_line(<span class="kw-2">&amp;</span>stdout, <span class="string">"Hostname:"</span>).<span class="kw">await</span>;
         <span class="kw">if </span>line_status.is_none() {
             <span class="kw">return </span><span class="prelude-val">Ok</span>(Status::Error);
         }
         <span class="kw">let </span>line_status = line_status.unwrap();
 
-        <span class="kw">if </span>line_status.ends_with(<span class="string">&quot;Disconnected&quot;</span>) {
+        <span class="kw">if </span>line_status.ends_with(<span class="string">"Disconnected"</span>) {
             <span class="kw">return </span><span class="prelude-val">Ok</span>(Status::Disconnected);
-        } <span class="kw">else if </span>line_status.ends_with(<span class="string">&quot;Connected&quot;</span>) {
+        } <span class="kw">else if </span>line_status.ends_with(<span class="string">"Connected"</span>) {
             <span class="kw">let </span>country = <span class="kw">match </span>line_country {
-                <span class="prelude-val">Some</span>(country_line) =&gt; country_line.rsplit(<span class="string">&quot;: &quot;</span>).next().unwrap().to_string(),
+                <span class="prelude-val">Some</span>(country_line) =&gt; country_line.rsplit(<span class="string">": "</span>).next().unwrap().to_string(),
                 <span class="prelude-val">None </span>=&gt; String::default(),
             };
             <span class="kw">let </span>country_flag = <span class="kw">match </span>line_country_flag {
@@ -181,8 +182,8 @@
 
     <span class="kw">async fn </span>toggle_connection(<span class="kw-2">&amp;</span><span class="self">self</span>, status: <span class="kw-2">&amp;</span>Status) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="kw">match </span>status {
-            Status::Connected { .. } =&gt; <span class="self">Self</span>::run_network_command(<span class="string">&quot;disconnect&quot;</span>).<span class="kw">await</span><span class="question-mark">?</span>,
-            Status::Disconnected =&gt; <span class="self">Self</span>::run_network_command(<span class="string">&quot;connect&quot;</span>).<span class="kw">await</span><span class="question-mark">?</span>,
+            Status::Connected { .. } =&gt; <span class="self">Self</span>::run_network_command(<span class="string">"disconnect"</span>).<span class="kw">await</span><span class="question-mark">?</span>,
+            Status::Disconnected =&gt; <span class="self">Self</span>::run_network_command(<span class="string">"connect"</span>).<span class="kw">await</span><span class="question-mark">?</span>,
             Status::Error =&gt; (),
         }
         <span class="prelude-val">Ok</span>(())

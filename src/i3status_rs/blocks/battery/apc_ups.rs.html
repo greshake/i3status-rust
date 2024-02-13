@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/battery/apc_ups.rs`."><title>apc_ups.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0 (82e1608df 2023-12-21)" data-channel="1.75.0" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/battery/apc_ups.rs`."><title>apc_ups.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-ac92e1bbe349e143.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0 (07dca489a 2024-02-04)" data-channel="1.76.0" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -200,7 +201,7 @@
 <span class="attr">#[derive(Debug, Default)]
 </span><span class="kw">struct </span>PropertyMap(HashMap&lt;String, String&gt;);
 
-<span class="macro">make_log_macro!</span>(debug, <span class="string">&quot;battery[apc_ups]&quot;</span>);
+<span class="macro">make_log_macro!</span>(debug, <span class="string">"battery[apc_ups]"</span>);
 
 <span class="kw">impl </span>PropertyMap {
     <span class="kw">fn </span>insert(<span class="kw-2">&amp;mut </span><span class="self">self</span>, k: String, v: String) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt; {
@@ -218,17 +219,17 @@
     ) -&gt; <span class="prelude-ty">Result</span>&lt;T&gt; {
         <span class="kw">let </span>stat = <span class="self">self
             </span>.get(property_name)
-            .or_error(|| <span class="macro">format!</span>(<span class="string">&quot;{property_name} not in apc ups data&quot;</span>))<span class="question-mark">?</span>;
+            .or_error(|| <span class="macro">format!</span>(<span class="string">"{property_name} not in apc ups data"</span>))<span class="question-mark">?</span>;
         <span class="kw">let </span>(value, unit) = stat
-            .split_once(<span class="string">&#39; &#39;</span>)
-            .or_error(|| <span class="macro">format!</span>(<span class="string">&quot;could not split {property_name}&quot;</span>))<span class="question-mark">?</span>;
+            .split_once(<span class="string">' '</span>)
+            .or_error(|| <span class="macro">format!</span>(<span class="string">"could not split {property_name}"</span>))<span class="question-mark">?</span>;
         <span class="kw">if </span>unit == required_unit {
             value
                 .parse::&lt;T&gt;()
-                .map_err(|<span class="kw">_</span>| Error::new(<span class="string">&quot;Could not parse data&quot;</span>))
+                .map_err(|<span class="kw">_</span>| Error::new(<span class="string">"Could not parse data"</span>))
         } <span class="kw">else </span>{
             <span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(
-                <span class="string">&quot;Expected unit for {property_name} are {required_unit}, but got {unit}&quot;
+                <span class="string">"Expected unit for {property_name} are {required_unit}, but got {unit}"
             </span>)))
         }
     }
@@ -242,31 +243,31 @@
         <span class="prelude-val">Ok</span>(<span class="self">Self</span>(
             TcpStream::connect(addr)
                 .<span class="kw">await
-                </span>.error(<span class="string">&quot;Failed to connect to socket&quot;</span>)<span class="question-mark">?</span>,
+                </span>.error(<span class="string">"Failed to connect to socket"</span>)<span class="question-mark">?</span>,
         ))
     }
 
     <span class="kw">async fn </span>write(<span class="kw-2">&amp;mut </span><span class="self">self</span>, msg: <span class="kw-2">&amp;</span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
         <span class="kw">let </span>msg_len = u16::try_from(msg.len())
-            .error(<span class="string">&quot;msg is too long, it must be less than 2^16 characters long&quot;</span>)<span class="question-mark">?</span>;
+            .error(<span class="string">"msg is too long, it must be less than 2^16 characters long"</span>)<span class="question-mark">?</span>;
 
         <span class="self">self</span>.<span class="number">0
             </span>.write_u16(msg_len)
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Could not write message length to socket&quot;</span>)<span class="question-mark">?</span>;
+            </span>.error(<span class="string">"Could not write message length to socket"</span>)<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="number">0
             </span>.write_all(msg)
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Could not write message to socket&quot;</span>)<span class="question-mark">?</span>;
+            </span>.error(<span class="string">"Could not write message to socket"</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(())
     }
 
-    <span class="kw">async fn </span>read_line&lt;<span class="lifetime">&#39;a</span>&gt;(<span class="kw-2">&amp;</span><span class="lifetime">&#39;_ </span><span class="kw-2">mut </span><span class="self">self</span>, buf: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>Vec&lt;u8&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str&gt;&gt; {
+    <span class="kw">async fn </span>read_line&lt;<span class="lifetime">'a</span>&gt;(<span class="kw-2">&amp;</span><span class="lifetime">'_ </span><span class="kw-2">mut </span><span class="self">self</span>, buf: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>Vec&lt;u8&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>str&gt;&gt; {
         <span class="kw">let </span>read_size = <span class="self">self
             </span>.<span class="number">0
             </span>.read_u16()
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Could not read response length from socket&quot;</span>)<span class="question-mark">?
+            </span>.error(<span class="string">"Could not read response length from socket"</span>)<span class="question-mark">?
             </span>.into();
         <span class="kw">if </span>read_size == <span class="number">0 </span>{
             <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
@@ -276,9 +277,9 @@
         <span class="self">self</span>.<span class="number">0
             </span>.read_exact(buf)
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Could not read from socket&quot;</span>)<span class="question-mark">?</span>;
+            </span>.error(<span class="string">"Could not read from socket"</span>)<span class="question-mark">?</span>;
 
-        std::str::from_utf8(buf).error(<span class="string">&quot;invalid UTF8&quot;</span>).map(<span class="prelude-val">Some</span>)
+        std::str::from_utf8(buf).error(<span class="string">"invalid UTF8"</span>).map(<span class="prelude-val">Some</span>)
     }
 }
 
@@ -289,7 +290,7 @@
 
 <span class="kw">impl </span>Device {
     <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">async fn </span>new(dev_name: DeviceName, interval: Seconds) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
-        <span class="kw">let </span>addr = dev_name.exact().unwrap_or(<span class="string">&quot;localhost:3551&quot;</span>);
+        <span class="kw">let </span>addr = dev_name.exact().unwrap_or(<span class="string">"localhost:3551"</span>);
         <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
             addr: addr.to_string(),
             interval: interval.timer(),
@@ -299,13 +300,13 @@
     <span class="kw">async fn </span>get_status(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;PropertyMap&gt; {
         <span class="kw">let </span><span class="kw-2">mut </span>conn = ApcConnection::connect(<span class="kw-2">&amp;</span><span class="self">self</span>.addr).<span class="kw">await</span><span class="question-mark">?</span>;
 
-        conn.write(<span class="string">b&quot;status&quot;</span>).<span class="kw">await</span><span class="question-mark">?</span>;
+        conn.write(<span class="string">b"status"</span>).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="kw">let </span><span class="kw-2">mut </span>buf = <span class="macro">vec!</span>[];
         <span class="kw">let </span><span class="kw-2">mut </span>property_map = PropertyMap::default();
 
         <span class="kw">while let </span><span class="prelude-val">Some</span>(line) = conn.read_line(<span class="kw-2">&amp;mut </span>buf).<span class="kw">await</span><span class="question-mark">? </span>{
-            <span class="kw">if let </span><span class="prelude-val">Some</span>((key, value)) = line.split_once(<span class="string">&#39;:&#39;</span>) {
+            <span class="kw">if let </span><span class="prelude-val">Some</span>((key, value)) = line.split_once(<span class="string">':'</span>) {
                 property_map.insert(key.trim().to_string(), value.trim().to_string());
             }
         }
@@ -321,30 +322,30 @@
             </span>.get_status()
             .<span class="kw">await
             </span>.map_err(|e| {
-                <span class="macro">debug!</span>(<span class="string">&quot;{e}&quot;</span>);
+                <span class="macro">debug!</span>(<span class="string">"{e}"</span>);
                 e
             })
             .unwrap_or_default();
 
-        <span class="kw">let </span>status_str = status_data.get(<span class="string">&quot;STATUS&quot;</span>).unwrap_or(<span class="string">&quot;COMMLOST&quot;</span>);
+        <span class="kw">let </span>status_str = status_data.get(<span class="string">"STATUS"</span>).unwrap_or(<span class="string">"COMMLOST"</span>);
 
         <span class="comment">// Even if the connection is valid, in the first few seconds
         // after apcupsd starts BCHARGE may not be present
         </span><span class="kw">let </span>capacity = status_data
-            .get_property::&lt;f64&gt;(<span class="string">&quot;BCHARGE&quot;</span>, <span class="string">&quot;Percent&quot;</span>)
+            .get_property::&lt;f64&gt;(<span class="string">"BCHARGE"</span>, <span class="string">"Percent"</span>)
             .unwrap_or(f64::MIN);
 
-        <span class="kw">if </span>status_str == <span class="string">&quot;COMMLOST&quot; </span>|| capacity == f64::MIN {
+        <span class="kw">if </span>status_str == <span class="string">"COMMLOST" </span>|| capacity == f64::MIN {
             <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
         }
 
-        <span class="kw">let </span>status = <span class="kw">if </span>status_str == <span class="string">&quot;ONBATT&quot; </span>{
+        <span class="kw">let </span>status = <span class="kw">if </span>status_str == <span class="string">"ONBATT" </span>{
             <span class="kw">if </span>capacity == <span class="number">0.0 </span>{
                 BatteryStatus::Empty
             } <span class="kw">else </span>{
                 BatteryStatus::Discharging
             }
-        } <span class="kw">else if </span>status_str == <span class="string">&quot;ONLINE&quot; </span>{
+        } <span class="kw">else if </span>status_str == <span class="string">"ONLINE" </span>{
             <span class="kw">if </span>capacity == <span class="number">100.0 </span>{
                 BatteryStatus::Full
             } <span class="kw">else </span>{
@@ -355,17 +356,17 @@
         };
 
         <span class="kw">let </span>power = status_data
-            .get_property::&lt;f64&gt;(<span class="string">&quot;NOMPOWER&quot;</span>, <span class="string">&quot;Watts&quot;</span>)
+            .get_property::&lt;f64&gt;(<span class="string">"NOMPOWER"</span>, <span class="string">"Watts"</span>)
             .ok()
             .and_then(|nominal_power| {
                 status_data
-                    .get_property::&lt;f64&gt;(<span class="string">&quot;LOADPCT&quot;</span>, <span class="string">&quot;Percent&quot;</span>)
+                    .get_property::&lt;f64&gt;(<span class="string">"LOADPCT"</span>, <span class="string">"Percent"</span>)
                     .ok()
                     .map(|load_percent| nominal_power * load_percent / <span class="number">100.0</span>)
             });
 
         <span class="kw">let </span>time_remaining = status_data
-            .get_property::&lt;f64&gt;(<span class="string">&quot;TIMELEFT&quot;</span>, <span class="string">&quot;Minutes&quot;</span>)
+            .get_property::&lt;f64&gt;(<span class="string">"TIMELEFT"</span>, <span class="string">"Minutes"</span>)
             .ok()
             .map(|e| e * <span class="number">60_f64</span>);
 

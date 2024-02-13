@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/docker.rs`."><title>docker.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0 (82e1608df 2023-12-21)" data-channel="1.75.0" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/docker.rs`."><title>docker.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-ac92e1bbe349e143.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0 (07dca489a 2024-02-04)" data-channel="1.76.0" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -115,8 +116,8 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `interval` | Update interval, in seconds. | `5`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon $running.eng(w:1) &quot;`
-//! `socket_path` | The path to the docker socket. Supports path expansions e.g. `~`. | `&quot;/var/run/docker.sock&quot;`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $running.eng(w:1) "`
+//! `socket_path` | The path to the docker socket. Supports path expansions e.g. `~`. | `"/var/run/docker.sock"`
 //!
 //! Key       | Value                          | Type   | Unit
 //! ----------|--------------------------------|--------|-----
@@ -131,9 +132,9 @@
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;docker&quot;
+//! block = "docker"
 //! interval = 2
-//! format = &quot; $icon $running/$total &quot;
+//! format = " $icon $running/$total "
 //! ```
 //!
 //! # Icons Used
@@ -150,12 +151,12 @@
     <span class="attr">#[default(<span class="number">5</span>.into())]
     </span><span class="kw">pub </span>interval: Seconds,
     <span class="kw">pub </span>format: FormatConfig,
-    <span class="attr">#[default(<span class="string">&quot;/var/run/docker.sock&quot;</span>.into())]
+    <span class="attr">#[default(<span class="string">"/var/run/docker.sock"</span>.into())]
     </span><span class="kw">pub </span>socket_path: ShellString,
 }
 
 <span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $running.eng(w:1) &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>format = config.format.with_default(<span class="string">" $icon $running.eng(w:1) "</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>socket_path = config.socket_path.expand()<span class="question-mark">?</span>;
 
     <span class="kw">loop </span>{
@@ -163,12 +164,12 @@
 
         <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
         widget.set_values(<span class="macro">map! </span>{
-            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(<span class="string">&quot;docker&quot;</span>),
-            <span class="string">&quot;total&quot; </span>=&gt;   Value::number(status.total),
-            <span class="string">&quot;running&quot; </span>=&gt; Value::number(status.running),
-            <span class="string">&quot;paused&quot; </span>=&gt;  Value::number(status.paused),
-            <span class="string">&quot;stopped&quot; </span>=&gt; Value::number(status.stopped),
-            <span class="string">&quot;images&quot; </span>=&gt;  Value::number(status.images),
+            <span class="string">"icon" </span>=&gt; Value::icon(<span class="string">"docker"</span>),
+            <span class="string">"total" </span>=&gt;   Value::number(status.total),
+            <span class="string">"running" </span>=&gt; Value::number(status.running),
+            <span class="string">"paused" </span>=&gt;  Value::number(status.paused),
+            <span class="string">"stopped" </span>=&gt; Value::number(status.stopped),
+            <span class="string">"images" </span>=&gt;  Value::number(status.images),
         });
         api.set_widget(widget)<span class="question-mark">?</span>;
 
@@ -181,15 +182,15 @@
 
 <span class="attr">#[derive(Deserialize, Debug)]
 </span><span class="kw">struct </span>Status {
-    <span class="attr">#[serde(rename = <span class="string">&quot;Containers&quot;</span>)]
+    <span class="attr">#[serde(rename = <span class="string">"Containers"</span>)]
     </span>total: i64,
-    <span class="attr">#[serde(rename = <span class="string">&quot;ContainersRunning&quot;</span>)]
+    <span class="attr">#[serde(rename = <span class="string">"ContainersRunning"</span>)]
     </span>running: i64,
-    <span class="attr">#[serde(rename = <span class="string">&quot;ContainersStopped&quot;</span>)]
+    <span class="attr">#[serde(rename = <span class="string">"ContainersStopped"</span>)]
     </span>stopped: i64,
-    <span class="attr">#[serde(rename = <span class="string">&quot;ContainersPaused&quot;</span>)]
+    <span class="attr">#[serde(rename = <span class="string">"ContainersPaused"</span>)]
     </span>paused: i64,
-    <span class="attr">#[serde(rename = <span class="string">&quot;Images&quot;</span>)]
+    <span class="attr">#[serde(rename = <span class="string">"Images"</span>)]
     </span>images: i64,
 }
 
@@ -197,25 +198,25 @@
     <span class="kw">async fn </span>new(socket_path: <span class="kw">impl </span>AsRef&lt;Path&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
         <span class="kw">let </span>socket = UnixStream::connect(socket_path)
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to connect to socket&quot;</span>)<span class="question-mark">?</span>;
+            </span>.error(<span class="string">"Failed to connect to socket"</span>)<span class="question-mark">?</span>;
         <span class="kw">let </span>(<span class="kw-2">mut </span>request_sender, connection) = hyper::client::conn::handshake(socket)
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to create request sender&quot;</span>)<span class="question-mark">?</span>;
+            </span>.error(<span class="string">"Failed to create request sender"</span>)<span class="question-mark">?</span>;
         tokio::spawn(connection);
         <span class="kw">let </span>request = hyper::Request::builder()
-            .header(<span class="string">&quot;Host&quot;</span>, <span class="string">&quot;localhost&quot;</span>)
-            .uri(<span class="string">&quot;http://api/info&quot;</span>)
-            .method(<span class="string">&quot;GET&quot;</span>)
+            .header(<span class="string">"Host"</span>, <span class="string">"localhost"</span>)
+            .uri(<span class="string">"http://api/info"</span>)
+            .method(<span class="string">"GET"</span>)
             .body(hyper::Body::empty())
-            .error(<span class="string">&quot;Failed to create request&quot;</span>)<span class="question-mark">?</span>;
+            .error(<span class="string">"Failed to create request"</span>)<span class="question-mark">?</span>;
         <span class="kw">let </span>response = request_sender
             .send_request(request)
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to get response&quot;</span>)<span class="question-mark">?</span>;
+            </span>.error(<span class="string">"Failed to get response"</span>)<span class="question-mark">?</span>;
         <span class="kw">let </span>bytes = hyper::body::to_bytes(response.into_body())
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to get response bytes&quot;</span>)<span class="question-mark">?</span>;
-        serde_json::from_slice::&lt;<span class="self">Self</span>&gt;(<span class="kw-2">&amp;</span>bytes).error(<span class="string">&quot;Failed to deserialize JSON&quot;</span>)
+            </span>.error(<span class="string">"Failed to get response bytes"</span>)<span class="question-mark">?</span>;
+        serde_json::from_slice::&lt;<span class="self">Self</span>&gt;(<span class="kw-2">&amp;</span>bytes).error(<span class="string">"Failed to deserialize JSON"</span>)
     }
 }
 </code></pre></div></section></main></body></html>

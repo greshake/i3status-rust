@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/toggle.rs`."><title>toggle.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0 (82e1608df 2023-12-21)" data-channel="1.75.0" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/toggle.rs`."><title>toggle.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-ac92e1bbe349e143.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0 (07dca489a 2024-02-04)" data-channel="1.76.0" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -164,19 +165,19 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders | `&quot; $icon &quot;`
+//! `format` | A string to customise the output of this block. See below for available placeholders | `" $icon "`
 //! `command_on` | Shell command to enable the toggle | **Required**
 //! `command_off` | Shell command to disable the toggle | **Required**
 //! `command_state` | Shell command to determine the state. Empty output =&gt; No, otherwise =&gt; Yes. | **Required**
-//! `icon_on` | Icon override for the toggle button while on | `&quot;toggle_on&quot;`
-//! `icon_off` | Icon override for the toggle button while off | `&quot;toggle_off&quot;`
+//! `icon_on` | Icon override for the toggle button while on | `"toggle_on"`
+//! `icon_off` | Icon override for the toggle button while off | `"toggle_off"`
 //! `interval` | Update interval in seconds. If not set, `command_state` will run only on click. | None
 //! `state_on` | [`State`] (color) of this block while on | [idle][State::Idle]
 //! `state_off` | [`State`] (color) of this block while off | [idle][State::Idle]
 //!
 //! Placeholder   | Value                                       | Type   | Unit
 //! --------------|---------------------------------------------|--------|-----
-//! `icon`        | Icon based on toggle&#39;s state                | Icon   | -
+//! `icon`        | Icon based on toggle's state                | Icon   | -
 //!
 //! Action   | Default button
 //! ---------|---------------
@@ -188,14 +189,14 @@
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;toggle&quot;
-//! format = &quot; $icon 4k &quot;
-//! command_state = &quot;xrandr | grep &#39;DP1 connected 38&#39; | grep -v eDP1&quot;
-//! command_on = &quot;~/.screenlayout/4kmon_default.sh&quot;
-//! command_off = &quot;~/.screenlayout/builtin.sh&quot;
+//! block = "toggle"
+//! format = " $icon 4k "
+//! command_state = "xrandr | grep 'DP1 connected 38' | grep -v eDP1"
+//! command_on = "~/.screenlayout/4kmon_default.sh"
+//! command_off = "~/.screenlayout/builtin.sh"
 //! interval = 5
-//! state_on = &quot;good&quot;
-//! state_off = &quot;warning&quot;
+//! state_on = "good"
+//! state_off = "warning"
 //! ```
 //!
 //! # Icons Used
@@ -232,30 +233,30 @@
 
 <span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions()<span class="question-mark">?</span>;
-    api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;toggle&quot;</span>)])<span class="question-mark">?</span>;
+    api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">"toggle"</span>)])<span class="question-mark">?</span>;
 
     <span class="kw">let </span>interval = config.interval.map(Duration::from_secs);
-    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(config.format.with_default(<span class="string">&quot; $icon &quot;</span>)<span class="question-mark">?</span>);
+    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(config.format.with_default(<span class="string">" $icon "</span>)<span class="question-mark">?</span>);
 
-    <span class="kw">let </span>icon_on = config.icon_on.as_deref().unwrap_or(<span class="string">&quot;toggle_on&quot;</span>);
-    <span class="kw">let </span>icon_off = config.icon_off.as_deref().unwrap_or(<span class="string">&quot;toggle_off&quot;</span>);
+    <span class="kw">let </span>icon_on = config.icon_on.as_deref().unwrap_or(<span class="string">"toggle_on"</span>);
+    <span class="kw">let </span>icon_off = config.icon_off.as_deref().unwrap_or(<span class="string">"toggle_off"</span>);
 
-    <span class="kw">let </span>shell = env::var(<span class="string">&quot;SHELL&quot;</span>).unwrap_or_else(|<span class="kw">_</span>| <span class="string">&quot;sh&quot;</span>.to_string());
+    <span class="kw">let </span>shell = env::var(<span class="string">"SHELL"</span>).unwrap_or_else(|<span class="kw">_</span>| <span class="string">"sh"</span>.to_string());
 
     <span class="kw">loop </span>{
         <span class="comment">// Check state
         </span><span class="kw">let </span>output = Command::new(<span class="kw-2">&amp;</span>shell)
-            .args([<span class="string">&quot;-c&quot;</span>, <span class="kw-2">&amp;</span>config.command_state])
+            .args([<span class="string">"-c"</span>, <span class="kw-2">&amp;</span>config.command_state])
             .output()
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to run command_state&quot;</span>)<span class="question-mark">?</span>;
+            </span>.error(<span class="string">"Failed to run command_state"</span>)<span class="question-mark">?</span>;
         <span class="kw">let </span>is_on = !std::str::from_utf8(<span class="kw-2">&amp;</span>output.stdout)
-            .error(<span class="string">&quot;The output of command_state is invalid UTF-8&quot;</span>)<span class="question-mark">?
+            .error(<span class="string">"The output of command_state is invalid UTF-8"</span>)<span class="question-mark">?
             </span>.trim()
             .is_empty();
 
         widget.set_values(<span class="macro">map!</span>(
-            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(
+            <span class="string">"icon" </span>=&gt; Value::icon(
                 <span class="kw">if </span>is_on { icon_on.to_string() } <span class="kw">else </span>{ icon_off.to_string() }
             )
         ));
@@ -273,17 +274,17 @@
                 <span class="kw">_ </span>= sleep_opt(interval) =&gt; <span class="kw">break</span>,
                 <span class="kw">_ </span>= api.wait_for_update_request() =&gt; <span class="kw">break</span>,
                 <span class="prelude-val">Some</span>(action) = actions.recv() =&gt; <span class="kw">match </span>action.as_ref() {
-                    <span class="string">&quot;toggle&quot; </span>=&gt; {
+                    <span class="string">"toggle" </span>=&gt; {
                         <span class="kw">let </span>cmd = <span class="kw">if </span>is_on {
                             <span class="kw-2">&amp;</span>config.command_off
                         } <span class="kw">else </span>{
                             <span class="kw-2">&amp;</span>config.command_on
                         };
                         <span class="kw">let </span>output = Command::new(<span class="kw-2">&amp;</span>shell)
-                            .args([<span class="string">&quot;-c&quot;</span>, cmd])
+                            .args([<span class="string">"-c"</span>, cmd])
                             .output()
                             .<span class="kw">await
-                            </span>.error(<span class="string">&quot;Failed to run command&quot;</span>)<span class="question-mark">?</span>;
+                            </span>.error(<span class="string">"Failed to run command"</span>)<span class="question-mark">?</span>;
                         <span class="kw">if </span>output.status.success() {
                             <span class="comment">// Temporary; it will immediately be updated by the outer loop
                             </span>widget.state = State::Idle;

@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/net.rs`."><title>net.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0 (82e1608df 2023-12-21)" data-channel="1.75.0" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/net.rs`."><title>net.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-ac92e1bbe349e143.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0 (07dca489a 2024-02-04)" data-channel="1.76.0" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -219,10 +220,10 @@
 //! ----|--------|--------
 //! `device` | Network interface to monitor (as specified in `/sys/class/net/`). Supports regex. | If not set, device will be automatically selected every `interval`
 //! `interval` | Update interval in seconds | `2`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $icon ^icon_net_down $speed_down.eng(prefix:K) ^icon_net_up $speed_up.eng(prefix:K) &quot;`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon ^icon_net_down $speed_down.eng(prefix:K) ^icon_net_up $speed_up.eng(prefix:K) "`
 //! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
-//! `inactive_format` | Same as `format` but for when the interface is inactive | `&quot; $icon Down &quot;`
-//! `missing_format` | Same as `format` but for when the device is missing | `&quot; × &quot;`
+//! `inactive_format` | Same as `format` but for when the interface is inactive | `" $icon Down "`
+//! `missing_format` | Same as `format` but for when the device is missing | `" × "`
 //!
 //! Action          | Description                               | Default button
 //! ----------------|-------------------------------------------|---------------
@@ -230,7 +231,7 @@
 //!
 //! Placeholder       | Value                       | Type   | Unit
 //! ------------------|-----------------------------|--------|---------------
-//! `icon`            | Icon based on device&#39;s type | Icon   | -
+//! `icon`            | Icon based on device's type | Icon   | -
 //! `speed_down`      | Download speed              | Number | Bytes per second
 //! `speed_up`        | Upload speed                | Number | Bytes per second
 //! `graph_down`      | Download speed graph        | Text   | -
@@ -249,16 +250,16 @@
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;net&quot;
-//! format = &quot; $icon {$signal_strength $ssid $frequency|Wired connection} via $device &quot;
+//! block = "net"
+//! format = " $icon {$signal_strength $ssid $frequency|Wired connection} via $device "
 //! ```
 //!
 //! Display exact device
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;net&quot;
-//! device = &quot;^wlo0$&quot;
+//! block = "net"
+//! device = "^wlo0$"
 //! ```
 //!
 //! # Icons Used
@@ -289,15 +290,15 @@
 
 <span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions()<span class="question-mark">?</span>;
-    api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">&quot;toggle_format&quot;</span>)])<span class="question-mark">?</span>;
+    api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">"toggle_format"</span>)])<span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>format = config.format.with_default(
-        <span class="string">&quot; $icon ^icon_net_down $speed_down.eng(prefix:K) ^icon_net_up $speed_up.eng(prefix:K) &quot;</span>,
+        <span class="string">" $icon ^icon_net_down $speed_down.eng(prefix:K) ^icon_net_up $speed_up.eng(prefix:K) "</span>,
     )<span class="question-mark">?</span>;
-    <span class="kw">let </span>missing_format = config.missing_format.with_default(<span class="string">&quot; × &quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let </span>inactive_format = config.inactive_format.with_default(<span class="string">&quot; $icon Down &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>missing_format = config.missing_format.with_default(<span class="string">" × "</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>inactive_format = config.inactive_format.with_default(<span class="string">" $icon Down "</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>format_alt = <span class="kw">match </span><span class="kw-2">&amp;</span>config.format_alt {
-        <span class="prelude-val">Some</span>(f) =&gt; <span class="prelude-val">Some</span>(f.with_default(<span class="string">&quot;&quot;</span>)<span class="question-mark">?</span>),
+        <span class="prelude-val">Some</span>(f) =&gt; <span class="prelude-val">Some</span>(f.with_default(<span class="string">""</span>)<span class="question-mark">?</span>),
         <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
     };
 
@@ -308,7 +309,7 @@
         .as_deref()
         .map(Regex::new)
         .transpose()
-        .error(<span class="string">&quot;Failed to parse device regex&quot;</span>)<span class="question-mark">?</span>;
+        .error(<span class="string">"Failed to parse device regex"</span>)<span class="question-mark">?</span>;
 
     <span class="comment">// Stats
     </span><span class="kw">let </span><span class="kw-2">mut </span>stats = <span class="prelude-val">None</span>;
@@ -359,18 +360,18 @@
                 };
 
                 widget.set_values(<span class="macro">map! </span>{
-                    <span class="string">&quot;icon&quot; </span>=&gt; icon,
-                    <span class="string">&quot;speed_down&quot; </span>=&gt; Value::bytes(speed_down),
-                    <span class="string">&quot;speed_up&quot; </span>=&gt; Value::bytes(speed_up),
-                    <span class="string">&quot;graph_down&quot; </span>=&gt; Value::text(util::format_bar_graph(<span class="kw-2">&amp;</span>rx_hist)),
-                    <span class="string">&quot;graph_up&quot; </span>=&gt; Value::text(util::format_bar_graph(<span class="kw-2">&amp;</span>tx_hist)),
-                    [<span class="kw">if let </span><span class="prelude-val">Some</span>(v) = device.ip] <span class="string">&quot;ip&quot; </span>=&gt; Value::text(v.to_string()),
-                    [<span class="kw">if let </span><span class="prelude-val">Some</span>(v) = device.ipv6] <span class="string">&quot;ipv6&quot; </span>=&gt; Value::text(v.to_string()),
-                    [<span class="kw">if let </span><span class="prelude-val">Some</span>(v) = device.ssid()] <span class="string">&quot;ssid&quot; </span>=&gt; Value::text(v),
-                    [<span class="kw">if let </span><span class="prelude-val">Some</span>(v) = device.frequency()] <span class="string">&quot;frequency&quot; </span>=&gt; Value::hertz(v),
-                    [<span class="kw">if let </span><span class="prelude-val">Some</span>(v) = device.bitrate()] <span class="string">&quot;bitrate&quot; </span>=&gt; Value::bits(v),
-                    [<span class="kw">if let </span><span class="prelude-val">Some</span>(v) = device.signal()] <span class="string">&quot;signal_strength&quot; </span>=&gt; Value::percents(v),
-                    <span class="string">&quot;device&quot; </span>=&gt; Value::text(device.iface.name),
+                    <span class="string">"icon" </span>=&gt; icon,
+                    <span class="string">"speed_down" </span>=&gt; Value::bytes(speed_down),
+                    <span class="string">"speed_up" </span>=&gt; Value::bytes(speed_up),
+                    <span class="string">"graph_down" </span>=&gt; Value::text(util::format_bar_graph(<span class="kw-2">&amp;</span>rx_hist)),
+                    <span class="string">"graph_up" </span>=&gt; Value::text(util::format_bar_graph(<span class="kw-2">&amp;</span>tx_hist)),
+                    [<span class="kw">if let </span><span class="prelude-val">Some</span>(v) = device.ip] <span class="string">"ip" </span>=&gt; Value::text(v.to_string()),
+                    [<span class="kw">if let </span><span class="prelude-val">Some</span>(v) = device.ipv6] <span class="string">"ipv6" </span>=&gt; Value::text(v.to_string()),
+                    [<span class="kw">if let </span><span class="prelude-val">Some</span>(v) = device.ssid()] <span class="string">"ssid" </span>=&gt; Value::text(v),
+                    [<span class="kw">if let </span><span class="prelude-val">Some</span>(v) = device.frequency()] <span class="string">"frequency" </span>=&gt; Value::hertz(v),
+                    [<span class="kw">if let </span><span class="prelude-val">Some</span>(v) = device.bitrate()] <span class="string">"bitrate" </span>=&gt; Value::bits(v),
+                    [<span class="kw">if let </span><span class="prelude-val">Some</span>(v) = device.signal()] <span class="string">"signal_strength" </span>=&gt; Value::percents(v),
+                    <span class="string">"device" </span>=&gt; Value::text(device.iface.name),
                 });
 
                 api.set_widget(widget)<span class="question-mark">?</span>;
@@ -382,7 +383,7 @@
                 <span class="kw">_ </span>= timer.tick() =&gt; <span class="kw">break</span>,
                 <span class="kw">_ </span>= api.wait_for_update_request() =&gt; <span class="kw">break</span>,
                 <span class="prelude-val">Some</span>(action) = actions.recv() =&gt; <span class="kw">match </span>action.as_ref() {
-                    <span class="string">&quot;toggle_format&quot; </span>=&gt; {
+                    <span class="string">"toggle_format" </span>=&gt; {
                         <span class="kw">if let </span><span class="prelude-val">Some</span>(format_alt) = <span class="kw-2">&amp;mut </span>format_alt {
                             std::mem::swap(format_alt, <span class="kw-2">&amp;mut </span>format);
                             <span class="kw">break</span>;

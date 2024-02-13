@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/service_status.rs`."><title>service_status.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0 (82e1608df 2023-12-21)" data-channel="1.75.0" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/service_status.rs`."><title>service_status.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-ac92e1bbe349e143.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0 (07dca489a 2024-02-04)" data-channel="1.76.0" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -179,10 +180,10 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `driver` | Which init system is running the service. Available drivers are: `&quot;systemd&quot;` | `&quot;systemd&quot;`
+//! `driver` | Which init system is running the service. Available drivers are: `"systemd"` | `"systemd"`
 //! `service` | The name of the service | **Required**
-//! `active_format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $service active &quot;`
-//! `inactive_format` | A string to customise the output of this block. See below for available placeholders. | `&quot; $service inactive &quot;`
+//! `active_format` | A string to customise the output of this block. See below for available placeholders. | `" $service active "`
+//! `inactive_format` | A string to customise the output of this block. See below for available placeholders. | `" $service inactive "`
 //! `active_state` | A valid [`State`] | [`State::Idle`]
 //! `inactive_state` | A valid [`State`]  | [`State::Critical`]
 //!
@@ -196,21 +197,21 @@
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;service_status&quot;
-//! service = &quot;cups&quot;
-//! active_format = &quot; ^icon_tea &quot;
-//! inactive_format = &quot; no ^icon_tea &quot;
+//! block = "service_status"
+//! service = "cups"
+//! active_format = " ^icon_tea "
+//! inactive_format = " no ^icon_tea "
 //! ```
 //!
 //! Example overriding the default `inactive_state`:
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;service_status&quot;
-//! service = &quot;shadow&quot;
-//! active_format = &quot;&quot;
-//! inactive_format = &quot; Integrity of password and group files failed &quot;
-//! inactive_state = &quot;Warning&quot;
+//! block = "service_status"
+//! service = "shadow"
+//! active_format = ""
+//! inactive_format = " Integrity of password and group files failed "
+//! inactive_state = "Warning"
 //! ```
 //!
 
@@ -230,15 +231,15 @@
 }
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(rename_all = <span class="string">&quot;snake_case&quot;</span>)]
+#[serde(rename_all = <span class="string">"snake_case"</span>)]
 </span><span class="kw">pub enum </span>DriverType {
     <span class="attr">#[default]
     </span>Systemd,
 }
 
 <span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span>active_format = config.active_format.with_default(<span class="string">&quot; $service active &quot;</span>)<span class="question-mark">?</span>;
-    <span class="kw">let </span>inactive_format = config.inactive_format.with_default(<span class="string">&quot; $service inactive &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>active_format = config.active_format.with_default(<span class="string">" $service active "</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>inactive_format = config.inactive_format.with_default(<span class="string">" $service inactive "</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span>active_state = config.active_state.unwrap_or(State::Idle);
     <span class="kw">let </span>inactive_state = config.inactive_state.unwrap_or(State::Critical);
@@ -261,7 +262,7 @@
         };
 
         widget.set_values(<span class="macro">map! </span>{
-            <span class="string">&quot;service&quot; </span>=&gt;Value::text(config.service.clone()),
+            <span class="string">"service" </span>=&gt;Value::text(config.service.clone()),
         });
 
         api.set_widget(widget)<span class="question-mark">?</span>;
@@ -277,8 +278,8 @@
 }
 
 <span class="kw">struct </span>SystemdDriver {
-    proxy: UnitProxy&lt;<span class="lifetime">&#39;static</span>&gt;,
-    active_state_changed: PropertyStream&lt;<span class="lifetime">&#39;static</span>, String&gt;,
+    proxy: UnitProxy&lt;<span class="lifetime">'static</span>&gt;,
+    active_state_changed: PropertyStream&lt;<span class="lifetime">'static</span>, String&gt;,
 }
 
 <span class="kw">impl </span>SystemdDriver {
@@ -287,10 +288,10 @@
 
         <span class="kw">if </span>!service.is_ascii() {
             <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(
-                <span class="string">&quot;service name \&quot;{service}\&quot; must only contain ASCII characters&quot;
+                <span class="string">"service name \"{service}\" must only contain ASCII characters"
             </span>)));
         }
-        <span class="kw">let </span>encoded_service = <span class="macro">format!</span>(<span class="string">&quot;{service}.service&quot;</span>)
+        <span class="kw">let </span>encoded_service = <span class="macro">format!</span>(<span class="string">"{service}.service"</span>)
             <span class="comment">// For each byte...
             </span>.bytes()
             .map(|b| {
@@ -299,19 +300,19 @@
                     </span>char::from(b).to_string()
                 } <span class="kw">else </span>{
                     <span class="comment">// Otherwise use the hex representation of the byte preceded by an underscore
-                    </span><span class="macro">format!</span>(<span class="string">&quot;_{b:02x}&quot;</span>)
+                    </span><span class="macro">format!</span>(<span class="string">"_{b:02x}"</span>)
                 }
             })
             .collect::&lt;String&gt;();
 
-        <span class="kw">let </span>path = <span class="macro">format!</span>(<span class="string">&quot;/org/freedesktop/systemd1/unit/{encoded_service}&quot;</span>);
+        <span class="kw">let </span>path = <span class="macro">format!</span>(<span class="string">"/org/freedesktop/systemd1/unit/{encoded_service}"</span>);
 
         <span class="kw">let </span>proxy = UnitProxy::builder(<span class="kw-2">&amp;</span>dbus_conn)
             .path(path)
-            .error(<span class="string">&quot;Could not set path&quot;</span>)<span class="question-mark">?
+            .error(<span class="string">"Could not set path"</span>)<span class="question-mark">?
             </span>.build()
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to create UnitProxy&quot;</span>)<span class="question-mark">?</span>;
+            </span>.error(<span class="string">"Failed to create UnitProxy"</span>)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
             active_state_changed: proxy.receive_active_state_changed().<span class="kw">await</span>,
@@ -326,8 +327,8 @@
         <span class="self">self</span>.proxy
             .active_state()
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Could not get active_state&quot;</span>)
-            .map(|state| state == <span class="string">&quot;active&quot;</span>)
+            </span>.error(<span class="string">"Could not get active_state"</span>)
+            .map(|state| state == <span class="string">"active"</span>)
     }
 
     <span class="kw">async fn </span>wait_for_change(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
@@ -337,8 +338,8 @@
 }
 
 <span class="attr">#[dbus_proxy(
-    interface = <span class="string">&quot;org.freedesktop.systemd1.Unit&quot;</span>,
-    default_service = <span class="string">&quot;org.freedesktop.systemd1&quot;
+    interface = <span class="string">"org.freedesktop.systemd1.Unit"</span>,
+    default_service = <span class="string">"org.freedesktop.systemd1"
 </span>)]
 </span><span class="kw">trait </span>Unit {
     <span class="attr">#[dbus_proxy(property)]

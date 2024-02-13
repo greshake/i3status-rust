@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/formatting/parse.rs`."><title>parse.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0 (82e1608df 2023-12-21)" data-channel="1.75.0" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/formatting/parse.rs`."><title>parse.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-ac92e1bbe349e143.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0 (07dca489a 2024-02-04)" data-channel="1.76.0" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -432,59 +433,59 @@
 <span class="kw">use </span><span class="kw">crate</span>::errors::<span class="kw-2">*</span>;
 
 <span class="attr">#[derive(Debug, PartialEq, Eq)]
-</span><span class="kw">pub struct </span>Arg&lt;<span class="lifetime">&#39;a</span>&gt; {
-    <span class="kw">pub </span>key: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str,
-    <span class="kw">pub </span>val: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str,
+</span><span class="kw">pub struct </span>Arg&lt;<span class="lifetime">'a</span>&gt; {
+    <span class="kw">pub </span>key: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str,
+    <span class="kw">pub </span>val: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str,
 }
 
 <span class="attr">#[derive(Debug, PartialEq, Eq)]
-</span><span class="kw">pub struct </span>Formatter&lt;<span class="lifetime">&#39;a</span>&gt; {
-    <span class="kw">pub </span>name: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str,
-    <span class="kw">pub </span>args: Vec&lt;Arg&lt;<span class="lifetime">&#39;a</span>&gt;&gt;,
+</span><span class="kw">pub struct </span>Formatter&lt;<span class="lifetime">'a</span>&gt; {
+    <span class="kw">pub </span>name: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str,
+    <span class="kw">pub </span>args: Vec&lt;Arg&lt;<span class="lifetime">'a</span>&gt;&gt;,
 }
 
 <span class="attr">#[derive(Debug, PartialEq, Eq)]
-</span><span class="kw">pub struct </span>Placeholder&lt;<span class="lifetime">&#39;a</span>&gt; {
-    <span class="kw">pub </span>name: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str,
-    <span class="kw">pub </span>formatter: <span class="prelude-ty">Option</span>&lt;Formatter&lt;<span class="lifetime">&#39;a</span>&gt;&gt;,
+</span><span class="kw">pub struct </span>Placeholder&lt;<span class="lifetime">'a</span>&gt; {
+    <span class="kw">pub </span>name: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str,
+    <span class="kw">pub </span>formatter: <span class="prelude-ty">Option</span>&lt;Formatter&lt;<span class="lifetime">'a</span>&gt;&gt;,
 }
 
 <span class="attr">#[derive(Debug, PartialEq, Eq)]
-</span><span class="kw">pub enum </span>Token&lt;<span class="lifetime">&#39;a</span>&gt; {
+</span><span class="kw">pub enum </span>Token&lt;<span class="lifetime">'a</span>&gt; {
     Text(String),
-    Placeholder(Placeholder&lt;<span class="lifetime">&#39;a</span>&gt;),
-    Icon(<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str),
-    Recursive(FormatTemplate&lt;<span class="lifetime">&#39;a</span>&gt;),
+    Placeholder(Placeholder&lt;<span class="lifetime">'a</span>&gt;),
+    Icon(<span class="kw-2">&amp;</span><span class="lifetime">'a </span>str),
+    Recursive(FormatTemplate&lt;<span class="lifetime">'a</span>&gt;),
 }
 
 <span class="attr">#[derive(Debug, PartialEq, Eq)]
-</span><span class="kw">pub struct </span>TokenList&lt;<span class="lifetime">&#39;a</span>&gt;(<span class="kw">pub </span>Vec&lt;Token&lt;<span class="lifetime">&#39;a</span>&gt;&gt;);
+</span><span class="kw">pub struct </span>TokenList&lt;<span class="lifetime">'a</span>&gt;(<span class="kw">pub </span>Vec&lt;Token&lt;<span class="lifetime">'a</span>&gt;&gt;);
 
 <span class="attr">#[derive(Debug, PartialEq, Eq)]
-</span><span class="kw">pub struct </span>FormatTemplate&lt;<span class="lifetime">&#39;a</span>&gt;(<span class="kw">pub </span>Vec&lt;TokenList&lt;<span class="lifetime">&#39;a</span>&gt;&gt;);
+</span><span class="kw">pub struct </span>FormatTemplate&lt;<span class="lifetime">'a</span>&gt;(<span class="kw">pub </span>Vec&lt;TokenList&lt;<span class="lifetime">'a</span>&gt;&gt;);
 
 <span class="attr">#[derive(Debug, PartialEq, Eq)]
-</span><span class="kw">enum </span>PError&lt;<span class="lifetime">&#39;a</span>&gt; {
+</span><span class="kw">enum </span>PError&lt;<span class="lifetime">'a</span>&gt; {
     Expected {
         expected: char,
         actual: <span class="prelude-ty">Option</span>&lt;char&gt;,
     },
     Other {
-        input: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str,
+        input: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str,
         kind: nom::error::ErrorKind,
     },
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>&gt; nom::error::ParseError&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str&gt; <span class="kw">for </span>PError&lt;<span class="lifetime">&#39;a</span>&gt; {
-    <span class="kw">fn </span>from_error_kind(input: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str, kind: nom::error::ErrorKind) -&gt; <span class="self">Self </span>{
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; nom::error::ParseError&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>str&gt; <span class="kw">for </span>PError&lt;<span class="lifetime">'a</span>&gt; {
+    <span class="kw">fn </span>from_error_kind(input: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str, kind: nom::error::ErrorKind) -&gt; <span class="self">Self </span>{
         <span class="self">Self</span>::Other { input, kind }
     }
 
-    <span class="kw">fn </span>append(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str, <span class="kw">_</span>: nom::error::ErrorKind, other: <span class="self">Self</span>) -&gt; <span class="self">Self </span>{
+    <span class="kw">fn </span>append(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str, <span class="kw">_</span>: nom::error::ErrorKind, other: <span class="self">Self</span>) -&gt; <span class="self">Self </span>{
         other
     }
 
-    <span class="kw">fn </span>from_char(input: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str, expected: char) -&gt; <span class="self">Self </span>{
+    <span class="kw">fn </span>from_char(input: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str, expected: char) -&gt; <span class="self">Self </span>{
         <span class="kw">let </span>actual = input.chars().next();
         <span class="self">Self</span>::Expected { expected, actual }
     }
@@ -499,22 +500,22 @@
 }
 
 <span class="kw">fn </span>alphanum1(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, <span class="kw-2">&amp;</span>str, PError&gt; {
-    take_while1(|x: char| x.is_alphanumeric() || x == <span class="string">&#39;_&#39; </span>|| x == <span class="string">&#39;-&#39;</span>)(i)
+    take_while1(|x: char| x.is_alphanumeric() || x == <span class="string">'_' </span>|| x == <span class="string">'-'</span>)(i)
 }
 
 <span class="comment">//val
-//&#39;val ue&#39;
+//'val ue'
 </span><span class="kw">fn </span>arg1(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, <span class="kw-2">&amp;</span>str, PError&gt; {
     alt((
-        take_while1(|x: char| x.is_alphanumeric() || x == <span class="string">&#39;_&#39; </span>|| x == <span class="string">&#39;-&#39; </span>|| x == <span class="string">&#39;.&#39; </span>|| x == <span class="string">&#39;%&#39;</span>),
-        preceded(char(<span class="string">&#39;\&#39;&#39;</span>), cut(terminated(is_not(<span class="string">&quot;\&#39;&quot;</span>), char(<span class="string">&#39;\&#39;&#39;</span>)))),
+        take_while1(|x: char| x.is_alphanumeric() || x == <span class="string">'_' </span>|| x == <span class="string">'-' </span>|| x == <span class="string">'.' </span>|| x == <span class="string">'%'</span>),
+        preceded(char(<span class="string">'\''</span>), cut(terminated(is_not(<span class="string">"\'"</span>), char(<span class="string">'\''</span>)))),
     ))(i)
 }
 
 <span class="comment">// `key:val`
 </span><span class="kw">fn </span>parse_arg(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, Arg, PError&gt; {
     map(
-        separated_pair(alphanum1, cut(char(<span class="string">&#39;:&#39;</span>)), cut(arg1)),
+        separated_pair(alphanum1, cut(char(<span class="string">':'</span>)), cut(arg1)),
         |(key, val)| Arg { key, val },
     )(i)
 }
@@ -522,17 +523,17 @@
 <span class="comment">// `(arg,key:val)`
 // `( arg, key:val , abc)`
 </span><span class="kw">fn </span>parse_args(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, Vec&lt;Arg&gt;, PError&gt; {
-    <span class="kw">let </span>inner = separated_list0(preceded(spaces, char(<span class="string">&#39;,&#39;</span>)), preceded(spaces, parse_arg));
+    <span class="kw">let </span>inner = separated_list0(preceded(spaces, char(<span class="string">','</span>)), preceded(spaces, parse_arg));
     preceded(
-        char(<span class="string">&#39;(&#39;</span>),
-        cut(terminated(inner, preceded(spaces, char(<span class="string">&#39;)&#39;</span>)))),
+        char(<span class="string">'('</span>),
+        cut(terminated(inner, preceded(spaces, char(<span class="string">')'</span>)))),
     )(i)
 }
 
 <span class="comment">// `.str(width:2)`
 // `.eng(unit:bits,bin)`
 </span><span class="kw">fn </span>parse_formatter(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, Formatter, PError&gt; {
-    preceded(char(<span class="string">&#39;.&#39;</span>), cut(tuple((alphanum1, opt(parse_args)))))
+    preceded(char(<span class="string">'.'</span>), cut(tuple((alphanum1, opt(parse_args)))))
         .map(|(name, args)| Formatter {
             name,
             args: args.unwrap_or_default(),
@@ -543,7 +544,7 @@
 <span class="comment">// `$var`
 // `$key.eng(unit:bits,bin)`
 </span><span class="kw">fn </span>parse_placeholder(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, Placeholder, PError&gt; {
-    preceded(char(<span class="string">&#39;$&#39;</span>), cut(tuple((alphanum1, opt(parse_formatter)))))
+    preceded(char(<span class="string">'$'</span>), cut(tuple((alphanum1, opt(parse_formatter)))))
         .map(|(name, formatter)| Placeholder { name, formatter })
         .parse(i)
 }
@@ -553,8 +554,8 @@
     preceded(
         not(eof),
         escaped_transform(
-            take_while1(|x| x != <span class="string">&#39;$&#39; </span>&amp;&amp; x != <span class="string">&#39;^&#39; </span>&amp;&amp; x != <span class="string">&#39;{&#39; </span>&amp;&amp; x != <span class="string">&#39;}&#39; </span>&amp;&amp; x != <span class="string">&#39;|&#39; </span>&amp;&amp; x != <span class="string">&#39;\\&#39;</span>),
-            <span class="string">&#39;\\&#39;</span>,
+            take_while1(|x| x != <span class="string">'$' </span>&amp;&amp; x != <span class="string">'^' </span>&amp;&amp; x != <span class="string">'{' </span>&amp;&amp; x != <span class="string">'}' </span>&amp;&amp; x != <span class="string">'|' </span>&amp;&amp; x != <span class="string">'\\'</span>),
+            <span class="string">'\\'</span>,
             anychar,
         ),
     )(i)
@@ -562,12 +563,12 @@
 
 <span class="comment">// `^icon_name`
 </span><span class="kw">fn </span>parse_icon(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, <span class="kw-2">&amp;</span>str, PError&gt; {
-    preceded(char(<span class="string">&#39;^&#39;</span>), cut(preceded(tag(<span class="string">&quot;icon_&quot;</span>), alphanum1)))(i)
+    preceded(char(<span class="string">'^'</span>), cut(preceded(tag(<span class="string">"icon_"</span>), alphanum1)))(i)
 }
 
 <span class="comment">// `{ a | b | c }`
 </span><span class="kw">fn </span>parse_recursive_template(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, FormatTemplate, PError&gt; {
-    preceded(char(<span class="string">&#39;{&#39;</span>), cut(terminated(parse_format_template, char(<span class="string">&#39;}&#39;</span>))))(i)
+    preceded(char(<span class="string">'{'</span>), cut(terminated(parse_format_template, char(<span class="string">'}'</span>))))(i)
 }
 
 <span class="kw">fn </span>parse_token_list(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, TokenList, PError&gt; {
@@ -583,7 +584,7 @@
 }
 
 <span class="kw">fn </span>parse_format_template(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, FormatTemplate, PError&gt; {
-    map(separated_list0(char(<span class="string">&#39;|&#39;</span>), parse_token_list), FormatTemplate)(i)
+    map(separated_list0(char(<span class="string">'|'</span>), parse_token_list), FormatTemplate)(i)
 }
 
 <span class="kw">pub fn </span>parse_full(i: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;FormatTemplate&gt; {
@@ -593,7 +594,7 @@
                 <span class="prelude-val">Ok</span>(template)
             } <span class="kw">else </span>{
                 <span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(
-                    <span class="string">&quot;unexpected &#39;{}&#39;&quot;</span>,
+                    <span class="string">"unexpected '{}'"</span>,
                     rest.chars().next().unwrap()
                 )))
             }
@@ -603,14 +604,14 @@
             nom::Err::Error(err) | nom::Err::Failure(err) =&gt; <span class="kw">match </span>err {
                 PError::Expected { expected, actual } =&gt; {
                     <span class="kw">if let </span><span class="prelude-val">Some</span>(actual) = actual {
-                        Error::new(<span class="macro">format!</span>(<span class="string">&quot;expected &#39;{expected}&#39;, got &#39;{actual}&#39;&quot;</span>))
+                        Error::new(<span class="macro">format!</span>(<span class="string">"expected '{expected}', got '{actual}'"</span>))
                     } <span class="kw">else </span>{
-                        Error::new(<span class="macro">format!</span>(<span class="string">&quot;expected &#39;{expected}&#39;, got EOF&quot;</span>))
+                        Error::new(<span class="macro">format!</span>(<span class="string">"expected '{expected}', got EOF"</span>))
                     }
                 }
                 PError::Other { input, kind } =&gt; {
                     <span class="comment">// TODO: improve?
-                    </span>Error::new(<span class="macro">format!</span>(<span class="string">&quot;{kind:?} error near &#39;{input}&#39;&quot;</span>))
+                    </span>Error::new(<span class="macro">format!</span>(<span class="string">"{kind:?} error near '{input}'"</span>))
                 }
             },
         }),
@@ -624,52 +625,52 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>arg() {
         <span class="macro">assert_eq!</span>(
-            parse_arg(<span class="string">&quot;key:val,&quot;</span>),
+            parse_arg(<span class="string">"key:val,"</span>),
             <span class="prelude-val">Ok</span>((
-                <span class="string">&quot;,&quot;</span>,
+                <span class="string">","</span>,
                 Arg {
-                    key: <span class="string">&quot;key&quot;</span>,
-                    val: <span class="string">&quot;val&quot;
+                    key: <span class="string">"key"</span>,
+                    val: <span class="string">"val"
                 </span>}
             ))
         );
         <span class="macro">assert_eq!</span>(
-            parse_arg(<span class="string">&quot;key:&#39;val ue&#39;,&quot;</span>),
+            parse_arg(<span class="string">"key:'val ue',"</span>),
             <span class="prelude-val">Ok</span>((
-                <span class="string">&quot;,&quot;</span>,
+                <span class="string">","</span>,
                 Arg {
-                    key: <span class="string">&quot;key&quot;</span>,
-                    val: <span class="string">&quot;val ue&quot;
+                    key: <span class="string">"key"</span>,
+                    val: <span class="string">"val ue"
                 </span>}
             ))
         );
-        <span class="macro">assert!</span>(parse_arg(<span class="string">&quot;key:,&quot;</span>).is_err());
+        <span class="macro">assert!</span>(parse_arg(<span class="string">"key:,"</span>).is_err());
     }
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>args() {
         <span class="macro">assert_eq!</span>(
-            parse_args(<span class="string">&quot;(key:val)&quot;</span>),
+            parse_args(<span class="string">"(key:val)"</span>),
             <span class="prelude-val">Ok</span>((
-                <span class="string">&quot;&quot;</span>,
+                <span class="string">""</span>,
                 <span class="macro">vec!</span>[Arg {
-                    key: <span class="string">&quot;key&quot;</span>,
-                    val: <span class="string">&quot;val&quot;
+                    key: <span class="string">"key"</span>,
+                    val: <span class="string">"val"
                 </span>}]
             ))
         );
         <span class="macro">assert_eq!</span>(
-            parse_args(<span class="string">&quot;( abc:d , key:val )&quot;</span>),
+            parse_args(<span class="string">"( abc:d , key:val )"</span>),
             <span class="prelude-val">Ok</span>((
-                <span class="string">&quot;&quot;</span>,
+                <span class="string">""</span>,
                 <span class="macro">vec!</span>[
                     Arg {
-                        key: <span class="string">&quot;abc&quot;</span>,
-                        val: <span class="string">&quot;d&quot;</span>,
+                        key: <span class="string">"abc"</span>,
+                        val: <span class="string">"d"</span>,
                     },
                     Arg {
-                        key: <span class="string">&quot;key&quot;</span>,
-                        val: <span class="string">&quot;val&quot;
+                        key: <span class="string">"key"</span>,
+                        val: <span class="string">"val"
                     </span>}
                 ]
             ))
@@ -679,29 +680,29 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>formatter() {
         <span class="macro">assert_eq!</span>(
-            parse_formatter(<span class="string">&quot;.str(key:val)&quot;</span>),
+            parse_formatter(<span class="string">".str(key:val)"</span>),
             <span class="prelude-val">Ok</span>((
-                <span class="string">&quot;&quot;</span>,
+                <span class="string">""</span>,
                 Formatter {
-                    name: <span class="string">&quot;str&quot;</span>,
+                    name: <span class="string">"str"</span>,
                     args: <span class="macro">vec!</span>[Arg {
-                        key: <span class="string">&quot;key&quot;</span>,
-                        val: <span class="string">&quot;val&quot;
+                        key: <span class="string">"key"</span>,
+                        val: <span class="string">"val"
                     </span>}]
                 }
             ))
         );
         <span class="macro">assert_eq!</span>(
-            parse_formatter(<span class="string">&quot;.eng(w:3 , bin:true )&quot;</span>),
+            parse_formatter(<span class="string">".eng(w:3 , bin:true )"</span>),
             <span class="prelude-val">Ok</span>((
-                <span class="string">&quot;&quot;</span>,
+                <span class="string">""</span>,
                 Formatter {
-                    name: <span class="string">&quot;eng&quot;</span>,
+                    name: <span class="string">"eng"</span>,
                     args: <span class="macro">vec!</span>[
-                        Arg { key: <span class="string">&quot;w&quot;</span>, val: <span class="string">&quot;3&quot; </span>},
+                        Arg { key: <span class="string">"w"</span>, val: <span class="string">"3" </span>},
                         Arg {
-                            key: <span class="string">&quot;bin&quot;</span>,
-                            val: <span class="string">&quot;true&quot;
+                            key: <span class="string">"bin"</span>,
+                            val: <span class="string">"true"
                         </span>}
                     ]
                 }
@@ -712,72 +713,72 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>placeholder() {
         <span class="macro">assert_eq!</span>(
-            parse_placeholder(<span class="string">&quot;$key&quot;</span>),
+            parse_placeholder(<span class="string">"$key"</span>),
             <span class="prelude-val">Ok</span>((
-                <span class="string">&quot;&quot;</span>,
+                <span class="string">""</span>,
                 Placeholder {
-                    name: <span class="string">&quot;key&quot;</span>,
+                    name: <span class="string">"key"</span>,
                     formatter: <span class="prelude-val">None</span>,
                 }
             ))
         );
         <span class="macro">assert_eq!</span>(
-            parse_placeholder(<span class="string">&quot;$var.str()&quot;</span>),
+            parse_placeholder(<span class="string">"$var.str()"</span>),
             <span class="prelude-val">Ok</span>((
-                <span class="string">&quot;&quot;</span>,
+                <span class="string">""</span>,
                 Placeholder {
-                    name: <span class="string">&quot;var&quot;</span>,
+                    name: <span class="string">"var"</span>,
                     formatter: <span class="prelude-val">Some</span>(Formatter {
-                        name: <span class="string">&quot;str&quot;</span>,
+                        name: <span class="string">"str"</span>,
                         args: <span class="macro">vec!</span>[]
                     }),
                 }
             ))
         );
         <span class="macro">assert_eq!</span>(
-            parse_placeholder(<span class="string">&quot;$var.str(a:b, c:d)&quot;</span>),
+            parse_placeholder(<span class="string">"$var.str(a:b, c:d)"</span>),
             <span class="prelude-val">Ok</span>((
-                <span class="string">&quot;&quot;</span>,
+                <span class="string">""</span>,
                 Placeholder {
-                    name: <span class="string">&quot;var&quot;</span>,
+                    name: <span class="string">"var"</span>,
                     formatter: <span class="prelude-val">Some</span>(Formatter {
-                        name: <span class="string">&quot;str&quot;</span>,
-                        args: <span class="macro">vec!</span>[Arg { key: <span class="string">&quot;a&quot;</span>, val: <span class="string">&quot;b&quot; </span>}, Arg { key: <span class="string">&quot;c&quot;</span>, val: <span class="string">&quot;d&quot; </span>}]
+                        name: <span class="string">"str"</span>,
+                        args: <span class="macro">vec!</span>[Arg { key: <span class="string">"a"</span>, val: <span class="string">"b" </span>}, Arg { key: <span class="string">"c"</span>, val: <span class="string">"d" </span>}]
                     }),
                 }
             ))
         );
-        <span class="macro">assert!</span>(parse_placeholder(<span class="string">&quot;$key.&quot;</span>).is_err());
+        <span class="macro">assert!</span>(parse_placeholder(<span class="string">"$key."</span>).is_err());
     }
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>icon() {
-        <span class="macro">assert_eq!</span>(parse_icon(<span class="string">&quot;^icon_my_icon&quot;</span>), <span class="prelude-val">Ok</span>((<span class="string">&quot;&quot;</span>, <span class="string">&quot;my_icon&quot;</span>)));
-        <span class="macro">assert_eq!</span>(parse_icon(<span class="string">&quot;^icon_m&quot;</span>), <span class="prelude-val">Ok</span>((<span class="string">&quot;&quot;</span>, <span class="string">&quot;m&quot;</span>)));
-        <span class="macro">assert!</span>(parse_icon(<span class="string">&quot;^icon_&quot;</span>).is_err());
-        <span class="macro">assert!</span>(parse_icon(<span class="string">&quot;^2&quot;</span>).is_err());
+        <span class="macro">assert_eq!</span>(parse_icon(<span class="string">"^icon_my_icon"</span>), <span class="prelude-val">Ok</span>((<span class="string">""</span>, <span class="string">"my_icon"</span>)));
+        <span class="macro">assert_eq!</span>(parse_icon(<span class="string">"^icon_m"</span>), <span class="prelude-val">Ok</span>((<span class="string">""</span>, <span class="string">"m"</span>)));
+        <span class="macro">assert!</span>(parse_icon(<span class="string">"^icon_"</span>).is_err());
+        <span class="macro">assert!</span>(parse_icon(<span class="string">"^2"</span>).is_err());
     }
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>token_list() {
         <span class="macro">assert_eq!</span>(
-            parse_token_list(<span class="string">&quot; abc \\$ $var.str(a:b)$x &quot;</span>),
+            parse_token_list(<span class="string">" abc \\$ $var.str(a:b)$x "</span>),
             <span class="prelude-val">Ok</span>((
-                <span class="string">&quot;&quot;</span>,
+                <span class="string">""</span>,
                 TokenList(<span class="macro">vec!</span>[
-                    Token::Text(<span class="string">&quot; abc $ &quot;</span>.into()),
+                    Token::Text(<span class="string">" abc $ "</span>.into()),
                     Token::Placeholder(Placeholder {
-                        name: <span class="string">&quot;var&quot;</span>,
+                        name: <span class="string">"var"</span>,
                         formatter: <span class="prelude-val">Some</span>(Formatter {
-                            name: <span class="string">&quot;str&quot;</span>,
-                            args: <span class="macro">vec!</span>[Arg { key: <span class="string">&quot;a&quot;</span>, val: <span class="string">&quot;b&quot; </span>}]
+                            name: <span class="string">"str"</span>,
+                            args: <span class="macro">vec!</span>[Arg { key: <span class="string">"a"</span>, val: <span class="string">"b" </span>}]
                         })
                     }),
                     Token::Placeholder(Placeholder {
-                        name: <span class="string">&quot;x&quot;</span>,
+                        name: <span class="string">"x"</span>,
                         formatter: <span class="prelude-val">None</span>,
                     }),
-                    Token::Text(<span class="string">&quot; &quot;</span>.into())
+                    Token::Text(<span class="string">" "</span>.into())
                 ])
             ))
         );
@@ -786,29 +787,29 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>format_template() {
         <span class="macro">assert_eq!</span>(
-            parse_format_template(<span class="string">&quot;simple&quot;</span>),
+            parse_format_template(<span class="string">"simple"</span>),
             <span class="prelude-val">Ok</span>((
-                <span class="string">&quot;&quot;</span>,
-                FormatTemplate(<span class="macro">vec!</span>[TokenList(<span class="macro">vec!</span>[Token::Text(<span class="string">&quot;simple&quot;</span>.into())]),])
+                <span class="string">""</span>,
+                FormatTemplate(<span class="macro">vec!</span>[TokenList(<span class="macro">vec!</span>[Token::Text(<span class="string">"simple"</span>.into())]),])
             ))
         );
         <span class="macro">assert_eq!</span>(
-            parse_format_template(<span class="string">&quot; $x.str() | N/A &quot;</span>),
+            parse_format_template(<span class="string">" $x.str() | N/A "</span>),
             <span class="prelude-val">Ok</span>((
-                <span class="string">&quot;&quot;</span>,
+                <span class="string">""</span>,
                 FormatTemplate(<span class="macro">vec!</span>[
                     TokenList(<span class="macro">vec!</span>[
-                        Token::Text(<span class="string">&quot; &quot;</span>.into()),
+                        Token::Text(<span class="string">" "</span>.into()),
                         Token::Placeholder(Placeholder {
-                            name: <span class="string">&quot;x&quot;</span>,
+                            name: <span class="string">"x"</span>,
                             formatter: <span class="prelude-val">Some</span>(Formatter {
-                                name: <span class="string">&quot;str&quot;</span>,
+                                name: <span class="string">"str"</span>,
                                 args: <span class="macro">vec!</span>[]
                             })
                         }),
-                        Token::Text(<span class="string">&quot; &quot;</span>.into()),
+                        Token::Text(<span class="string">" "</span>.into()),
                     ]),
-                    TokenList(<span class="macro">vec!</span>[Token::Text(<span class="string">&quot; N/A &quot;</span>.into())]),
+                    TokenList(<span class="macro">vec!</span>[Token::Text(<span class="string">" N/A "</span>.into())]),
                 ])
             ))
         );
@@ -817,24 +818,24 @@
     <span class="attr">#[test]
     </span><span class="kw">fn </span>full() {
         <span class="macro">assert_eq!</span>(
-            parse_format_template(<span class="string">&quot; ^icon_my_icon {$x.str()|N/A} &quot;</span>),
+            parse_format_template(<span class="string">" ^icon_my_icon {$x.str()|N/A} "</span>),
             <span class="prelude-val">Ok</span>((
-                <span class="string">&quot;&quot;</span>,
+                <span class="string">""</span>,
                 FormatTemplate(<span class="macro">vec!</span>[TokenList(<span class="macro">vec!</span>[
-                    Token::Text(<span class="string">&quot; &quot;</span>.into()),
-                    Token::Icon(<span class="string">&quot;my_icon&quot;</span>),
-                    Token::Text(<span class="string">&quot; &quot;</span>.into()),
+                    Token::Text(<span class="string">" "</span>.into()),
+                    Token::Icon(<span class="string">"my_icon"</span>),
+                    Token::Text(<span class="string">" "</span>.into()),
                     Token::Recursive(FormatTemplate(<span class="macro">vec!</span>[
                         TokenList(<span class="macro">vec!</span>[Token::Placeholder(Placeholder {
-                            name: <span class="string">&quot;x&quot;</span>,
+                            name: <span class="string">"x"</span>,
                             formatter: <span class="prelude-val">Some</span>(Formatter {
-                                name: <span class="string">&quot;str&quot;</span>,
+                                name: <span class="string">"str"</span>,
                                 args: <span class="macro">vec!</span>[]
                             })
                         })]),
-                        TokenList(<span class="macro">vec!</span>[Token::Text(<span class="string">&quot;N/A&quot;</span>.into())]),
+                        TokenList(<span class="macro">vec!</span>[Token::Text(<span class="string">"N/A"</span>.into())]),
                     ])),
-                    Token::Text(<span class="string">&quot; &quot;</span>.into()),
+                    Token::Text(<span class="string">" "</span>.into()),
                 ]),])
             ))
         );

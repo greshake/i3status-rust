@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/sound.rs`."><title>sound.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0 (82e1608df 2023-12-21)" data-channel="1.75.0" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/sound.rs`."><title>sound.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-ac92e1bbe349e143.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0 (07dca489a 2024-02-04)" data-channel="1.76.0" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -368,18 +369,18 @@
 //!
 //! Requires a PulseAudio installation or `alsa-utils` for ALSA.
 //!
-//! Note that if you are using PulseAudio commands (such as `pactl`) to control your volume, you should select the `&quot;pulseaudio&quot;` (or `&quot;auto&quot;`) driver to see volume changes that exceed 100%.
+//! Note that if you are using PulseAudio commands (such as `pactl`) to control your volume, you should select the `"pulseaudio"` (or `"auto"`) driver to see volume changes that exceed 100%.
 //!
 //! # Configuration
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `driver` | `&quot;auto&quot;`, `&quot;pulseaudio&quot;`, `&quot;alsa&quot;`. | `&quot;auto&quot;` (Pulseaudio with ALSA fallback)
+//! `driver` | `"auto"`, `"pulseaudio"`, `"alsa"`. | `"auto"` (Pulseaudio with ALSA fallback)
 //! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt; $icon {$volume.eng(w:2) &amp;vert;}&lt;/code&gt;
 //! `name` | PulseAudio device name, or the ALSA control name as found in the output of `amixer -D yourdevice scontrols`. | PulseAudio: `@DEFAULT_SINK@` / ALSA: `Master`
-//! `device` | ALSA device name, usually in the form &quot;hw:X&quot; or &quot;hw:X,Y&quot; where `X` is the card number and `Y` is the device number as found in the output of `aplay -l`. | `default`
-//! `device_kind` | PulseAudio device kind: `source` or `sink`. | `&quot;sink&quot;`
-//! `natural_mapping` | When using the ALSA driver, display the &quot;mapped volume&quot; as given by `alsamixer`/`amixer -M`, which represents the volume level more naturally with respect for the human ear. | `false`
+//! `device` | ALSA device name, usually in the form "hw:X" or "hw:X,Y" where `X` is the card number and `Y` is the device number as found in the output of `aplay -l`. | `default`
+//! `device_kind` | PulseAudio device kind: `source` or `sink`. | `"sink"`
+//! `natural_mapping` | When using the ALSA driver, display the "mapped volume" as given by `alsamixer`/`amixer -M`, which represents the volume level more naturally with respect for the human ear. | `false`
 //! `step_width` | The percent volume level is increased/decreased for the selected audio device when scrolling. Capped automatically at 50. | `5`
 //! `max_vol` | Max volume in percent that can be set via scrolling. Note it can still be set above this value if changed by another application. | `None`
 //! `show_volume_when_muted` | Show the volume even if it is currently muted. | `false`
@@ -394,7 +395,7 @@
 //! `volume`             | Current volume. Missing if muted. | Number | %
 //! `output_name`        | PulseAudio or ALSA device name    | Text   | -
 //! `output_description` | PulseAudio device description, will fallback to `output_name` if no description is available and will be overwritten by mappings (mappings will still use `output_name`) | Text | -
-//! `active_port`        | Active port (same as information in Ports section of `pactl list cards`). Will be absent if not supported by `driver` or if mapped to `&quot;&quot;` in `active_port_mappings`. | Text | -
+//! `active_port`        | Active port (same as information in Ports section of `pactl list cards`). Will be absent if not supported by `driver` or if mapped to `""` in `active_port_mappings`. | Text | -
 //!
 //! Action        | Default button
 //! --------------|---------------
@@ -408,7 +409,7 @@
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;sound&quot;
+//! block = "sound"
 //! step_width = 3
 //! ```
 //!
@@ -416,11 +417,11 @@
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;sound&quot;
-//! format = &quot; $icon $output_name{ $volume|} &quot;
+//! block = "sound"
+//! format = " $icon $output_name{ $volume|} "
 //! [block.mappings]
-//! &quot;alsa_output.usb-Harman_Multimedia_JBL_Pebbles_1.0.0-00.analog-stereo&quot; = &quot;Speakers&quot;
-//! &quot;alsa_output.pci-0000_00_1b.0.analog-stereo&quot; = &quot;Headset&quot;
+//! "alsa_output.usb-Harman_Multimedia_JBL_Pebbles_1.0.0-00.analog-stereo" = "Speakers"
+//! "alsa_output.pci-0000_00_1b.0.analog-stereo" = "Headset"
 //! ```
 //!
 //! Since the default value for the `device_kind` key is `sink`,
@@ -428,22 +429,22 @@
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;sound&quot;
-//! driver = &quot;pulseaudio&quot;
-//! device_kind = &quot;source&quot;
+//! block = "sound"
+//! driver = "pulseaudio"
+//! device_kind = "source"
 //! ```
 //!
 //! Display warning in block if microphone if using the wrong port:
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;sound&quot;
-//! driver = &quot;pulseaudio&quot;
-//! device_kind = &quot;source&quot;
-//! format = &quot; $icon { $volume|} {$active_port |}&quot;
+//! block = "sound"
+//! driver = "pulseaudio"
+//! device_kind = "source"
+//! format = " $icon { $volume|} {$active_port |}"
 //! [block.active_port_mappings]
-//! &quot;analog-input-rear-mic&quot; = &quot;&quot; # Mapping to an empty string makes `$active_port` absent
-//! &quot;analog-input-front-mic&quot; = &quot;ERR!&quot;
+//! "analog-input-rear-mic" = "" # Mapping to an empty string makes `$active_port` absent
+//! "analog-input-front-mic" = "ERR!"
 //! ```
 //!
 //! #  Icons Used
@@ -455,7 +456,7 @@
 //! - `headphones`
 
 </span><span class="kw">mod </span>alsa;
-<span class="attr">#[cfg(feature = <span class="string">&quot;pulseaudio&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"pulseaudio"</span>)]
 </span><span class="kw">mod </span>pulseaudio;
 
 <span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
@@ -485,62 +486,62 @@
     <span class="kw">pub </span>format: FormatConfig,
     <span class="kw">pub </span>headphones_indicator: bool,
     <span class="kw">pub </span>show_volume_when_muted: bool,
-    <span class="attr">#[serde_as(<span class="kw">as </span>= <span class="string">&quot;Option&lt;Map&lt;_, _&gt;&gt;&quot;</span>)]
+    <span class="attr">#[serde_as(<span class="kw">as </span>= <span class="string">"Option&lt;Map&lt;_, _&gt;&gt;"</span>)]
     </span><span class="kw">pub </span>mappings: <span class="prelude-ty">Option</span>&lt;Vec&lt;(String, String)&gt;&gt;,
     <span class="attr">#[default(<span class="bool-val">true</span>)]
     </span><span class="kw">pub </span>mappings_use_regex: bool,
     <span class="kw">pub </span>max_vol: <span class="prelude-ty">Option</span>&lt;u32&gt;,
-    <span class="attr">#[serde_as(<span class="kw">as </span>= <span class="string">&quot;Map&lt;RegexAsString, _&gt;&quot;</span>)]
+    <span class="attr">#[serde_as(<span class="kw">as </span>= <span class="string">"Map&lt;RegexAsString, _&gt;"</span>)]
     </span><span class="kw">pub </span>active_port_mappings: Vec&lt;(Regex, String)&gt;,
 }
 
-<span class="kw">enum </span>Mappings&lt;<span class="lifetime">&#39;a</span>&gt; {
-    Exact(<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[(String, String)]),
-    Regex(Vec&lt;(Regex, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str)&gt;),
+<span class="kw">enum </span>Mappings&lt;<span class="lifetime">'a</span>&gt; {
+    Exact(<span class="kw-2">&amp;</span><span class="lifetime">'a </span>[(String, String)]),
+    Regex(Vec&lt;(Regex, <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str)&gt;),
 }
 
 <span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions()<span class="question-mark">?</span>;
     api.set_default_actions(<span class="kw-2">&amp;</span>[
-        (MouseButton::Right, <span class="prelude-val">None</span>, <span class="string">&quot;toggle_mute&quot;</span>),
-        (MouseButton::WheelUp, <span class="prelude-val">None</span>, <span class="string">&quot;volume_up&quot;</span>),
-        (MouseButton::WheelDown, <span class="prelude-val">None</span>, <span class="string">&quot;volume_down&quot;</span>),
+        (MouseButton::Right, <span class="prelude-val">None</span>, <span class="string">"toggle_mute"</span>),
+        (MouseButton::WheelUp, <span class="prelude-val">None</span>, <span class="string">"volume_up"</span>),
+        (MouseButton::WheelDown, <span class="prelude-val">None</span>, <span class="string">"volume_down"</span>),
     ])<span class="question-mark">?</span>;
 
-    <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon {$volume.eng(w:2)|} &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>format = config.format.with_default(<span class="string">" $icon {$volume.eng(w:2)|} "</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span>device_kind = config.device_kind;
     <span class="kw">let </span>step_width = config.step_width.clamp(<span class="number">0</span>, <span class="number">50</span>) <span class="kw">as </span>i32;
 
-    <span class="kw">let </span>icon = |muted: bool, device: <span class="kw-2">&amp;</span><span class="kw">dyn </span>SoundDevice| -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str {
+    <span class="kw">let </span>icon = |muted: bool, device: <span class="kw-2">&amp;</span><span class="kw">dyn </span>SoundDevice| -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str {
         <span class="kw">if </span>config.headphones_indicator &amp;&amp; device_kind == DeviceKind::Sink {
             <span class="kw">let </span>headphones = <span class="kw">match </span>device.form_factor() {
-                <span class="comment">// form_factor&#39;s possible values are listed at:
+                <span class="comment">// form_factor's possible values are listed at:
                 // https://docs.rs/libpulse-binding/2.25.0/libpulse_binding/proplist/properties/constant.DEVICE_FORM_FACTOR.html
-                </span><span class="prelude-val">Some</span>(<span class="string">&quot;headset&quot;</span>) | <span class="prelude-val">Some</span>(<span class="string">&quot;headphone&quot;</span>) | <span class="prelude-val">Some</span>(<span class="string">&quot;hands-free&quot;</span>) | <span class="prelude-val">Some</span>(<span class="string">&quot;portable&quot;</span>) =&gt; <span class="bool-val">true</span>,
+                </span><span class="prelude-val">Some</span>(<span class="string">"headset"</span>) | <span class="prelude-val">Some</span>(<span class="string">"headphone"</span>) | <span class="prelude-val">Some</span>(<span class="string">"hands-free"</span>) | <span class="prelude-val">Some</span>(<span class="string">"portable"</span>) =&gt; <span class="bool-val">true</span>,
                 <span class="comment">// Per discussion at
                 // https://github.com/greshake/i3status-rust/pull/1363#issuecomment-1046095869,
                 // some sinks may not have the form_factor property, so we should fall back to the
                 // active_port if that property is not present.
                 </span><span class="prelude-val">None </span>=&gt; device
                     .active_port()
-                    .is_some_and(|p| p.contains(<span class="string">&quot;headphones&quot;</span>)),
+                    .is_some_and(|p| p.contains(<span class="string">"headphones"</span>)),
                 <span class="comment">// form_factor is present and is some non-headphone value
                 </span><span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
             };
             <span class="kw">if </span>headphones {
-                <span class="kw">return </span><span class="string">&quot;headphones&quot;</span>;
+                <span class="kw">return </span><span class="string">"headphones"</span>;
             }
         }
         <span class="kw">if </span>muted {
             <span class="kw">match </span>device_kind {
-                DeviceKind::Source =&gt; <span class="string">&quot;microphone_muted&quot;</span>,
-                DeviceKind::Sink =&gt; <span class="string">&quot;volume_muted&quot;</span>,
+                DeviceKind::Source =&gt; <span class="string">"microphone_muted"</span>,
+                DeviceKind::Sink =&gt; <span class="string">"volume_muted"</span>,
             }
         } <span class="kw">else </span>{
             <span class="kw">match </span>device_kind {
-                DeviceKind::Source =&gt; <span class="string">&quot;microphone&quot;</span>,
-                DeviceKind::Sink =&gt; <span class="string">&quot;volume&quot;</span>,
+                DeviceKind::Source =&gt; <span class="string">"microphone"</span>,
+                DeviceKind::Sink =&gt; <span class="string">"volume"</span>,
             }
         }
     };
@@ -548,31 +549,31 @@
     <span class="kw">type </span>DeviceType = Box&lt;<span class="kw">dyn </span>SoundDevice&gt;;
     <span class="kw">let </span><span class="kw-2">mut </span>device: DeviceType = <span class="kw">match </span>config.driver {
         SoundDriver::Alsa =&gt; Box::new(alsa::Device::new(
-            config.name.clone().unwrap_or_else(|| <span class="string">&quot;Master&quot;</span>.into()),
-            config.device.clone().unwrap_or_else(|| <span class="string">&quot;default&quot;</span>.into()),
+            config.name.clone().unwrap_or_else(|| <span class="string">"Master"</span>.into()),
+            config.device.clone().unwrap_or_else(|| <span class="string">"default"</span>.into()),
             config.natural_mapping,
         )<span class="question-mark">?</span>),
-        <span class="attr">#[cfg(feature = <span class="string">&quot;pulseaudio&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"pulseaudio"</span>)]
         </span>SoundDriver::PulseAudio =&gt; Box::new(pulseaudio::Device::new(
             config.device_kind,
             config.name.clone(),
         )<span class="question-mark">?</span>),
-        <span class="attr">#[cfg(feature = <span class="string">&quot;pulseaudio&quot;</span>)]
+        <span class="attr">#[cfg(feature = <span class="string">"pulseaudio"</span>)]
         </span>SoundDriver::Auto =&gt; {
             <span class="kw">if let </span><span class="prelude-val">Ok</span>(pulse) = pulseaudio::Device::new(config.device_kind, config.name.clone()) {
                 Box::new(pulse)
             } <span class="kw">else </span>{
                 Box::new(alsa::Device::new(
-                    config.name.clone().unwrap_or_else(|| <span class="string">&quot;Master&quot;</span>.into()),
-                    config.device.clone().unwrap_or_else(|| <span class="string">&quot;default&quot;</span>.into()),
+                    config.name.clone().unwrap_or_else(|| <span class="string">"Master"</span>.into()),
+                    config.device.clone().unwrap_or_else(|| <span class="string">"default"</span>.into()),
                     config.natural_mapping,
                 )<span class="question-mark">?</span>)
             }
         }
-        <span class="attr">#[cfg(not(feature = <span class="string">&quot;pulseaudio&quot;</span>))]
+        <span class="attr">#[cfg(not(feature = <span class="string">"pulseaudio"</span>))]
         </span>SoundDriver::Auto =&gt; Box::new(alsa::Device::new(
-            config.name.clone().unwrap_or_else(|| <span class="string">&quot;Master&quot;</span>.into()),
-            config.device.clone().unwrap_or_else(|| <span class="string">&quot;default&quot;</span>.into()),
+            config.name.clone().unwrap_or_else(|| <span class="string">"Master"</span>.into()),
+            config.device.clone().unwrap_or_else(|| <span class="string">"default"</span>.into()),
             config.natural_mapping,
         )<span class="question-mark">?</span>),
     };
@@ -585,7 +586,7 @@
                         .map(|(key, val)| {
                             <span class="prelude-val">Ok</span>((
                                 Regex::new(key)
-                                    .error(<span class="string">&quot;Failed to parse `{key}` in mappings as regex&quot;</span>)<span class="question-mark">?</span>,
+                                    .error(<span class="string">"Failed to parse `{key}` in mappings as regex"</span>)<span class="question-mark">?</span>,
                                 val.as_str(),
                             ))
                         })
@@ -641,11 +642,11 @@
             .unwrap_or_else(|| output_name.clone());
 
         <span class="kw">let </span><span class="kw-2">mut </span>values = <span class="macro">map! </span>{
-            <span class="string">&quot;icon&quot; </span>=&gt; Value::icon_progression(icon(muted, <span class="kw-2">&amp;*</span>device), volume <span class="kw">as </span>f64 / <span class="number">100.0</span>),
-            <span class="string">&quot;volume&quot; </span>=&gt; Value::percents(volume),
-            <span class="string">&quot;output_name&quot; </span>=&gt; Value::text(output_name),
-            <span class="string">&quot;output_description&quot; </span>=&gt; Value::text(output_description),
-            [<span class="kw">if let </span><span class="prelude-val">Some</span>(ap) = active_port] <span class="string">&quot;active_port&quot; </span>=&gt; Value::text(ap),
+            <span class="string">"icon" </span>=&gt; Value::icon_progression(icon(muted, <span class="kw-2">&amp;*</span>device), volume <span class="kw">as </span>f64 / <span class="number">100.0</span>),
+            <span class="string">"volume" </span>=&gt; Value::percents(volume),
+            <span class="string">"output_name" </span>=&gt; Value::text(output_name),
+            <span class="string">"output_description" </span>=&gt; Value::text(output_description),
+            [<span class="kw">if let </span><span class="prelude-val">Some</span>(ap) = active_port] <span class="string">"active_port" </span>=&gt; Value::text(ap),
         };
 
         <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
@@ -653,7 +654,7 @@
         <span class="kw">if </span>muted {
             widget.state = State::Warning;
             <span class="kw">if </span>!config.show_volume_when_muted {
-                values.remove(<span class="string">&quot;volume&quot;</span>);
+                values.remove(<span class="string">"volume"</span>);
             }
         }
 
@@ -668,13 +669,13 @@
                 }
                 <span class="kw">_ </span>= api.wait_for_update_request() =&gt; <span class="kw">break</span>,
                 <span class="prelude-val">Some</span>(action) = actions.recv() =&gt; <span class="kw">match </span>action.as_ref() {
-                    <span class="string">&quot;toggle_mute&quot; </span>=&gt; {
+                    <span class="string">"toggle_mute" </span>=&gt; {
                         device.toggle().<span class="kw">await</span><span class="question-mark">?</span>;
                     }
-                    <span class="string">&quot;volume_up&quot; </span>=&gt; {
+                    <span class="string">"volume_up" </span>=&gt; {
                         device.set_volume(step_width, config.max_vol).<span class="kw">await</span><span class="question-mark">?</span>;
                     }
-                    <span class="string">&quot;volume_down&quot; </span>=&gt; {
+                    <span class="string">"volume_down" </span>=&gt; {
                         device.set_volume(-step_width, config.max_vol).<span class="kw">await</span><span class="question-mark">?</span>;
                     }
                     <span class="kw">_ </span>=&gt; (),
@@ -685,26 +686,26 @@
 }
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault, Clone, Copy)]
-#[serde(rename_all = <span class="string">&quot;lowercase&quot;</span>)]
+#[serde(rename_all = <span class="string">"lowercase"</span>)]
 </span><span class="kw">pub enum </span>SoundDriver {
     <span class="attr">#[default]
     </span>Auto,
     Alsa,
-    <span class="attr">#[cfg(feature = <span class="string">&quot;pulseaudio&quot;</span>)]
+    <span class="attr">#[cfg(feature = <span class="string">"pulseaudio"</span>)]
     </span>PulseAudio,
 }
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault, Clone, Copy, PartialEq, Eq, Hash)]
-#[serde(rename_all = <span class="string">&quot;lowercase&quot;</span>)]
+#[serde(rename_all = <span class="string">"lowercase"</span>)]
 </span><span class="kw">pub enum </span>DeviceKind {
     <span class="attr">#[default]
     </span>Sink,
     Source,
 }
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;pulseaudio&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"pulseaudio"</span>)]
 </span><span class="kw">impl </span>DeviceKind {
-    <span class="kw">pub fn </span>default_name(<span class="self">self</span>) -&gt; Cow&lt;<span class="lifetime">&#39;static</span>, str&gt; {
+    <span class="kw">pub fn </span>default_name(<span class="self">self</span>) -&gt; Cow&lt;<span class="lifetime">'static</span>, str&gt; {
         <span class="kw">match </span><span class="self">self </span>{
             <span class="self">Self</span>::Sink =&gt; pulseaudio::DEFAULT_SINK.lock().unwrap().clone(),
             <span class="self">Self</span>::Source =&gt; pulseaudio::DEFAULT_SOURCE.lock().unwrap().clone(),

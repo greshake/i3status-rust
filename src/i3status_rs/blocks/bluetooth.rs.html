@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/bluetooth.rs`."><title>bluetooth.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0 (82e1608df 2023-12-21)" data-channel="1.75.0" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/bluetooth.rs`."><title>bluetooth.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-ac92e1bbe349e143.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0 (07dca489a 2024-02-04)" data-channel="1.76.0" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -457,15 +458,15 @@
 //! ----|--------|--------
 //! `mac` | MAC address of the Bluetooth device | **Required**
 //! `adapter_mac` | MAC Address of the Bluetooth adapter (in case your device was connected to multiple currently available adapters) | `None`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot; $icon $name{ $percentage&amp;vert;} &quot;&lt;/code&gt;
-//! `disconnected_format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;&quot; $icon{ $name&amp;vert;} &quot;&lt;/code&gt;
-//! `battery_state` | A mapping from battery percentage to block&#39;s [state](State) (color). See example below. | 0..15 -&gt; critical, 16..30 -&gt; warning, 31..60 -&gt; info, 61..100 -&gt; good
+//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;" $icon $name{ $percentage&amp;vert;} "&lt;/code&gt;
+//! `disconnected_format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;" $icon{ $name&amp;vert;} "&lt;/code&gt;
+//! `battery_state` | A mapping from battery percentage to block's [state](State) (color). See example below. | 0..15 -&gt; critical, 16..30 -&gt; warning, 31..60 -&gt; info, 61..100 -&gt; good
 //!
 //! Placeholder    | Value                                                                 | Type   | Unit
 //! ---------------|-----------------------------------------------------------------------|--------|------
 //! `icon`         | Icon based on what type of device is connected                        | Icon   | -
-//! `name`         | Device&#39;s name                                                         | Text   | -
-//! `percentage`   | Device&#39;s battery level (may be absent if the device is not supported) | Number | %
+//! `name`         | Device's name                                                         | Text   | -
+//! `percentage`   | Device's battery level (may be absent if the device is not supported) | Number | %
 //! `battery_icon` | Battery icon (may be absent if the device is not supported)           | Icon   | -
 //! `available`    | Present if the device is available                                    | Flag   | -
 //!
@@ -479,21 +480,21 @@
 //!
 //! ```toml
 //! [[block]]
-//! block = &quot;bluetooth&quot;
-//! mac = &quot;00:18:09:92:1B:BA&quot;
-//! disconnected_format = &quot;&quot;
-//! format = &quot; $icon &quot;
+//! block = "bluetooth"
+//! mac = "00:18:09:92:1B:BA"
+//! disconnected_format = ""
+//! format = " $icon "
 //! [block.battery_state]
-//! &quot;0..20&quot; = &quot;critical&quot;
-//! &quot;21..70&quot; = &quot;warning&quot;
-//! &quot;71..100&quot; = &quot;good&quot;
+//! "0..20" = "critical"
+//! "21..70" = "warning"
+//! "71..100" = "good"
 //! ```
 //!
 //! # Icons Used
-//! - `headphones` for bluetooth devices identifying as &quot;audio-card&quot;, &quot;audio-headset&quot; or &quot;audio-headphones&quot;
-//! - `joystick` for bluetooth devices identifying as &quot;input-gaming&quot;
-//! - `keyboard` for bluetooth devices identifying as &quot;input-keyboard&quot;
-//! - `mouse` for bluetooth devices identifying as &quot;input-mouse&quot;
+//! - `headphones` for bluetooth devices identifying as "audio-card", "audio-headset" or "audio-headphones"
+//! - `joystick` for bluetooth devices identifying as "input-gaming"
+//! - `keyboard` for bluetooth devices identifying as "input-keyboard"
+//! - `mouse` for bluetooth devices identifying as "input-mouse"
 //! - `bluetooth` for all other devices
 
 </span><span class="kw">use </span>zbus::fdo::{DBusProxy, ObjectManagerProxy, PropertiesProxy};
@@ -501,7 +502,7 @@
 <span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
 <span class="kw">use </span><span class="kw">crate</span>::wrappers::RangeMap;
 
-<span class="macro">make_log_macro!</span>(debug, <span class="string">&quot;bluetooth&quot;</span>);
+<span class="macro">make_log_macro!</span>(debug, <span class="string">"bluetooth"</span>);
 
 <span class="attr">#[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
@@ -519,12 +520,12 @@
 
 <span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
     <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions()<span class="question-mark">?</span>;
-    api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Right, <span class="prelude-val">None</span>, <span class="string">&quot;toggle&quot;</span>)])<span class="question-mark">?</span>;
+    api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Right, <span class="prelude-val">None</span>, <span class="string">"toggle"</span>)])<span class="question-mark">?</span>;
 
-    <span class="kw">let </span>format = config.format.with_default(<span class="string">&quot; $icon $name{ $percentage|} &quot;</span>)<span class="question-mark">?</span>;
+    <span class="kw">let </span>format = config.format.with_default(<span class="string">" $icon $name{ $percentage|} "</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span>disconnected_format = config
         .disconnected_format
-        .with_default(<span class="string">&quot; $icon{ $name|} &quot;</span>)<span class="question-mark">?</span>;
+        .with_default(<span class="string">" $icon{ $name|} "</span>)<span class="question-mark">?</span>;
 
     <span class="kw">let </span><span class="kw-2">mut </span>monitor = DeviceMonitor::new(config.mac.clone(), config.adapter_mac.clone()).<span class="kw">await</span><span class="question-mark">?</span>;
 
@@ -542,17 +543,17 @@
         <span class="kw">match </span>monitor.get_device_info().<span class="kw">await </span>{
             <span class="comment">// Available
             </span><span class="prelude-val">Some</span>(device) =&gt; {
-                <span class="macro">debug!</span>(<span class="string">&quot;Device available, info: {device:?}&quot;</span>);
+                <span class="macro">debug!</span>(<span class="string">"Device available, info: {device:?}"</span>);
 
                 <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new();
 
                 <span class="kw">let </span>values = <span class="macro">map! </span>{
-                    <span class="string">&quot;icon&quot; </span>=&gt; Value::icon(device.icon),
-                    <span class="string">&quot;name&quot; </span>=&gt; Value::text(device.name),
-                    <span class="string">&quot;available&quot; </span>=&gt; Value::flag(),
-                    [<span class="kw">if let </span><span class="prelude-val">Some</span>(p) = device.battery_percentage] <span class="string">&quot;percentage&quot; </span>=&gt; Value::percents(p),
+                    <span class="string">"icon" </span>=&gt; Value::icon(device.icon),
+                    <span class="string">"name" </span>=&gt; Value::text(device.name),
+                    <span class="string">"available" </span>=&gt; Value::flag(),
+                    [<span class="kw">if let </span><span class="prelude-val">Some</span>(p) = device.battery_percentage] <span class="string">"percentage" </span>=&gt; Value::percents(p),
                     [<span class="kw">if let </span><span class="prelude-val">Some</span>(p) = device.battery_percentage]
-                        <span class="string">&quot;battery_icon&quot; </span>=&gt; Value::icon_progression(<span class="string">&quot;bat&quot;</span>, p <span class="kw">as </span>f64 / <span class="number">100.0</span>),
+                        <span class="string">"battery_icon" </span>=&gt; Value::icon_progression(<span class="string">"bat"</span>, p <span class="kw">as </span>f64 / <span class="number">100.0</span>),
                 };
 
                 <span class="kw">if </span>device.connected {
@@ -571,9 +572,9 @@
             }
             <span class="comment">// Unavailable
             </span><span class="prelude-val">None </span>=&gt; {
-                <span class="macro">debug!</span>(<span class="string">&quot;Showing device as unavailable&quot;</span>);
+                <span class="macro">debug!</span>(<span class="string">"Showing device as unavailable"</span>);
                 <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(disconnected_format.clone());
-                widget.set_values(<span class="macro">map!</span>(<span class="string">&quot;icon&quot; </span>=&gt; Value::icon(<span class="string">&quot;bluetooth&quot;</span>)));
+                widget.set_values(<span class="macro">map!</span>(<span class="string">"icon" </span>=&gt; Value::icon(<span class="string">"bluetooth"</span>)));
                 api.set_widget(widget)<span class="question-mark">?</span>;
             }
         }
@@ -585,7 +586,7 @@
                     <span class="kw">break</span>;
                 },
                 <span class="prelude-val">Some</span>(action) = actions.recv() =&gt; <span class="kw">match </span>action.as_ref() {
-                    <span class="string">&quot;toggle&quot; </span>=&gt; {
+                    <span class="string">"toggle" </span>=&gt; {
                         <span class="kw">if let </span><span class="prelude-val">Some</span>(dev) = <span class="kw-2">&amp;</span>monitor.device {
                             <span class="kw">if let </span><span class="prelude-val">Ok</span>(connected) = dev.device.connected().<span class="kw">await </span>{
                                 <span class="kw">if </span>connected {
@@ -607,20 +608,20 @@
 <span class="kw">struct </span>DeviceMonitor {
     mac: String,
     adapter_mac: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    manager_proxy: ObjectManagerProxy&lt;<span class="lifetime">&#39;static</span>&gt;,
+    manager_proxy: ObjectManagerProxy&lt;<span class="lifetime">'static</span>&gt;,
     device: <span class="prelude-ty">Option</span>&lt;Device&gt;,
 }
 
 <span class="kw">struct </span>Device {
-    props: PropertiesProxy&lt;<span class="lifetime">&#39;static</span>&gt;,
-    device: Device1Proxy&lt;<span class="lifetime">&#39;static</span>&gt;,
-    battery: Battery1Proxy&lt;<span class="lifetime">&#39;static</span>&gt;,
+    props: PropertiesProxy&lt;<span class="lifetime">'static</span>&gt;,
+    device: Device1Proxy&lt;<span class="lifetime">'static</span>&gt;,
+    battery: Battery1Proxy&lt;<span class="lifetime">'static</span>&gt;,
 }
 
 <span class="attr">#[derive(Debug)]
 </span><span class="kw">struct </span>DeviceInfo {
     connected: bool,
-    icon: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str,
+    icon: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str,
     name: String,
     battery_percentage: <span class="prelude-ty">Option</span>&lt;u8&gt;,
 }
@@ -629,12 +630,12 @@
     <span class="kw">async fn </span>new(mac: String, adapter_mac: <span class="prelude-ty">Option</span>&lt;String&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
         <span class="kw">let </span>dbus_conn = new_system_dbus_connection().<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">let </span>manager_proxy = ObjectManagerProxy::builder(<span class="kw-2">&amp;</span>dbus_conn)
-            .destination(<span class="string">&quot;org.bluez&quot;</span>)
-            .and_then(|x| x.path(<span class="string">&quot;/&quot;</span>))
+            .destination(<span class="string">"org.bluez"</span>)
+            .and_then(|x| x.path(<span class="string">"/"</span>))
             .unwrap()
             .build()
             .<span class="kw">await
-            </span>.error(<span class="string">&quot;Failed to create ObjectManagerProxy&quot;</span>)<span class="question-mark">?</span>;
+            </span>.error(<span class="string">"Failed to create ObjectManagerProxy"</span>)<span class="question-mark">?</span>;
         <span class="kw">let </span>device = Device::try_find(<span class="kw-2">&amp;</span>manager_proxy, <span class="kw-2">&amp;</span>mac, adapter_mac.as_deref()).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
             mac,
@@ -651,12 +652,12 @@
                     </span>.manager_proxy
                     .receive_interfaces_added()
                     .<span class="kw">await
-                    </span>.error(<span class="string">&quot;Failed to monitor interfaces&quot;</span>)<span class="question-mark">?</span>;
+                    </span>.error(<span class="string">"Failed to monitor interfaces"</span>)<span class="question-mark">?</span>;
                 <span class="kw">loop </span>{
                     interface_added
                         .next()
                         .<span class="kw">await
-                        </span>.error(<span class="string">&quot;Stream ended unexpectedly&quot;</span>)<span class="question-mark">?</span>;
+                        </span>.error(<span class="string">"Stream ended unexpectedly"</span>)<span class="question-mark">?</span>;
                     <span class="kw">if let </span><span class="prelude-val">Some</span>(device) = Device::try_find(
                         <span class="kw-2">&amp;</span><span class="self">self</span>.manager_proxy,
                         <span class="kw-2">&amp;</span><span class="self">self</span>.mac,
@@ -665,7 +666,7 @@
                     .<span class="kw">await</span><span class="question-mark">?
                     </span>{
                         <span class="self">self</span>.device = <span class="prelude-val">Some</span>(device);
-                        <span class="macro">debug!</span>(<span class="string">&quot;Device has been added&quot;</span>);
+                        <span class="macro">debug!</span>(<span class="string">"Device has been added"</span>);
                         <span class="kw">return </span><span class="prelude-val">Ok</span>(());
                     }
                 }
@@ -675,24 +676,24 @@
                     .props
                     .receive_properties_changed()
                     .<span class="kw">await
-                    </span>.error(<span class="string">&quot;Failed to receive updates&quot;</span>)<span class="question-mark">?</span>;
+                    </span>.error(<span class="string">"Failed to receive updates"</span>)<span class="question-mark">?</span>;
 
                 <span class="kw">let </span><span class="kw-2">mut </span>interface_added = <span class="self">self
                     </span>.manager_proxy
                     .receive_interfaces_added()
                     .<span class="kw">await
-                    </span>.error(<span class="string">&quot;Failed to monitor interfaces&quot;</span>)<span class="question-mark">?</span>;
+                    </span>.error(<span class="string">"Failed to monitor interfaces"</span>)<span class="question-mark">?</span>;
 
                 <span class="kw">let </span><span class="kw-2">mut </span>interface_removed = <span class="self">self
                     </span>.manager_proxy
                     .receive_interfaces_removed()
                     .<span class="kw">await
-                    </span>.error(<span class="string">&quot;Failed to monitor interfaces&quot;</span>)<span class="question-mark">?</span>;
+                    </span>.error(<span class="string">"Failed to monitor interfaces"</span>)<span class="question-mark">?</span>;
 
                 <span class="kw">let </span><span class="kw-2">mut </span>bluez_owner_changed = DBusProxy::new(<span class="self">self</span>.manager_proxy.connection())
                     .<span class="kw">await
-                    </span>.error(<span class="string">&quot;Failed to create DBusProxy&quot;</span>)<span class="question-mark">?
-                    </span>.receive_name_owner_changed_with_args(<span class="kw-2">&amp;</span>[(<span class="number">0</span>, <span class="string">&quot;org.bluez&quot;</span>)])
+                    </span>.error(<span class="string">"Failed to create DBusProxy"</span>)<span class="question-mark">?
+                    </span>.receive_name_owner_changed_with_args(<span class="kw-2">&amp;</span>[(<span class="number">0</span>, <span class="string">"org.bluez"</span>)])
                     .<span class="kw">await
                     </span>.unwrap();
 
@@ -703,29 +704,29 @@
                             </span><span class="kw">let _ </span>= tokio::time::timeout(Duration::from_millis(<span class="number">100</span>), <span class="kw">async </span>{
                                 <span class="kw">loop </span>{ <span class="kw">let _ </span>= updates.next().<span class="kw">await</span>; }
                             }).<span class="kw">await</span>;
-                            <span class="macro">debug!</span>(<span class="string">&quot;Got update for device&quot;</span>);
+                            <span class="macro">debug!</span>(<span class="string">"Got update for device"</span>);
                             <span class="kw">return </span><span class="prelude-val">Ok</span>(());
                         }
                         <span class="prelude-val">Some</span>(event) = interface_added.next() =&gt; {
-                            <span class="kw">let </span>args = event.args().error(<span class="string">&quot;Failed to get the args&quot;</span>)<span class="question-mark">?</span>;
+                            <span class="kw">let </span>args = event.args().error(<span class="string">"Failed to get the args"</span>)<span class="question-mark">?</span>;
                             <span class="kw">if </span>args.object_path() == device.device.path() {
-                                <span class="macro">debug!</span>(<span class="string">&quot;Interfaces added: {:?}&quot;</span>, args.interfaces_and_properties().keys());
+                                <span class="macro">debug!</span>(<span class="string">"Interfaces added: {:?}"</span>, args.interfaces_and_properties().keys());
                                 <span class="kw">return </span><span class="prelude-val">Ok</span>(());
                             }
                         }
                         <span class="prelude-val">Some</span>(event) = interface_removed.next() =&gt; {
-                            <span class="kw">let </span>args = event.args().error(<span class="string">&quot;Failed to get the args&quot;</span>)<span class="question-mark">?</span>;
+                            <span class="kw">let </span>args = event.args().error(<span class="string">"Failed to get the args"</span>)<span class="question-mark">?</span>;
                             <span class="kw">if </span>args.object_path() == device.device.path() {
                                 <span class="self">self</span>.device = <span class="prelude-val">None</span>;
-                                <span class="macro">debug!</span>(<span class="string">&quot;Device is no longer available&quot;</span>);
+                                <span class="macro">debug!</span>(<span class="string">"Device is no longer available"</span>);
                                 <span class="kw">return </span><span class="prelude-val">Ok</span>(());
                             }
                         }
                         <span class="prelude-val">Some</span>(event) = bluez_owner_changed.next() =&gt; {
-                            <span class="kw">let </span>args = event.args().error(<span class="string">&quot;Failed to get the args&quot;</span>)<span class="question-mark">?</span>;
+                            <span class="kw">let </span>args = event.args().error(<span class="string">"Failed to get the args"</span>)<span class="question-mark">?</span>;
                             <span class="kw">if </span>args.new_owner.is_none() {
                                 <span class="self">self</span>.device = <span class="prelude-val">None</span>;
-                                <span class="macro">debug!</span>(<span class="string">&quot;org.bluez disappeared&quot;</span>);
+                                <span class="macro">debug!</span>(<span class="string">"org.bluez disappeared"</span>);
                                 <span class="kw">return </span><span class="prelude-val">Ok</span>(());
                             }
                         }
@@ -743,7 +744,7 @@
             device.device.icon(),
             device.device.name(),
         ) <span class="kw">else </span>{
-            <span class="macro">debug!</span>(<span class="string">&quot;failed to fetch device info, assuming device or bluez disappeared&quot;</span>);
+            <span class="macro">debug!</span>(<span class="string">"failed to fetch device info, assuming device or bluez disappeared"</span>);
             <span class="self">self</span>.device = <span class="prelude-val">None</span>;
             <span class="kw">return </span><span class="prelude-val">None</span>;
         };
@@ -751,11 +752,11 @@
         <span class="prelude-val">Some</span>(DeviceInfo {
             connected,
             icon: <span class="kw">match </span>icon.as_str() {
-                <span class="string">&quot;audio-card&quot; </span>| <span class="string">&quot;audio-headset&quot; </span>| <span class="string">&quot;audio-headphones&quot; </span>=&gt; <span class="string">&quot;headphones&quot;</span>,
-                <span class="string">&quot;input-gaming&quot; </span>=&gt; <span class="string">&quot;joystick&quot;</span>,
-                <span class="string">&quot;input-keyboard&quot; </span>=&gt; <span class="string">&quot;keyboard&quot;</span>,
-                <span class="string">&quot;input-mouse&quot; </span>=&gt; <span class="string">&quot;mouse&quot;</span>,
-                <span class="kw">_ </span>=&gt; <span class="string">&quot;bluetooth&quot;</span>,
+                <span class="string">"audio-card" </span>| <span class="string">"audio-headset" </span>| <span class="string">"audio-headphones" </span>=&gt; <span class="string">"headphones"</span>,
+                <span class="string">"input-gaming" </span>=&gt; <span class="string">"joystick"</span>,
+                <span class="string">"input-keyboard" </span>=&gt; <span class="string">"keyboard"</span>,
+                <span class="string">"input-mouse" </span>=&gt; <span class="string">"mouse"</span>,
+                <span class="kw">_ </span>=&gt; <span class="string">"bluetooth"</span>,
             },
             name,
             battery_percentage: device.battery.percentage().<span class="kw">await</span>.ok(),
@@ -765,27 +766,27 @@
 
 <span class="kw">impl </span>Device {
     <span class="kw">async fn </span>try_find(
-        manager_proxy: <span class="kw-2">&amp;</span>ObjectManagerProxy&lt;<span class="lifetime">&#39;_</span>&gt;,
+        manager_proxy: <span class="kw-2">&amp;</span>ObjectManagerProxy&lt;<span class="lifetime">'_</span>&gt;,
         mac: <span class="kw-2">&amp;</span>str,
         adapter_mac: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt;,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>&gt;&gt; {
         <span class="kw">let </span><span class="prelude-val">Ok</span>(devices) = manager_proxy.get_managed_objects().<span class="kw">await else </span>{
-            <span class="macro">debug!</span>(<span class="string">&quot;could not get the list of managed objects&quot;</span>);
+            <span class="macro">debug!</span>(<span class="string">"could not get the list of managed objects"</span>);
             <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
         };
 
-        <span class="macro">debug!</span>(<span class="string">&quot;all managed devices: {:?}&quot;</span>, devices);
+        <span class="macro">debug!</span>(<span class="string">"all managed devices: {:?}"</span>, devices);
 
         <span class="kw">let </span>root_object: <span class="prelude-ty">Option</span>&lt;String&gt; = <span class="kw">match </span>adapter_mac {
             <span class="prelude-val">Some</span>(adapter_mac) =&gt; {
                 <span class="kw">let </span><span class="kw-2">mut </span>adapter_path = <span class="prelude-val">None</span>;
                 <span class="kw">for </span>(path, interfaces) <span class="kw">in </span><span class="kw-2">&amp;</span>devices {
-                    <span class="kw">let </span>adapter_interface = <span class="kw">match </span>interfaces.get(<span class="string">&quot;org.bluez.Adapter1&quot;</span>) {
+                    <span class="kw">let </span>adapter_interface = <span class="kw">match </span>interfaces.get(<span class="string">"org.bluez.Adapter1"</span>) {
                         <span class="prelude-val">Some</span>(i) =&gt; i,
                         <span class="prelude-val">None </span>=&gt; <span class="kw">continue</span>, <span class="comment">// Not an adapter
                     </span>};
                     <span class="kw">let </span>addr: <span class="kw-2">&amp;</span>str = adapter_interface
-                        .get(<span class="string">&quot;Address&quot;</span>)
+                        .get(<span class="string">"Address"</span>)
                         .and_then(|a| a.downcast_ref())
                         .unwrap();
                     <span class="kw">if </span>addr == adapter_mac {
@@ -794,14 +795,14 @@
                     }
                 }
                 <span class="kw">match </span>adapter_path {
-                    <span class="prelude-val">Some</span>(path) =&gt; <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">&quot;{}/&quot;</span>, path.as_str())),
+                    <span class="prelude-val">Some</span>(path) =&gt; <span class="prelude-val">Some</span>(<span class="macro">format!</span>(<span class="string">"{}/"</span>, path.as_str())),
                     <span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
                 }
             }
             <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
         };
 
-        <span class="macro">debug!</span>(<span class="string">&quot;root object: {:?}&quot;</span>, root_object);
+        <span class="macro">debug!</span>(<span class="string">"root object: {:?}"</span>, root_object);
 
         <span class="kw">for </span>(path, interfaces) <span class="kw">in </span>devices {
             <span class="kw">if let </span><span class="prelude-val">Some</span>(root) = <span class="kw-2">&amp;</span>root_object {
@@ -810,29 +811,29 @@
                 }
             }
 
-            <span class="kw">let </span><span class="prelude-val">Some</span>(device_interface) = interfaces.get(<span class="string">&quot;org.bluez.Device1&quot;</span>) <span class="kw">else </span>{
+            <span class="kw">let </span><span class="prelude-val">Some</span>(device_interface) = interfaces.get(<span class="string">"org.bluez.Device1"</span>) <span class="kw">else </span>{
                 <span class="comment">// Not a device
                 </span><span class="kw">continue</span>;
             };
 
             <span class="kw">let </span>addr: <span class="kw-2">&amp;</span>str = device_interface
-                .get(<span class="string">&quot;Address&quot;</span>)
+                .get(<span class="string">"Address"</span>)
                 .and_then(|a| a.downcast_ref())
                 .unwrap();
             <span class="kw">if </span>addr != mac {
                 <span class="kw">continue</span>;
             }
 
-            <span class="macro">debug!</span>(<span class="string">&quot;Found device with path {:?}&quot;</span>, path);
+            <span class="macro">debug!</span>(<span class="string">"Found device with path {:?}"</span>, path);
 
             <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="self">Self </span>{
                 props: PropertiesProxy::builder(manager_proxy.connection())
-                    .destination(<span class="string">&quot;org.bluez&quot;</span>)
+                    .destination(<span class="string">"org.bluez"</span>)
                     .and_then(|x| x.path(path.clone()))
                     .unwrap()
                     .build()
                     .<span class="kw">await
-                    </span>.error(<span class="string">&quot;Failed to create PropertiesProxy&quot;</span>)<span class="question-mark">?</span>,
+                    </span>.error(<span class="string">"Failed to create PropertiesProxy"</span>)<span class="question-mark">?</span>,
                 device: Device1Proxy::builder(manager_proxy.connection())
                     <span class="comment">// No caching because https://github.com/greshake/i3status-rust/issues/1565#issuecomment-1379308681
                     </span>.cache_properties(zbus::CacheProperties::No)
@@ -840,23 +841,23 @@
                     .unwrap()
                     .build()
                     .<span class="kw">await
-                    </span>.error(<span class="string">&quot;Failed to create Device1Proxy&quot;</span>)<span class="question-mark">?</span>,
+                    </span>.error(<span class="string">"Failed to create Device1Proxy"</span>)<span class="question-mark">?</span>,
                 battery: Battery1Proxy::builder(manager_proxy.connection())
                     .cache_properties(zbus::CacheProperties::No)
                     .path(path)
                     .unwrap()
                     .build()
                     .<span class="kw">await
-                    </span>.error(<span class="string">&quot;Failed to create Battery1Proxy&quot;</span>)<span class="question-mark">?</span>,
+                    </span>.error(<span class="string">"Failed to create Battery1Proxy"</span>)<span class="question-mark">?</span>,
             }));
         }
 
-        <span class="macro">debug!</span>(<span class="string">&quot;No device found&quot;</span>);
+        <span class="macro">debug!</span>(<span class="string">"No device found"</span>);
         <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
     }
 }
 
-<span class="attr">#[zbus::dbus_proxy(interface = <span class="string">&quot;org.bluez.Device1&quot;</span>, default_service = <span class="string">&quot;org.bluez&quot;</span>)]
+<span class="attr">#[zbus::dbus_proxy(interface = <span class="string">"org.bluez.Device1"</span>, default_service = <span class="string">"org.bluez"</span>)]
 </span><span class="kw">trait </span>Device1 {
     <span class="kw">fn </span>connect(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;()&gt;;
     <span class="kw">fn </span>disconnect(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;()&gt;;
@@ -871,7 +872,7 @@
     </span><span class="kw">fn </span>icon(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;String&gt;;
 }
 
-<span class="attr">#[zbus::dbus_proxy(interface = <span class="string">&quot;org.bluez.Battery1&quot;</span>, default_service = <span class="string">&quot;org.bluez&quot;</span>)]
+<span class="attr">#[zbus::dbus_proxy(interface = <span class="string">"org.bluez.Battery1"</span>, default_service = <span class="string">"org.bluez"</span>)]
 </span><span class="kw">trait </span>Battery1 {
     <span class="attr">#[dbus_proxy(property)]
     </span><span class="kw">fn </span>percentage(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;u8&gt;;

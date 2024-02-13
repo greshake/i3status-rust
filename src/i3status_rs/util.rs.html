@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/util.rs`."><title>util.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0 (82e1608df 2023-12-21)" data-channel="1.75.0" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/util.rs`."><title>util.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-ac92e1bbe349e143.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0 (07dca489a 2024-02-04)" data-channel="1.76.0" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -298,7 +299,7 @@
 
     <span class="comment">// Try XDG_CONFIG_HOME (e.g. `~/.config`)
     </span><span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">mut </span>xdg_config) = config_dir() {
-        xdg_config.push(<span class="string">&quot;i3status-rust&quot;</span>);
+        xdg_config.push(<span class="string">"i3status-rust"</span>);
         <span class="kw">if let </span><span class="prelude-val">Some</span>(subdir) = subdir {
             xdg_config.push(subdir);
         }
@@ -310,7 +311,7 @@
 
     <span class="comment">// Try XDG_DATA_HOME (e.g. `~/.local/share/`)
     </span><span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">mut </span>xdg_data) = data_dir() {
-        xdg_data.push(<span class="string">&quot;i3status-rust&quot;</span>);
+        xdg_data.push(<span class="string">"i3status-rust"</span>);
         <span class="kw">if let </span><span class="prelude-val">Some</span>(subdir) = subdir {
             xdg_data.push(subdir);
         }
@@ -321,7 +322,7 @@
     }
 
     <span class="comment">// Try `/usr/share/`
-    </span><span class="kw">let </span><span class="kw-2">mut </span>usr_share_path = PathBuf::from(<span class="string">&quot;/usr/share/i3status-rust&quot;</span>);
+    </span><span class="kw">let </span><span class="kw-2">mut </span>usr_share_path = PathBuf::from(<span class="string">"/usr/share/i3status-rust"</span>);
     <span class="kw">if let </span><span class="prelude-val">Some</span>(subdir) = subdir {
         usr_share_path.push(subdir);
     }
@@ -351,13 +352,13 @@
 <span class="kw">pub async fn </span>new_dbus_connection() -&gt; <span class="prelude-ty">Result</span>&lt;zbus::Connection&gt; {
     zbus::Connection::session()
         .<span class="kw">await
-        </span>.error(<span class="string">&quot;Failed to open DBus session connection&quot;</span>)
+        </span>.error(<span class="string">"Failed to open DBus session connection"</span>)
 }
 
 <span class="kw">pub async fn </span>new_system_dbus_connection() -&gt; <span class="prelude-ty">Result</span>&lt;zbus::Connection&gt; {
     zbus::Connection::system()
         .<span class="kw">await
-        </span>.error(<span class="string">&quot;Failed to open DBus system connection&quot;</span>)
+        </span>.error(<span class="string">"Failed to open DBus system connection"</span>)
 }
 
 <span class="kw">pub fn </span>deserialize_toml_file&lt;T, P&gt;(path: P) -&gt; <span class="prelude-ty">Result</span>&lt;T&gt;
@@ -368,7 +369,7 @@
     <span class="kw">let </span>path = path.as_ref();
 
     <span class="kw">let </span>contents = std::fs::read_to_string(path)
-        .or_error(|| <span class="macro">format!</span>(<span class="string">&quot;Failed to read file: {}&quot;</span>, path.display()))<span class="question-mark">?</span>;
+        .or_error(|| <span class="macro">format!</span>(<span class="string">"Failed to read file: {}"</span>, path.display()))<span class="question-mark">?</span>;
 
     toml::from_str(<span class="kw-2">&amp;</span>contents).map_err(|err| {
         <span class="kw">let </span>location_msg = err
@@ -376,13 +377,13 @@
             .map(|span| {
                 <span class="kw">let </span>line = <span class="number">1 </span>+ contents.as_bytes()[..(span.start)]
                     .iter()
-                    .filter(|b| <span class="kw-2">**</span>b == <span class="string">b&#39;\n&#39;</span>)
+                    .filter(|b| <span class="kw-2">**</span>b == <span class="string">b'\n'</span>)
                     .count();
-                <span class="macro">format!</span>(<span class="string">&quot; at line {line}&quot;</span>)
+                <span class="macro">format!</span>(<span class="string">" at line {line}"</span>)
             })
             .unwrap_or_default();
         Error::new(<span class="macro">format!</span>(
-            <span class="string">&quot;Failed to deserialize TOML file {}{}: {}&quot;</span>,
+            <span class="string">"Failed to deserialize TOML file {}{}: {}"</span>,
             path.display(),
             location_msg,
             err.message()
@@ -398,14 +399,14 @@
 }
 
 <span class="kw">pub async fn </span>has_command(command: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;bool&gt; {
-    Command::new(<span class="string">&quot;sh&quot;</span>)
+    Command::new(<span class="string">"sh"</span>)
         .args([
-            <span class="string">&quot;-c&quot;</span>,
-            <span class="macro">format!</span>(<span class="string">&quot;command -v {command} &gt;/dev/null 2&gt;&amp;1&quot;</span>).as_ref(),
+            <span class="string">"-c"</span>,
+            <span class="macro">format!</span>(<span class="string">"command -v {command} &gt;/dev/null 2&gt;&amp;1"</span>).as_ref(),
         ])
         .status()
         .<span class="kw">await
-        </span>.or_error(|| <span class="macro">format!</span>(<span class="string">&quot;Failed to check {command} presence&quot;</span>))
+        </span>.or_error(|| <span class="macro">format!</span>(<span class="string">"Failed to check {command} presence"</span>))
         .map(|status| status.success())
 }
 
@@ -413,10 +414,10 @@
 ///
 /// ```ignore
 /// let opt = Some(1);
-/// let map: HashMap&lt;&amp;&#39;static str, String&gt; = map! {
-///     &quot;key&quot; =&gt; &quot;value&quot;,
-///     [if true] &quot;hello&quot; =&gt; &quot;world&quot;,
-///     [if let Some(x) = opt] &quot;opt&quot; =&gt; x.to_string(),
+/// let map: HashMap&lt;&amp;'static str, String&gt; = map! {
+///     "key" =&gt; "value",
+///     [if true] "hello" =&gt; "world",
+///     [if let Some(x) = opt] "opt" =&gt; x.to_string(),
 /// };
 /// ```
 </span><span class="attr">#[macro_export]
@@ -478,8 +479,8 @@
 <span class="kw">pub fn </span>format_bar_graph(content: <span class="kw-2">&amp;</span>[f64]) -&gt; String {
     <span class="comment">// (x * one eighth block) https://en.wikipedia.org/wiki/Block_Elements
     </span><span class="kw">static </span>BARS: [char; <span class="number">8</span>] = [
-        <span class="string">&#39;\u{2581}&#39;</span>, <span class="string">&#39;\u{2582}&#39;</span>, <span class="string">&#39;\u{2583}&#39;</span>, <span class="string">&#39;\u{2584}&#39;</span>, <span class="string">&#39;\u{2585}&#39;</span>, <span class="string">&#39;\u{2586}&#39;</span>, <span class="string">&#39;\u{2587}&#39;</span>,
-        <span class="string">&#39;\u{2588}&#39;</span>,
+        <span class="string">'\u{2581}'</span>, <span class="string">'\u{2582}'</span>, <span class="string">'\u{2583}'</span>, <span class="string">'\u{2584}'</span>, <span class="string">'\u{2585}'</span>, <span class="string">'\u{2586}'</span>, <span class="string">'\u{2587}'</span>,
+        <span class="string">'\u{2588}'</span>,
     ];
 
     <span class="comment">// Find min and max
@@ -530,22 +531,22 @@
     <span class="attr">#[tokio::test]
     </span><span class="kw">async fn </span>test_has_command_ok() {
         <span class="comment">// we assume sh is always available
-        </span><span class="macro">assert!</span>(has_command(<span class="string">&quot;sh&quot;</span>).<span class="kw">await</span>.unwrap());
+        </span><span class="macro">assert!</span>(has_command(<span class="string">"sh"</span>).<span class="kw">await</span>.unwrap());
     }
 
     <span class="attr">#[tokio::test]
     </span><span class="kw">async fn </span>test_has_command_err() {
         <span class="comment">// we assume thequickbrownfoxjumpsoverthelazydog command does not exist
-        </span><span class="macro">assert!</span>(!has_command(<span class="string">&quot;thequickbrownfoxjumpsoverthelazydog&quot;</span>)
+        </span><span class="macro">assert!</span>(!has_command(<span class="string">"thequickbrownfoxjumpsoverthelazydog"</span>)
             .<span class="kw">await
             </span>.unwrap());
     }
 
     <span class="attr">#[test]
     </span><span class="kw">fn </span>test_flags() {
-        <span class="macro">assert!</span>(country_flag_from_iso_code(<span class="string">&quot;ES&quot;</span>) == <span class="string">&quot;🇪🇸&quot;</span>);
-        <span class="macro">assert!</span>(country_flag_from_iso_code(<span class="string">&quot;US&quot;</span>) == <span class="string">&quot;🇺🇸&quot;</span>);
-        <span class="macro">assert!</span>(country_flag_from_iso_code(<span class="string">&quot;USA&quot;</span>) == <span class="string">&quot;USA&quot;</span>);
+        <span class="macro">assert!</span>(country_flag_from_iso_code(<span class="string">"ES"</span>) == <span class="string">"🇪🇸"</span>);
+        <span class="macro">assert!</span>(country_flag_from_iso_code(<span class="string">"US"</span>) == <span class="string">"🇺🇸"</span>);
+        <span class="macro">assert!</span>(country_flag_from_iso_code(<span class="string">"USA"</span>) == <span class="string">"USA"</span>);
     }
 }
 </code></pre></div></section></main></body></html>
