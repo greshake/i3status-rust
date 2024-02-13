@@ -508,6 +508,15 @@
 <a href="#507" id="507">507</a>
 <a href="#508" id="508">508</a>
 <a href="#509" id="509">509</a>
+<a href="#510" id="510">510</a>
+<a href="#511" id="511">511</a>
+<a href="#512" id="512">512</a>
+<a href="#513" id="513">513</a>
+<a href="#514" id="514">514</a>
+<a href="#515" id="515">515</a>
+<a href="#516" id="516">516</a>
+<a href="#517" id="517">517</a>
+<a href="#518" id="518">518</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>libc::c_void;
 <span class="kw">use </span>libpulse_binding::callbacks::ListResult;
 <span class="kw">use </span>libpulse_binding::context::{
@@ -538,6 +547,15 @@
     Mutex::new(Cow::Borrowed(<span class="string">"@DEFAULT_SOURCE@"</span>));
 <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">static </span>DEFAULT_SINK: Mutex&lt;Cow&lt;<span class="lifetime">'static</span>, str&gt;&gt; =
     Mutex::new(Cow::Borrowed(<span class="string">"@DEFAULT_SINK@"</span>));
+
+<span class="kw">impl </span>DeviceKind {
+    <span class="kw">pub fn </span>default_name(<span class="self">self</span>) -&gt; Cow&lt;<span class="lifetime">'static</span>, str&gt; {
+        <span class="kw">match </span><span class="self">self </span>{
+            <span class="self">Self</span>::Sink =&gt; DEFAULT_SINK.lock().unwrap().clone(),
+            <span class="self">Self</span>::Source =&gt; DEFAULT_SOURCE.lock().unwrap().clone(),
+        }
+    }
+}
 
 <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct </span>Device {
     name: <span class="prelude-ty">Option</span>&lt;String&gt;,
