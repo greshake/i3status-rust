@@ -195,6 +195,20 @@ where
 #[derive(Debug, Clone)]
 pub struct SerdeRegex(pub regex::Regex);
 
+impl PartialEq for SerdeRegex {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.as_str() == other.0.as_str()
+    }
+}
+
+impl Eq for SerdeRegex {}
+
+impl std::hash::Hash for SerdeRegex {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.0.as_str().hash(state);
+    }
+}
+
 impl<'de> Deserialize<'de> for SerdeRegex {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
