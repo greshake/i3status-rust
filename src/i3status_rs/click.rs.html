@@ -148,6 +148,11 @@
 <a href="#147" id="147">147</a>
 <a href="#148" id="148">148</a>
 <a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::fmt;
 
 <span class="kw">use </span>serde::de::{<span class="self">self</span>, Deserializer, Visitor};
@@ -156,6 +161,7 @@
 <span class="kw">use </span><span class="kw">crate</span>::errors::{ErrorContext, <span class="prelude-ty">Result</span>};
 <span class="kw">use </span><span class="kw">crate</span>::protocol::i3bar_event::I3BarEvent;
 <span class="kw">use </span><span class="kw">crate</span>::subprocess::{spawn_shell, spawn_shell_sync};
+<span class="kw">use </span><span class="kw">crate</span>::wrappers::SerdeRegex;
 
 <span class="doccomment">/// Can be one of `left`, `middle`, `right`, `up`, `down`, `forward`, `back` or `double_left`.
 ///
@@ -188,7 +194,11 @@
         <span class="kw">let </span><span class="prelude-val">Some</span>(entry) = <span class="self">self
             </span>.<span class="number">0
             </span>.iter()
-            .find(|e| e.button == event.button &amp;&amp; e.widget == event.instance)
+            .filter(|e| e.button == event.button)
+            .find(|e| <span class="kw">match </span><span class="kw-2">&amp;</span>e.widget {
+                <span class="prelude-val">None </span>=&gt; event.instance.is_none(),
+                <span class="prelude-val">Some</span>(re) =&gt; re.<span class="number">0</span>.is_match(event.instance.as_deref().unwrap_or(<span class="string">"block"</span>)),
+            })
         <span class="kw">else </span>{
             <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
         };
@@ -216,7 +226,7 @@
     </span>button: MouseButton,
     <span class="doccomment">/// To which part of the block this entry applies
     </span><span class="attr">#[serde(default)]
-    </span>widget: <span class="prelude-ty">Option</span>&lt;String&gt;,
+    </span>widget: <span class="prelude-ty">Option</span>&lt;SerdeRegex&gt;,
     <span class="doccomment">/// Which command to run
     </span><span class="attr">#[serde(default)]
     </span>cmd: <span class="prelude-ty">Option</span>&lt;String&gt;,
