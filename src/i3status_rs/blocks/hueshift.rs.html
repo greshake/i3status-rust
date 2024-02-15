@@ -662,7 +662,7 @@
         </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
     }
     <span class="kw">async fn </span>update(<span class="kw-2">&amp;mut </span><span class="self">self</span>, temp: u16) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-        spawn_shell(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"killall gammastep; gammastep -O {temp} -P &amp;"</span>,))
+        spawn_shell(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"pkill gammastep; gammastep -O {temp} -P &amp;"</span>,))
             .error(<span class="string">"Failed to set new color temperature using gammastep."</span>)
     }
     <span class="kw">async fn </span>reset(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
@@ -697,7 +697,7 @@
         // night temperature. wlsunset dose not allow for day and night
         // temperatures to be the same, so increment the day temperature.
         </span>spawn_shell(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
-            <span class="string">"killall wlsunset; wlsunset -T {} -t {} &amp;"</span>,
+            <span class="string">"pkill wlsunset; wlsunset -T {} -t {} &amp;"</span>,
             temp + <span class="number">1</span>,
             temp
         ))
@@ -712,7 +712,7 @@
         //     ^ results in sun_condition == POLAR_NIGHT at time of testing
         // With these defaults, this results in the the color temperature
         // getting set to 4000K.
-        </span>spawn_process(<span class="string">"killall"</span>, <span class="kw-2">&amp;</span>[<span class="string">"wlsunset"</span>])
+        </span>spawn_process(<span class="string">"pkill"</span>, <span class="kw-2">&amp;</span>[<span class="string">"wlsunset"</span>])
             .error(<span class="string">"Failed to set new color temperature using wlsunset."</span>)
     }
     <span class="kw">async fn </span>receive_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;u16&gt; {
