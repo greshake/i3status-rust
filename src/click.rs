@@ -6,6 +6,7 @@ use serde::Deserialize;
 use crate::errors::{ErrorContext, Result};
 use crate::protocol::i3bar_event::I3BarEvent;
 use crate::subprocess::{spawn_shell, spawn_shell_sync};
+use crate::wrappers::SerdeRegex;
 
 /// Can be one of `left`, `middle`, `right`, `up`, `down`, `forward`, `back` or `double_left`.
 ///
@@ -38,7 +39,11 @@ impl ClickHandler {
         let Some(entry) = self
             .0
             .iter()
-            .find(|e| e.button == event.button && e.widget == event.instance)
+            .filter(|e| e.button == event.button)
+            .find(|e| match &e.widget {
+                None => event.instance.is_none(),
+                Some(re) => re.0.is_match(event.instance.as_deref().unwrap_or("block")),
+            })
         else {
             return Ok(None);
         };
@@ -66,7 +71,7 @@ pub struct ClickConfigEntry {
     button: MouseButton,
     /// To which part of the block this entry applies
     #[serde(default)]
-    widget: Option<String>,
+    widget: Option<SerdeRegex>,
     /// Which command to run
     #[serde(default)]
     cmd: Option<String>,
