@@ -340,19 +340,6 @@
 <a href="#339" id="339">339</a>
 <a href="#340" id="340">340</a>
 <a href="#341" id="341">341</a>
-<a href="#342" id="342">342</a>
-<a href="#343" id="343">343</a>
-<a href="#344" id="344">344</a>
-<a href="#345" id="345">345</a>
-<a href="#346" id="346">346</a>
-<a href="#347" id="347">347</a>
-<a href="#348" id="348">348</a>
-<a href="#349" id="349">349</a>
-<a href="#350" id="350">350</a>
-<a href="#351" id="351">351</a>
-<a href="#352" id="352">352</a>
-<a href="#353" id="353">353</a>
-<a href="#354" id="354">354</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Volume level
 //!
 //! This block displays the volume level (according to PulseAudio or ALSA). Right click to toggle mute, scroll to adjust volume.
@@ -450,20 +437,11 @@
 </span><span class="kw">mod </span>pulseaudio;
 
 <span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+<span class="kw">use </span><span class="kw">crate</span>::wrappers::SerdeRegex;
+<span class="kw">use </span>indexmap::IndexMap;
 <span class="kw">use </span>regex::Regex;
-<span class="kw">use </span>serde_with::{serde_as, serde_conv, Map};
 
-<span class="comment">// A conversion adapter that is used to convert Regex to String and vice versa
-// when serializing or deserializing using serde.
-</span><span class="macro">serde_conv!</span>(
-    RegexAsString,
-    Regex,
-    |regex: <span class="kw-2">&amp;</span>Regex| regex.as_str().to_string(),
-    |value: String| Regex::new(<span class="kw-2">&amp;</span>value)
-);
-
-<span class="attr">#[serde_as]
-#[derive(Deserialize, Debug, SmartDefault)]
+<span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
     <span class="kw">pub </span>driver: SoundDriver,
@@ -476,17 +454,15 @@
     <span class="kw">pub </span>format: FormatConfig,
     <span class="kw">pub </span>headphones_indicator: bool,
     <span class="kw">pub </span>show_volume_when_muted: bool,
-    <span class="attr">#[serde_as(<span class="kw">as </span>= <span class="string">"Option&lt;Map&lt;_, _&gt;&gt;"</span>)]
-    </span><span class="kw">pub </span>mappings: <span class="prelude-ty">Option</span>&lt;Vec&lt;(String, String)&gt;&gt;,
+    <span class="kw">pub </span>mappings: <span class="prelude-ty">Option</span>&lt;IndexMap&lt;String, String&gt;&gt;,
     <span class="attr">#[default(<span class="bool-val">true</span>)]
     </span><span class="kw">pub </span>mappings_use_regex: bool,
     <span class="kw">pub </span>max_vol: <span class="prelude-ty">Option</span>&lt;u32&gt;,
-    <span class="attr">#[serde_as(<span class="kw">as </span>= <span class="string">"Map&lt;RegexAsString, _&gt;"</span>)]
-    </span><span class="kw">pub </span>active_port_mappings: Vec&lt;(Regex, String)&gt;,
+    <span class="kw">pub </span>active_port_mappings: IndexMap&lt;SerdeRegex, String&gt;,
 }
 
 <span class="kw">enum </span>Mappings&lt;<span class="lifetime">'a</span>&gt; {
-    Exact(<span class="kw-2">&amp;</span><span class="lifetime">'a </span>[(String, String)]),
+    Exact(<span class="kw-2">&amp;</span><span class="lifetime">'a </span>IndexMap&lt;String, String&gt;),
     Regex(Vec&lt;(Regex, <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str)&gt;),
 }
 
@@ -604,9 +580,7 @@
                 }
             }
             <span class="prelude-val">Some</span>(Mappings::Exact(m)) =&gt; {
-                <span class="kw">if let </span><span class="prelude-val">Some</span>((<span class="kw">_</span>, mapped)) =
-                    m.iter().find(|<span class="kw-2">&amp;</span>(exact, <span class="kw">_</span>)| output_name == exact.as_str())
-                {
+                <span class="kw">if let </span><span class="prelude-val">Some</span>(mapped) = m.get(<span class="kw-2">&amp;</span>output_name) {
                     output_name = mapped.clone();
                 }
             }
@@ -616,9 +590,9 @@
             <span class="kw">if let </span><span class="prelude-val">Some</span>((regex, mapped)) = config
                 .active_port_mappings
                 .iter()
-                .find(|(regex, <span class="kw">_</span>)| regex.is_match(ap))
+                .find(|(regex, <span class="kw">_</span>)| regex.<span class="number">0</span>.is_match(ap))
             {
-                <span class="kw">let </span>mapped = regex.replace(ap, mapped);
+                <span class="kw">let </span>mapped = regex.<span class="number">0</span>.replace(ap, mapped);
                 <span class="kw">if </span>mapped.is_empty() {
                     active_port = <span class="prelude-val">None</span>;
                 } <span class="kw">else </span>{
