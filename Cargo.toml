@@ -60,6 +60,7 @@ nix = { version = "0.29", features = ["fs", "process"] }
 nom = "7.1.2"
 notmuch = { version = "0.8", optional = true }
 oauth2 = { version = "4.4.2" }
+num-traits = "0.2"
 pipewire = { version = "0.8", default-features = false, optional = true }
 quick-xml = { version = "0.37", features = ["serialize"] }
 regex = "1.5"
