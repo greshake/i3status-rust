@@ -57,6 +57,7 @@ neli-wifi = { version = "0.6", features = ["async"] }
 nix = { version = "0.27", features = ["fs", "process"] }
 nom = "7.1.2"
 notmuch = { version = "0.8", optional = true }
+num-traits = "0.2"
 once_cell = "1"
 pipewire = { version = "0.8", default-features = false, optional = true }
 regex = "1.5"
