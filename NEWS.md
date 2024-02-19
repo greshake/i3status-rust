@@ -1,4 +1,4 @@
-# i3status-rust 0.33.0 [unreleased]
+# i3status-rust 0.33.0
 
 ### Breaking Changes
 
