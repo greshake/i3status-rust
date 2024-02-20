@@ -49,7 +49,7 @@
 //! # Icons Used
 //! - `time`
 
-use chrono::Utc;
+use chrono::{Timelike, Utc};
 use chrono_tz::Tz;
 
 use super::prelude::*;
@@ -96,6 +96,14 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut timezone = timezone_iter.next();
 
     let mut timer = config.interval.timer();
+
+    let interval_seconds = config.interval.seconds();
+    if interval_seconds <= 60 {
+        let phase = Utc::now().second() as u64 % interval_seconds;
+        if phase != 0 {
+            timer.reset_after(Duration::from_secs(interval_seconds - phase));
+        }
+    }
 
     loop {
         let mut widget = Widget::new().with_format(format.clone());
