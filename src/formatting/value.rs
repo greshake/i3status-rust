@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::time::Duration;
 
 use super::formatter;
 use super::unit::Unit;
@@ -18,6 +19,7 @@ pub enum ValueInner {
     Icon(Cow<'static, str>, Option<f64>),
     Number { val: f64, unit: Unit },
     Datetime(DateTime<Utc>, Option<Tz>),
+    Duration(Duration),
     Flag,
 }
 
@@ -28,6 +30,7 @@ impl ValueInner {
             ValueInner::Icon(..) => "Icon",
             ValueInner::Number { .. } => "Number",
             ValueInner::Datetime(..) => "Datetime",
+            ValueInner::Duration(..) => "Duration",
             ValueInner::Flag => "Flag",
         }
     }
@@ -65,6 +68,10 @@ impl Value {
 
     pub fn datetime(datetime: DateTime<Utc>, tz: Option<Tz>) -> Self {
         Self::new(ValueInner::Datetime(datetime, tz))
+    }
+
+    pub fn duration(duration: Duration) -> Self {
+        Self::new(ValueInner::Duration(duration))
     }
 
     pub fn icon<S>(name: S) -> Self
@@ -146,6 +153,7 @@ impl Value {
             ValueInner::Text(_) | ValueInner::Icon(..) => &formatter::DEFAULT_STRING_FORMATTER,
             ValueInner::Number { .. } => &formatter::DEFAULT_NUMBER_FORMATTER,
             ValueInner::Datetime { .. } => &*formatter::DEFAULT_DATETIME_FORMATTER,
+            ValueInner::Duration { .. } => &formatter::DEFAULT_DURATION_FORMATTER,
             ValueInner::Flag => &formatter::DEFAULT_FLAG_FORMATTER,
         }
     }

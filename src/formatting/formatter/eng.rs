@@ -4,7 +4,6 @@ use crate::formatting::unit::Unit;
 use super::*;
 
 const DEFAULT_NUMBER_WIDTH: usize = 2;
-const DEFAULT_NUMBER_PAD_WITH: char = ' ';
 
 // TODO: split those defaults
 pub const DEFAULT_NUMBER_FORMATTER: EngFormatter = EngFormatter {
