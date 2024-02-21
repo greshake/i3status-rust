@@ -95,7 +95,11 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     let mut timezone = timezone_iter.next();
 
-    let mut timer = config.interval.timer();
+    let mut timer = tokio::time::interval_at(
+        tokio::time::Instant::now() + config.interval.0,
+        config.interval.0,
+    );
+    timer.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
 
     let interval_seconds = config.interval.seconds();
     if interval_seconds <= 60 {
