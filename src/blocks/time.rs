@@ -101,19 +101,22 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     );
     timer.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
 
+    let interval_seconds = config.interval.seconds();
+
     loop {
         let mut widget = Widget::new().with_format(format.clone());
+        let now = Utc::now();
 
         widget.set_values(map! {
             "icon" => Value::icon("time"),
-            "timestamp" => Value::datetime(Utc::now(), timezone.copied())
+            "timestamp" => Value::datetime(now, timezone.copied())
         });
 
         api.set_widget(widget)?;
 
-        let phase = Utc::now().second() as u64 % config.interval.seconds();
+        let phase = now.second() as u64 % interval_seconds;
         if phase != 0 {
-            timer.reset_after(Duration::from_secs(config.interval.seconds() - phase));
+            timer.reset_after(Duration::from_secs(interval_seconds - phase));
         }
 
         tokio::select! {
