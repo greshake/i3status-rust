@@ -111,16 +111,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         api.set_widget(widget)?;
 
-        let tick = async {
-            let phase = Utc::now().second() as u64 % config.interval.seconds();
-            if phase != 0 {
-                timer.reset_after(Duration::from_secs(config.interval.seconds() - phase));
-            }
-            timer.tick().await;
-        };
+        let phase = Utc::now().second() as u64 % config.interval.seconds();
+        if phase != 0 {
+            timer.reset_after(Duration::from_secs(config.interval.seconds() - phase));
+        }
 
         tokio::select! {
-            _ = tick => (),
+            _ = timer.tick() => (),
             _ = api.wait_for_update_request() => (),
             Some(action) = actions.recv() => match action.as_ref() {
                 "next_timezone" => {
