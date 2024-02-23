@@ -123,6 +123,18 @@
 <a href="#122" id="122">122</a>
 <a href="#123" id="123">123</a>
 <a href="#124" id="124">124</a>
+<a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
+<a href="#127" id="127">127</a>
+<a href="#128" id="128">128</a>
+<a href="#129" id="129">129</a>
+<a href="#130" id="130">130</a>
+<a href="#131" id="131">131</a>
+<a href="#132" id="132">132</a>
+<a href="#133" id="133">133</a>
+<a href="#134" id="134">134</a>
+<a href="#135" id="135">135</a>
+<a href="#136" id="136">136</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! The current time.
 //!
 //! # Configuration
@@ -174,7 +186,7 @@
 //! # Icons Used
 //! - `time`
 
-</span><span class="kw">use </span>chrono::Utc;
+</span><span class="kw">use </span>chrono::{Timelike, Utc};
 <span class="kw">use </span>chrono_tz::Tz;
 
 <span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
@@ -220,17 +232,29 @@
 
     <span class="kw">let </span><span class="kw-2">mut </span>timezone = timezone_iter.next();
 
-    <span class="kw">let </span><span class="kw-2">mut </span>timer = config.interval.timer();
+    <span class="kw">let </span><span class="kw-2">mut </span>timer = tokio::time::interval_at(
+        tokio::time::Instant::now() + config.interval.<span class="number">0</span>,
+        config.interval.<span class="number">0</span>,
+    );
+    timer.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+
+    <span class="kw">let </span>interval_seconds = config.interval.seconds();
 
     <span class="kw">loop </span>{
         <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
+        <span class="kw">let </span>now = Utc::now();
 
         widget.set_values(<span class="macro">map! </span>{
             <span class="string">"icon" </span>=&gt; Value::icon(<span class="string">"time"</span>),
-            <span class="string">"timestamp" </span>=&gt; Value::datetime(Utc::now(), timezone.copied())
+            <span class="string">"timestamp" </span>=&gt; Value::datetime(now, timezone.copied())
         });
 
         api.set_widget(widget)<span class="question-mark">?</span>;
+
+        <span class="kw">let </span>phase = now.second() <span class="kw">as </span>u64 % interval_seconds;
+        <span class="kw">if </span>phase != <span class="number">0 </span>{
+            timer.reset_after(Duration::from_secs(interval_seconds - phase));
+        }
 
         <span class="macro">tokio::select! </span>{
             <span class="kw">_ </span>= timer.tick() =&gt; (),
