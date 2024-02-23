@@ -77,8 +77,8 @@ impl Driver for NordVpnDriver {
                 None => String::default(),
             };
             return Ok(Status::Connected {
-                country,
-                country_flag,
+                country: Some(country),
+                country_flag: Some(country_flag),
             });
         }
         Ok(Status::Error)

@@ -12,6 +12,7 @@
 //! `format_disconnected` | A string to customise the output in case the network is disconnected. See below for available placeholders. | `" VPN: $icon "`
 //! `state_connected` | The widgets state if the vpn network is connected. | `info`
 //! `state_disconnected` | The widgets state if the vpn network is disconnected | `idle`
+//! `wireguard_interface` | The wireguard interface name | `wg0`
 //!
 //! Placeholder | Value                                                     | Type   | Unit
 //! ------------|-----------------------------------------------------------|--------|------
@@ -31,6 +32,21 @@
 //!
 //! ## Mullvad
 //! Behind the scenes the mullvad driver uses the `mullvad` command line binary. In order for this to work properly the binary should be executable and mullvad daemon should be running.
+//!
+//! ## Wireguard
+//! Behind the scenes the wireguard driver uses the `wg` and `wg-quick` command line binaries.
+//! The binaries are executed through sudo, so you need to configure your sudoers file to allow password-less execution of these binaries.
+//!
+//! Sample sudoers file (`/etc/sudoers.d/wireguard`):
+//! ```text
+//! your_user ALL=(ALL:ALL) NOPASSWD: /usr/bin/wg-quick up wg0, \
+//!   /usr/bin/wg-quick down wg0, \
+//!   /usr/bin/wg show wg0
+//! ```
+//! Be careful to include the interface name, and make sure that the config file is owned by root and not writable by others.
+//! Otherwise the PreUp and PostDown scripts can be used to run arbitrary commands as root.
+//!
+//! The country and flag placeholders are not available when connected to Wireguard.
 //!
 //! # Example
 //!
@@ -70,6 +86,9 @@
 mod nordvpn;
 use nordvpn::NordVpnDriver;
 mod mullvad;
+mod wireguard;
+
+use crate::blocks::vpn::wireguard::WireguardDriver;
 use mullvad::MullvadDriver;
 
 use super::prelude::*;
@@ -80,6 +99,7 @@ pub enum DriverType {
     #[default]
     Nordvpn,
     Mullvad,
+    Wireguard,
 }
 
 #[derive(Deserialize, Debug, SmartDefault)]
@@ -92,12 +112,14 @@ pub struct Config {
     pub format_disconnected: FormatConfig,
     pub state_connected: State,
     pub state_disconnected: State,
+    #[default("wg0".into())]
+    pub wireguard_interface: String,
 }
 
 enum Status {
     Connected {
-        country: String,
-        country_flag: String,
+        country: Option<String>,
+        country_flag: Option<String>,
     },
     Disconnected,
     Error,
@@ -123,6 +145,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let driver: Box<dyn Driver> = match config.driver {
         DriverType::Nordvpn => Box::new(NordVpnDriver::new().await),
         DriverType::Mullvad => Box::new(MullvadDriver::new().await),
+        DriverType::Wireguard => {
+            Box::new(WireguardDriver::new(config.wireguard_interface.to_owned()).await)
+        }
     };
 
     loop {
@@ -136,10 +161,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 country_flag,
             } => {
                 widget.set_values(map!(
-                        "icon" => Value::icon(status.icon()),
-                        "country" => Value::text(country.to_string()),
-                        "flag" => Value::text(country_flag.to_string()),
-
+                    "icon" => Value::icon(status.icon()),
+                    [if let Some(c) = country] "country" => Value::text(c.into()),
+                    [if let Some(f) = country_flag] "flag" => Value::text(f.into()),
                 ));
                 widget.set_format(format_connected.clone());
                 config.state_connected
