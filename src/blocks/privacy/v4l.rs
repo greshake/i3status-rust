@@ -7,8 +7,6 @@ use std::path::PathBuf;
 
 use super::*;
 
-const V4L_DEVICES_PATH: &str = "/dev/v4l/by-id";
-
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(rename_all = "lowercase", deny_unknown_fields, default)]
 pub struct Config {
@@ -52,33 +50,33 @@ impl<'a> Monitor<'a> {
     async fn update_devices(&mut self) -> Result<bool> {
         let mut changes = false;
         let mut devices_to_remove: HashMap<PathBuf, WatchDescriptor> = self.devices.clone();
-        let mut sysfs_paths = read_dir(V4L_DEVICES_PATH)
-            .await
-            .error("Unable to read /dev/v4l/by-id")?;
-        while let Some(sysfs_path) = sysfs_paths
+        let mut sysfs_paths = read_dir("/dev").await.error("Unable to read /dev")?;
+        while let Some(entry) = sysfs_paths
             .next_entry()
             .await
-            .error("Unable to get next device in /dev/v4l/by-id")?
+            .error("Unable to get next device in /dev")?
         {
-            let sysfs_path = sysfs_path.path();
-            let link_path = PathBuf::from(V4L_DEVICES_PATH)
-                .join(sysfs_path.read_link().error("Could not read link")?)
-                .canonicalize()
-                .error("Failed to canonicalize path")?;
+            if let Some(file_name) = entry.file_name().to_str() {
+                if !file_name.starts_with("video") {
+                    continue;
+                }
+            }
 
-            if self.config.exclude_device.contains(&link_path) {
-                debug!("ignoring {:?}", link_path);
+            let sysfs_path = entry.path();
+
+            if self.config.exclude_device.contains(&sysfs_path) {
+                debug!("ignoring {:?}", sysfs_path);
                 continue;
             }
 
-            if self.devices.contains_key(&link_path) {
-                devices_to_remove.remove(&link_path);
+            if self.devices.contains_key(&sysfs_path) {
+                devices_to_remove.remove(&sysfs_path);
             } else {
-                debug!("adding watch {:?}", link_path);
+                debug!("adding watch {:?}", sysfs_path);
                 self.devices.insert(
-                    link_path.clone(),
+                    sysfs_path.clone(),
                     self.watches
-                        .add(&link_path, WatchMask::OPEN | WatchMask::CLOSE)
+                        .add(&sysfs_path, WatchMask::OPEN | WatchMask::CLOSE)
                         .error("Failed to watch data location")?,
                 );
                 changes = true;
