@@ -25,7 +25,7 @@ icu_calendar = ["dep:icu_datetime", "dep:icu_calendar", "dep:icu_locid"]
 debug_borders = []                # Make widgets' borders visible
 
 [package.metadata.docs.rs]
-all-features = true
+features = ["maildir", "notmuch"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
