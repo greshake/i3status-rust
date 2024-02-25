@@ -197,6 +197,7 @@ define_blocks!(
     tea_timer,
     toggle,
     uptime,
+    virt,
     vpn,
     watson,
     weather,
