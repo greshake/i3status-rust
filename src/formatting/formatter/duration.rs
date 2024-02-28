@@ -68,10 +68,13 @@ impl DurationFormatter {
                         .error("prefix_space must be true or false")?;
                 }
                 "pad_with" => {
-                    pad_with = arg
-                        .val
-                        .parse()
-                        .error("pad_with must be a single character")?;
+                    pad_with = if arg.val.is_empty() {
+                        '\u{200B}' // zero-width space
+                    } else {
+                        arg.val
+                            .parse()
+                            .error("pad_with must be a single character")?
+                    };
                 }
                 "show_leading_units_if_zero" => {
                     show_leading_units_if_zero =
