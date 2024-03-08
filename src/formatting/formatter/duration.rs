@@ -153,70 +153,85 @@ impl DurationFormatter {
             show_leading_units_if_zero,
         })
     }
+
+    fn get_time_parts(&self, mut ms: u128) -> Vec<(usize, u128)> {
+        // A Vec of the unit index and value pairs
+        let mut v = Vec::new();
+        for (i, div) in UNIT_CONVERSION_RATES[self.max_unit_index..=self.min_unit_index]
+            .iter()
+            .enumerate()
+        {
+            // Offset i by the offset used to slice UNIT_CONVERSION_RATES
+            let index = i + self.max_unit_index;
+            let value = ms / div;
+
+            // Only add the non-zero, unless we want to display the leading units of time with value of zero.
+            // For example we want to have a minimum unit of seconds but to always show two values we could have:
+            // " 0m 15s"
+            if value != 0
+                || (self.show_leading_units_if_zero
+                    && index >= self.min_unit_index + 1 - self.units)
+            {
+                v.push((index, value));
+                // We have the right number of values/units
+                if v.len() == self.units {
+                    break;
+                }
+            }
+            ms %= div;
+        }
+
+        v
+    }
 }
 
 impl Formatter for DurationFormatter {
     fn format(&self, val: &Value, _config: &SharedConfig) -> Result<String, FormatError> {
         match val {
             Value::Duration(duration) => {
-                let mut ms = duration.as_millis();
-                if self.round_up {
-                    ms += UNIT_CONVERSION_RATES[self.min_unit_index] - 1;
-                }
+                let mut v = self.get_time_parts(duration.as_millis());
 
-                let mut v = Vec::new();
-                for div in &UNIT_CONVERSION_RATES[self.max_unit_index..=self.min_unit_index] {
-                    v.push(ms / div);
-                    ms %= div;
+                if self.round_up {
+                    // Get the index for which unit we should round up to
+                    let i = v.last().map_or(self.min_unit_index, |&(i, _)| i);
+                    v = self.get_time_parts(duration.as_millis() + UNIT_CONVERSION_RATES[i] - 1);
                 }
 
                 let mut first_entry = true;
                 let mut result = String::new();
-                v.iter()
-                    .enumerate()
-                    // Skip wile the value is zero, unless we want to display the leading units of time with value of zero.
-                    // For example we want to have a minimum unit of seconds but to always show two values we could have:
-                    // " 0m 15s"
-                    .skip_while(|&(i, &value)| {
-                        value == 0
-                            && (!self.show_leading_units_if_zero
-                                || i + self.max_unit_index != self.min_unit_index + 1 - self.units)
-                    })
-                    .take(self.units)
-                    .for_each(|(i, &value)| {
-                        let index = i + self.max_unit_index;
-                        // No separator before the first entry
-                        if !first_entry {
-                            if self.hms {
-                                // Separator between s and ms should be a '.'
-                                if index == 6 {
-                                    result.push('.');
-                                } else {
-                                    result.push(':');
-                                }
+                for (i, value) in v {
+                    // No separator before the first entry
+                    if !first_entry {
+                        if self.hms {
+                            // Separator between s and ms should be a '.'
+                            if i == 6 {
+                                result.push('.');
                             } else {
-                                result.push(' ');
+                                result.push(':');
                             }
                         } else {
-                            first_entry = false;
+                            result.push(' ');
                         }
+                    } else {
+                        first_entry = false;
+                    }
 
-                        // Pad the value
-                        let pad_width = UNIT_PAD_WIDTHS[index];
-                        let value_str = value.to_string();
-                        for _ in value_str.len()..pad_width {
-                            result.push(self.pad_with);
-                        }
-                        result.push_str(&value_str);
+                    // Pad the value
+                    let pad_width = UNIT_PAD_WIDTHS[i];
+                    let value_str = value.to_string();
+                    for _ in value_str.len()..pad_width {
+                        result.push(self.pad_with);
+                    }
+                    result.push_str(&value_str);
 
-                        // No units in hms mode
-                        if !self.hms {
-                            if self.unit_has_space {
-                                result.push(' ');
-                            }
-                            result.push_str(UNITS[index]);
+                    // No units in hms mode
+                    if !self.hms {
+                        if self.unit_has_space {
+                            result.push(' ');
                         }
-                    });
+                        result.push_str(UNITS[i]);
+                    }
+                }
 
                 Ok(result)
             }

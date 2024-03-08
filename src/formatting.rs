@@ -82,7 +82,7 @@
 //! `max_unit`                   | The largest unit to display the duration with                                                    | hms ? `h` : `y`
 //! `min_unit`                   | The smallest unit to display the duration with                                                   | `s`
 //! `units`                      | The number of units to display                                                                   | min(# of units between max and min unit, 2)
-//! `round_up`                   | Round up to the nearest min_unit                                                                 | `true`
+//! `round_up`                   | Round up to the nearest minimum displayed unit                                                   | `true`
 //! `unit_space`                 | Have a whitespace between the value and unit symbol                                              | `false`
 //! `pad_with`                   | The character that is used to pad the numbers                                                    | hms ? `0` : ` ` (a space)
 //! `show_leading_units_if_zero` | If fewer than `units` are non-zero should leading numbers that have a value of zero be shown     | `true`
