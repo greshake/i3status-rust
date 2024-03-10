@@ -61,7 +61,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     let format = config.format.with_default(" $icon {$minutes:$seconds |}")?;
 
-    let increment = Duration::seconds(config.increment.unwrap_or(30));
+    let increment =
+        Duration::try_seconds(config.increment.unwrap_or(30)).error("invalid increment value")?;
     let mut timer_end = Utc::now();
 
     let mut timer_was_active = false;
