@@ -12,7 +12,7 @@ use libpulse_binding::volume::{ChannelVolumes, Volume};
 use std::cmp::{max, min};
 use std::convert::{TryFrom, TryInto};
 use std::io;
-use std::os::fd::RawFd;
+use std::os::fd::{IntoRawFd, RawFd};
 use std::sync::Mutex;
 use std::thread;
 
@@ -476,6 +476,7 @@ impl SoundDevice for Device {
 /// Has the same purpose as [`Mainloop::wake`], but can be shared across threads.
 #[derive(Debug, Clone, Copy)]
 struct MainloopWaker {
+    // Note: these fds are never closed, but this is OK because there is only one instance of this struct.
     pipe_tx: RawFd,
     pipe_rx: RawFd,
 }
@@ -484,7 +485,10 @@ impl MainloopWaker {
     /// Create new waker.
     fn new() -> io::Result<Self> {
         let (pipe_rx, pipe_tx) = nix::unistd::pipe2(nix::fcntl::OFlag::O_CLOEXEC)?;
-        Ok(Self { pipe_tx, pipe_rx })
+        Ok(Self {
+            pipe_tx: pipe_tx.into_raw_fd(),
+            pipe_rx: pipe_rx.into_raw_fd(),
+        })
     }
 
     /// Attach this waker to a [`Mainloop`].
@@ -512,7 +516,12 @@ impl MainloopWaker {
 
     /// Interrupt blocking [`Mainloop::iterate`].
     fn wake(self) -> io::Result<()> {
-        nix::unistd::write(self.pipe_tx, &[0])?;
-        Ok(())
+        let buf = [0u8];
+        let res = unsafe { libc::write(self.pipe_tx, buf.as_ptr().cast(), 1) };
+        if res == -1 {
+            Err(io::Error::last_os_error())
+        } else {
+            Ok(())
+        }
     }
 }

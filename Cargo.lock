@@ -1274,7 +1274,7 @@ dependencies = [
  "maildir",
  "neli",
  "neli-wifi",
- "nix 0.27.1",
+ "nix 0.28.0",
  "nom",
  "notmuch",
  "once_cell",
