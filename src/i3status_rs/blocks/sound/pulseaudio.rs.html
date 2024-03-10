@@ -517,6 +517,15 @@
 <a href="#516" id="516">516</a>
 <a href="#517" id="517">517</a>
 <a href="#518" id="518">518</a>
+<a href="#519" id="519">519</a>
+<a href="#520" id="520">520</a>
+<a href="#521" id="521">521</a>
+<a href="#522" id="522">522</a>
+<a href="#523" id="523">523</a>
+<a href="#524" id="524">524</a>
+<a href="#525" id="525">525</a>
+<a href="#526" id="526">526</a>
+<a href="#527" id="527">527</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>libc::c_void;
 <span class="kw">use </span>libpulse_binding::callbacks::ListResult;
 <span class="kw">use </span>libpulse_binding::context::{
@@ -531,7 +540,7 @@
 <span class="kw">use </span>std::cmp::{max, min};
 <span class="kw">use </span>std::convert::{TryFrom, TryInto};
 <span class="kw">use </span>std::io;
-<span class="kw">use </span>std::os::fd::RawFd;
+<span class="kw">use </span>std::os::fd::{IntoRawFd, RawFd};
 <span class="kw">use </span>std::sync::Mutex;
 <span class="kw">use </span>std::thread;
 
@@ -995,7 +1004,8 @@
 /// Has the same purpose as [`Mainloop::wake`], but can be shared across threads.
 </span><span class="attr">#[derive(Debug, Clone, Copy)]
 </span><span class="kw">struct </span>MainloopWaker {
-    pipe_tx: RawFd,
+    <span class="comment">// Note: these fds are never closed, but this is OK because there is only one instance of this struct.
+    </span>pipe_tx: RawFd,
     pipe_rx: RawFd,
 }
 
@@ -1003,7 +1013,10 @@
     <span class="doccomment">/// Create new waker.
     </span><span class="kw">fn </span>new() -&gt; io::Result&lt;<span class="self">Self</span>&gt; {
         <span class="kw">let </span>(pipe_rx, pipe_tx) = nix::unistd::pipe2(nix::fcntl::OFlag::O_CLOEXEC)<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{ pipe_tx, pipe_rx })
+        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
+            pipe_tx: pipe_tx.into_raw_fd(),
+            pipe_rx: pipe_rx.into_raw_fd(),
+        })
     }
 
     <span class="doccomment">/// Attach this waker to a [`Mainloop`].
@@ -1031,8 +1044,13 @@
 
     <span class="doccomment">/// Interrupt blocking [`Mainloop::iterate`].
     </span><span class="kw">fn </span>wake(<span class="self">self</span>) -&gt; io::Result&lt;()&gt; {
-        nix::unistd::write(<span class="self">self</span>.pipe_tx, <span class="kw-2">&amp;</span>[<span class="number">0</span>])<span class="question-mark">?</span>;
-        <span class="prelude-val">Ok</span>(())
+        <span class="kw">let </span>buf = [<span class="number">0u8</span>];
+        <span class="kw">let </span>res = <span class="kw">unsafe </span>{ libc::write(<span class="self">self</span>.pipe_tx, buf.as_ptr().cast(), <span class="number">1</span>) };
+        <span class="kw">if </span>res == -<span class="number">1 </span>{
+            <span class="prelude-val">Err</span>(io::Error::last_os_error())
+        } <span class="kw">else </span>{
+            <span class="prelude-val">Ok</span>(())
+        }
     }
 }
 </code></pre></div></section></main></body></html>
