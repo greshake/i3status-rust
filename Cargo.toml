@@ -32,7 +32,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 async-once-cell = "0.5"
 async-trait = "0.1"
 backon = "0.4.1"
-calibright = { version = "0.1", features = ["watch"] }
+calibright = { version = "0.1.6", features = ["watch"] }
 chrono = { version = "0.4", default-features = false, features = ["clock", "unstable-locales"] }
 chrono-tz = { version = "0.8", features = ["serde"] }
 clap = { version = "4.0", default-features = false, features = ["std", "derive", "help", "usage"] }
@@ -74,7 +74,7 @@ toml = { version = "0.8", features = ["preserve_order"] }
 unicode-segmentation = "1.10.1"
 wayrs-client = { version = "1.0", features = ["tokio"] }
 wayrs-protocols = { version = "0.13", features = ["wlr-foreign-toplevel-management-unstable-v1"] }
-zbus = { version = "3.14", default-features = false, features = ["tokio"] }
+zbus = { version = "4", default-features = false, features = ["tokio"] }
 
 [dependencies.tokio]
 version = "1.12"

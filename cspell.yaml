@@ -8,8 +8,8 @@ ignorePaths:
 ignoreRegExpList:
   # Ignore usernames that are @'d
   - /@[\w-]*/g
-  #  Ignore names in dbus_proxy
-  - /#\[dbus_proxy\([\w\s=\.",\/]*\)\]/gm
+  #  Ignore names in zbus::proxy
+  - /#\[zbus::proxy\([\w\s=\.",\/]*\)\]/gm
     # Ignore unicode characters
   - /(\\u[0-9a-fA-F]{4}|\\U[0-9a-fA-F]{8})/g
 words:

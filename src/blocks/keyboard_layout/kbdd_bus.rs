@@ -1,5 +1,4 @@
 use super::*;
-use zbus::dbus_proxy;
 
 pub(super) struct KbddBus {
     stream: layoutNameChangedStream<'static>,
@@ -51,18 +50,18 @@ impl Backend for KbddBus {
     }
 }
 
-#[dbus_proxy(
+#[zbus::proxy(
     interface = "ru.gentoo.kbdd",
     default_service = "ru.gentoo.KbddService",
     default_path = "/ru/gentoo/KbddService"
 )]
 trait KbddBusInterface {
-    #[dbus_proxy(signal, name = "layoutNameChanged")]
+    #[zbus(signal, name = "layoutNameChanged")]
     fn layout_updated(&self, layout: String) -> zbus::Result<()>;
 
-    #[dbus_proxy(name = "getCurrentLayout")]
+    #[zbus(name = "getCurrentLayout")]
     fn current_layout_index(&self) -> zbus::Result<u32>;
 
-    #[dbus_proxy(name = "getLayoutName")]
+    #[zbus(name = "getLayoutName")]
     fn current_layout(&self, layout_id: u32) -> zbus::Result<String>;
 }

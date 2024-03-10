@@ -49,8 +49,6 @@
 //! - `phone`
 //! - `phone_disconnected`
 
-use zbus::dbus_proxy;
-
 use super::prelude::*;
 
 mod battery;
@@ -195,8 +193,8 @@ struct Device {
     battery_proxy: BatteryDbusProxy<'static>,
     notifications_proxy: NotificationsDbusProxy<'static>,
     connectivity_proxy: ConnectivityDbusProxy<'static>,
-    device_signals: zbus::SignalStream<'static>,
-    notifications_signals: zbus::SignalStream<'static>,
+    device_signals: zbus::proxy::SignalStream<'static>,
+    notifications_signals: zbus::proxy::SignalStream<'static>,
     battery_refreshed: battery::refreshedStream<'static>,
     connectivity_refreshed: connectivity_report::refreshedStream<'static>,
 }
@@ -316,7 +314,7 @@ impl Device {
         let mut selected_device = None;
 
         for id in devices {
-            let device_proxy = DeviceDbusProxy::builder(daemon_proxy.connection())
+            let device_proxy = DeviceDbusProxy::builder(daemon_proxy.inner().connection())
                 .cache_properties(zbus::CacheProperties::No)
                 .path(format!("/modules/kdeconnect/devices/{id}"))
                 .unwrap()
@@ -340,21 +338,22 @@ impl Device {
         let notifications_path = format!("{device_path}/notifications");
         let connectivity_path = format!("{device_path}/connectivity_report");
 
-        let battery_proxy = BatteryDbusProxy::builder(daemon_proxy.connection())
+        let battery_proxy = BatteryDbusProxy::builder(daemon_proxy.inner().connection())
             .cache_properties(zbus::CacheProperties::No)
             .path(battery_path)
             .error("Failed to set battery path")?
             .build()
             .await
             .error("Failed to create BatteryDbusProxy")?;
-        let notifications_proxy = NotificationsDbusProxy::builder(daemon_proxy.connection())
-            .cache_properties(zbus::CacheProperties::No)
-            .path(notifications_path)
-            .error("Failed to set notifications path")?
-            .build()
-            .await
-            .error("Failed to create BatteryDbusProxy")?;
-        let connectivity_proxy = ConnectivityDbusProxy::builder(daemon_proxy.connection())
+        let notifications_proxy =
+            NotificationsDbusProxy::builder(daemon_proxy.inner().connection())
+                .cache_properties(zbus::CacheProperties::No)
+                .path(notifications_path)
+                .error("Failed to set notifications path")?
+                .build()
+                .await
+                .error("Failed to create BatteryDbusProxy")?;
+        let connectivity_proxy = ConnectivityDbusProxy::builder(daemon_proxy.inner().connection())
             .cache_properties(zbus::CacheProperties::No)
             .path(connectivity_path)
             .error("Failed to set connectivity path")?
@@ -363,10 +362,12 @@ impl Device {
             .error("Failed to create ConnectivityDbusProxy")?;
 
         let device_signals = device_proxy
+            .inner()
             .receive_all_signals()
             .await
             .error("Failed to receive signals")?;
         let notifications_signals = notifications_proxy
+            .inner()
             .receive_all_signals()
             .await
             .error("Failed to receive signals")?;
@@ -437,54 +438,54 @@ impl Device {
     }
 }
 
-#[dbus_proxy(
+#[zbus::proxy(
     interface = "org.kde.kdeconnect.daemon",
     default_service = "org.kde.kdeconnect",
     default_path = "/modules/kdeconnect"
 )]
 trait DaemonDbus {
-    #[dbus_proxy(name = "devices")]
+    #[zbus(name = "devices")]
     fn devices(&self) -> zbus::Result<Vec<String>>;
 
-    #[dbus_proxy(signal, name = "deviceAdded")]
+    #[zbus(signal, name = "deviceAdded")]
     fn device_added(&self, id: String) -> zbus::Result<()>;
 
-    #[dbus_proxy(signal, name = "deviceRemoved")]
+    #[zbus(signal, name = "deviceRemoved")]
     fn device_removed(&self, id: String) -> zbus::Result<()>;
 }
 
-#[dbus_proxy(
+#[zbus::proxy(
     interface = "org.kde.kdeconnect.device",
     default_service = "org.kde.kdeconnect"
 )]
 trait DeviceDbus {
-    #[dbus_proxy(property, name = "isReachable")]
+    #[zbus(property, name = "isReachable")]
     fn is_reachable(&self) -> zbus::Result<bool>;
 
-    #[dbus_proxy(signal, name = "reachableChanged")]
+    #[zbus(signal, name = "reachableChanged")]
     fn reachable_changed(&self, reachable: bool) -> zbus::Result<()>;
 
-    #[dbus_proxy(property, name = "name")]
+    #[zbus(property, name = "name")]
     fn name(&self) -> zbus::Result<String>;
 
-    #[dbus_proxy(signal, name = "nameChanged")]
+    #[zbus(signal, name = "nameChanged")]
     fn name_changed_(&self, name: &str) -> zbus::Result<()>;
 }
 
-#[dbus_proxy(
+#[zbus::proxy(
     interface = "org.kde.kdeconnect.device.notifications",
     default_service = "org.kde.kdeconnect"
 )]
 trait NotificationsDbus {
-    #[dbus_proxy(name = "activeNotifications")]
+    #[zbus(name = "activeNotifications")]
     fn active_notifications(&self) -> zbus::Result<Vec<String>>;
 
-    #[dbus_proxy(signal, name = "allNotificationsRemoved")]
+    #[zbus(signal, name = "allNotificationsRemoved")]
     fn all_notifications_removed(&self) -> zbus::Result<()>;
 
-    #[dbus_proxy(signal, name = "notificationPosted")]
+    #[zbus(signal, name = "notificationPosted")]
     fn notification_posted(&self, id: &str) -> zbus::Result<()>;
 
-    #[dbus_proxy(signal, name = "notificationRemoved")]
+    #[zbus(signal, name = "notificationRemoved")]
     fn notification_removed(&self, id: &str) -> zbus::Result<()>;
 }

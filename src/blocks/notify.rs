@@ -58,7 +58,6 @@
 
 use super::prelude::*;
 use tokio::try_join;
-use zbus::dbus_proxy;
 use zbus::PropertyStream;
 
 const ICON_ON: &str = "bell";
@@ -191,20 +190,20 @@ impl Driver for DunstDriver {
     }
 }
 
-#[dbus_proxy(
+#[zbus::proxy(
     interface = "org.dunstproject.cmd0",
     default_service = "org.freedesktop.Notifications",
     default_path = "/org/freedesktop/Notifications"
 )]
 trait DunstDbus {
-    #[dbus_proxy(property, name = "paused")]
+    #[zbus(property, name = "paused")]
     fn paused(&self) -> zbus::Result<bool>;
-    #[dbus_proxy(property, name = "paused")]
+    #[zbus(property, name = "paused")]
     fn set_paused(&self, value: bool) -> zbus::Result<()>;
     fn notification_show(&self) -> zbus::Result<()>;
-    #[dbus_proxy(property, name = "displayedLength")]
+    #[zbus(property, name = "displayedLength")]
     fn displayed_length(&self) -> zbus::Result<u32>;
-    #[dbus_proxy(property, name = "waitingLength")]
+    #[zbus(property, name = "waitingLength")]
     fn waiting_length(&self) -> zbus::Result<u32>;
 }
 struct SwayNCDriver {
@@ -269,7 +268,7 @@ impl Driver for SwayNCDriver {
     }
 }
 
-#[dbus_proxy(
+#[zbus::proxy(
     interface = "org.erikreider.swaync.cc",
     default_service = "org.freedesktop.Notifications",
     default_path = "/org/erikreider/swaync/cc"
@@ -279,9 +278,9 @@ trait SwayNCDbus {
     fn set_dnd(&self, value: bool) -> zbus::Result<()>;
     fn toggle_visibility(&self) -> zbus::Result<()>;
     fn notification_count(&self) -> zbus::Result<u32>;
-    #[dbus_proxy(signal)]
+    #[zbus(signal)]
     fn subscribe(&self, count: u32, dnd: bool, cc_open: bool) -> zbus::Result<()>;
-    #[dbus_proxy(signal)]
+    #[zbus(signal)]
     fn subscribe_v2(
         &self,
         count: u32,

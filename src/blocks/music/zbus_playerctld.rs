@@ -19,9 +19,7 @@
 //!
 //! …consequently `zbus-xmlgen` did not generate code for the above interfaces.
 
-use zbus::dbus_proxy;
-
-#[dbus_proxy(
+#[zbus::proxy(
     interface = "com.github.altdesktop.playerctld",
     default_service = "org.mpris.MediaPlayer2.playerctld",
     default_path = "/org/mpris/MediaPlayer2"
@@ -34,14 +32,14 @@ trait Playerctld {
     fn unshift(&self) -> zbus::Result<String>;
 
     /// ActivePlayerChangeBegin signal
-    #[dbus_proxy(signal)]
+    #[zbus(signal)]
     fn active_player_change_begin(&self, name: &str) -> zbus::Result<()>;
 
     /// ActivePlayerChangeEnd signal
-    #[dbus_proxy(signal)]
+    #[zbus(signal)]
     fn active_player_change_end(&self, name: &str) -> zbus::Result<()>;
 
     /// PlayerNames property
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn player_names(&self) -> zbus::Result<Vec<String>>;
 }

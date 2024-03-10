@@ -360,8 +360,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     let msg = msg.unwrap();
                     let msg = PropertiesChanged::from_message(msg).unwrap();
                     let args = msg.args().unwrap();
-                    let header = msg.header().unwrap();
-                    let sender = header.sender().unwrap().unwrap();
+                    let header = msg.message().header();
+                    let sender = header.sender().unwrap();
                     if let Some((pos, player)) = players.iter_mut().enumerate().find(|p| &*p.1.owner == sender) {
                         let props = args.changed_properties;
                         if let Some(status) = props.get("PlaybackStatus") {
@@ -370,10 +370,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                         }
                         if let Some(metadata) = props.get("Metadata") {
                             player.metadata =
-                                zbus_mpris::PlayerMetadata::try_from(metadata.to_owned()).unwrap();
+                                zbus_mpris::PlayerMetadata::try_from(metadata.try_to_owned().unwrap()).unwrap();
                         }
                         if let Some(volume) = props.get("Volume") {
-                            player.volume = Some(*volume.downcast_ref().unwrap());
+                            player.volume = Some(*volume.downcast_ref::<&f64>().unwrap());
                         }
                         if player.status == Some(PlaybackStatus::Playing)
                         && (
