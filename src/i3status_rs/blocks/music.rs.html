@@ -1042,8 +1042,8 @@
                     <span class="kw">let </span>msg = msg.unwrap();
                     <span class="kw">let </span>msg = PropertiesChanged::from_message(msg).unwrap();
                     <span class="kw">let </span>args = msg.args().unwrap();
-                    <span class="kw">let </span>header = msg.header().unwrap();
-                    <span class="kw">let </span>sender = header.sender().unwrap().unwrap();
+                    <span class="kw">let </span>header = msg.message().header();
+                    <span class="kw">let </span>sender = header.sender().unwrap();
                     <span class="kw">if let </span><span class="prelude-val">Some</span>((pos, player)) = players.iter_mut().enumerate().find(|p| <span class="kw-2">&amp;*</span>p.<span class="number">1</span>.owner == sender) {
                         <span class="kw">let </span>props = args.changed_properties;
                         <span class="kw">if let </span><span class="prelude-val">Some</span>(status) = props.get(<span class="string">"PlaybackStatus"</span>) {
@@ -1052,10 +1052,10 @@
                         }
                         <span class="kw">if let </span><span class="prelude-val">Some</span>(metadata) = props.get(<span class="string">"Metadata"</span>) {
                             player.metadata =
-                                zbus_mpris::PlayerMetadata::try_from(metadata.to_owned()).unwrap();
+                                zbus_mpris::PlayerMetadata::try_from(metadata.try_to_owned().unwrap()).unwrap();
                         }
                         <span class="kw">if let </span><span class="prelude-val">Some</span>(volume) = props.get(<span class="string">"Volume"</span>) {
-                            player.volume = <span class="prelude-val">Some</span>(<span class="kw-2">*</span>volume.downcast_ref().unwrap());
+                            player.volume = <span class="prelude-val">Some</span>(<span class="kw-2">*</span>volume.downcast_ref::&lt;<span class="kw-2">&amp;</span>f64&gt;().unwrap());
                         }
                         <span class="kw">if </span>player.status == <span class="prelude-val">Some</span>(PlaybackStatus::Playing)
                         &amp;&amp; (

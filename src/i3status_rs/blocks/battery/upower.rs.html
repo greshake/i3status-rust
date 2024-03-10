@@ -344,7 +344,7 @@
         <span class="kw">let </span>changes = PropertiesProxy::builder(dbus_conn)
             .destination(<span class="string">"org.freedesktop.UPower"</span>)
             .unwrap()
-            .path(device_proxy.path().to_owned())
+            .path(device_proxy.inner().path().to_owned())
             .unwrap()
             .build()
             .<span class="kw">await
@@ -448,7 +448,7 @@
                     },
                     <span class="prelude-val">Some</span>(msg) = <span class="self">self</span>.device_removed_stream.next() =&gt; {
                         <span class="kw">let </span>args = msg.args().unwrap();
-                        <span class="kw">if </span>args.device().as_ref() == device_conn.device_proxy.path().as_ref() {
+                        <span class="kw">if </span>args.device().as_ref() == device_conn.device_proxy.inner().path().as_ref() {
                             <span class="self">self</span>.device_conn = <span class="prelude-val">None</span>;
                             <span class="kw">break</span>;
                         }
@@ -474,43 +474,43 @@
     }
 }
 
-<span class="attr">#[zbus::dbus_proxy(
+<span class="attr">#[zbus::proxy(
     interface = <span class="string">"org.freedesktop.UPower.Device"</span>,
     default_service = <span class="string">"org.freedesktop.UPower"
 </span>)]
 </span><span class="kw">trait </span>Device {
-    <span class="attr">#[dbus_proxy(property)]
+    <span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>energy_rate(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;f64&gt;;
 
-    <span class="attr">#[dbus_proxy(property)]
+    <span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>is_present(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;
 
-    <span class="attr">#[dbus_proxy(property)]
+    <span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>native_path(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;String&gt;;
 
-    <span class="attr">#[dbus_proxy(property)]
+    <span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>model(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;String&gt;;
 
-    <span class="attr">#[dbus_proxy(property)]
+    <span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>online(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;
 
-    <span class="attr">#[dbus_proxy(property)]
+    <span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>percentage(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;f64&gt;;
 
-    <span class="attr">#[dbus_proxy(property)]
+    <span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>state(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;u32&gt;;
 
-    <span class="attr">#[dbus_proxy(property)]
+    <span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>time_to_empty(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;i64&gt;;
 
-    <span class="attr">#[dbus_proxy(property)]
+    <span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>time_to_full(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;i64&gt;;
 
-    <span class="attr">#[dbus_proxy(property, name = <span class="string">"Type"</span>)]
+    <span class="attr">#[zbus(property, name = <span class="string">"Type"</span>)]
     </span><span class="kw">fn </span>type_(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;u32&gt;;
 }
 
-<span class="attr">#[zbus::dbus_proxy(
+<span class="attr">#[zbus::proxy(
     interface = <span class="string">"org.freedesktop.UPower"</span>,
     default_service = <span class="string">"org.freedesktop.UPower"</span>,
     default_path = <span class="string">"/org/freedesktop/UPower"
@@ -520,13 +520,13 @@
 
     <span class="kw">fn </span>get_display_device(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;zvariant::OwnedObjectPath&gt;;
 
-    <span class="attr">#[dbus_proxy(signal)]
+    <span class="attr">#[zbus(signal)]
     </span><span class="kw">fn </span>device_added(<span class="kw-2">&amp;</span><span class="self">self</span>, device: zvariant::OwnedObjectPath) -&gt; zbus::Result&lt;()&gt;;
 
-    <span class="attr">#[dbus_proxy(signal)]
+    <span class="attr">#[zbus(signal)]
     </span><span class="kw">fn </span>device_removed(<span class="kw-2">&amp;</span><span class="self">self</span>, device: zvariant::OwnedObjectPath) -&gt; zbus::Result&lt;()&gt;;
 
-    <span class="attr">#[dbus_proxy(property)]
+    <span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>on_battery(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;
 }
 </code></pre></div></section></main></body></html>

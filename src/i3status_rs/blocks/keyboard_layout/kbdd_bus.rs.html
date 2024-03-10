@@ -66,9 +66,7 @@
 <a href="#65" id="65">65</a>
 <a href="#66" id="66">66</a>
 <a href="#67" id="67">67</a>
-<a href="#68" id="68">68</a>
 </pre></div><pre class="rust"><code><span class="kw">use super</span>::<span class="kw-2">*</span>;
-<span class="kw">use </span>zbus::dbus_proxy;
 
 <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct </span>KbddBus {
     stream: layoutNameChangedStream&lt;<span class="lifetime">'static</span>&gt;,
@@ -120,19 +118,19 @@
     }
 }
 
-<span class="attr">#[dbus_proxy(
+<span class="attr">#[zbus::proxy(
     interface = <span class="string">"ru.gentoo.kbdd"</span>,
     default_service = <span class="string">"ru.gentoo.KbddService"</span>,
     default_path = <span class="string">"/ru/gentoo/KbddService"
 </span>)]
 </span><span class="kw">trait </span>KbddBusInterface {
-    <span class="attr">#[dbus_proxy(signal, name = <span class="string">"layoutNameChanged"</span>)]
+    <span class="attr">#[zbus(signal, name = <span class="string">"layoutNameChanged"</span>)]
     </span><span class="kw">fn </span>layout_updated(<span class="kw-2">&amp;</span><span class="self">self</span>, layout: String) -&gt; zbus::Result&lt;()&gt;;
 
-    <span class="attr">#[dbus_proxy(name = <span class="string">"getCurrentLayout"</span>)]
+    <span class="attr">#[zbus(name = <span class="string">"getCurrentLayout"</span>)]
     </span><span class="kw">fn </span>current_layout_index(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;u32&gt;;
 
-    <span class="attr">#[dbus_proxy(name = <span class="string">"getLayoutName"</span>)]
+    <span class="attr">#[zbus(name = <span class="string">"getLayoutName"</span>)]
     </span><span class="kw">fn </span>current_layout(<span class="kw-2">&amp;</span><span class="self">self</span>, layout_id: u32) -&gt; zbus::Result&lt;String&gt;;
 }
 </code></pre></div></section></main></body></html>

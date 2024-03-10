@@ -115,6 +115,7 @@
 <a href="#114" id="114">114</a>
 <a href="#115" id="115">115</a>
 <a href="#116" id="116">116</a>
+<a href="#117" id="117">117</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Timer
 //!
 //! # Configuration
@@ -178,7 +179,8 @@
 
     <span class="kw">let </span>format = config.format.with_default(<span class="string">" $icon {$minutes:$seconds |}"</span>)<span class="question-mark">?</span>;
 
-    <span class="kw">let </span>increment = Duration::seconds(config.increment.unwrap_or(<span class="number">30</span>));
+    <span class="kw">let </span>increment =
+        Duration::try_seconds(config.increment.unwrap_or(<span class="number">30</span>)).error(<span class="string">"invalid increment value"</span>)<span class="question-mark">?</span>;
     <span class="kw">let </span><span class="kw-2">mut </span>timer_end = Utc::now();
 
     <span class="kw">let </span><span class="kw-2">mut </span>timer_was_active = <span class="bool-val">false</span>;

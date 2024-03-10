@@ -438,6 +438,7 @@
 <a href="#437" id="437">437</a>
 <a href="#438" id="438">438</a>
 <a href="#439" id="439">439</a>
+<a href="#440" id="440">440</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Monitor Bluetooth device
 //!
 //! This block displays the connectivity of a given Bluetooth device and the battery level if this
@@ -690,12 +691,13 @@
                     .<span class="kw">await
                     </span>.error(<span class="string">"Failed to monitor interfaces"</span>)<span class="question-mark">?</span>;
 
-                <span class="kw">let </span><span class="kw-2">mut </span>bluez_owner_changed = DBusProxy::new(<span class="self">self</span>.manager_proxy.connection())
-                    .<span class="kw">await
-                    </span>.error(<span class="string">"Failed to create DBusProxy"</span>)<span class="question-mark">?
-                    </span>.receive_name_owner_changed_with_args(<span class="kw-2">&amp;</span>[(<span class="number">0</span>, <span class="string">"org.bluez"</span>)])
-                    .<span class="kw">await
-                    </span>.unwrap();
+                <span class="kw">let </span><span class="kw-2">mut </span>bluez_owner_changed =
+                    DBusProxy::new(<span class="self">self</span>.manager_proxy.inner().connection())
+                        .<span class="kw">await
+                        </span>.error(<span class="string">"Failed to create DBusProxy"</span>)<span class="question-mark">?
+                        </span>.receive_name_owner_changed_with_args(<span class="kw-2">&amp;</span>[(<span class="number">0</span>, <span class="string">"org.bluez"</span>)])
+                        .<span class="kw">await
+                        </span>.unwrap();
 
                 <span class="kw">loop </span>{
                     <span class="macro">select! </span>{
@@ -709,14 +711,14 @@
                         }
                         <span class="prelude-val">Some</span>(event) = interface_added.next() =&gt; {
                             <span class="kw">let </span>args = event.args().error(<span class="string">"Failed to get the args"</span>)<span class="question-mark">?</span>;
-                            <span class="kw">if </span>args.object_path() == device.device.path() {
+                            <span class="kw">if </span>args.object_path() == device.device.inner().path() {
                                 <span class="macro">debug!</span>(<span class="string">"Interfaces added: {:?}"</span>, args.interfaces_and_properties().keys());
                                 <span class="kw">return </span><span class="prelude-val">Ok</span>(());
                             }
                         }
                         <span class="prelude-val">Some</span>(event) = interface_removed.next() =&gt; {
                             <span class="kw">let </span>args = event.args().error(<span class="string">"Failed to get the args"</span>)<span class="question-mark">?</span>;
-                            <span class="kw">if </span>args.object_path() == device.device.path() {
+                            <span class="kw">if </span>args.object_path() == device.device.inner().path() {
                                 <span class="self">self</span>.device = <span class="prelude-val">None</span>;
                                 <span class="macro">debug!</span>(<span class="string">"Device is no longer available"</span>);
                                 <span class="kw">return </span><span class="prelude-val">Ok</span>(());
@@ -787,7 +789,7 @@
                     </span>};
                     <span class="kw">let </span>addr: <span class="kw-2">&amp;</span>str = adapter_interface
                         .get(<span class="string">"Address"</span>)
-                        .and_then(|a| a.downcast_ref())
+                        .and_then(|a| a.downcast_ref().ok())
                         .unwrap();
                     <span class="kw">if </span>addr == adapter_mac {
                         adapter_path = <span class="prelude-val">Some</span>(path);
@@ -818,7 +820,7 @@
 
             <span class="kw">let </span>addr: <span class="kw-2">&amp;</span>str = device_interface
                 .get(<span class="string">"Address"</span>)
-                .and_then(|a| a.downcast_ref())
+                .and_then(|a| a.downcast_ref().ok())
                 .unwrap();
             <span class="kw">if </span>addr != mac {
                 <span class="kw">continue</span>;
@@ -827,14 +829,14 @@
             <span class="macro">debug!</span>(<span class="string">"Found device with path {:?}"</span>, path);
 
             <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="self">Self </span>{
-                props: PropertiesProxy::builder(manager_proxy.connection())
+                props: PropertiesProxy::builder(manager_proxy.inner().connection())
                     .destination(<span class="string">"org.bluez"</span>)
                     .and_then(|x| x.path(path.clone()))
                     .unwrap()
                     .build()
                     .<span class="kw">await
                     </span>.error(<span class="string">"Failed to create PropertiesProxy"</span>)<span class="question-mark">?</span>,
-                device: Device1Proxy::builder(manager_proxy.connection())
+                device: Device1Proxy::builder(manager_proxy.inner().connection())
                     <span class="comment">// No caching because https://github.com/greshake/i3status-rust/issues/1565#issuecomment-1379308681
                     </span>.cache_properties(zbus::CacheProperties::No)
                     .path(path.clone())
@@ -842,7 +844,7 @@
                     .build()
                     .<span class="kw">await
                     </span>.error(<span class="string">"Failed to create Device1Proxy"</span>)<span class="question-mark">?</span>,
-                battery: Battery1Proxy::builder(manager_proxy.connection())
+                battery: Battery1Proxy::builder(manager_proxy.inner().connection())
                     .cache_properties(zbus::CacheProperties::No)
                     .path(path)
                     .unwrap()
@@ -857,24 +859,24 @@
     }
 }
 
-<span class="attr">#[zbus::dbus_proxy(interface = <span class="string">"org.bluez.Device1"</span>, default_service = <span class="string">"org.bluez"</span>)]
+<span class="attr">#[zbus::proxy(interface = <span class="string">"org.bluez.Device1"</span>, default_service = <span class="string">"org.bluez"</span>)]
 </span><span class="kw">trait </span>Device1 {
     <span class="kw">fn </span>connect(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;()&gt;;
     <span class="kw">fn </span>disconnect(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;()&gt;;
 
-    <span class="attr">#[dbus_proxy(property)]
+    <span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>connected(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;
 
-    <span class="attr">#[dbus_proxy(property)]
+    <span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;String&gt;;
 
-    <span class="attr">#[dbus_proxy(property)]
+    <span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>icon(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;String&gt;;
 }
 
-<span class="attr">#[zbus::dbus_proxy(interface = <span class="string">"org.bluez.Battery1"</span>, default_service = <span class="string">"org.bluez"</span>)]
+<span class="attr">#[zbus::proxy(interface = <span class="string">"org.bluez.Battery1"</span>, default_service = <span class="string">"org.bluez"</span>)]
 </span><span class="kw">trait </span>Battery1 {
-    <span class="attr">#[dbus_proxy(property)]
+    <span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>percentage(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;u8&gt;;
 }
 </code></pre></div></section></main></body></html>

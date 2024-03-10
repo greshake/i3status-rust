@@ -489,6 +489,7 @@
 <a href="#488" id="488">488</a>
 <a href="#489" id="489">489</a>
 <a href="#490" id="490">490</a>
+<a href="#491" id="491">491</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! [KDEConnect](https://community.kde.org/KDEConnect) indicator
 //!
 //! Display info from the currently connected device in KDEConnect, updated asynchronously.
@@ -540,9 +541,7 @@
 //! - `phone`
 //! - `phone_disconnected`
 
-</span><span class="kw">use </span>zbus::dbus_proxy;
-
-<span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+</span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
 
 <span class="kw">mod </span>battery;
 <span class="kw">mod </span>connectivity_report;
@@ -686,8 +685,8 @@
     battery_proxy: BatteryDbusProxy&lt;<span class="lifetime">'static</span>&gt;,
     notifications_proxy: NotificationsDbusProxy&lt;<span class="lifetime">'static</span>&gt;,
     connectivity_proxy: ConnectivityDbusProxy&lt;<span class="lifetime">'static</span>&gt;,
-    device_signals: zbus::SignalStream&lt;<span class="lifetime">'static</span>&gt;,
-    notifications_signals: zbus::SignalStream&lt;<span class="lifetime">'static</span>&gt;,
+    device_signals: zbus::proxy::SignalStream&lt;<span class="lifetime">'static</span>&gt;,
+    notifications_signals: zbus::proxy::SignalStream&lt;<span class="lifetime">'static</span>&gt;,
     battery_refreshed: battery::refreshedStream&lt;<span class="lifetime">'static</span>&gt;,
     connectivity_refreshed: connectivity_report::refreshedStream&lt;<span class="lifetime">'static</span>&gt;,
 }
@@ -807,7 +806,7 @@
         <span class="kw">let </span><span class="kw-2">mut </span>selected_device = <span class="prelude-val">None</span>;
 
         <span class="kw">for </span>id <span class="kw">in </span>devices {
-            <span class="kw">let </span>device_proxy = DeviceDbusProxy::builder(daemon_proxy.connection())
+            <span class="kw">let </span>device_proxy = DeviceDbusProxy::builder(daemon_proxy.inner().connection())
                 .cache_properties(zbus::CacheProperties::No)
                 .path(<span class="macro">format!</span>(<span class="string">"/modules/kdeconnect/devices/{id}"</span>))
                 .unwrap()
@@ -831,21 +830,22 @@
         <span class="kw">let </span>notifications_path = <span class="macro">format!</span>(<span class="string">"{device_path}/notifications"</span>);
         <span class="kw">let </span>connectivity_path = <span class="macro">format!</span>(<span class="string">"{device_path}/connectivity_report"</span>);
 
-        <span class="kw">let </span>battery_proxy = BatteryDbusProxy::builder(daemon_proxy.connection())
+        <span class="kw">let </span>battery_proxy = BatteryDbusProxy::builder(daemon_proxy.inner().connection())
             .cache_properties(zbus::CacheProperties::No)
             .path(battery_path)
             .error(<span class="string">"Failed to set battery path"</span>)<span class="question-mark">?
             </span>.build()
             .<span class="kw">await
             </span>.error(<span class="string">"Failed to create BatteryDbusProxy"</span>)<span class="question-mark">?</span>;
-        <span class="kw">let </span>notifications_proxy = NotificationsDbusProxy::builder(daemon_proxy.connection())
-            .cache_properties(zbus::CacheProperties::No)
-            .path(notifications_path)
-            .error(<span class="string">"Failed to set notifications path"</span>)<span class="question-mark">?
-            </span>.build()
-            .<span class="kw">await
-            </span>.error(<span class="string">"Failed to create BatteryDbusProxy"</span>)<span class="question-mark">?</span>;
-        <span class="kw">let </span>connectivity_proxy = ConnectivityDbusProxy::builder(daemon_proxy.connection())
+        <span class="kw">let </span>notifications_proxy =
+            NotificationsDbusProxy::builder(daemon_proxy.inner().connection())
+                .cache_properties(zbus::CacheProperties::No)
+                .path(notifications_path)
+                .error(<span class="string">"Failed to set notifications path"</span>)<span class="question-mark">?
+                </span>.build()
+                .<span class="kw">await
+                </span>.error(<span class="string">"Failed to create BatteryDbusProxy"</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>connectivity_proxy = ConnectivityDbusProxy::builder(daemon_proxy.inner().connection())
             .cache_properties(zbus::CacheProperties::No)
             .path(connectivity_path)
             .error(<span class="string">"Failed to set connectivity path"</span>)<span class="question-mark">?
@@ -854,10 +854,12 @@
             </span>.error(<span class="string">"Failed to create ConnectivityDbusProxy"</span>)<span class="question-mark">?</span>;
 
         <span class="kw">let </span>device_signals = device_proxy
+            .inner()
             .receive_all_signals()
             .<span class="kw">await
             </span>.error(<span class="string">"Failed to receive signals"</span>)<span class="question-mark">?</span>;
         <span class="kw">let </span>notifications_signals = notifications_proxy
+            .inner()
             .receive_all_signals()
             .<span class="kw">await
             </span>.error(<span class="string">"Failed to receive signals"</span>)<span class="question-mark">?</span>;
@@ -928,55 +930,55 @@
     }
 }
 
-<span class="attr">#[dbus_proxy(
+<span class="attr">#[zbus::proxy(
     interface = <span class="string">"org.kde.kdeconnect.daemon"</span>,
     default_service = <span class="string">"org.kde.kdeconnect"</span>,
     default_path = <span class="string">"/modules/kdeconnect"
 </span>)]
 </span><span class="kw">trait </span>DaemonDbus {
-    <span class="attr">#[dbus_proxy(name = <span class="string">"devices"</span>)]
+    <span class="attr">#[zbus(name = <span class="string">"devices"</span>)]
     </span><span class="kw">fn </span>devices(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;Vec&lt;String&gt;&gt;;
 
-    <span class="attr">#[dbus_proxy(signal, name = <span class="string">"deviceAdded"</span>)]
+    <span class="attr">#[zbus(signal, name = <span class="string">"deviceAdded"</span>)]
     </span><span class="kw">fn </span>device_added(<span class="kw-2">&amp;</span><span class="self">self</span>, id: String) -&gt; zbus::Result&lt;()&gt;;
 
-    <span class="attr">#[dbus_proxy(signal, name = <span class="string">"deviceRemoved"</span>)]
+    <span class="attr">#[zbus(signal, name = <span class="string">"deviceRemoved"</span>)]
     </span><span class="kw">fn </span>device_removed(<span class="kw-2">&amp;</span><span class="self">self</span>, id: String) -&gt; zbus::Result&lt;()&gt;;
 }
 
-<span class="attr">#[dbus_proxy(
+<span class="attr">#[zbus::proxy(
     interface = <span class="string">"org.kde.kdeconnect.device"</span>,
     default_service = <span class="string">"org.kde.kdeconnect"
 </span>)]
 </span><span class="kw">trait </span>DeviceDbus {
-    <span class="attr">#[dbus_proxy(property, name = <span class="string">"isReachable"</span>)]
+    <span class="attr">#[zbus(property, name = <span class="string">"isReachable"</span>)]
     </span><span class="kw">fn </span>is_reachable(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;
 
-    <span class="attr">#[dbus_proxy(signal, name = <span class="string">"reachableChanged"</span>)]
+    <span class="attr">#[zbus(signal, name = <span class="string">"reachableChanged"</span>)]
     </span><span class="kw">fn </span>reachable_changed(<span class="kw-2">&amp;</span><span class="self">self</span>, reachable: bool) -&gt; zbus::Result&lt;()&gt;;
 
-    <span class="attr">#[dbus_proxy(property, name = <span class="string">"name"</span>)]
+    <span class="attr">#[zbus(property, name = <span class="string">"name"</span>)]
     </span><span class="kw">fn </span>name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;String&gt;;
 
-    <span class="attr">#[dbus_proxy(signal, name = <span class="string">"nameChanged"</span>)]
+    <span class="attr">#[zbus(signal, name = <span class="string">"nameChanged"</span>)]
     </span><span class="kw">fn </span>name_changed_(<span class="kw-2">&amp;</span><span class="self">self</span>, name: <span class="kw-2">&amp;</span>str) -&gt; zbus::Result&lt;()&gt;;
 }
 
-<span class="attr">#[dbus_proxy(
+<span class="attr">#[zbus::proxy(
     interface = <span class="string">"org.kde.kdeconnect.device.notifications"</span>,
     default_service = <span class="string">"org.kde.kdeconnect"
 </span>)]
 </span><span class="kw">trait </span>NotificationsDbus {
-    <span class="attr">#[dbus_proxy(name = <span class="string">"activeNotifications"</span>)]
+    <span class="attr">#[zbus(name = <span class="string">"activeNotifications"</span>)]
     </span><span class="kw">fn </span>active_notifications(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;Vec&lt;String&gt;&gt;;
 
-    <span class="attr">#[dbus_proxy(signal, name = <span class="string">"allNotificationsRemoved"</span>)]
+    <span class="attr">#[zbus(signal, name = <span class="string">"allNotificationsRemoved"</span>)]
     </span><span class="kw">fn </span>all_notifications_removed(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;()&gt;;
 
-    <span class="attr">#[dbus_proxy(signal, name = <span class="string">"notificationPosted"</span>)]
+    <span class="attr">#[zbus(signal, name = <span class="string">"notificationPosted"</span>)]
     </span><span class="kw">fn </span>notification_posted(<span class="kw-2">&amp;</span><span class="self">self</span>, id: <span class="kw-2">&amp;</span>str) -&gt; zbus::Result&lt;()&gt;;
 
-    <span class="attr">#[dbus_proxy(signal, name = <span class="string">"notificationRemoved"</span>)]
+    <span class="attr">#[zbus(signal, name = <span class="string">"notificationRemoved"</span>)]
     </span><span class="kw">fn </span>notification_removed(<span class="kw-2">&amp;</span><span class="self">self</span>, id: <span class="kw-2">&amp;</span>str) -&gt; zbus::Result&lt;()&gt;;
 }
 </code></pre></div></section></main></body></html>

@@ -767,22 +767,22 @@
     }
 }
 
-<span class="attr">#[zbus::dbus_proxy(
+<span class="attr">#[zbus::proxy(
     interface = <span class="string">"rs.wl.gammarelay"</span>,
     default_service = <span class="string">"rs.wl-gammarelay"</span>,
     default_path = <span class="string">"/"
 </span>)]
 </span><span class="kw">trait </span>WlGammarelayRsBus {
     <span class="doccomment">/// Brightness property
-    </span><span class="attr">#[dbus_proxy(property)]
+    </span><span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>brightness(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;f64&gt;;
-    <span class="attr">#[dbus_proxy(property)]
+    <span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>set_brightness(<span class="kw-2">&amp;</span><span class="self">self</span>, value: f64) -&gt; zbus::Result&lt;()&gt;;
 
     <span class="doccomment">/// Temperature property
-    </span><span class="attr">#[dbus_proxy(property)]
+    </span><span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>temperature(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;u16&gt;;
-    <span class="attr">#[dbus_proxy(property)]
+    <span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>set_temperature(<span class="kw-2">&amp;</span><span class="self">self</span>, value: u16) -&gt; zbus::Result&lt;()&gt;;
 }
 </code></pre></div></section></main></body></html>

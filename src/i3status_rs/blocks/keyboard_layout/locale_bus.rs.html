@@ -56,9 +56,7 @@
 <a href="#55" id="55">55</a>
 <a href="#56" id="56">56</a>
 <a href="#57" id="57">57</a>
-<a href="#58" id="58">58</a>
 </pre></div><pre class="rust"><code><span class="kw">use super</span>::<span class="kw-2">*</span>;
-<span class="kw">use </span>zbus::dbus_proxy;
 
 <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct </span>LocaleBus {
     proxy: LocaleBusInterfaceProxy&lt;<span class="lifetime">'static</span>&gt;,
@@ -103,16 +101,16 @@
     }
 }
 
-<span class="attr">#[dbus_proxy(
+<span class="attr">#[zbus::proxy(
     interface = <span class="string">"org.freedesktop.locale1"</span>,
     default_service = <span class="string">"org.freedesktop.locale1"</span>,
     default_path = <span class="string">"/org/freedesktop/locale1"
 </span>)]
 </span><span class="kw">trait </span>LocaleBusInterface {
-    <span class="attr">#[dbus_proxy(property, name = <span class="string">"X11Layout"</span>)]
+    <span class="attr">#[zbus(property, name = <span class="string">"X11Layout"</span>)]
     </span><span class="kw">fn </span>layout(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;String&gt;;
 
-    <span class="attr">#[dbus_proxy(property, name = <span class="string">"X11Variant"</span>)]
+    <span class="attr">#[zbus(property, name = <span class="string">"X11Variant"</span>)]
     </span><span class="kw">fn </span>variant(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;String&gt;;
 }
 </code></pre></div></section></main></body></html>

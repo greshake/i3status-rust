@@ -216,7 +216,6 @@
 //! …consequently `zbus-xmlgen` did not generate code for the above interfaces.
 
 </span><span class="kw">use </span>std::collections::HashMap;
-<span class="kw">use </span>zbus::dbus_proxy;
 <span class="kw">use </span>zbus::zvariant::{<span class="self">self</span>, ObjectPath, OwnedValue, Type, Value};
 
 <span class="attr">#[derive(Debug, Clone)]
@@ -239,7 +238,8 @@
         <span class="kw">let </span>map = HashMap::&lt;String, OwnedValue&gt;::try_from(value)<span class="question-mark">?</span>;
 
         <span class="kw">let </span>val_to_string = |val: <span class="kw-2">&amp;</span>Value| {
-            val.downcast_ref::&lt;str&gt;()
+            val.downcast_ref::&lt;<span class="kw-2">&amp;</span>str&gt;()
+                .ok()
                 .and_then(|val| (!val.is_empty()).then(|| val.to_string()))
         };
 
@@ -247,8 +247,8 @@
 
         <span class="kw">let </span>artists = map
             .get(<span class="string">"xesam:artist"</span>)
-            .and_then(|val| val.downcast_ref::&lt;zvariant::Array&gt;())
-            .map(|val| val.get());
+            .and_then(|val| val.downcast_ref::&lt;<span class="kw-2">&amp;</span>zvariant::Array&gt;().ok())
+            .map(|val| val.inner());
         <span class="kw">let </span>artist = artists.and_then(|val| val.first()).and_then(val_to_string);
 
         <span class="kw">let </span>url = map.get(<span class="string">"xesam:url"</span>).and_then(|val| val_to_string(val));
@@ -257,7 +257,7 @@
     }
 }
 
-<span class="attr">#[dbus_proxy(
+<span class="attr">#[zbus::proxy(
     interface = <span class="string">"org.mpris.MediaPlayer2"</span>,
     default_path = <span class="string">"/org/mpris/MediaPlayer2"
 </span>)]
@@ -269,35 +269,35 @@
     </span><span class="kw">fn </span>raise(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;()&gt;;
 
     <span class="doccomment">/// CanQuit property
-    </span><span class="attr">#[dbus_proxy(property)]
+    </span><span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>can_quit(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;
 
     <span class="doccomment">/// CanRaise property
-    </span><span class="attr">#[dbus_proxy(property)]
+    </span><span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>can_raise(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;
 
     <span class="doccomment">/// DesktopEntry property
-    </span><span class="attr">#[dbus_proxy(property)]
+    </span><span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>desktop_entry(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;String&gt;;
 
     <span class="doccomment">/// HasTrackList property
-    </span><span class="attr">#[dbus_proxy(property)]
+    </span><span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>has_track_list(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;
 
     <span class="doccomment">/// Identity property
-    </span><span class="attr">#[dbus_proxy(property)]
+    </span><span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>identity(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;String&gt;;
 
     <span class="doccomment">/// SupportedMimeTypes property
-    </span><span class="attr">#[dbus_proxy(property)]
+    </span><span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>supported_mime_types(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;Vec&lt;String&gt;&gt;;
 
     <span class="doccomment">/// SupportedUriSchemes property
-    </span><span class="attr">#[dbus_proxy(property)]
+    </span><span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>supported_uri_schemes(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;Vec&lt;String&gt;&gt;;
 }
 
-<span class="attr">#[dbus_proxy(
+<span class="attr">#[zbus::proxy(
     interface = <span class="string">"org.mpris.MediaPlayer2.Player"</span>,
     default_path = <span class="string">"/org/mpris/MediaPlayer2"
 </span>)]
@@ -330,63 +330,63 @@
     </span><span class="kw">fn </span>stop(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;()&gt;;
 
     <span class="doccomment">/// Seeked signal
-    </span><span class="attr">#[dbus_proxy(signal)]
+    </span><span class="attr">#[zbus(signal)]
     </span><span class="kw">fn </span>seeked(<span class="kw-2">&amp;</span><span class="self">self</span>, position: i64) -&gt; zbus::Result&lt;()&gt;;
 
     <span class="doccomment">/// CanControl property
-    </span><span class="attr">#[dbus_proxy(property)]
+    </span><span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>can_control(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;
 
     <span class="doccomment">/// CanGoNext property
-    </span><span class="attr">#[dbus_proxy(property)]
+    </span><span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>can_go_next(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;
 
     <span class="doccomment">/// CanGoPrevious property
-    </span><span class="attr">#[dbus_proxy(property)]
+    </span><span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>can_go_previous(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;
 
     <span class="doccomment">/// CanPause property
-    </span><span class="attr">#[dbus_proxy(property)]
+    </span><span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>can_pause(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;
 
     <span class="doccomment">/// CanPlay property
-    </span><span class="attr">#[dbus_proxy(property)]
+    </span><span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>can_play(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;
 
     <span class="doccomment">/// CanSeek property
-    </span><span class="attr">#[dbus_proxy(property)]
+    </span><span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>can_seek(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;
 
     <span class="doccomment">/// MaximumRate property
-    </span><span class="attr">#[dbus_proxy(property)]
+    </span><span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>maximum_rate(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;f64&gt;;
 
     <span class="doccomment">/// Metadata property
-    </span><span class="attr">#[dbus_proxy(property)]
+    </span><span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>metadata(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;PlayerMetadata&gt;;
 
     <span class="doccomment">/// MinimumRate property
-    </span><span class="attr">#[dbus_proxy(property)]
+    </span><span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>minimum_rate(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;f64&gt;;
 
     <span class="doccomment">/// PlaybackStatus property
-    </span><span class="attr">#[dbus_proxy(property)]
+    </span><span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>playback_status(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;String&gt;;
 
     <span class="doccomment">/// Position property
-    </span><span class="attr">#[dbus_proxy(property)]
+    </span><span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>position(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;i64&gt;;
 
     <span class="doccomment">/// Rate property
-    </span><span class="attr">#[dbus_proxy(property)]
+    </span><span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>rate(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;f64&gt;;
-    <span class="attr">#[dbus_proxy(property)]
+    <span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>set_rate(<span class="kw-2">&amp;</span><span class="self">self</span>, value: f64) -&gt; zbus::Result&lt;()&gt;;
 
     <span class="doccomment">/// Volume property
-    </span><span class="attr">#[dbus_proxy(property)]
+    </span><span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>volume(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;f64&gt;;
-    <span class="attr">#[dbus_proxy(property)]
+    <span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>set_volume(<span class="kw-2">&amp;</span><span class="self">self</span>, value: f64) -&gt; zbus::Result&lt;()&gt;;
 }
 </code></pre></div></section></main></body></html>

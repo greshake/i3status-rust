@@ -171,7 +171,6 @@
 <a href="#170" id="170">170</a>
 <a href="#171" id="171">171</a>
 <a href="#172" id="172">172</a>
-<a href="#173" id="173">173</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Display the status of a service
 //!
 //! Right now only `systemd` is supported.
@@ -216,7 +215,6 @@
 //!
 
 </span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
-<span class="kw">use </span>zbus::dbus_proxy;
 <span class="kw">use </span>zbus::PropertyStream;
 
 <span class="attr">#[derive(Deserialize, Debug, Default)]
@@ -337,12 +335,12 @@
     }
 }
 
-<span class="attr">#[dbus_proxy(
+<span class="attr">#[zbus::proxy(
     interface = <span class="string">"org.freedesktop.systemd1.Unit"</span>,
     default_service = <span class="string">"org.freedesktop.systemd1"
 </span>)]
 </span><span class="kw">trait </span>Unit {
-    <span class="attr">#[dbus_proxy(property)]
+    <span class="attr">#[zbus(property)]
     </span><span class="kw">fn </span>active_state(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;String&gt;;
 }
 </code></pre></div></section></main></body></html>
