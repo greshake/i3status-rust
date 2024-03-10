@@ -1,16 +1,14 @@
-use zbus::dbus_proxy;
-
-#[dbus_proxy(
+#[zbus::proxy(
     interface = "org.kde.kdeconnect.device.battery",
     default_service = "org.kde.kdeconnect"
 )]
 trait BatteryDbus {
-    #[dbus_proxy(signal, name = "refreshed")]
+    #[zbus(signal, name = "refreshed")]
     fn refreshed(&self, is_charging: bool, charge: i32) -> zbus::Result<()>;
 
-    #[dbus_proxy(property, name = "charge")]
+    #[zbus(property, name = "charge")]
     fn charge(&self) -> zbus::Result<i32>;
 
-    #[dbus_proxy(property, name = "isCharging")]
+    #[zbus(property, name = "isCharging")]
     fn is_charging(&self) -> zbus::Result<bool>;
 }

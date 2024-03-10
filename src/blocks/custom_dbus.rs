@@ -54,7 +54,7 @@
 
 use super::prelude::*;
 use std::env;
-use zbus::{dbus_interface, fdo};
+use zbus::fdo;
 
 // Share DBus connection between multiple block instances
 static DBUS_CONNECTION: async_once_cell::OnceCell<Result<zbus::Connection>> =
@@ -86,7 +86,7 @@ fn block_values(block: &Block) -> HashMap<Cow<'static, str>, Value> {
     }
 }
 
-#[dbus_interface(name = "rs.i3status.custom")]
+#[zbus::interface(name = "rs.i3status.custom")]
 impl Block {
     async fn set_icon(&mut self, icon: &str) -> fdo::Result<()> {
         self.icon = if icon.is_empty() {

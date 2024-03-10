@@ -373,21 +373,21 @@ impl HueShiftDriver for WlGammarelayRs {
     }
 }
 
-#[zbus::dbus_proxy(
+#[zbus::proxy(
     interface = "rs.wl.gammarelay",
     default_service = "rs.wl-gammarelay",
     default_path = "/"
 )]
 trait WlGammarelayRsBus {
     /// Brightness property
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn brightness(&self) -> zbus::Result<f64>;
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn set_brightness(&self, value: f64) -> zbus::Result<()>;
 
     /// Temperature property
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn temperature(&self) -> zbus::Result<u16>;
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn set_temperature(&self, value: u16) -> zbus::Result<()>;
 }

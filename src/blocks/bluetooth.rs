@@ -250,12 +250,13 @@ impl DeviceMonitor {
                     .await
                     .error("Failed to monitor interfaces")?;
 
-                let mut bluez_owner_changed = DBusProxy::new(self.manager_proxy.connection())
-                    .await
-                    .error("Failed to create DBusProxy")?
-                    .receive_name_owner_changed_with_args(&[(0, "org.bluez")])
-                    .await
-                    .unwrap();
+                let mut bluez_owner_changed =
+                    DBusProxy::new(self.manager_proxy.inner().connection())
+                        .await
+                        .error("Failed to create DBusProxy")?
+                        .receive_name_owner_changed_with_args(&[(0, "org.bluez")])
+                        .await
+                        .unwrap();
 
                 loop {
                     select! {
@@ -269,14 +270,14 @@ impl DeviceMonitor {
                         }
                         Some(event) = interface_added.next() => {
                             let args = event.args().error("Failed to get the args")?;
-                            if args.object_path() == device.device.path() {
+                            if args.object_path() == device.device.inner().path() {
                                 debug!("Interfaces added: {:?}", args.interfaces_and_properties().keys());
                                 return Ok(());
                             }
                         }
                         Some(event) = interface_removed.next() => {
                             let args = event.args().error("Failed to get the args")?;
-                            if args.object_path() == device.device.path() {
+                            if args.object_path() == device.device.inner().path() {
                                 self.device = None;
                                 debug!("Device is no longer available");
                                 return Ok(());
@@ -347,7 +348,7 @@ impl Device {
                     };
                     let addr: &str = adapter_interface
                         .get("Address")
-                        .and_then(|a| a.downcast_ref())
+                        .and_then(|a| a.downcast_ref().ok())
                         .unwrap();
                     if addr == adapter_mac {
                         adapter_path = Some(path);
@@ -378,7 +379,7 @@ impl Device {
 
             let addr: &str = device_interface
                 .get("Address")
-                .and_then(|a| a.downcast_ref())
+                .and_then(|a| a.downcast_ref().ok())
                 .unwrap();
             if addr != mac {
                 continue;
@@ -387,14 +388,14 @@ impl Device {
             debug!("Found device with path {:?}", path);
 
             return Ok(Some(Self {
-                props: PropertiesProxy::builder(manager_proxy.connection())
+                props: PropertiesProxy::builder(manager_proxy.inner().connection())
                     .destination("org.bluez")
                     .and_then(|x| x.path(path.clone()))
                     .unwrap()
                     .build()
                     .await
                     .error("Failed to create PropertiesProxy")?,
-                device: Device1Proxy::builder(manager_proxy.connection())
+                device: Device1Proxy::builder(manager_proxy.inner().connection())
                     // No caching because https://github.com/greshake/i3status-rust/issues/1565#issuecomment-1379308681
                     .cache_properties(zbus::CacheProperties::No)
                     .path(path.clone())
@@ -402,7 +403,7 @@ impl Device {
                     .build()
                     .await
                     .error("Failed to create Device1Proxy")?,
-                battery: Battery1Proxy::builder(manager_proxy.connection())
+                battery: Battery1Proxy::builder(manager_proxy.inner().connection())
                     .cache_properties(zbus::CacheProperties::No)
                     .path(path)
                     .unwrap()
@@ -417,23 +418,23 @@ impl Device {
     }
 }
 
-#[zbus::dbus_proxy(interface = "org.bluez.Device1", default_service = "org.bluez")]
+#[zbus::proxy(interface = "org.bluez.Device1", default_service = "org.bluez")]
 trait Device1 {
     fn connect(&self) -> zbus::Result<()>;
     fn disconnect(&self) -> zbus::Result<()>;
 
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn connected(&self) -> zbus::Result<bool>;
 
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn name(&self) -> zbus::Result<String>;
 
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn icon(&self) -> zbus::Result<String>;
 }
 
-#[zbus::dbus_proxy(interface = "org.bluez.Battery1", default_service = "org.bluez")]
+#[zbus::proxy(interface = "org.bluez.Battery1", default_service = "org.bluez")]
 trait Battery1 {
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn percentage(&self) -> zbus::Result<u8>;
 }

@@ -78,7 +78,7 @@ impl DeviceConnection {
         let changes = PropertiesProxy::builder(dbus_conn)
             .destination("org.freedesktop.UPower")
             .unwrap()
-            .path(device_proxy.path().to_owned())
+            .path(device_proxy.inner().path().to_owned())
             .unwrap()
             .build()
             .await
@@ -182,7 +182,7 @@ impl BatteryDevice for Device {
                     },
                     Some(msg) = self.device_removed_stream.next() => {
                         let args = msg.args().unwrap();
-                        if args.device().as_ref() == device_conn.device_proxy.path().as_ref() {
+                        if args.device().as_ref() == device_conn.device_proxy.inner().path().as_ref() {
                             self.device_conn = None;
                             break;
                         }
@@ -208,43 +208,43 @@ impl BatteryDevice for Device {
     }
 }
 
-#[zbus::dbus_proxy(
+#[zbus::proxy(
     interface = "org.freedesktop.UPower.Device",
     default_service = "org.freedesktop.UPower"
 )]
 trait Device {
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn energy_rate(&self) -> zbus::Result<f64>;
 
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn is_present(&self) -> zbus::Result<bool>;
 
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn native_path(&self) -> zbus::Result<String>;
 
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn model(&self) -> zbus::Result<String>;
 
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn online(&self) -> zbus::Result<bool>;
 
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn percentage(&self) -> zbus::Result<f64>;
 
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn state(&self) -> zbus::Result<u32>;
 
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn time_to_empty(&self) -> zbus::Result<i64>;
 
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn time_to_full(&self) -> zbus::Result<i64>;
 
-    #[dbus_proxy(property, name = "Type")]
+    #[zbus(property, name = "Type")]
     fn type_(&self) -> zbus::Result<u32>;
 }
 
-#[zbus::dbus_proxy(
+#[zbus::proxy(
     interface = "org.freedesktop.UPower",
     default_service = "org.freedesktop.UPower",
     default_path = "/org/freedesktop/UPower"
@@ -254,12 +254,12 @@ trait UPower {
 
     fn get_display_device(&self) -> zbus::Result<zvariant::OwnedObjectPath>;
 
-    #[dbus_proxy(signal)]
+    #[zbus(signal)]
     fn device_added(&self, device: zvariant::OwnedObjectPath) -> zbus::Result<()>;
 
-    #[dbus_proxy(signal)]
+    #[zbus(signal)]
     fn device_removed(&self, device: zvariant::OwnedObjectPath) -> zbus::Result<()>;
 
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn on_battery(&self) -> zbus::Result<bool>;
 }

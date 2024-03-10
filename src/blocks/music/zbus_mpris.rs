@@ -20,7 +20,6 @@
 //! …consequently `zbus-xmlgen` did not generate code for the above interfaces.
 
 use std::collections::HashMap;
-use zbus::dbus_proxy;
 use zbus::zvariant::{self, ObjectPath, OwnedValue, Type, Value};
 
 #[derive(Debug, Clone)]
@@ -43,7 +42,8 @@ impl TryFrom<OwnedValue> for PlayerMetadata {
         let map = HashMap::<String, OwnedValue>::try_from(value)?;
 
         let val_to_string = |val: &Value| {
-            val.downcast_ref::<str>()
+            val.downcast_ref::<&str>()
+                .ok()
                 .and_then(|val| (!val.is_empty()).then(|| val.to_string()))
         };
 
@@ -51,8 +51,8 @@ impl TryFrom<OwnedValue> for PlayerMetadata {
 
         let artists = map
             .get("xesam:artist")
-            .and_then(|val| val.downcast_ref::<zvariant::Array>())
-            .map(|val| val.get());
+            .and_then(|val| val.downcast_ref::<&zvariant::Array>().ok())
+            .map(|val| val.inner());
         let artist = artists.and_then(|val| val.first()).and_then(val_to_string);
 
         let url = map.get("xesam:url").and_then(|val| val_to_string(val));
@@ -61,7 +61,7 @@ impl TryFrom<OwnedValue> for PlayerMetadata {
     }
 }
 
-#[dbus_proxy(
+#[zbus::proxy(
     interface = "org.mpris.MediaPlayer2",
     default_path = "/org/mpris/MediaPlayer2"
 )]
@@ -73,35 +73,35 @@ trait MediaPlayer2 {
     fn raise(&self) -> zbus::Result<()>;
 
     /// CanQuit property
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn can_quit(&self) -> zbus::Result<bool>;
 
     /// CanRaise property
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn can_raise(&self) -> zbus::Result<bool>;
 
     /// DesktopEntry property
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn desktop_entry(&self) -> zbus::Result<String>;
 
     /// HasTrackList property
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn has_track_list(&self) -> zbus::Result<bool>;
 
     /// Identity property
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn identity(&self) -> zbus::Result<String>;
 
     /// SupportedMimeTypes property
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn supported_mime_types(&self) -> zbus::Result<Vec<String>>;
 
     /// SupportedUriSchemes property
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn supported_uri_schemes(&self) -> zbus::Result<Vec<String>>;
 }
 
-#[dbus_proxy(
+#[zbus::proxy(
     interface = "org.mpris.MediaPlayer2.Player",
     default_path = "/org/mpris/MediaPlayer2"
 )]
@@ -134,62 +134,62 @@ trait Player {
     fn stop(&self) -> zbus::Result<()>;
 
     /// Seeked signal
-    #[dbus_proxy(signal)]
+    #[zbus(signal)]
     fn seeked(&self, position: i64) -> zbus::Result<()>;
 
     /// CanControl property
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn can_control(&self) -> zbus::Result<bool>;
 
     /// CanGoNext property
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn can_go_next(&self) -> zbus::Result<bool>;
 
     /// CanGoPrevious property
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn can_go_previous(&self) -> zbus::Result<bool>;
 
     /// CanPause property
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn can_pause(&self) -> zbus::Result<bool>;
 
     /// CanPlay property
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn can_play(&self) -> zbus::Result<bool>;
 
     /// CanSeek property
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn can_seek(&self) -> zbus::Result<bool>;
 
     /// MaximumRate property
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn maximum_rate(&self) -> zbus::Result<f64>;
 
     /// Metadata property
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn metadata(&self) -> zbus::Result<PlayerMetadata>;
 
     /// MinimumRate property
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn minimum_rate(&self) -> zbus::Result<f64>;
 
     /// PlaybackStatus property
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn playback_status(&self) -> zbus::Result<String>;
 
     /// Position property
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn position(&self) -> zbus::Result<i64>;
 
     /// Rate property
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn rate(&self) -> zbus::Result<f64>;
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn set_rate(&self, value: f64) -> zbus::Result<()>;
 
     /// Volume property
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn volume(&self) -> zbus::Result<f64>;
-    #[dbus_proxy(property)]
+    #[zbus(property)]
     fn set_volume(&self, value: f64) -> zbus::Result<()>;
 }

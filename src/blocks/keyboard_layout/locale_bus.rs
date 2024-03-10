@@ -1,5 +1,4 @@
 use super::*;
-use zbus::dbus_proxy;
 
 pub(super) struct LocaleBus {
     proxy: LocaleBusInterfaceProxy<'static>,
@@ -44,15 +43,15 @@ impl Backend for LocaleBus {
     }
 }
 
-#[dbus_proxy(
+#[zbus::proxy(
     interface = "org.freedesktop.locale1",
     default_service = "org.freedesktop.locale1",
     default_path = "/org/freedesktop/locale1"
 )]
 trait LocaleBusInterface {
-    #[dbus_proxy(property, name = "X11Layout")]
+    #[zbus(property, name = "X11Layout")]
     fn layout(&self) -> zbus::Result<String>;
 
-    #[dbus_proxy(property, name = "X11Variant")]
+    #[zbus(property, name = "X11Variant")]
     fn variant(&self) -> zbus::Result<String>;
 }
