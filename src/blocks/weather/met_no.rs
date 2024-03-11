@@ -171,10 +171,27 @@ struct ForecastTimeInstant {
     relative_humidity: Option<f64>,
 }
 
+#[derive(Debug, Deserialize)]
+struct SunResponse {
+    properties: Properties,
+}
+
+#[derive(Debug, Deserialize)]
+struct Properties {
+    sunrise: TimeData,
+    sunset: TimeData,
+}
+
+#[derive(Debug, Deserialize)]
+struct TimeData {
+    time: String,
+}
+
 static LEGENDS: LazyLock<Option<LegendsStore>> =
     LazyLock::new(|| serde_json::from_str(include_str!("met_no_legends.json")).ok());
 
 const FORECAST_URL: &str = "https://api.met.no/weatherapi/locationforecast/2.0/compact";
+const SUN_URL: &str = "https://api.met.no/weatherapi/sunrise/3.0/sun";
 
 #[async_trait]
 impl WeatherProvider for Service<'_> {
@@ -182,6 +199,7 @@ impl WeatherProvider for Service<'_> {
         &self,
         location: Option<&Coordinates>,
         need_forecast: bool,
+        need_sunrise_and_sunset: bool,
     ) -> Result<WeatherResult> {
         let (lat, lon) = location
             .as_ref()
@@ -190,8 +208,8 @@ impl WeatherProvider for Service<'_> {
             .error("No location given")?;
 
         let querystr: HashMap<&str, String> = map! {
-            "lat" => lat,
-            "lon" => lon,
+            "lat" => &lat,
+            "lon" => &lon,
             [if let Some(alt) = &self.config.altitude] "altitude" => alt,
         };
 
@@ -237,10 +255,47 @@ impl WeatherProvider for Service<'_> {
 
         let forecast = Some(Forecast::new(&data_agg, fin));
 
+        let (sunset, sunrise) = match need_sunrise_and_sunset {
+            true => {
+                let sun_query_string: HashMap<&str, String> = map! {
+                    "lat" => &lat,
+                    "lon" => &lon,
+                };
+
+                let sun_data: SunResponse = REQWEST_CLIENT
+                    .get(SUN_URL)
+                    .query(&sun_query_string)
+                    .header(reqwest::header::CONTENT_TYPE, "application/json")
+                    .send()
+                    .await
+                    .error("Forecast request failed")?
+                    .json()
+                    .await
+                    .error("Forecast request failed")?;
+
+                let sunset = Some(
+                    DateTime::parse_from_str(&sun_data.properties.sunset.time, "%Y-%m-%dT%H:%M%z")
+                        .error("failed to parse sunset timestring")?
+                        .to_utc(),
+                );
+
+                let sunrise = Some(
+                    DateTime::parse_from_str(&sun_data.properties.sunrise.time, "%Y-%m-%dT%H:%M%z")
+                        .error("failed to parse sunrise timestring")?
+                        .to_utc(),
+                );
+
+                (sunset, sunrise)
+            }
+            false => (None, None),
+        };
+
         Ok(WeatherResult {
             location: location_name,
             current_weather,
             forecast,
+            sunset,
+            sunrise,
         })
     }
 }

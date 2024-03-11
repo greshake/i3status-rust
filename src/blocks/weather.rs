@@ -70,18 +70,20 @@
 //!
 //! # Available Format Keys
 //!
-//!  Key                                         | Value                                                                         | Type   | Unit
-//! ---------------------------------------------|-------------------------------------------------------------------------------|--------|-----
-//! `location`                                   | Location name (exact format depends on the service)                           | Text   | -
-//! `icon{,_ffin}`                               | Icon representing the weather                                                 | Icon   | -
-//! `weather{,_ffin}`                            | Textual brief description of the weather, e.g. "Raining"                      | Text   | -
-//! `weather_verbose{,_ffin}`                    | Textual verbose description of the weather, e.g. "overcast clouds"            | Text   | -
-//! `temp{,_{favg,fmin,fmax,ffin}}`              | Temperature                                                                   | Number | degrees
-//! `apparent{,_{favg,fmin,fmax,ffin}}`          | Australian Apparent Temperature                                               | Number | degrees
-//! `humidity{,_{favg,fmin,fmax,ffin}}`          | Humidity                                                                      | Number | %
-//! `wind{,_{favg,fmin,fmax,ffin}}`              | Wind speed                                                                    | Number | -
-//! `wind_kmh{,_{favg,fmin,fmax,ffin}}`          | Wind speed. The wind speed in km/h                                            | Number | -
-//! `direction{,_{favg,fmin,fmax,ffin}}`         | Wind direction, e.g. "NE"                                                     | Text   | -
+//!  Key                                         | Value                                                                         | Type     | Unit
+//! ---------------------------------------------|-------------------------------------------------------------------------------|----------|-----
+//! `location`                                   | Location name (exact format depends on the service)                           | Text     | -
+//! `icon{,_ffin}`                               | Icon representing the weather                                                 | Icon     | -
+//! `weather{,_ffin}`                            | Textual brief description of the weather, e.g. "Raining"                      | Text     | -
+//! `weather_verbose{,_ffin}`                    | Textual verbose description of the weather, e.g. "overcast clouds"            | Text     | -
+//! `temp{,_{favg,fmin,fmax,ffin}}`              | Temperature                                                                   | Number   | degrees
+//! `apparent{,_{favg,fmin,fmax,ffin}}`          | Australian Apparent Temperature                                               | Number   | degrees
+//! `humidity{,_{favg,fmin,fmax,ffin}}`          | Humidity                                                                      | Number   | %
+//! `wind{,_{favg,fmin,fmax,ffin}}`              | Wind speed                                                                    | Number   | -
+//! `wind_kmh{,_{favg,fmin,fmax,ffin}}`          | Wind speed. The wind speed in km/h                                            | Number   | -
+//! `direction{,_{favg,fmin,fmax,ffin}}`         | Wind direction, e.g. "NE"                                                     | Text     | -
+//! `sunrise`                                    | Time of sunrise                                                                | DateTime | -
+//! `sunset`                                     | Time of sunset                                                                | DateTime | -
 //!
 //! You can use the suffixes noted above to get the following:
 //!
@@ -97,7 +99,7 @@
 //! ----------------|-------------------------------------------|---------------
 //! `toggle_format` | Toggles between `format` and `format_alt` | Left
 //!
-//! # Example
+//! # Examples
 //!
 //! Show detailed weather in San Francisco through the OpenWeatherMap service:
 //!
@@ -112,6 +114,17 @@
 //! city_id = "5398563"
 //! units = "metric"
 //! forecast_hours = 9
+//! ```
+//!
+//! Show sunrise and sunset times in null island
+//!
+//! ```toml
+//! [[block]]
+//! block = "weather"
+//! format = "up $sunrise.datetime(f:'%R') down $sunset.datetime(f:'%R')"
+//! [block.service]
+//! name = "metno"
+//! coordinates = ["0", "0"]
 //! ```
 //!
 //! # Used Icons
@@ -131,6 +144,8 @@
 use std::fmt;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
+
+use chrono::{DateTime, Utc};
 
 use crate::formatting::Format;
 
@@ -168,6 +183,7 @@ trait WeatherProvider {
         &self,
         autolocated_location: Option<&Coordinates>,
         need_forecast: bool,
+        need_sunrise_and_sunset: bool,
     ) -> Result<WeatherResult>;
 }
 
@@ -255,6 +271,8 @@ struct WeatherResult {
     location: String,
     current_weather: WeatherMoment,
     forecast: Option<Forecast>,
+    sunrise: Option<DateTime<Utc>>,
+    sunset: Option<DateTime<Utc>>,
 }
 
 impl WeatherResult {
@@ -300,6 +318,14 @@ impl WeatherResult {
                 "weather_ffin" => Value::text(forecast.fin.weather.clone()),
                 "weather_verbose_ffin" => Value::text(forecast.fin.weather_verbose.clone()),
             }
+        }
+
+        if let Some(sunset) = self.sunset {
+            values.insert("sunset".into(), Value::datetime(sunset, None));
+        }
+
+        if let Some(sunrise) = self.sunrise {
+            values.insert("sunrise".into(), Value::datetime(sunrise, None));
         }
         values
     }
@@ -439,6 +465,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     let autolocate_interval = config.autolocate_interval.unwrap_or(config.interval);
     let need_forecast = need_forecast(&format, format_alt.as_ref());
+    let need_sunrise_and_sunset = need_sunrise_and_sunset(&format, format_alt.as_ref());
 
     let mut timer = config.interval.timer();
 
@@ -450,7 +477,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             None
         };
 
-        let fetch = || provider.get_weather(location.as_ref(), need_forecast);
+        let fetch =
+            || provider.get_weather(location.as_ref(), need_forecast, need_sunrise_and_sunset);
         let data = fetch.retry(ExponentialBuilder::default()).await?;
         let data_values = data.into_values();
 
@@ -497,6 +525,13 @@ fn need_forecast(format: &Format, format_alt: Option<&Format>) -> bool {
             || format.contains_key("weather_verbose_ffin")
     }
     has_forecast_key(format) || format_alt.is_some_and(has_forecast_key)
+}
+
+fn need_sunrise_and_sunset(format: &Format, format_alt: Option<&Format>) -> bool {
+    fn has_sunrise_or_sunset_keys(format: &Format) -> bool {
+        format.contains_key("sunrise") || format.contains_key("sunset")
+    }
+    has_sunrise_or_sunset_keys(format) || format_alt.is_some_and(has_sunrise_or_sunset_keys)
 }
 
 #[derive(Debug, Deserialize, Clone, Copy, PartialEq, Eq, SmartDefault)]
