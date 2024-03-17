@@ -334,7 +334,7 @@ impl Memstate {
                 if name.starts_with("zram") {
                     let zram_file_path = entry.path().join("mm_stat");
                     let Ok(file) = File::open(zram_file_path).await else {
-                        break;
+                        continue;
                     };
 
                     let mut buf = BufReader::new(file);
