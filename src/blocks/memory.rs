@@ -330,32 +330,35 @@ impl Memstate {
             .await
             .error("Could not get next file /sys/block")?
         {
-            if let Some(name) = entry.file_name().to_str() {
-                if name.starts_with("zram") {
-                    let zram_file_path = entry.path().join("mm_stat");
-                    let Ok(file) = File::open(zram_file_path).await else {
-                        continue;
-                    };
+            let Ok(file_name) = entry.file_name().into_string() else {
+                continue;
+            };
+            if !file_name.starts_with("zram") {
+                continue;
+            }
 
-                    let mut buf = BufReader::new(file);
-                    let mut line = String::new();
+            let zram_file_path = entry.path().join("mm_stat");
+            let Ok(file) = File::open(zram_file_path).await else {
+                continue;
+            };
 
-                    if buf.read_to_string(&mut line).await.is_err() {
-                        continue;
-                    };
+            let mut buf = BufReader::new(file);
+            let mut line = String::new();
+            if buf.read_to_string(&mut line).await.is_err() {
+                continue;
+            }
 
-                    let mut values = line.split_whitespace().map(|s| s.parse::<u64>());
+            let mut values = line.split_whitespace().map(|s| s.parse::<u64>());
+            let (Some(Ok(zram_swap_size)), Some(Ok(zram_comp_size))) =
+                (values.next(), values.next())
+            else {
+                continue;
+            };
 
-                    if let (Some(Ok(zram_swap_size)), Some(Ok(zram_comp_size))) =
-                        (values.next(), values.next())
-                    {
-                        // zram initializes with small amount by default, return 0 then
-                        if zram_swap_size >= 65_536 {
-                            mem_state.zram_decompressed += zram_swap_size;
-                            mem_state.zram_compressed += zram_comp_size;
-                        }
-                    }
-                }
+            // zram initializes with small amount by default, return 0 then
+            if zram_swap_size >= 65_536 {
+                mem_state.zram_decompressed += zram_swap_size;
+                mem_state.zram_compressed += zram_comp_size;
             }
         }
 
