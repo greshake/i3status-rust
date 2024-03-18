@@ -280,11 +280,6 @@
 <a href="#279" id="279">279</a>
 <a href="#280" id="280">280</a>
 <a href="#281" id="281">281</a>
-<a href="#282" id="282">282</a>
-<a href="#283" id="283">283</a>
-<a href="#284" id="284">284</a>
-<a href="#285" id="285">285</a>
-<a href="#286" id="286">286</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::convert::Infallible;
 <span class="kw">use </span>std::path::{Path, PathBuf};
 <span class="kw">use </span>std::str::FromStr;
@@ -390,19 +385,14 @@
                 <span class="kw">continue</span>;
             }
 
+            <span class="kw">let </span>model_name = <span class="self">Self</span>::read_prop::&lt;String&gt;(<span class="kw-2">&amp;</span>path, <span class="string">"model_name"</span>).<span class="kw">await</span>;
             <span class="macro">debug!</span>(
                 <span class="string">"battery '{}', model={:?}"</span>,
                 path.display(),
-                <span class="self">Self</span>::read_prop::&lt;String&gt;(<span class="kw-2">&amp;</span>path, <span class="string">"model_name"</span>)
-                    .<span class="kw">await
-                    </span>.as_deref()
+                model_name.as_deref()
             );
             <span class="kw">if let </span><span class="prelude-val">Some</span>(dev_model) = <span class="kw-2">&amp;</span><span class="self">self</span>.dev_model {
-                <span class="kw">if </span><span class="self">Self</span>::read_prop::&lt;String&gt;(<span class="kw-2">&amp;</span>path, <span class="string">"model_name"</span>)
-                    .<span class="kw">await
-                    </span>.as_deref()
-                    != <span class="prelude-val">Some</span>(dev_model.as_str())
-                {
+                <span class="kw">if </span>model_name.as_deref() != <span class="prelude-val">Some</span>(dev_model.as_str()) {
                     <span class="macro">debug!</span>(<span class="string">"Skipping based on model."</span>);
                     <span class="kw">continue</span>;
                 }

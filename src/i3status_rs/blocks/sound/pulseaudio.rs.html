@@ -942,9 +942,9 @@
         <span class="kw">if let </span><span class="prelude-val">Some</span>(info) = devices.get(<span class="kw-2">&amp;</span>(<span class="self">self</span>.device_kind, <span class="self">self</span>.name())) {
             <span class="self">self</span>.volume(info.volume);
             <span class="self">self</span>.muted = info.mute;
-            <span class="self">self</span>.description = info.description.clone();
-            <span class="self">self</span>.active_port = info.active_port.clone();
-            <span class="self">self</span>.form_factor = info.form_factor.clone();
+            <span class="self">self</span>.description.clone_from(<span class="kw-2">&amp;</span>info.description);
+            <span class="self">self</span>.active_port.clone_from(<span class="kw-2">&amp;</span>info.active_port);
+            <span class="self">self</span>.form_factor.clone_from(<span class="kw-2">&amp;</span>info.form_factor);
         }
 
         <span class="prelude-val">Ok</span>(())

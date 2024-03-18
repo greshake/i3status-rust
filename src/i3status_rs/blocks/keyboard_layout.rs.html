@@ -345,7 +345,7 @@
         <span class="kw">let </span>variant = variant.unwrap_or_else(|| <span class="string">"N/A"</span>.into());
         <span class="kw">if let </span><span class="prelude-val">Some</span>(mappings) = <span class="kw-2">&amp;</span>config.mappings {
             <span class="kw">if let </span><span class="prelude-val">Some</span>(mapped) = mappings.get(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"{layout} ({variant})"</span>)) {
-                layout = mapped.clone();
+                layout.clone_from(mapped);
             }
         }
 

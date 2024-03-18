@@ -581,7 +581,7 @@
             }
             <span class="prelude-val">Some</span>(Mappings::Exact(m)) =&gt; {
                 <span class="kw">if let </span><span class="prelude-val">Some</span>(mapped) = m.get(<span class="kw-2">&amp;</span>output_name) {
-                    output_name = mapped.clone();
+                    output_name.clone_from(mapped);
                 }
             }
             <span class="prelude-val">None </span>=&gt; (),
