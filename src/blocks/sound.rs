@@ -239,7 +239,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             }
             Some(Mappings::Exact(m)) => {
                 if let Some(mapped) = m.get(&output_name) {
-                    output_name = mapped.clone();
+                    output_name.clone_from(mapped);
                 }
             }
             None => (),

@@ -148,7 +148,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let variant = variant.unwrap_or_else(|| "N/A".into());
         if let Some(mappings) = &config.mappings {
             if let Some(mapped) = mappings.get(&format!("{layout} ({variant})")) {
-                layout = mapped.clone();
+                layout.clone_from(mapped);
             }
         }
 

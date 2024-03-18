@@ -414,9 +414,9 @@ impl SoundDevice for Device {
         if let Some(info) = devices.get(&(self.device_kind, self.name())) {
             self.volume(info.volume);
             self.muted = info.mute;
-            self.description = info.description.clone();
-            self.active_port = info.active_port.clone();
-            self.form_factor = info.form_factor.clone();
+            self.description.clone_from(&info.description);
+            self.active_port.clone_from(&info.active_port);
+            self.form_factor.clone_from(&info.form_factor);
         }
 
         Ok(())
