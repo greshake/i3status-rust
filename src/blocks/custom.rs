@@ -12,7 +12,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>"{ $icon&vert;} $text.pango-str() "</code>
+//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>\"{ $icon\|} $text.pango-str() \"</code>
 //! `command` | Shell command to execute & display | `None`
 //! `persistent` | Run command in the background; update display for each output line of the command | `false`
 //! `cycle` | Commands to execute and change when the button is clicked | `None`

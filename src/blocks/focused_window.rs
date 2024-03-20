@@ -8,7 +8,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>" $title.str(max_w:21) &vert;"</code>
+//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>\" $title.str(max_w:21) \|\"</code>
 //! `driver` | Which driver to use. Available values: `sway_ipc` - for `i3` and `sway`, `wlr_toplevel_management` - for Wayland compositors that implement [wlr-foreign-toplevel-management-unstable-v1](https://gitlab.freedesktop.org/wlroots/wlr-protocols/-/blob/master/unstable/wlr-foreign-toplevel-management-unstable-v1.xml), `auto` - try to automatically guess which driver to use. | `"auto"`
 //!
 //! Placeholder     | Value                                                                 | Type | Unit

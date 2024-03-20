@@ -4,7 +4,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>" $icon {$minutes:$seconds &vert;}"</code>
+//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>\" $icon {$minutes:$seconds \|}\"</code>
 //! `increment` | The numbers of seconds to add each time the block is clicked. | 30
 //! `done_cmd` | A command to run in `sh` when timer finishes. | None
 //!

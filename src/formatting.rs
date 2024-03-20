@@ -34,7 +34,7 @@
 //! `max_width` or `max_w` | if text is longer it will be truncated            | Infinity
 //! `width` or `w`         | Text will be exactly this length by padding or truncating as needed | N/A
 //! `rot_interval`         | if text is longer than `max_width` it will be rotated every `rot_interval` seconds, if set | None
-//! `rot_separator`        | if text is longer than `max_width` it will be rotated with this seporator | <code>"\|"</code>
+//! `rot_separator`        | if text is longer than `max_width` it will be rotated with this seporator | <code>\"\|\"</code>
 //!
 //! Note: width just changes the values of both min_width and max_width to be the same. Use width
 //! if you want the values to be the same, or the other two otherwise. Don't mix width with

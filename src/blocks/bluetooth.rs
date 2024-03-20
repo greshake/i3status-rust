@@ -18,8 +18,8 @@
 //! ----|--------|--------
 //! `mac` | MAC address of the Bluetooth device | **Required**
 //! `adapter_mac` | MAC Address of the Bluetooth adapter (in case your device was connected to multiple currently available adapters) | `None`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>" $icon $name{ $percentage&vert;} "</code>
-//! `disconnected_format` | A string to customise the output of this block. See below for available placeholders. | <code>" $icon{ $name&vert;} "</code>
+//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>\" $icon $name{ $percentage\|} \"</code>
+//! `disconnected_format` | A string to customise the output of this block. See below for available placeholders. | <code>\" $icon{ $name\|} \"</code>
 //! `battery_state` | A mapping from battery percentage to block's [state](State) (color). See example below. | 0..15 -> critical, 16..30 -> warning, 31..60 -> info, 61..100 -> good
 //!
 //! Placeholder    | Value                                                                 | Type   | Unit
