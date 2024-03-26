@@ -1,3 +1,11 @@
+# i3status-rust 0.33.1 [unreleased]
+
+### Bug Fixes and Improvements
+
+* Time: snap seconds to the multiple of interval (#2005).
+* Privacy(Pipewire): fix status bar freezing (#2024).
+* Privacy(v4l): change device scan method.
+
 # i3status-rust 0.33.0
 
 ### Breaking Changes
