@@ -3,7 +3,7 @@ use ::pipewire::{
     spa::utils::dict::DictRef, types::ObjectType,
 };
 use itertools::Itertools;
-use tokio::sync::mpsc::{self, Receiver, Sender};
+use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};
 
 use std::{collections::HashMap, sync::Mutex, thread};
 
@@ -70,7 +70,7 @@ struct Data {
 
 #[derive(Default)]
 struct Client {
-    event_listeners: Mutex<Vec<Sender<()>>>,
+    event_listeners: Mutex<Vec<UnboundedSender<()>>>,
     ready: Mutex<bool>,
     data: Mutex<Data>,
 }
@@ -151,7 +151,7 @@ impl Client {
         main_loop.run();
     }
 
-    fn add_event_listener(&self, tx: Sender<()>) {
+    fn add_event_listener(&self, tx: UnboundedSender<()>) {
         self.event_listeners.lock().unwrap().push(tx);
     }
 
@@ -159,7 +159,7 @@ impl Client {
         self.event_listeners
             .lock()
             .unwrap()
-            .retain(|tx| tx.blocking_send(()).is_ok());
+            .retain(|tx| tx.send(()).is_ok());
     }
 
     async fn wait_until_ready(&self) {
@@ -198,7 +198,7 @@ impl NodeDisplay {
 
 pub(super) struct Monitor<'a> {
     config: &'a Config,
-    updates: Receiver<()>,
+    updates: UnboundedReceiver<()>,
 }
 
 impl<'a> Monitor<'a> {
@@ -206,7 +206,7 @@ impl<'a> Monitor<'a> {
         let client = CLIENT.as_ref().error("Could not get client")?;
         client.wait_until_ready().await;
 
-        let (tx, rx) = mpsc::channel(32);
+        let (tx, rx) = mpsc::unbounded_channel();
         client.add_event_listener(tx);
         Ok(Self {
             config,
