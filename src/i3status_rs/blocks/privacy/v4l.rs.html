@@ -157,8 +157,6 @@
 <a href="#155" id="155">155</a>
 <a href="#156" id="156">156</a>
 <a href="#157" id="157">157</a>
-<a href="#158" id="158">158</a>
-<a href="#159" id="159">159</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>debounced::{debounced, Debounced};
 <span class="kw">use </span>inotify::{EventStream, Inotify, WatchDescriptor, WatchMask, Watches};
 <span class="kw">use </span>tokio::fs::{read_dir, File};
@@ -167,8 +165,6 @@
 <span class="kw">use </span>std::path::PathBuf;
 
 <span class="kw">use super</span>::<span class="kw-2">*</span>;
-
-<span class="kw">const </span>V4L_DEVICES_PATH: <span class="kw-2">&amp;</span>str = <span class="string">"/dev/v4l/by-id"</span>;
 
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(rename_all = <span class="string">"lowercase"</span>, deny_unknown_fields, default)]
@@ -213,33 +209,33 @@
     <span class="kw">async fn </span>update_devices(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;bool&gt; {
         <span class="kw">let </span><span class="kw-2">mut </span>changes = <span class="bool-val">false</span>;
         <span class="kw">let </span><span class="kw-2">mut </span>devices_to_remove: HashMap&lt;PathBuf, WatchDescriptor&gt; = <span class="self">self</span>.devices.clone();
-        <span class="kw">let </span><span class="kw-2">mut </span>sysfs_paths = read_dir(V4L_DEVICES_PATH)
-            .<span class="kw">await
-            </span>.error(<span class="string">"Unable to read /dev/v4l/by-id"</span>)<span class="question-mark">?</span>;
-        <span class="kw">while let </span><span class="prelude-val">Some</span>(sysfs_path) = sysfs_paths
+        <span class="kw">let </span><span class="kw-2">mut </span>sysfs_paths = read_dir(<span class="string">"/dev"</span>).<span class="kw">await</span>.error(<span class="string">"Unable to read /dev"</span>)<span class="question-mark">?</span>;
+        <span class="kw">while let </span><span class="prelude-val">Some</span>(entry) = sysfs_paths
             .next_entry()
             .<span class="kw">await
-            </span>.error(<span class="string">"Unable to get next device in /dev/v4l/by-id"</span>)<span class="question-mark">?
+            </span>.error(<span class="string">"Unable to get next device in /dev"</span>)<span class="question-mark">?
         </span>{
-            <span class="kw">let </span>sysfs_path = sysfs_path.path();
-            <span class="kw">let </span>link_path = PathBuf::from(V4L_DEVICES_PATH)
-                .join(sysfs_path.read_link().error(<span class="string">"Could not read link"</span>)<span class="question-mark">?</span>)
-                .canonicalize()
-                .error(<span class="string">"Failed to canonicalize path"</span>)<span class="question-mark">?</span>;
+            <span class="kw">if let </span><span class="prelude-val">Some</span>(file_name) = entry.file_name().to_str() {
+                <span class="kw">if </span>!file_name.starts_with(<span class="string">"video"</span>) {
+                    <span class="kw">continue</span>;
+                }
+            }
 
-            <span class="kw">if </span><span class="self">self</span>.config.exclude_device.contains(<span class="kw-2">&amp;</span>link_path) {
-                <span class="macro">debug!</span>(<span class="string">"ignoring {:?}"</span>, link_path);
+            <span class="kw">let </span>sysfs_path = entry.path();
+
+            <span class="kw">if </span><span class="self">self</span>.config.exclude_device.contains(<span class="kw-2">&amp;</span>sysfs_path) {
+                <span class="macro">debug!</span>(<span class="string">"ignoring {:?}"</span>, sysfs_path);
                 <span class="kw">continue</span>;
             }
 
-            <span class="kw">if </span><span class="self">self</span>.devices.contains_key(<span class="kw-2">&amp;</span>link_path) {
-                devices_to_remove.remove(<span class="kw-2">&amp;</span>link_path);
+            <span class="kw">if </span><span class="self">self</span>.devices.contains_key(<span class="kw-2">&amp;</span>sysfs_path) {
+                devices_to_remove.remove(<span class="kw-2">&amp;</span>sysfs_path);
             } <span class="kw">else </span>{
-                <span class="macro">debug!</span>(<span class="string">"adding watch {:?}"</span>, link_path);
+                <span class="macro">debug!</span>(<span class="string">"adding watch {:?}"</span>, sysfs_path);
                 <span class="self">self</span>.devices.insert(
-                    link_path.clone(),
+                    sysfs_path.clone(),
                     <span class="self">self</span>.watches
-                        .add(<span class="kw-2">&amp;</span>link_path, WatchMask::OPEN | WatchMask::CLOSE)
+                        .add(<span class="kw-2">&amp;</span>sysfs_path, WatchMask::OPEN | WatchMask::CLOSE)
                         .error(<span class="string">"Failed to watch data location"</span>)<span class="question-mark">?</span>,
                 );
                 changes = <span class="bool-val">true</span>;
