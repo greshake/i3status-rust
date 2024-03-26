@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::sync::atomic::{self, AtomicBool};
 use std::sync::{Arc, Mutex, Weak};
 use std::thread;
 
@@ -73,7 +74,8 @@ struct Data {
 #[derive(Default)]
 struct Client {
     event_listeners: Mutex<Vec<Weak<Notify>>>,
-    ready: Mutex<bool>,
+    ready: AtomicBool,
+    ready_notify: Notify,
     data: Mutex<Data>,
 }
 
@@ -108,7 +110,9 @@ impl Client {
             .done(move |id, seq| {
                 if id == PW_ID_CORE && seq == pending {
                     debug!("ready");
-                    *client.ready.lock().unwrap() = true;
+                    client.ready.store(true, atomic::Ordering::SeqCst);
+                    atomic::fence(atomic::Ordering::SeqCst);
+                    client.ready_notify.notify_waiters();
                 }
             })
             .register();
@@ -168,8 +172,14 @@ impl Client {
     }
 
     async fn wait_until_ready(&self) {
-        while !*self.ready.lock().unwrap() {
-            sleep(Duration::from_millis(1)).await;
+        // Call `.notified()` _before_ checking `ready` to avoid a race condition:
+        // 1. We check `ready` and it is `false`.
+        // 2. `ready` is set to `true` and subscribers are notified by another thread.
+        // 3. We subscribe but are never notified.
+        let notify = self.ready_notify.notified();
+        atomic::fence(atomic::Ordering::SeqCst);
+        if !self.ready.load(atomic::Ordering::SeqCst) {
+            notify.await;
         }
     }
 }
