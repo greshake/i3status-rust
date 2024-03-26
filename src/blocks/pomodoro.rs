@@ -15,7 +15,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. | <code>" $icon{ $message&vert;} "</code>
+//! `format` | A string to customise the output of this block. | <code>\" $icon{ $message&vert;} \"</code>
 //! `message` | Message when timer expires | `"Pomodoro over! Take a break!"`
 //! `break_message` | Message when break is over | `"Break over! Time to work!"`
 //! `notify_cmd` | A shell command to run as a notifier. `{msg}` will be substituted with either `message` or `break_message`. | `None`

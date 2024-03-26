@@ -10,7 +10,7 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `device_id` | Device ID as per the output of `kdeconnect --list-devices`. | Chooses the first found device, if any.
-//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>" $icon $name{ $bat_icon $bat_charge&vert;}{ $notif_icon&vert;} "</code>
+//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>\" $icon $name{ $bat_icon $bat_charge\|}{ $notif_icon\|} \"</code>
 //! `format_disconnected` | Same as `format` but when device is disconnected | `" $icon "`
 //! `format_missing` | Same as `format` but when device does not exist | `" $icon x "`
 //! `bat_info` | Min battery level below which state is set to info. | `60`

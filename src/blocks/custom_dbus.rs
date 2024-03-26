@@ -16,7 +16,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. | <code>"{ $icon&vert;}{ $text.pango-str()&vert;} "</code>
+//! `format` | A string to customise the output of this block. | <code>\"{ $icon\|}{ $text.pango-str()\|} \"</code>
 //!
 //! Placeholder  | Value                                  | Type   | Unit
 //! -------------|-------------------------------------------------------------------|--------|---------------

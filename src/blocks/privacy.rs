@@ -5,8 +5,8 @@
 //! Key        | Values | Default|
 //! -----------|--------|--------|
 //! `driver` | The configuration of a driver (see below). | **Required**
-//! `format`   | Format string. | <code>"{ $icon_audio \|}{ $icon_audio_sink \|}{ $icon_video \|}{ $icon_webcam \|}{ $icon_unknown \|}"</code> |
-//! `format_alt`   | Format string. | <code>"{ $icon_audio $info_audio \|}{ $icon_audio_sink $info_audio_sink \|}{ $icon_video $info_video \|}{ $icon_webcam $info_webcam \|}{ $icon_unknown $info_unknown \|}"</code> |
+//! `format`   | Format string. | <code>\"{ $icon_audio \|}{ $icon_audio_sink \|}{ $icon_video \|}{ $icon_webcam \|}{ $icon_unknown \|}\"</code> |
+//! `format_alt`   | Format string. | <code>\"{ $icon_audio $info_audio \|}{ $icon_audio_sink $info_audio_sink \|}{ $icon_video $info_video \|}{ $icon_webcam $info_webcam \|}{ $icon_unknown $info_unknown \|}\"</code> |
 //!
 //! # pipewire Options (requires the pipewire feature to be enabled)
 //!
