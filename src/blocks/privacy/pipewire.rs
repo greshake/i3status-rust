@@ -1,11 +1,13 @@
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex, Weak};
+use std::thread;
+
 use ::pipewire::{
     context::Context, core::PW_ID_CORE, keys, main_loop::MainLoop, properties::properties,
     spa::utils::dict::DictRef, types::ObjectType,
 };
 use itertools::Itertools;
-use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};
-
-use std::{collections::HashMap, sync::Mutex, thread};
+use tokio::sync::Notify;
 
 use super::*;
 
@@ -70,7 +72,7 @@ struct Data {
 
 #[derive(Default)]
 struct Client {
-    event_listeners: Mutex<Vec<UnboundedSender<()>>>,
+    event_listeners: Mutex<Vec<Weak<Notify>>>,
     ready: Mutex<bool>,
     data: Mutex<Data>,
 }
@@ -151,15 +153,18 @@ impl Client {
         main_loop.run();
     }
 
-    fn add_event_listener(&self, tx: UnboundedSender<()>) {
-        self.event_listeners.lock().unwrap().push(tx);
+    fn add_event_listener(&self, notify: &Arc<Notify>) {
+        self.event_listeners
+            .lock()
+            .unwrap()
+            .push(Arc::downgrade(notify));
     }
 
     fn send_update_event(&self) {
         self.event_listeners
             .lock()
             .unwrap()
-            .retain(|tx| tx.send(()).is_ok());
+            .retain(|notify| notify.upgrade().inspect(|x| x.notify_one()).is_some());
     }
 
     async fn wait_until_ready(&self) {
@@ -198,7 +203,7 @@ impl NodeDisplay {
 
 pub(super) struct Monitor<'a> {
     config: &'a Config,
-    updates: UnboundedReceiver<()>,
+    notify: Arc<Notify>,
 }
 
 impl<'a> Monitor<'a> {
@@ -206,12 +211,9 @@ impl<'a> Monitor<'a> {
         let client = CLIENT.as_ref().error("Could not get client")?;
         client.wait_until_ready().await;
 
-        let (tx, rx) = mpsc::unbounded_channel();
-        client.add_event_listener(tx);
-        Ok(Self {
-            config,
-            updates: rx,
-        })
+        let notify = Arc::new(Notify::new());
+        client.add_event_listener(&notify);
+        Ok(Self { config, notify })
     }
 }
 
@@ -272,7 +274,7 @@ impl<'a> PrivacyMonitor for Monitor<'a> {
     }
 
     async fn wait_for_change(&mut self) -> Result<()> {
-        self.updates.recv().await;
+        self.notify.notified().await;
         Ok(())
     }
 }
