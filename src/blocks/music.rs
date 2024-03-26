@@ -24,11 +24,9 @@
 //! `interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore. | `["playerctld"]`
 //! `separator` | String to insert between artist and title. | `" - "`
 //! `seek_step_secs` | Positive number of seconds to seek forward/backward when scrolling on the bar. Does not need to be an integer. | `1`
-//! `seek_forward_step_secs` | Positive number of seconds to seek forward when scrolling on the bar. Does not need to be an integer. | `1`
-//! `seek_backward_step_secs` | Positive number of seconds to seek backward when scrolling on the bar. Does not need to be an integer. | `1`
+//! `seek_forward_step_secs` | Positive number of seconds to seek forward when scrolling on the bar. Does not need to be an integer. | `seek_step_secs`
+//! `seek_backward_step_secs` | Positive number of seconds to seek backward when scrolling on the bar. Does not need to be an integer. | `seek_step_secs`
 //! `volume_step` | The percent volume level is increased/decreased for the selected audio device when scrolling. Capped automatically at 50. | `5`
-//!
-//! Note: `seek_forward_step_secs` and `seek_backward_step_secs` are mutually exclusive with `seek_step_secs`.
 //!
 //! Note: All placeholders except `icon` can be absent. See the examples below to learn how to handle this.
 //!
@@ -204,18 +202,6 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     let volume_step = config.volume_step.clamp(0.0, 50.0) / 100.0;
 
-    if config.seek_step_secs.is_some() {
-        if config.seek_forward_step_secs.is_some() {
-            return Err(Error::new(
-                "seek_forward_step_secs and seek_step_secs should not both be specified",
-            ));
-        }
-        if config.seek_backward_step_secs.is_some() {
-            return Err(Error::new(
-                "seek_backward_step_secs and seek_step_secs should not both be specified",
-            ));
-        }
-    }
     let default_seek_step = config.seek_step_secs.unwrap_or(1.into());
     let seek_forward_step = config
         .seek_forward_step_secs
