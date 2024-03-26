@@ -5,7 +5,7 @@
 in which case the block colours will depend on the notification count instead.</p>
 <h2 id="configuration"><a class="doc-anchor" href="#configuration">§</a>Configuration</h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Default</th></tr></thead><tbody>
 <tr><td><code>device_id</code></td><td>Device ID as per the output of <code>kdeconnect --list-devices</code>.</td><td>Chooses the first found device, if any.</td></tr>
-<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td><code>“ $icon $name{ $bat_icon $bat_charge|}{ $notif_icon|} “</code></td></tr>
+<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td><code>&quot; $icon $name{ $bat_icon $bat_charge|}{ $notif_icon|} &quot;</code></td></tr>
 <tr><td><code>format_disconnected</code></td><td>Same as <code>format</code> but when device is disconnected</td><td><code>&quot; $icon &quot;</code></td></tr>
 <tr><td><code>format_missing</code></td><td>Same as <code>format</code> but when device does not exist</td><td><code>&quot; $icon x &quot;</code></td></tr>
 <tr><td><code>bat_info</code></td><td>Min battery level below which state is set to info.</td><td><code>60</code></td></tr>

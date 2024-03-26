@@ -11,8 +11,8 @@ may fix it.</p>
 <h2 id="configuration"><a class="doc-anchor" href="#configuration">§</a>Configuration</h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Default</th></tr></thead><tbody>
 <tr><td><code>mac</code></td><td>MAC address of the Bluetooth device</td><td><strong>Required</strong></td></tr>
 <tr><td><code>adapter_mac</code></td><td>MAC Address of the Bluetooth adapter (in case your device was connected to multiple currently available adapters)</td><td><code>None</code></td></tr>
-<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td><code>“ $icon $name{ $percentage|} “</code></td></tr>
-<tr><td><code>disconnected_format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td><code>“ $icon{ $name|} “</code></td></tr>
+<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td><code>&quot; $icon $name{ $percentage|} &quot;</code></td></tr>
+<tr><td><code>disconnected_format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td><code>&quot; $icon{ $name|} &quot;</code></td></tr>
 <tr><td><code>battery_state</code></td><td>A mapping from battery percentage to block’s <a href="../../widget/enum.State.html" title="enum i3status_rs::widget::State">state</a> (color). See example below.</td><td>0..15 -&gt; critical, 16..30 -&gt; warning, 31..60 -&gt; info, 61..100 -&gt; good</td></tr>
 </tbody></table>
 </div><div><table><thead><tr><th>Placeholder</th><th>Value</th><th>Type</th><th>Unit</th></tr></thead><tbody>

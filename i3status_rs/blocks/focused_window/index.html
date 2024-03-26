@@ -4,7 +4,7 @@
 focused window. Supported WMs are: <code>sway</code>, <code>i3</code> and most wlroots-based compositors. See <code>driver</code>
 option for more info.</p>
 <h2 id="configuration"><a class="doc-anchor" href="#configuration">§</a>Configuration</h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Default</th></tr></thead><tbody>
-<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td><code>“ $title.str(max_w:21) |“</code></td></tr>
+<tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td><code>&quot; $title.str(max_w:21) |&quot;</code></td></tr>
 <tr><td><code>driver</code></td><td>Which driver to use. Available values: <code>sway_ipc</code> - for <code>i3</code> and <code>sway</code>, <code>wlr_toplevel_management</code> - for Wayland compositors that implement <a href="https://gitlab.freedesktop.org/wlroots/wlr-protocols/-/blob/master/unstable/wlr-foreign-toplevel-management-unstable-v1.xml">wlr-foreign-toplevel-management-unstable-v1</a>, <code>auto</code> - try to automatically guess which driver to use.</td><td><code>&quot;auto&quot;</code></td></tr>
 </tbody></table>
 </div><div><table><thead><tr><th>Placeholder</th><th>Value</th><th>Type</th><th>Unit</th></tr></thead><tbody>
