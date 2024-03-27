@@ -129,10 +129,27 @@ struct ForecastTimeInstant {
     relative_humidity: Option<f64>,
 }
 
+#[derive(Debug, Deserialize)]
+struct SunResponse {
+    properties: Properties,
+}
+
+#[derive(Debug, Deserialize)]
+struct Properties {
+    sunrise: TimeData,
+    sunset: TimeData,
+}
+
+#[derive(Debug, Deserialize)]
+struct TimeData {
+    time: String,
+}
+
 static LEGENDS: Lazy<Option<LegendsStore>> =
     Lazy::new(|| serde_json::from_str(include_str!("met_no_legends.json")).ok());
 
 const FORECAST_URL: &str = "https://api.met.no/weatherapi/locationforecast/2.0/compact";
+const SUN_URL: &str = "https://api.met.no/weatherapi/sunrise/3.0/sun";
 
 fn translate(legend: &LegendsStore, summary: &str, lang: &ApiLanguage) -> String {
     legend
@@ -160,8 +177,8 @@ impl WeatherProvider for Service<'_> {
             .error("No location given")?;
 
         let querystr: HashMap<&str, String> = map! {
-            "lat" => lat,
-            "lon" => lon,
+            "lat" => &lat,
+            "lon" => &lon,
             [if let Some(alt) = &self.config.altitude] "altitude" => alt,
         };
 
@@ -283,11 +300,41 @@ impl WeatherProvider for Service<'_> {
             })
         };
 
+        let current_date = chrono::Local::now().format("%Y-%m-%d").to_string();
+
+        let sun_query_string: HashMap<&str, String> = map! {
+            "lat" => &lat,
+            "lon" => &lon,
+            "date" => & current_date
+        };
+
+        let sun_data: SunResponse = REQWEST_CLIENT
+            .get(SUN_URL)
+            .query(&sun_query_string)
+            .header(reqwest::header::CONTENT_TYPE, "application/json")
+            .send()
+            .await
+            .error("Forecast request failed")?
+            .json()
+            .await
+            .error("Forecast request failed")?;
+
+        let sunset = DateTime::parse_from_str(&sun_data.properties.sunset.time, "%Y-%m-%dT%H:%M%z")
+            .error("failed to parse sunset timestring")?
+            .to_utc();
+
+        let sunrise =
+            DateTime::parse_from_str(&sun_data.properties.sunrise.time, "%Y-%m-%dT%H:%M%z")
+                .error("failed to parse sunrise timestring")?
+                .to_utc();
+
         Ok(WeatherResult {
             location: location.map_or("Unknown".to_string(), |c| c.city.clone()),
             current_weather: self
                 .get_weather_instant(&data.properties.timeseries.first().unwrap().data),
             forecast,
+            sunset,
+            sunrise,
         })
     }
 }
