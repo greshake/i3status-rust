@@ -1,3 +1,5 @@
+use unicode_segmentation::UnicodeSegmentation;
+
 use std::fmt::Debug;
 use std::time::Duration;
 
