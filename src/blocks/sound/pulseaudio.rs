@@ -1,3 +1,10 @@
+use std::cmp::{max, min};
+use std::convert::{TryFrom, TryInto};
+use std::io;
+use std::os::fd::{IntoRawFd, RawFd};
+use std::sync::{Arc, Mutex, Weak};
+use std::thread;
+
 use libc::c_void;
 use libpulse_binding::callbacks::ListResult;
 use libpulse_binding::context::{
@@ -8,19 +15,13 @@ use libpulse_binding::mainloop::api::MainloopApi;
 use libpulse_binding::mainloop::standard::{IterateResult, Mainloop};
 use libpulse_binding::proplist::{properties, Proplist};
 use libpulse_binding::volume::{ChannelVolumes, Volume};
-
-use std::cmp::{max, min};
-use std::convert::{TryFrom, TryInto};
-use std::io;
-use std::os::fd::{IntoRawFd, RawFd};
-use std::sync::Mutex;
-use std::thread;
+use tokio::sync::Notify;
 
 use super::super::prelude::*;
 use super::{DeviceKind, SoundDevice};
 
 static CLIENT: Lazy<Result<Client>> = Lazy::new(Client::new);
-static EVENT_LISTENER: Mutex<Vec<tokio::sync::mpsc::Sender<()>>> = Mutex::new(Vec::new());
+static EVENT_LISTENER: Mutex<Vec<Weak<Notify>>> = Mutex::new(Vec::new());
 static DEVICES: Lazy<Mutex<HashMap<(DeviceKind, String), VolInfo>>> = Lazy::new(default);
 
 // Default device names
@@ -47,7 +48,7 @@ pub(super) struct Device {
     volume: Option<ChannelVolumes>,
     volume_avg: u32,
     muted: bool,
-    updates: tokio::sync::mpsc::Receiver<()>,
+    notify: Arc<Notify>,
 }
 
 struct Connection {
@@ -342,14 +343,14 @@ impl Client {
         EVENT_LISTENER
             .lock()
             .unwrap()
-            .retain(|tx| tx.blocking_send(()).is_ok());
+            .retain(|notify| notify.upgrade().inspect(|x| x.notify_one()).is_some());
     }
 }
 
 impl Device {
     pub(super) fn new(device_kind: DeviceKind, name: Option<String>) -> Result<Self> {
-        let (tx, rx) = tokio::sync::mpsc::channel(32);
-        EVENT_LISTENER.lock().unwrap().push(tx);
+        let notify = Arc::new(Notify::new());
+        EVENT_LISTENER.lock().unwrap().push(Arc::downgrade(&notify));
 
         Client::send(ClientRequest::GetDefaultDevice)?;
 
@@ -362,7 +363,7 @@ impl Device {
             volume: None,
             volume_avg: 0,
             muted: false,
-            updates: rx,
+            notify,
         };
 
         Client::send(ClientRequest::GetInfoByName(device_kind, device.name()))?;
@@ -464,10 +465,8 @@ impl SoundDevice for Device {
     }
 
     async fn wait_for_update(&mut self) -> Result<()> {
-        self.updates
-            .recv()
-            .await
-            .error("Failed to receive new update")
+        self.notify.notified().await;
+        Ok(())
     }
 }
 

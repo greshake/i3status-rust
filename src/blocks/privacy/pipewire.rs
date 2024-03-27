@@ -1,11 +1,15 @@
+use std::cell::Cell;
+use std::collections::HashMap;
+use std::rc::Rc;
+use std::sync::{Arc, Mutex, Weak};
+use std::thread;
+
 use ::pipewire::{
-    context::Context, core::PW_ID_CORE, keys, main_loop::MainLoop, properties::properties,
-    spa::utils::dict::DictRef, types::ObjectType,
+    context::Context, keys, main_loop::MainLoop, properties::properties, spa::utils::dict::DictRef,
+    types::ObjectType,
 };
 use itertools::Itertools;
-use tokio::sync::mpsc::{self, UnboundedReceiver, UnboundedSender};
-
-use std::{collections::HashMap, sync::Mutex, thread};
+use tokio::sync::Notify;
 
 use super::*;
 
@@ -70,8 +74,7 @@ struct Data {
 
 #[derive(Default)]
 struct Client {
-    event_listeners: Mutex<Vec<UnboundedSender<()>>>,
-    ready: Mutex<bool>,
+    event_listeners: Mutex<Vec<Weak<Notify>>>,
     data: Mutex<Data>,
 }
 
@@ -97,19 +100,9 @@ impl Client {
         let core = context.connect(None).expect("Failed to connect");
         let registry = core.get_registry().expect("Failed to get registry");
 
-        // Trigger the sync event. The server's answer won't be processed until we start the main loop,
-        // so we can safely do this before setting up a callback. This lets us avoid using a Cell.
-        let pending = core.sync(0).expect("sync failed");
-
-        let _core_listener = core
-            .add_listener_local()
-            .done(move |id, seq| {
-                if id == PW_ID_CORE && seq == pending {
-                    debug!("ready");
-                    *client.ready.lock().unwrap() = true;
-                }
-            })
-            .register();
+        let updated = Rc::new(Cell::new(false));
+        let updated_copy = updated.clone();
+        let updated_copy2 = updated.clone();
 
         // Register a callback to the `global` event on the registry, which notifies of any new global objects
         // appearing on the remote.
@@ -117,55 +110,55 @@ impl Client {
         let _registry_listener = registry
             .add_listener_local()
             .global(move |global| {
-                let global_id = global.id;
                 let Some(global_props) = global.props else {
                     return;
                 };
-                if global.type_ == ObjectType::Node {
-                    client
-                        .data
-                        .lock()
-                        .unwrap()
-                        .nodes
-                        .insert(global_id, Node::new(global_id, global_props));
-                    client.send_update_event();
-                } else if global.type_ == ObjectType::Link {
-                    let Some(link) = Link::new(global_props) else {
-                        return;
-                    };
-                    client.data.lock().unwrap().links.insert(global_id, link);
-                    client.send_update_event();
+                match &global.type_ {
+                    ObjectType::Node => {
+                        client
+                            .data
+                            .lock()
+                            .unwrap()
+                            .nodes
+                            .insert(global.id, Node::new(global.id, global_props));
+                        updated_copy.set(true);
+                    }
+                    ObjectType::Link => {
+                        let Some(link) = Link::new(global_props) else {
+                            return;
+                        };
+                        client.data.lock().unwrap().links.insert(global.id, link);
+                        updated_copy.set(true);
+                    }
+                    _ => (),
                 }
             })
             .global_remove(move |uid| {
                 let mut data = client.data.lock().unwrap();
-                if data.nodes.remove(&uid).is_some() {
-                    client.send_update_event();
-                }
-                if data.links.remove(&uid).is_some() {
-                    client.send_update_event();
+                if data.nodes.remove(&uid).is_some() || data.links.remove(&uid).is_some() {
+                    updated_copy2.set(true);
                 }
             })
             .register();
 
-        main_loop.run();
+        loop {
+            main_loop.loop_().iterate(Duration::from_secs(60 * 60 * 24));
+            if updated.get() {
+                updated.set(false);
+                client
+                    .event_listeners
+                    .lock()
+                    .unwrap()
+                    .retain(|notify| notify.upgrade().inspect(|x| x.notify_one()).is_some());
+            }
+        }
     }
 
-    fn add_event_listener(&self, tx: UnboundedSender<()>) {
-        self.event_listeners.lock().unwrap().push(tx);
-    }
-
-    fn send_update_event(&self) {
+    fn add_event_listener(&self, notify: &Arc<Notify>) {
         self.event_listeners
             .lock()
             .unwrap()
-            .retain(|tx| tx.send(()).is_ok());
-    }
-
-    async fn wait_until_ready(&self) {
-        while !*self.ready.lock().unwrap() {
-            sleep(Duration::from_millis(1)).await;
-        }
+            .push(Arc::downgrade(notify));
     }
 }
 
@@ -198,20 +191,15 @@ impl NodeDisplay {
 
 pub(super) struct Monitor<'a> {
     config: &'a Config,
-    updates: UnboundedReceiver<()>,
+    notify: Arc<Notify>,
 }
 
 impl<'a> Monitor<'a> {
     pub(super) async fn new(config: &'a Config) -> Result<Self> {
         let client = CLIENT.as_ref().error("Could not get client")?;
-        client.wait_until_ready().await;
-
-        let (tx, rx) = mpsc::unbounded_channel();
-        client.add_event_listener(tx);
-        Ok(Self {
-            config,
-            updates: rx,
-        })
+        let notify = Arc::new(Notify::new());
+        client.add_event_listener(&notify);
+        Ok(Self { config, notify })
     }
 }
 
@@ -272,7 +260,7 @@ impl<'a> PrivacyMonitor for Monitor<'a> {
     }
 
     async fn wait_for_change(&mut self) -> Result<()> {
-        self.updates.recv().await;
+        self.notify.notified().await;
         Ok(())
     }
 }
