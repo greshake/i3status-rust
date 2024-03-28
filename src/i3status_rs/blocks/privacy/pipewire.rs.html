@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/privacy/pipewire.rs`."><title>pipewire.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0 (aedd173a2 2024-03-17)" data-channel="1.77.0" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/privacy/pipewire.rs`."><title>pipewire.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-5bc39a1768837dd0.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.1 (7cf61ebde 2024-03-27)" data-channel="1.77.1" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-4c98445ec4002617.js"></script><script defer src="../../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-48f368f3872407c8.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
             <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
     <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../../i3status_rs/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
@@ -266,26 +266,18 @@
 <a href="#264" id="264">264</a>
 <a href="#265" id="265">265</a>
 <a href="#266" id="266">266</a>
-<a href="#267" id="267">267</a>
-<a href="#268" id="268">268</a>
-<a href="#269" id="269">269</a>
-<a href="#270" id="270">270</a>
-<a href="#271" id="271">271</a>
-<a href="#272" id="272">272</a>
-<a href="#273" id="273">273</a>
-<a href="#274" id="274">274</a>
-<a href="#275" id="275">275</a>
-<a href="#276" id="276">276</a>
-<a href="#277" id="277">277</a>
-<a href="#278" id="278">278</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span>::pipewire::{
-    context::Context, core::PW_ID_CORE, keys, main_loop::MainLoop, properties::properties,
-    spa::utils::dict::DictRef, types::ObjectType,
+</pre></div><pre class="rust"><code><span class="kw">use </span>std::cell::Cell;
+<span class="kw">use </span>std::collections::HashMap;
+<span class="kw">use </span>std::rc::Rc;
+<span class="kw">use </span>std::sync::{Arc, Mutex, Weak};
+<span class="kw">use </span>std::thread;
+
+<span class="kw">use </span>::pipewire::{
+    context::Context, keys, main_loop::MainLoop, properties::properties, spa::utils::dict::DictRef,
+    types::ObjectType,
 };
 <span class="kw">use </span>itertools::Itertools;
-<span class="kw">use </span>tokio::sync::mpsc::{<span class="self">self</span>, UnboundedReceiver, UnboundedSender};
-
-<span class="kw">use </span>std::{collections::HashMap, sync::Mutex, thread};
+<span class="kw">use </span>tokio::sync::Notify;
 
 <span class="kw">use super</span>::<span class="kw-2">*</span>;
 
@@ -350,8 +342,7 @@
 
 <span class="attr">#[derive(Default)]
 </span><span class="kw">struct </span>Client {
-    event_listeners: Mutex&lt;Vec&lt;UnboundedSender&lt;()&gt;&gt;&gt;,
-    ready: Mutex&lt;bool&gt;,
+    event_listeners: Mutex&lt;Vec&lt;Weak&lt;Notify&gt;&gt;&gt;,
     data: Mutex&lt;Data&gt;,
 }
 
@@ -377,19 +368,9 @@
         <span class="kw">let </span>core = context.connect(<span class="prelude-val">None</span>).expect(<span class="string">"Failed to connect"</span>);
         <span class="kw">let </span>registry = core.get_registry().expect(<span class="string">"Failed to get registry"</span>);
 
-        <span class="comment">// Trigger the sync event. The server's answer won't be processed until we start the main loop,
-        // so we can safely do this before setting up a callback. This lets us avoid using a Cell.
-        </span><span class="kw">let </span>pending = core.sync(<span class="number">0</span>).expect(<span class="string">"sync failed"</span>);
-
-        <span class="kw">let </span>_core_listener = core
-            .add_listener_local()
-            .done(<span class="kw">move </span>|id, seq| {
-                <span class="kw">if </span>id == PW_ID_CORE &amp;&amp; seq == pending {
-                    <span class="macro">debug!</span>(<span class="string">"ready"</span>);
-                    <span class="kw-2">*</span>client.ready.lock().unwrap() = <span class="bool-val">true</span>;
-                }
-            })
-            .register();
+        <span class="kw">let </span>updated = Rc::new(Cell::new(<span class="bool-val">false</span>));
+        <span class="kw">let </span>updated_copy = updated.clone();
+        <span class="kw">let </span>updated_copy2 = updated.clone();
 
         <span class="comment">// Register a callback to the `global` event on the registry, which notifies of any new global objects
         // appearing on the remote.
@@ -397,55 +378,55 @@
         </span><span class="kw">let </span>_registry_listener = registry
             .add_listener_local()
             .global(<span class="kw">move </span>|global| {
-                <span class="kw">let </span>global_id = global.id;
                 <span class="kw">let </span><span class="prelude-val">Some</span>(global_props) = global.props <span class="kw">else </span>{
                     <span class="kw">return</span>;
                 };
-                <span class="kw">if </span>global.type_ == ObjectType::Node {
-                    client
-                        .data
-                        .lock()
-                        .unwrap()
-                        .nodes
-                        .insert(global_id, Node::new(global_id, global_props));
-                    client.send_update_event();
-                } <span class="kw">else if </span>global.type_ == ObjectType::Link {
-                    <span class="kw">let </span><span class="prelude-val">Some</span>(link) = Link::new(global_props) <span class="kw">else </span>{
-                        <span class="kw">return</span>;
-                    };
-                    client.data.lock().unwrap().links.insert(global_id, link);
-                    client.send_update_event();
+                <span class="kw">match </span><span class="kw-2">&amp;</span>global.type_ {
+                    ObjectType::Node =&gt; {
+                        client
+                            .data
+                            .lock()
+                            .unwrap()
+                            .nodes
+                            .insert(global.id, Node::new(global.id, global_props));
+                        updated_copy.set(<span class="bool-val">true</span>);
+                    }
+                    ObjectType::Link =&gt; {
+                        <span class="kw">let </span><span class="prelude-val">Some</span>(link) = Link::new(global_props) <span class="kw">else </span>{
+                            <span class="kw">return</span>;
+                        };
+                        client.data.lock().unwrap().links.insert(global.id, link);
+                        updated_copy.set(<span class="bool-val">true</span>);
+                    }
+                    <span class="kw">_ </span>=&gt; (),
                 }
             })
             .global_remove(<span class="kw">move </span>|uid| {
                 <span class="kw">let </span><span class="kw-2">mut </span>data = client.data.lock().unwrap();
-                <span class="kw">if </span>data.nodes.remove(<span class="kw-2">&amp;</span>uid).is_some() {
-                    client.send_update_event();
-                }
-                <span class="kw">if </span>data.links.remove(<span class="kw-2">&amp;</span>uid).is_some() {
-                    client.send_update_event();
+                <span class="kw">if </span>data.nodes.remove(<span class="kw-2">&amp;</span>uid).is_some() || data.links.remove(<span class="kw-2">&amp;</span>uid).is_some() {
+                    updated_copy2.set(<span class="bool-val">true</span>);
                 }
             })
             .register();
 
-        main_loop.run();
+        <span class="kw">loop </span>{
+            main_loop.loop_().iterate(Duration::from_secs(<span class="number">60 </span>* <span class="number">60 </span>* <span class="number">24</span>));
+            <span class="kw">if </span>updated.get() {
+                updated.set(<span class="bool-val">false</span>);
+                client
+                    .event_listeners
+                    .lock()
+                    .unwrap()
+                    .retain(|notify| notify.upgrade().inspect(|x| x.notify_one()).is_some());
+            }
+        }
     }
 
-    <span class="kw">fn </span>add_event_listener(<span class="kw-2">&amp;</span><span class="self">self</span>, tx: UnboundedSender&lt;()&gt;) {
-        <span class="self">self</span>.event_listeners.lock().unwrap().push(tx);
-    }
-
-    <span class="kw">fn </span>send_update_event(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+    <span class="kw">fn </span>add_event_listener(<span class="kw-2">&amp;</span><span class="self">self</span>, notify: <span class="kw-2">&amp;</span>Arc&lt;Notify&gt;) {
         <span class="self">self</span>.event_listeners
             .lock()
             .unwrap()
-            .retain(|tx| tx.send(()).is_ok());
-    }
-
-    <span class="kw">async fn </span>wait_until_ready(<span class="kw-2">&amp;</span><span class="self">self</span>) {
-        <span class="kw">while </span>!<span class="kw-2">*</span><span class="self">self</span>.ready.lock().unwrap() {
-            sleep(Duration::from_millis(<span class="number">1</span>)).<span class="kw">await</span>;
-        }
+            .push(Arc::downgrade(notify));
     }
 }
 
@@ -478,20 +459,15 @@
 
 <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct </span>Monitor&lt;<span class="lifetime">'a</span>&gt; {
     config: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>Config,
-    updates: UnboundedReceiver&lt;()&gt;,
+    notify: Arc&lt;Notify&gt;,
 }
 
 <span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; Monitor&lt;<span class="lifetime">'a</span>&gt; {
     <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">async fn </span>new(config: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>Config) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
         <span class="kw">let </span>client = CLIENT.as_ref().error(<span class="string">"Could not get client"</span>)<span class="question-mark">?</span>;
-        client.wait_until_ready().<span class="kw">await</span>;
-
-        <span class="kw">let </span>(tx, rx) = mpsc::unbounded_channel();
-        client.add_event_listener(tx);
-        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
-            config,
-            updates: rx,
-        })
+        <span class="kw">let </span>notify = Arc::new(Notify::new());
+        client.add_event_listener(<span class="kw-2">&amp;</span>notify);
+        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{ config, notify })
     }
 }
 
@@ -552,7 +528,7 @@
     }
 
     <span class="kw">async fn </span>wait_for_change(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-        <span class="self">self</span>.updates.recv().<span class="kw">await</span>;
+        <span class="self">self</span>.notify.notified().<span class="kw">await</span>;
         <span class="prelude-val">Ok</span>(())
     }
 }
