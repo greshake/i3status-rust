@@ -1,10 +1,14 @@
 use crate::formatting::prefix::Prefix;
 use crate::formatting::unit::Unit;
 
+use std::borrow::Cow;
+
 use super::*;
 
+type PadWith = Cow<'static, str>;
+
 const DEFAULT_NUMBER_WIDTH: usize = 2;
-const DEFAULT_NUMBER_PAD_WITH: char = ' ';
+const DEFAULT_NUMBER_PAD_WITH: PadWith = Cow::Borrowed(" ");
 
 // TODO: split those defaults
 pub const DEFAULT_NUMBER_FORMATTER: EngFormatter = EngFormatter {
@@ -29,7 +33,7 @@ pub struct EngFormatter {
     prefix_has_space: bool,
     prefix_hidden: bool,
     prefix_forced: bool,
-    pad_with: char,
+    pad_with: PadWith,
 }
 
 impl EngFormatter {
@@ -91,10 +95,13 @@ impl EngFormatter {
                         .error("force_prefix must be true or false")?;
                 }
                 "pad_with" => {
-                    pad_with = arg
-                        .val
-                        .parse()
-                        .error("pad_with must be a single character")?;
+                    if arg.val.graphemes(true).count() < 2 {
+                        pad_with = Cow::Owned(arg.val.into());
+                    } else {
+                        return Err(Error::new(
+                            "pad_with must be an empty string or a single character",
+                        ));
+                    }
                 }
                 other => {
                     return Err(Error::new(format!("Unknown argument for 'eng': '{other}'")));

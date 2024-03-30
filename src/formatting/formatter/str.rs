@@ -1,5 +1,3 @@
-use unicode_segmentation::UnicodeSegmentation;
-
 use std::iter::repeat;
 use std::time::Instant;
 
