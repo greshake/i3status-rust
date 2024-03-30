@@ -313,13 +313,24 @@
 <a href="#311" id="311">311</a>
 <a href="#312" id="312">312</a>
 <a href="#313" id="313">313</a>
+<a href="#314" id="314">314</a>
+<a href="#315" id="315">315</a>
+<a href="#316" id="316">316</a>
+<a href="#317" id="317">317</a>
+<a href="#318" id="318">318</a>
+<a href="#319" id="319">319</a>
+<a href="#320" id="320">320</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::formatting::prefix::Prefix;
 <span class="kw">use </span><span class="kw">crate</span>::formatting::unit::Unit;
 
+<span class="kw">use </span>std::borrow::Cow;
+
 <span class="kw">use super</span>::<span class="kw-2">*</span>;
 
+<span class="kw">type </span>PadWith = Cow&lt;<span class="lifetime">'static</span>, str&gt;;
+
 <span class="kw">const </span>DEFAULT_NUMBER_WIDTH: usize = <span class="number">2</span>;
-<span class="kw">const </span>DEFAULT_NUMBER_PAD_WITH: char = <span class="string">' '</span>;
+<span class="kw">const </span>DEFAULT_NUMBER_PAD_WITH: PadWith = Cow::Borrowed(<span class="string">" "</span>);
 
 <span class="comment">// TODO: split those defaults
 </span><span class="kw">pub const </span>DEFAULT_NUMBER_FORMATTER: EngFormatter = EngFormatter {
@@ -344,7 +355,7 @@
     prefix_has_space: bool,
     prefix_hidden: bool,
     prefix_forced: bool,
-    pad_with: char,
+    pad_with: PadWith,
 }
 
 <span class="kw">impl </span>EngFormatter {
@@ -406,10 +417,13 @@
                         .error(<span class="string">"force_prefix must be true or false"</span>)<span class="question-mark">?</span>;
                 }
                 <span class="string">"pad_with" </span>=&gt; {
-                    pad_with = arg
-                        .val
-                        .parse()
-                        .error(<span class="string">"pad_with must be a single character"</span>)<span class="question-mark">?</span>;
+                    <span class="kw">if </span>arg.val.graphemes(<span class="bool-val">true</span>).count() &lt; <span class="number">2 </span>{
+                        pad_with = Cow::Owned(arg.val.into());
+                    } <span class="kw">else </span>{
+                        <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(
+                            <span class="string">"pad_with must be an empty string or a single character"</span>,
+                        ));
+                    }
                 }
                 other =&gt; {
                     <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">"Unknown argument for 'eng': '{other}'"</span>)));
