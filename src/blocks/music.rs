@@ -24,6 +24,8 @@
 //! `interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore. | `["playerctld"]`
 //! `separator` | String to insert between artist and title. | `" - "`
 //! `seek_step_secs` | Positive number of seconds to seek forward/backward when scrolling on the bar. Does not need to be an integer. | `1`
+//! `seek_forward_step_secs` | Positive number of seconds to seek forward when scrolling on the bar. Does not need to be an integer. | `seek_step_secs`
+//! `seek_backward_step_secs` | Positive number of seconds to seek backward when scrolling on the bar. Does not need to be an integer. | `seek_step_secs`
 //! `volume_step` | The percent volume level is increased/decreased for the selected audio device when scrolling. Capped automatically at 50. | `5`
 //!
 //! Note: All placeholders except `icon` can be absent. See the examples below to learn how to handle this.
@@ -163,6 +165,8 @@ pub struct Config {
     pub separator: String,
     #[default(1.into())]
     pub seek_step_secs: Seconds<false>,
+    pub seek_forward_step_secs: Option<Seconds<false>>,
+    pub seek_backward_step_secs: Option<Seconds<false>>,
     #[default(5.0)]
     pub volume_step: f64,
 }
@@ -198,6 +202,17 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     };
 
     let volume_step = config.volume_step.clamp(0.0, 50.0) / 100.0;
+
+    let seek_forward_step = config
+        .seek_forward_step_secs
+        .unwrap_or(config.seek_step_secs)
+        .0
+        .as_micros() as i64;
+    let seek_backward_step = -(config
+        .seek_backward_step_secs
+        .unwrap_or(config.seek_step_secs)
+        .0
+        .as_micros() as i64);
 
     let new_btn = |icon: &str, instance: &'static str| -> Result<Value> {
         Ok(Value::icon(icon.to_string()).with_instance(instance))
@@ -456,10 +471,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                                 break;
                             }
                             "seek_forward" => {
-                                player.seek(config.seek_step_secs.0.as_micros() as i64).await?;
+                                player.seek(seek_forward_step).await?;
                             }
                             "seek_backward" => {
-                                player.seek(-(config.seek_step_secs.0.as_micros() as i64)).await?;
+                                player.seek(seek_backward_step).await?;
                             }
                             "volume_up" => {
                                 player.set_volume(volume_step).await?;
