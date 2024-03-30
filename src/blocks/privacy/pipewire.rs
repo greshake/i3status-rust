@@ -1,7 +1,7 @@
 use std::cell::Cell;
 use std::collections::HashMap;
 use std::rc::Rc;
-use std::sync::{Arc, Mutex, Weak};
+use std::sync::Mutex;
 use std::thread;
 
 use ::pipewire::{
@@ -74,7 +74,7 @@ struct Data {
 
 #[derive(Default)]
 struct Client {
-    event_listeners: Mutex<Vec<Weak<Notify>>>,
+    notify: Notify,
     data: Mutex<Data>,
 }
 
@@ -145,20 +145,9 @@ impl Client {
             main_loop.loop_().iterate(Duration::from_secs(60 * 60 * 24));
             if updated.get() {
                 updated.set(false);
-                client
-                    .event_listeners
-                    .lock()
-                    .unwrap()
-                    .retain(|notify| notify.upgrade().inspect(|x| x.notify_one()).is_some());
+                client.notify.notify_waiters();
             }
         }
-    }
-
-    fn add_event_listener(&self, notify: &Arc<Notify>) {
-        self.event_listeners
-            .lock()
-            .unwrap()
-            .push(Arc::downgrade(notify));
     }
 }
 
@@ -191,23 +180,20 @@ impl NodeDisplay {
 
 pub(super) struct Monitor<'a> {
     config: &'a Config,
-    notify: Arc<Notify>,
+    client: &'static Client,
 }
 
 impl<'a> Monitor<'a> {
     pub(super) async fn new(config: &'a Config) -> Result<Self> {
         let client = CLIENT.as_ref().error("Could not get client")?;
-        let notify = Arc::new(Notify::new());
-        client.add_event_listener(&notify);
-        Ok(Self { config, notify })
+        Ok(Self { config, client })
     }
 }
 
 #[async_trait]
 impl<'a> PrivacyMonitor for Monitor<'a> {
     async fn get_info(&mut self) -> Result<PrivacyInfo> {
-        let client = CLIENT.as_ref().error("Could not get client")?;
-        let data = client.data.lock().unwrap();
+        let data = self.client.data.lock().unwrap();
         let mut mapping: PrivacyInfo = PrivacyInfo::new();
 
         for node in data.nodes.values() {
@@ -260,7 +246,7 @@ impl<'a> PrivacyMonitor for Monitor<'a> {
     }
 
     async fn wait_for_change(&mut self) -> Result<()> {
-        self.notify.notified().await;
+        self.client.notify.notified().await;
         Ok(())
     }
 }

@@ -193,7 +193,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let mut widget = Widget::new().with_format(format.clone());
 
         let mut info = PrivacyInfo::default();
-        //Merge driver info
+        // Merge driver info
         for driver_info in try_join_all(drivers.iter_mut().map(|driver| driver.get_info())).await? {
             for (type_, mapping) in driver_info {
                 let existing_mapping = info.entry(type_).or_default();
