@@ -151,6 +151,7 @@
 <a href="#149" id="149">149</a>
 <a href="#150" id="150">150</a>
 <a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>chrono::format::{Item, StrftimeItems};
 <span class="kw">use </span>chrono::{DateTime, Local, Locale, TimeZone};
 <span class="kw">use </span>once_cell::sync::Lazy;
@@ -255,7 +256,8 @@
 
 <span class="kw">impl </span>Formatter <span class="kw">for </span>DatetimeFormatter {
     <span class="kw">fn </span>format(<span class="kw-2">&amp;</span><span class="self">self</span>, val: <span class="kw-2">&amp;</span>Value, _config: <span class="kw-2">&amp;</span>SharedConfig) -&gt; <span class="prelude-ty">Result</span>&lt;String, FormatError&gt; {
-        <span class="kw">fn </span>for_generic_datetime&lt;T&gt;(
+        <span class="attr">#[allow(clippy::unnecessary_wraps)]
+        </span><span class="kw">fn </span>for_generic_datetime&lt;T&gt;(
             this: <span class="kw-2">&amp;</span>DatetimeFormatter,
             datetime: DateTime&lt;T&gt;,
         ) -&gt; <span class="prelude-ty">Result</span>&lt;String, FormatError&gt;
