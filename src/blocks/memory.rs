@@ -141,7 +141,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         // same logic as htop
         let used_diff = mem_free + buffers + pagecache + reclaimable;
         let mem_used = if mem_total >= used_diff {
-            mem_total - used_diff + shmem
+            mem_total - used_diff
         } else {
             mem_total - mem_free
         };
