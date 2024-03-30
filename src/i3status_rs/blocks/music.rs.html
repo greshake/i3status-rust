@@ -681,6 +681,21 @@
 <a href="#679" id="679">679</a>
 <a href="#680" id="680">680</a>
 <a href="#681" id="681">681</a>
+<a href="#682" id="682">682</a>
+<a href="#683" id="683">683</a>
+<a href="#684" id="684">684</a>
+<a href="#685" id="685">685</a>
+<a href="#686" id="686">686</a>
+<a href="#687" id="687">687</a>
+<a href="#688" id="688">688</a>
+<a href="#689" id="689">689</a>
+<a href="#690" id="690">690</a>
+<a href="#691" id="691">691</a>
+<a href="#692" id="692">692</a>
+<a href="#693" id="693">693</a>
+<a href="#694" id="694">694</a>
+<a href="#695" id="695">695</a>
+<a href="#696" id="696">696</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! The current song title and artist
 //!
 //! Also provides buttons for play/pause, previous and next.
@@ -707,6 +722,8 @@
 //! `interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore. | `["playerctld"]`
 //! `separator` | String to insert between artist and title. | `" - "`
 //! `seek_step_secs` | Positive number of seconds to seek forward/backward when scrolling on the bar. Does not need to be an integer. | `1`
+//! `seek_forward_step_secs` | Positive number of seconds to seek forward when scrolling on the bar. Does not need to be an integer. | `seek_step_secs`
+//! `seek_backward_step_secs` | Positive number of seconds to seek backward when scrolling on the bar. Does not need to be an integer. | `seek_step_secs`
 //! `volume_step` | The percent volume level is increased/decreased for the selected audio device when scrolling. Capped automatically at 50. | `5`
 //!
 //! Note: All placeholders except `icon` can be absent. See the examples below to learn how to handle this.
@@ -846,6 +863,8 @@
     </span><span class="kw">pub </span>separator: String,
     <span class="attr">#[default(<span class="number">1</span>.into())]
     </span><span class="kw">pub </span>seek_step_secs: Seconds&lt;<span class="bool-val">false</span>&gt;,
+    <span class="kw">pub </span>seek_forward_step_secs: <span class="prelude-ty">Option</span>&lt;Seconds&lt;<span class="bool-val">false</span>&gt;&gt;,
+    <span class="kw">pub </span>seek_backward_step_secs: <span class="prelude-ty">Option</span>&lt;Seconds&lt;<span class="bool-val">false</span>&gt;&gt;,
     <span class="attr">#[default(<span class="number">5.0</span>)]
     </span><span class="kw">pub </span>volume_step: f64,
 }
@@ -881,6 +900,17 @@
     };
 
     <span class="kw">let </span>volume_step = config.volume_step.clamp(<span class="number">0.0</span>, <span class="number">50.0</span>) / <span class="number">100.0</span>;
+
+    <span class="kw">let </span>seek_forward_step = config
+        .seek_forward_step_secs
+        .unwrap_or(config.seek_step_secs)
+        .<span class="number">0
+        </span>.as_micros() <span class="kw">as </span>i64;
+    <span class="kw">let </span>seek_backward_step = -(config
+        .seek_backward_step_secs
+        .unwrap_or(config.seek_step_secs)
+        .<span class="number">0
+        </span>.as_micros() <span class="kw">as </span>i64);
 
     <span class="kw">let </span>new_btn = |icon: <span class="kw-2">&amp;</span>str, instance: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str| -&gt; <span class="prelude-ty">Result</span>&lt;Value&gt; {
         <span class="prelude-val">Ok</span>(Value::icon(icon.to_string()).with_instance(instance))
@@ -1139,10 +1169,10 @@
                                 <span class="kw">break</span>;
                             }
                             <span class="string">"seek_forward" </span>=&gt; {
-                                player.seek(config.seek_step_secs.<span class="number">0</span>.as_micros() <span class="kw">as </span>i64).<span class="kw">await</span><span class="question-mark">?</span>;
+                                player.seek(seek_forward_step).<span class="kw">await</span><span class="question-mark">?</span>;
                             }
                             <span class="string">"seek_backward" </span>=&gt; {
-                                player.seek(-(config.seek_step_secs.<span class="number">0</span>.as_micros() <span class="kw">as </span>i64)).<span class="kw">await</span><span class="question-mark">?</span>;
+                                player.seek(seek_backward_step).<span class="kw">await</span><span class="question-mark">?</span>;
                             }
                             <span class="string">"volume_up" </span>=&gt; {
                                 player.set_volume(volume_step).<span class="kw">await</span><span class="question-mark">?</span>;
