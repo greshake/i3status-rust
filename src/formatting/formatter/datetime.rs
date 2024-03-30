@@ -102,6 +102,7 @@ impl DatetimeFormatter {
 
 impl Formatter for DatetimeFormatter {
     fn format(&self, val: &Value, _config: &SharedConfig) -> Result<String, FormatError> {
+        #[allow(clippy::unnecessary_wraps)]
         fn for_generic_datetime<T>(
             this: &DatetimeFormatter,
             datetime: DateTime<T>,
