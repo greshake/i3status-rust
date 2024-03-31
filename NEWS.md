@@ -1,5 +1,10 @@
 # i3status-rust 0.33.1 [unreleased]
 
+### New Blocks and Features
+
+* Memory: add zram, zswap support (#2018).
+* Music: allow asymmetric seek steps (#2019).
+
 ### Bug Fixes and Improvements
 
 * Time: snap seconds to the multiple of interval (#2005).
