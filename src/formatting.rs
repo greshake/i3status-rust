@@ -63,6 +63,12 @@
 //! `max_value`            | which value is treated as "full". For example, for battery level `100` is full. | `100`
 //! `vertical` or `v`      | whether to render the bar vertically or not                                     | `false`
 //!
+//! ## `tally` - Display numbers as tally marks
+//!
+//! Argument       | Description                                                                                                                                                                     |Default value
+//! ---------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------
+//! `style` or `s` | One of [`chinese_counting_rods`/`ccr`](https://en.wikipedia.org/wiki/Counting_rods), [`chinese_tally`/`ct`, `western_tally`/`wt`, `western_tally_ungrouped`/`wtu`](https://en.wikipedia.org/wiki/Tally_marks) | western_tally
+//!
 //! ## `pango-str` - Just display the text without pango markup escaping
 //!
 //! No arguments.

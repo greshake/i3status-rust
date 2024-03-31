@@ -25,6 +25,8 @@ macro_rules! new_fmt {
 
 mod bar;
 pub use bar::BarFormatter;
+mod tally;
+pub use tally::TallyFormatter;
 mod datetime;
 pub use datetime::{DatetimeFormatter, DEFAULT_DATETIME_FORMATTER};
 mod eng;
@@ -51,6 +53,7 @@ pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
         "eng" => Ok(Box::new(EngFormatter::from_args(args)?)),
         "pango-str" => Ok(Box::new(PangoStrFormatter::from_args(args)?)),
         "str" => Ok(Box::new(StrFormatter::from_args(args)?)),
+        "tally" => Ok(Box::new(TallyFormatter::from_args(args)?)),
         _ => Err(Error::new(format!("Unknown formatter: '{name}'"))),
     }
 }
