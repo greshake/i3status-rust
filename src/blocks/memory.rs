@@ -34,6 +34,13 @@
 //! `swap_free_percents`      | as above but as a percentage of total memory                                    | Number | Percents
 //! `swap_used`               | Swap used                                                                       | Number | Bytes
 //! `swap_used_percents`      | as above but as a percentage of total memory                                    | Number | Percents
+//! `zram_compressed`         | Compressed zram memory usage                                                    | Number | Bytes
+//! `zram_decompressed`       | Decompressed zram memory usage                                                  | Number | Bytes
+//! 'zram_comp_ratio'         | Ratio of the decompressed/compressed zram memory                                | Number | -
+//! `zswap_compressed`        | Compressed zswap memory usage (>=Linux 5.19)                                    | Number | Bytes
+//! `zswap_decompressed`      | Decompressed zswap memory usage (>=Linux 5.19)                                  | Number | Bytes
+//! `zswap_decompressed_percents` | as above but as a percentage of total zswap memory  (>=Linux 5.19)          | Number | Percents
+//! 'zswap_comp_ratio'        | Ratio of the decompressed/compressed zswap memory (>=Linux 5.19)                | Number | -
 //!
 //! Action          | Description                               | Default button
 //! ----------------|-------------------------------------------|---------------
@@ -57,7 +64,7 @@
 
 use std::cmp::min;
 use std::str::FromStr;
-use tokio::fs::File;
+use tokio::fs::{read_dir, File};
 use tokio::io::{AsyncBufReadExt, BufReader};
 
 use super::prelude::*;
@@ -147,6 +154,31 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let swap_cached = mem_state.swap_cached as f64 * 1024.;
         let swap_used = swap_total - swap_free - swap_cached;
 
+        // Zswap usage
+        let zswap_compressed = mem_state.zswap_compressed as f64 * 1024.;
+        let zswap_decompressed = mem_state.zswap_decompressed as f64 * 1024.;
+
+        let zswap_comp_ratio = if zswap_compressed != 0.0 {
+            zswap_decompressed / zswap_compressed
+        } else {
+            0.0
+        };
+        let zswap_decompressed_percents = if (swap_used + swap_cached) != 0.0 {
+            zswap_decompressed / (swap_used + swap_cached) * 100.0
+        } else {
+            0.0
+        };
+
+        // Zram usage
+        let zram_compressed = mem_state.zram_compressed as f64;
+        let zram_decompressed = mem_state.zram_decompressed as f64;
+
+        let zram_comp_ratio = if zram_compressed != 0.0 {
+            zram_decompressed / zram_compressed
+        } else {
+            0.0
+        };
+
         let mut widget = Widget::new().with_format(format.clone());
         widget.set_values(map! {
             "icon" => Value::icon("memory_mem"),
@@ -168,7 +200,14 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             "buffers" => Value::bytes(buffers),
             "buffers_percent" => Value::percents(buffers / mem_total * 100.),
             "cached" => Value::bytes(cached),
-            "cached_percent" => Value::percents(cached / mem_total * 100.)
+            "cached_percent" => Value::percents(cached / mem_total * 100.),
+            "zram_compressed" => Value::bytes(zram_compressed),
+            "zram_decompressed" => Value::bytes(zram_decompressed),
+            "zram_comp_ratio" => Value::number(zram_comp_ratio),
+            "zswap_compressed" => Value::bytes(zswap_compressed),
+            "zswap_decompressed" => Value::bytes(zswap_decompressed),
+            "zswap_decompressed_percents" => Value::percents(zswap_decompressed_percents),
+            "zswap_comp_ratio" => Value::number(zswap_comp_ratio),
         });
 
         let mem_state = match mem_used / mem_total * 100. {
@@ -223,6 +262,10 @@ struct Memstate {
     swap_total: u64,
     swap_free: u64,
     swap_cached: u64,
+    zram_compressed: u64,
+    zram_decompressed: u64,
+    zswap_compressed: u64,
+    zswap_decompressed: u64,
     zfs_arc_cache: u64,
     zfs_arc_min: u64,
 }
@@ -230,7 +273,6 @@ struct Memstate {
 impl Memstate {
     async fn new() -> Result<Self> {
         // Reference: https://www.kernel.org/doc/Documentation/filesystems/proc.txt
-
         let mut file = BufReader::new(
             File::open("/proc/meminfo")
                 .await
@@ -271,10 +313,53 @@ impl Memstate {
                 "SwapTotal:" => mem_state.swap_total = val,
                 "SwapFree:" => mem_state.swap_free = val,
                 "SwapCached:" => mem_state.swap_cached = val,
+                "Zswap:" => mem_state.zswap_compressed = val,
+                "Zswapped:" => mem_state.zswap_decompressed = val,
                 _ => (),
             }
 
             line.clear();
+        }
+
+        // For ZRAM
+        let mut entries = read_dir("/sys/block/")
+            .await
+            .error("Could not read /sys/block")?;
+        while let Some(entry) = entries
+            .next_entry()
+            .await
+            .error("Could not get next file /sys/block")?
+        {
+            let Ok(file_name) = entry.file_name().into_string() else {
+                continue;
+            };
+            if !file_name.starts_with("zram") {
+                continue;
+            }
+
+            let zram_file_path = entry.path().join("mm_stat");
+            let Ok(file) = File::open(zram_file_path).await else {
+                continue;
+            };
+
+            let mut buf = BufReader::new(file);
+            let mut line = String::new();
+            if buf.read_to_string(&mut line).await.is_err() {
+                continue;
+            }
+
+            let mut values = line.split_whitespace().map(|s| s.parse::<u64>());
+            let (Some(Ok(zram_swap_size)), Some(Ok(zram_comp_size))) =
+                (values.next(), values.next())
+            else {
+                continue;
+            };
+
+            // zram initializes with small amount by default, return 0 then
+            if zram_swap_size >= 65_536 {
+                mem_state.zram_decompressed += zram_swap_size;
+                mem_state.zram_compressed += zram_comp_size;
+            }
         }
 
         // For ZFS
