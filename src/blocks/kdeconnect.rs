@@ -308,7 +308,7 @@ impl Device {
         debug!("all devices: {:?}", devices);
 
         if let Some(device_id) = device_id {
-            devices.retain(|id| id != device_id);
+            devices.retain(|id| id == device_id);
         }
 
         let mut selected_device = None;
