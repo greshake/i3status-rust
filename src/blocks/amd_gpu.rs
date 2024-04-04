@@ -127,7 +127,7 @@ impl Device {
         if !path.exists() {
             Err(Error::new(format!("Device {name} not found")))
         } else {
-            Ok(Self {path})
+            Ok(Self { path })
         }
     }
 
@@ -189,7 +189,6 @@ mod tests {
     #[test]
     fn test_non_existing_gpu_device() {
         let device = Device::new("/nope");
-        //let expected = Err("Device /nope not found");
         assert!(device.is_err());
     }
 }
