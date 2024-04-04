@@ -181,7 +181,6 @@ impl Device {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
