@@ -178,6 +178,21 @@
 <a href="#176" id="176">176</a>
 <a href="#177" id="177">177</a>
 <a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
+<a href="#180" id="180">180</a>
+<a href="#181" id="181">181</a>
+<a href="#182" id="182">182</a>
+<a href="#183" id="183">183</a>
+<a href="#184" id="184">184</a>
+<a href="#185" id="185">185</a>
+<a href="#186" id="186">186</a>
+<a href="#187" id="187">187</a>
+<a href="#188" id="188">188</a>
+<a href="#189" id="189">189</a>
+<a href="#190" id="190">190</a>
+<a href="#191" id="191">191</a>
+<a href="#192" id="192">192</a>
+<a href="#193" id="193">193</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Display the stats of your AMD GPU
 //!
 //! # Configuration
@@ -243,7 +258,7 @@
     };
 
     <span class="kw">let </span>device = <span class="kw">match </span><span class="kw-2">&amp;</span>config.device {
-        <span class="prelude-val">Some</span>(name) =&gt; Device::new(name),
+        <span class="prelude-val">Some</span>(name) =&gt; Device::new(name)<span class="question-mark">?</span>,
         <span class="prelude-val">None </span>=&gt; Device::default_card()
             .<span class="kw">await
             </span>.error(<span class="string">"failed to get default GPU"</span>)<span class="question-mark">?
@@ -301,9 +316,13 @@
 }
 
 <span class="kw">impl </span>Device {
-    <span class="kw">fn </span>new(name: <span class="kw-2">&amp;</span>str) -&gt; <span class="self">Self </span>{
-        <span class="self">Self </span>{
-            path: PathBuf::from(<span class="macro">format!</span>(<span class="string">"/sys/class/drm/{name}/device"</span>)),
+    <span class="kw">fn </span>new(name: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, Error&gt; {
+        <span class="kw">let </span>path = PathBuf::from(<span class="macro">format!</span>(<span class="string">"/sys/class/drm/{name}/device"</span>));
+
+        <span class="kw">if </span>!path.exists() {
+            <span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">"Device {name} not found"</span>)))
+        } <span class="kw">else </span>{
+            <span class="prelude-val">Ok</span>(<span class="self">Self </span>{ path })
         }
     }
 
@@ -354,6 +373,17 @@
                 .<span class="kw">await
                 </span>.error(<span class="string">"Failed to read mem_info_vram_used"</span>)<span class="question-mark">?</span>,
         })
+    }
+}
+
+<span class="attr">#[cfg(test)]
+</span><span class="kw">mod </span>tests {
+    <span class="kw">use super</span>::<span class="kw-2">*</span>;
+
+    <span class="attr">#[test]
+    </span><span class="kw">fn </span>test_non_existing_gpu_device() {
+        <span class="kw">let </span>device = Device::new(<span class="string">"/nope"</span>);
+        <span class="macro">assert!</span>(device.is_err());
     }
 }
 </code></pre></div></section></main></body></html>
