@@ -63,7 +63,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     };
 
     let device = match &config.device {
-        Some(name) => Device::new(name),
+        Some(name) => Device::new(name)?,
         None => Device::default_card()
             .await
             .error("failed to get default GPU")?
@@ -121,9 +121,13 @@ struct GpuInfo {
 }
 
 impl Device {
-    fn new(name: &str) -> Self {
-        Self {
-            path: PathBuf::from(format!("/sys/class/drm/{name}/device")),
+    fn new(name: &str) -> Result<Self, Error> {
+        let path = PathBuf::from(format!("/sys/class/drm/{name}/device"));
+
+        if !path.exists() {
+            Err(Error::new(format!("Device {name} not found")))
+        } else {
+            Ok(Self { path })
         }
     }
 
@@ -174,5 +178,16 @@ impl Device {
                 .await
                 .error("Failed to read mem_info_vram_used")?,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_non_existing_gpu_device() {
+        let device = Device::new("/nope");
+        assert!(device.is_err());
     }
 }
