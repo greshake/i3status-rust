@@ -39,7 +39,7 @@
 //! `combo`       | Resolves to "`$artist[sep]$title"`, `"$artist"`, `"$title"`, or `"$url"` depending on what information is available. `[sep]` is set by `separator` option. | Text
 //! `player`      | Name of the current player (taken from the last part of its MPRIS bus name) | Text
 //! `avail`       | Total number of players available to switch between | Number
-//! `cur`         | Total number of players available to switch between | Number
+//! `cur`         | The current player index of the available players | Number
 //! `play`        | Play/Pause button | Clickable icon
 //! `next`        | Next button | Clickable icon
 //! `prev`        | Previous button | Clickable icon
