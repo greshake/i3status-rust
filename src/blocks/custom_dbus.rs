@@ -57,8 +57,8 @@ use std::env;
 use zbus::fdo;
 
 // Share DBus connection between multiple block instances
-static DBUS_CONNECTION: async_once_cell::OnceCell<Result<zbus::Connection>> =
-    async_once_cell::OnceCell::new();
+static DBUS_CONNECTION: tokio::sync::OnceCell<Result<zbus::Connection>> =
+    tokio::sync::OnceCell::const_new();
 
 const DBUS_NAME: &str = "rs.i3status";
 
@@ -128,7 +128,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     )?);
 
     let dbus_conn = DBUS_CONNECTION
-        .get_or_init(dbus_conn())
+        .get_or_init(dbus_conn)
         .await
         .as_ref()
         .map_err(Clone::clone)?;

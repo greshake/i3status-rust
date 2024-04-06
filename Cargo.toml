@@ -29,7 +29,6 @@ features = ["maildir", "notmuch"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
-async-once-cell = "0.5"
 async-trait = "0.1"
 backon = "0.4.1"
 calibright = { version = "0.1.6", features = ["watch"] }
