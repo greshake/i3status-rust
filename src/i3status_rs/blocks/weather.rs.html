@@ -588,7 +588,6 @@
 <a href="#586" id="586">586</a>
 <a href="#587" id="587">587</a>
 <a href="#588" id="588">588</a>
-<a href="#589" id="589">589</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Current weather
 //!
 //! This block displays local weather and temperature information. In order to use this block, you
@@ -855,8 +854,8 @@
         <span class="kw">if let </span><span class="prelude-val">Some</span>(forecast) = <span class="self">self</span>.forecast {
             <span class="macro">macro_rules! </span>map_forecasts {
                 ({$(<span class="macro-nonterminal">$suffix</span>: literal =&gt; <span class="macro-nonterminal">$src</span>: expr),* $(,)<span class="question-mark">?</span>}) =&gt; {
-                    values.extend(<span class="macro">map!</span>{
-                            $(
+                    <span class="macro">map!</span>{ @extend values
+                        $(
                             <span class="macro">concat!</span>(<span class="string">"temp_f"</span>, <span class="macro-nonterminal">$suffix</span>) =&gt; Value::degrees(<span class="macro-nonterminal">$src</span>.temp),
                             <span class="macro">concat!</span>(<span class="string">"apparent_f"</span>, <span class="macro-nonterminal">$suffix</span>) =&gt; Value::degrees(<span class="macro-nonterminal">$src</span>.apparent),
                             <span class="macro">concat!</span>(<span class="string">"humidity_f"</span>, <span class="macro-nonterminal">$suffix</span>) =&gt; Value::percents(<span class="macro-nonterminal">$src</span>.humidity),
@@ -864,7 +863,7 @@
                             <span class="macro">concat!</span>(<span class="string">"wind_kmh_f"</span>, <span class="macro-nonterminal">$suffix</span>) =&gt; Value::number(<span class="macro-nonterminal">$src</span>.wind_kmh),
                             <span class="macro">concat!</span>(<span class="string">"direction_f"</span>, <span class="macro-nonterminal">$suffix</span>) =&gt; Value::text(convert_wind_direction(<span class="macro-nonterminal">$src</span>.wind_direction).into()),
                         )*
-                    });
+                    }
                 };
             }
             <span class="macro">map_forecasts!</span>({
@@ -874,12 +873,11 @@
                 <span class="string">"fin" </span>=&gt; forecast.fin,
             });
 
-            values.extend(<span class="macro">map! </span>{
-                    <span class="string">"icon_ffin" </span>=&gt; Value::icon(forecast.fin.icon.to_icon_str()),
-                    <span class="string">"weather_ffin" </span>=&gt; Value::text(forecast.fin.weather.clone()),
-                    <span class="string">"weather_verbose_ffin" </span>=&gt; Value::text(forecast.fin.weather_verbose.clone()),
-
-            });
+            <span class="macro">map! </span>{ @extend values
+                <span class="string">"icon_ffin" </span>=&gt; Value::icon(forecast.fin.icon.to_icon_str()),
+                <span class="string">"weather_ffin" </span>=&gt; Value::text(forecast.fin.weather.clone()),
+                <span class="string">"weather_verbose_ffin" </span>=&gt; Value::text(forecast.fin.weather_verbose.clone()),
+            }
         }
         values
     }

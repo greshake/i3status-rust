@@ -468,34 +468,34 @@
         <span class="kw">let </span><span class="kw-2">mut </span>values = Values::new();
 
         <span class="kw">if let </span><span class="prelude-val">Some</span>(info_by_type) = info.get(<span class="kw-2">&amp;</span>Type::Audio) {
-            values.extend(<span class="macro">map! </span>{
+            <span class="macro">map! </span>{ @extend values
                 <span class="string">"icon_audio" </span>=&gt; Value::icon(<span class="string">"microphone"</span>),
                 <span class="string">"info_audio" </span>=&gt; Value::text(<span class="macro">format!</span>(<span class="string">"{}"</span>, info_by_type))
-            });
+            }
         }
         <span class="kw">if let </span><span class="prelude-val">Some</span>(info_by_type) = info.get(<span class="kw-2">&amp;</span>Type::AudioSink) {
-            values.extend(<span class="macro">map! </span>{
+            <span class="macro">map! </span>{ @extend values
                 <span class="string">"icon_audio_sink" </span>=&gt; Value::icon(<span class="string">"volume"</span>),
                 <span class="string">"info_audio_sink" </span>=&gt; Value::text(<span class="macro">format!</span>(<span class="string">"{}"</span>, info_by_type))
-            });
+            }
         }
         <span class="kw">if let </span><span class="prelude-val">Some</span>(info_by_type) = info.get(<span class="kw-2">&amp;</span>Type::Video) {
-            values.extend(<span class="macro">map! </span>{
+            <span class="macro">map! </span>{ @extend values
                 <span class="string">"icon_video" </span>=&gt; Value::icon(<span class="string">"xrandr"</span>),
                 <span class="string">"info_video" </span>=&gt; Value::text(<span class="macro">format!</span>(<span class="string">"{}"</span>, info_by_type))
-            });
+            }
         }
         <span class="kw">if let </span><span class="prelude-val">Some</span>(info_by_type) = info.get(<span class="kw-2">&amp;</span>Type::Webcam) {
-            values.extend(<span class="macro">map! </span>{
+            <span class="macro">map! </span>{ @extend values
                 <span class="string">"icon_webcam" </span>=&gt; Value::icon(<span class="string">"webcam"</span>),
                 <span class="string">"info_webcam" </span>=&gt; Value::text(<span class="macro">format!</span>(<span class="string">"{}"</span>, info_by_type))
-            });
+            }
         }
         <span class="kw">if let </span><span class="prelude-val">Some</span>(info_by_type) = info.get(<span class="kw-2">&amp;</span>Type::Unknown) {
-            values.extend(<span class="macro">map! </span>{
+            <span class="macro">map! </span>{ @extend values
                 <span class="string">"icon_unknown" </span>=&gt; Value::icon(<span class="string">"unknown"</span>),
                 <span class="string">"info_unknown" </span>=&gt; Value::text(<span class="macro">format!</span>(<span class="string">"{}"</span>, info_by_type))
-            });
+            }
         }
 
         widget.set_values(values);

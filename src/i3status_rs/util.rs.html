@@ -275,6 +275,10 @@
 <a href="#273" id="273">273</a>
 <a href="#274" id="274">274</a>
 <a href="#275" id="275">275</a>
+<a href="#276" id="276">276</a>
+<a href="#277" id="277">277</a>
+<a href="#278" id="278">278</a>
+<a href="#279" id="279">279</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::path::{Path, PathBuf};
 
 <span class="kw">use </span>dirs::{config_dir, data_dir};
@@ -415,29 +419,27 @@
 ///
 /// ```ignore
 /// let opt = Some(1);
-/// let map: HashMap&lt;&amp;'static str, String&gt; = map! {
+/// let m: HashMap&lt;&amp;'static str, String&gt; = map! {
 ///     "key" =&gt; "value",
 ///     [if true] "hello" =&gt; "world",
 ///     [if let Some(x) = opt] "opt" =&gt; x.to_string(),
 /// };
+/// map! { @extend m
+///     "new key" =&gt; "new value",
+///     "one" =&gt; "more",
+/// }
 /// ```
 </span><span class="attr">#[macro_export]
 </span><span class="macro">macro_rules! </span>map {
-    ($( $([$(<span class="macro-nonterminal">$cond_tokens</span>:tt)<span class="kw-2">*</span>])<span class="question-mark">? </span><span class="macro-nonterminal">$key</span>:literal =&gt; <span class="macro-nonterminal">$value</span>:expr ),* $(,)<span class="question-mark">?</span>) =&gt; {{
-        <span class="attr">#[allow(unused_mut)]
-        </span><span class="kw">let </span><span class="kw-2">mut </span>m = ::std::collections::HashMap::new();
+    (@extend <span class="macro-nonterminal">$map</span>:ident $( $([$(<span class="macro-nonterminal">$cond_tokens</span>:tt)<span class="kw-2">*</span>])<span class="question-mark">? </span><span class="macro-nonterminal">$key</span>:literal =&gt; <span class="macro-nonterminal">$value</span>:expr ),* $(,)<span class="question-mark">?</span>) =&gt; {{
         $(
-        <span class="macro">map!</span>(@insert m, <span class="macro-nonterminal">$key</span>, <span class="macro-nonterminal">$value </span>$(,$(<span class="macro-nonterminal">$cond_tokens</span>)<span class="kw-2">*</span>)<span class="question-mark">?</span>);
+        <span class="macro">map!</span>(@insert <span class="macro-nonterminal">$map</span>, <span class="macro-nonterminal">$key</span>, <span class="macro-nonterminal">$value </span>$(,$(<span class="macro-nonterminal">$cond_tokens</span>)<span class="kw-2">*</span>)<span class="question-mark">?</span>);
         )*
-        m
     }};
-    ($( <span class="macro-nonterminal">$key</span>:expr =&gt; <span class="macro-nonterminal">$value</span>:expr ),* $(,)<span class="question-mark">?</span>) =&gt; {{
-        <span class="attr">#[allow(unused_mut)]
-        </span><span class="kw">let </span><span class="kw-2">mut </span>m = ::std::collections::HashMap::new();
+    (@extend <span class="macro-nonterminal">$map</span>:ident $( <span class="macro-nonterminal">$key</span>:expr =&gt; <span class="macro-nonterminal">$value</span>:expr ),* $(,)<span class="question-mark">?</span>) =&gt; {{
         $(
-        <span class="macro">map!</span>(@insert m, <span class="macro-nonterminal">$key</span>, <span class="macro-nonterminal">$value</span>);
+        <span class="macro">map!</span>(@insert <span class="macro-nonterminal">$map</span>, <span class="macro-nonterminal">$key</span>, <span class="macro-nonterminal">$value</span>);
         )*
-        m
     }};
     (@insert <span class="macro-nonterminal">$map</span>:ident, <span class="macro-nonterminal">$key</span>:expr, <span class="macro-nonterminal">$value</span>:expr) =&gt; {{
         <span class="macro-nonterminal">$map</span>.insert(<span class="macro-nonterminal">$key</span>.into(), <span class="macro-nonterminal">$value</span>.into());
@@ -451,6 +453,12 @@
         <span class="kw">if let </span><span class="macro-nonterminal">$pat </span>= <span class="macro-nonterminal">$match_on </span>{
         <span class="macro-nonterminal">$map</span>.insert(<span class="macro-nonterminal">$key</span>.into(), <span class="macro-nonterminal">$value</span>.into());
         }
+    }};
+    ($(<span class="macro-nonterminal">$tt</span>:tt)<span class="kw-2">*</span>) =&gt; {{
+        <span class="attr">#[allow(unused_mut)]
+        </span><span class="kw">let </span><span class="kw-2">mut </span>m = ::std::collections::HashMap::new();
+        <span class="macro">map!</span>(@extend m $(<span class="macro-nonterminal">$tt</span>)<span class="kw-2">*</span>);
+        m
     }};
 }
 
