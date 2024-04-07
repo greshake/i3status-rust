@@ -264,8 +264,8 @@ impl WeatherResult {
         if let Some(forecast) = self.forecast {
             macro_rules! map_forecasts {
                 ({$($suffix: literal => $src: expr),* $(,)?}) => {
-                    values.extend(map!{
-                            $(
+                    map!{ @extend values
+                        $(
                             concat!("temp_f", $suffix) => Value::degrees($src.temp),
                             concat!("apparent_f", $suffix) => Value::degrees($src.apparent),
                             concat!("humidity_f", $suffix) => Value::percents($src.humidity),
@@ -273,7 +273,7 @@ impl WeatherResult {
                             concat!("wind_kmh_f", $suffix) => Value::number($src.wind_kmh),
                             concat!("direction_f", $suffix) => Value::text(convert_wind_direction($src.wind_direction).into()),
                         )*
-                    });
+                    }
                 };
             }
             map_forecasts!({
@@ -283,12 +283,11 @@ impl WeatherResult {
                 "fin" => forecast.fin,
             });
 
-            values.extend(map! {
-                    "icon_ffin" => Value::icon(forecast.fin.icon.to_icon_str()),
-                    "weather_ffin" => Value::text(forecast.fin.weather.clone()),
-                    "weather_verbose_ffin" => Value::text(forecast.fin.weather_verbose.clone()),
-
-            });
+            map! { @extend values
+                "icon_ffin" => Value::icon(forecast.fin.icon.to_icon_str()),
+                "weather_ffin" => Value::text(forecast.fin.weather.clone()),
+                "weather_verbose_ffin" => Value::text(forecast.fin.weather_verbose.clone()),
+            }
         }
         values
     }
