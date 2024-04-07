@@ -209,34 +209,34 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let mut values = Values::new();
 
         if let Some(info_by_type) = info.get(&Type::Audio) {
-            values.extend(map! {
+            map! { @extend values
                 "icon_audio" => Value::icon("microphone"),
                 "info_audio" => Value::text(format!("{}", info_by_type))
-            });
+            }
         }
         if let Some(info_by_type) = info.get(&Type::AudioSink) {
-            values.extend(map! {
+            map! { @extend values
                 "icon_audio_sink" => Value::icon("volume"),
                 "info_audio_sink" => Value::text(format!("{}", info_by_type))
-            });
+            }
         }
         if let Some(info_by_type) = info.get(&Type::Video) {
-            values.extend(map! {
+            map! { @extend values
                 "icon_video" => Value::icon("xrandr"),
                 "info_video" => Value::text(format!("{}", info_by_type))
-            });
+            }
         }
         if let Some(info_by_type) = info.get(&Type::Webcam) {
-            values.extend(map! {
+            map! { @extend values
                 "icon_webcam" => Value::icon("webcam"),
                 "info_webcam" => Value::text(format!("{}", info_by_type))
-            });
+            }
         }
         if let Some(info_by_type) = info.get(&Type::Unknown) {
-            values.extend(map! {
+            map! { @extend values
                 "icon_unknown" => Value::icon("unknown"),
                 "info_unknown" => Value::text(format!("{}", info_by_type))
-            });
+            }
         }
 
         widget.set_values(values);
