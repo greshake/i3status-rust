@@ -222,8 +222,8 @@
 <span class="kw">use </span>zbus::fdo;
 
 <span class="comment">// Share DBus connection between multiple block instances
-</span><span class="kw">static </span>DBUS_CONNECTION: async_once_cell::OnceCell&lt;<span class="prelude-ty">Result</span>&lt;zbus::Connection&gt;&gt; =
-    async_once_cell::OnceCell::new();
+</span><span class="kw">static </span>DBUS_CONNECTION: tokio::sync::OnceCell&lt;<span class="prelude-ty">Result</span>&lt;zbus::Connection&gt;&gt; =
+    tokio::sync::OnceCell::const_new();
 
 <span class="kw">const </span>DBUS_NAME: <span class="kw-2">&amp;</span>str = <span class="string">"rs.i3status"</span>;
 
@@ -293,7 +293,7 @@
     )<span class="question-mark">?</span>);
 
     <span class="kw">let </span>dbus_conn = DBUS_CONNECTION
-        .get_or_init(dbus_conn())
+        .get_or_init(dbus_conn)
         .<span class="kw">await
         </span>.as_ref()
         .map_err(Clone::clone)<span class="question-mark">?</span>;
