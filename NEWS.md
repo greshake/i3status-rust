@@ -10,6 +10,8 @@
 * Time: snap seconds to the multiple of interval (#2005).
 * Privacy(Pipewire): fix status bar freezing (#2024).
 * Privacy(v4l): change device scan method.
+* Kdeconnect: fix device_id parameter (#2033).
+* AMD GPU: better error message on device not found (#2035).
 
 # i3status-rust 0.33.0
 
