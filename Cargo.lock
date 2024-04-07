@@ -190,12 +190,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "async-once-cell"
-version = "0.5.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9338790e78aa95a416786ec8389546c4b6a1dfc3dc36071ed9518a9413a542eb"
-
-[[package]]
 name = "async-pidfd"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1249,7 +1243,6 @@ dependencies = [
 name = "i3status-rs"
 version = "0.33.0"
 dependencies = [
- "async-once-cell",
  "async-trait",
  "backon",
  "calibright",
