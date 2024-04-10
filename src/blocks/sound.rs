@@ -12,6 +12,7 @@
 //! ----|--------|--------
 //! `driver` | `"auto"`, `"pulseaudio"`, `"alsa"`. | `"auto"` (Pulseaudio with ALSA fallback)
 //! `format` | A string to customise the output of this block. See below for available placeholders. | <code>\" $icon {$volume.eng(w:2) \|}\"</code>
+//! `format_alt` | If set, block will switch between `format` and `format_alt` on every click. | `None`
 //! `name` | PulseAudio device name, or the ALSA control name as found in the output of `amixer -D yourdevice scontrols`. | PulseAudio: `@DEFAULT_SINK@` / ALSA: `Master`
 //! `device` | ALSA device name, usually in the form "hw:X" or "hw:X,Y" where `X` is the card number and `Y` is the device number as found in the output of `aplay -l`. | `default`
 //! `device_kind` | PulseAudio device kind: `source` or `sink`. | `"sink"`
@@ -32,11 +33,12 @@
 //! `output_description` | PulseAudio device description, will fallback to `output_name` if no description is available and will be overwritten by mappings (mappings will still use `output_name`) | Text | -
 //! `active_port`        | Active port (same as information in Ports section of `pactl list cards`). Will be absent if not supported by `driver` or if mapped to `""` in `active_port_mappings`. | Text | -
 //!
-//! Action        | Default button
-//! --------------|---------------
-//! `toggle_mute` | Right
-//! `volume_up`   | Wheel Up
-//! `volume_down` | Wheel Down
+//! Action          | Default button
+//! ----------------|---------------
+//! `toggle_format` | Left
+//! `toggle_mute`   | Right
+//! `volume_down`   | Wheel Down
+//! `volume_up`     | Wheel Up
 //!
 //! # Examples
 //!
@@ -110,6 +112,7 @@ pub struct Config {
     #[default(5)]
     pub step_width: u32,
     pub format: FormatConfig,
+    pub format_alt: Option<FormatConfig>,
     pub headphones_indicator: bool,
     pub show_volume_when_muted: bool,
     pub mappings: Option<IndexMap<String, String>>,
@@ -127,12 +130,17 @@ enum Mappings<'a> {
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
+        (MouseButton::Left, None, "toggle_format"),
         (MouseButton::Right, None, "toggle_mute"),
         (MouseButton::WheelUp, None, "volume_up"),
         (MouseButton::WheelDown, None, "volume_down"),
     ])?;
 
-    let format = config.format.with_default(" $icon {$volume.eng(w:2)|} ")?;
+    let mut format = config.format.with_default(" $icon {$volume.eng(w:2)|} ")?;
+    let mut format_alt = match &config.format_alt {
+        Some(f) => Some(f.with_default("")?),
+        None => None,
+    };
 
     let device_kind = config.device_kind;
     let step_width = config.step_width.clamp(0, 50) as i32;
@@ -291,6 +299,12 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 }
                 _ = api.wait_for_update_request() => break,
                 Some(action) = actions.recv() => match action.as_ref() {
+                    "toggle_format" => {
+                        if let Some(format_alt) = &mut format_alt {
+                            std::mem::swap(format_alt, &mut format);
+                            break;
+                        }
+                    }
                     "toggle_mute" => {
                         device.toggle().await?;
                     }
