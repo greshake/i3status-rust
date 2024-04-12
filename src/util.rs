@@ -212,8 +212,8 @@ pub fn format_bar_graph(content: &[f64]) -> String {
     ];
 
     // Find min and max
-    let mut min = std::f64::INFINITY;
-    let mut max = -std::f64::INFINITY;
+    let mut min = f64::INFINITY;
+    let mut max = f64::NEG_INFINITY;
     for &v in content {
         min = min.min(v);
         max = max.max(v);
