@@ -51,7 +51,9 @@ impl FormatTemplate {
             match token_list.render(values, config) {
                 Ok(res) => return Ok(res),
                 Err(
-                    FormatError::PlaceholderNotFound(_) | FormatError::IncompatibleFormatter { .. },
+                    FormatError::PlaceholderNotFound(_)
+                    | FormatError::IncompatibleFormatter { .. }
+                    | FormatError::NumberOutOfRange(_),
                 ) if i != self.0.len() - 1 => (),
                 Err(e) => return Err(e),
             }

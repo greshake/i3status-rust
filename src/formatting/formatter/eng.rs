@@ -2,6 +2,7 @@ use crate::formatting::prefix::Prefix;
 use crate::formatting::unit::Unit;
 
 use std::borrow::Cow;
+use std::ops::RangeInclusive;
 
 use super::*;
 
@@ -20,6 +21,7 @@ pub const DEFAULT_NUMBER_FORMATTER: EngFormatter = EngFormatter {
     prefix_hidden: false,
     prefix_forced: false,
     pad_with: DEFAULT_NUMBER_PAD_WITH,
+    range: f64::NEG_INFINITY..=f64::INFINITY,
 };
 
 #[derive(Debug)]
@@ -33,6 +35,7 @@ pub struct EngFormatter {
     prefix_hidden: bool,
     prefix_forced: bool,
     pad_with: PadWith,
+    range: RangeInclusive<f64>,
 }
 
 impl EngFormatter {
@@ -94,6 +97,17 @@ impl EngFormatter {
                         ));
                     }
                 }
+                "range" => {
+                    let (start, end) = arg.val.split_once("..").error("invalid range")?;
+                    if !start.is_empty() {
+                        result.range = start.parse::<f64>().error("invalid range start")?
+                            ..=*result.range.end();
+                    }
+                    if !end.is_empty() {
+                        result.range = *result.range.start()
+                            ..=end.parse::<f64>().error("invalid range end")?;
+                    }
+                }
                 other => {
                     return Err(Error::new(format!("Unknown argument for 'eng': '{other}'")));
                 }
@@ -108,6 +122,10 @@ impl Formatter for EngFormatter {
     fn format(&self, val: &Value, _config: &SharedConfig) -> Result<String, FormatError> {
         match val {
             Value::Number { mut val, mut unit } => {
+                if !self.range.contains(&val) {
+                    return Err(FormatError::NumberOutOfRange(val));
+                }
+
                 let is_negative = val.is_sign_negative();
                 if is_negative {
                     val = -val;

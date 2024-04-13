@@ -53,6 +53,7 @@
 //! `prefix_space`  | have a whitespace before prefix symbol                                                           | `false`
 //! `force_prefix`  | force the prefix value instead of setting a "minimal prefix"                                     | `false`
 //! `pad_with`      | the character that is used to pad the number to be `width` long                                  | ` ` (a space)
+//! `range`         | a range of allowed values, in the format `<start>..<end>`, inclusive. Both start and end are optional. Can be used to, for example, hide the block when the value is not in a given range. | `..`
 //!
 //! ## `bar` - Display numbers as progress bars
 //!
@@ -120,6 +121,8 @@ pub enum FormatError {
     PlaceholderNotFound(String),
     #[error("{} cannot be formatted with '{}' formatter", .ty, .fmt)]
     IncompatibleFormatter { ty: &'static str, fmt: &'static str },
+    #[error("Number {0} is out of range")]
+    NumberOutOfRange(f64),
     #[error(transparent)]
     Other(#[from] Error),
 }
