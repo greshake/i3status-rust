@@ -31,9 +31,11 @@ words:
   - bugz
   - busctl
   - caldav
+  - ccache
   - chrono
   - clippy
   - CLOEXEC
+  - cmap
   - conn
   - consts
   - conv
@@ -182,15 +184,16 @@ words:
   - wofi
   - wttr
   - xclip
+  - xcolors
   - xesam
   - xkbswitch
   - XKCD
   - xrandr
+  - xresources
   - xtask
   - zbus
+  - zram
+  - zswap
+  - Zswapped
   - zvariant
   - zwlr
-  - zswap
-  - zram
-  - Zswapped
-  - ccache
