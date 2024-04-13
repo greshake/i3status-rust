@@ -301,25 +301,6 @@
 <a href="#299" id="299">299</a>
 <a href="#300" id="300">300</a>
 <a href="#301" id="301">301</a>
-<a href="#302" id="302">302</a>
-<a href="#303" id="303">303</a>
-<a href="#304" id="304">304</a>
-<a href="#305" id="305">305</a>
-<a href="#306" id="306">306</a>
-<a href="#307" id="307">307</a>
-<a href="#308" id="308">308</a>
-<a href="#309" id="309">309</a>
-<a href="#310" id="310">310</a>
-<a href="#311" id="311">311</a>
-<a href="#312" id="312">312</a>
-<a href="#313" id="313">313</a>
-<a href="#314" id="314">314</a>
-<a href="#315" id="315">315</a>
-<a href="#316" id="316">316</a>
-<a href="#317" id="317">317</a>
-<a href="#318" id="318">318</a>
-<a href="#319" id="319">319</a>
-<a href="#320" id="320">320</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::formatting::prefix::Prefix;
 <span class="kw">use </span><span class="kw">crate</span>::formatting::unit::Unit;
 
@@ -332,8 +313,7 @@
 <span class="kw">const </span>DEFAULT_NUMBER_WIDTH: usize = <span class="number">2</span>;
 <span class="kw">const </span>DEFAULT_NUMBER_PAD_WITH: PadWith = Cow::Borrowed(<span class="string">" "</span>);
 
-<span class="comment">// TODO: split those defaults
-</span><span class="kw">pub const </span>DEFAULT_NUMBER_FORMATTER: EngFormatter = EngFormatter {
+<span class="kw">pub const </span>DEFAULT_NUMBER_FORMATTER: EngFormatter = EngFormatter {
     width: DEFAULT_NUMBER_WIDTH,
     unit: <span class="prelude-val">None</span>,
     unit_has_space: <span class="bool-val">false</span>,
@@ -360,57 +340,49 @@
 
 <span class="kw">impl </span>EngFormatter {
     <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn </span>from_args(args: <span class="kw-2">&amp;</span>[Arg]) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
-        <span class="kw">let </span><span class="kw-2">mut </span>width = DEFAULT_NUMBER_WIDTH;
-        <span class="kw">let </span><span class="kw-2">mut </span>unit = <span class="prelude-val">None</span>;
-        <span class="kw">let </span><span class="kw-2">mut </span>unit_has_space = <span class="bool-val">false</span>;
-        <span class="kw">let </span><span class="kw-2">mut </span>unit_hidden = <span class="bool-val">false</span>;
-        <span class="kw">let </span><span class="kw-2">mut </span>prefix = <span class="prelude-val">None</span>;
-        <span class="kw">let </span><span class="kw-2">mut </span>prefix_has_space = <span class="bool-val">false</span>;
-        <span class="kw">let </span><span class="kw-2">mut </span>prefix_hidden = <span class="bool-val">false</span>;
-        <span class="kw">let </span><span class="kw-2">mut </span>prefix_forced = <span class="bool-val">false</span>;
-        <span class="kw">let </span><span class="kw-2">mut </span>pad_with = DEFAULT_NUMBER_PAD_WITH;
+        <span class="kw">let </span><span class="kw-2">mut </span>result = DEFAULT_NUMBER_FORMATTER;
 
         <span class="kw">for </span>arg <span class="kw">in </span>args {
             <span class="kw">match </span>arg.key {
                 <span class="string">"width" </span>| <span class="string">"w" </span>=&gt; {
-                    width = arg.val.parse().error(<span class="string">"Width must be a positive integer"</span>)<span class="question-mark">?</span>;
+                    result.width = arg.val.parse().error(<span class="string">"Width must be a positive integer"</span>)<span class="question-mark">?</span>;
                 }
                 <span class="string">"unit" </span>| <span class="string">"u" </span>=&gt; {
-                    unit = <span class="prelude-val">Some</span>(arg.val.parse()<span class="question-mark">?</span>);
+                    result.unit = <span class="prelude-val">Some</span>(arg.val.parse()<span class="question-mark">?</span>);
                 }
                 <span class="string">"hide_unit" </span>=&gt; {
-                    unit_hidden = arg
+                    result.unit_hidden = arg
                         .val
                         .parse()
                         .ok()
                         .error(<span class="string">"hide_unit must be true or false"</span>)<span class="question-mark">?</span>;
                 }
                 <span class="string">"unit_space" </span>=&gt; {
-                    unit_has_space = arg
+                    result.unit_has_space = arg
                         .val
                         .parse()
                         .ok()
                         .error(<span class="string">"unit_space must be true or false"</span>)<span class="question-mark">?</span>;
                 }
                 <span class="string">"prefix" </span>| <span class="string">"p" </span>=&gt; {
-                    prefix = <span class="prelude-val">Some</span>(arg.val.parse()<span class="question-mark">?</span>);
+                    result.prefix = <span class="prelude-val">Some</span>(arg.val.parse()<span class="question-mark">?</span>);
                 }
                 <span class="string">"hide_prefix" </span>=&gt; {
-                    prefix_hidden = arg
+                    result.prefix_hidden = arg
                         .val
                         .parse()
                         .ok()
                         .error(<span class="string">"hide_prefix must be true or false"</span>)<span class="question-mark">?</span>;
                 }
                 <span class="string">"prefix_space" </span>=&gt; {
-                    prefix_has_space = arg
+                    result.prefix_has_space = arg
                         .val
                         .parse()
                         .ok()
                         .error(<span class="string">"prefix_space must be true or false"</span>)<span class="question-mark">?</span>;
                 }
                 <span class="string">"force_prefix" </span>=&gt; {
-                    prefix_forced = arg
+                    result.prefix_forced = arg
                         .val
                         .parse()
                         .ok()
@@ -418,7 +390,7 @@
                 }
                 <span class="string">"pad_with" </span>=&gt; {
                     <span class="kw">if </span>arg.val.graphemes(<span class="bool-val">true</span>).count() &lt; <span class="number">2 </span>{
-                        pad_with = Cow::Owned(arg.val.into());
+                        result.pad_with = Cow::Owned(arg.val.into());
                     } <span class="kw">else </span>{
                         <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(
                             <span class="string">"pad_with must be an empty string or a single character"</span>,
@@ -431,17 +403,7 @@
             }
         }
 
-        <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
-            width,
-            unit,
-            unit_has_space,
-            unit_hidden,
-            prefix,
-            prefix_has_space,
-            prefix_hidden,
-            prefix_forced,
-            pad_with,
-        })
+        <span class="prelude-val">Ok</span>(result)
     }
 }
 
