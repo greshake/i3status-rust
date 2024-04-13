@@ -216,6 +216,12 @@ impl FromStr for Color {
             let v = components.next().or_error(err_msg)??;
             let a = components.next().unwrap_or(Ok(100.))?;
             Color::Hsva(Hsva::new(h, s / 100., v / 100., (a / 100. * 255.) as u8))
+        } else if color.starts_with("x:") {
+            let name = color.split_at(2).1;
+            super::xresources::get_color(name)?
+                .or_error(|| format!("color '{name}' not defined in ~/.Xresources"))?
+                .parse()
+                .or_error(|| format!("invalid color definition '{name}'"))?
         } else {
             let err_msg = || format!("'{color}' is not a valid RGBA color");
             let rgb = color.get(1..7).or_error(err_msg)?;
