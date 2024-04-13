@@ -10,7 +10,6 @@ type PadWith = Cow<'static, str>;
 const DEFAULT_NUMBER_WIDTH: usize = 2;
 const DEFAULT_NUMBER_PAD_WITH: PadWith = Cow::Borrowed(" ");
 
-// TODO: split those defaults
 pub const DEFAULT_NUMBER_FORMATTER: EngFormatter = EngFormatter {
     width: DEFAULT_NUMBER_WIDTH,
     unit: None,
@@ -38,57 +37,49 @@ pub struct EngFormatter {
 
 impl EngFormatter {
     pub(super) fn from_args(args: &[Arg]) -> Result<Self> {
-        let mut width = DEFAULT_NUMBER_WIDTH;
-        let mut unit = None;
-        let mut unit_has_space = false;
-        let mut unit_hidden = false;
-        let mut prefix = None;
-        let mut prefix_has_space = false;
-        let mut prefix_hidden = false;
-        let mut prefix_forced = false;
-        let mut pad_with = DEFAULT_NUMBER_PAD_WITH;
+        let mut result = DEFAULT_NUMBER_FORMATTER;
 
         for arg in args {
             match arg.key {
                 "width" | "w" => {
-                    width = arg.val.parse().error("Width must be a positive integer")?;
+                    result.width = arg.val.parse().error("Width must be a positive integer")?;
                 }
                 "unit" | "u" => {
-                    unit = Some(arg.val.parse()?);
+                    result.unit = Some(arg.val.parse()?);
                 }
                 "hide_unit" => {
-                    unit_hidden = arg
+                    result.unit_hidden = arg
                         .val
                         .parse()
                         .ok()
                         .error("hide_unit must be true or false")?;
                 }
                 "unit_space" => {
-                    unit_has_space = arg
+                    result.unit_has_space = arg
                         .val
                         .parse()
                         .ok()
                         .error("unit_space must be true or false")?;
                 }
                 "prefix" | "p" => {
-                    prefix = Some(arg.val.parse()?);
+                    result.prefix = Some(arg.val.parse()?);
                 }
                 "hide_prefix" => {
-                    prefix_hidden = arg
+                    result.prefix_hidden = arg
                         .val
                         .parse()
                         .ok()
                         .error("hide_prefix must be true or false")?;
                 }
                 "prefix_space" => {
-                    prefix_has_space = arg
+                    result.prefix_has_space = arg
                         .val
                         .parse()
                         .ok()
                         .error("prefix_space must be true or false")?;
                 }
                 "force_prefix" => {
-                    prefix_forced = arg
+                    result.prefix_forced = arg
                         .val
                         .parse()
                         .ok()
@@ -96,7 +87,7 @@ impl EngFormatter {
                 }
                 "pad_with" => {
                     if arg.val.graphemes(true).count() < 2 {
-                        pad_with = Cow::Owned(arg.val.into());
+                        result.pad_with = Cow::Owned(arg.val.into());
                     } else {
                         return Err(Error::new(
                             "pad_with must be an empty string or a single character",
@@ -109,17 +100,7 @@ impl EngFormatter {
             }
         }
 
-        Ok(Self {
-            width,
-            unit,
-            unit_has_space,
-            unit_hidden,
-            prefix,
-            prefix_has_space,
-            prefix_hidden,
-            prefix_forced,
-            pad_with,
-        })
+        Ok(result)
     }
 }
 
