@@ -430,10 +430,10 @@
     <span class="kw">let </span>abs_a = a.abs();
     <span class="kw">let </span>abs_b = b.abs();
     <span class="kw">let </span>diff = (abs_a - abs_b).abs();
-    <span class="kw">if </span>a == <span class="number">0.0 </span>|| b == <span class="number">0.0 </span>|| abs_a + abs_b &lt; std::f64::EPSILON {
-        diff &lt; eps * std::f64::EPSILON
+    <span class="kw">if </span>a == <span class="number">0.0 </span>|| b == <span class="number">0.0 </span>|| abs_a + abs_b &lt; f64::EPSILON {
+        diff &lt; eps * f64::EPSILON
     } <span class="kw">else </span>{
-        diff / (abs_a + abs_b).min(std::f64::MAX) &lt; eps
+        diff / (abs_a + abs_b).min(f64::MAX) &lt; eps
     }
 }
 

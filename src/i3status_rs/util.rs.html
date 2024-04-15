@@ -493,8 +493,8 @@
     ];
 
     <span class="comment">// Find min and max
-    </span><span class="kw">let </span><span class="kw-2">mut </span>min = std::f64::INFINITY;
-    <span class="kw">let </span><span class="kw-2">mut </span>max = -std::f64::INFINITY;
+    </span><span class="kw">let </span><span class="kw-2">mut </span>min = f64::INFINITY;
+    <span class="kw">let </span><span class="kw-2">mut </span>max = f64::NEG_INFINITY;
     <span class="kw">for </span><span class="kw-2">&amp;</span>v <span class="kw">in </span>content {
         min = min.min(v);
         max = max.max(v);
