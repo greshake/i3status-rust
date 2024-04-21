@@ -1,9 +1,10 @@
 pub mod color;
 pub mod separator;
 
+use std::fmt;
 use std::ops::{Deref, DerefMut};
 
-use serde::Deserialize;
+use serde::{de, Deserialize};
 
 use crate::errors::*;
 use crate::util;
@@ -145,8 +146,7 @@ impl TryFrom<ThemeUserConfig> for Theme {
     }
 }
 
-#[derive(Deserialize, Debug, Clone)]
-#[serde(untagged)]
+#[derive(Debug, Clone)]
 pub enum ColorOrLink {
     Color(Color),
     Link { link: String },
@@ -174,5 +174,42 @@ impl ColorOrLink {
                 _ => return Err(Error::new(format!("{link} is not a correct theme color"))),
             },
         })
+    }
+}
+
+impl<'de> Deserialize<'de> for ColorOrLink {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: de::Deserializer<'de>,
+    {
+        struct Visitor;
+        impl<'de> de::Visitor<'de> for Visitor {
+            type Value = ColorOrLink;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("color or link")
+            }
+
+            fn visit_map<A>(self, map: A) -> Result<Self::Value, A::Error>
+            where
+                A: de::MapAccess<'de>,
+            {
+                #[derive(Deserialize)]
+                #[serde(deny_unknown_fields)]
+                struct Link {
+                    link: String,
+                }
+                Link::deserialize(de::value::MapAccessDeserializer::new(map))
+                    .map(|link| ColorOrLink::Link { link: link.link })
+            }
+
+            fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                v.parse::<Color>().serde_error().map(ColorOrLink::Color)
+            }
+        }
+        deserializer.deserialize_any(Visitor)
     }
 }
