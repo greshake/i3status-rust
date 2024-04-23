@@ -101,6 +101,8 @@ use crate::wrappers::SerdeRegex;
 use indexmap::IndexMap;
 use regex::Regex;
 
+make_log_macro!(debug, "sound");
+
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
@@ -147,7 +149,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     let icon = |muted: bool, device: &dyn SoundDevice| -> &'static str {
         if config.headphones_indicator && device_kind == DeviceKind::Sink {
-            let headphones = match device.form_factor() {
+            let form_factor = device.form_factor();
+            let active_port = device.active_port();
+            debug!("form_factor = {form_factor:?} active_port = {active_port:?}");
+            let headphones = match form_factor {
                 // form_factor's possible values are listed at:
                 // https://docs.rs/libpulse-binding/2.25.0/libpulse_binding/proplist/properties/constant.DEVICE_FORM_FACTOR.html
                 Some("headset") | Some("headphone") | Some("hands-free") | Some("portable") => true,
@@ -155,9 +160,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 // https://github.com/greshake/i3status-rust/pull/1363#issuecomment-1046095869,
                 // some sinks may not have the form_factor property, so we should fall back to the
                 // active_port if that property is not present.
-                None => device
-                    .active_port()
-                    .is_some_and(|p| p.contains("headphones")),
+                None => active_port.is_some_and(|p| p.contains("headphones")),
                 // form_factor is present and is some non-headphone value
                 _ => false,
             };
