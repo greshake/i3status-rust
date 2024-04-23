@@ -406,7 +406,7 @@ impl SoundDevice for Device {
     }
 
     fn form_factor(&self) -> Option<&str> {
-        self.active_port.as_deref()
+        self.form_factor.as_deref()
     }
 
     async fn get_info(&mut self) -> Result<()> {
