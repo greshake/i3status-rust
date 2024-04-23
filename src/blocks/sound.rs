@@ -160,7 +160,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 // https://github.com/greshake/i3status-rust/pull/1363#issuecomment-1046095869,
                 // some sinks may not have the form_factor property, so we should fall back to the
                 // active_port if that property is not present.
-                None => active_port.is_some_and(|p| p.contains("headphones")),
+                None => active_port.is_some_and(|p| p.to_lowercase().contains("headphones")),
                 // form_factor is present and is some non-headphone value
                 _ => false,
             };
