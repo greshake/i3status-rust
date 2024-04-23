@@ -27,7 +27,7 @@
 //! ----------------|-------------------------------------------|---------------
 //! `toggle_format` | Toggles between `format` and `format_alt` | Left
 //!
-//! # Example
+//! # Examples
 //!
 //! ```toml
 //! [[block]]
@@ -48,6 +48,14 @@
 //! [[block.click]]
 //! button = "right"
 //! update = true
+//! ```
+//!
+//! Show the block only if less than 10GB is available:
+//!
+//! ```toml
+//! [[block]]
+//! block = "disk_space"
+//! format = " $free.eng(range:..10e9) |"
 //! ```
 //!
 //! # Icons Used
