@@ -35,8 +35,6 @@ impl WlrToplevelManagement {
             .bind_with_cb(&mut conn, 1..=3, toplevel_manager_cb)
             .error("unsupported compositor")?;
 
-        conn.async_flush().await.error("wayland error")?;
-
         Ok(Self {
             conn,
             state: default(),
@@ -48,12 +46,13 @@ impl WlrToplevelManagement {
 impl Backend for WlrToplevelManagement {
     async fn get_info(&mut self) -> Result<Info> {
         loop {
+            self.conn.async_flush().await.error("wayland error")?;
             self.conn.async_recv_events().await.error("wayland error")?;
             self.conn.dispatch_events(&mut self.state);
+
             if let Some(err) = self.state.error.take() {
                 return Err(err);
             }
-            self.conn.async_flush().await.error("wayland error")?;
 
             if let Some(title) = self.state.new_title.take() {
                 return Ok(Info {
