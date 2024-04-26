@@ -355,6 +355,9 @@
 <a href="#353" id="353">353</a>
 <a href="#354" id="354">354</a>
 <a href="#355" id="355">355</a>
+<a href="#356" id="356">356</a>
+<a href="#357" id="357">357</a>
+<a href="#358" id="358">358</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Volume level
 //!
 //! This block displays the volume level (according to PulseAudio or ALSA). Right click to toggle mute, scroll to adjust volume.
@@ -458,6 +461,8 @@
 <span class="kw">use </span>indexmap::IndexMap;
 <span class="kw">use </span>regex::Regex;
 
+<span class="macro">make_log_macro!</span>(debug, <span class="string">"sound"</span>);
+
 <span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 </span><span class="kw">pub struct </span>Config {
@@ -504,7 +509,10 @@
 
     <span class="kw">let </span>icon = |muted: bool, device: <span class="kw-2">&amp;</span><span class="kw">dyn </span>SoundDevice| -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str {
         <span class="kw">if </span>config.headphones_indicator &amp;&amp; device_kind == DeviceKind::Sink {
-            <span class="kw">let </span>headphones = <span class="kw">match </span>device.form_factor() {
+            <span class="kw">let </span>form_factor = device.form_factor();
+            <span class="kw">let </span>active_port = device.active_port();
+            <span class="macro">debug!</span>(<span class="string">"form_factor = {form_factor:?} active_port = {active_port:?}"</span>);
+            <span class="kw">let </span>headphones = <span class="kw">match </span>form_factor {
                 <span class="comment">// form_factor's possible values are listed at:
                 // https://docs.rs/libpulse-binding/2.25.0/libpulse_binding/proplist/properties/constant.DEVICE_FORM_FACTOR.html
                 </span><span class="prelude-val">Some</span>(<span class="string">"headset"</span>) | <span class="prelude-val">Some</span>(<span class="string">"headphone"</span>) | <span class="prelude-val">Some</span>(<span class="string">"hands-free"</span>) | <span class="prelude-val">Some</span>(<span class="string">"portable"</span>) =&gt; <span class="bool-val">true</span>,
@@ -512,9 +520,7 @@
                 // https://github.com/greshake/i3status-rust/pull/1363#issuecomment-1046095869,
                 // some sinks may not have the form_factor property, so we should fall back to the
                 // active_port if that property is not present.
-                </span><span class="prelude-val">None </span>=&gt; device
-                    .active_port()
-                    .is_some_and(|p| p.contains(<span class="string">"headphones"</span>)),
+                </span><span class="prelude-val">None </span>=&gt; active_port.is_some_and(|p| p.to_lowercase().contains(<span class="string">"headphones"</span>)),
                 <span class="comment">// form_factor is present and is some non-headphone value
                 </span><span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
             };
