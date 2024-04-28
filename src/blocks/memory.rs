@@ -46,7 +46,7 @@
 //! ----------------|-------------------------------------------|---------------
 //! `toggle_format` | Toggles between `format` and `format_alt` | Left
 //!
-//! # Example
+//! # Examples
 //!
 //! ```toml
 //! [[block]]
@@ -56,6 +56,14 @@
 //! interval = 30
 //! warning_mem = 70
 //! critical_mem = 90
+//! ```
+//!
+//! Show swap and hide if it is zero:
+//!
+//! ```toml
+//! [[block]]
+//! block = "memory"
+//! format = " $icon $swap_used.eng(range:1..) |"
 //! ```
 //!
 //! # Icons Used
