@@ -9,6 +9,20 @@ use super::FormatError;
 use crate::config::SharedConfig;
 use crate::errors::*;
 
+// A helper macro for testing formatters
+#[cfg(test)]
+#[macro_export]
+macro_rules! new_fmt {
+    ($name:ident) => {{
+        fmt!($name,)
+    }};
+    ($name:ident, $($key:ident : $value:tt),* $(,)?) => {
+        new_formatter(stringify!($name), &[
+            $( Arg { key: stringify!($key), val: stringify!($value) } ),*
+        ])
+    };
+}
+
 mod bar;
 pub use bar::BarFormatter;
 mod datetime;

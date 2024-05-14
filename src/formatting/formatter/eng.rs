@@ -199,17 +199,9 @@ impl Formatter for EngFormatter {
 mod tests {
     use super::*;
 
-    macro_rules! fmt {
-        ($name:ident, $($key:ident : $value:tt),*) => {
-            new_formatter(stringify!($name), &[
-                $( Arg { key: stringify!($key), val: stringify!($value) } ),*
-            ]).unwrap()
-        };
-    }
-
     #[test]
     fn eng_rounding_and_negatives() {
-        let fmt = fmt!(eng, w: 3);
+        let fmt = new_fmt!(eng, w: 3).unwrap();
         let config = SharedConfig::default();
 
         let result = fmt
@@ -278,7 +270,7 @@ mod tests {
             .unwrap();
         assert_eq!(result, " 10");
 
-        let fmt = fmt!(eng, w: 5, p: 1);
+        let fmt = new_fmt!(eng, w: 5, p: 1).unwrap();
         let result = fmt
             .format(
                 &Value::Number {
@@ -300,19 +292,19 @@ mod tests {
             unit: Unit::Bytes,
         };
 
-        let fmt = fmt!(eng, w: 5, p: Mi);
+        let fmt = new_fmt!(eng, w: 5, p: Mi).unwrap();
         let result = fmt.format(&val, &config).unwrap();
         assert_eq!(result, "14.96GiB");
 
-        let fmt = fmt!(eng, w: 4, p: Mi);
+        let fmt = new_fmt!(eng, w: 4, p: Mi).unwrap();
         let result = fmt.format(&val, &config).unwrap();
         assert_eq!(result, "15.0GiB");
 
-        let fmt = fmt!(eng, w: 3, p: Mi);
+        let fmt = new_fmt!(eng, w: 3, p: Mi).unwrap();
         let result = fmt.format(&val, &config).unwrap();
         assert_eq!(result, " 15GiB");
 
-        let fmt = fmt!(eng, w: 2, p: Mi);
+        let fmt = new_fmt!(eng, w: 2, p: Mi).unwrap();
         let result = fmt.format(&val, &config).unwrap();
         assert_eq!(result, "15GiB");
     }
