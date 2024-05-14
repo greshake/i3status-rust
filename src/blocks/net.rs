@@ -31,6 +31,7 @@
 //! `bitrate`         | WiFi connection bitrate     | Number | Bits per second
 //! `ip`              | IPv4 address of the iface   | Text   | -
 //! `ipv6`            | IPv6 address of the iface   | Text   | -
+//! `nameserver`      | Nameserver                  | Text   | -
 //!
 //! # Example
 //!
