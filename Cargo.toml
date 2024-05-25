@@ -22,10 +22,11 @@ pipewire = ["dep:pipewire"]
 notmuch = ["dep:notmuch"]
 maildir = ["dep:maildir", "glob"]
 icu_calendar = ["dep:icu_datetime", "dep:icu_calendar", "dep:icu_locid"]
+calendar = ["dep:oauth2", "dep:base64", "dep:icalendar", "dep:quick-xml", "dep:url"]
 debug_borders = []                # Make widgets' borders visible
 
 [package.metadata.docs.rs]
-features = ["maildir", "notmuch"]
+features = ["maildir", "notmuch", "calendar"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
@@ -74,6 +75,11 @@ unicode-segmentation = "1.10.1"
 wayrs-client = { version = "1.0", features = ["tokio"] }
 wayrs-protocols = { version = "0.14", features = ["wlr-foreign-toplevel-management-unstable-v1"] }
 zbus = { version = "4", default-features = false, features = ["tokio"] }
+oauth2 = { version = "4.4.2", optional = true }
+quick-xml = { version = "0.31.0", features = ["serde", "serialize"], optional = true }
+icalendar = { version = "0.16.1", features = ["chrono-tz"], optional = true }
+url = { version = "2.5.0", optional = true }
+base64 = { version = "0.22.1", optional = true }
 
 [dependencies.tokio]
 version = "1.12"

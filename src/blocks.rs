@@ -202,6 +202,8 @@ define_blocks!(
     watson,
     weather,
     xrandr,
+    #[cfg(feature = "calendar")]
+    calendar,
 );
 
 /// An error which originates from a block
