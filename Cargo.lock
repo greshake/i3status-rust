@@ -1240,6 +1240,7 @@ dependencies = [
  "futures",
  "glob",
  "hyper",
+ "iana-time-zone",
  "icu_calendar",
  "icu_datetime",
  "icu_locid",
