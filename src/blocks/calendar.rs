@@ -35,7 +35,6 @@
 //! url = "https://caldav.example.com/calendar/"
 //! calendars = ["user/calendar"]
 //! events_within_hours = 48
-//! ignore_all_day_events = true
 //! warning_threshold = 600
 //! browser_cmd = "firefox"
 //! [block.auth]
@@ -54,7 +53,6 @@
 //! url = "https://caldav.example.com/calendar/"
 //! calendars = [ "Holidays" ]
 //! events_within_hours = 48
-//! ignore_all_day_events = true
 //! warning_threshold = 600
 //! browser_cmd = "firefox"
 //! [block.auth]
@@ -66,6 +64,20 @@
 //!
 //! ## OAuth2 Authentication (Google Calendar)
 //!
+//! To access the CalDav API of Google, follow these steps to enable the API and obtain the `client_id`` and `client_secret`:
+//! 1. **Go to the Google Cloud Console**: Navigate to the [Google Cloud Console](https://console.cloud.google.com/).
+//! 2. **Create a New Project**: If you don't already have a project, click on the project dropdown and select "New Project". Give your project a name and click "Create".
+//! 3. **Enable the CalDAV API**: In the project dashboard, go to the "APIs & Services" > "Library". Search for "CalDAV API" and click on it, then click "Enable".
+//! 4. **Set Up OAuth Consent Screen**: Go to "APIs & Services" > "OAuth consent screen". Fill out the required information and save.
+//! 5. **Create Credentials**:
+//!    - Navigate to "APIs & Services" > "Credentials".
+//!    - Click "Create Credentials" and select "OAuth 2.0 Client IDs".
+//!    - Configure the consent screen if you haven't already.
+//!    - Set the application type to "Web application".
+//!    - Add your authorized redirect URIs. For example, `http://localhost:8080`.
+//!    - Click "Create" and note down the `client_id` and `client_secret`.
+//! 6. **Download the Credentials**: Click on the download icon next to your OAuth 2.0 Client ID to download the JSON file containing your client ID and client secret. Use these values in your configuration.
+//!
 //! ```toml
 //! [[block]]
 //! block = "calendar"
@@ -73,10 +85,9 @@
 //! ongoing_event_format = " $icon $summary (ends at $end.datetime(f:'%H:%M')) "
 //! no_events_format = " $icon no events "
 //! interval = 30
-//! url = "https://www.googleapis.com/calendar/v3/calendars/primary/events"
+//! url = "https://apidata.googleusercontent.com/caldav/v2/"
 //! calendars = ["primary"]
 //! events_within_hours = 48
-//! ignore_all_day_events = true
 //! warning_threshold = 600
 //! browser_cmd = "firefox"
 //! [block.auth]
@@ -106,7 +117,7 @@
 //! - `calendar`
 
 use chrono::{Duration, Utc};
-use oauth2::{AuthUrl, ClientId, ClientSecret, TokenUrl};
+use oauth2::{AuthUrl, ClientId, ClientSecret, TokenUrl, Scope};
 use url::Url;
 
 use crate::{subprocess::spawn_process, util::has_command};
@@ -140,7 +151,7 @@ pub struct OAuth2Config {
     pub auth_token: ShellString,
     #[default(8080)]
     pub redirect_port: u16,
-    pub scopes: Vec<String>,
+    pub scopes: Vec<Scope>,
 }
 
 #[derive(Deserialize, Default, Debug)]
@@ -210,7 +221,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 Err(err) => {
                     if let CalendarError::AuthRequired = err {
                         let authorization =
-                            client.authorize().await.error("authorization failed")?;
+                            client.authorize().await.error("Authorization failed")?;
                         match &authorization {
                             auth::Authorize::Completed => {
                                 return Err(Error::new(
@@ -224,7 +235,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                                 client
                                     .ask_user(authorization)
                                     .await
-                                    .error("ask user failed")?;
+                                    .error("Ask user failed")?;
                             }
                         }
                     }
@@ -281,8 +292,8 @@ async fn open_browser(config: &Config, url: &Url) -> Result<()> {
     let cmd = config.browser_cmd.expand()?;
     has_command(&cmd)
         .await
-        .or_error(|| "browser command not found")?;
-    spawn_process(&cmd, &[url.as_ref()]).error("open browser failed")
+        .or_error(|| "Browser command not found")?;
+    spawn_process(&cmd, &[url.as_ref()]).error("Open browser failed")
 }
 
 async fn caldav_client(config: &Config) -> Result<caldav::CalDavClient> {
@@ -311,8 +322,8 @@ async fn caldav_client(config: &Config) -> Result<caldav::CalDavClient> {
                 .or_else(|| std::env::var("I3RS_CALENDAR_AUTH_CLIENT_SECRET").ok())
                 .error("Calendar oauth2 client_secret not found")?;
             let auth_url =
-                AuthUrl::new(oauth2.auth_url.clone()).error("invalid authorization url")?;
-            let token_url = TokenUrl::new(oauth2.token_url.clone()).error("invalid token url")?;
+                AuthUrl::new(oauth2.auth_url.clone()).error("Invalid authorization url")?;
+            let token_url = TokenUrl::new(oauth2.token_url.clone()).error("Invalid token url")?;
 
             let flow = OAuth2Flow::new(
                 ClientId::new(client_id),
@@ -326,7 +337,7 @@ async fn caldav_client(config: &Config) -> Result<caldav::CalDavClient> {
         }
     };
     Ok(CalDavClient::new(
-        Url::parse(&config.url).error("invalid CalDav server url")?,
+        Url::parse(&config.url).error("Invalid CalDav server url")?,
         auth,
     ))
 }
@@ -372,14 +383,14 @@ pub enum CalendarError {
     Http(#[from] reqwest::Error),
     #[error(transparent)]
     Deserialize(#[from] quick_xml::de::DeError),
-    #[error("parsing error: {0}")]
+    #[error("Parsing error: {0}")]
     Parsing(String),
-    #[error("auth required")]
+    #[error("Auth required")]
     AuthRequired,
     #[error(transparent)]
     Io(#[from] std::io::Error),
-    #[error("token not exchanged")]
+    #[error("Token not exchanged")]
     TokenNotExchanged,
-    #[error("request token error: {0}")]
+    #[error("Request token error: {0}")]
     RequestToken(String),
 }

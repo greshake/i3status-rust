@@ -76,7 +76,7 @@ wayrs-client = { version = "1.0", features = ["tokio"] }
 wayrs-protocols = { version = "0.14", features = ["wlr-foreign-toplevel-management-unstable-v1"] }
 zbus = { version = "4", default-features = false, features = ["tokio"] }
 oauth2 = { version = "4.4.2", optional = true }
-quick-xml = { version = "0.31.0", features = ["serde", "serialize"], optional = true }
+quick-xml = { version = "0.31.0", features = ["serialize"], optional = true }
 icalendar = { version = "0.16.1", features = ["chrono-tz"], optional = true }
 url = { version = "2.5.0", optional = true }
 base64 = { version = "0.22.1", optional = true }

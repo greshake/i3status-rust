@@ -22,11 +22,11 @@ pub enum Auth {
 }
 
 impl Auth {
-    pub fn oauth2(flow: OAuth2Flow, token_store: TokenStore, scopes: Vec<String>) -> Self {
+    pub fn oauth2(flow: OAuth2Flow, token_store: TokenStore, scopes: Vec<Scope>) -> Self {
         Self::OAuth2(Box::new(OAuth2 {
             flow,
             token_store,
-            scopes: scopes.into_iter().map(Scope::new).collect(),
+            scopes,
         }))
     }
     pub fn basic(username: String, password: String) -> Self {

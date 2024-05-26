@@ -177,7 +177,6 @@ struct Multistatus {
 
 #[derive(Debug, Deserialize, Clone, Eq, PartialEq)]
 struct Response {
-    #[serde(rename = "href")]
     href: String,
     #[serde(rename = "propstat", default)]
     propstats: Vec<Propstat>,
@@ -195,9 +194,7 @@ impl Response {
 
 #[derive(Debug, Deserialize, Clone, Eq, PartialEq)]
 struct Propstat {
-    #[serde(rename = "status")]
     status: String,
-    #[serde(rename = "prop")]
     prop: Prop,
 }
 
@@ -246,7 +243,6 @@ enum ResourceType {
 
 #[derive(Debug, Deserialize, Clone, PartialEq, Eq)]
 struct SupportedCalendarComponentSet {
-    #[serde(rename = "comp")]
     comp: Option<Comp>,
 }
 impl SupportedCalendarComponentSet {
@@ -274,11 +270,11 @@ fn parse_href(multi_status: Multistatus, base_url: Url) -> Result<Url, CalendarE
         .into_iter()
         .flat_map(|r| r.valid_props().into_iter())
         .next();
-    match props.ok_or_else(|| CalendarError::Parsing("property not found".into()))? {
+    match props.ok_or_else(|| CalendarError::Parsing("Property not found".into()))? {
         PropValue::CurrentUserPrincipal(href) | PropValue::CalendarHomeSet(href) => base_url
             .join(&href.href)
             .map_err(|e| CalendarError::Parsing(e.to_string())),
-        _ => Err(CalendarError::Parsing("invalid property".to_string())),
+        _ => Err(CalendarError::Parsing("Invalid property".into())),
     }
 }
 
