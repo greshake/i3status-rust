@@ -9,7 +9,7 @@ use regex::Regex;
 
 use libc::c_uchar;
 
-use std::net::{Ipv4Addr, Ipv6Addr};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::ops;
 use std::path::Path;
 
@@ -27,6 +27,7 @@ pub struct NetDevice {
     pub ipv6: Option<Ipv6Addr>,
     pub icon: &'static str,
     pub tun_wg_ppp: bool,
+    pub nameservers: Vec<IpAddr>,
 }
 
 #[derive(Debug, Default)]
