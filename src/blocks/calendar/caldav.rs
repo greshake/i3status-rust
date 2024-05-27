@@ -304,7 +304,7 @@ fn parse_events(multi_status: Multistatus) -> Vec<Event> {
                                 d.and_hms_opt(0, 0, 0).map(|d| d.and_utc())
                             }
                         });
-                        let end_at = event.get_start().and_then(|d| match d {
+                        let end_at = event.get_end().and_then(|d| match d {
                             icalendar::DatePerhapsTime::DateTime(dt) => dt.try_into_utc(),
                             icalendar::DatePerhapsTime::Date(d) => {
                                 d.and_hms_opt(23, 59, 59).map(|d| d.and_utc())

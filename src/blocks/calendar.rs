@@ -253,7 +253,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             };
         }
         if let Some(event) = next_event.clone() {
-            if let (Some(start_date), Some(end_date)) = (event.end_at, event.end_at) {
+            if let (Some(start_date), Some(end_date)) = (event.start_at, event.end_at) {
                 let warn_datetime = start_date
                     - Duration::try_seconds(config.warning_threshold.into())
                         .error("Invalid warning threshold configuration")?;

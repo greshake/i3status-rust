@@ -106,7 +106,10 @@ impl OAuth2 {
                     .and_then(|t| t.refresh_token().cloned())
                 {
                     Some(refresh_token) => {
-                        let token = self.flow.refresh_token_exchange(&refresh_token).await?;
+                        let mut token = self.flow.refresh_token_exchange(&refresh_token).await?;
+                        if token.refresh_token().is_none() {
+                            token.set_refresh_token(Some(refresh_token));
+                        }
                         self.token_store.store(token)?;
                         return Ok(());
                     }
