@@ -429,6 +429,21 @@ async fn ipv6(sock: &mut NlSocket, ifa_index: i32) -> Result<Option<Ipv6Addr>> {
         .map(Ipv6Addr::from))
 }
 
+async fn read_nameservers() -> Result<Vec<IpAddr>> {
+    let file = util::read_file("/etc/resolv.conf").await?;
+    let mut nameservers = Vec::new();
+
+    for line in file.lines() {
+        if let Some(ip) = line.strip_prefix("nameserver ") {
+            if let Ok(ip) = ip.parse() {
+                nameservers.push(ip);
+            }
+        }
+    }
+
+    Ok(nameservers)
+}
+
 // Source: https://www.kernel.org/doc/Documentation/networking/operstates.txt
 #[derive(Debug, PartialEq, Eq)]
 pub enum Operstate {
