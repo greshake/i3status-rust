@@ -20,28 +20,9 @@ pub struct Event {
     pub summary: Option<String>,
     pub description: Option<String>,
     pub location: Option<String>,
+    pub url: Option<String>,
     pub start_at: Option<DateTime<Utc>>,
     pub end_at: Option<DateTime<Utc>>,
-    pub url: Option<String>,
-}
-
-impl From<icalendar::Event> for Event {
-    fn from(value: icalendar::Event) -> Self {
-        Self {
-            summary: value.get_summary().map(Into::into),
-            description: value.get_description().map(Into::into),
-            location: value.get_location().map(Into::into),
-            start_at: value.get_start().map(|d| match d {
-                icalendar::DatePerhapsTime::DateTime(dt) => dt.try_into_utc().unwrap(),
-                icalendar::DatePerhapsTime::Date(d) => d.and_hms_opt(0, 0, 0).unwrap().and_utc(),
-            }),
-            end_at: value.get_start().map(|d| match d {
-                icalendar::DatePerhapsTime::DateTime(dt) => dt.try_into_utc().unwrap(),
-                icalendar::DatePerhapsTime::Date(d) => d.and_hms_opt(23, 59, 59).unwrap().and_utc(),
-            }),
-            url: value.get_url().map(Into::into),
-        }
-    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -317,7 +298,26 @@ fn parse_events(multi_status: Multistatus) -> Vec<Event> {
                 };
                 for component in calendar.components {
                     if let icalendar::CalendarComponent::Event(event) = component {
-                        result.push(event);
+                        let start_at = event.get_start().and_then(|d| match d {
+                            icalendar::DatePerhapsTime::DateTime(dt) => dt.try_into_utc(),
+                            icalendar::DatePerhapsTime::Date(d) => {
+                                d.and_hms_opt(0, 0, 0).map(|d| d.and_utc())
+                            }
+                        });
+                        let end_at = event.get_start().and_then(|d| match d {
+                            icalendar::DatePerhapsTime::DateTime(dt) => dt.try_into_utc(),
+                            icalendar::DatePerhapsTime::Date(d) => {
+                                d.and_hms_opt(23, 59, 59).map(|d| d.and_utc())
+                            }
+                        });
+                        result.push(Event {
+                            summary: event.get_summary().map(Into::into),
+                            description: event.get_description().map(Into::into),
+                            location: event.get_location().map(Into::into),
+                            url: event.get_url().map(Into::into),
+                            start_at,
+                            end_at,
+                        });
                     }
                 }
             }

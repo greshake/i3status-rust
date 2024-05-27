@@ -9,11 +9,12 @@
 //! `next_event_format` | A string to customize the output of this block when there is a next event in the calendar. See below for available placeholders. | <code>\" $icon $start.datetime(f:'%a %H:%M') $summary \"</code>
 //! `ongoing_event_format` | A string to customize the output of this block when an event is ongoing. | <code>\" $icon $summary (ends at $end.datetime(f:'%H:%M')) \"</code>
 //! `no_events_format` | A string to customize the output of this block when there are no events | <code>\" $icon \"</code>
+//! `redirect_format` | A string to customize the output of this block when the authorization is asked | <code>\" $icon Check your web browser \"</code>
 //! `interval` | Update interval in seconds | `60`
 //! `url` | CalDav calendar server URL | N/A
 //! `auth` | Authentication configuration (unauthenticated, basic, or oauth2) | `unauthenticated`
 //! `calendars` | List of calendar names to monitor. If empty, all calendars will be fetched. | `[]`
-//! `events_within_hours` | Number of hours to look for events in the future | `24`
+//! `events_within_hours` | Number of hours to look for events in the future | `48`
 //! `warning_threshold` | Warning threshold in seconds for the upcoming event | `300`
 //! `browser_cmd` | Command to open event details in a browser. The block passes the HTML link as an argument | `"xdg-open"`
 //!
@@ -21,7 +22,7 @@
 //! ----------------|-------------------------------------------|---------------
 //! `open_link` | Opens the HTML link of the event | Left
 //!
-//!//! # Examples
+//! # Examples
 //!
 //! ## Unauthenticated
 //!
@@ -64,7 +65,7 @@
 //!
 //! ## OAuth2 Authentication (Google Calendar)
 //!
-//! To access the CalDav API of Google, follow these steps to enable the API and obtain the `client_id`` and `client_secret`:
+//! To access the CalDav API of Google, follow these steps to enable the API and obtain the `client_id` and `client_secret`:
 //! 1. **Go to the Google Cloud Console**: Navigate to the [Google Cloud Console](https://console.cloud.google.com/).
 //! 2. **Create a New Project**: If you don't already have a project, click on the project dropdown and select "New Project". Give your project a name and click "Create".
 //! 3. **Enable the CalDAV API**: In the project dashboard, go to the "APIs & Services" > "Library". Search for "CalDAV API" and click on it, then click "Enable".
@@ -117,7 +118,7 @@
 //! - `calendar`
 
 use chrono::{Duration, Utc};
-use oauth2::{AuthUrl, ClientId, ClientSecret, TokenUrl, Scope};
+use oauth2::{AuthUrl, ClientId, ClientSecret, Scope, TokenUrl};
 use url::Url;
 
 use crate::{subprocess::spawn_process, util::has_command};
@@ -125,12 +126,13 @@ use crate::{subprocess::spawn_process, util::has_command};
 mod auth;
 mod caldav;
 
-use self::auth::{AuthorizeUrl, OAuth2Flow, TokenStore};
+use self::auth::{Authorize, AuthorizeUrl, OAuth2Flow, TokenStore};
 use self::caldav::Event;
 
 use super::prelude::*;
 
 use std::path::Path;
+use std::sync::Arc;
 
 use caldav::CalDavClient;
 
@@ -176,9 +178,9 @@ pub struct Config {
     pub auth: AuthConfig,
     pub calendars: Vec<String>,
     #[default(48)]
-    pub events_within_hours: u64,
-    #[default(300.into())]
-    pub warning_threshold: Seconds,
+    pub events_within_hours: u32,
+    #[default(300)]
+    pub warning_threshold: u32,
     #[default("xdg-open".into())]
     pub browser_cmd: ShellString,
 }
@@ -203,6 +205,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     let mut actions = api.get_actions()?;
 
+    let events_within = Duration::try_hours(config.events_within_hours.into())
+        .error("Invalid event within hours configuration")?;
+
     loop {
         let mut widget = Widget::new().with_format(no_events_format.clone());
         widget.set_values(map! {
@@ -210,25 +215,19 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         });
 
         let mut next_event = None;
-        let mut retries = 0;
-        while retries <= 1 {
-            let next_event_result = get_next_event(config, &mut client).await;
+        for retries in 0..=1 {
+            let next_event_result = get_next_event(config, &mut client, events_within).await;
             match next_event_result {
                 Ok(event) => {
                     next_event = event;
                     break;
                 }
-                Err(err) => {
-                    if let CalendarError::AuthRequired = err {
+                Err(err) => match err {
+                    CalendarError::AuthRequired => {
                         let authorization =
                             client.authorize().await.error("Authorization failed")?;
                         match &authorization {
-                            auth::Authorize::Completed => {
-                                return Err(Error::new(
-                                    "Authorization failed. Check your configurations",
-                                ))
-                            }
-                            auth::Authorize::AskUser(AuthorizeUrl { url, .. }) => {
+                            Authorize::AskUser(AuthorizeUrl { url, .. }) if retries == 0 => {
                                 widget.set_format(redirect_format.clone());
                                 api.set_widget(widget.clone())?;
                                 open_browser(config, url).await?;
@@ -237,18 +236,28 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                                     .await
                                     .error("Ask user failed")?;
                             }
+                            _ => {
+                                return Err(Error::new(
+                                    "Authorization failed. Check your configurations",
+                                ))
+                            }
                         }
                     }
-                }
+                    e => {
+                        return Err(Error {
+                            message: None,
+                            cause: Some(Arc::new(e)),
+                        })
+                    }
+                },
             };
-            retries += 1;
         }
         if let Some(event) = next_event.clone() {
             if let (Some(start_date), Some(end_date)) = (event.end_at, event.end_at) {
-                let warn_datetime = Utc::now()
-                    - Duration::try_seconds(config.warning_threshold.seconds().try_into().unwrap())
-                        .unwrap();
-                if warn_datetime < start_date && start_date < Utc::now() {
+                let warn_datetime = start_date
+                    - Duration::try_seconds(config.warning_threshold.into())
+                        .error("Invalid warning threshold configuration")?;
+                if warn_datetime < Utc::now() && Utc::now() < start_date {
                     widget.state = State::Warning;
                 }
                 if start_date < Utc::now() && Utc::now() < end_date {
@@ -286,14 +295,6 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             }
         }
     }
-}
-
-async fn open_browser(config: &Config, url: &Url) -> Result<()> {
-    let cmd = config.browser_cmd.expand()?;
-    has_command(&cmd)
-        .await
-        .or_error(|| "Browser command not found")?;
-    spawn_process(&cmd, &[url.as_ref()]).error("Open browser failed")
 }
 
 async fn caldav_client(config: &Config) -> Result<caldav::CalDavClient> {
@@ -345,6 +346,7 @@ async fn caldav_client(config: &Config) -> Result<caldav::CalDavClient> {
 async fn get_next_event(
     config: &Config,
     client: &mut CalDavClient,
+    within: Duration,
 ) -> Result<Option<caldav::Event>, CalendarError> {
     let calendars: Vec<_> = client
         .calendars()
@@ -355,12 +357,7 @@ async fn get_next_event(
     let mut events: Vec<Event> = vec![];
     for calendar in calendars {
         let calendar_events: Vec<_> = client
-            .events(
-                &calendar,
-                Utc::now(),
-                Utc::now()
-                    + Duration::try_days(config.events_within_hours.try_into().unwrap()).unwrap(),
-            )
+            .events(&calendar, Utc::now(), Utc::now() + within)
             .await?
             .into_iter()
             .filter(|e| {
@@ -375,6 +372,14 @@ async fn get_next_event(
 
     events.sort_by_key(|e| e.start_at);
     Ok(events.first().cloned())
+}
+
+async fn open_browser(config: &Config, url: &Url) -> Result<()> {
+    let cmd = config.browser_cmd.expand()?;
+    has_command(&cmd)
+        .await
+        .or_error(|| "Browser command not found")?;
+    spawn_process(&cmd, &[url.as_ref()]).error("Open browser failed")
 }
 
 #[derive(thiserror::Error, Debug)]
