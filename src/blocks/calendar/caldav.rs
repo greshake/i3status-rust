@@ -47,7 +47,7 @@ impl CalDavClient {
                 .timeout(Duration::from_secs(10))
                 .default_headers(headers)
                 .build()
-                .unwrap(),
+                .expect("A valid http client"),
             auth,
         }
     }
@@ -59,12 +59,12 @@ impl CalDavClient {
     ) -> Result<Multistatus, CalendarError> {
         let request = self
             .client
-            .request(Method::from_str("PROPFIND").unwrap(), url.clone())
+            .request(Method::from_str("PROPFIND").expect("A valid method"), url)
             .body(body.clone())
             .headers(self.auth.headers())
             .header("Depth", depth)
             .build()
-            .unwrap();
+            .expect("A valid propfind request");
         self.call(request).await
     }
 
@@ -76,19 +76,22 @@ impl CalDavClient {
     ) -> Result<Multistatus, CalendarError> {
         let request = self
             .client
-            .request(Method::from_str("REPORT").unwrap(), url)
+            .request(Method::from_str("REPORT").expect("A valid method"), url)
             .body(body)
             .headers(self.auth.headers())
             .header("Depth", depth)
             .build()
-            .unwrap();
+            .expect("A valid report request");
         self.call(request).await
     }
 
     async fn call(&mut self, request: reqwest::Request) -> Result<Multistatus, CalendarError> {
         let mut retries = 0;
         loop {
-            let result = self.client.execute(request.try_clone().unwrap()).await?;
+            let result = self
+                .client
+                .execute(request.try_clone().expect("Request to be cloanable"))
+                .await?;
             match result.error_for_status() {
                 Err(err) if retries == 0 => {
                     self.auth.handle_error(err).await?;
@@ -106,6 +109,7 @@ impl CalDavClient {
             .await?;
         parse_href(multi_status, self.url.clone())
     }
+
     async fn home_set_url(&mut self, user_principal_url: Url) -> Result<Url, CalendarError> {
         let multi_status = self
             .propfind_request(user_principal_url, 0, CALENDAR_HOME_SET.into())
@@ -117,8 +121,9 @@ impl CalDavClient {
         let multi_status = self
             .propfind_request(home_set_url, 1, CALENDAR_REQUEST.into())
             .await?;
-        Ok(parse_calendars(multi_status, self.url.clone()))
+        parse_calendars(multi_status, self.url.clone())
     }
+
     pub async fn calendars(&mut self) -> Result<Vec<Calendar>, CalendarError> {
         let user_principal_url = self.user_principal_url().await?;
         let home_set_url = self.home_set_url(user_principal_url).await?;
@@ -259,7 +264,10 @@ fn parse_href(multi_status: Multistatus, base_url: Url) -> Result<Url, CalendarE
     }
 }
 
-fn parse_calendars(multi_status: Multistatus, base_url: Url) -> Vec<Calendar> {
+fn parse_calendars(
+    multi_status: Multistatus,
+    base_url: Url,
+) -> Result<Vec<Calendar>, CalendarError> {
     let mut result = vec![];
     for response in multi_status.responses {
         let mut is_calendar = false;
@@ -280,12 +288,14 @@ fn parse_calendars(multi_status: Multistatus, base_url: Url) -> Vec<Calendar> {
             if let Some(name) = name {
                 result.push(Calendar {
                     name,
-                    url: base_url.join(&href).unwrap(),
+                    url: base_url
+                        .join(&href)
+                        .map_err(|_| CalendarError::Parsing("Malformed calendar url".into()))?,
                 });
             }
         }
     }
-    result
+    Ok(result)
 }
 
 fn parse_events(multi_status: Multistatus) -> Vec<Event> {

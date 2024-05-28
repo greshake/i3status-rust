@@ -71,7 +71,8 @@ impl Basic {
         let mut headers = HeaderMap::new();
         let header =
             base64::prelude::BASE64_STANDARD.encode(format!("{}:{}", self.username, self.password));
-        let mut header_value = HeaderValue::from_str(format!("Basic {header}").as_str()).unwrap();
+        let mut header_value = HeaderValue::from_str(format!("Basic {header}").as_str())
+            .expect("A valid basic header");
         header_value.set_sensitive(true);
         headers.insert(AUTHORIZATION, header_value);
         headers
@@ -90,7 +91,7 @@ impl OAuth2 {
         if let Some(token) = self.token_store.get() {
             let mut auth_value =
                 HeaderValue::from_str(format!("Bearer {}", token.access_token().secret()).as_str())
-                    .unwrap();
+                    .expect("A valid access token");
             auth_value.set_sensitive(true);
             headers.insert(AUTHORIZATION, auth_value);
         }
@@ -150,7 +151,7 @@ impl OAuth2Flow {
             client: BasicClient::new(client_id, Some(client_secret), auth_url, Some(token_url))
                 .set_redirect_uri(
                     RedirectUrl::new(format!("http://localhost:{redirect_port}").to_string())
-                        .expect("Invalid redirect URL"),
+                        .expect("A valid redirect URL"),
                 ),
             redirect_port,
         }
@@ -197,8 +198,12 @@ impl OAuth2Flow {
                     let mut reader = BufReader::new(&stream);
                     reader.read_line(&mut request_line)?;
 
-                    let redirect_url = request_line.split_whitespace().nth(1).unwrap();
-                    let url = Url::parse(&("http://localhost".to_string() + redirect_url)).unwrap();
+                    let redirect_url = request_line
+                        .split_whitespace()
+                        .nth(1)
+                        .ok_or(CalendarError::RequestToken("Invalid redirect url".into()))?;
+                    let url = Url::parse(&("http://localhost".to_string() + redirect_url))
+                        .map_err(|e| CalendarError::RequestToken(e.to_string()))?;
 
                     let (_, code_value) = url
                         .query_pairs()
@@ -206,7 +211,9 @@ impl OAuth2Flow {
                             let (key, _) = pair;
                             key == "code"
                         })
-                        .unwrap();
+                        .ok_or(CalendarError::RequestToken(
+                            "code query param is missing".into(),
+                        ))?;
                     code = AuthorizationCode::new(code_value.into_owned());
                     let (_, state_value) = url
                         .query_pairs()
@@ -214,9 +221,15 @@ impl OAuth2Flow {
                             let (key, _) = pair;
                             key == "state"
                         })
-                        .unwrap();
+                        .ok_or(CalendarError::RequestToken(
+                            "state query param is missing".into(),
+                        ))?;
                     let state = CsrfToken::new(state_value.into_owned());
-                    assert_eq!(state.secret(), authorize_url.csrf_token.secret());
+                    if state.secret() != authorize_url.csrf_token.secret() {
+                        return Err(CalendarError::RequestToken(
+                            "Received state and csrf token are different".to_string(),
+                        ));
+                    }
                 }
 
                 let message = "Now your i3status-rust calendar is authorized";
@@ -236,7 +249,7 @@ impl OAuth2Flow {
             Err(CalendarError::TokenNotExchanged)
         })
         .await
-        .unwrap()
+        .map_err(|e| CalendarError::RequestToken(e.to_string()))?
     }
 }
 
