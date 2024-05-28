@@ -206,7 +206,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut actions = api.get_actions()?;
 
     let events_within = Duration::try_hours(config.events_within_hours.into())
-        .error("Invalid event within hours configuration")?;
+        .error("Invalid events within hours configuration")?;
 
     loop {
         let mut widget = Widget::new().with_format(no_events_format.clone());

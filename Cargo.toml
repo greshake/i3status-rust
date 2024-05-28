@@ -26,7 +26,7 @@ calendar = ["dep:oauth2", "dep:base64", "dep:icalendar", "dep:quick-xml", "dep:u
 debug_borders = []                # Make widgets' borders visible
 
 [package.metadata.docs.rs]
-features = ["maildir", "notmuch", "calendar"]
+features = ["calendar", "maildir", "notmuch"]
 rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
