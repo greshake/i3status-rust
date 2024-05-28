@@ -22,7 +22,7 @@ pipewire = ["dep:pipewire"]
 notmuch = ["dep:notmuch"]
 maildir = ["dep:maildir", "glob"]
 icu_calendar = ["dep:icu_datetime", "dep:icu_calendar", "dep:icu_locid"]
-calendar = ["dep:oauth2", "dep:base64", "dep:icalendar", "dep:quick-xml", "dep:url"]
+calendar = ["dep:oauth2", "dep:base64", "dep:icalendar", "dep:quick-xml"]
 debug_borders = []                # Make widgets' borders visible
 
 [package.metadata.docs.rs]
@@ -77,7 +77,6 @@ swayipc-async = "2.0"
 thiserror = "1.0"
 toml = { version = "0.8", features = ["preserve_order"] }
 unicode-segmentation = "1.10.1"
-url = { version = "2.5.0", optional = true }
 wayrs-client = { version = "1.0", features = ["tokio"] }
 wayrs-protocols = { version = "0.14", features = ["wlr-foreign-toplevel-management-unstable-v1"] }
 zbus = { version = "4", default-features = false, features = ["tokio"] }

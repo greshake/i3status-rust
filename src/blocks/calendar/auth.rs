@@ -7,11 +7,11 @@ use oauth2::{
     TokenResponse, TokenUrl,
 };
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION};
+use reqwest::Url;
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::net::TcpListener;
 use std::path::{Path, PathBuf};
-use url::Url;
 
 use super::CalendarError;
 

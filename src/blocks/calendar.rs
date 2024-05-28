@@ -119,7 +119,7 @@
 
 use chrono::{Duration, Utc};
 use oauth2::{AuthUrl, ClientId, ClientSecret, Scope, TokenUrl};
-use url::Url;
+use reqwest::Url;
 
 use crate::{subprocess::spawn_process, util::has_command};
 

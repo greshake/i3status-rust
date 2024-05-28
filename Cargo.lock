@@ -1268,7 +1268,6 @@ dependencies = [
  "tokio",
  "toml",
  "unicode-segmentation",
- "url",
  "wayrs-client",
  "wayrs-protocols",
  "zbus",

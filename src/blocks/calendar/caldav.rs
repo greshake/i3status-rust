@@ -5,10 +5,9 @@ use icalendar::{Component, EventLike};
 use reqwest::{
     self,
     header::{HeaderMap, HeaderValue, CONTENT_TYPE},
-    Client, ClientBuilder, Method,
+    Client, ClientBuilder, Method, Url,
 };
 use serde::{Deserialize, Serialize};
-use url::Url;
 
 use super::{
     auth::{Auth, Authorize},
