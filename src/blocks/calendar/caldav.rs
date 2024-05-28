@@ -89,7 +89,7 @@ impl CalDavClient {
         loop {
             let result = self
                 .client
-                .execute(request.try_clone().expect("Request to be cloanable"))
+                .execute(request.try_clone().expect("Request to be cloneable"))
                 .await?;
             match result.error_for_status() {
                 Err(err) if retries == 0 => {
