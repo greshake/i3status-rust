@@ -138,7 +138,7 @@ impl CalDavClient {
         let multi_status = self
             .report_request(calendar.url.clone(), 1, calendar_events_request(start, end))
             .await?;
-        Ok(parse_events(multi_status))
+        parse_events(multi_status)
     }
 
     pub async fn authorize(&mut self) -> Result<Authorize, CalendarError> {
@@ -297,14 +297,12 @@ fn parse_calendars(
     Ok(result)
 }
 
-fn parse_events(multi_status: Multistatus) -> Vec<Event> {
+fn parse_events(multi_status: Multistatus) -> Result<Vec<Event>, CalendarError> {
     let mut result = vec![];
     for response in multi_status.responses {
         for prop in response.valid_props() {
             if let PropValue::CalendarData(data) = prop {
-                let Ok(calendar) = icalendar::Calendar::from_str(&data) else {
-                    continue;
-                };
+                let calendar = icalendar::Calendar::from_str(&data).map_err(|e| CalendarError::Parsing(e))?;
                 for component in calendar.components {
                     if let icalendar::CalendarComponent::Event(event) = component {
                         let start_at = event.get_start().and_then(|d| match d {
@@ -332,7 +330,7 @@ fn parse_events(multi_status: Multistatus) -> Vec<Event> {
             }
         }
     }
-    result.into_iter().map(Into::into).collect()
+    Ok(result)
 }
 
 static CURRENT_USER_PRINCIPAL: &str = r#"<d:propfind xmlns:d="DAV:">
