@@ -160,6 +160,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     [if let Some(v) = device.frequency()] "frequency" => Value::hertz(v),
                     [if let Some(v) = device.bitrate()] "bitrate" => Value::bits(v),
                     [if let Some(v) = device.signal()] "signal_strength" => Value::percents(v),
+                    [if let Some(v) = device.nameserver] "nameserver" => Value::text(v.to_string()),
                     "device" => Value::text(device.iface.name),
                 });
 

@@ -27,7 +27,7 @@ pub struct NetDevice {
     pub ipv6: Option<Ipv6Addr>,
     pub icon: &'static str,
     pub tun_wg_ppp: bool,
-    pub nameservers: Vec<IpAddr>,
+    pub nameserver: Option<String>,
 }
 
 #[derive(Debug, Default)]
@@ -68,6 +68,10 @@ impl NetDevice {
         let wifi_info = WifiInfo::new(iface.index).await?;
         let ip = ipv4(&mut sock, iface.index).await?;
         let ipv6 = ipv6(&mut sock, iface.index).await?;
+        let nameserver = read_nameservers()
+            .await
+            .map(|ns| ns.get(0).map(|ip| ip.to_string()))
+            .error("Failed to read nameservers")?;
 
         // TODO: use netlink for the these too
         // I don't believe that this should ever change, so set it now:
@@ -98,6 +102,7 @@ impl NetDevice {
             ipv6,
             icon,
             tun_wg_ppp: tun | wg | ppp,
+            nameserver,
         }))
     }
 
@@ -430,7 +435,9 @@ async fn ipv6(sock: &mut NlSocket, ifa_index: i32) -> Result<Option<Ipv6Addr>> {
 }
 
 async fn read_nameservers() -> Result<Vec<IpAddr>> {
-    let file = util::read_file("/etc/resolv.conf").await?;
+    let file = util::read_file("/etc/resolv.conf")
+        .await
+        .error("Failed to read /etc/resolv.conf")?;
     let mut nameservers = Vec::new();
 
     for line in file.lines() {
