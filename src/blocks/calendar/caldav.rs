@@ -295,7 +295,8 @@ fn parse_events(multi_status: Multistatus) -> Result<Vec<Event>, CalendarError> 
     for response in multi_status.responses {
         for prop in response.valid_props() {
             if let PropValue::CalendarData(data) = prop {
-                let calendar = icalendar::Calendar::from_str(&data).map_err(|e| CalendarError::Parsing(e))?;
+                let calendar =
+                    icalendar::Calendar::from_str(&data).map_err(CalendarError::Parsing)?;
                 for component in calendar.components {
                     if let icalendar::CalendarComponent::Event(event) = component {
                         let start_at = event.get_start().and_then(|d| match d {
