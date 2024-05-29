@@ -265,9 +265,9 @@ impl TokenStore {
         }
     }
 
-    pub async fn store(&mut self, token: OAuth2TokenResponse) -> Result<(), CalendarError> {
+    pub async fn store(&mut self, token: OAuth2TokenResponse) -> Result<(), TokenStoreError> {
         let mut file = File::create(&self.path).await?;
-        let value = serde_json::to_string(&token).expect("A serializable token");
+        let value = serde_json::to_string(&token)?;
         file.write_all(value.as_bytes()).await?;
         self.token = Some(token);
         Ok(())
@@ -283,4 +283,12 @@ impl TokenStore {
         }
         self.token.clone()
     }
+}
+
+#[derive(thiserror::Error, Debug)]
+pub enum TokenStoreError {
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+    #[error(transparent)]
+    Serde(#[from] serde_json::Error),
 }

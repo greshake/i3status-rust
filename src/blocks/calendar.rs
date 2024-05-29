@@ -126,7 +126,7 @@ use crate::{subprocess::spawn_process, util::has_command};
 mod auth;
 mod caldav;
 
-use self::auth::{Authorize, AuthorizeUrl, OAuth2Flow, TokenStore};
+use self::auth::{Authorize, AuthorizeUrl, OAuth2Flow, TokenStore, TokenStoreError};
 use self::caldav::Event;
 
 use super::prelude::*;
@@ -402,6 +402,10 @@ pub enum CalendarError {
     AuthRequired,
     #[error(transparent)]
     Io(#[from] std::io::Error),
+    #[error(transparent)]
+    Serialize(#[from] serde_json::Error),
     #[error("Request token error: {0}")]
     RequestToken(String),
+    #[error("Store token error: {0}")]
+    TokenStore(#[from] TokenStoreError),
 }
