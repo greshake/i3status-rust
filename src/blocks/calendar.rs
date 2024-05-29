@@ -284,11 +284,11 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
               _ = api.wait_for_update_request() => break,
               Some(action) = actions.recv() => match action.as_ref() {
                     "open_link" => {
-                            if let Some(url) = next_event.clone().and_then(|e| e.url) {
-                                if let Ok(url) = Url::parse(&url) {
-                                    open_browser(config, &url).await?;
-                                }
+                        if let Some(Event { url: Some(url), .. }) = &next_event {
+                            if let Ok(url) = Url::parse(url) {
+                                open_browser(config, &url).await?;
                             }
+                        }
                     }
                     _ => ()
                 }
@@ -357,7 +357,15 @@ async fn get_next_event(
     let mut events: Vec<Event> = vec![];
     for calendar in calendars {
         let calendar_events: Vec<_> = client
-            .events(&calendar, Utc::now(), Utc::now() + within)
+            .events(
+                &calendar,
+                Utc::now()
+                    .date_naive()
+                    .and_hms_opt(0, 0, 0)
+                    .expect("A valid start date")
+                    .and_utc(),
+                Utc::now() + within,
+            )
             .await?
             .into_iter()
             .filter(|e| {
@@ -394,8 +402,6 @@ pub enum CalendarError {
     AuthRequired,
     #[error(transparent)]
     Io(#[from] std::io::Error),
-    #[error("Token not exchanged")]
-    TokenNotExchanged,
     #[error("Request token error: {0}")]
     RequestToken(String),
 }

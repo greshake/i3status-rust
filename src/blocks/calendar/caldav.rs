@@ -7,7 +7,7 @@ use reqwest::{
     header::{HeaderMap, HeaderValue, CONTENT_TYPE},
     Client, ClientBuilder, Method, Url,
 };
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use super::{
     auth::{Auth, Authorize},
@@ -24,7 +24,7 @@ pub struct Event {
     pub end_at: Option<DateTime<Utc>>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Deserialize, Debug)]
 pub struct Calendar {
     pub url: Url,
     pub name: String,
@@ -60,7 +60,7 @@ impl CalDavClient {
             .client
             .request(Method::from_str("PROPFIND").expect("A valid method"), url)
             .body(body.clone())
-            .headers(self.auth.headers())
+            .headers(self.auth.headers().await)
             .header("Depth", depth)
             .build()
             .expect("A valid propfind request");
@@ -77,7 +77,7 @@ impl CalDavClient {
             .client
             .request(Method::from_str("REPORT").expect("A valid method"), url)
             .body(body)
-            .headers(self.auth.headers())
+            .headers(self.auth.headers().await)
             .header("Depth", depth)
             .build()
             .expect("A valid report request");
@@ -153,14 +153,14 @@ impl CalDavClient {
     }
 }
 
-#[derive(Debug, Deserialize, Clone, Eq, PartialEq)]
+#[derive(Debug, Deserialize)]
 #[serde(rename = "multistatus")]
 struct Multistatus {
     #[serde(rename = "response", default)]
     responses: Vec<Response>,
 }
 
-#[derive(Debug, Deserialize, Clone, Eq, PartialEq)]
+#[derive(Debug, Deserialize)]
 struct Response {
     href: String,
     #[serde(rename = "propstat", default)]
@@ -177,19 +177,19 @@ impl Response {
     }
 }
 
-#[derive(Debug, Deserialize, Clone, Eq, PartialEq)]
+#[derive(Debug, Deserialize)]
 struct Propstat {
     status: String,
     prop: Prop,
 }
 
-#[derive(Debug, Deserialize, Clone, Eq, PartialEq)]
+#[derive(Debug, Deserialize)]
 struct Prop {
     #[serde(rename = "$value")]
     pub values: Vec<PropValue>,
 }
 
-#[derive(Debug, Deserialize, Clone, Eq, PartialEq)]
+#[derive(Debug, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 enum PropValue {
     CurrentUserPrincipal(HrefProperty),
@@ -202,12 +202,12 @@ enum PropValue {
     CalendarData(String),
 }
 
-#[derive(Debug, Deserialize, Clone, Eq, PartialEq)]
+#[derive(Debug, Deserialize)]
 pub struct HrefProperty {
     href: String,
 }
 
-#[derive(Debug, Deserialize, Clone, PartialEq, Eq)]
+#[derive(Debug, Deserialize)]
 struct ResourceTypes {
     #[serde(rename = "$value")]
     pub values: Vec<ResourceType>,
@@ -218,7 +218,7 @@ impl ResourceTypes {
         self.values.contains(&ResourceType::Calendar)
     }
 }
-#[derive(Debug, Deserialize, Clone, PartialEq, Eq)]
+#[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 enum ResourceType {
     Calendar,
@@ -226,7 +226,7 @@ enum ResourceType {
     Unsupported,
 }
 
-#[derive(Debug, Deserialize, Clone, PartialEq, Eq)]
+#[derive(Debug, Deserialize)]
 struct SupportedCalendarComponentSet {
     comp: Option<Comp>,
 }
@@ -236,17 +236,10 @@ impl SupportedCalendarComponentSet {
     }
 }
 
-#[derive(Debug, Deserialize, Clone, PartialEq, Eq)]
+#[derive(Debug, Deserialize)]
 struct Comp {
     #[serde(rename = "@name", default)]
     name: String,
-}
-
-#[derive(Debug, Deserialize, Clone, PartialEq, Eq)]
-struct ResponseCalendarError {
-    code: String,
-    #[serde(rename = "internalReason")]
-    internal_reason: String,
 }
 
 fn parse_href(multi_status: Multistatus, base_url: Url) -> Result<Url, CalendarError> {

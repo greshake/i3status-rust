@@ -8,10 +8,10 @@ use oauth2::{
 };
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION};
 use reqwest::Url;
-use std::fs::File;
-use std::io::{BufRead, BufReader, BufWriter, Write};
-use std::net::TcpListener;
 use std::path::{Path, PathBuf};
+use tokio::fs::File;
+use tokio::io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader};
+use tokio::net::TcpListener;
 
 use super::CalendarError;
 
@@ -32,11 +32,11 @@ impl Auth {
     pub fn basic(username: String, password: String) -> Self {
         Self::Basic(Basic { username, password })
     }
-    pub fn headers(&mut self) -> HeaderMap {
+    pub async fn headers(&mut self) -> HeaderMap {
         match self {
             Auth::Unauthenticated => HeaderMap::new(),
-            Auth::Basic(auth) => auth.headers(),
-            Auth::OAuth2(auth) => auth.headers(),
+            Auth::Basic(auth) => auth.headers().await,
+            Auth::OAuth2(auth) => auth.headers().await,
         }
     }
 
@@ -67,7 +67,7 @@ pub struct Basic {
 }
 
 impl Basic {
-    pub fn headers(&mut self) -> HeaderMap {
+    pub async fn headers(&mut self) -> HeaderMap {
         let mut headers = HeaderMap::new();
         let header =
             base64::prelude::BASE64_STANDARD.encode(format!("{}:{}", self.username, self.password));
@@ -86,9 +86,9 @@ pub struct OAuth2 {
 }
 
 impl OAuth2 {
-    pub fn headers(&mut self) -> HeaderMap {
+    pub async fn headers(&mut self) -> HeaderMap {
         let mut headers = HeaderMap::new();
-        if let Some(token) = self.token_store.get() {
+        if let Some(token) = self.token_store.get().await {
             let mut auth_value =
                 HeaderValue::from_str(format!("Bearer {}", token.access_token().secret()).as_str())
                     .expect("A valid access token");
@@ -104,6 +104,7 @@ impl OAuth2 {
                 match self
                     .token_store
                     .get()
+                    .await
                     .and_then(|t| t.refresh_token().cloned())
                 {
                     Some(refresh_token) => {
@@ -111,7 +112,7 @@ impl OAuth2 {
                         if token.refresh_token().is_none() {
                             token.set_refresh_token(Some(refresh_token));
                         }
-                        self.token_store.store(token)?;
+                        self.token_store.store(token).await?;
                         return Ok(());
                     }
                     None => return Err(CalendarError::AuthRequired),
@@ -130,7 +131,7 @@ impl OAuth2 {
 
     async fn ask_user(&mut self, authorize_url: AuthorizeUrl) -> Result<(), CalendarError> {
         let token = self.flow.redirect(authorize_url).await?;
-        self.token_store.store(token)?;
+        self.token_store.store(token).await?;
         Ok(())
     }
 }
@@ -189,67 +190,49 @@ impl OAuth2Flow {
     ) -> Result<OAuth2TokenResponse, CalendarError> {
         let client = self.client.clone();
         let redirect_port = self.redirect_port;
-        tokio::task::spawn_blocking(move || {
-            let listener = TcpListener::bind(format!("127.0.0.1:{}", redirect_port))?;
-            if let Some(mut stream) = listener.incoming().flatten().next() {
-                let code;
-                {
-                    let mut request_line = String::new();
-                    let mut reader = BufReader::new(&stream);
-                    reader.read_line(&mut request_line)?;
+        let listener = TcpListener::bind(format!("127.0.0.1:{}", redirect_port)).await?;
+        let (mut stream, _) = listener.accept().await?;
+        let mut request_line = String::new();
+        let mut reader = BufReader::new(&mut stream);
+        reader.read_line(&mut request_line).await?;
 
-                    let redirect_url = request_line
-                        .split_whitespace()
-                        .nth(1)
-                        .ok_or(CalendarError::RequestToken("Invalid redirect url".into()))?;
-                    let url = Url::parse(&("http://localhost".to_string() + redirect_url))
-                        .map_err(|e| CalendarError::RequestToken(e.to_string()))?;
+        let redirect_url = request_line
+            .split_whitespace()
+            .nth(1)
+            .ok_or(CalendarError::RequestToken("Invalid redirect url".into()))?;
+        let url = Url::parse(&("http://localhost".to_string() + redirect_url))
+            .map_err(|e| CalendarError::RequestToken(e.to_string()))?;
 
-                    let (_, code_value) = url
-                        .query_pairs()
-                        .find(|pair| {
-                            let (key, _) = pair;
-                            key == "code"
-                        })
-                        .ok_or(CalendarError::RequestToken(
-                            "code query param is missing".into(),
-                        ))?;
-                    code = AuthorizationCode::new(code_value.into_owned());
-                    let (_, state_value) = url
-                        .query_pairs()
-                        .find(|pair| {
-                            let (key, _) = pair;
-                            key == "state"
-                        })
-                        .ok_or(CalendarError::RequestToken(
-                            "state query param is missing".into(),
-                        ))?;
-                    let state = CsrfToken::new(state_value.into_owned());
-                    if state.secret() != authorize_url.csrf_token.secret() {
-                        return Err(CalendarError::RequestToken(
-                            "Received state and csrf token are different".to_string(),
-                        ));
-                    }
-                }
+        let (_, code_value) =
+            url.query_pairs()
+                .find(|(key, _)| key == "code")
+                .ok_or(CalendarError::RequestToken(
+                    "code query param is missing".into(),
+                ))?;
+        let code = AuthorizationCode::new(code_value.into_owned());
+        let (_, state_value) = url.query_pairs().find(|(key, _)| key == "state").ok_or(
+            CalendarError::RequestToken("state query param is missing".into()),
+        )?;
+        let state = CsrfToken::new(state_value.into_owned());
+        if state.secret() != authorize_url.csrf_token.secret() {
+            return Err(CalendarError::RequestToken(
+                "Received state and csrf token are different".to_string(),
+            ));
+        }
 
-                let message = "Now your i3status-rust calendar is authorized";
-                let response = format!(
-                    "HTTP/1.1 200 OK\r\ncontent-length: {}\r\n\r\n{}",
-                    message.len(),
-                    message
-                );
-                stream.write_all(response.as_bytes())?;
+        let message = "Now your i3status-rust calendar is authorized";
+        let response = format!(
+            "HTTP/1.1 200 OK\r\ncontent-length: {}\r\n\r\n{}",
+            message.len(),
+            message
+        );
+        stream.write_all(response.as_bytes()).await?;
 
-                return client
-                    .exchange_code(code)
-                    .set_pkce_verifier(authorize_url.pkce_code_verifier)
-                    .request(http_client)
-                    .map_err(|e| CalendarError::RequestToken(e.to_string()));
-            }
-            Err(CalendarError::TokenNotExchanged)
-        })
-        .await
-        .map_err(|e| CalendarError::RequestToken(e.to_string()))?
+        return client
+            .exchange_code(code)
+            .set_pkce_verifier(authorize_url.pkce_code_verifier)
+            .request(http_client)
+            .map_err(|e| CalendarError::RequestToken(e.to_string()));
     }
 }
 
@@ -282,20 +265,20 @@ impl TokenStore {
         }
     }
 
-    pub fn store(&mut self, token: OAuth2TokenResponse) -> Result<(), CalendarError> {
-        let file = File::create(&self.path).unwrap();
-        let mut writer = BufWriter::new(file);
-        serde_json::to_writer(&mut writer, &token).unwrap();
-        writer.flush()?;
+    pub async fn store(&mut self, token: OAuth2TokenResponse) -> Result<(), CalendarError> {
+        let mut file = File::create(&self.path).await?;
+        let value = serde_json::to_string(&token).expect("A serializable token");
+        file.write_all(value.as_bytes()).await?;
         self.token = Some(token);
         Ok(())
     }
 
-    pub fn get(&mut self) -> Option<OAuth2TokenResponse> {
+    pub async fn get(&mut self) -> Option<OAuth2TokenResponse> {
         if self.token.is_none() {
-            if let Ok(file) = File::open(&self.path) {
-                let mut reader = BufReader::new(file);
-                self.token = serde_json::from_reader(&mut reader).unwrap_or(None);
+            if let Ok(mut file) = File::open(&self.path).await {
+                let mut content = vec![];
+                file.read_to_end(&mut content).await.ok()?;
+                self.token = serde_json::from_slice(&content).ok();
             }
         }
         self.token.clone()
