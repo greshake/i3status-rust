@@ -407,5 +407,5 @@ pub enum CalendarError {
     #[error("Request token error: {0}")]
     RequestToken(String),
     #[error("Store token error: {0}")]
-    TokenStore(#[from] TokenStoreError),
+    StoreToken(#[from] TokenStoreError),
 }
