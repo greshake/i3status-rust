@@ -442,6 +442,7 @@ async fn read_nameservers() -> Result<Vec<IpAddr>> {
 
     for line in file.lines() {
         if let Some(ip) = line.strip_prefix("nameserver ") {
+            let ip = ip.trim();
             if let Ok(ip) = ip.parse() {
                 nameservers.push(ip);
             }
