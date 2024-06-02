@@ -245,6 +245,8 @@ pub struct Config {
     pub redirect_format: FormatConfig,
     #[default(60.into())]
     pub interval: Seconds,
+    #[default(10.into())]
+    pub alternate_overlapping_events_every: Seconds,
     #[default(48)]
     pub events_within_hours: u32,
     pub source: Vec<SourceConfig>,
@@ -252,6 +254,12 @@ pub struct Config {
     pub warning_threshold: u32,
     #[default("xdg-open".into())]
     pub browser_cmd: ShellString,
+}
+
+#[derive(Eq, PartialEq)]
+enum WidgetStatus {
+    AlternateEvents,
+    FetchSources,
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
@@ -285,10 +293,16 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     let mut timer = config.interval.timer();
 
+    let mut alternate_events_timer = config.alternate_overlapping_events_every.timer();
+
     let mut actions = api.get_actions()?;
 
     let events_within = Duration::try_hours(config.events_within_hours.into())
         .error("Invalid events within hours configuration")?;
+
+    let mut widget_status = WidgetStatus::FetchSources;
+
+    let mut next_events = vec![].into_iter().cycle().peekable(); 
 
     loop {
         let mut widget = Widget::new().with_format(no_events_format.clone());
@@ -296,46 +310,50 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             "icon" => Value::icon("calendar"),
         });
 
-        let mut next_event = None;
-        for retries in 0..=1 {
-            let next_event_result = source.get_next_event(events_within).await;
-            match next_event_result {
-                Ok(event) => {
-                    next_event = event;
-                    break;
-                }
-                Err(err) => match err {
-                    CalendarError::AuthRequired => {
-                        let authorization =
-                            source.client.authorize().await.error("Authorization failed")?;
-                        match &authorization {
-                            Authorize::AskUser(AuthorizeUrl { url, .. }) if retries == 0 => {
-                                widget.set_format(redirect_format.clone());
-                                api.set_widget(widget.clone())?;
-                                open_browser(config, url).await?;
-                                source
-                                    .client
-                                    .ask_user(authorization)
-                                    .await
-                                    .error("Ask user failed")?;
-                            }
-                            _ => {
-                                return Err(Error::new(
-                                    "Authorization failed. Check your configurations",
-                                ))
+        if widget_status == WidgetStatus::FetchSources {
+            for retries in 0..=1 {
+                match source.get_next_events(events_within).await {
+                    Ok(events) => {
+                        next_events = events.into_iter().cycle().peekable();
+                        break;
+                    }
+                    Err(err) => match err {
+                        CalendarError::AuthRequired => {
+                            let authorization = source
+                                .client
+                                .authorize()
+                                .await
+                                .error("Authorization failed")?;
+                            match &authorization {
+                                Authorize::AskUser(AuthorizeUrl { url, .. }) if retries == 0 => {
+                                    widget.set_format(redirect_format.clone());
+                                    api.set_widget(widget.clone())?;
+                                    open_browser(config, url).await?;
+                                    source
+                                        .client
+                                        .ask_user(authorization)
+                                        .await
+                                        .error("Ask user failed")?;
+                                }
+                                _ => {
+                                    return Err(Error::new(
+                                        "Authorization failed. Check your configurations",
+                                    ))
+                                }
                             }
                         }
-                    }
-                    e => {
-                        return Err(Error {
-                            message: None,
-                            cause: Some(Arc::new(e)),
-                        })
-                    }
-                },
-            };
+                        e => {
+                            return Err(Error {
+                                message: None,
+                                cause: Some(Arc::new(e)),
+                            })
+                        }
+                    },
+                };
+            }
         }
-        if let Some(event) = next_event.clone() {
+
+        if let Some(event) = next_events.next().clone() {
             if let (Some(start_date), Some(end_date)) = (event.start_at, event.end_at) {
                 let warn_datetime = start_date
                     - Duration::try_seconds(config.warning_threshold.into())
@@ -363,11 +381,18 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         api.set_widget(widget)?;
         loop {
             select! {
-              _ = timer.tick() => break,
+              _ = timer.tick() => {
+                widget_status = WidgetStatus::FetchSources;
+                break
+            },
+              _ = alternate_events_timer.tick() => {
+                widget_status = WidgetStatus::AlternateEvents;
+                break
+              }
               _ = api.wait_for_update_request() => break,
               Some(action) = actions.recv() => match action.as_ref() {
                     "open_link" => {
-                        if let Some(Event { url: Some(url), .. }) = &next_event {
+                        if let Some(Event { url: Some(url), .. }) = &next_events.peek(){
                             if let Ok(url) = Url::parse(url) {
                                 open_browser(config, &url).await?;
                             }
@@ -448,11 +473,12 @@ impl Source {
         })
     }
 
-    async fn get_next_event(
+    async fn get_next_events(
         &mut self,
         within: Duration,
-    ) -> Result<Option<caldav::Event>, CalendarError> {
-        let calendars: Vec<_> = self.client 
+    ) -> Result<Vec<caldav::Event>, CalendarError> {
+        let calendars: Vec<_> = self
+            .client
             .calendars()
             .await?
             .into_iter()
@@ -460,7 +486,8 @@ impl Source {
             .collect();
         let mut events: Vec<Event> = vec![];
         for calendar in calendars {
-            let calendar_events: Vec<_> = self.client
+            let calendar_events: Vec<_> = self
+                .client
                 .events(
                     &calendar,
                     Utc::now()
@@ -483,7 +510,13 @@ impl Source {
         }
 
         events.sort_by_key(|e| e.start_at);
-        Ok(events.first().cloned())
+        let Some(next_event) = events.first().cloned() else {
+            return Ok(vec![]);
+        };
+        Ok(events
+            .into_iter()
+            .take_while(|e| e.start_at < next_event.end_at)
+            .collect())
     }
 }
 
