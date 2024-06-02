@@ -10,7 +10,8 @@
 //! `ongoing_event_format` | A string to customize the output of this block when an event is ongoing. | <code>\" $icon $summary (ends at $end.datetime(f:'%H:%M')) \"</code>
 //! `no_events_format` | A string to customize the output of this block when there are no events | <code>\" $icon \"</code>
 //! `redirect_format` | A string to customize the output of this block when the authorization is asked | <code>\" $icon Check your web browser \"</code>
-//! `interval` | Update interval in seconds | `60`
+//! `fetch_interval` | Fetch events interval in seconds | `60`
+//! `alternate_events_interval` | Alternate overlapping events interval in seconds | `10`
 //! `events_within_hours` | Number of hours to look for events in the future | `48`
 //! `source` | Array of sources to pull calendars from | `[]`
 //! `warning_threshold` | Warning threshold in seconds for the upcoming event | `300`
@@ -40,7 +41,8 @@
 //! next_event_format = " $icon $start.datetime(f:'%a %H:%M') $summary "
 //! ongoing_event_format = " $icon $summary (ends at $end.datetime(f:'%H:%M')) "
 //! no_events_format = " $icon no events "
-//! interval = 30
+//! fetch_interval = 30
+//! alternate_events_interval = 10
 //! events_within_hours = 48
 //! warning_threshold = 600
 //! browser_cmd = "firefox"
@@ -59,7 +61,8 @@
 //! next_event_format = " $icon $start.datetime(f:'%a %H:%M') $summary "
 //! ongoing_event_format = " $icon $summary (ends at $end.datetime(f:'%H:%M')) "
 //! no_events_format = " $icon no events "
-//! interval = 30
+//! fetch_interval = 30
+//! alternate_events_interval = 10
 //! events_within_hours = 48
 //! warning_threshold = 600
 //! browser_cmd = "firefox"
@@ -110,7 +113,8 @@
 //! next_event_format = " $icon $start.datetime(f:'%a %H:%M') $summary "
 //! ongoing_event_format = " $icon $summary (ends at $end.datetime(f:'%H:%M')) "
 //! no_events_format = " $icon no events "
-//! interval = 30
+//! fetch_interval = 30
+//! alternate_events_interval = 10
 //! events_within_hours = 48
 //! warning_threshold = 600
 //! browser_cmd = "firefox"
@@ -244,9 +248,9 @@ pub struct Config {
     pub no_events_format: FormatConfig,
     pub redirect_format: FormatConfig,
     #[default(60.into())]
-    pub interval: Seconds,
+    pub fetch_interval: Seconds,
     #[default(10.into())]
-    pub alternate_overlapping_events_every: Seconds,
+    pub alternate_events_interval: Seconds,
     #[default(48)]
     pub events_within_hours: u32,
     pub source: Vec<SourceConfig>,
@@ -291,9 +295,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     let mut source = Source::new(source_config.clone()).await?;
 
-    let mut timer = config.interval.timer();
+    let mut timer = config.fetch_interval.timer();
 
-    let mut alternate_events_timer = config.alternate_overlapping_events_every.timer();
+    let mut alternate_events_timer = config.alternate_events_interval.timer();
 
     let mut actions = api.get_actions()?;
 
@@ -353,7 +357,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             }
         }
 
-        if let Some(event) = next_events.next().clone() {
+        if let Some(event) = next_events.peek().cloned() {
             if let (Some(start_date), Some(end_date)) = (event.start_at, event.end_at) {
                 let warn_datetime = start_date
                     - Duration::try_seconds(config.warning_threshold.into())
@@ -386,13 +390,14 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 break
             },
               _ = alternate_events_timer.tick() => {
+                next_events.next();
                 widget_status = WidgetStatus::AlternateEvents;
                 break
               }
               _ = api.wait_for_update_request() => break,
               Some(action) = actions.recv() => match action.as_ref() {
                     "open_link" => {
-                        if let Some(Event { url: Some(url), .. }) = &next_events.peek(){
+                        if let Some(Event { url: Some(url), .. }) = next_events.peek(){
                             if let Ok(url) = Url::parse(url) {
                                 open_browser(config, &url).await?;
                             }

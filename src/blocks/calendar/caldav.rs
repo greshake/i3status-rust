@@ -1,6 +1,6 @@
 use std::{str::FromStr, time::Duration, vec};
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Local, Utc};
 use icalendar::{Component, EventLike};
 use reqwest::{
     self,
@@ -301,15 +301,17 @@ fn parse_events(multi_status: Multistatus) -> Result<Vec<Event>, CalendarError> 
                     if let icalendar::CalendarComponent::Event(event) = component {
                         let start_at = event.get_start().and_then(|d| match d {
                             icalendar::DatePerhapsTime::DateTime(dt) => dt.try_into_utc(),
-                            icalendar::DatePerhapsTime::Date(d) => {
-                                d.and_hms_opt(0, 0, 0).map(|d| d.and_utc())
-                            }
+                            icalendar::DatePerhapsTime::Date(d) => d
+                                .and_hms_opt(0, 0, 0)
+                                .and_then(|d| d.and_local_timezone(Local).earliest())
+                                .map(|d| d.to_utc()),
                         });
                         let end_at = event.get_end().and_then(|d| match d {
                             icalendar::DatePerhapsTime::DateTime(dt) => dt.try_into_utc(),
-                            icalendar::DatePerhapsTime::Date(d) => {
-                                d.and_hms_opt(23, 59, 59).map(|d| d.and_utc())
-                            }
+                            icalendar::DatePerhapsTime::Date(d) => d
+                                .and_hms_opt(23, 59, 59)
+                                .and_then(|d| d.and_local_timezone(Local).earliest())
+                                .map(|d| d.to_utc()),
                         });
                         result.push(Event {
                             summary: event.get_summary().map(Into::into),
