@@ -306,7 +306,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     let mut widget_status = WidgetStatus::FetchSources;
 
-    let mut next_events = vec![].into_iter().cycle().peekable(); 
+    let mut next_events = OverlappingEvents::default();
 
     loop {
         let mut widget = Widget::new().with_format(no_events_format.clone());
@@ -318,7 +318,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             for retries in 0..=1 {
                 match source.get_next_events(events_within).await {
                     Ok(events) => {
-                        next_events = events.into_iter().cycle().peekable();
+                        next_events.swap(events);
                         break;
                     }
                     Err(err) => match err {
@@ -357,7 +357,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             }
         }
 
-        if let Some(event) = next_events.peek().cloned() {
+        if let Some(event) = next_events.current().cloned() {
             if let (Some(start_date), Some(end_date)) = (event.start_at, event.end_at) {
                 let warn_datetime = start_date
                     - Duration::try_seconds(config.warning_threshold.into())
@@ -390,14 +390,14 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 break
             },
               _ = alternate_events_timer.tick() => {
-                next_events.next();
+                next_events.cycle();
                 widget_status = WidgetStatus::AlternateEvents;
                 break
               }
               _ = api.wait_for_update_request() => break,
               Some(action) = actions.recv() => match action.as_ref() {
                     "open_link" => {
-                        if let Some(Event { url: Some(url), .. }) = next_events.peek(){
+                        if let Some(Event { url: Some(url), .. }) = next_events.current(){
                             if let Ok(url) = Url::parse(url) {
                                 open_browser(config, &url).await?;
                             }
@@ -481,7 +481,7 @@ impl Source {
     async fn get_next_events(
         &mut self,
         within: Duration,
-    ) -> Result<Vec<caldav::Event>, CalendarError> {
+    ) -> Result<OverlappingEvents, CalendarError> {
         let calendars: Vec<_> = self
             .client
             .calendars()
@@ -516,12 +516,49 @@ impl Source {
 
         events.sort_by_key(|e| e.start_at);
         let Some(next_event) = events.first().cloned() else {
-            return Ok(vec![]);
+            return Ok(OverlappingEvents::default());
         };
         Ok(events
             .into_iter()
             .take_while(|e| e.start_at < next_event.end_at)
             .collect())
+    }
+}
+
+#[derive(Default)]
+struct OverlappingEvents {
+    index: usize,
+    events: Vec<caldav::Event>,
+}
+
+impl OverlappingEvents {
+    fn swap(&mut self, other: OverlappingEvents) {
+        self.events = other.events;
+    }
+
+    fn current(&self) -> Option<&caldav::Event> {
+        if self.index >= self.events.len() {
+            self.events.first()
+        } else {
+            self.events.get(self.index)
+        }
+    }
+
+    fn cycle(&mut self) {
+        if self.index >= self.events.len() {
+            self.index = 0;
+        } else {
+            self.index+= 1;
+        }
+    }
+}
+
+impl FromIterator<caldav::Event> for OverlappingEvents {
+    fn from_iter<T: IntoIterator<Item = caldav::Event>>(iter: T) -> Self {
+        Self {
+            events: iter.into_iter().collect(),
+            index: 0,
+        }
     }
 }
 
