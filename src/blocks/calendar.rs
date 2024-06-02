@@ -71,7 +71,22 @@
 //! username = "your_username"
 //! password = "your_password"
 //! ```
-//! Note: The `username` and `password` can also be provided by setting the environment variables `I3RS_CALENDAR_AUTH_USERNAME` and `I3RS_CALENDAR_PASSWORD` respectively.
+//! 
+//! Note: You can also configure the `username` and `password` in a separate TOML file.
+//!
+//! `~/.config/i3status-rust/example_credentials.toml`
+//! ```toml
+//! username = "my-username"
+//! password = "my-password"
+//! ```
+//! 
+//! Source auth configuration with `credentials_path`: 
+//! 
+//! ```toml
+//! [block.source.auth]
+//! type = "basic"
+//! credentials_path = "~/.config/i3status-rust/example_credentials.toml"
+//! ```
 //!
 //! ## OAuth2 Authentication (Google Calendar)
 //!
@@ -112,7 +127,27 @@
 //! redirect_port = 8080
 //! scopes = ["https://www.googleapis.com/auth/calendar", "https://www.googleapis.com/auth/calendar.events"]
 //! ```
-//! Note: The `client_id` and `client_secret` can also be provided by setting the environment variables `I3RS_CALENDAR_AUTH_USERNAME` and `I3RS_CALENDAR_PASSWORD` respectively.
+//! 
+//! Note: You can also configure the `client_id` and `client_secret` in a separate TOML file.
+//!
+//! `~/.config/i3status-rust/google_credentials.toml`
+//! ```toml
+//! client_id = "my-client_id"
+//! client_secret = "my-client_secret"
+//! ```
+//!
+//! Source auth configuration with `credentials_path`: 
+//! 
+//! ```toml
+//! [block.source.auth]
+//! type = "oauth2"
+//! credentials_path = "~/.config/i3status-rust/google_credentials.toml"
+//! auth_url = "https://accounts.google.com/o/oauth2/auth"
+//! token_url = "https://oauth2.googleapis.com/token"
+//! auth_token = "~/.config/i3status-rust/calendar.auth_token"
+//! redirect_port = 8080
+//! scopes = ["https://www.googleapis.com/auth/calendar", "https://www.googleapis.com/auth/calendar.events"]
+//! ```
 //!
 //! # Format Configuration
 //!
@@ -132,6 +167,7 @@ use chrono::{Duration, Utc};
 use oauth2::{AuthUrl, ClientId, ClientSecret, Scope, TokenUrl};
 use reqwest::Url;
 
+use crate::util;
 use crate::{subprocess::spawn_process, util::has_command};
 
 mod auth;
@@ -147,17 +183,33 @@ use std::sync::Arc;
 
 use caldav::CalDavClient;
 
+#[derive(Deserialize, Debug, SmartDefault, Clone)]
+#[serde(deny_unknown_fields, default)]
+pub struct BasicCredentials {
+    pub username: Option<String>,
+    pub password: Option<String>,
+}
+
 #[derive(Deserialize, Debug)]
 pub struct BasicAuthConfig {
-    username: Option<String>,
-    password: Option<String>,
+    #[serde(flatten)]
+    pub credentials: BasicCredentials,
+    pub credentials_path: Option<ShellString>,
+}
+
+#[derive(Deserialize, Debug, SmartDefault, Clone)]
+#[serde(deny_unknown_fields, default)]
+pub struct OAuth2Credentials {
+    pub client_id: Option<String>,
+    pub client_secret: Option<String>,
 }
 
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct OAuth2Config {
-    pub client_id: Option<String>,
-    pub client_secret: Option<String>,
+    #[serde(flatten)]
+    pub credentials: OAuth2Credentials,
+    pub credentials_path: Option<ShellString>,
     pub auth_url: String,
     pub token_url: String,
     #[default("~/.config/i3status-rust/calendar.auth_token".into())]
@@ -330,28 +382,37 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 async fn caldav_client(source: &Source) -> Result<caldav::CalDavClient> {
     let auth = match &source.auth {
         AuthConfig::Unauthenticated => auth::Auth::Unauthenticated,
-        AuthConfig::Basic(BasicAuthConfig { username, password }) => {
-            let username = username
-                .clone()
-                .or_else(|| std::env::var("I3RS_CALENDAR_AUTH_USERNAME").ok())
-                .error("Calendar username not found")?;
-            let password = password
-                .clone()
-                .or_else(|| std::env::var("I3RS_CALENDAR_AUTH_PASSWORD").ok())
-                .error("Calendar password not found")?;
+        AuthConfig::Basic(BasicAuthConfig {
+            credentials,
+            credentials_path,
+        }) => {
+            let credentials = if let Some(path) = credentials_path {
+                util::deserialize_toml_file(path.expand()?.to_string()).error("Failed to read basic credentials file")?
+            } else {
+                credentials.clone()
+            };
+            let BasicCredentials {
+                username: Some(username),
+                password: Some(password),
+            } = credentials
+            else {
+                return Err(Error::new("Basic credentials are not configured"));
+            };
             auth::Auth::basic(username, password)
         }
         AuthConfig::OAuth2(oauth2) => {
-            let client_id = oauth2
-                .client_id
-                .clone()
-                .or_else(|| std::env::var("I3RS_CALENDAR_AUTH_CLIENT_ID").ok())
-                .error("Calendar oauth2 client_id not found")?;
-            let client_secret = oauth2
-                .client_secret
-                .clone()
-                .or_else(|| std::env::var("I3RS_CALENDAR_AUTH_CLIENT_SECRET").ok())
-                .error("Calendar oauth2 client_secret not found")?;
+            let credentials = if let Some(path) = &oauth2.credentials_path {
+                util::deserialize_toml_file(path.expand()?.to_string()).error("Failed to read oauth2 credentials file")?
+            } else {
+                oauth2.credentials.clone()
+            };
+            let OAuth2Credentials {
+                client_id: Some(client_id),
+                client_secret: Some(client_secret),
+            } = credentials
+            else {
+                return Err(Error::new("Oauth2 credentials are not configured"));
+            };
             let auth_url =
                 AuthUrl::new(oauth2.auth_url.clone()).error("Invalid authorization url")?;
             let token_url = TokenUrl::new(oauth2.token_url.clone()).error("Invalid token url")?;
