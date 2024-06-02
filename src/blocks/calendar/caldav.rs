@@ -5,7 +5,7 @@ use icalendar::{Component, EventLike};
 use reqwest::{
     self,
     header::{HeaderMap, HeaderValue, CONTENT_TYPE},
-    Client, ClientBuilder, Method, Url,
+    ClientBuilder, Method, Url,
 };
 use serde::Deserialize;
 
@@ -30,13 +30,13 @@ pub struct Calendar {
     pub name: String,
 }
 
-pub struct CalDavClient {
+pub struct Client {
     url: Url,
-    client: Client,
+    client: reqwest::Client,
     auth: Auth,
 }
 
-impl CalDavClient {
+impl Client {
     pub fn new(url: Url, auth: Auth) -> Self {
         let mut headers = HeaderMap::new();
         headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/xml"));

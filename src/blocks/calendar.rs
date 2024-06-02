@@ -71,7 +71,7 @@
 //! username = "your_username"
 //! password = "your_password"
 //! ```
-//! 
+//!
 //! Note: You can also configure the `username` and `password` in a separate TOML file.
 //!
 //! `~/.config/i3status-rust/example_credentials.toml`
@@ -79,9 +79,9 @@
 //! username = "my-username"
 //! password = "my-password"
 //! ```
-//! 
-//! Source auth configuration with `credentials_path`: 
-//! 
+//!
+//! Source auth configuration with `credentials_path`:
+//!
 //! ```toml
 //! [block.source.auth]
 //! type = "basic"
@@ -127,7 +127,7 @@
 //! redirect_port = 8080
 //! scopes = ["https://www.googleapis.com/auth/calendar", "https://www.googleapis.com/auth/calendar.events"]
 //! ```
-//! 
+//!
 //! Note: You can also configure the `client_id` and `client_secret` in a separate TOML file.
 //!
 //! `~/.config/i3status-rust/google_credentials.toml`
@@ -136,8 +136,8 @@
 //! client_secret = "my-client_secret"
 //! ```
 //!
-//! Source auth configuration with `credentials_path`: 
-//! 
+//! Source auth configuration with `credentials_path`:
+//!
 //! ```toml
 //! [block.source.auth]
 //! type = "oauth2"
@@ -181,7 +181,7 @@ use super::prelude::*;
 use std::path::Path;
 use std::sync::Arc;
 
-use caldav::CalDavClient;
+use caldav::Client;
 
 #[derive(Deserialize, Debug, SmartDefault, Clone)]
 #[serde(deny_unknown_fields, default)]
@@ -190,7 +190,7 @@ pub struct BasicCredentials {
     pub password: Option<String>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub struct BasicAuthConfig {
     #[serde(flatten)]
     pub credentials: BasicCredentials,
@@ -204,7 +204,7 @@ pub struct OAuth2Credentials {
     pub client_secret: Option<String>,
 }
 
-#[derive(Deserialize, Debug, SmartDefault)]
+#[derive(Deserialize, Debug, SmartDefault, Clone)]
 #[serde(deny_unknown_fields, default)]
 pub struct OAuth2Config {
     #[serde(flatten)]
@@ -219,7 +219,7 @@ pub struct OAuth2Config {
     pub scopes: Vec<Scope>,
 }
 
-#[derive(Deserialize, Default, Debug)]
+#[derive(Deserialize, Default, Debug, Clone)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum AuthConfig {
     #[default]
@@ -228,9 +228,9 @@ pub enum AuthConfig {
     OAuth2(OAuth2Config),
 }
 
-#[derive(Deserialize, Debug, SmartDefault)]
+#[derive(Deserialize, Debug, SmartDefault, Clone)]
 #[serde(deny_unknown_fields, default)]
-pub struct Source {
+pub struct SourceConfig {
     pub url: String,
     pub auth: AuthConfig,
     pub calendars: Vec<String>,
@@ -247,7 +247,7 @@ pub struct Config {
     pub interval: Seconds,
     #[default(48)]
     pub events_within_hours: u32,
-    pub source: Vec<Source>,
+    pub source: Vec<SourceConfig>,
     #[default(300)]
     pub warning_threshold: u32,
     #[default("xdg-open".into())]
@@ -268,7 +268,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     api.set_default_actions(&[(MouseButton::Left, None, "open_link")])?;
 
-    let source = match config.source.len() {
+    let source_config = match config.source.len() {
         0 => return Err(Error::new("A calendar source must be supplied")),
         1 => config
             .source
@@ -281,7 +281,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         }
     };
 
-    let mut client = caldav_client(source).await?;
+    let mut source = Source::new(source_config.clone()).await?;
 
     let mut timer = config.interval.timer();
 
@@ -298,7 +298,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         let mut next_event = None;
         for retries in 0..=1 {
-            let next_event_result = get_next_event(source, &mut client, events_within).await;
+            let next_event_result = source.get_next_event(events_within).await;
             match next_event_result {
                 Ok(event) => {
                     next_event = event;
@@ -307,13 +307,14 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 Err(err) => match err {
                     CalendarError::AuthRequired => {
                         let authorization =
-                            client.authorize().await.error("Authorization failed")?;
+                            source.client.authorize().await.error("Authorization failed")?;
                         match &authorization {
                             Authorize::AskUser(AuthorizeUrl { url, .. }) if retries == 0 => {
                                 widget.set_format(redirect_format.clone());
                                 api.set_widget(widget.clone())?;
                                 open_browser(config, url).await?;
-                                client
+                                source
+                                    .client
                                     .ask_user(authorization)
                                     .await
                                     .error("Ask user failed")?;
@@ -379,98 +380,111 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     }
 }
 
-async fn caldav_client(source: &Source) -> Result<caldav::CalDavClient> {
-    let auth = match &source.auth {
-        AuthConfig::Unauthenticated => auth::Auth::Unauthenticated,
-        AuthConfig::Basic(BasicAuthConfig {
-            credentials,
-            credentials_path,
-        }) => {
-            let credentials = if let Some(path) = credentials_path {
-                util::deserialize_toml_file(path.expand()?.to_string()).error("Failed to read basic credentials file")?
-            } else {
-                credentials.clone()
-            };
-            let BasicCredentials {
-                username: Some(username),
-                password: Some(password),
-            } = credentials
-            else {
-                return Err(Error::new("Basic credentials are not configured"));
-            };
-            auth::Auth::basic(username, password)
-        }
-        AuthConfig::OAuth2(oauth2) => {
-            let credentials = if let Some(path) = &oauth2.credentials_path {
-                util::deserialize_toml_file(path.expand()?.to_string()).error("Failed to read oauth2 credentials file")?
-            } else {
-                oauth2.credentials.clone()
-            };
-            let OAuth2Credentials {
-                client_id: Some(client_id),
-                client_secret: Some(client_secret),
-            } = credentials
-            else {
-                return Err(Error::new("Oauth2 credentials are not configured"));
-            };
-            let auth_url =
-                AuthUrl::new(oauth2.auth_url.clone()).error("Invalid authorization url")?;
-            let token_url = TokenUrl::new(oauth2.token_url.clone()).error("Invalid token url")?;
-
-            let flow = OAuth2Flow::new(
-                ClientId::new(client_id),
-                ClientSecret::new(client_secret),
-                auth_url,
-                token_url,
-                oauth2.redirect_port,
-            );
-            let token_store = TokenStore::new(Path::new(&oauth2.auth_token.expand()?.to_string()));
-            auth::Auth::oauth2(flow, token_store, oauth2.scopes.clone())
-        }
-    };
-    Ok(CalDavClient::new(
-        Url::parse(&source.url).error("Invalid CalDav server url")?,
-        auth,
-    ))
+struct Source {
+    pub client: caldav::Client,
+    pub config: SourceConfig,
 }
 
-async fn get_next_event(
-    source: &Source,
-    client: &mut CalDavClient,
-    within: Duration,
-) -> Result<Option<caldav::Event>, CalendarError> {
-    let calendars: Vec<_> = client
-        .calendars()
-        .await?
-        .into_iter()
-        .filter(|c| source.calendars.is_empty() || source.calendars.contains(&c.name))
-        .collect();
-    let mut events: Vec<Event> = vec![];
-    for calendar in calendars {
-        let calendar_events: Vec<_> = client
-            .events(
-                &calendar,
-                Utc::now()
-                    .date_naive()
-                    .and_hms_opt(0, 0, 0)
-                    .expect("A valid start date")
-                    .and_utc(),
-                Utc::now() + within,
-            )
-            .await?
-            .into_iter()
-            .filter(|e| {
-                let not_started = e.start_at.is_some_and(|d| d > Utc::now());
-                let is_ongoing = e.start_at.is_some_and(|d| d < Utc::now())
-                    && e.end_at.is_some_and(|d| d > Utc::now());
-                not_started || is_ongoing
-            })
-            .collect();
-        events.extend(calendar_events);
+impl Source {
+    async fn new(config: SourceConfig) -> Result<Self> {
+        let auth = match &config.auth {
+            AuthConfig::Unauthenticated => auth::Auth::Unauthenticated,
+            AuthConfig::Basic(BasicAuthConfig {
+                credentials,
+                credentials_path,
+            }) => {
+                let credentials = if let Some(path) = credentials_path {
+                    util::deserialize_toml_file(path.expand()?.to_string())
+                        .error("Failed to read basic credentials file")?
+                } else {
+                    credentials.clone()
+                };
+                let BasicCredentials {
+                    username: Some(username),
+                    password: Some(password),
+                } = credentials
+                else {
+                    return Err(Error::new("Basic credentials are not configured"));
+                };
+                auth::Auth::basic(username, password)
+            }
+            AuthConfig::OAuth2(oauth2) => {
+                let credentials = if let Some(path) = &oauth2.credentials_path {
+                    util::deserialize_toml_file(path.expand()?.to_string())
+                        .error("Failed to read oauth2 credentials file")?
+                } else {
+                    oauth2.credentials.clone()
+                };
+                let OAuth2Credentials {
+                    client_id: Some(client_id),
+                    client_secret: Some(client_secret),
+                } = credentials
+                else {
+                    return Err(Error::new("Oauth2 credentials are not configured"));
+                };
+                let auth_url =
+                    AuthUrl::new(oauth2.auth_url.clone()).error("Invalid authorization url")?;
+                let token_url =
+                    TokenUrl::new(oauth2.token_url.clone()).error("Invalid token url")?;
+
+                let flow = OAuth2Flow::new(
+                    ClientId::new(client_id),
+                    ClientSecret::new(client_secret),
+                    auth_url,
+                    token_url,
+                    oauth2.redirect_port,
+                );
+                let token_store =
+                    TokenStore::new(Path::new(&oauth2.auth_token.expand()?.to_string()));
+                auth::Auth::oauth2(flow, token_store, oauth2.scopes.clone())
+            }
+        };
+        Ok(Self {
+            client: Client::new(
+                Url::parse(&config.url).error("Invalid CalDav server url")?,
+                auth,
+            ),
+            config,
+        })
     }
 
-    events.sort_by_key(|e| e.start_at);
-    Ok(events.first().cloned())
+    async fn get_next_event(
+        &mut self,
+        within: Duration,
+    ) -> Result<Option<caldav::Event>, CalendarError> {
+        let calendars: Vec<_> = self.client 
+            .calendars()
+            .await?
+            .into_iter()
+            .filter(|c| self.config.calendars.is_empty() || self.config.calendars.contains(&c.name))
+            .collect();
+        let mut events: Vec<Event> = vec![];
+        for calendar in calendars {
+            let calendar_events: Vec<_> = self.client
+                .events(
+                    &calendar,
+                    Utc::now()
+                        .date_naive()
+                        .and_hms_opt(0, 0, 0)
+                        .expect("A valid start date")
+                        .and_utc(),
+                    Utc::now() + within,
+                )
+                .await?
+                .into_iter()
+                .filter(|e| {
+                    let not_started = e.start_at.is_some_and(|d| d > Utc::now());
+                    let is_ongoing = e.start_at.is_some_and(|d| d < Utc::now())
+                        && e.end_at.is_some_and(|d| d > Utc::now());
+                    not_started || is_ongoing
+                })
+                .collect();
+            events.extend(calendar_events);
+        }
+
+        events.sort_by_key(|e| e.start_at);
+        Ok(events.first().cloned())
+    }
 }
 
 async fn open_browser(config: &Config, url: &Url) -> Result<()> {
