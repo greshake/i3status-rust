@@ -1,6 +1,6 @@
 use base64::Engine;
 use oauth2::basic::{BasicClient, BasicTokenType};
-use oauth2::reqwest::{async_http_client, http_client};
+use oauth2::reqwest::async_http_client;
 use oauth2::{
     AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, EmptyExtraTokenFields,
     PkceCodeChallenge, PkceCodeVerifier, RedirectUrl, RefreshToken, Scope, StandardTokenResponse,
@@ -228,11 +228,12 @@ impl OAuth2Flow {
         );
         stream.write_all(response.as_bytes()).await?;
 
-        return client
+        client
             .exchange_code(code)
             .set_pkce_verifier(authorize_url.pkce_code_verifier)
-            .request(http_client)
-            .map_err(|e| CalendarError::RequestToken(e.to_string()));
+            .request_async(async_http_client)
+            .await
+            .map_err(|e| CalendarError::RequestToken(e.to_string()))
     }
 }
 
