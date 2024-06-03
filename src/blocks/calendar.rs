@@ -542,6 +542,9 @@ impl OverlappingEvents {
     }
 
     fn refresh(&mut self, other: OverlappingEvents) {
+        if self.current.is_none() {
+            self.current = other.events.first().cloned();
+        }
         self.events = other.events;
     }
 
