@@ -16,6 +16,7 @@ use super::{
 
 #[derive(Clone, Debug)]
 pub struct Event {
+    pub uid: Option<String>,
     pub summary: Option<String>,
     pub description: Option<String>,
     pub location: Option<String>,
@@ -314,6 +315,7 @@ fn parse_events(multi_status: Multistatus) -> Result<Vec<Event>, CalendarError> 
                                 .map(|d| d.to_utc()),
                         });
                         result.push(Event {
+                            uid: event.get_uid().map(Into::into),
                             summary: event.get_summary().map(Into::into),
                             description: event.get_description().map(Into::into),
                             location: event.get_location().map(Into::into),

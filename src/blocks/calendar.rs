@@ -293,6 +293,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         }
     };
 
+    let warning_threshold = Duration::try_seconds(config.warning_threshold.into())
+        .error("Invalid warning threshold configuration")?;
+
     let mut source = Source::new(source_config.clone()).await?;
 
     let mut timer = config.fetch_interval.timer();
@@ -318,7 +321,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             for retries in 0..=1 {
                 match source.get_next_events(events_within).await {
                     Ok(events) => {
-                        next_events.swap(events);
+                        next_events.refresh(events);
                         break;
                     }
                     Err(err) => match err {
@@ -359,9 +362,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         if let Some(event) = next_events.current().cloned() {
             if let (Some(start_date), Some(end_date)) = (event.start_at, event.end_at) {
-                let warn_datetime = start_date
-                    - Duration::try_seconds(config.warning_threshold.into())
-                        .error("Invalid warning threshold configuration")?;
+                let warn_datetime = start_date - warning_threshold;
                 if warn_datetime < Utc::now() && Utc::now() < start_date {
                     widget.state = State::Warning;
                 }
@@ -390,7 +391,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 break
             },
               _ = alternate_events_timer.tick() => {
-                next_events.cycle();
+                next_events.cycle_warning_or_ongoing(warning_threshold);
                 widget_status = WidgetStatus::AlternateEvents;
                 break
               }
@@ -518,47 +519,60 @@ impl Source {
         let Some(next_event) = events.first().cloned() else {
             return Ok(OverlappingEvents::default());
         };
-        Ok(events
+        let overlapping_events = events
             .into_iter()
-            .take_while(|e| e.start_at < next_event.end_at)
-            .collect())
+            .take_while(|e| e.start_at <= next_event.end_at)
+            .collect();
+        Ok(OverlappingEvents::new(overlapping_events))
     }
 }
 
 #[derive(Default)]
 struct OverlappingEvents {
-    index: usize,
+    current: Option<caldav::Event>,
     events: Vec<caldav::Event>,
 }
 
 impl OverlappingEvents {
-    fn swap(&mut self, other: OverlappingEvents) {
+    fn new(events: Vec<caldav::Event>) -> Self {
+        Self {
+            current: events.first().cloned(),
+            events,
+        }
+    }
+
+    fn refresh(&mut self, other: OverlappingEvents) {
         self.events = other.events;
     }
 
     fn current(&self) -> Option<&caldav::Event> {
-        if self.index >= self.events.len() {
-            self.events.first()
-        } else {
-            self.events.get(self.index)
-        }
+        self.current.as_ref()
     }
 
-    fn cycle(&mut self) {
-        if self.index >= self.events.len() {
-            self.index = 0;
+    fn cycle_warning_or_ongoing(&mut self, warning_threshold: Duration) {
+        self.current = if let Some(current) = &self.current {
+            if self.events.iter().any(|e| e.uid == current.uid) {
+                let mut iter = self
+                    .events
+                    .iter()
+                    .cycle()
+                    .skip_while(|e| e.uid != current.uid);
+                iter.next();
+                iter.find(|e| {
+                    let is_ongoing = e.start_at.is_some_and(|d| d < Utc::now())
+                        && e.end_at.is_some_and(|d| d > Utc::now());
+                    let is_warning = e
+                        .start_at
+                        .is_some_and(|d| d - warning_threshold < Utc::now() && Utc::now() < d);
+                    e.uid == current.uid || is_warning || is_ongoing
+                })
+                .cloned()
+            } else {
+                self.events.first().cloned()
+            }
         } else {
-            self.index+= 1;
-        }
-    }
-}
-
-impl FromIterator<caldav::Event> for OverlappingEvents {
-    fn from_iter<T: IntoIterator<Item = caldav::Event>>(iter: T) -> Self {
-        Self {
-            events: iter.into_iter().collect(),
-            index: 0,
-        }
+            self.events.first().cloned()
+        };
     }
 }
 
