@@ -532,12 +532,12 @@ impl Source {
 
 #[derive(Default)]
 struct OverlappingEvents {
-    current: Option<caldav::Event>,
-    events: Vec<caldav::Event>,
+    current: Option<Event>,
+    events: Vec<Event>,
 }
 
 impl OverlappingEvents {
-    fn new(events: Vec<caldav::Event>) -> Self {
+    fn new(events: Vec<Event>) -> Self {
         Self {
             current: events.first().cloned(),
             events,
@@ -551,7 +551,7 @@ impl OverlappingEvents {
         self.events = other.events;
     }
 
-    fn current(&self) -> Option<&caldav::Event> {
+    fn current(&self) -> Option<&Event> {
         self.current.as_ref()
     }
 
