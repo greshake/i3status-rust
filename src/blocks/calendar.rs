@@ -167,7 +167,7 @@
 //! # Icons Used
 //! - `calendar`
 
-use chrono::{Duration, Utc};
+use chrono::{Duration, Local, Utc};
 use oauth2::{AuthUrl, ClientId, ClientSecret, Scope, TokenUrl};
 use reqwest::Url;
 
@@ -499,8 +499,11 @@ impl Source {
                     Utc::now()
                         .date_naive()
                         .and_hms_opt(0, 0, 0)
-                        .expect("A valid start date")
-                        .and_utc(),
+                        .expect("A valid time")
+                        .and_local_timezone(Local)
+                        .earliest()
+                        .expect("A valid datetime")
+                        .to_utc(),
                     Utc::now() + within,
                 )
                 .await?
