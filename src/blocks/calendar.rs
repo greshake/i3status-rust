@@ -260,7 +260,6 @@ pub struct Config {
     pub browser_cmd: ShellString,
 }
 
-#[derive(Eq, PartialEq)]
 enum WidgetStatus {
     AlternateEvents,
     FetchSources,
@@ -317,7 +316,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             "icon" => Value::icon("calendar"),
         });
 
-        if widget_status == WidgetStatus::FetchSources {
+        if matches!(widget_status, WidgetStatus::FetchSources) {
             for retries in 0..=1 {
                 match source.get_next_events(events_within).await {
                     Ok(events) => {
@@ -386,25 +385,25 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         api.set_widget(widget)?;
         loop {
             select! {
-              _ = timer.tick() => {
-                widget_status = WidgetStatus::FetchSources;
-                break
-            },
-              _ = alternate_events_timer.tick() => {
-                next_events.cycle_warning_or_ongoing(warning_threshold);
-                widget_status = WidgetStatus::AlternateEvents;
-                break
-              }
-              _ = api.wait_for_update_request() => break,
-              Some(action) = actions.recv() => match action.as_ref() {
-                    "open_link" => {
-                        if let Some(Event { url: Some(url), .. }) = next_events.current(){
-                            if let Ok(url) = Url::parse(url) {
-                                open_browser(config, &url).await?;
-                            }
-                        }
-                    }
-                    _ => ()
+                _ = timer.tick() => {
+                  widget_status = WidgetStatus::FetchSources;
+                  break
+                }
+                _ = alternate_events_timer.tick() => {
+                  next_events.cycle_warning_or_ongoing(warning_threshold);
+                  widget_status = WidgetStatus::AlternateEvents;
+                  break
+                }
+                _ = api.wait_for_update_request() => break,
+                Some(action) = actions.recv() => match action.as_ref() {
+                      "open_link" => {
+                          if let Some(Event { url: Some(url), .. }) = next_events.current(){
+                              if let Ok(url) = Url::parse(url) {
+                                  open_browser(config, &url).await?;
+                              }
+                          }
+                      }
+                      _ => ()
                 }
             }
         }
