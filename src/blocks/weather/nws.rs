@@ -109,6 +109,13 @@ struct ApiForecastProperties {
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
+struct ApiValue {
+    value: f64,
+    unit_code: String,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 struct ApiForecast {
     is_daytime: bool,
     temperature: ApiValue,
@@ -277,13 +284,6 @@ fn aggregate_min(data: &[ForecastAggregate]) -> ForecastAggregate {
         min.wind_kmh = min.wind_kmh.min(val.wind_kmh);
     }
     min
-}
-
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-struct ApiValue {
-    value: f64,
-    unit_code: String,
 }
 
 #[async_trait]
