@@ -49,6 +49,7 @@ words:
   - execvp
   - favg
   - fcntl
+  - flurr
   - fmax
   - fmin
   - getaddr

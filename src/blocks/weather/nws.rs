@@ -169,7 +169,7 @@ impl ApiForecast {
         }
     }
 
-    fn apparant_temp(&self) -> f64 {
+    fn apparent_temp(&self) -> f64 {
         let temp = if self.temperature.unit_code.ends_with("degC") {
             self.temperature.value
         } else {
@@ -188,7 +188,7 @@ impl ApiForecast {
             weather,
             weather_verbose: self.short_forecast.clone(),
             temp: self.temperature.value,
-            apparent: self.apparant_temp(),
+            apparent: self.apparent_temp(),
             humidity: self.relative_humidity.value,
             wind: self.wind_speed.value,
             wind_kmh: self.wind_kmh(),
@@ -199,7 +199,7 @@ impl ApiForecast {
     fn to_aggregate(&self) -> ForecastAggregate {
         ForecastAggregate {
             temp: self.temperature.value,
-            apparent: self.apparant_temp(),
+            apparent: self.apparent_temp(),
             humidity: self.relative_humidity.value,
             wind: self.wind_speed.value,
             wind_kmh: self.wind_kmh(),
