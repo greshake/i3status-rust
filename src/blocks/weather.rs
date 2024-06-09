@@ -1,8 +1,8 @@
 //! Current weather
 //!
 //! This block displays local weather and temperature information. In order to use this block, you
-//! will need access to a supported weather API service. At the time of writing, OpenWeatherMap and
-//! met.no are supported.
+//! will need access to a supported weather API service. At the time of writing, OpenWeatherMap,
+//! met.no, and the US National Weather Service are supported.
 //!
 //! Configuring this block requires configuring a weather service, which may require API keys and
 //! other parameters.
@@ -55,6 +55,17 @@
 //! `forecast_hours` | How many hours should be forecast | No | 12
 //!
 //! Met.no does not support location name, but if autolocate is enabled then autolocate's city value is used.
+//!
+//! # NWS Options
+//!
+//! Key | Values | Required | Default
+//! ----|--------|----------|--------
+//! `name` | `nws`. | Yes | None
+//! `coordinates` | GPS latitude longitude coordinates as a tuple, example: `["39.2362","9.3317"]` | Required if `autolocate = false` | None
+//! `forecast_hours` | How many hours should be forecast | No | 12
+//! `units` | Either `"metric"` or `"imperial"`. | No | `"metric"`
+//!
+//! Location name support is not included,
 //!
 //! # Available Format Keys
 //!
@@ -126,6 +137,7 @@ use super::prelude::*;
 
 pub mod met_no;
 pub mod open_weather_map;
+pub mod nws;
 
 const IP_API_URL: &str = "https://ipapi.co/json";
 
@@ -163,6 +175,7 @@ trait WeatherProvider {
 pub enum WeatherService {
     OpenWeatherMap(open_weather_map::Config),
     MetNo(met_no::Config),
+    Nws(nws::Config),
 }
 
 #[derive(Clone, Copy)]
@@ -307,7 +320,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         WeatherService::MetNo(service_config) => Box::new(met_no::Service::new(service_config)?),
         WeatherService::OpenWeatherMap(service_config) => {
             Box::new(open_weather_map::Service::new(config.autolocate, service_config).await?)
-        }
+        },
+        WeatherService::Nws(service_config) => {
+            Box::new(nws::Service::new(config.autolocate, service_config).await?)
+        },
     };
 
     let autolocate_interval = config.autolocate_interval.unwrap_or(config.interval);
