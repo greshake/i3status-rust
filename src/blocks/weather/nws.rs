@@ -1,3 +1,16 @@
+//! Support for using the US National Weather Service API.
+//!
+//! The API is documented [here](https://www.weather.gov/documentation/services-web-api).
+//! There is a corresponding [OpenAPI document](https://api.weather.gov/openapi.json). The forecast 
+//! descriptions are translated into the set of supported icons as best as possible, and a more 
+//! complete summary forecast is available in the `weather_verbose` format key. The full NWS list 
+//! of icons and corresponding descriptions can be found [here](https://api.weather.gov/icons), 
+//! though these are slated for deprecation.
+//! 
+//! All data is gathered using the hourly weather forecast service, after resolving from latitude & 
+//! longitude coordinates to a specific forecast office and grid point.
+//!
+
 use super::*;
 use serde::Deserialize;
 

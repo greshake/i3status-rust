@@ -56,7 +56,7 @@
 //!
 //! Met.no does not support location name, but if autolocate is enabled then autolocate's city value is used.
 //!
-//! # NWS Options
+//! # US National Weather Service Options
 //!
 //! Key | Values | Required | Default
 //! ----|--------|----------|--------
@@ -65,7 +65,8 @@
 //! `forecast_hours` | How many hours should be forecast | No | 12
 //! `units` | Either `"metric"` or `"imperial"`. | No | `"metric"`
 //!
-//! Location name support is not included,
+//! Forecasts gather statistics from each hour between now and the `forecast_hours` value, and 
+//! provide predicted weather at the set number of hours into the future.
 //!
 //! # Available Format Keys
 //!
