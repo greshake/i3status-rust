@@ -137,8 +137,8 @@ use crate::formatting::Format;
 use super::prelude::*;
 
 pub mod met_no;
-pub mod open_weather_map;
 pub mod nws;
+pub mod open_weather_map;
 
 const IP_API_URL: &str = "https://ipapi.co/json";
 
@@ -321,10 +321,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         WeatherService::MetNo(service_config) => Box::new(met_no::Service::new(service_config)?),
         WeatherService::OpenWeatherMap(service_config) => {
             Box::new(open_weather_map::Service::new(config.autolocate, service_config).await?)
-        },
+        }
         WeatherService::Nws(service_config) => {
             Box::new(nws::Service::new(config.autolocate, service_config).await?)
-        },
+        }
     };
 
     let autolocate_interval = config.autolocate_interval.unwrap_or(config.interval);
