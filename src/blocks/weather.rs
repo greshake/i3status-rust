@@ -65,7 +65,7 @@
 //! `forecast_hours` | How many hours should be forecast | No | 12
 //! `units` | Either `"metric"` or `"imperial"`. | No | `"metric"`
 //!
-//! Forecasts gather statistics from each hour between now and the `forecast_hours` value, and 
+//! Forecasts gather statistics from each hour between now and the `forecast_hours` value, and
 //! provide predicted weather at the set number of hours into the future.
 //!
 //! # Available Format Keys
