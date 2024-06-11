@@ -27,7 +27,7 @@ pub struct NetDevice {
     pub ipv6: Option<Ipv6Addr>,
     pub icon: &'static str,
     pub tun_wg_ppp: bool,
-    pub nameserver: Option<String>,
+    pub nameservers: Vec<IpAddr>,
 }
 
 #[derive(Debug, Default)]
@@ -68,9 +68,8 @@ impl NetDevice {
         let wifi_info = WifiInfo::new(iface.index).await?;
         let ip = ipv4(&mut sock, iface.index).await?;
         let ipv6 = ipv6(&mut sock, iface.index).await?;
-        let nameserver = read_nameservers()
+        let nameservers = read_nameservers()
             .await
-            .map(|ns| ns.first().map(|ip| ip.to_string()))
             .error("Failed to read nameservers")?;
 
         // TODO: use netlink for the these too
@@ -102,7 +101,7 @@ impl NetDevice {
             ipv6,
             icon,
             tun_wg_ppp: tun | wg | ppp,
-            nameserver,
+            nameservers,
         }))
     }
 
