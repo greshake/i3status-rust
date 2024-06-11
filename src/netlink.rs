@@ -70,7 +70,7 @@ impl NetDevice {
         let ipv6 = ipv6(&mut sock, iface.index).await?;
         let nameserver = read_nameservers()
             .await
-            .map(|ns| ns.get(0).map(|ip| ip.to_string()))
+            .map(|ns| ns.first().map(|ip| ip.to_string()))
             .error("Failed to read nameservers")?;
 
         // TODO: use netlink for the these too
@@ -441,10 +441,10 @@ async fn read_nameservers() -> Result<Vec<IpAddr>> {
     let mut nameservers = Vec::new();
 
     for line in file.lines() {
-        if let Some(ip) = line.strip_prefix("nameserver ") {
-            let ip = ip.trim();
-            if let Ok(ip) = ip.parse() {
-                nameservers.push(ip);
+        let mut line_parts = line.split_whitespace();
+        if line_parts.next() == Some("nameserver") {
+            if let Some(ip) = line_parts.next() {
+                nameservers.push(ip.parse().error("Unable to parse ip")?);
             }
         }
     }
