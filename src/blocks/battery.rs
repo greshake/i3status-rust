@@ -138,7 +138,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         if let Some(info) = &mut info {
             if info.capacity >= config.full_threshold {
                 info.status = BatteryStatus::Full;
-            } else if info.capacity <= config.empty_threshold {
+            } else if info.capacity <= config.empty_threshold
+                && info.status != BatteryStatus::Charging
+            {
                 info.status = BatteryStatus::Empty;
             }
         }
