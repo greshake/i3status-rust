@@ -95,13 +95,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     let mut timezone = timezone_iter.next();
 
+    let interval_seconds = config.interval.seconds().max(1);
+
     let mut timer = tokio::time::interval_at(
-        tokio::time::Instant::now() + config.interval.0,
-        config.interval.0,
+        tokio::time::Instant::now() + Duration::from_secs(interval_seconds),
+        Duration::from_secs(interval_seconds),
     );
     timer.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
-
-    let interval_seconds = config.interval.seconds();
 
     loop {
         let mut widget = Widget::new().with_format(format.clone());
