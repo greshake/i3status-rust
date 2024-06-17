@@ -231,13 +231,13 @@
 
     <span class="kw">let </span><span class="kw-2">mut </span>timezone = timezone_iter.next();
 
+    <span class="kw">let </span>interval_seconds = config.interval.seconds().max(<span class="number">1</span>);
+
     <span class="kw">let </span><span class="kw-2">mut </span>timer = tokio::time::interval_at(
-        tokio::time::Instant::now() + config.interval.<span class="number">0</span>,
-        config.interval.<span class="number">0</span>,
+        tokio::time::Instant::now() + Duration::from_secs(interval_seconds),
+        Duration::from_secs(interval_seconds),
     );
     timer.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
-
-    <span class="kw">let </span>interval_seconds = config.interval.seconds();
 
     <span class="kw">loop </span>{
         <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
