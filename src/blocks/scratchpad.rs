@@ -31,9 +31,8 @@ pub struct Config {
 }
 
 fn count_scratchpad_windows(node: &Node) -> usize {
-    node.find_as_ref(|n| n.name == Some("__i3_scratch".to_string()))
-        .map(|node| node.floating_nodes.len())
-        .unwrap_or(0)
+    node.find_as_ref(|n| n.name.as_deref() == Some("__i3_scratch"))
+        .map_or(0, |node| node.floating_nodes.len())
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
