@@ -21,7 +21,6 @@
 //! # Icons Used
 //! - `scratchpad`
 
-
 use swayipc_async::{Connection, Event as SwayEvent, EventType, Node, WindowChange};
 
 use super::prelude::*;
@@ -41,7 +40,7 @@ fn count_scratchpad_windows(node: &Node) -> usize {
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let format = config.format.with_default("   $count ")?;
+    let format = config.format.with_default(" $icon $count ")?;
 
     let connection_for_events = Connection::new()
         .await
@@ -67,7 +66,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         widget.state = State::Idle;
         widget.set_values(map! {
-            "icon" => Value::icon("cogs"), // #TODO 
+            "icon" => Value::icon("scratchpad"),
             "count" => Value::number(count),
         });
 
