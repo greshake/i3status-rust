@@ -13,6 +13,26 @@ ignoreRegExpList:
     # Ignore unicode characters
   - /(\\u[0-9a-fA-F]{4}|\\U[0-9a-fA-F]{8})/g
 words:
+  - BCHARGE
+  - CLOEXEC
+  - COPR
+  - Greshake
+  - HHMM
+  - Mupi
+  - NLMSG
+  - NOFLAGS
+  - NOPASSWD
+  - NZXT
+  - Noto
+  - ONBATT
+  - OPER
+  - SIGRTMAX
+  - SIGRTMIN
+  - SIGUSR
+  - WLAN
+  - XKCD
+  - Xresources
+  - Zswapped
   - aarch
   - alacritty
   - alphanum
@@ -25,18 +45,17 @@ words:
   - armv
   - arphrd
   - backon
-  - BCHARGE
   - bluez
   - bokmaal
   - bugz
   - busctl
+  - ccache
   - chrono
   - clippy
-  - CLOEXEC
+  - cmap
   - conn
   - consts
   - conv
-  - COPR
   - dbpath
   - dbus
   - ddcci
@@ -55,10 +74,8 @@ words:
   - getenv
   - gibi
   - giga
-  - Greshake
   - gruvbox
   - gsettings
-  - HHMM
   - horiz
   - hypot
   - ibus
@@ -92,21 +109,13 @@ words:
   - mpDris2
   - mpris
   - mullvad
-  - Mupi
   - neli
-  - NLMSG
   - nlmsghdr
   - nmtui
   - noconfirm
-  - NOFLAGS
   - noheader
-  - NOPASSWD
   - noprogressbar
   - notif
-  - Noto
-  - NZXT
-  - ONBATT
-  - OPER
   - operstate
   - pactl
   - pango
@@ -142,9 +151,6 @@ words:
   - serde
   - setxkbmap
   - shmem
-  - SIGRTMAX
-  - SIGRTMIN
-  - SIGUSR
   - softirq
   - srcery
   - srcpkgcache
@@ -169,21 +175,19 @@ words:
   - vals
   - wayrs
   - wdoll
-  - WLAN
   - wlroots
   - wlsunset
   - wofi
   - wttr
   - xclip
+  - xcolors
   - xesam
   - xkbswitch
-  - XKCD
   - xrandr
+  - xresources
   - xtask
   - zbus
+  - zram
+  - zswap
   - zvariant
   - zwlr
-  - zswap
-  - zram
-  - Zswapped
-  - ccache

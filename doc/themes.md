@@ -124,7 +124,11 @@ cpu_boost_off = "OFF"
 
 # Available theme overrides
 
-All `bg` and `fg` overrides are html hex color codes like `#000000` or `#789ABC`. A fourth byte for alpha (like `#acbdef42`) works on some systems. `00` is transparent, `FF` is opaque.
+All `bg` and `fg` overrides are either
+
+* html hex color codes like `#000000` or `#789ABC`; a fourth byte for alpha (like `#acbdef42`) works on some systems. `00` is transparent, `FF` is opaque, or
+* a reference to another override, e.g., `{ link = "idle-bg" }`, or
+* a reference to a color name defined in `~/.Xresources`, e.g., `x:background` looks for a line like `*background: #aabbcc` in `~/.Xresources` (see also [.Xresources](https://wiki.debian.org/Xresources)).
 
 The tints are added to every second block counting from the right. They will therefore always brighten the block and never darken it. The alpha channel, if it works, can also be alternated in the same way.
 
