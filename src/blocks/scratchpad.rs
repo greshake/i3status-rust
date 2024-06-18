@@ -4,8 +4,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format`          | A string to customise the output of this block      | `" $icon $count "`
-//! `hide_when_empty` | Hides the block when scratchpad contains no windows | `true`
+//! `format`          | A string to customise the output of this block | ` $icon $count.eng(range:1..) |`
 //!
 //! Placeholder | Value                                      | Type   | Unit
 //! ------------|--------------------------------------------|--------|-----
@@ -29,8 +28,6 @@ use super::prelude::*;
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
     pub format: FormatConfig,
-    #[default(true)]
-    pub hide_when_empty: bool,
 }
 
 fn count_scratchpad_windows(node: &Node) -> usize {
@@ -40,7 +37,9 @@ fn count_scratchpad_windows(node: &Node) -> usize {
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let format = config.format.with_default(" $icon $count ")?;
+    let format = config
+        .format
+        .with_default(" $icon $count.eng(range:1..) |")?;
 
     let connection_for_events = Connection::new()
         .await
@@ -64,17 +63,12 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             .error("could not get windows tree")?;
         let count = count_scratchpad_windows(&root_node);
 
-        widget.state = State::Idle;
         widget.set_values(map! {
             "icon" => Value::icon("scratchpad"),
             "count" => Value::number(count),
         });
 
-        if count == 0 && config.hide_when_empty {
-            api.hide()?;
-        } else {
-            api.set_widget(widget)?;
-        }
+        api.set_widget(widget)?;
 
         loop {
             let event = events
