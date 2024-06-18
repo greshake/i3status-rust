@@ -1,3 +1,27 @@
+//! Scratchpad indicator
+//!
+//! # Configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `format`          | A string to customise the output of this block      | `" $icon $count "`
+//! `hide_when_empty` | Hides the block when scratchpad contains no windows | `true`
+//!
+//! Placeholder | Value                                      | Type   | Unit
+//! ------------|--------------------------------------------|--------|-----
+//! `icon`      | A static icon                              | Icon   | -
+//! `count`     | Number of windows in scratchpad            | Number | -
+//!
+//! # Example
+//!
+//! ```toml
+//! [[block]]
+//! block = "scratchpad"
+//!
+//! # Icons Used
+//! - `scratchpad`
+
+
 use swayipc_async::{Connection, Event as SwayEvent, EventType, Node, WindowChange};
 
 use super::prelude::*;
