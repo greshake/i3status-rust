@@ -208,7 +208,7 @@ impl ApiForecast {
     }
 }
 
-fn aggregate_avg(data: &[ForecastAggregate]) -> ForecastAggregate {
+fn combine_forecasts(data: &[ForecastAggregate], fin: WeatherMoment) -> Forecast {
     let mut temp = 0.0;
     let mut apparent = 0.0;
     let mut humidity = 0.0;
@@ -216,7 +216,24 @@ fn aggregate_avg(data: &[ForecastAggregate]) -> ForecastAggregate {
     let mut wind_east = 0.0;
     let mut wind_kmh_north = 0.0;
     let mut wind_kmh_east = 0.0;
+    let mut max = ForecastAggregate {
+        temp: -1000.0,
+        apparent: -1000.0,
+        humidity: 0.0,
+        wind: 0.0,
+        wind_kmh: 0.0,
+        wind_direction: Some(0.0),
+    };
+    let mut min = ForecastAggregate {
+        temp: 1000.0,
+        apparent: 1000.0,
+        humidity: 100.0,
+        wind: 1000.0,
+        wind_kmh: 1000.0,
+        wind_direction: Some(0.0),
+    };
     for val in data {
+        // Summations for averaging
         temp += val.temp;
         apparent += val.apparent;
         humidity += val.humidity;
@@ -229,29 +246,8 @@ fn aggregate_avg(data: &[ForecastAggregate]) -> ForecastAggregate {
         wind_east += val.wind * sin;
         wind_kmh_north += val.wind_kmh * cos;
         wind_kmh_east += val.wind_kmh * sin;
-    }
 
-    let count = data.len() as f64;
-    ForecastAggregate {
-        temp,
-        apparent,
-        humidity,
-        wind: wind_east.hypot(wind_north) / count,
-        wind_kmh: wind_kmh_east.hypot(wind_kmh_north) / count,
-        wind_direction: Some(wind_east.atan2(wind_north).to_degrees().rem_euclid(360.0)),
-    }
-}
-
-fn aggregate_max(data: &[ForecastAggregate]) -> ForecastAggregate {
-    let mut max = ForecastAggregate {
-        temp: -1000.0,
-        apparent: -1000.0,
-        humidity: 0.0,
-        wind: 0.0,
-        wind_kmh: 0.0,
-        wind_direction: Some(0.0),
-    };
-    for val in data {
+        // Max
         max.temp = max.temp.max(val.temp);
         max.apparent = max.apparent.max(val.apparent);
         max.humidity = max.humidity.max(val.humidity);
@@ -260,20 +256,8 @@ fn aggregate_max(data: &[ForecastAggregate]) -> ForecastAggregate {
         }
         max.wind = max.wind.max(val.wind);
         max.wind_kmh = max.wind_kmh.max(val.wind_kmh);
-    }
-    max
-}
 
-fn aggregate_min(data: &[ForecastAggregate]) -> ForecastAggregate {
-    let mut min = ForecastAggregate {
-        temp: 1000.0,
-        apparent: 1000.0,
-        humidity: 100.0,
-        wind: 1000.0,
-        wind_kmh: 1000.0,
-        wind_direction: Some(0.0),
-    };
-    for val in data {
+        // Min
         min.temp = min.temp.min(val.temp);
         min.apparent = min.apparent.min(val.apparent);
         min.humidity = min.humidity.min(val.humidity);
@@ -283,7 +267,17 @@ fn aggregate_min(data: &[ForecastAggregate]) -> ForecastAggregate {
         min.wind = min.wind.min(val.wind);
         min.wind_kmh = min.wind_kmh.min(val.wind_kmh);
     }
-    min
+
+    let count = data.len() as f64;
+    let avg = ForecastAggregate {
+        temp: temp / count,
+        apparent: apparent / count,
+        humidity: humidity / count,
+        wind: wind_east.hypot(wind_north) / count,
+        wind_kmh: wind_kmh_east.hypot(wind_kmh_north) / count,
+        wind_direction: Some(wind_east.atan2(wind_north).to_degrees().rem_euclid(360.0)),
+    };
+    Forecast { avg, min, max, fin }
 }
 
 #[async_trait]
@@ -341,12 +335,7 @@ impl WeatherProvider for Service<'_> {
             .error("no weather available")?
             .to_moment();
 
-        let forecast = Some(Forecast {
-            avg: aggregate_avg(&data_agg),
-            min: aggregate_min(&data_agg),
-            max: aggregate_max(&data_agg),
-            fin,
-        });
+        let forecast = Some(combine_forecasts(&data_agg, fin));
 
         Ok(WeatherResult {
             location: location.name,
