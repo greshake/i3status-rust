@@ -209,6 +209,15 @@
 <a href="#209" id="209">209</a>
 <a href="#210" id="210">210</a>
 <a href="#211" id="211">211</a>
+<a href="#212" id="212">212</a>
+<a href="#213" id="213">213</a>
+<a href="#214" id="214">214</a>
+<a href="#215" id="215">215</a>
+<a href="#216" id="216">216</a>
+<a href="#217" id="217">217</a>
+<a href="#218" id="218">218</a>
+<a href="#219" id="219">219</a>
+<a href="#220" id="220">220</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Network information
 //!
 //! This block uses `sysfs` and `netlink` and thus does not require any external dependencies.
@@ -242,6 +251,7 @@
 //! `bitrate`         | WiFi connection bitrate     | Number | Bits per second
 //! `ip`              | IPv4 address of the iface   | Text   | -
 //! `ipv6`            | IPv6 address of the iface   | Text   | -
+//! `nameserver`      | Nameserver                  | Text   | -
 //!
 //! # Example
 //!
@@ -272,6 +282,7 @@
 </span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
 <span class="kw">use </span><span class="kw">crate</span>::netlink::NetDevice;
 <span class="kw">use </span><span class="kw">crate</span>::util;
+<span class="kw">use </span>itertools::Itertools;
 <span class="kw">use </span>regex::Regex;
 <span class="kw">use </span>std::time::Instant;
 
@@ -370,6 +381,13 @@
                     [<span class="kw">if let </span><span class="prelude-val">Some</span>(v) = device.frequency()] <span class="string">"frequency" </span>=&gt; Value::hertz(v),
                     [<span class="kw">if let </span><span class="prelude-val">Some</span>(v) = device.bitrate()] <span class="string">"bitrate" </span>=&gt; Value::bits(v),
                     [<span class="kw">if let </span><span class="prelude-val">Some</span>(v) = device.signal()] <span class="string">"signal_strength" </span>=&gt; Value::percents(v),
+                    [<span class="kw">if </span>!device.nameservers.is_empty()] <span class="string">"nameserver" </span>=&gt; Value::text(
+                                                                            device
+                                                                                .nameservers
+                                                                                .into_iter()
+                                                                                .map(|s| s.to_string())
+                                                                                .join(<span class="string">" "</span>),
+                                                                        ),
                     <span class="string">"device" </span>=&gt; Value::text(device.iface.name),
                 });
 
