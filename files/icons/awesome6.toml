@@ -62,6 +62,7 @@ pomodoro_paused = "\uf04c"        # fa-pause
 pomodoro_started = "\uf04b"       # fa-play
 pomodoro_stopped = "\uf04d"       # fa-stop
 resolution = "\uf096"             # fa-square-o
+scratchpad = "\uf2d2" # fa-window-restore
 tasks = "\uf0ae"
 tea = "\uf0f4"
 thermometer = "\uf2c8"

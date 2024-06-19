@@ -188,6 +188,7 @@ define_blocks!(
     privacy,
     rofication,
     service_status,
+    scratchpad,
     sound,
     speedtest,
     keyboard_layout,

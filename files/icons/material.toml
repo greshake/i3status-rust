@@ -75,6 +75,7 @@ pomodoro_paused = "\ue034" # pause
 pomodoro_started = "\ue037" # play_arrow
 pomodoro_stopped = "\uef6a" # play_disabled ef6a | TODO: broken?
 resolution = "\uf152" # crop-square-rounded
+scratchpad = "\ue883" # flip_to_front
 tasks = "\ue8f9" # work
 tea = "\uefef" # coffee
 thermometer = "\ue1ff" # device_thermostat | TODO: broken?

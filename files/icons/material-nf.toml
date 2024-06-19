@@ -91,6 +91,7 @@ pomodoro_paused = "\U000f03e4" # nf-md-pause
 pomodoro_started = "\U000f040a" # nf-md-play
 pomodoro_stopped = "\U000f04db" # nf-md-stop
 resolution = "\U000f0293" # nf-md-fullscreen
+scratchpad = "\U000f05b2" # nf-md-window_restore
 tasks = "\U000f05c7" # nf-md-playlist_check
 tea = "\U000f0d9e" # nf-md-tea
 thermometer = [
