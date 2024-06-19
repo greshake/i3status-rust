@@ -31,6 +31,7 @@
 //! `bitrate`         | WiFi connection bitrate     | Number | Bits per second
 //! `ip`              | IPv4 address of the iface   | Text   | -
 //! `ipv6`            | IPv6 address of the iface   | Text   | -
+//! `nameserver`      | Nameserver                  | Text   | -
 //!
 //! # Example
 //!
@@ -61,6 +62,7 @@
 use super::prelude::*;
 use crate::netlink::NetDevice;
 use crate::util;
+use itertools::Itertools;
 use regex::Regex;
 use std::time::Instant;
 
@@ -159,6 +161,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     [if let Some(v) = device.frequency()] "frequency" => Value::hertz(v),
                     [if let Some(v) = device.bitrate()] "bitrate" => Value::bits(v),
                     [if let Some(v) = device.signal()] "signal_strength" => Value::percents(v),
+                    [if !device.nameservers.is_empty()] "nameserver" => Value::text(
+                                                                            device
+                                                                                .nameservers
+                                                                                .into_iter()
+                                                                                .map(|s| s.to_string())
+                                                                                .join(" "),
+                                                                        ),
                     "device" => Value::text(device.iface.name),
                 });
 

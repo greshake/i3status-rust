@@ -9,7 +9,7 @@ use regex::Regex;
 
 use libc::c_uchar;
 
-use std::net::{Ipv4Addr, Ipv6Addr};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::ops;
 use std::path::Path;
 
@@ -27,6 +27,7 @@ pub struct NetDevice {
     pub ipv6: Option<Ipv6Addr>,
     pub icon: &'static str,
     pub tun_wg_ppp: bool,
+    pub nameservers: Vec<IpAddr>,
 }
 
 #[derive(Debug, Default)]
@@ -67,6 +68,9 @@ impl NetDevice {
         let wifi_info = WifiInfo::new(iface.index).await?;
         let ip = ipv4(&mut sock, iface.index).await?;
         let ipv6 = ipv6(&mut sock, iface.index).await?;
+        let nameservers = read_nameservers()
+            .await
+            .error("Failed to read nameservers")?;
 
         // TODO: use netlink for the these too
         // I don't believe that this should ever change, so set it now:
@@ -97,6 +101,7 @@ impl NetDevice {
             ipv6,
             icon,
             tun_wg_ppp: tun | wg | ppp,
+            nameservers,
         }))
     }
 
@@ -426,6 +431,24 @@ async fn ipv6(sock: &mut NlSocket, ifa_index: i32) -> Result<Option<Ipv6Addr>> {
         .map_err(BoxErrorWrapper)
         .error("Failed to get IPv6 address")?
         .map(Ipv6Addr::from))
+}
+
+async fn read_nameservers() -> Result<Vec<IpAddr>> {
+    let file = util::read_file("/etc/resolv.conf")
+        .await
+        .error("Failed to read /etc/resolv.conf")?;
+    let mut nameservers = Vec::new();
+
+    for line in file.lines() {
+        let mut line_parts = line.split_whitespace();
+        if line_parts.next() == Some("nameserver") {
+            if let Some(ip) = line_parts.next() {
+                nameservers.push(ip.parse().error("Unable to parse ip")?);
+            }
+        }
+    }
+
+    Ok(nameservers)
 }
 
 // Source: https://www.kernel.org/doc/Documentation/networking/operstates.txt
