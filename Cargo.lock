@@ -1256,6 +1256,7 @@ dependencies = [
  "nix 0.28.0",
  "nom",
  "notmuch",
+ "num-traits",
  "once_cell",
  "pipewire",
  "regex",
