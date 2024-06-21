@@ -184,7 +184,7 @@ impl ApiForecast {
         let icon = short_forecast_to_icon(&self.short_forecast, !self.is_daytime);
         let weather = Self::icon_to_word(icon);
         WeatherMoment {
-            icon: short_forecast_to_icon(&self.short_forecast, !self.is_daytime),
+            icon,
             weather,
             weather_verbose: self.short_forecast.clone(),
             temp: self.temperature.value,
