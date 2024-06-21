@@ -253,18 +253,18 @@ fn combine_forecasts(data: &[ForecastAggregate], fin: WeatherMoment) -> Forecast
         max.humidity = max.humidity.max(val.humidity);
         if val.wind > max.wind {
             max.wind_direction = val.wind_direction;
+            max.wind = val.wind;
         }
-        max.wind = max.wind.max(val.wind);
         max.wind_kmh = max.wind_kmh.max(val.wind_kmh);
 
         // Min
         min.temp = min.temp.min(val.temp);
         min.apparent = min.apparent.min(val.apparent);
         min.humidity = min.humidity.min(val.humidity);
-        if val.wind > min.wind {
+        if val.wind < min.wind {
             min.wind_direction = val.wind_direction;
+            min.wind = val.wind;
         }
-        min.wind = min.wind.min(val.wind);
         min.wind_kmh = min.wind_kmh.min(val.wind_kmh);
     }
 
