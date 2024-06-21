@@ -254,8 +254,8 @@ fn combine_forecasts(data: &[ForecastAggregate], fin: WeatherMoment) -> Forecast
         if val.wind > max.wind {
             max.wind_direction = val.wind_direction;
             max.wind = val.wind;
+            max.wind_kmh = val.wind_kmh;
         }
-        max.wind_kmh = max.wind_kmh.max(val.wind_kmh);
 
         // Min
         min.temp = min.temp.min(val.temp);
@@ -264,8 +264,8 @@ fn combine_forecasts(data: &[ForecastAggregate], fin: WeatherMoment) -> Forecast
         if val.wind < min.wind {
             min.wind_direction = val.wind_direction;
             min.wind = val.wind;
+            min.wind_kmh = val.wind_kmh;
         }
-        min.wind_kmh = min.wind_kmh.min(val.wind_kmh);
     }
 
     let count = data.len() as f64;
