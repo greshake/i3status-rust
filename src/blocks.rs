@@ -152,6 +152,8 @@ define_blocks!(
     backlight,
     battery,
     bluetooth,
+    #[cfg(feature = "calendar")]
+    calendar,
     cpu,
     custom,
     custom_dbus,
