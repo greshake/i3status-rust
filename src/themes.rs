@@ -1,5 +1,6 @@
 pub mod color;
 pub mod separator;
+pub mod xresources;
 
 use std::fmt;
 use std::ops::{Deref, DerefMut};
