@@ -126,8 +126,9 @@ struct ApiForecast {
 }
 
 impl ApiForecast {
-    fn wind_direction(&self) -> f64 {
+    fn wind_direction(&self) -> Option<f64> {
         let dir = match self.wind_direction.as_str() {
+            "N" => 0,
             "NNE" => 1,
             "NE" => 2,
             "ENE" => 3,
@@ -143,9 +144,9 @@ impl ApiForecast {
             "WNW" => 13,
             "NW" => 14,
             "NNW" => 15,
-            _ => 0,
+            _ => return None,
         };
-        (dir as f64) * (360.0 / 16.0)
+        Some((dir as f64) * (360.0 / 16.0))
     }
 
     fn icon_to_word(icon: WeatherIcon) -> String {
@@ -192,7 +193,7 @@ impl ApiForecast {
             humidity: self.relative_humidity.value,
             wind: self.wind_speed.value,
             wind_kmh: self.wind_kmh(),
-            wind_direction: Some(self.wind_direction()),
+            wind_direction: self.wind_direction(),
         }
     }
 
@@ -203,7 +204,7 @@ impl ApiForecast {
             humidity: self.relative_humidity.value,
             wind: self.wind_speed.value,
             wind_kmh: self.wind_kmh(),
-            wind_direction: Some(self.wind_direction()),
+            wind_direction: self.wind_direction(),
         }
     }
 }
@@ -217,20 +218,20 @@ fn combine_forecasts(data: &[ForecastAggregate], fin: WeatherMoment) -> Forecast
     let mut wind_kmh_north = 0.0;
     let mut wind_kmh_east = 0.0;
     let mut max = ForecastAggregate {
-        temp: -1000.0,
-        apparent: -1000.0,
-        humidity: 0.0,
-        wind: 0.0,
-        wind_kmh: 0.0,
-        wind_direction: Some(0.0),
+        temp: f64::MIN,
+        apparent: f64::MIN,
+        humidity: f64::MIN,
+        wind: f64::MIN,
+        wind_kmh: f64::MIN,
+        wind_direction: None,
     };
     let mut min = ForecastAggregate {
-        temp: 1000.0,
-        apparent: 1000.0,
-        humidity: 100.0,
-        wind: 1000.0,
-        wind_kmh: 1000.0,
-        wind_direction: Some(0.0),
+        temp: f64::MAX,
+        apparent: f64::MAX,
+        humidity: f64::MAX,
+        wind: f64::MAX,
+        wind_kmh: f64::MAX,
+        wind_direction: None,
     };
     for val in data {
         // Summations for averaging
