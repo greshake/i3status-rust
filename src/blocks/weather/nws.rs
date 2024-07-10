@@ -177,8 +177,13 @@ impl ApiForecast {
             (self.temperature.value - 32.0) * 5.0 / 9.0
         };
         let humidity = self.relative_humidity.value;
-        let wind_speed = self.wind_kmh();
-        australian_apparent_temp(temp, humidity, wind_speed)
+        let wind_speed = self.wind_kmh() / 3.6;
+        let apparent = australian_apparent_temp(temp, humidity, wind_speed);
+        if self.temperature.unit_code.ends_with("degC") {
+            apparent
+        } else {
+            (apparent * 9.0 / 5.0) + 32.0
+        }
     }
 
     fn to_moment(&self) -> WeatherMoment {
