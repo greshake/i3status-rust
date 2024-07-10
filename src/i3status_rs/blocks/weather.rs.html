@@ -586,11 +586,28 @@
 <a href="#586" id="586">586</a>
 <a href="#587" id="587">587</a>
 <a href="#588" id="588">588</a>
+<a href="#589" id="589">589</a>
+<a href="#590" id="590">590</a>
+<a href="#591" id="591">591</a>
+<a href="#592" id="592">592</a>
+<a href="#593" id="593">593</a>
+<a href="#594" id="594">594</a>
+<a href="#595" id="595">595</a>
+<a href="#596" id="596">596</a>
+<a href="#597" id="597">597</a>
+<a href="#598" id="598">598</a>
+<a href="#599" id="599">599</a>
+<a href="#600" id="600">600</a>
+<a href="#601" id="601">601</a>
+<a href="#602" id="602">602</a>
+<a href="#603" id="603">603</a>
+<a href="#604" id="604">604</a>
+<a href="#605" id="605">605</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Current weather
 //!
 //! This block displays local weather and temperature information. In order to use this block, you
-//! will need access to a supported weather API service. At the time of writing, OpenWeatherMap and
-//! met.no are supported.
+//! will need access to a supported weather API service. At the time of writing, OpenWeatherMap,
+//! met.no, and the US National Weather Service are supported.
 //!
 //! Configuring this block requires configuring a weather service, which may require API keys and
 //! other parameters.
@@ -643,6 +660,18 @@
 //! `forecast_hours` | How many hours should be forecast | No | 12
 //!
 //! Met.no does not support location name, but if autolocate is enabled then autolocate's city value is used.
+//!
+//! # US National Weather Service Options
+//!
+//! Key | Values | Required | Default
+//! ----|--------|----------|--------
+//! `name` | `nws`. | Yes | None
+//! `coordinates` | GPS latitude longitude coordinates as a tuple, example: `["39.2362","9.3317"]` | Required if `autolocate = false` | None
+//! `forecast_hours` | How many hours should be forecast | No | 12
+//! `units` | Either `"metric"` or `"imperial"`. | No | `"metric"`
+//!
+//! Forecasts gather statistics from each hour between now and the `forecast_hours` value, and
+//! provide predicted weather at the set number of hours into the future.
 //!
 //! # Available Format Keys
 //!
@@ -713,6 +742,7 @@
 <span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
 
 <span class="kw">pub mod </span>met_no;
+<span class="kw">pub mod </span>nws;
 <span class="kw">pub mod </span>open_weather_map;
 
 <span class="kw">const </span>IP_API_URL: <span class="kw-2">&amp;</span>str = <span class="string">"https://ipapi.co/json"</span>;
@@ -751,6 +781,7 @@
 </span><span class="kw">pub enum </span>WeatherService {
     OpenWeatherMap(open_weather_map::Config),
     MetNo(met_no::Config),
+    Nws(nws::Config),
 }
 
 <span class="attr">#[derive(Clone, Copy)]
@@ -895,6 +926,9 @@
         WeatherService::MetNo(service_config) =&gt; Box::new(met_no::Service::new(service_config)<span class="question-mark">?</span>),
         WeatherService::OpenWeatherMap(service_config) =&gt; {
             Box::new(open_weather_map::Service::new(config.autolocate, service_config).<span class="kw">await</span><span class="question-mark">?</span>)
+        }
+        WeatherService::Nws(service_config) =&gt; {
+            Box::new(nws::Service::new(config.autolocate, service_config).<span class="kw">await</span><span class="question-mark">?</span>)
         }
     };
 
