@@ -217,6 +217,7 @@ fn combine_forecasts(data: &[ForecastAggregate], fin: WeatherMoment) -> Forecast
     let mut wind_east = 0.0;
     let mut wind_kmh_north = 0.0;
     let mut wind_kmh_east = 0.0;
+    let mut wind_count = 0.0;
     let mut max = ForecastAggregate {
         temp: f64::MIN,
         apparent: f64::MIN,
@@ -238,15 +239,14 @@ fn combine_forecasts(data: &[ForecastAggregate], fin: WeatherMoment) -> Forecast
         temp += val.temp;
         apparent += val.apparent;
         humidity += val.humidity;
-        let (sin, cos) = val
-            .wind_direction
-            .unwrap_or_default()
-            .to_radians()
-            .sin_cos();
-        wind_north += val.wind * cos;
-        wind_east += val.wind * sin;
-        wind_kmh_north += val.wind_kmh * cos;
-        wind_kmh_east += val.wind_kmh * sin;
+        if let Some(degrees) = val.wind_direction {
+            let (sin, cos) = degrees.to_radians().sin_cos();
+            wind_north += val.wind * cos;
+            wind_east += val.wind * sin;
+            wind_kmh_north += val.wind_kmh * cos;
+            wind_kmh_east += val.wind_kmh * sin;
+            wind_count += 1.0;
+        }
 
         // Max
         max.temp = max.temp.max(val.temp);
@@ -270,13 +270,25 @@ fn combine_forecasts(data: &[ForecastAggregate], fin: WeatherMoment) -> Forecast
     }
 
     let count = data.len() as f64;
+
+    // Calculate the wind results separately, discarding invalid wind values
+    let (wind, wind_kmh, wind_direction) = if wind_count == 0.0 {
+        (0.0, 0.0, None)
+    } else {
+        (
+            wind_east.hypot(wind_north) / wind_count,
+            wind_kmh_east.hypot(wind_kmh_north) / wind_count,
+            Some(wind_east.atan2(wind_north).to_degrees().rem_euclid(360.0)),
+        )
+    };
+
     let avg = ForecastAggregate {
         temp: temp / count,
         apparent: apparent / count,
         humidity: humidity / count,
-        wind: wind_east.hypot(wind_north) / count,
-        wind_kmh: wind_kmh_east.hypot(wind_kmh_north) / count,
-        wind_direction: Some(wind_east.atan2(wind_north).to_degrees().rem_euclid(360.0)),
+        wind,
+        wind_kmh,
+        wind_direction,
     };
     Forecast { avg, min, max, fin }
 }
