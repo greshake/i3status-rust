@@ -162,6 +162,16 @@ impl ApiForecast {
         .to_string()
     }
 
+    fn wind_speed(&self) -> f64 {
+        if self.wind_speed.unit_code.ends_with("km_h-1") {
+            // m/s
+            self.wind_speed.value / 3.6
+        } else {
+            // mph
+            self.wind_speed.value
+        }
+    }
+
     fn wind_kmh(&self) -> f64 {
         if self.wind_speed.unit_code.ends_with("km_h-1") {
             self.wind_speed.value
@@ -177,6 +187,7 @@ impl ApiForecast {
             (self.temperature.value - 32.0) * 5.0 / 9.0
         };
         let humidity = self.relative_humidity.value;
+        // wind_speed in m/s
         let wind_speed = self.wind_kmh() / 3.6;
         let apparent = australian_apparent_temp(temp, humidity, wind_speed);
         if self.temperature.unit_code.ends_with("degC") {
@@ -196,7 +207,7 @@ impl ApiForecast {
             temp: self.temperature.value,
             apparent: self.apparent_temp(),
             humidity: self.relative_humidity.value,
-            wind: self.wind_speed.value,
+            wind: self.wind_speed(),
             wind_kmh: self.wind_kmh(),
             wind_direction: self.wind_direction(),
         }
@@ -207,7 +218,7 @@ impl ApiForecast {
             temp: self.temperature.value,
             apparent: self.apparent_temp(),
             humidity: self.relative_humidity.value,
-            wind: self.wind_speed.value,
+            wind: self.wind_speed(),
             wind_kmh: self.wind_kmh(),
             wind_direction: self.wind_direction(),
         }
