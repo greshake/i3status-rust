@@ -7,13 +7,16 @@
 //!
 //! Key        | Values                     | Default
 //! -----------|----------------------------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders | `" $icon $text "`
+//! `format` | A string to customise the output of this block. See below for available placeholders | `" $icon $uptime "`
 //! `interval` | Update interval in seconds | `60`
 //!
-//! Placeholder   | Value                   | Type   | Unit
-//! --------------|-------------------------|--------|-----
-//! `icon`        | A static icon           | Icon   | -
-//! `text`        | Current uptime          | Text   | -
+//! Placeholder         | Value                   | Type     | Unit
+//! --------------------|-------------------------|----------|-----
+//! `icon`              | A static icon           | Icon     | -
+//! `text` *DEPRECATED* | Current uptime          | Text     | -
+//! `uptime`            | Current uptime          | Duration | -
+//!
+//! `text` has been deprecated in favor of `uptime`.
 //!
 //! # Example
 //!
@@ -25,9 +28,6 @@
 //!
 //! # Used Icons
 //! - `uptime`
-//!
-//! # TODO:
-//! - Add `time` or `dur` formatter to `src/formatting/formatter.rs`
 
 use super::prelude::*;
 use tokio::fs::read_to_string;
@@ -41,7 +41,7 @@ pub struct Config {
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let format = config.format.with_default(" $icon $text ")?;
+    let format = config.format.with_default(" $icon $uptime ")?;
 
     loop {
         let uptime = read_to_string("/proc/uptime")
@@ -52,6 +52,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             .next()
             .and_then(|u| u.parse().ok())
             .error("/proc/uptime has invalid content")?;
+
+        let uptime = Duration::from_secs(seconds);
 
         let weeks = seconds / 604_800;
         seconds %= 604_800;
@@ -75,7 +77,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let mut widget = Widget::new().with_format(format.clone());
         widget.set_values(map! {
           "icon" => Value::icon("uptime"),
-          "text" => Value::text(text)
+          "text" => Value::text(text),
+          "uptime" => Value::duration(uptime)
         });
         api.set_widget(widget)?;
 

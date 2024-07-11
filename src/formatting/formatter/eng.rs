@@ -6,10 +6,7 @@ use std::ops::RangeInclusive;
 
 use super::*;
 
-type PadWith = Cow<'static, str>;
-
 const DEFAULT_NUMBER_WIDTH: usize = 2;
-const DEFAULT_NUMBER_PAD_WITH: PadWith = Cow::Borrowed(" ");
 
 pub const DEFAULT_NUMBER_FORMATTER: EngFormatter = EngFormatter {
     width: DEFAULT_NUMBER_WIDTH,
