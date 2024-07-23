@@ -16,6 +16,7 @@
 //! ```toml
 //! [[block]]
 //! block = "scratchpad"
+//! ```
 //!
 //! # Icons Used
 //! - `scratchpad`
