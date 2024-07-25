@@ -391,6 +391,22 @@
 <a href="#391" id="391">391</a>
 <a href="#392" id="392">392</a>
 <a href="#393" id="393">393</a>
+<a href="#394" id="394">394</a>
+<a href="#395" id="395">395</a>
+<a href="#396" id="396">396</a>
+<a href="#397" id="397">397</a>
+<a href="#398" id="398">398</a>
+<a href="#399" id="399">399</a>
+<a href="#400" id="400">400</a>
+<a href="#401" id="401">401</a>
+<a href="#402" id="402">402</a>
+<a href="#403" id="403">403</a>
+<a href="#404" id="404">404</a>
+<a href="#405" id="405">405</a>
+<a href="#406" id="406">406</a>
+<a href="#407" id="407">407</a>
+<a href="#408" id="408">408</a>
+<a href="#409" id="409">409</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Support for using the US National Weather Service API.
 //!
 //! The API is documented [here](https://www.weather.gov/documentation/services-web-api).
@@ -555,6 +571,16 @@
         .to_string()
     }
 
+    <span class="kw">fn </span>wind_speed(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; f64 {
+        <span class="kw">if </span><span class="self">self</span>.wind_speed.unit_code.ends_with(<span class="string">"km_h-1"</span>) {
+            <span class="comment">// m/s
+            </span><span class="self">self</span>.wind_speed.value / <span class="number">3.6
+        </span>} <span class="kw">else </span>{
+            <span class="comment">// mph
+            </span><span class="self">self</span>.wind_speed.value
+        }
+    }
+
     <span class="kw">fn </span>wind_kmh(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; f64 {
         <span class="kw">if </span><span class="self">self</span>.wind_speed.unit_code.ends_with(<span class="string">"km_h-1"</span>) {
             <span class="self">self</span>.wind_speed.value
@@ -570,8 +596,14 @@
             (<span class="self">self</span>.temperature.value - <span class="number">32.0</span>) * <span class="number">5.0 </span>/ <span class="number">9.0
         </span>};
         <span class="kw">let </span>humidity = <span class="self">self</span>.relative_humidity.value;
-        <span class="kw">let </span>wind_speed = <span class="self">self</span>.wind_kmh();
-        australian_apparent_temp(temp, humidity, wind_speed)
+        <span class="comment">// wind_speed in m/s
+        </span><span class="kw">let </span>wind_speed = <span class="self">self</span>.wind_kmh() / <span class="number">3.6</span>;
+        <span class="kw">let </span>apparent = australian_apparent_temp(temp, humidity, wind_speed);
+        <span class="kw">if </span><span class="self">self</span>.temperature.unit_code.ends_with(<span class="string">"degC"</span>) {
+            apparent
+        } <span class="kw">else </span>{
+            (apparent * <span class="number">9.0 </span>/ <span class="number">5.0</span>) + <span class="number">32.0
+        </span>}
     }
 
     <span class="kw">fn </span>to_moment(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; WeatherMoment {
@@ -584,7 +616,7 @@
             temp: <span class="self">self</span>.temperature.value,
             apparent: <span class="self">self</span>.apparent_temp(),
             humidity: <span class="self">self</span>.relative_humidity.value,
-            wind: <span class="self">self</span>.wind_speed.value,
+            wind: <span class="self">self</span>.wind_speed(),
             wind_kmh: <span class="self">self</span>.wind_kmh(),
             wind_direction: <span class="self">self</span>.wind_direction(),
         }
@@ -595,7 +627,7 @@
             temp: <span class="self">self</span>.temperature.value,
             apparent: <span class="self">self</span>.apparent_temp(),
             humidity: <span class="self">self</span>.relative_humidity.value,
-            wind: <span class="self">self</span>.wind_speed.value,
+            wind: <span class="self">self</span>.wind_speed(),
             wind_kmh: <span class="self">self</span>.wind_kmh(),
             wind_direction: <span class="self">self</span>.wind_direction(),
         }
