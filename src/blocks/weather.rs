@@ -179,14 +179,25 @@ pub enum WeatherService {
     Nws(nws::Config),
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 enum WeatherIcon {
-    Clear { is_night: bool },
-    Clouds { is_night: bool },
-    Fog { is_night: bool },
-    Rain { is_night: bool },
+    Clear {
+        is_night: bool,
+    },
+    Clouds {
+        is_night: bool,
+    },
+    Fog {
+        is_night: bool,
+    },
+    Rain {
+        is_night: bool,
+    },
     Snow,
-    Thunder { is_night: bool },
+    Thunder {
+        is_night: bool,
+    },
+    #[default]
     Default,
 }
 
@@ -209,23 +220,7 @@ impl WeatherIcon {
     }
 }
 
-#[derive(Debug)]
-struct Wind {
-    speed: f64,
-    degrees: Option<f64>,
-}
-
-impl PartialEq for Wind {
-    fn eq(&self, other: &Self) -> bool {
-        (self.speed - other.speed).abs() < 0.001
-            && match (self.degrees, other.degrees) {
-                (Some(degrees0), Some(degrees1)) => (degrees0 - degrees1).abs() < 0.001,
-                (None, None) => true,
-                _ => false,
-            }
-    }
-}
-
+#[derive(Default)]
 struct WeatherMoment {
     icon: WeatherIcon,
     weather: String,
@@ -237,6 +232,7 @@ struct WeatherMoment {
     wind_kmh: f64,
     wind_direction: Option<f64>,
 }
+
 struct ForecastAggregate {
     temp: f64,
     apparent: f64,
@@ -246,17 +242,19 @@ struct ForecastAggregate {
     wind_direction: Option<f64>,
 }
 
+struct ForecastAggregateSegment {
+    temp: Option<f64>,
+    apparent: Option<f64>,
+    humidity: Option<f64>,
+    wind: Option<f64>,
+    wind_kmh: Option<f64>,
+    wind_direction: Option<f64>,
+}
+
 struct WeatherResult {
     location: String,
     current_weather: WeatherMoment,
     forecast: Option<Forecast>,
-}
-
-struct Forecast {
-    avg: ForecastAggregate,
-    min: ForecastAggregate,
-    max: ForecastAggregate,
-    fin: WeatherMoment,
 }
 
 impl WeatherResult {
@@ -304,6 +302,118 @@ impl WeatherResult {
             }
         }
         values
+    }
+}
+
+struct Forecast {
+    avg: ForecastAggregate,
+    min: ForecastAggregate,
+    max: ForecastAggregate,
+    fin: WeatherMoment,
+}
+
+impl Forecast {
+    fn new(data: &[ForecastAggregateSegment], fin: WeatherMoment) -> Self {
+        let mut temp_avg = 0.0;
+        let mut temp_count = 0.0;
+        let mut apparent_avg = 0.0;
+        let mut apparent_count = 0.0;
+        let mut humidity_avg = 0.0;
+        let mut humidity_count = 0.0;
+        let mut wind_north_avg = 0.0;
+        let mut wind_east_avg = 0.0;
+        let mut wind_kmh_north_avg = 0.0;
+        let mut wind_kmh_east_avg = 0.0;
+        let mut wind_count = 0.0;
+        let mut max = ForecastAggregate {
+            temp: f64::MIN,
+            apparent: f64::MIN,
+            humidity: f64::MIN,
+            wind: f64::MIN,
+            wind_kmh: f64::MIN,
+            wind_direction: None,
+        };
+        let mut min = ForecastAggregate {
+            temp: f64::MAX,
+            apparent: f64::MAX,
+            humidity: f64::MAX,
+            wind: f64::MAX,
+            wind_kmh: f64::MAX,
+            wind_direction: None,
+        };
+        for val in data {
+            if let Some(temp) = val.temp {
+                temp_avg += temp;
+                max.temp = max.temp.max(temp);
+                min.temp = min.temp.min(temp);
+                temp_count += 1.0;
+            }
+            if let Some(apparent) = val.apparent {
+                apparent_avg += apparent;
+                max.apparent = max.apparent.max(apparent);
+                min.apparent = min.apparent.min(apparent);
+                apparent_count += 1.0;
+            }
+            if let Some(humidity) = val.humidity {
+                humidity_avg += humidity;
+                max.humidity = max.humidity.max(humidity);
+                min.humidity = min.humidity.min(humidity);
+                humidity_count += 1.0;
+            }
+
+            if let (Some(wind), Some(wind_kmh)) = (val.wind, val.wind_kmh) {
+                if let Some(degrees) = val.wind_direction {
+                    let (sin, cos) = degrees.to_radians().sin_cos();
+                    wind_north_avg += wind * cos;
+                    wind_east_avg += wind * sin;
+                    wind_kmh_north_avg += wind_kmh * cos;
+                    wind_kmh_east_avg += wind_kmh * sin;
+                    wind_count += 1.0;
+                }
+
+                if wind > max.wind {
+                    max.wind_direction = val.wind_direction;
+                    max.wind = wind;
+                    max.wind_kmh = wind_kmh;
+                }
+
+                if wind < min.wind {
+                    min.wind_direction = val.wind_direction;
+                    min.wind = wind;
+                    min.wind_kmh = wind_kmh;
+                }
+            }
+        }
+
+        temp_avg /= temp_count;
+        humidity_avg /= humidity_count;
+        apparent_avg /= apparent_count;
+
+        // Calculate the wind results separately, discarding invalid wind values
+        let (wind_avg, wind_kmh_avg, wind_direction_avg) = if wind_count == 0.0 {
+            (0.0, 0.0, None)
+        } else {
+            (
+                wind_east_avg.hypot(wind_north_avg) / wind_count,
+                wind_kmh_east_avg.hypot(wind_kmh_north_avg) / wind_count,
+                Some(
+                    wind_east_avg
+                        .atan2(wind_north_avg)
+                        .to_degrees()
+                        .rem_euclid(360.0),
+                ),
+            )
+        };
+
+        let avg = ForecastAggregate {
+            temp: temp_avg,
+            apparent: apparent_avg,
+            humidity: humidity_avg,
+            wind: wind_avg,
+            wind_kmh: wind_kmh_avg,
+            wind_direction: wind_direction_avg,
+        };
+        Self { avg, min, max, fin }
     }
 }
 
@@ -490,32 +600,6 @@ fn convert_wind_direction(direction_opt: Option<f64>) -> &'static str {
     }
 }
 
-// Compute the average wind speed and direction
-fn average_wind(winds: &[Wind]) -> Wind {
-    let mut north = 0.0;
-    let mut east = 0.0;
-    let mut count = 0.0;
-    for wind in winds {
-        if let Some(degrees) = wind.degrees {
-            let (sin, cos) = degrees.to_radians().sin_cos();
-            north += wind.speed * cos;
-            east += wind.speed * sin;
-            count += 1.0;
-        }
-    }
-    if count == 0.0 {
-        Wind {
-            speed: 0.0,
-            degrees: None,
-        }
-    } else {
-        Wind {
-            speed: east.hypot(north) / count,
-            degrees: Some(east.atan2(north).to_degrees().rem_euclid(360.0)),
-        }
-    }
-}
-
 /// Compute the Australian Apparent Temperature from metric units
 fn australian_apparent_temp(temp: f64, humidity: f64, wind_speed: f64) -> f64 {
     let exponent = 17.27 * temp / (237.7 + temp);
@@ -528,77 +612,106 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_average_wind_speed() {
+    fn test_new_forecast_average_wind_speed() {
         let mut degrees = 0.0;
         while degrees < 360.0 {
-            let averaged = average_wind(&[
-                Wind {
-                    speed: 1.0,
-                    degrees: Some(degrees),
-                },
-                Wind {
-                    speed: 2.0,
-                    degrees: Some(degrees),
-                },
-            ]);
-            assert_eq!(
-                averaged,
-                Wind {
-                    speed: 1.5,
-                    degrees: Some(degrees)
-                }
+            let forecast = Forecast::new(
+                &[
+                    ForecastAggregateSegment {
+                        temp: None,
+                        apparent: None,
+                        humidity: None,
+                        wind: Some(1.0),
+                        wind_kmh: Some(3.6),
+                        wind_direction: Some(degrees),
+                    },
+                    ForecastAggregateSegment {
+                        temp: None,
+                        apparent: None,
+                        humidity: None,
+                        wind: Some(2.0),
+                        wind_kmh: Some(7.2),
+                        wind_direction: Some(degrees),
+                    },
+                ],
+                WeatherMoment::default(),
             );
+            assert!((forecast.avg.wind - 1.5).abs() < 0.1);
+            assert!((forecast.avg.wind_kmh - 5.4).abs() < 0.1);
+            assert!((forecast.avg.wind_direction.unwrap() - degrees).abs() < 0.1);
 
             degrees += 15.0;
         }
     }
 
     #[test]
-    fn test_average_wind_degrees() {
+    fn test_new_forecast_average_wind_degrees() {
         let mut degrees = 0.0;
         while degrees < 360.0 {
             let low = degrees - 1.0;
             let high = degrees + 1.0;
-            let averaged = average_wind(&[
-                Wind {
-                    speed: 1.0,
-                    degrees: Some(low),
-                },
-                Wind {
-                    speed: 1.0,
-                    degrees: Some(high),
-                },
-            ]);
+            let forecast = Forecast::new(
+                &[
+                    ForecastAggregateSegment {
+                        temp: None,
+                        apparent: None,
+                        humidity: None,
+                        wind: Some(1.0),
+                        wind_kmh: Some(3.6),
+                        wind_direction: Some(low),
+                    },
+                    ForecastAggregateSegment {
+                        temp: None,
+                        apparent: None,
+                        humidity: None,
+                        wind: Some(1.0),
+                        wind_kmh: Some(3.6),
+                        wind_direction: Some(high),
+                    },
+                ],
+                WeatherMoment::default(),
+            );
             // For winds of equal strength the direction should will be the
             // average of the low and high degrees
-            assert!((averaged.degrees.unwrap() - degrees).abs() < 0.1);
+            assert!((forecast.avg.wind_direction.unwrap() - degrees).abs() < 0.1);
 
             degrees += 15.0;
         }
     }
 
     #[test]
-    fn test_average_wind_speed_and_degrees() {
+    fn test_new_forecast_average_wind_speed_and_degrees() {
         let mut degrees = 0.0;
         while degrees < 360.0 {
             let low = degrees - 1.0;
             let high = degrees + 1.0;
-            let averaged = average_wind(&[
-                Wind {
-                    speed: 1.0,
-                    degrees: Some(low),
-                },
-                Wind {
-                    speed: 2.0,
-                    degrees: Some(high),
-                },
-            ]);
+            let forecast = Forecast::new(
+                &[
+                    ForecastAggregateSegment {
+                        temp: None,
+                        apparent: None,
+                        humidity: None,
+                        wind: Some(1.0),
+                        wind_kmh: Some(3.6),
+                        wind_direction: Some(low),
+                    },
+                    ForecastAggregateSegment {
+                        temp: None,
+                        apparent: None,
+                        humidity: None,
+                        wind: Some(2.0),
+                        wind_kmh: Some(7.2),
+                        wind_direction: Some(high),
+                    },
+                ],
+                WeatherMoment::default(),
+            );
             // Wind degree will be higher than the centerpoint of the low
             // and high winds since the high wind is stronger and will be
             // less than high
             // (low+high)/2 < average.degrees < high
-            assert!((low + high) / 2.0 < averaged.degrees.unwrap());
-            assert!(averaged.degrees.unwrap() < high);
+            assert!((low + high) / 2.0 < forecast.avg.wind_direction.unwrap());
+            assert!(forecast.avg.wind_direction.unwrap() < high);
             degrees += 15.0;
         }
     }

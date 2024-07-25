@@ -157,14 +157,55 @@ struct ApiInstantResponse {
     dt: i64,
 }
 
+impl ApiInstantResponse {
+    fn wind_kmh(&self, units: &UnitSystem) -> f64 {
+        self.wind.speed
+            * match units {
+                UnitSystem::Metric => 3.6,
+                UnitSystem::Imperial => 3.6 * 0.447,
+            }
+    }
+
+    fn to_moment(&self, units: &UnitSystem, current_data: &ApiCurrentResponse) -> WeatherMoment {
+        let is_night = current_data.sys.sunrise >= self.dt || self.dt >= current_data.sys.sunset;
+
+        WeatherMoment {
+            icon: weather_to_icon(self.weather[0].main.as_str(), is_night),
+            weather: self.weather[0].main.clone(),
+            weather_verbose: self.weather[0].description.clone(),
+            temp: self.main.temp,
+            apparent: self.main.feels_like,
+            humidity: self.main.humidity,
+            wind: self.wind.speed,
+            wind_kmh: self.wind_kmh(units),
+            wind_direction: self.wind.deg,
+        }
+    }
+
+    fn to_aggregate(&self, units: &UnitSystem) -> ForecastAggregateSegment {
+        ForecastAggregateSegment {
+            temp: Some(self.main.temp),
+            apparent: Some(self.main.feels_like),
+            humidity: Some(self.main.humidity),
+            wind: Some(self.wind.speed),
+            wind_kmh: Some(self.wind_kmh(units)),
+            wind_direction: self.wind.deg,
+        }
+    }
+}
+
 #[derive(Deserialize, Debug)]
 struct ApiCurrentResponse {
-    weather: Vec<ApiWeather>,
-    main: ApiMain,
-    wind: ApiWind,
+    #[serde(flatten)]
+    instant: ApiInstantResponse,
     sys: ApiSys,
     name: String,
-    dt: i64,
+}
+
+impl ApiCurrentResponse {
+    fn to_moment(&self, units: &UnitSystem) -> WeatherMoment {
+        self.instant.to_moment(units, self)
+    }
 }
 
 #[derive(Deserialize, Debug)]
@@ -231,160 +272,51 @@ impl WeatherProvider for Service<'_> {
             .await
             .error("Current weather request failed")?;
 
-        let current_weather = {
-            let is_night = current_data.sys.sunrise >= current_data.dt
-                || current_data.dt >= current_data.sys.sunset;
-            WeatherMoment {
-                temp: current_data.main.temp,
-                apparent: current_data.main.feels_like,
-                humidity: current_data.main.humidity,
-                weather: current_data.weather[0].main.clone(),
-                weather_verbose: current_data.weather[0].description.clone(),
-                wind: current_data.wind.speed,
-                wind_kmh: current_data.wind.speed
-                    * match self.units {
-                        UnitSystem::Metric => 3.6,
-                        UnitSystem::Imperial => 3.6 * 0.447,
-                    },
-                wind_direction: current_data.wind.deg,
-                icon: weather_to_icon(current_data.weather[0].main.as_str(), is_night),
-            }
-        };
+        let current_weather = current_data.to_moment(self.units);
 
-        let forecast = if !need_forecast || self.forecast_hours == 0 {
-            None
-        } else {
-            // Refer to https://openweathermap.org/forecast5
-            let forecast_url = format!(
-                "{FORECAST_URL}?{location_query}&appid={api_key}&units={units}&lang={lang}&cnt={cnt}",
-                api_key = self.api_key,
-                units = match self.units {
-                    UnitSystem::Metric => "metric",
-                    UnitSystem::Imperial => "imperial",
-                },
-                lang = self.lang,
-                cnt = self.forecast_hours / 3,
-            );
+        if !need_forecast || self.forecast_hours == 0 {
+            return Ok(WeatherResult {
+                location: current_data.name,
+                current_weather,
+                forecast: None,
+            });
+        }
 
-            let forecast_data: ApiForecastResponse = REQWEST_CLIENT
-                .get(forecast_url)
-                .send()
-                .await
-                .error("Forecast weather request failed")?
-                .json()
-                .await
-                .error("Forecast weather request failed")?;
+        // Refer to https://openweathermap.org/forecast5
+        let forecast_url = format!(
+            "{FORECAST_URL}?{location_query}&appid={api_key}&units={units}&lang={lang}&cnt={cnt}",
+            api_key = self.api_key,
+            units = match self.units {
+                UnitSystem::Metric => "metric",
+                UnitSystem::Imperial => "imperial",
+            },
+            lang = self.lang,
+            cnt = self.forecast_hours / 3,
+        );
 
-            let mut temp_avg = 0.0;
-            let mut temp_min = f64::MAX;
-            let mut temp_max = f64::MIN;
-            let mut apparent_avg = 0.0;
-            let mut apparent_min = f64::MAX;
-            let mut apparent_max = f64::MIN;
-            let mut humidity_avg = 0.0;
-            let mut humidity_min = f64::MAX;
-            let mut humidity_max = f64::MIN;
-            let mut wind_forecasts = Vec::new();
-            let mut forecast_count = 0.0;
-            for forecast_instant in &forecast_data.list {
-                let instant_main = &forecast_instant.main;
-                temp_avg += instant_main.temp;
-                temp_min = temp_min.min(instant_main.temp);
-                temp_max = temp_max.max(instant_main.temp);
-                apparent_avg += instant_main.feels_like;
-                apparent_min = apparent_min.min(instant_main.feels_like);
-                apparent_max = apparent_max.max(instant_main.feels_like);
-                humidity_avg += instant_main.humidity;
-                humidity_min = humidity_min.min(instant_main.humidity);
-                humidity_max = humidity_max.max(instant_main.humidity);
-                forecast_count += 1.0;
+        let forecast_data: ApiForecastResponse = REQWEST_CLIENT
+            .get(forecast_url)
+            .send()
+            .await
+            .error("Forecast weather request failed")?
+            .json()
+            .await
+            .error("Forecast weather request failed")?;
 
-                let instant_wind = &forecast_instant.wind;
-                wind_forecasts.push(Wind {
-                    speed: instant_wind.speed,
-                    degrees: instant_wind.deg,
-                });
-            }
-            temp_avg /= forecast_count;
-            apparent_avg /= forecast_count;
-            humidity_avg /= forecast_count;
-            let Wind {
-                speed: wind_avg,
-                degrees: direction_avg,
-            } = average_wind(&wind_forecasts);
-            let Wind {
-                speed: wind_min,
-                degrees: direction_min,
-            } = wind_forecasts
-                .iter()
-                .min_by(|x, y| x.speed.total_cmp(&y.speed))
-                .error("No min wind")?;
-            let Wind {
-                speed: wind_max,
-                degrees: direction_max,
-            } = wind_forecasts
-                .iter()
-                .min_by(|x, y| x.speed.total_cmp(&y.speed))
-                .error("No max wind")?;
+        let data_agg: Vec<ForecastAggregateSegment> = forecast_data
+            .list
+            .iter()
+            .take(self.forecast_hours)
+            .map(|f| f.to_aggregate(self.units))
+            .collect();
 
-            let fin_data = forecast_data.list.last().unwrap();
-            let fin_is_night =
-                current_data.sys.sunrise >= fin_data.dt || fin_data.dt >= current_data.sys.sunset;
+        let fin = forecast_data
+            .list
+            .last()
+            .error("no weather available")?
+            .to_moment(self.units, &current_data);
 
-            Some(Forecast {
-                avg: ForecastAggregate {
-                    temp: temp_avg,
-                    apparent: apparent_avg,
-                    humidity: humidity_avg,
-                    wind: wind_avg,
-                    wind_kmh: wind_avg
-                        * match self.units {
-                            UnitSystem::Metric => 3.6,
-                            UnitSystem::Imperial => 3.6 * 0.447,
-                        },
-                    wind_direction: direction_avg,
-                },
-                min: ForecastAggregate {
-                    temp: temp_min,
-                    apparent: apparent_min,
-                    humidity: humidity_min,
-                    wind: *wind_min,
-                    wind_kmh: wind_min
-                        * match self.units {
-                            UnitSystem::Metric => 3.6,
-                            UnitSystem::Imperial => 3.6 * 0.447,
-                        },
-                    wind_direction: *direction_min,
-                },
-                max: ForecastAggregate {
-                    temp: temp_max,
-                    apparent: apparent_max,
-                    humidity: humidity_max,
-                    wind: *wind_max,
-                    wind_kmh: wind_max
-                        * match self.units {
-                            UnitSystem::Metric => 3.6,
-                            UnitSystem::Imperial => 3.6 * 0.447,
-                        },
-                    wind_direction: *direction_max,
-                },
-                fin: WeatherMoment {
-                    icon: weather_to_icon(fin_data.weather[0].main.as_str(), fin_is_night),
-                    weather: fin_data.weather[0].main.clone(),
-                    weather_verbose: fin_data.weather[0].description.clone(),
-                    temp: fin_data.main.temp,
-                    apparent: fin_data.main.feels_like,
-                    humidity: fin_data.main.humidity,
-                    wind: fin_data.wind.speed,
-                    wind_kmh: fin_data.wind.speed
-                        * match self.units {
-                            UnitSystem::Metric => 3.6,
-                            UnitSystem::Imperial => 3.6 * 0.447,
-                        },
-                    wind_direction: fin_data.wind.deg,
-                },
-            })
-        };
+        let forecast = Some(Forecast::new(&data_agg, fin));
 
         Ok(WeatherResult {
             location: current_data.name,
