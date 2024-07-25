@@ -13,7 +13,7 @@ use tokio::sync::Notify;
 
 use super::*;
 
-static CLIENT: Lazy<Result<Client>> = Lazy::new(Client::new);
+static CLIENT: LazyLock<Result<Client>> = LazyLock::new(Client::new);
 
 #[derive(Debug)]
 struct Node {

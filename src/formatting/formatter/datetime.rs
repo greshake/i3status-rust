@@ -1,9 +1,9 @@
 use chrono::format::{Fixed, Item, StrftimeItems};
 use chrono::{DateTime, Datelike, Local, LocalResult, Locale, TimeZone, Timelike};
 use chrono_tz::{OffsetName, Tz};
-use once_cell::sync::Lazy;
 
 use std::fmt::Display;
+use std::sync::LazyLock;
 
 use super::*;
 
@@ -11,8 +11,8 @@ make_log_macro!(error, "datetime");
 
 const DEFAULT_DATETIME_FORMAT: &str = "%a %d/%m %R";
 
-pub static DEFAULT_DATETIME_FORMATTER: Lazy<DatetimeFormatter> =
-    Lazy::new(|| DatetimeFormatter::new(Some(DEFAULT_DATETIME_FORMAT), None).unwrap());
+pub static DEFAULT_DATETIME_FORMATTER: LazyLock<DatetimeFormatter> =
+    LazyLock::new(|| DatetimeFormatter::new(Some(DEFAULT_DATETIME_FORMAT), None).unwrap());
 
 #[derive(Debug)]
 pub enum DatetimeFormatter {

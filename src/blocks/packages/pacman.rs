@@ -10,7 +10,7 @@ use crate::util::has_command;
 
 make_log_macro!(debug, "pacman");
 
-pub static PACMAN_UPDATES_DB: Lazy<PathBuf> = Lazy::new(|| {
+pub static PACMAN_UPDATES_DB: LazyLock<PathBuf> = LazyLock::new(|| {
     let path = match env::var_os("CHECKUPDATES_DB") {
         Some(val) => val.into(),
         None => {
@@ -27,7 +27,7 @@ pub static PACMAN_UPDATES_DB: Lazy<PathBuf> = Lazy::new(|| {
     path
 });
 
-pub static PACMAN_DB: Lazy<PathBuf> = Lazy::new(|| {
+pub static PACMAN_DB: LazyLock<PathBuf> = LazyLock::new(|| {
     let path = env::var_os("DBPath")
         .map(Into::into)
         .unwrap_or_else(|| PathBuf::from("/var/lib/pacman/"));

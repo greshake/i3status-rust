@@ -129,8 +129,8 @@ struct ForecastTimeInstant {
     relative_humidity: Option<f64>,
 }
 
-static LEGENDS: Lazy<Option<LegendsStore>> =
-    Lazy::new(|| serde_json::from_str(include_str!("met_no_legends.json")).ok());
+static LEGENDS: LazyLock<Option<LegendsStore>> =
+    LazyLock::new(|| serde_json::from_str(include_str!("met_no_legends.json")).ok());
 
 const FORECAST_URL: &str = "https://api.met.no/weatherapi/locationforecast/2.0/compact";
 
