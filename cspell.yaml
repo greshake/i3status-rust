@@ -30,6 +30,7 @@ words:
   - bokmaal
   - bugz
   - busctl
+  - caldav
   - chrono
   - clippy
   - CLOEXEC
@@ -63,6 +64,7 @@ words:
   - horiz
   - hypot
   - ibus
+  - icalendar
   - iface
   - ifaces
   - ifaddrmsg
@@ -114,6 +116,7 @@ words:
   - pavucontrol
   - percents
   - pikaur
+  - pkce
   - pkill
   - playerctl
   - playerctld
@@ -169,6 +172,8 @@ words:
   - upower
   - uptodate
   - vals
+  - VCALENDAR
+  - VEVENT
   - wayrs
   - wdoll
   - WLAN
