@@ -28,12 +28,11 @@ pub use tokio;
 use std::borrow::Cow;
 use std::future::Future;
 use std::pin::Pin;
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 use std::time::Duration;
 
 use futures::stream::{FuturesUnordered, StreamExt};
 use futures::Stream;
-use once_cell::sync::Lazy;
 use tokio::process::Command;
 use tokio::sync::{mpsc, Notify};
 
@@ -51,7 +50,7 @@ use crate::widget::{State, Widget};
 const APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
 const REQWEST_TIMEOUT: Duration = Duration::from_secs(10);
 
-static REQWEST_CLIENT: Lazy<reqwest::Client> = Lazy::new(|| {
+static REQWEST_CLIENT: LazyLock<reqwest::Client> = LazyLock::new(|| {
     reqwest::Client::builder()
         .user_agent(APP_USER_AGENT)
         .timeout(REQWEST_TIMEOUT)
@@ -59,7 +58,7 @@ static REQWEST_CLIENT: Lazy<reqwest::Client> = Lazy::new(|| {
         .unwrap()
 });
 
-static REQWEST_CLIENT_IPV4: Lazy<reqwest::Client> = Lazy::new(|| {
+static REQWEST_CLIENT_IPV4: LazyLock<reqwest::Client> = LazyLock::new(|| {
     reqwest::Client::builder()
         .user_agent(APP_USER_AGENT)
         .local_address(Some(std::net::Ipv4Addr::UNSPECIFIED.into()))
