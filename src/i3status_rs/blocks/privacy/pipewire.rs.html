@@ -279,7 +279,7 @@
 
 <span class="kw">use super</span>::<span class="kw-2">*</span>;
 
-<span class="kw">static </span>CLIENT: Lazy&lt;<span class="prelude-ty">Result</span>&lt;Client&gt;&gt; = Lazy::new(Client::new);
+<span class="kw">static </span>CLIENT: LazyLock&lt;<span class="prelude-ty">Result</span>&lt;Client&gt;&gt; = LazyLock::new(Client::new);
 
 <span class="attr">#[derive(Debug)]
 </span><span class="kw">struct </span>Node {

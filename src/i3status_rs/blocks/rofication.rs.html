@@ -199,7 +199,7 @@
 
     <span class="comment">// Response must be two integers: regular and critical, separated either by a comma or a \n
     </span><span class="kw">let </span>(num, crit) = response
-        .split_once(|x| x == <span class="string">',' </span>|| x == <span class="string">'\n'</span>)
+        .split_once([<span class="string">','</span>, <span class="string">'\n'</span>])
         .error(<span class="string">"Incorrect response"</span>)<span class="question-mark">?</span>;
     <span class="prelude-val">Ok</span>((
         num.parse().error(<span class="string">"Incorrect response"</span>)<span class="question-mark">?</span>,

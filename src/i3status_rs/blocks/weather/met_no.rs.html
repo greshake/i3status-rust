@@ -451,8 +451,8 @@
     relative_humidity: <span class="prelude-ty">Option</span>&lt;f64&gt;,
 }
 
-<span class="kw">static </span>LEGENDS: Lazy&lt;<span class="prelude-ty">Option</span>&lt;LegendsStore&gt;&gt; =
-    Lazy::new(|| serde_json::from_str(<span class="macro">include_str!</span>(<span class="string">"met_no_legends.json"</span>)).ok());
+<span class="kw">static </span>LEGENDS: LazyLock&lt;<span class="prelude-ty">Option</span>&lt;LegendsStore&gt;&gt; =
+    LazyLock::new(|| serde_json::from_str(<span class="macro">include_str!</span>(<span class="string">"met_no_legends.json"</span>)).ok());
 
 <span class="kw">const </span>FORECAST_URL: <span class="kw-2">&amp;</span>str = <span class="string">"https://api.met.no/weatherapi/locationforecast/2.0/compact"</span>;
 

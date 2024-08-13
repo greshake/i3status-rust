@@ -464,7 +464,7 @@
 
 <span class="macro">macro_rules!</span> regex {
     (<span class="macro-nonterminal">$re</span>:literal $(,)<span class="question-mark">?</span>) =&gt; {{
-        <span class="kw">static </span>RE: once_cell::sync::OnceCell&lt;regex::Regex&gt; = once_cell::sync::OnceCell::new();
+        <span class="kw">static </span>RE: std::sync::OnceLock&lt;regex::Regex&gt; = std::sync::OnceLock::new();
         RE.get_or_init(|| regex::Regex::new(<span class="macro-nonterminal">$re</span>).unwrap())
     }};
 }

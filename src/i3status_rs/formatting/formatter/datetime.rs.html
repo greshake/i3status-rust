@@ -225,9 +225,9 @@
 </pre></div><pre class="rust"><code><span class="kw">use </span>chrono::format::{Fixed, Item, StrftimeItems};
 <span class="kw">use </span>chrono::{DateTime, Datelike, Local, LocalResult, Locale, TimeZone, Timelike};
 <span class="kw">use </span>chrono_tz::{OffsetName, Tz};
-<span class="kw">use </span>once_cell::sync::Lazy;
 
 <span class="kw">use </span>std::fmt::Display;
+<span class="kw">use </span>std::sync::LazyLock;
 
 <span class="kw">use super</span>::<span class="kw-2">*</span>;
 
@@ -235,8 +235,8 @@
 
 <span class="kw">const </span>DEFAULT_DATETIME_FORMAT: <span class="kw-2">&amp;</span>str = <span class="string">"%a %d/%m %R"</span>;
 
-<span class="kw">pub static </span>DEFAULT_DATETIME_FORMATTER: Lazy&lt;DatetimeFormatter&gt; =
-    Lazy::new(|| DatetimeFormatter::new(<span class="prelude-val">Some</span>(DEFAULT_DATETIME_FORMAT), <span class="prelude-val">None</span>).unwrap());
+<span class="kw">pub static </span>DEFAULT_DATETIME_FORMATTER: LazyLock&lt;DatetimeFormatter&gt; =
+    LazyLock::new(|| DatetimeFormatter::new(<span class="prelude-val">Some</span>(DEFAULT_DATETIME_FORMAT), <span class="prelude-val">None</span>).unwrap());
 
 <span class="attr">#[derive(Debug)]
 </span><span class="kw">pub enum </span>DatetimeFormatter {

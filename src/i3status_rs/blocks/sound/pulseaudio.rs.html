@@ -546,9 +546,9 @@
 <span class="kw">use </span><span class="kw">super</span>::<span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
 <span class="kw">use super</span>::{DeviceKind, SoundDevice};
 
-<span class="kw">static </span>CLIENT: Lazy&lt;<span class="prelude-ty">Result</span>&lt;Client&gt;&gt; = Lazy::new(Client::new);
+<span class="kw">static </span>CLIENT: LazyLock&lt;<span class="prelude-ty">Result</span>&lt;Client&gt;&gt; = LazyLock::new(Client::new);
 <span class="kw">static </span>EVENT_LISTENER: Mutex&lt;Vec&lt;Weak&lt;Notify&gt;&gt;&gt; = Mutex::new(Vec::new());
-<span class="kw">static </span>DEVICES: Lazy&lt;Mutex&lt;HashMap&lt;(DeviceKind, String), VolInfo&gt;&gt;&gt; = Lazy::new(default);
+<span class="kw">static </span>DEVICES: LazyLock&lt;Mutex&lt;HashMap&lt;(DeviceKind, String), VolInfo&gt;&gt;&gt; = LazyLock::new(default);
 
 <span class="comment">// Default device names
 </span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">static </span>DEFAULT_SOURCE: Mutex&lt;Cow&lt;<span class="lifetime">'static</span>, str&gt;&gt; =

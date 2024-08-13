@@ -170,7 +170,7 @@
 
 <span class="macro">make_log_macro!</span>(debug, <span class="string">"pacman"</span>);
 
-<span class="kw">pub static </span>PACMAN_UPDATES_DB: Lazy&lt;PathBuf&gt; = Lazy::new(|| {
+<span class="kw">pub static </span>PACMAN_UPDATES_DB: LazyLock&lt;PathBuf&gt; = LazyLock::new(|| {
     <span class="kw">let </span>path = <span class="kw">match </span>env::var_os(<span class="string">"CHECKUPDATES_DB"</span>) {
         <span class="prelude-val">Some</span>(val) =&gt; val.into(),
         <span class="prelude-val">None </span>=&gt; {
@@ -187,7 +187,7 @@
     path
 });
 
-<span class="kw">pub static </span>PACMAN_DB: Lazy&lt;PathBuf&gt; = Lazy::new(|| {
+<span class="kw">pub static </span>PACMAN_DB: LazyLock&lt;PathBuf&gt; = LazyLock::new(|| {
     <span class="kw">let </span>path = env::var_os(<span class="string">"DBPath"</span>)
         .map(Into::into)
         .unwrap_or_else(|| PathBuf::from(<span class="string">"/var/lib/pacman/"</span>));
