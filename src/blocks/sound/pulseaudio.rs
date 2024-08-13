@@ -20,9 +20,9 @@ use tokio::sync::Notify;
 use super::super::prelude::*;
 use super::{DeviceKind, SoundDevice};
 
-static CLIENT: Lazy<Result<Client>> = Lazy::new(Client::new);
+static CLIENT: LazyLock<Result<Client>> = LazyLock::new(Client::new);
 static EVENT_LISTENER: Mutex<Vec<Weak<Notify>>> = Mutex::new(Vec::new());
-static DEVICES: Lazy<Mutex<HashMap<(DeviceKind, String), VolInfo>>> = Lazy::new(default);
+static DEVICES: LazyLock<Mutex<HashMap<(DeviceKind, String), VolInfo>>> = LazyLock::new(default);
 
 // Default device names
 pub(super) static DEFAULT_SOURCE: Mutex<Cow<'static, str>> =

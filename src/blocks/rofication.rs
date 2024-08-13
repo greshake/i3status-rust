@@ -95,7 +95,7 @@ async fn rofication_status(socket_path: &str) -> Result<(usize, usize)> {
 
     // Response must be two integers: regular and critical, separated either by a comma or a \n
     let (num, crit) = response
-        .split_once(|x| x == ',' || x == '\n')
+        .split_once([',', '\n'])
         .error("Incorrect response")?;
     Ok((
         num.parse().error("Incorrect response")?,

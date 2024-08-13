@@ -17,6 +17,7 @@ pub use std::borrow::Cow;
 pub use std::collections::HashMap;
 pub use std::fmt::Write;
 pub use std::pin::Pin;
+pub use std::sync::LazyLock;
 pub use std::time::Duration;
 
 pub use tokio::io::{AsyncBufRead, AsyncBufReadExt, AsyncReadExt, AsyncWriteExt};
@@ -24,8 +25,6 @@ pub use tokio::select;
 pub use tokio::time::sleep;
 
 pub use futures::{Stream, StreamExt};
-
-pub use once_cell::sync::Lazy;
 
 pub use smart_default::SmartDefault;
 
