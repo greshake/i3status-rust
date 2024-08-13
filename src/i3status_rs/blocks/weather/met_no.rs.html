@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/weather/met_no.rs`."><title>met_no.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-dd39b87e5fcfba68.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.80.0 (051478957 2024-07-21)" data-channel="1.80.0" data-search-js="search-d52510db62a78183.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/weather/met_no.rs`."><title>met_no.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-dd39b87e5fcfba68.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.80.1 (3f5fd8dd4 2024-08-06)" data-channel="1.80.1" data-search-js="search-d52510db62a78183.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -278,53 +278,6 @@
 <a href="#278" id="278">278</a>
 <a href="#279" id="279">279</a>
 <a href="#280" id="280">280</a>
-<a href="#281" id="281">281</a>
-<a href="#282" id="282">282</a>
-<a href="#283" id="283">283</a>
-<a href="#284" id="284">284</a>
-<a href="#285" id="285">285</a>
-<a href="#286" id="286">286</a>
-<a href="#287" id="287">287</a>
-<a href="#288" id="288">288</a>
-<a href="#289" id="289">289</a>
-<a href="#290" id="290">290</a>
-<a href="#291" id="291">291</a>
-<a href="#292" id="292">292</a>
-<a href="#293" id="293">293</a>
-<a href="#294" id="294">294</a>
-<a href="#295" id="295">295</a>
-<a href="#296" id="296">296</a>
-<a href="#297" id="297">297</a>
-<a href="#298" id="298">298</a>
-<a href="#299" id="299">299</a>
-<a href="#300" id="300">300</a>
-<a href="#301" id="301">301</a>
-<a href="#302" id="302">302</a>
-<a href="#303" id="303">303</a>
-<a href="#304" id="304">304</a>
-<a href="#305" id="305">305</a>
-<a href="#306" id="306">306</a>
-<a href="#307" id="307">307</a>
-<a href="#308" id="308">308</a>
-<a href="#309" id="309">309</a>
-<a href="#310" id="310">310</a>
-<a href="#311" id="311">311</a>
-<a href="#312" id="312">312</a>
-<a href="#313" id="313">313</a>
-<a href="#314" id="314">314</a>
-<a href="#315" id="315">315</a>
-<a href="#316" id="316">316</a>
-<a href="#317" id="317">317</a>
-<a href="#318" id="318">318</a>
-<a href="#319" id="319">319</a>
-<a href="#320" id="320">320</a>
-<a href="#321" id="321">321</a>
-<a href="#322" id="322">322</a>
-<a href="#323" id="323">323</a>
-<a href="#324" id="324">324</a>
-<a href="#325" id="325">325</a>
-<a href="#326" id="326">326</a>
-<a href="#327" id="327">327</a>
 </pre></div><pre class="rust"><code><span class="kw">use super</span>::<span class="kw-2">*</span>;
 
 <span class="kw">type </span>LegendsStore = HashMap&lt;String, LegendsResult&gt;;
@@ -353,41 +306,16 @@
         })
     }
 
-    <span class="kw">fn </span>get_weather_instant(<span class="kw-2">&amp;</span><span class="self">self</span>, forecast_data: <span class="kw-2">&amp;</span>ForecastData) -&gt; WeatherMoment {
-        <span class="kw">let </span>instant = <span class="kw-2">&amp;</span>forecast_data.instant.details;
-
-        <span class="kw">let </span><span class="kw-2">mut </span>symbol_code_split = forecast_data
-            .next_1_hours
-            .as_ref()
-            .unwrap()
-            .summary
-            .symbol_code
-            .split(<span class="string">'_'</span>);
-
-        <span class="kw">let </span>summary = symbol_code_split.next().unwrap();
-
-        <span class="comment">// Times of day can be day, night, and polartwilight
-        </span><span class="kw">let </span>is_night = symbol_code_split
-            .next()
-            .map_or(<span class="bool-val">false</span>, |time_of_day| time_of_day == <span class="string">"night"</span>);
-
-        <span class="kw">let </span>translated = translate(<span class="self">self</span>.legend, summary, <span class="kw-2">&amp;</span><span class="self">self</span>.config.lang);
-
-        <span class="kw">let </span>temp = instant.air_temperature.unwrap_or_default();
-        <span class="kw">let </span>humidity = instant.relative_humidity.unwrap_or_default();
-        <span class="kw">let </span>wind_speed = instant.wind_speed.unwrap_or_default();
-
-        WeatherMoment {
-            temp,
-            apparent: australian_apparent_temp(temp, humidity, wind_speed),
-            humidity,
-            weather: translated.clone(),
-            weather_verbose: translated,
-            wind: wind_speed,
-            wind_kmh: wind_speed * <span class="number">3.6</span>,
-            wind_direction: instant.wind_from_direction,
-            icon: weather_to_icon(summary, is_night),
-        }
+    <span class="kw">fn </span>translate(<span class="kw-2">&amp;</span><span class="self">self</span>, summary: <span class="kw-2">&amp;</span>str) -&gt; String {
+        <span class="self">self</span>.legend
+            .get(summary)
+            .map(|res| <span class="kw">match </span><span class="self">self</span>.config.lang {
+                ApiLanguage::English =&gt; res.desc_en.as_str(),
+                ApiLanguage::NorwegianBokmaal =&gt; res.desc_nb.as_str(),
+                ApiLanguage::NorwegianNynorsk =&gt; res.desc_nn.as_str(),
+            })
+            .unwrap_or(summary)
+            .into()
     }
 }
 
@@ -425,6 +353,73 @@
     <span class="comment">// time: String,
 </span>}
 
+<span class="kw">impl </span>ForecastTimeStep {
+    <span class="kw">fn </span>to_moment(<span class="kw-2">&amp;</span><span class="self">self</span>, service: <span class="kw-2">&amp;</span>Service) -&gt; WeatherMoment {
+        <span class="kw">let </span>instant = <span class="kw-2">&amp;</span><span class="self">self</span>.data.instant.details;
+
+        <span class="kw">let </span><span class="kw-2">mut </span>symbol_code_split = <span class="self">self
+            </span>.data
+            .next_1_hours
+            .as_ref()
+            .unwrap()
+            .summary
+            .symbol_code
+            .split(<span class="string">'_'</span>);
+
+        <span class="kw">let </span>summary = symbol_code_split.next().unwrap();
+
+        <span class="comment">// Times of day can be day, night, and polartwilight
+        </span><span class="kw">let </span>is_night = symbol_code_split
+            .next()
+            .map_or(<span class="bool-val">false</span>, |time_of_day| time_of_day == <span class="string">"night"</span>);
+
+        <span class="kw">let </span>translated = service.translate(summary);
+
+        <span class="kw">let </span>temp = instant.air_temperature.unwrap_or_default();
+        <span class="kw">let </span>humidity = instant.relative_humidity.unwrap_or_default();
+        <span class="kw">let </span>wind_speed = instant.wind_speed.unwrap_or_default();
+
+        WeatherMoment {
+            temp,
+            apparent: australian_apparent_temp(temp, humidity, wind_speed),
+            humidity,
+            weather: translated.clone(),
+            weather_verbose: translated,
+            wind: wind_speed,
+            wind_kmh: wind_speed * <span class="number">3.6</span>,
+            wind_direction: instant.wind_from_direction,
+            icon: weather_to_icon(summary, is_night),
+        }
+    }
+
+    <span class="kw">fn </span>to_aggregate(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; ForecastAggregateSegment {
+        <span class="kw">let </span>instant = <span class="kw-2">&amp;</span><span class="self">self</span>.data.instant.details;
+
+        <span class="kw">let </span>apparent = <span class="kw">if let </span>(<span class="prelude-val">Some</span>(air_temperature), <span class="prelude-val">Some</span>(relative_humidity), <span class="prelude-val">Some</span>(wind_speed)) = (
+            instant.air_temperature,
+            instant.relative_humidity,
+            instant.wind_speed,
+        ) {
+            <span class="prelude-val">Some</span>(australian_apparent_temp(
+                air_temperature,
+                relative_humidity,
+                wind_speed,
+            ))
+        } <span class="kw">else </span>{
+            <span class="prelude-val">None
+        </span>};
+
+        ForecastAggregateSegment {
+            temp: instant.air_temperature,
+            apparent,
+            humidity: instant.relative_humidity,
+            wind: instant.wind_speed,
+            wind_kmh: instant.wind_speed.map(|t| t * <span class="number">3.6</span>),
+            wind_direction: instant.wind_from_direction,
+        }
+    }
+}
+
 <span class="attr">#[derive(Deserialize, Debug)]
 </span><span class="kw">struct </span>ForecastData {
     instant: ForecastModelInstant,
@@ -461,18 +456,6 @@
 
 <span class="kw">const </span>FORECAST_URL: <span class="kw-2">&amp;</span>str = <span class="string">"https://api.met.no/weatherapi/locationforecast/2.0/compact"</span>;
 
-<span class="kw">fn </span>translate(legend: <span class="kw-2">&amp;</span>LegendsStore, summary: <span class="kw-2">&amp;</span>str, lang: <span class="kw-2">&amp;</span>ApiLanguage) -&gt; String {
-    legend
-        .get(summary)
-        .map(|res| <span class="kw">match </span>lang {
-            ApiLanguage::English =&gt; res.desc_en.as_str(),
-            ApiLanguage::NorwegianBokmaal =&gt; res.desc_nb.as_str(),
-            ApiLanguage::NorwegianNynorsk =&gt; res.desc_nn.as_str(),
-        })
-        .unwrap_or(summary)
-        .into()
-}
-
 <span class="attr">#[async_trait]
 </span><span class="kw">impl </span>WeatherProvider <span class="kw">for </span>Service&lt;<span class="lifetime">'_</span>&gt; {
     <span class="kw">async fn </span>get_weather(
@@ -504,116 +487,39 @@
             </span>.error(<span class="string">"Forecast request failed"</span>)<span class="question-mark">?</span>;
 
         <span class="kw">let </span>forecast_hours = <span class="self">self</span>.config.forecast_hours;
+        <span class="kw">let </span>location_name = location.map_or(<span class="string">"Unknown"</span>.to_string(), |c| c.city.clone());
 
-        <span class="kw">let </span>forecast = <span class="kw">if </span>!need_forecast || forecast_hours == <span class="number">0 </span>{
-            <span class="prelude-val">None
-        </span>} <span class="kw">else </span>{
-            <span class="kw">let </span><span class="kw-2">mut </span>temp_avg = <span class="number">0.0</span>;
-            <span class="kw">let </span><span class="kw-2">mut </span>temp_min = f64::MAX;
-            <span class="kw">let </span><span class="kw-2">mut </span>temp_max = f64::MIN;
-            <span class="kw">let </span><span class="kw-2">mut </span>temp_count = <span class="number">0.0</span>;
-            <span class="kw">let </span><span class="kw-2">mut </span>humidity_avg = <span class="number">0.0</span>;
-            <span class="kw">let </span><span class="kw-2">mut </span>humidity_min = f64::MAX;
-            <span class="kw">let </span><span class="kw-2">mut </span>humidity_max = f64::MIN;
-            <span class="kw">let </span><span class="kw-2">mut </span>humidity_count = <span class="number">0.0</span>;
-            <span class="kw">let </span><span class="kw-2">mut </span>wind_forecasts = Vec::new();
-            <span class="kw">let </span><span class="kw-2">mut </span>apparent_avg = <span class="number">0.0</span>;
-            <span class="kw">let </span><span class="kw-2">mut </span>apparent_min = f64::MAX;
-            <span class="kw">let </span><span class="kw-2">mut </span>apparent_max = f64::MIN;
-            <span class="kw">let </span><span class="kw-2">mut </span>apparent_count = <span class="number">0.0</span>;
-            <span class="kw">if </span>data.properties.timeseries.len() &lt; forecast_hours {
-                <span class="prelude-val">Err</span>(Error::new(
+        <span class="kw">let </span>current_weather = data.properties.timeseries.first().unwrap().to_moment(<span class="self">self</span>);
+
+        <span class="kw">if </span>!need_forecast || forecast_hours == <span class="number">0 </span>{
+            <span class="kw">return </span><span class="prelude-val">Ok</span>(WeatherResult {
+                location: location_name,
+                current_weather,
+                forecast: <span class="prelude-val">None</span>,
+            });
+        }
+
+        <span class="kw">if </span>data.properties.timeseries.len() &lt; forecast_hours {
+            <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(
                 <span class="macro">format!</span>(<span class="string">"Unable to fetch the specified number of forecast_hours specified {}, only {} hours available"</span>, forecast_hours, data.properties.timeseries.len()),
             ))<span class="question-mark">?</span>;
-            }
-            <span class="kw">for </span>forecast_time_step <span class="kw">in </span>data.properties.timeseries.iter().take(forecast_hours) {
-                <span class="kw">let </span>forecast_instant = <span class="kw-2">&amp;</span>forecast_time_step.data.instant.details;
-                <span class="kw">if let </span><span class="prelude-val">Some</span>(air_temperature) = forecast_instant.air_temperature {
-                    temp_avg += air_temperature;
-                    temp_min = temp_min.min(air_temperature);
-                    temp_max = temp_max.max(air_temperature);
-                    temp_count += <span class="number">1.0</span>;
-                }
-                <span class="kw">if let </span><span class="prelude-val">Some</span>(relative_humidity) = forecast_instant.relative_humidity {
-                    humidity_avg += relative_humidity;
-                    humidity_min = humidity_min.min(relative_humidity);
-                    humidity_max = humidity_max.max(relative_humidity);
-                    humidity_count += <span class="number">1.0</span>;
-                }
-                <span class="kw">if let </span><span class="prelude-val">Some</span>(wind_speed) = forecast_instant.wind_speed {
-                    wind_forecasts.push(Wind {
-                        speed: wind_speed,
-                        degrees: forecast_instant.wind_from_direction,
-                    });
-                }
-                <span class="kw">if let </span>(<span class="prelude-val">Some</span>(air_temperature), <span class="prelude-val">Some</span>(relative_humidity), <span class="prelude-val">Some</span>(wind_speed)) = (
-                    forecast_instant.air_temperature,
-                    forecast_instant.relative_humidity,
-                    forecast_instant.wind_speed,
-                ) {
-                    <span class="kw">let </span>apparent =
-                        australian_apparent_temp(air_temperature, relative_humidity, wind_speed);
-                    apparent_avg += apparent;
-                    apparent_min = apparent_min.min(apparent);
-                    apparent_max = apparent_max.max(apparent);
-                    apparent_count += <span class="number">1.0</span>;
-                }
-            }
-            temp_avg /= temp_count;
-            humidity_avg /= humidity_count;
-            apparent_avg /= apparent_count;
-            <span class="kw">let </span>Wind {
-                speed: wind_avg,
-                degrees: direction_avg,
-            } = average_wind(<span class="kw-2">&amp;</span>wind_forecasts);
-            <span class="kw">let </span>Wind {
-                speed: wind_min,
-                degrees: direction_min,
-            } = wind_forecasts
-                .iter()
-                .min_by(|x, y| x.speed.total_cmp(<span class="kw-2">&amp;</span>y.speed))
-                .error(<span class="string">"No min wind"</span>)<span class="question-mark">?</span>;
-            <span class="kw">let </span>Wind {
-                speed: wind_max,
-                degrees: direction_max,
-            } = wind_forecasts
-                .iter()
-                .min_by(|x, y| x.speed.total_cmp(<span class="kw-2">&amp;</span>y.speed))
-                .error(<span class="string">"No max wind"</span>)<span class="question-mark">?</span>;
+        }
 
-            <span class="prelude-val">Some</span>(Forecast {
-                avg: ForecastAggregate {
-                    temp: temp_avg,
-                    apparent: apparent_avg,
-                    humidity: humidity_avg,
-                    wind: wind_avg,
-                    wind_kmh: wind_avg * <span class="number">3.6</span>,
-                    wind_direction: direction_avg,
-                },
-                min: ForecastAggregate {
-                    temp: temp_min,
-                    apparent: apparent_min,
-                    humidity: humidity_min,
-                    wind: <span class="kw-2">*</span>wind_min,
-                    wind_kmh: wind_min * <span class="number">3.6</span>,
-                    wind_direction: <span class="kw-2">*</span>direction_min,
-                },
-                max: ForecastAggregate {
-                    temp: temp_max,
-                    apparent: apparent_max,
-                    humidity: humidity_max,
-                    wind: <span class="kw-2">*</span>wind_max,
-                    wind_kmh: wind_max * <span class="number">3.6</span>,
-                    wind_direction: <span class="kw-2">*</span>direction_max,
-                },
-                fin: <span class="self">self</span>.get_weather_instant(<span class="kw-2">&amp;</span>data.properties.timeseries[forecast_hours - <span class="number">1</span>].data),
-            })
-        };
+        <span class="kw">let </span>data_agg: Vec&lt;ForecastAggregateSegment&gt; = data
+            .properties
+            .timeseries
+            .iter()
+            .take(forecast_hours)
+            .map(|f| f.to_aggregate())
+            .collect();
+
+        <span class="kw">let </span>fin = data.properties.timeseries[forecast_hours - <span class="number">1</span>].to_moment(<span class="self">self</span>);
+
+        <span class="kw">let </span>forecast = <span class="prelude-val">Some</span>(Forecast::new(<span class="kw-2">&amp;</span>data_agg, fin));
 
         <span class="prelude-val">Ok</span>(WeatherResult {
-            location: location.map_or(<span class="string">"Unknown"</span>.to_string(), |c| c.city.clone()),
-            current_weather: <span class="self">self
-                </span>.get_weather_instant(<span class="kw-2">&amp;</span>data.properties.timeseries.first().unwrap().data),
+            location: location_name,
+            current_weather,
             forecast,
         })
     }

@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/weather.rs`."><title>weather.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-dd39b87e5fcfba68.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.80.0 (051478957 2024-07-21)" data-channel="1.80.0" data-search-js="search-d52510db62a78183.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/weather.rs`."><title>weather.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-dd39b87e5fcfba68.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.80.1 (3f5fd8dd4 2024-08-06)" data-channel="1.80.1" data-search-js="search-d52510db62a78183.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -603,6 +603,119 @@
 <a href="#603" id="603">603</a>
 <a href="#604" id="604">604</a>
 <a href="#605" id="605">605</a>
+<a href="#606" id="606">606</a>
+<a href="#607" id="607">607</a>
+<a href="#608" id="608">608</a>
+<a href="#609" id="609">609</a>
+<a href="#610" id="610">610</a>
+<a href="#611" id="611">611</a>
+<a href="#612" id="612">612</a>
+<a href="#613" id="613">613</a>
+<a href="#614" id="614">614</a>
+<a href="#615" id="615">615</a>
+<a href="#616" id="616">616</a>
+<a href="#617" id="617">617</a>
+<a href="#618" id="618">618</a>
+<a href="#619" id="619">619</a>
+<a href="#620" id="620">620</a>
+<a href="#621" id="621">621</a>
+<a href="#622" id="622">622</a>
+<a href="#623" id="623">623</a>
+<a href="#624" id="624">624</a>
+<a href="#625" id="625">625</a>
+<a href="#626" id="626">626</a>
+<a href="#627" id="627">627</a>
+<a href="#628" id="628">628</a>
+<a href="#629" id="629">629</a>
+<a href="#630" id="630">630</a>
+<a href="#631" id="631">631</a>
+<a href="#632" id="632">632</a>
+<a href="#633" id="633">633</a>
+<a href="#634" id="634">634</a>
+<a href="#635" id="635">635</a>
+<a href="#636" id="636">636</a>
+<a href="#637" id="637">637</a>
+<a href="#638" id="638">638</a>
+<a href="#639" id="639">639</a>
+<a href="#640" id="640">640</a>
+<a href="#641" id="641">641</a>
+<a href="#642" id="642">642</a>
+<a href="#643" id="643">643</a>
+<a href="#644" id="644">644</a>
+<a href="#645" id="645">645</a>
+<a href="#646" id="646">646</a>
+<a href="#647" id="647">647</a>
+<a href="#648" id="648">648</a>
+<a href="#649" id="649">649</a>
+<a href="#650" id="650">650</a>
+<a href="#651" id="651">651</a>
+<a href="#652" id="652">652</a>
+<a href="#653" id="653">653</a>
+<a href="#654" id="654">654</a>
+<a href="#655" id="655">655</a>
+<a href="#656" id="656">656</a>
+<a href="#657" id="657">657</a>
+<a href="#658" id="658">658</a>
+<a href="#659" id="659">659</a>
+<a href="#660" id="660">660</a>
+<a href="#661" id="661">661</a>
+<a href="#662" id="662">662</a>
+<a href="#663" id="663">663</a>
+<a href="#664" id="664">664</a>
+<a href="#665" id="665">665</a>
+<a href="#666" id="666">666</a>
+<a href="#667" id="667">667</a>
+<a href="#668" id="668">668</a>
+<a href="#669" id="669">669</a>
+<a href="#670" id="670">670</a>
+<a href="#671" id="671">671</a>
+<a href="#672" id="672">672</a>
+<a href="#673" id="673">673</a>
+<a href="#674" id="674">674</a>
+<a href="#675" id="675">675</a>
+<a href="#676" id="676">676</a>
+<a href="#677" id="677">677</a>
+<a href="#678" id="678">678</a>
+<a href="#679" id="679">679</a>
+<a href="#680" id="680">680</a>
+<a href="#681" id="681">681</a>
+<a href="#682" id="682">682</a>
+<a href="#683" id="683">683</a>
+<a href="#684" id="684">684</a>
+<a href="#685" id="685">685</a>
+<a href="#686" id="686">686</a>
+<a href="#687" id="687">687</a>
+<a href="#688" id="688">688</a>
+<a href="#689" id="689">689</a>
+<a href="#690" id="690">690</a>
+<a href="#691" id="691">691</a>
+<a href="#692" id="692">692</a>
+<a href="#693" id="693">693</a>
+<a href="#694" id="694">694</a>
+<a href="#695" id="695">695</a>
+<a href="#696" id="696">696</a>
+<a href="#697" id="697">697</a>
+<a href="#698" id="698">698</a>
+<a href="#699" id="699">699</a>
+<a href="#700" id="700">700</a>
+<a href="#701" id="701">701</a>
+<a href="#702" id="702">702</a>
+<a href="#703" id="703">703</a>
+<a href="#704" id="704">704</a>
+<a href="#705" id="705">705</a>
+<a href="#706" id="706">706</a>
+<a href="#707" id="707">707</a>
+<a href="#708" id="708">708</a>
+<a href="#709" id="709">709</a>
+<a href="#710" id="710">710</a>
+<a href="#711" id="711">711</a>
+<a href="#712" id="712">712</a>
+<a href="#713" id="713">713</a>
+<a href="#714" id="714">714</a>
+<a href="#715" id="715">715</a>
+<a href="#716" id="716">716</a>
+<a href="#717" id="717">717</a>
+<a href="#718" id="718">718</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Current weather
 //!
 //! This block displays local weather and temperature information. In order to use this block, you
@@ -784,15 +897,26 @@
     Nws(nws::Config),
 }
 
-<span class="attr">#[derive(Clone, Copy)]
+<span class="attr">#[derive(Clone, Copy, Default)]
 </span><span class="kw">enum </span>WeatherIcon {
-    Clear { is_night: bool },
-    Clouds { is_night: bool },
-    Fog { is_night: bool },
-    Rain { is_night: bool },
+    Clear {
+        is_night: bool,
+    },
+    Clouds {
+        is_night: bool,
+    },
+    Fog {
+        is_night: bool,
+    },
+    Rain {
+        is_night: bool,
+    },
     Snow,
-    Thunder { is_night: bool },
-    Default,
+    Thunder {
+        is_night: bool,
+    },
+    <span class="attr">#[default]
+    </span>Default,
 }
 
 <span class="kw">impl </span>WeatherIcon {
@@ -814,24 +938,8 @@
     }
 }
 
-<span class="attr">#[derive(Debug)]
-</span><span class="kw">struct </span>Wind {
-    speed: f64,
-    degrees: <span class="prelude-ty">Option</span>&lt;f64&gt;,
-}
-
-<span class="kw">impl </span>PartialEq <span class="kw">for </span>Wind {
-    <span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; bool {
-        (<span class="self">self</span>.speed - other.speed).abs() &lt; <span class="number">0.001
-            </span>&amp;&amp; <span class="kw">match </span>(<span class="self">self</span>.degrees, other.degrees) {
-                (<span class="prelude-val">Some</span>(degrees0), <span class="prelude-val">Some</span>(degrees1)) =&gt; (degrees0 - degrees1).abs() &lt; <span class="number">0.001</span>,
-                (<span class="prelude-val">None</span>, <span class="prelude-val">None</span>) =&gt; <span class="bool-val">true</span>,
-                <span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
-            }
-    }
-}
-
-<span class="kw">struct </span>WeatherMoment {
+<span class="attr">#[derive(Default)]
+</span><span class="kw">struct </span>WeatherMoment {
     icon: WeatherIcon,
     weather: String,
     weather_verbose: String,
@@ -842,6 +950,7 @@
     wind_kmh: f64,
     wind_direction: <span class="prelude-ty">Option</span>&lt;f64&gt;,
 }
+
 <span class="kw">struct </span>ForecastAggregate {
     temp: f64,
     apparent: f64,
@@ -851,17 +960,19 @@
     wind_direction: <span class="prelude-ty">Option</span>&lt;f64&gt;,
 }
 
+<span class="kw">struct </span>ForecastAggregateSegment {
+    temp: <span class="prelude-ty">Option</span>&lt;f64&gt;,
+    apparent: <span class="prelude-ty">Option</span>&lt;f64&gt;,
+    humidity: <span class="prelude-ty">Option</span>&lt;f64&gt;,
+    wind: <span class="prelude-ty">Option</span>&lt;f64&gt;,
+    wind_kmh: <span class="prelude-ty">Option</span>&lt;f64&gt;,
+    wind_direction: <span class="prelude-ty">Option</span>&lt;f64&gt;,
+}
+
 <span class="kw">struct </span>WeatherResult {
     location: String,
     current_weather: WeatherMoment,
     forecast: <span class="prelude-ty">Option</span>&lt;Forecast&gt;,
-}
-
-<span class="kw">struct </span>Forecast {
-    avg: ForecastAggregate,
-    min: ForecastAggregate,
-    max: ForecastAggregate,
-    fin: WeatherMoment,
 }
 
 <span class="kw">impl </span>WeatherResult {
@@ -909,6 +1020,118 @@
             }
         }
         values
+    }
+}
+
+<span class="kw">struct </span>Forecast {
+    avg: ForecastAggregate,
+    min: ForecastAggregate,
+    max: ForecastAggregate,
+    fin: WeatherMoment,
+}
+
+<span class="kw">impl </span>Forecast {
+    <span class="kw">fn </span>new(data: <span class="kw-2">&amp;</span>[ForecastAggregateSegment], fin: WeatherMoment) -&gt; <span class="self">Self </span>{
+        <span class="kw">let </span><span class="kw-2">mut </span>temp_avg = <span class="number">0.0</span>;
+        <span class="kw">let </span><span class="kw-2">mut </span>temp_count = <span class="number">0.0</span>;
+        <span class="kw">let </span><span class="kw-2">mut </span>apparent_avg = <span class="number">0.0</span>;
+        <span class="kw">let </span><span class="kw-2">mut </span>apparent_count = <span class="number">0.0</span>;
+        <span class="kw">let </span><span class="kw-2">mut </span>humidity_avg = <span class="number">0.0</span>;
+        <span class="kw">let </span><span class="kw-2">mut </span>humidity_count = <span class="number">0.0</span>;
+        <span class="kw">let </span><span class="kw-2">mut </span>wind_north_avg = <span class="number">0.0</span>;
+        <span class="kw">let </span><span class="kw-2">mut </span>wind_east_avg = <span class="number">0.0</span>;
+        <span class="kw">let </span><span class="kw-2">mut </span>wind_kmh_north_avg = <span class="number">0.0</span>;
+        <span class="kw">let </span><span class="kw-2">mut </span>wind_kmh_east_avg = <span class="number">0.0</span>;
+        <span class="kw">let </span><span class="kw-2">mut </span>wind_count = <span class="number">0.0</span>;
+        <span class="kw">let </span><span class="kw-2">mut </span>max = ForecastAggregate {
+            temp: f64::MIN,
+            apparent: f64::MIN,
+            humidity: f64::MIN,
+            wind: f64::MIN,
+            wind_kmh: f64::MIN,
+            wind_direction: <span class="prelude-val">None</span>,
+        };
+        <span class="kw">let </span><span class="kw-2">mut </span>min = ForecastAggregate {
+            temp: f64::MAX,
+            apparent: f64::MAX,
+            humidity: f64::MAX,
+            wind: f64::MAX,
+            wind_kmh: f64::MAX,
+            wind_direction: <span class="prelude-val">None</span>,
+        };
+        <span class="kw">for </span>val <span class="kw">in </span>data {
+            <span class="kw">if let </span><span class="prelude-val">Some</span>(temp) = val.temp {
+                temp_avg += temp;
+                max.temp = max.temp.max(temp);
+                min.temp = min.temp.min(temp);
+                temp_count += <span class="number">1.0</span>;
+            }
+            <span class="kw">if let </span><span class="prelude-val">Some</span>(apparent) = val.apparent {
+                apparent_avg += apparent;
+                max.apparent = max.apparent.max(apparent);
+                min.apparent = min.apparent.min(apparent);
+                apparent_count += <span class="number">1.0</span>;
+            }
+            <span class="kw">if let </span><span class="prelude-val">Some</span>(humidity) = val.humidity {
+                humidity_avg += humidity;
+                max.humidity = max.humidity.max(humidity);
+                min.humidity = min.humidity.min(humidity);
+                humidity_count += <span class="number">1.0</span>;
+            }
+
+            <span class="kw">if let </span>(<span class="prelude-val">Some</span>(wind), <span class="prelude-val">Some</span>(wind_kmh)) = (val.wind, val.wind_kmh) {
+                <span class="kw">if let </span><span class="prelude-val">Some</span>(degrees) = val.wind_direction {
+                    <span class="kw">let </span>(sin, cos) = degrees.to_radians().sin_cos();
+                    wind_north_avg += wind * cos;
+                    wind_east_avg += wind * sin;
+                    wind_kmh_north_avg += wind_kmh * cos;
+                    wind_kmh_east_avg += wind_kmh * sin;
+                    wind_count += <span class="number">1.0</span>;
+                }
+
+                <span class="kw">if </span>wind &gt; max.wind {
+                    max.wind_direction = val.wind_direction;
+                    max.wind = wind;
+                    max.wind_kmh = wind_kmh;
+                }
+
+                <span class="kw">if </span>wind &lt; min.wind {
+                    min.wind_direction = val.wind_direction;
+                    min.wind = wind;
+                    min.wind_kmh = wind_kmh;
+                }
+            }
+        }
+
+        temp_avg /= temp_count;
+        humidity_avg /= humidity_count;
+        apparent_avg /= apparent_count;
+
+        <span class="comment">// Calculate the wind results separately, discarding invalid wind values
+        </span><span class="kw">let </span>(wind_avg, wind_kmh_avg, wind_direction_avg) = <span class="kw">if </span>wind_count == <span class="number">0.0 </span>{
+            (<span class="number">0.0</span>, <span class="number">0.0</span>, <span class="prelude-val">None</span>)
+        } <span class="kw">else </span>{
+            (
+                wind_east_avg.hypot(wind_north_avg) / wind_count,
+                wind_kmh_east_avg.hypot(wind_kmh_north_avg) / wind_count,
+                <span class="prelude-val">Some</span>(
+                    wind_east_avg
+                        .atan2(wind_north_avg)
+                        .to_degrees()
+                        .rem_euclid(<span class="number">360.0</span>),
+                ),
+            )
+        };
+
+        <span class="kw">let </span>avg = ForecastAggregate {
+            temp: temp_avg,
+            apparent: apparent_avg,
+            humidity: humidity_avg,
+            wind: wind_avg,
+            wind_kmh: wind_kmh_avg,
+            wind_direction: wind_direction_avg,
+        };
+        <span class="self">Self </span>{ avg, min, max, fin }
     }
 }
 
@@ -1095,32 +1318,6 @@
     }
 }
 
-<span class="comment">// Compute the average wind speed and direction
-</span><span class="kw">fn </span>average_wind(winds: <span class="kw-2">&amp;</span>[Wind]) -&gt; Wind {
-    <span class="kw">let </span><span class="kw-2">mut </span>north = <span class="number">0.0</span>;
-    <span class="kw">let </span><span class="kw-2">mut </span>east = <span class="number">0.0</span>;
-    <span class="kw">let </span><span class="kw-2">mut </span>count = <span class="number">0.0</span>;
-    <span class="kw">for </span>wind <span class="kw">in </span>winds {
-        <span class="kw">if let </span><span class="prelude-val">Some</span>(degrees) = wind.degrees {
-            <span class="kw">let </span>(sin, cos) = degrees.to_radians().sin_cos();
-            north += wind.speed * cos;
-            east += wind.speed * sin;
-            count += <span class="number">1.0</span>;
-        }
-    }
-    <span class="kw">if </span>count == <span class="number">0.0 </span>{
-        Wind {
-            speed: <span class="number">0.0</span>,
-            degrees: <span class="prelude-val">None</span>,
-        }
-    } <span class="kw">else </span>{
-        Wind {
-            speed: east.hypot(north) / count,
-            degrees: <span class="prelude-val">Some</span>(east.atan2(north).to_degrees().rem_euclid(<span class="number">360.0</span>)),
-        }
-    }
-}
-
 <span class="doccomment">/// Compute the Australian Apparent Temperature from metric units
 </span><span class="kw">fn </span>australian_apparent_temp(temp: f64, humidity: f64, wind_speed: f64) -&gt; f64 {
     <span class="kw">let </span>exponent = <span class="number">17.27 </span>* temp / (<span class="number">237.7 </span>+ temp);
@@ -1133,77 +1330,106 @@
     <span class="kw">use super</span>::<span class="kw-2">*</span>;
 
     <span class="attr">#[test]
-    </span><span class="kw">fn </span>test_average_wind_speed() {
+    </span><span class="kw">fn </span>test_new_forecast_average_wind_speed() {
         <span class="kw">let </span><span class="kw-2">mut </span>degrees = <span class="number">0.0</span>;
         <span class="kw">while </span>degrees &lt; <span class="number">360.0 </span>{
-            <span class="kw">let </span>averaged = average_wind(<span class="kw-2">&amp;</span>[
-                Wind {
-                    speed: <span class="number">1.0</span>,
-                    degrees: <span class="prelude-val">Some</span>(degrees),
-                },
-                Wind {
-                    speed: <span class="number">2.0</span>,
-                    degrees: <span class="prelude-val">Some</span>(degrees),
-                },
-            ]);
-            <span class="macro">assert_eq!</span>(
-                averaged,
-                Wind {
-                    speed: <span class="number">1.5</span>,
-                    degrees: <span class="prelude-val">Some</span>(degrees)
-                }
+            <span class="kw">let </span>forecast = Forecast::new(
+                <span class="kw-2">&amp;</span>[
+                    ForecastAggregateSegment {
+                        temp: <span class="prelude-val">None</span>,
+                        apparent: <span class="prelude-val">None</span>,
+                        humidity: <span class="prelude-val">None</span>,
+                        wind: <span class="prelude-val">Some</span>(<span class="number">1.0</span>),
+                        wind_kmh: <span class="prelude-val">Some</span>(<span class="number">3.6</span>),
+                        wind_direction: <span class="prelude-val">Some</span>(degrees),
+                    },
+                    ForecastAggregateSegment {
+                        temp: <span class="prelude-val">None</span>,
+                        apparent: <span class="prelude-val">None</span>,
+                        humidity: <span class="prelude-val">None</span>,
+                        wind: <span class="prelude-val">Some</span>(<span class="number">2.0</span>),
+                        wind_kmh: <span class="prelude-val">Some</span>(<span class="number">7.2</span>),
+                        wind_direction: <span class="prelude-val">Some</span>(degrees),
+                    },
+                ],
+                WeatherMoment::default(),
             );
+            <span class="macro">assert!</span>((forecast.avg.wind - <span class="number">1.5</span>).abs() &lt; <span class="number">0.1</span>);
+            <span class="macro">assert!</span>((forecast.avg.wind_kmh - <span class="number">5.4</span>).abs() &lt; <span class="number">0.1</span>);
+            <span class="macro">assert!</span>((forecast.avg.wind_direction.unwrap() - degrees).abs() &lt; <span class="number">0.1</span>);
 
             degrees += <span class="number">15.0</span>;
         }
     }
 
     <span class="attr">#[test]
-    </span><span class="kw">fn </span>test_average_wind_degrees() {
+    </span><span class="kw">fn </span>test_new_forecast_average_wind_degrees() {
         <span class="kw">let </span><span class="kw-2">mut </span>degrees = <span class="number">0.0</span>;
         <span class="kw">while </span>degrees &lt; <span class="number">360.0 </span>{
             <span class="kw">let </span>low = degrees - <span class="number">1.0</span>;
             <span class="kw">let </span>high = degrees + <span class="number">1.0</span>;
-            <span class="kw">let </span>averaged = average_wind(<span class="kw-2">&amp;</span>[
-                Wind {
-                    speed: <span class="number">1.0</span>,
-                    degrees: <span class="prelude-val">Some</span>(low),
-                },
-                Wind {
-                    speed: <span class="number">1.0</span>,
-                    degrees: <span class="prelude-val">Some</span>(high),
-                },
-            ]);
+            <span class="kw">let </span>forecast = Forecast::new(
+                <span class="kw-2">&amp;</span>[
+                    ForecastAggregateSegment {
+                        temp: <span class="prelude-val">None</span>,
+                        apparent: <span class="prelude-val">None</span>,
+                        humidity: <span class="prelude-val">None</span>,
+                        wind: <span class="prelude-val">Some</span>(<span class="number">1.0</span>),
+                        wind_kmh: <span class="prelude-val">Some</span>(<span class="number">3.6</span>),
+                        wind_direction: <span class="prelude-val">Some</span>(low),
+                    },
+                    ForecastAggregateSegment {
+                        temp: <span class="prelude-val">None</span>,
+                        apparent: <span class="prelude-val">None</span>,
+                        humidity: <span class="prelude-val">None</span>,
+                        wind: <span class="prelude-val">Some</span>(<span class="number">1.0</span>),
+                        wind_kmh: <span class="prelude-val">Some</span>(<span class="number">3.6</span>),
+                        wind_direction: <span class="prelude-val">Some</span>(high),
+                    },
+                ],
+                WeatherMoment::default(),
+            );
             <span class="comment">// For winds of equal strength the direction should will be the
             // average of the low and high degrees
-            </span><span class="macro">assert!</span>((averaged.degrees.unwrap() - degrees).abs() &lt; <span class="number">0.1</span>);
+            </span><span class="macro">assert!</span>((forecast.avg.wind_direction.unwrap() - degrees).abs() &lt; <span class="number">0.1</span>);
 
             degrees += <span class="number">15.0</span>;
         }
     }
 
     <span class="attr">#[test]
-    </span><span class="kw">fn </span>test_average_wind_speed_and_degrees() {
+    </span><span class="kw">fn </span>test_new_forecast_average_wind_speed_and_degrees() {
         <span class="kw">let </span><span class="kw-2">mut </span>degrees = <span class="number">0.0</span>;
         <span class="kw">while </span>degrees &lt; <span class="number">360.0 </span>{
             <span class="kw">let </span>low = degrees - <span class="number">1.0</span>;
             <span class="kw">let </span>high = degrees + <span class="number">1.0</span>;
-            <span class="kw">let </span>averaged = average_wind(<span class="kw-2">&amp;</span>[
-                Wind {
-                    speed: <span class="number">1.0</span>,
-                    degrees: <span class="prelude-val">Some</span>(low),
-                },
-                Wind {
-                    speed: <span class="number">2.0</span>,
-                    degrees: <span class="prelude-val">Some</span>(high),
-                },
-            ]);
+            <span class="kw">let </span>forecast = Forecast::new(
+                <span class="kw-2">&amp;</span>[
+                    ForecastAggregateSegment {
+                        temp: <span class="prelude-val">None</span>,
+                        apparent: <span class="prelude-val">None</span>,
+                        humidity: <span class="prelude-val">None</span>,
+                        wind: <span class="prelude-val">Some</span>(<span class="number">1.0</span>),
+                        wind_kmh: <span class="prelude-val">Some</span>(<span class="number">3.6</span>),
+                        wind_direction: <span class="prelude-val">Some</span>(low),
+                    },
+                    ForecastAggregateSegment {
+                        temp: <span class="prelude-val">None</span>,
+                        apparent: <span class="prelude-val">None</span>,
+                        humidity: <span class="prelude-val">None</span>,
+                        wind: <span class="prelude-val">Some</span>(<span class="number">2.0</span>),
+                        wind_kmh: <span class="prelude-val">Some</span>(<span class="number">7.2</span>),
+                        wind_direction: <span class="prelude-val">Some</span>(high),
+                    },
+                ],
+                WeatherMoment::default(),
+            );
             <span class="comment">// Wind degree will be higher than the centerpoint of the low
             // and high winds since the high wind is stronger and will be
             // less than high
             // (low+high)/2 &lt; average.degrees &lt; high
-            </span><span class="macro">assert!</span>((low + high) / <span class="number">2.0 </span>&lt; averaged.degrees.unwrap());
-            <span class="macro">assert!</span>(averaged.degrees.unwrap() &lt; high);
+            </span><span class="macro">assert!</span>((low + high) / <span class="number">2.0 </span>&lt; forecast.avg.wind_direction.unwrap());
+            <span class="macro">assert!</span>(forecast.avg.wind_direction.unwrap() &lt; high);
             degrees += <span class="number">15.0</span>;
         }
     }
