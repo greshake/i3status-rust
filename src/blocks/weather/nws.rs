@@ -213,100 +213,16 @@ impl ApiForecast {
         }
     }
 
-    fn to_aggregate(&self) -> ForecastAggregate {
-        ForecastAggregate {
-            temp: self.temperature.value,
-            apparent: self.apparent_temp(),
-            humidity: self.relative_humidity.value,
-            wind: self.wind_speed(),
-            wind_kmh: self.wind_kmh(),
+    fn to_aggregate(&self) -> ForecastAggregateSegment {
+        ForecastAggregateSegment {
+            temp: Some(self.temperature.value),
+            apparent: Some(self.apparent_temp()),
+            humidity: Some(self.relative_humidity.value),
+            wind: Some(self.wind_speed()),
+            wind_kmh: Some(self.wind_kmh()),
             wind_direction: self.wind_direction(),
         }
     }
-}
-
-fn combine_forecasts(data: &[ForecastAggregate], fin: WeatherMoment) -> Forecast {
-    let mut temp = 0.0;
-    let mut apparent = 0.0;
-    let mut humidity = 0.0;
-    let mut wind_north = 0.0;
-    let mut wind_east = 0.0;
-    let mut wind_kmh_north = 0.0;
-    let mut wind_kmh_east = 0.0;
-    let mut wind_count = 0.0;
-    let mut max = ForecastAggregate {
-        temp: f64::MIN,
-        apparent: f64::MIN,
-        humidity: f64::MIN,
-        wind: f64::MIN,
-        wind_kmh: f64::MIN,
-        wind_direction: None,
-    };
-    let mut min = ForecastAggregate {
-        temp: f64::MAX,
-        apparent: f64::MAX,
-        humidity: f64::MAX,
-        wind: f64::MAX,
-        wind_kmh: f64::MAX,
-        wind_direction: None,
-    };
-    for val in data {
-        // Summations for averaging
-        temp += val.temp;
-        apparent += val.apparent;
-        humidity += val.humidity;
-        if let Some(degrees) = val.wind_direction {
-            let (sin, cos) = degrees.to_radians().sin_cos();
-            wind_north += val.wind * cos;
-            wind_east += val.wind * sin;
-            wind_kmh_north += val.wind_kmh * cos;
-            wind_kmh_east += val.wind_kmh * sin;
-            wind_count += 1.0;
-        }
-
-        // Max
-        max.temp = max.temp.max(val.temp);
-        max.apparent = max.apparent.max(val.apparent);
-        max.humidity = max.humidity.max(val.humidity);
-        if val.wind > max.wind {
-            max.wind_direction = val.wind_direction;
-            max.wind = val.wind;
-            max.wind_kmh = val.wind_kmh;
-        }
-
-        // Min
-        min.temp = min.temp.min(val.temp);
-        min.apparent = min.apparent.min(val.apparent);
-        min.humidity = min.humidity.min(val.humidity);
-        if val.wind < min.wind {
-            min.wind_direction = val.wind_direction;
-            min.wind = val.wind;
-            min.wind_kmh = val.wind_kmh;
-        }
-    }
-
-    let count = data.len() as f64;
-
-    // Calculate the wind results separately, discarding invalid wind values
-    let (wind, wind_kmh, wind_direction) = if wind_count == 0.0 {
-        (0.0, 0.0, None)
-    } else {
-        (
-            wind_east.hypot(wind_north) / wind_count,
-            wind_kmh_east.hypot(wind_kmh_north) / wind_count,
-            Some(wind_east.atan2(wind_north).to_degrees().rem_euclid(360.0)),
-        )
-    };
-
-    let avg = ForecastAggregate {
-        temp: temp / count,
-        apparent: apparent / count,
-        humidity: humidity / count,
-        wind,
-        wind_kmh,
-        wind_direction,
-    };
-    Forecast { avg, min, max, fin }
 }
 
 #[async_trait]
@@ -341,11 +257,9 @@ impl WeatherProvider for Service<'_> {
             .error("parsing weather data failed")?;
 
         let data = data.properties.periods;
-        let current = data.first().error("No current weather")?;
+        let current_weather = data.first().error("No current weather")?.to_moment();
 
-        let current_weather = current.to_moment();
-
-        if !need_forecast {
+        if !need_forecast || self.config.forecast_hours == 0 {
             return Ok(WeatherResult {
                 location: location.name,
                 current_weather,
@@ -353,18 +267,15 @@ impl WeatherProvider for Service<'_> {
             });
         }
 
-        let data_agg: Vec<ForecastAggregate> = data
+        let data_agg: Vec<ForecastAggregateSegment> = data
             .iter()
             .take(self.config.forecast_hours)
             .map(|f| f.to_aggregate())
             .collect();
 
-        let fin = data
-            .get(self.config.forecast_hours.min(data.len() - 1))
-            .error("no weather available")?
-            .to_moment();
+        let fin = data.last().error("no weather available")?.to_moment();
 
-        let forecast = Some(combine_forecasts(&data_agg, fin));
+        let forecast = Some(Forecast::new(&data_agg, fin));
 
         Ok(WeatherResult {
             location: location.name,
