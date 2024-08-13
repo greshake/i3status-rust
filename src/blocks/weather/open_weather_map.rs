@@ -1,4 +1,5 @@
 use super::*;
+use chrono::{DateTime, Utc};
 use serde::{de, Deserializer};
 
 pub(super) const GEO_URL: &str = "https://api.openweathermap.org/geo/1.0";
@@ -245,6 +246,7 @@ impl WeatherProvider for Service<'_> {
         &self,
         autolocated: Option<&Coordinates>,
         need_forecast: bool,
+        _need_sunrise_and_sunset: bool,
     ) -> Result<WeatherResult> {
         let location_query = autolocated
             .as_ref()
@@ -318,10 +320,22 @@ impl WeatherProvider for Service<'_> {
 
         let forecast = Some(Forecast::new(&data_agg, fin));
 
+        let sunrise = Some(
+            DateTime::<Utc>::from_timestamp(current_data.sys.sunrise, 0)
+                .error("Unable to convert timestamp to DateTime")?,
+        );
+
+        let sunset = Some(
+            DateTime::<Utc>::from_timestamp(current_data.sys.sunset, 0)
+                .error("Unable to convert timestamp to DateTime")?,
+        );
+
         Ok(WeatherResult {
             location: current_data.name,
             current_weather,
             forecast,
+            sunrise,
+            sunset,
         })
     }
 }
