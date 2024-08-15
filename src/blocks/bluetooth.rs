@@ -300,17 +300,16 @@ impl DeviceMonitor {
     async fn get_device_info(&mut self) -> Option<DeviceInfo> {
         let device = self.device.as_ref()?;
 
-        let Ok((connected, name)) = tokio::try_join!(
-            device.device.connected(),
-            device.device.name(),
-        ) else {
+        let Ok((connected, name)) =
+            tokio::try_join!(device.device.connected(), device.device.name(),)
+        else {
             debug!("failed to fetch device info, assuming device or bluez disappeared");
             self.device = None;
             return None;
         };
-        
+
         //icon can be null, so ignore errors when fetching it
-        let icon: &str = match device.device.icon().await.ok().as_deref(){
+        let icon: &str = match device.device.icon().await.ok().as_deref() {
             Some("audio-card" | "audio-headset" | "audio-headphones") => "headphones",
             Some("input-gaming") => "joystick",
             Some("input-keyboard") => "keyboard",
