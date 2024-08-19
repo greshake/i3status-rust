@@ -20,7 +20,7 @@
 //! ----|--------|--------
 //! `format` | A string to customise the output of this block. See below for available placeholders. | <code>\" $icon {$combo.str(max_w:25,rot_interval:0.5) $play \|}\"</code>
 //! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
-//! `player` | Name(s) of the music player(s) MPRIS interface. This can be either a music player name or an array of music player names. Run <code>busctl --user list \| grep "org.mpris.MediaPlayer2." \| cut -d' ' -f1</code> and the name is the part after "org.mpris.MediaPlayer2.". | `None`
+//! `player` | Name(s) of the music player(s) MPRIS interface. This can be either a music player name or an array of music player names. Run <code>busctl \--user list \| grep \"org.mpris.MediaPlayer2.\" \| cut -d\' \' -f1</code> and the name is the part after "org.mpris.MediaPlayer2.". | `None`
 //! `interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore. | `["playerctld"]`
 //! `separator` | String to insert between artist and title. | `" - "`
 //! `seek_step_secs` | Positive number of seconds to seek forward/backward when scrolling on the bar. Does not need to be an integer. | `1`
