@@ -438,6 +438,7 @@
 <a href="#438" id="438">438</a>
 <a href="#439" id="439">439</a>
 <a href="#440" id="440">440</a>
+<a href="#441" id="441">441</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Monitor Bluetooth device
 //!
 //! This block displays the connectivity of a given Bluetooth device and the battery level if this
@@ -740,25 +741,26 @@
     <span class="kw">async fn </span>get_device_info(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;DeviceInfo&gt; {
         <span class="kw">let </span>device = <span class="self">self</span>.device.as_ref()<span class="question-mark">?</span>;
 
-        <span class="kw">let </span><span class="prelude-val">Ok</span>((connected, icon, name)) = <span class="macro">tokio::try_join!</span>(
-            device.device.connected(),
-            device.device.icon(),
-            device.device.name(),
-        ) <span class="kw">else </span>{
+        <span class="kw">let </span><span class="prelude-val">Ok</span>((connected, name)) =
+            <span class="macro">tokio::try_join!</span>(device.device.connected(), device.device.name(),)
+        <span class="kw">else </span>{
             <span class="macro">debug!</span>(<span class="string">"failed to fetch device info, assuming device or bluez disappeared"</span>);
             <span class="self">self</span>.device = <span class="prelude-val">None</span>;
             <span class="kw">return </span><span class="prelude-val">None</span>;
         };
 
+        <span class="comment">//icon can be null, so ignore errors when fetching it
+        </span><span class="kw">let </span>icon: <span class="kw-2">&amp;</span>str = <span class="kw">match </span>device.device.icon().<span class="kw">await</span>.ok().as_deref() {
+            <span class="prelude-val">Some</span>(<span class="string">"audio-card" </span>| <span class="string">"audio-headset" </span>| <span class="string">"audio-headphones"</span>) =&gt; <span class="string">"headphones"</span>,
+            <span class="prelude-val">Some</span>(<span class="string">"input-gaming"</span>) =&gt; <span class="string">"joystick"</span>,
+            <span class="prelude-val">Some</span>(<span class="string">"input-keyboard"</span>) =&gt; <span class="string">"keyboard"</span>,
+            <span class="prelude-val">Some</span>(<span class="string">"input-mouse"</span>) =&gt; <span class="string">"mouse"</span>,
+            <span class="kw">_ </span>=&gt; <span class="string">"bluetooth"</span>,
+        };
+
         <span class="prelude-val">Some</span>(DeviceInfo {
             connected,
-            icon: <span class="kw">match </span>icon.as_str() {
-                <span class="string">"audio-card" </span>| <span class="string">"audio-headset" </span>| <span class="string">"audio-headphones" </span>=&gt; <span class="string">"headphones"</span>,
-                <span class="string">"input-gaming" </span>=&gt; <span class="string">"joystick"</span>,
-                <span class="string">"input-keyboard" </span>=&gt; <span class="string">"keyboard"</span>,
-                <span class="string">"input-mouse" </span>=&gt; <span class="string">"mouse"</span>,
-                <span class="kw">_ </span>=&gt; <span class="string">"bluetooth"</span>,
-            },
+            icon,
             name,
             battery_percentage: device.battery.percentage().<span class="kw">await</span>.ok(),
         })
