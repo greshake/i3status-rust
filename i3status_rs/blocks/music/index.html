@@ -13,7 +13,7 @@ setting.</p>
 <h2 id="configuration"><a class="doc-anchor" href="#configuration">§</a>Configuration</h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Default</th></tr></thead><tbody>
 <tr><td><code>format</code></td><td>A string to customise the output of this block. See below for available placeholders.</td><td><code>&quot; $icon {$combo.str(max_w:25,rot_interval:0.5) $play |}&quot;</code></td></tr>
 <tr><td><code>format_alt</code></td><td>If set, block will switch between <code>format</code> and <code>format_alt</code> on every click</td><td><code>None</code></td></tr>
-<tr><td><code>player</code></td><td>Name(s) of the music player(s) MPRIS interface. This can be either a music player name or an array of music player names. Run <code>busctl –user list | grep “org.mpris.MediaPlayer2.” | cut -d’ ’ -f1</code> and the name is the part after “org.mpris.MediaPlayer2.”.</td><td><code>None</code></td></tr>
+<tr><td><code>player</code></td><td>Name(s) of the music player(s) MPRIS interface. This can be either a music player name or an array of music player names. Run <code>busctl --user list | grep &quot;org.mpris.MediaPlayer2.&quot; | cut -d' ' -f1</code> and the name is the part after “org.mpris.MediaPlayer2.”.</td><td><code>None</code></td></tr>
 <tr><td><code>interface_name_exclude</code></td><td>A list of regex patterns for player MPRIS interface names to ignore.</td><td><code>[&quot;playerctld&quot;]</code></td></tr>
 <tr><td><code>separator</code></td><td>String to insert between artist and title.</td><td><code>&quot; - &quot;</code></td></tr>
 <tr><td><code>seek_step_secs</code></td><td>Positive number of seconds to seek forward/backward when scrolling on the bar. Does not need to be an integer.</td><td><code>1</code></td></tr>
