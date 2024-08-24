@@ -489,6 +489,10 @@
 <a href="#489" id="489">489</a>
 <a href="#490" id="490">490</a>
 <a href="#491" id="491">491</a>
+<a href="#492" id="492">492</a>
+<a href="#493" id="493">493</a>
+<a href="#494" id="494">494</a>
+<a href="#495" id="495">495</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>neli::attr::Attribute;
 <span class="kw">use </span>neli::consts::{nl::<span class="kw-2">*</span>, rtnl::<span class="kw-2">*</span>, socket::<span class="kw-2">*</span>};
 <span class="kw">use </span>neli::nl::{NlPayload, Nlmsghdr};
@@ -933,7 +937,11 @@
     <span class="kw">for </span>line <span class="kw">in </span>file.lines() {
         <span class="kw">let </span><span class="kw-2">mut </span>line_parts = line.split_whitespace();
         <span class="kw">if </span>line_parts.next() == <span class="prelude-val">Some</span>(<span class="string">"nameserver"</span>) {
-            <span class="kw">if let </span><span class="prelude-val">Some</span>(ip) = line_parts.next() {
+            <span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">mut </span>ip) = line_parts.next() {
+                <span class="comment">// TODO: use the zone id somehow?
+                </span><span class="kw">if let </span><span class="prelude-val">Some</span>((without_zone_id, _zone_id)) = ip.split_once(<span class="string">'%'</span>) {
+                    ip = without_zone_id;
+                }
                 nameservers.push(ip.parse().error(<span class="string">"Unable to parse ip"</span>)<span class="question-mark">?</span>);
             }
         }
