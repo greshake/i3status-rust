@@ -198,6 +198,12 @@
 <a href="#198" id="198">198</a>
 <a href="#199" id="199">199</a>
 <a href="#200" id="200">200</a>
+<a href="#201" id="201">201</a>
+<a href="#202" id="202">202</a>
+<a href="#203" id="203">203</a>
+<a href="#204" id="204">204</a>
+<a href="#205" id="205">205</a>
+<a href="#206" id="206">206</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! # Formatting system
 //! Many blocks have a `format` configuration option, which allows to heavily customize the block's
 //! appearance. In short, each block with `format` option provides a set of values, which are
@@ -262,6 +268,12 @@
 //! `width` or `w`         | the width of the bar (in characters)                                            | `5` (`1` for `vertical`)
 //! `max_value`            | which value is treated as "full". For example, for battery level `100` is full. | `100`
 //! `vertical` or `v`      | whether to render the bar vertically or not                                     | `false`
+//!
+//! ## `tally` - Display numbers as tally marks
+//!
+//! Argument       | Description                                                                                                                                                                     |Default value
+//! ---------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------
+//! `style` or `s` | One of [`chinese_counting_rods`/`ccr`](https://en.wikipedia.org/wiki/Counting_rods), [`chinese_tally`/`ct`, `western_tally`/`wt`, `western_tally_ungrouped`/`wtu`](https://en.wikipedia.org/wiki/Tally_marks) | western_tally
 //!
 //! ## `pango-str` - Just display the text without pango markup escaping
 //!
