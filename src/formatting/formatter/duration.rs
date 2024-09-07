@@ -23,7 +23,7 @@ pub const DEFAULT_DURATION_FORMATTER: DurationFormatter = DurationFormatter {
     round_up: true,
     unit_has_space: false,
     pad_with: DEFAULT_NUMBER_PAD_WITH,
-    show_leading_units_if_zero: true,
+    leading_zeroes: true,
 };
 
 #[derive(Debug, Default)]
@@ -35,7 +35,7 @@ pub struct DurationFormatter {
     round_up: bool,
     unit_has_space: bool,
     pad_with: PadWith,
-    show_leading_units_if_zero: bool,
+    leading_zeroes: bool,
 }
 
 impl DurationFormatter {
@@ -47,7 +47,7 @@ impl DurationFormatter {
         let mut round_up = true;
         let mut unit_has_space = false;
         let mut pad_with = None;
-        let mut show_leading_units_if_zero = true;
+        let mut leading_zeroes = true;
         for arg in args {
             match arg.key {
                 "hms" => {
@@ -90,9 +90,8 @@ impl DurationFormatter {
                         ));
                     };
                 }
-                "show_leading_units_if_zero" => {
-                    show_leading_units_if_zero =
-                        arg.val.parse().ok().error("units must be true or false")?;
+                "leading_zeroes" => {
+                    leading_zeroes = arg.val.parse().ok().error("units must be true or false")?;
                 }
 
                 _ => return Err(Error::new(format!("Unexpected argument {:?}", arg.key))),
@@ -154,7 +153,7 @@ impl DurationFormatter {
             round_up,
             unit_has_space,
             pad_with,
-            show_leading_units_if_zero,
+            leading_zeroes,
         })
     }
 
@@ -175,8 +174,7 @@ impl DurationFormatter {
             // " 0m 15s"
             if !should_push {
                 should_push = value != 0
-                    || (self.show_leading_units_if_zero
-                        && index >= self.min_unit_index + 1 - self.units);
+                    || (self.leading_zeroes && index >= self.min_unit_index + 1 - self.units);
             }
 
             if should_push {
