@@ -1,7 +1,7 @@
 use unicode_segmentation::UnicodeSegmentation;
 
-use std::fmt::Debug;
 use std::time::Duration;
+use std::{borrow::Cow, fmt::Debug};
 
 use super::parse::Arg;
 use super::value::ValueInner as Value;
@@ -14,7 +14,7 @@ use crate::errors::*;
 #[macro_export]
 macro_rules! new_fmt {
     ($name:ident) => {{
-        fmt!($name,)
+        new_fmt!($name,)
     }};
     ($name:ident, $($key:ident : $value:tt),* $(,)?) => {
         new_formatter(stringify!($name), &[
@@ -29,6 +29,8 @@ mod tally;
 pub use tally::TallyFormatter;
 mod datetime;
 pub use datetime::{DatetimeFormatter, DEFAULT_DATETIME_FORMATTER};
+mod duration;
+pub use duration::{DurationFormatter, DEFAULT_DURATION_FORMATTER};
 mod eng;
 pub use eng::{EngFormatter, DEFAULT_NUMBER_FORMATTER};
 mod flag;
@@ -37,6 +39,10 @@ mod pango;
 pub use pango::PangoStrFormatter;
 mod str;
 pub use str::{StrFormatter, DEFAULT_STRING_FORMATTER};
+
+type PadWith = Cow<'static, str>;
+
+const DEFAULT_NUMBER_PAD_WITH: PadWith = Cow::Borrowed(" ");
 
 pub trait Formatter: Debug + Send + Sync {
     fn format(&self, val: &Value, config: &SharedConfig) -> Result<String, FormatError>;
@@ -50,6 +56,7 @@ pub fn new_formatter(name: &str, args: &[Arg]) -> Result<Box<dyn Formatter>> {
     match name {
         "bar" => Ok(Box::new(BarFormatter::from_args(args)?)),
         "datetime" => Ok(Box::new(DatetimeFormatter::from_args(args)?)),
+        "dur" | "duration" => Ok(Box::new(DurationFormatter::from_args(args)?)),
         "eng" => Ok(Box::new(EngFormatter::from_args(args)?)),
         "pango-str" => Ok(Box::new(PangoStrFormatter::from_args(args)?)),
         "str" => Ok(Box::new(StrFormatter::from_args(args)?)),

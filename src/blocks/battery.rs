@@ -28,8 +28,11 @@
 //! -------------|-------------------------------------------------------------------------|-------------------|-----
 //! `icon`       | Icon based on battery's state                                           | Icon   | -
 //! `percentage` | Battery level, in percent                                               | Number | Percents
-//! `time`       | Time remaining until (dis)charge is complete. Presented only if battery's status is (dis)charging. | String | -
+//! `time_remaining`  | Time remaining until (dis)charge is complete. Presented only if battery's status is (dis)charging. | Duration | -
+//! `time`       | Time remaining until (dis)charge is complete. Presented only if battery's status is (dis)charging. | String *DEPRECATED* | -
 //! `power`      | Power consumption by the battery or from the power supply when charging | String or Float   | Watts
+//!
+//! `time` has been deprecated in favor of `time_remaining`.
 //!
 //! # Examples
 //!
@@ -44,7 +47,7 @@
 //! ```toml
 //! [[block]]
 //! block = "battery"
-//! format = " $percentage {$time |}"
+//! format = " $percentage {$time_remaining.dur(hms:true, min_unit:m) |}"
 //! device = "DisplayDevice"
 //! driver = "upower"
 //! ```
@@ -163,15 +166,19 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
                 info.power
                     .map(|p| values.insert("power".into(), Value::watts(p)));
-                info.time_remaining.map(|t| {
-                    values.insert(
-                        "time".into(),
-                        Value::text(format!(
-                            "{}:{:02}",
-                            (t / 3600.) as i32,
-                            (t % 3600. / 60.) as i32
-                        )),
-                    )
+                info.time_remaining.inspect(|&t| {
+                    map! { @extend values
+                        "time" => Value::text(
+                            format!(
+                                "{}:{:02}",
+                                (t / 3600.) as i32,
+                                (t % 3600. / 60.) as i32
+                            ),
+                        ),
+                        "time_remaining" =>  Value::duration(
+                            Duration::from_secs(t as u64),
+                        ),
+                    }
                 });
 
                 let (icon_name, icon_value, state) = match (info.status, info.capacity) {

@@ -17,6 +17,8 @@
 //! --------------------------|------------------
 //! Text                      | `str`
 //! Number                    | `eng`
+//! Datetime                  | `datetime`
+//! Duration                  | `duration`
 //! [Flag](#how-to-use-flags) | N/A
 //!
 //! # Formatters
@@ -79,6 +81,30 @@
 //! -----------------------|-----------------------------------------------------------------------------------------------------------|-------------
 //! `format` or `f`        | [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. | `'%a %d/%m %R'`
 //! `locale` or `l`        | Locale to apply when formatting the time                                                                  | System locale
+//!
+//!
+//! ## `duration`/`dur` - Format durations
+//!
+//! Argument                     | Description                                                                                      |Default value
+//! -----------------|--------------------------------------------------------------------------------------------------|------------------------------------------------------
+//! `hms`            | Should the format be hours:minutes:seconds.milliseconds                                          | `false`
+//! `max_unit`       | The largest unit to display the duration with (see below for the list of all possible units)     | hms ? `h` : `y`
+//! `min_unit`       | The smallest unit to display the duration with (see below for the list of all possible units)    | `s`
+//! `units`          | The number of units to display                                                                   | min(# of units between `max_unit` and `min_unit``, 2)
+//! `round_up`       | Round up to the nearest minimum displayed unit                                                   | `true`
+//! `unit_space`     | Should there be a space between the value and unit symbol (not allowed when `hms:true`)          | `false`
+//! `pad_with`       | The character that is used to pad the numbers                                                    | hms ? `0` : ` ` (a space)
+//! `leading_zeroes` | If fewer than `units` are non-zero should leading numbers that have a value of zero be shown     | `true`
+//!
+//! Unit | Description
+//! -----|------------
+//! y    | years
+//! w    | weeks
+//! d    | days
+//! h    | hours
+//! m    | minutes
+//! s    | seconds
+//! ms   | milliseconds
 //!
 //! # Handling missing placeholders and incorrect types
 //!
