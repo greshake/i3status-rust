@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/battery.rs`."><title>battery.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-dd39b87e5fcfba68.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.80.1 (3f5fd8dd4 2024-08-06)" data-channel="1.80.1" data-search-js="search-d52510db62a78183.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/battery.rs`."><title>battery.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -300,6 +300,13 @@
 <a href="#300" id="300">300</a>
 <a href="#301" id="301">301</a>
 <a href="#302" id="302">302</a>
+<a href="#303" id="303">303</a>
+<a href="#304" id="304">304</a>
+<a href="#305" id="305">305</a>
+<a href="#306" id="306">306</a>
+<a href="#307" id="307">307</a>
+<a href="#308" id="308">308</a>
+<a href="#309" id="309">309</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Information about the internal power supply
 //!
 //! This block can display the current battery state (Full, Charging or Discharging), percentage
@@ -330,8 +337,11 @@
 //! -------------|-------------------------------------------------------------------------|-------------------|-----
 //! `icon`       | Icon based on battery's state                                           | Icon   | -
 //! `percentage` | Battery level, in percent                                               | Number | Percents
-//! `time`       | Time remaining until (dis)charge is complete. Presented only if battery's status is (dis)charging. | String | -
+//! `time_remaining`  | Time remaining until (dis)charge is complete. Presented only if battery's status is (dis)charging. | Duration | -
+//! `time`       | Time remaining until (dis)charge is complete. Presented only if battery's status is (dis)charging. | String *DEPRECATED* | -
 //! `power`      | Power consumption by the battery or from the power supply when charging | String or Float   | Watts
+//!
+//! `time` has been deprecated in favor of `time_remaining`.
 //!
 //! # Examples
 //!
@@ -346,7 +356,7 @@
 //! ```toml
 //! [[block]]
 //! block = "battery"
-//! format = " $percentage {$time |}"
+//! format = " $percentage {$time_remaining.dur(hms:true, min_unit:m) |}"
 //! device = "DisplayDevice"
 //! driver = "upower"
 //! ```
@@ -465,15 +475,19 @@
 
                 info.power
                     .map(|p| values.insert(<span class="string">"power"</span>.into(), Value::watts(p)));
-                info.time_remaining.map(|t| {
-                    values.insert(
-                        <span class="string">"time"</span>.into(),
-                        Value::text(<span class="macro">format!</span>(
-                            <span class="string">"{}:{:02}"</span>,
-                            (t / <span class="number">3600.</span>) <span class="kw">as </span>i32,
-                            (t % <span class="number">3600. </span>/ <span class="number">60.</span>) <span class="kw">as </span>i32
-                        )),
-                    )
+                info.time_remaining.inspect(|<span class="kw-2">&amp;</span>t| {
+                    <span class="macro">map!</span> { @extend values
+                        <span class="string">"time" </span>=&gt; Value::text(
+                            <span class="macro">format!</span>(
+                                <span class="string">"{}:{:02}"</span>,
+                                (t / <span class="number">3600.</span>) <span class="kw">as </span>i32,
+                                (t % <span class="number">3600. </span>/ <span class="number">60.</span>) <span class="kw">as </span>i32
+                            ),
+                        ),
+                        <span class="string">"time_remaining" </span>=&gt;  Value::duration(
+                            Duration::from_secs(t <span class="kw">as </span>u64),
+                        ),
+                    }
                 });
 
                 <span class="kw">let </span>(icon_name, icon_value, state) = <span class="kw">match </span>(info.status, info.capacity) {

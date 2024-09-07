@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/formatting/formatter.rs`."><title>formatter.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-dd39b87e5fcfba68.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.80.1 (3f5fd8dd4 2024-08-06)" data-channel="1.80.1" data-search-js="search-d52510db62a78183.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-20a3ad099b048cf2.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/formatting/formatter.rs`."><title>formatter.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-c5d6553a23f1e5a6.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.81.0 (eeb90cda1 2024-09-04)" data-channel="1.81.0" data-search-js="search-d234aafac6c221dd.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-d2fab2bf619172d3.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-df360f571f6edeae.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -57,10 +57,17 @@
 <a href="#57" id="57">57</a>
 <a href="#58" id="58">58</a>
 <a href="#59" id="59">59</a>
+<a href="#60" id="60">60</a>
+<a href="#61" id="61">61</a>
+<a href="#62" id="62">62</a>
+<a href="#63" id="63">63</a>
+<a href="#64" id="64">64</a>
+<a href="#65" id="65">65</a>
+<a href="#66" id="66">66</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>unicode_segmentation::UnicodeSegmentation;
 
-<span class="kw">use </span>std::fmt::Debug;
 <span class="kw">use </span>std::time::Duration;
+<span class="kw">use </span>std::{borrow::Cow, fmt::Debug};
 
 <span class="kw">use </span><span class="kw">super</span>::parse::Arg;
 <span class="kw">use </span><span class="kw">super</span>::value::ValueInner <span class="kw">as </span>Value;
@@ -73,7 +80,7 @@
 #[macro_export]
 </span><span class="macro">macro_rules!</span> new_fmt {
     (<span class="macro-nonterminal">$name</span>:ident) =&gt; {{
-        <span class="macro">fmt!</span>(<span class="macro-nonterminal">$name</span>,)
+        <span class="macro">new_fmt!</span>(<span class="macro-nonterminal">$name</span>,)
     }};
     (<span class="macro-nonterminal">$name</span>:ident, $(<span class="macro-nonterminal">$key</span>:ident : <span class="macro-nonterminal">$value</span>:tt),* $(,)<span class="question-mark">?</span>) =&gt; {
         new_formatter(<span class="macro">stringify!</span>(<span class="macro-nonterminal">$name</span>), <span class="kw-2">&amp;</span>[
@@ -88,6 +95,8 @@
 <span class="kw">pub use </span>tally::TallyFormatter;
 <span class="kw">mod </span>datetime;
 <span class="kw">pub use </span>datetime::{DatetimeFormatter, DEFAULT_DATETIME_FORMATTER};
+<span class="kw">mod </span>duration;
+<span class="kw">pub use </span>duration::{DurationFormatter, DEFAULT_DURATION_FORMATTER};
 <span class="kw">mod </span>eng;
 <span class="kw">pub use </span>eng::{EngFormatter, DEFAULT_NUMBER_FORMATTER};
 <span class="kw">mod </span>flag;
@@ -96,6 +105,10 @@
 <span class="kw">pub use </span>pango::PangoStrFormatter;
 <span class="kw">mod </span>str;
 <span class="kw">pub use </span>str::{StrFormatter, DEFAULT_STRING_FORMATTER};
+
+<span class="kw">type </span>PadWith = Cow&lt;<span class="lifetime">'static</span>, str&gt;;
+
+<span class="kw">const </span>DEFAULT_NUMBER_PAD_WITH: PadWith = Cow::Borrowed(<span class="string">" "</span>);
 
 <span class="kw">pub trait </span>Formatter: Debug + Send + Sync {
     <span class="kw">fn </span>format(<span class="kw-2">&amp;</span><span class="self">self</span>, val: <span class="kw-2">&amp;</span>Value, config: <span class="kw-2">&amp;</span>SharedConfig) -&gt; <span class="prelude-ty">Result</span>&lt;String, FormatError&gt;;
@@ -109,6 +122,7 @@
     <span class="kw">match </span>name {
         <span class="string">"bar" </span>=&gt; <span class="prelude-val">Ok</span>(Box::new(BarFormatter::from_args(args)<span class="question-mark">?</span>)),
         <span class="string">"datetime" </span>=&gt; <span class="prelude-val">Ok</span>(Box::new(DatetimeFormatter::from_args(args)<span class="question-mark">?</span>)),
+        <span class="string">"dur" </span>| <span class="string">"duration" </span>=&gt; <span class="prelude-val">Ok</span>(Box::new(DurationFormatter::from_args(args)<span class="question-mark">?</span>)),
         <span class="string">"eng" </span>=&gt; <span class="prelude-val">Ok</span>(Box::new(EngFormatter::from_args(args)<span class="question-mark">?</span>)),
         <span class="string">"pango-str" </span>=&gt; <span class="prelude-val">Ok</span>(Box::new(PangoStrFormatter::from_args(args)<span class="question-mark">?</span>)),
         <span class="string">"str" </span>=&gt; <span class="prelude-val">Ok</span>(Box::new(StrFormatter::from_args(args)<span class="question-mark">?</span>)),
