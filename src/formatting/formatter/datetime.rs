@@ -27,18 +27,6 @@ pub enum DatetimeFormatter {
     },
 }
 
-fn make_static_item(item: Item<'_>) -> Item<'static> {
-    match item {
-        Item::Literal(str) => Item::OwnedLiteral(str.into()),
-        Item::OwnedLiteral(boxed) => Item::OwnedLiteral(boxed),
-        Item::Space(str) => Item::OwnedSpace(str.into()),
-        Item::OwnedSpace(boxed) => Item::OwnedSpace(boxed),
-        Item::Numeric(numeric, pad) => Item::Numeric(numeric, pad),
-        Item::Fixed(fixed) => Item::Fixed(fixed),
-        Item::Error => Item::Error,
-    }
-}
-
 impl DatetimeFormatter {
     pub(super) fn from_args(args: &[Arg]) -> Result<Self> {
         let mut format = None;
@@ -97,7 +85,10 @@ impl DatetimeFormatter {
         };
 
         Ok(Self::Chrono {
-            items: items.map(make_static_item).collect(),
+            items: items.parse_to_owned().error(format!(
+                "Invalid format: \"{}\"",
+                format.unwrap_or(DEFAULT_DATETIME_FORMAT)
+            ))?,
             locale,
         })
     }
