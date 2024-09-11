@@ -3,7 +3,7 @@
 ### New Blocks and Features
 
 * Sound: add `format_alt` configuration option.
-* `.eng` formatter: add `range` parameter to limit to customize format based on the value of a placeholder. For example, `format = " $icon $swap_used.eng(range:1..) |"` will hide the block if swap is not used.
+* `.eng` formatter: add `range` parameter to customize format based on the value of a placeholder. For example, `format = " $icon $swap_used.eng(range:1..) |"` will hide the block if swap is not used.
 * Net: add `nameserver` placeholder for DNS information.
 * Weather: add support for the US National Weather Service.
 * New `scratchpad` block which shows the number of windows in i3/sway scratchpad.
