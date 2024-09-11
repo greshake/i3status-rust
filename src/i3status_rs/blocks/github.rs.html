@@ -325,7 +325,7 @@
     <span class="kw">let </span><span class="kw-2">mut </span>total = <span class="number">0</span>;
     <span class="kw">for </span>page <span class="kw">in </span><span class="number">1</span>..<span class="number">100 </span>{
         <span class="kw">let </span>fetch = || get_on_page(token, page);
-        <span class="kw">let </span>on_page = fetch.retry(<span class="kw-2">&amp;</span>ExponentialBuilder::default()).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let </span>on_page = fetch.retry(ExponentialBuilder::default()).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">if </span>on_page.is_empty() {
             <span class="kw">break</span>;
         }

@@ -1163,13 +1163,13 @@
     <span class="kw">loop </span>{
         <span class="kw">let </span>location = <span class="kw">if </span>config.autolocate {
             <span class="kw">let </span>fetch = || find_ip_location(autolocate_interval.<span class="number">0</span>);
-            <span class="prelude-val">Some</span>(fetch.retry(<span class="kw-2">&amp;</span>ExponentialBuilder::default()).<span class="kw">await</span><span class="question-mark">?</span>)
+            <span class="prelude-val">Some</span>(fetch.retry(ExponentialBuilder::default()).<span class="kw">await</span><span class="question-mark">?</span>)
         } <span class="kw">else </span>{
             <span class="prelude-val">None
         </span>};
 
         <span class="kw">let </span>fetch = || provider.get_weather(location.as_ref(), need_forecast);
-        <span class="kw">let </span>data = fetch.retry(<span class="kw-2">&amp;</span>ExponentialBuilder::default()).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let </span>data = fetch.retry(ExponentialBuilder::default()).<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">let </span>data_values = data.into_values();
 
         <span class="kw">loop </span>{

@@ -380,7 +380,7 @@
 
     <span class="kw">loop </span>{
         <span class="kw">let </span>fetch_info = || IPAddressInfo::new(client);
-        <span class="kw">let </span>info = fetch_info.retry(<span class="kw-2">&amp;</span>ExponentialBuilder::default()).<span class="kw">await</span><span class="question-mark">?</span>;
+        <span class="kw">let </span>info = fetch_info.retry(ExponentialBuilder::default()).<span class="kw">await</span><span class="question-mark">?</span>;
 
         <span class="kw">let </span><span class="kw-2">mut </span>values = <span class="macro">map!</span> {
             <span class="string">"ip" </span>=&gt; Value::text(info.ip),
