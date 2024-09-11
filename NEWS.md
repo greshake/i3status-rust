@@ -1,3 +1,29 @@
+# i3status-rust 0.33.2 [unreleased]
+
+### New Blocks and Features
+
+* Sound: add `format_alt` configuration option.
+* `.eng` formatter: add `range` parameter to limit to customize format based on the value of a placeholder. For example, `format = " $icon $swap_used.eng(range:1..) |"` will hide the block if swap is not used.
+* Net: add `nameserver` placeholder for DNS information.
+* Weather: add support for the US National Weather Service.
+* New `scratchpad` block which shows the number of windows in i3/sway scratchpad.
+* New `.tally` and `.duration` formatters (refer to [docs](https://docs.rs/i3status-rs/latest/i3status_rs/formatting/index.html) for more info).
+
+### Bug Fixes and Improvements
+
+* Sound: correctly show headphones icon when `headphones_indicator = true` and headphones are connected.
+* Time: fix timezone abbreviation (%Z).
+* Battery: give priority to charging over empty.
+* Time: fix divide by zero when the interval is less than a second.
+* Fix Bluetooth block not working when device has no icon.
+* Datetime formatter: raise error for invalid format instead of crashing.
+
+### Deprecation Warnings
+
+* Battery: `time` has been deprecated in favor of `time_remaining`.
+* Tea timer: `hours`, `minutes`, and `seconds` have been deprecated in favor of `time`.
+* Uptime: `text` has been deprecated in favor of `uptime`.
+
 # i3status-rust 0.33.1
 
 ### New Blocks and Features
