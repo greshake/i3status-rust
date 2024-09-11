@@ -135,7 +135,7 @@ async fn get_stats(token: &str) -> Result<HashMap<String, usize>> {
     let mut total = 0;
     for page in 1..100 {
         let fetch = || get_on_page(token, page);
-        let on_page = fetch.retry(&ExponentialBuilder::default()).await?;
+        let on_page = fetch.retry(ExponentialBuilder::default()).await?;
         if on_page.is_empty() {
             break;
         }

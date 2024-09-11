@@ -445,13 +445,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     loop {
         let location = if config.autolocate {
             let fetch = || find_ip_location(autolocate_interval.0);
-            Some(fetch.retry(&ExponentialBuilder::default()).await?)
+            Some(fetch.retry(ExponentialBuilder::default()).await?)
         } else {
             None
         };
 
         let fetch = || provider.get_weather(location.as_ref(), need_forecast);
-        let data = fetch.retry(&ExponentialBuilder::default()).await?;
+        let data = fetch.retry(ExponentialBuilder::default()).await?;
         let data_values = data.into_values();
 
         loop {

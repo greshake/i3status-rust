@@ -30,7 +30,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 async-trait = "0.1"
-backon = "0.4.1"
+backon = { version = "1.2", default-features = false, features = ["tokio-sleep"] }
 calibright = { version = "0.1.6", features = ["watch"] }
 chrono = { version = "0.4", default-features = false, features = ["clock", "unstable-locales"] }
 chrono-tz = { version = "0.8", features = ["serde"] }
