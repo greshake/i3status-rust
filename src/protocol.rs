@@ -38,6 +38,15 @@ where
 
     let mut prev_merge_with_next = false;
 
+    if let Separator::Custom(start_separator) = &config.theme.start_separator {
+        rendered_blocks.push(I3BarBlock {
+            full_text: start_separator.clone(),
+            background: Color::None,
+            color: prev_last_bg,
+            ..Default::default()
+        });
+    }
+
     for widgets in blocks
         .iter()
         .map(|x| x.borrow())
