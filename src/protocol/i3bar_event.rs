@@ -18,15 +18,19 @@ pub struct I3BarEvent {
 }
 
 fn unprocessed_events_stream(invert_scrolling: bool) -> BoxedStream<I3BarEvent> {
-    // Avoid spawning a blocking therad (why doesn't tokio do this too?)
+    // Avoid spawning a blocking thread (why doesn't tokio do this too?)
     // This should be safe given that this function is called only once
     let stdin = unsafe { File::from_raw_fd(0) };
     let lines = BufReader::new(stdin).lines();
 
     futures::stream::unfold(lines, move |mut lines| async move {
         loop {
+            let Some(line) = lines.next_line().await.ok().flatten() else {
+                eprintln!("Error: stdin was closed");
+                std::process::exit(1)
+            };
+
             // Take only the valid JSON object between curly braces (cut off leading bracket, commas and whitespace)
-            let line = lines.next_line().await.ok().flatten()?;
             let line = line.trim_start_matches(|c| c != '{');
             let line = line.trim_end_matches(|c| c != '}');
 
