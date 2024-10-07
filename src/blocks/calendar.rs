@@ -495,7 +495,7 @@ impl Source {
                 .client
                 .events(
                     &calendar,
-                    Utc::now()
+                    Local::now()
                         .date_naive()
                         .and_hms_opt(0, 0, 0)
                         .expect("A valid time")
