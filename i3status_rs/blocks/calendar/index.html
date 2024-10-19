@@ -1,0 +1,138 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Calendar"><title>i3status_rs::blocks::calendar - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-492a78a4a87dcc01.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.82.0 (f6e511eec 2024-10-15)" data-channel="1.82.0" data-search-js="search-a99f1315e7cc5121.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-118b08c4c78b968e.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../../static.files/main-921df33f47b8780c.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-3b12f09e550e0385.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../i3status_rs/index.html">i3status_<wbr>rs</a><span class="version">0.33.1</span></h2></div><h2 class="location"><a href="#">Module calendar</a></h2><div class="sidebar-elems"><section><ul class="block"><li><a href="#structs">Structs</a></li><li><a href="#enums">Enums</a></li><li><a href="#functions">Functions</a></li></ul></section><h2><a href="../index.html">In i3status_<wbr>rs::<wbr>blocks</a></h2></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1>Module <a href="../../index.html">i3status_rs</a>::<wbr><a href="../index.html">blocks</a>::<wbr><a class="mod" href="#">calendar</a><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><span class="out-of-band"><a class="src" href="../../../src/i3status_rs/blocks/calendar.rs.html#1-610">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Calendar</p>
+<p>This block displays upcoming calendar events retrieved from a CalDav ICalendar server.</p>
+<h2 id="configuration"><a class="doc-anchor" href="#configuration">§</a>Configuration</h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Default</th></tr></thead><tbody>
+<tr><td><code>next_event_format</code></td><td>A string to customize the output of this block when there is a next event in the calendar. See below for available placeholders.</td><td><code>" $icon $start.datetime(f:‘%a %H:%M’) $summary "</code></td></tr>
+<tr><td><code>ongoing_event_format</code></td><td>A string to customize the output of this block when an event is ongoing.</td><td><code>" $icon $summary (ends at $end.datetime(f:‘%H:%M’)) "</code></td></tr>
+<tr><td><code>no_events_format</code></td><td>A string to customize the output of this block when there are no events</td><td><code>" $icon "</code></td></tr>
+<tr><td><code>redirect_format</code></td><td>A string to customize the output of this block when the authorization is asked</td><td><code>" $icon Check your web browser "</code></td></tr>
+<tr><td><code>fetch_interval</code></td><td>Fetch events interval in seconds</td><td><code>60</code></td></tr>
+<tr><td><code>alternate_events_interval</code></td><td>Alternate overlapping events interval in seconds</td><td><code>10</code></td></tr>
+<tr><td><code>events_within_hours</code></td><td>Number of hours to look for events in the future</td><td><code>48</code></td></tr>
+<tr><td><code>source</code></td><td>Array of sources to pull calendars from</td><td><code>[]</code></td></tr>
+<tr><td><code>warning_threshold</code></td><td>Warning threshold in seconds for the upcoming event</td><td><code>300</code></td></tr>
+<tr><td><code>browser_cmd</code></td><td>Command to open event details in a browser. The block passes the HTML link as an argument</td><td><code>"xdg-open"</code></td></tr>
+</tbody></table>
+</div><h2 id="source-configuration"><a class="doc-anchor" href="#source-configuration">§</a>Source Configuration</h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Default</th></tr></thead><tbody>
+<tr><td><code>url</code></td><td>CalDav calendar server URL</td><td>N/A</td></tr>
+<tr><td><code>auth</code></td><td>Authentication configuration (unauthenticated, basic, or oauth2)</td><td><code>unauthenticated</code></td></tr>
+<tr><td><code>calendars</code></td><td>List of calendar names to monitor. If empty, all calendars will be fetched.</td><td><code>[]</code></td></tr>
+</tbody></table>
+</div>
+<p>Note: Currently only one source is supported</p>
+<div><table><thead><tr><th>Action</th><th>Description</th><th>Default button</th></tr></thead><tbody>
+<tr><td><code>open_link</code></td><td>Opens the HTML link of the event</td><td>Left</td></tr>
+</tbody></table>
+</div><h2 id="examples"><a class="doc-anchor" href="#examples">§</a>Examples</h2><h3 id="unauthenticated"><a class="doc-anchor" href="#unauthenticated">§</a>Unauthenticated</h3><div class="example-wrap"><pre class="language-toml"><code>[[block]]
+block = &quot;calendar&quot;
+next_event_format = &quot; $icon $start.datetime(f:&#39;%a %H:%M&#39;) $summary &quot;
+ongoing_event_format = &quot; $icon $summary (ends at $end.datetime(f:&#39;%H:%M&#39;)) &quot;
+no_events_format = &quot; $icon no events &quot;
+fetch_interval = 30
+alternate_events_interval = 10
+events_within_hours = 48
+warning_threshold = 600
+browser_cmd = &quot;firefox&quot;
+[[block.source]]
+url = &quot;https://caldav.example.com/calendar/&quot;
+calendars = [&quot;user/calendar&quot;]
+[block.source.auth]
+type = &quot;unauthenticated&quot;
+</code></pre></div><h3 id="basic-authentication"><a class="doc-anchor" href="#basic-authentication">§</a>Basic Authentication</h3><div class="example-wrap"><pre class="language-toml"><code>[[block]]
+block = &quot;calendar&quot;
+next_event_format = &quot; $icon $start.datetime(f:&#39;%a %H:%M&#39;) $summary &quot;
+ongoing_event_format = &quot; $icon $summary (ends at $end.datetime(f:&#39;%H:%M&#39;)) &quot;
+no_events_format = &quot; $icon no events &quot;
+fetch_interval = 30
+alternate_events_interval = 10
+events_within_hours = 48
+warning_threshold = 600
+browser_cmd = &quot;firefox&quot;
+[[block.source]]
+url = &quot;https://caldav.example.com/calendar/&quot;
+calendars = [ &quot;Holidays&quot; ]
+[block.source.auth]
+type = &quot;basic&quot;
+username = &quot;your_username&quot;
+password = &quot;your_password&quot;
+</code></pre></div>
+<p>Note: You can also configure the <code>username</code> and <code>password</code> in a separate TOML file.</p>
+<p><code>~/.config/i3status-rust/example_credentials.toml</code></p>
+<div class="example-wrap"><pre class="language-toml"><code>username = &quot;my-username&quot;
+password = &quot;my-password&quot;
+</code></pre></div>
+<p>Source auth configuration with <code>credentials_path</code>:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[block.source.auth]
+type = &quot;basic&quot;
+credentials_path = &quot;~/.config/i3status-rust/example_credentials.toml&quot;
+</code></pre></div><h3 id="oauth2-authentication-google-calendar"><a class="doc-anchor" href="#oauth2-authentication-google-calendar">§</a>OAuth2 Authentication (Google Calendar)</h3>
+<p>To access the CalDav API of Google, follow these steps to enable the API and obtain the <code>client_id</code> and <code>client_secret</code>:</p>
+<ol>
+<li><strong>Go to the Google Cloud Console</strong>: Navigate to the <a href="https://console.cloud.google.com/">Google Cloud Console</a>.</li>
+<li><strong>Create a New Project</strong>: If you don’t already have a project, click on the project dropdown and select “New Project”. Give your project a name and click “Create”.</li>
+<li><strong>Enable the CalDAV API</strong>: In the project dashboard, go to the “APIs &amp; Services” &gt; “Library”. Search for “CalDAV API” and click on it, then click “Enable”.</li>
+<li><strong>Set Up OAuth Consent Screen</strong>: Go to “APIs &amp; Services” &gt; “OAuth consent screen”. Fill out the required information and save.</li>
+<li><strong>Create Credentials</strong>:
+<ul>
+<li>Navigate to “APIs &amp; Services” &gt; “Credentials”.</li>
+<li>Click “Create Credentials” and select “OAuth 2.0 Client IDs”.</li>
+<li>Configure the consent screen if you haven’t already.</li>
+<li>Set the application type to “Web application”.</li>
+<li>Add your authorized redirect URIs. For example, <code>http://localhost:8080</code>.</li>
+<li>Click “Create” and note down the <code>client_id</code> and <code>client_secret</code>.</li>
+</ul>
+</li>
+<li><strong>Download the Credentials</strong>: Click on the download icon next to your OAuth 2.0 Client ID to download the JSON file containing your client ID and client secret. Use these values in your configuration.</li>
+</ol>
+<div class="example-wrap"><pre class="language-toml"><code>[[block]]
+block = &quot;calendar&quot;
+next_event_format = &quot; $icon $start.datetime(f:&#39;%a %H:%M&#39;) $summary &quot;
+ongoing_event_format = &quot; $icon $summary (ends at $end.datetime(f:&#39;%H:%M&#39;)) &quot;
+no_events_format = &quot; $icon no events &quot;
+fetch_interval = 30
+alternate_events_interval = 10
+events_within_hours = 48
+warning_threshold = 600
+browser_cmd = &quot;firefox&quot;
+[[block.source]]
+url = &quot;https://apidata.googleusercontent.com/caldav/v2/&quot;
+calendars = [&quot;primary&quot;]
+[block.source.auth]
+type = &quot;oauth2&quot;
+client_id = &quot;your_client_id&quot;
+client_secret = &quot;your_client_secret&quot;
+auth_url = &quot;https://accounts.google.com/o/oauth2/auth&quot;
+token_url = &quot;https://oauth2.googleapis.com/token&quot;
+auth_token = &quot;~/.config/i3status-rust/calendar.auth_token&quot;
+redirect_port = 8080
+scopes = [&quot;https://www.googleapis.com/auth/calendar&quot;, &quot;https://www.googleapis.com/auth/calendar.events&quot;]
+</code></pre></div>
+<p>Note: You can also configure the <code>client_id</code> and <code>client_secret</code> in a separate TOML file.</p>
+<p><code>~/.config/i3status-rust/google_credentials.toml</code></p>
+<div class="example-wrap"><pre class="language-toml"><code>client_id = &quot;my-client_id&quot;
+client_secret = &quot;my-client_secret&quot;
+</code></pre></div>
+<p>Source auth configuration with <code>credentials_path</code>:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[block.source.auth]
+type = &quot;oauth2&quot;
+credentials_path = &quot;~/.config/i3status-rust/google_credentials.toml&quot;
+auth_url = &quot;https://accounts.google.com/o/oauth2/auth&quot;
+token_url = &quot;https://oauth2.googleapis.com/token&quot;
+auth_token = &quot;~/.config/i3status-rust/calendar.auth_token&quot;
+redirect_port = 8080
+scopes = [&quot;https://www.googleapis.com/auth/calendar&quot;, &quot;https://www.googleapis.com/auth/calendar.events&quot;]
+</code></pre></div><h2 id="format-configuration"><a class="doc-anchor" href="#format-configuration">§</a>Format Configuration</h2>
+<p>The format configuration is a string that can include placeholders to be replaced with dynamic content.
+Placeholders can be:</p>
+<ul>
+<li><code>$summary</code>: Summary of the event</li>
+<li><code>$description</code>: Description of the event</li>
+<li><code>$url</code>: Url of the event</li>
+<li><code>$location</code>: Location of the event</li>
+<li><code>$start</code>: Start time of the event</li>
+<li><code>$end</code>: End time of the event</li>
+</ul>
+<h2 id="icons-used"><a class="doc-anchor" href="#icons-used">§</a>Icons Used</h2>
+<ul>
+<li><code>calendar</code></li>
+</ul>
+</div></details><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.BasicAuthConfig.html" title="struct i3status_rs::blocks::calendar::BasicAuthConfig">Basic<wbr>Auth<wbr>Config</a></div></li><li><div class="item-name"><a class="struct" href="struct.BasicCredentials.html" title="struct i3status_rs::blocks::calendar::BasicCredentials">Basic<wbr>Credentials</a></div></li><li><div class="item-name"><a class="struct" href="struct.Config.html" title="struct i3status_rs::blocks::calendar::Config">Config</a></div></li><li><div class="item-name"><a class="struct" href="struct.OAuth2Config.html" title="struct i3status_rs::blocks::calendar::OAuth2Config">OAuth2<wbr>Config</a></div></li><li><div class="item-name"><a class="struct" href="struct.OAuth2Credentials.html" title="struct i3status_rs::blocks::calendar::OAuth2Credentials">OAuth2<wbr>Credentials</a></div></li><li><div class="item-name"><a class="struct" href="struct.SourceConfig.html" title="struct i3status_rs::blocks::calendar::SourceConfig">Source<wbr>Config</a></div></li></ul><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="enum" href="enum.AuthConfig.html" title="enum i3status_rs::blocks::calendar::AuthConfig">Auth<wbr>Config</a></div></li><li><div class="item-name"><a class="enum" href="enum.CalendarError.html" title="enum i3status_rs::blocks::calendar::CalendarError">Calendar<wbr>Error</a></div></li></ul><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><ul class="item-table"><li><div class="item-name"><a class="fn" href="fn.run.html" title="fn i3status_rs::blocks::calendar::run">run</a></div></li></ul></section></div></main></body></html>
