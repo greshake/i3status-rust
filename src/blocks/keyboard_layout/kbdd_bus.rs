@@ -1,7 +1,7 @@
 use super::*;
 
 pub(super) struct KbddBus {
-    stream: layoutNameChangedStream<'static>,
+    stream: layoutNameChangedStream,
     info: Info,
 }
 
@@ -9,7 +9,7 @@ impl KbddBus {
     pub(super) async fn new() -> Result<Self> {
         let conn = new_dbus_connection().await?;
         let proxy = KbddBusInterfaceProxy::builder(&conn)
-            .cache_properties(zbus::CacheProperties::No)
+            .cache_properties(zbus::proxy::CacheProperties::No)
             .build()
             .await
             .error("Failed to create KbddBusInterfaceProxy")?;

@@ -2,8 +2,8 @@ use super::*;
 
 pub(super) struct LocaleBus {
     proxy: LocaleBusInterfaceProxy<'static>,
-    stream1: zbus::PropertyStream<'static, String>,
-    stream2: zbus::PropertyStream<'static, String>,
+    stream1: zbus::proxy::PropertyStream<'static, String>,
+    stream2: zbus::proxy::PropertyStream<'static, String>,
 }
 
 impl LocaleBus {

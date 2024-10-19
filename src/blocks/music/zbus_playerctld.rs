@@ -24,7 +24,7 @@
     default_service = "org.mpris.MediaPlayer2.playerctld",
     default_path = "/org/mpris/MediaPlayer2"
 )]
-trait Playerctld {
+pub(super) trait Playerctld {
     /// Shift method
     fn shift(&self) -> zbus::Result<String>;
 

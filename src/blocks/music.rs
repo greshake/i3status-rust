@@ -267,7 +267,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     let mut properties_stream = MessageStream::for_match_rule(
         MatchRule::builder()
-            .msg_type(zbus::MessageType::Signal)
+            .msg_type(zbus::message::Type::Signal)
             .interface("org.freedesktop.DBus.Properties")
             .and_then(|x| x.member("PropertiesChanged"))
             .and_then(|x| x.path("/org/mpris/MediaPlayer2"))
@@ -281,7 +281,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     let mut name_owner_changed_stream = MessageStream::for_match_rule(
         MatchRule::builder()
-            .msg_type(zbus::MessageType::Signal)
+            .msg_type(zbus::message::Type::Signal)
             .interface("org.freedesktop.DBus")
             .and_then(|x| x.member("NameOwnerChanged"))
             .and_then(|x| x.arg0ns("org.mpris.MediaPlayer2"))
