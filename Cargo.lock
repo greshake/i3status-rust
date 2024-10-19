@@ -1229,7 +1229,6 @@ dependencies = [
  "nom",
  "notmuch",
  "oauth2",
- "once_cell",
  "pipewire",
  "quick-xml 0.31.0",
  "regex",
