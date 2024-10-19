@@ -152,6 +152,7 @@ define_blocks!(
     backlight,
     battery,
     bluetooth,
+    calendar,
     cpu,
     custom,
     custom_dbus,
