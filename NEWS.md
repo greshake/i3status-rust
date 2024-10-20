@@ -8,6 +8,7 @@
 * Weather: add support for the US National Weather Service.
 * New `scratchpad` block which shows the number of windows in i3/sway scratchpad.
 * New `.tally` and `.duration` formatters (refer to [docs](https://docs.rs/i3status-rs/latest/i3status_rs/formatting/index.html) for more info).
+* Add new `calendar` block which can pull from multiple `CalDav` calendars.
 
 ### Bug Fixes and Improvements
 
