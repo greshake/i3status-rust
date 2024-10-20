@@ -330,7 +330,7 @@ impl HueShiftDriver for Wlsunset {
 
 struct WlGammarelayRs {
     proxy: WlGammarelayRsBusProxy<'static>,
-    updates: zbus::PropertyStream<'static, u16>,
+    updates: zbus::proxy::PropertyStream<'static, u16>,
 }
 
 impl WlGammarelayRs {

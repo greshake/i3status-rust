@@ -12,7 +12,7 @@ const DISPLAY_DEVICE_PATH: ObjectPath =
 
 struct DeviceConnection {
     device_proxy: DeviceProxy<'static>,
-    changes: PropertiesChangedStream<'static>,
+    changes: PropertiesChangedStream,
 }
 
 impl DeviceConnection {
@@ -99,8 +99,8 @@ pub(super) struct Device {
     device: DeviceName,
     dev_model: Option<String>,
     device_conn: Option<DeviceConnection>,
-    device_added_stream: DeviceAddedStream<'static>,
-    device_removed_stream: DeviceRemovedStream<'static>,
+    device_added_stream: DeviceAddedStream,
+    device_removed_stream: DeviceRemovedStream,
 }
 
 impl Device {

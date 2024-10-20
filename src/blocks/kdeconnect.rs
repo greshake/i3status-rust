@@ -195,8 +195,8 @@ struct Device {
     connectivity_proxy: ConnectivityDbusProxy<'static>,
     device_signals: zbus::proxy::SignalStream<'static>,
     notifications_signals: zbus::proxy::SignalStream<'static>,
-    battery_refreshed: battery::refreshedStream<'static>,
-    connectivity_refreshed: connectivity_report::refreshedStream<'static>,
+    battery_refreshed: battery::refreshedStream,
+    connectivity_refreshed: connectivity_report::refreshedStream,
 }
 
 struct DeviceInfo {
@@ -315,7 +315,7 @@ impl Device {
 
         for id in devices {
             let device_proxy = DeviceDbusProxy::builder(daemon_proxy.inner().connection())
-                .cache_properties(zbus::CacheProperties::No)
+                .cache_properties(zbus::proxy::CacheProperties::No)
                 .path(format!("/modules/kdeconnect/devices/{id}"))
                 .unwrap()
                 .build()
@@ -339,7 +339,7 @@ impl Device {
         let connectivity_path = format!("{device_path}/connectivity_report");
 
         let battery_proxy = BatteryDbusProxy::builder(daemon_proxy.inner().connection())
-            .cache_properties(zbus::CacheProperties::No)
+            .cache_properties(zbus::proxy::CacheProperties::No)
             .path(battery_path)
             .error("Failed to set battery path")?
             .build()
@@ -347,14 +347,14 @@ impl Device {
             .error("Failed to create BatteryDbusProxy")?;
         let notifications_proxy =
             NotificationsDbusProxy::builder(daemon_proxy.inner().connection())
-                .cache_properties(zbus::CacheProperties::No)
+                .cache_properties(zbus::proxy::CacheProperties::No)
                 .path(notifications_path)
                 .error("Failed to set notifications path")?
                 .build()
                 .await
                 .error("Failed to create BatteryDbusProxy")?;
         let connectivity_proxy = ConnectivityDbusProxy::builder(daemon_proxy.inner().connection())
-            .cache_properties(zbus::CacheProperties::No)
+            .cache_properties(zbus::proxy::CacheProperties::No)
             .path(connectivity_path)
             .error("Failed to set connectivity path")?
             .build()

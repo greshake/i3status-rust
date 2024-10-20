@@ -42,7 +42,7 @@
 //!
 
 use super::prelude::*;
-use zbus::PropertyStream;
+use zbus::proxy::PropertyStream;
 
 #[derive(Deserialize, Debug, Default)]
 #[serde(deny_unknown_fields, default)]
