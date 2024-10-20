@@ -146,6 +146,7 @@ Feel free to take a look at the provided color schemes for reference.
 * `separator_fg`
 * `separator`
 * `end_separator`
+* `start_separator`
 
 # Available icon overrides
 
