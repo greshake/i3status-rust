@@ -63,7 +63,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     };
 
     let device = match &config.device {
-        Some(name) => Device::new(name)?,
+        Some(name) => Device::new(name).await?,
         None => Device::default_card()
             .await
             .error("failed to get default GPU")?
@@ -121,10 +121,10 @@ struct GpuInfo {
 }
 
 impl Device {
-    fn new(name: &str) -> Result<Self, Error> {
+    async fn new(name: &str) -> Result<Self, Error> {
         let path = PathBuf::from(format!("/sys/class/drm/{name}/device"));
 
-        if !path.exists() {
+        if !file_exists(&path).await {
             Err(Error::new(format!("Device {name} not found")))
         } else {
             Ok(Self { path })
@@ -185,9 +185,9 @@ impl Device {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_non_existing_gpu_device() {
-        let device = Device::new("/nope");
+    #[tokio::test]
+    async fn test_non_existing_gpu_device() {
+        let device = Device::new("/nope").await;
         assert!(device.is_err());
     }
 }

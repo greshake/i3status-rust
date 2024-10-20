@@ -50,7 +50,7 @@ impl Apt {
     async fn setup(&mut self) -> Result<()> {
         let mut cache_dir = env::temp_dir();
         cache_dir.push("i3rs-apt");
-        if !cache_dir.exists() {
+        if !file_exists(&cache_dir).await {
             create_dir_all(&cache_dir)
                 .await
                 .error("Failed to create temp dir")?;

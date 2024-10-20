@@ -77,7 +77,7 @@ impl NetDevice {
         let path = Path::new("/sys/class/net").join(&iface.name);
         let tun = iface.name.starts_with("tun")
             || iface.name.starts_with("tap")
-            || path.join("tun_flags").exists();
+            || util::file_exists(path.join("tun_flags")).await;
         let (wg, ppp) = util::read_file(path.join("uevent"))
             .await
             .map_or((false, false), |c| {
