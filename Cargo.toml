@@ -41,7 +41,6 @@ dirs = "6.0"
 env_logger = "0.11"
 futures = { version = "0.3.31", default-features = false }
 glob = { version = "0.3.1", optional = true }
-hyper = "0.14"
 iana-time-zone = "0.1.60"
 icalendar = { version = "0.16.2", features = ["chrono-tz"] }
 icu_calendar = { version = "1.3.0", optional = true }
@@ -59,12 +58,12 @@ neli-wifi = { version = "0.6", features = ["async"] }
 nix = { version = "0.29", features = ["fs", "process"] }
 nom = "7.1.2"
 notmuch = { version = "0.8", optional = true }
-oauth2 = { version = "4.4.2" }
+oauth2 = { version = "5.0.0", default-features = false, features = ["reqwest"] }
 num-traits = "0.2"
 pipewire = { version = "0.8", default-features = false, optional = true }
 quick-xml = { version = "0.37", features = ["serialize"] }
 regex = "1.5"
-reqwest = { version = "0.11", features = ["json"] }
+reqwest = { version = "0.12", features = ["json"] }
 sensors = "0.2.2"
 serde = { version = "1.0", features = ["derive", "rc"] }
 serde_json = "1.0"
@@ -106,3 +105,4 @@ lto = "thin"
 [profile.release-debug-info]
 inherits = "release"
 debug = true
+
