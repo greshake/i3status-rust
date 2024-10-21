@@ -31,8 +31,6 @@
 //! - `docker`
 
 use super::prelude::*;
-use std::path::Path;
-use tokio::net::UnixStream;
 
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
@@ -48,8 +46,20 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let format = config.format.with_default(" $icon $running.eng(w:1) ")?;
     let socket_path = config.socket_path.expand()?;
 
+    let client = reqwest::Client::builder()
+        .unix_socket(&*socket_path)
+        .build()
+        .unwrap();
+
     loop {
-        let status = Status::new(&*socket_path).await?;
+        let status: Status = client
+            .get("http://api/info")
+            .send()
+            .await
+            .error("Failed to get response")?
+            .json()
+            .await
+            .error("Failed to deserialize JSON")?;
 
         let mut widget = Widget::new().with_format(format.clone());
         widget.set_values(map! {
@@ -81,30 +91,4 @@ struct Status {
     paused: i64,
     #[serde(rename = "Images")]
     images: i64,
-}
-
-impl Status {
-    async fn new(socket_path: impl AsRef<Path>) -> Result<Self> {
-        let socket = UnixStream::connect(socket_path)
-            .await
-            .error("Failed to connect to socket")?;
-        let (mut request_sender, connection) = hyper::client::conn::handshake(socket)
-            .await
-            .error("Failed to create request sender")?;
-        tokio::spawn(connection);
-        let request = hyper::Request::builder()
-            .header("Host", "localhost")
-            .uri("http://api/info")
-            .method("GET")
-            .body(hyper::Body::empty())
-            .error("Failed to create request")?;
-        let response = request_sender
-            .send_request(request)
-            .await
-            .error("Failed to get response")?;
-        let bytes = hyper::body::to_bytes(response.into_body())
-            .await
-            .error("Failed to get response bytes")?;
-        serde_json::from_slice::<Self>(&bytes).error("Failed to deserialize JSON")
-    }
 }
