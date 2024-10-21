@@ -1,19 +1,53 @@
 use base64::Engine as _;
-use oauth2::basic::{BasicClient, BasicTokenType};
-use oauth2::reqwest::async_http_client;
-use oauth2::{
-    AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, EmptyExtraTokenFields,
-    PkceCodeChallenge, PkceCodeVerifier, RedirectUrl, RefreshToken, Scope, StandardTokenResponse,
-    TokenResponse as _, TokenUrl,
+use oauth2::basic::{
+    BasicErrorResponse, BasicRevocationErrorResponse, BasicTokenIntrospectionResponse,
+    BasicTokenResponse,
 };
+use oauth2::{
+    AuthUrl, AuthorizationCode, Client, ClientId, ClientSecret, CsrfToken, EndpointNotSet,
+    EndpointSet, PkceCodeChallenge, PkceCodeVerifier, RedirectUrl, RefreshToken, Scope,
+    StandardRevocableToken, TokenResponse as _, TokenUrl,
+};
+use reqwest;
 use reqwest::Url;
 use reqwest::header::{AUTHORIZATION, HeaderMap, HeaderValue};
 use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
 use tokio::fs::File;
 use tokio::io::{AsyncBufReadExt as _, AsyncReadExt as _, AsyncWriteExt as _, BufReader};
 use tokio::net::TcpListener;
 
 use super::CalendarError;
+use crate::{APP_USER_AGENT, REQWEST_TIMEOUT};
+
+static REQWEST_CLIENT: LazyLock<reqwest::Client> = LazyLock::new(|| {
+    reqwest::Client::builder()
+        .user_agent(APP_USER_AGENT)
+        .timeout(REQWEST_TIMEOUT)
+        // Following redirects opens the client up to SSRF vulnerabilities.
+        .redirect(reqwest::redirect::Policy::none())
+        .build()
+        .unwrap()
+});
+
+type BasicClient<
+    HasAuthUrl = EndpointSet,
+    HasDeviceAuthUrl = EndpointNotSet,
+    HasIntrospectionUrl = EndpointNotSet,
+    HasRevocationUrl = EndpointNotSet,
+    HasTokenUrl = EndpointSet,
+> = Client<
+    BasicErrorResponse,
+    BasicTokenResponse,
+    BasicTokenIntrospectionResponse,
+    StandardRevocableToken,
+    BasicRevocationErrorResponse,
+    HasAuthUrl,
+    HasDeviceAuthUrl,
+    HasIntrospectionUrl,
+    HasRevocationUrl,
+    HasTokenUrl,
+>;
 
 pub enum Auth {
     Unauthenticated,
@@ -149,7 +183,10 @@ impl OAuth2Flow {
         redirect_port: u16,
     ) -> Self {
         Self {
-            client: BasicClient::new(client_id, Some(client_secret), auth_url, Some(token_url))
+            client: BasicClient::new(client_id)
+                .set_client_secret(client_secret)
+                .set_auth_uri(auth_url)
+                .set_token_uri(token_url)
                 .set_redirect_uri(
                     RedirectUrl::new(format!("http://localhost:{redirect_port}").to_string())
                         .expect("A valid redirect URL"),
@@ -176,10 +213,10 @@ impl OAuth2Flow {
     pub async fn refresh_token_exchange(
         &self,
         token: &RefreshToken,
-    ) -> Result<OAuth2TokenResponse, CalendarError> {
+    ) -> Result<BasicTokenResponse, CalendarError> {
         self.client
             .exchange_refresh_token(token)
-            .request_async(async_http_client)
+            .request_async(&*REQWEST_CLIENT)
             .await
             .map_err(|e| CalendarError::RequestToken(e.to_string()))
     }
@@ -187,7 +224,7 @@ impl OAuth2Flow {
     pub async fn redirect(
         &self,
         authorize_url: AuthorizeUrl,
-    ) -> Result<OAuth2TokenResponse, CalendarError> {
+    ) -> Result<BasicTokenResponse, CalendarError> {
         let client = self.client.clone();
         let redirect_port = self.redirect_port;
         let listener = TcpListener::bind(format!("127.0.0.1:{redirect_port}")).await?;
@@ -231,7 +268,7 @@ impl OAuth2Flow {
         client
             .exchange_code(code)
             .set_pkce_verifier(authorize_url.pkce_code_verifier)
-            .request_async(async_http_client)
+            .request_async(&*REQWEST_CLIENT)
             .await
             .map_err(|e| CalendarError::RequestToken(e.to_string()))
     }
@@ -250,12 +287,10 @@ pub struct AuthorizeUrl {
     csrf_token: CsrfToken,
 }
 
-type OAuth2TokenResponse = StandardTokenResponse<EmptyExtraTokenFields, BasicTokenType>;
-
 #[derive(Debug)]
 pub struct TokenStore {
     path: PathBuf,
-    token: Option<OAuth2TokenResponse>,
+    token: Option<BasicTokenResponse>,
 }
 
 impl TokenStore {
@@ -266,7 +301,7 @@ impl TokenStore {
         }
     }
 
-    pub async fn store(&mut self, token: OAuth2TokenResponse) -> Result<(), TokenStoreError> {
+    pub async fn store(&mut self, token: BasicTokenResponse) -> Result<(), TokenStoreError> {
         let mut file = File::create(&self.path).await?;
         let value = serde_json::to_string(&token)?;
         file.write_all(value.as_bytes()).await?;
@@ -274,7 +309,7 @@ impl TokenStore {
         Ok(())
     }
 
-    pub async fn get(&mut self) -> Option<OAuth2TokenResponse> {
+    pub async fn get(&mut self) -> Option<BasicTokenResponse> {
         if self.token.is_none()
             && let Ok(mut file) = File::open(&self.path).await
         {
