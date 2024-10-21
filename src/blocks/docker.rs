@@ -31,6 +31,9 @@
 //! - `docker`
 
 use super::prelude::*;
+use http_body_util::BodyExt;
+use hyper::body::{Buf, Bytes};
+use hyper_util::rt::TokioIo;
 use std::path::Path;
 use tokio::net::UnixStream;
 
@@ -88,23 +91,27 @@ impl Status {
         let socket = UnixStream::connect(socket_path)
             .await
             .error("Failed to connect to socket")?;
-        let (mut request_sender, connection) = hyper::client::conn::handshake(socket)
-            .await
-            .error("Failed to create request sender")?;
+        let (mut request_sender, connection) =
+            hyper::client::conn::http1::handshake(TokioIo::new(socket))
+                .await
+                .error("Failed to create request sender")?;
         tokio::spawn(connection);
         let request = hyper::Request::builder()
             .header("Host", "localhost")
             .uri("http://api/info")
             .method("GET")
-            .body(hyper::Body::empty())
+            .body(http_body_util::Empty::<Bytes>::new())
             .error("Failed to create request")?;
         let response = request_sender
             .send_request(request)
             .await
             .error("Failed to get response")?;
-        let bytes = hyper::body::to_bytes(response.into_body())
+        let body = response
+            .collect()
             .await
-            .error("Failed to get response bytes")?;
-        serde_json::from_slice::<Self>(&bytes).error("Failed to deserialize JSON")
+            .error("Failed to get response bytes")?
+            .aggregate();
+
+        serde_json::from_reader(body.reader()).error("Failed to deserialize JSON")
     }
 }
