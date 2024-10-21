@@ -82,7 +82,7 @@
 //! `wind{,_{favg,fmin,fmax,ffin}}`              | Wind speed                                                                    | Number   | -
 //! `wind_kmh{,_{favg,fmin,fmax,ffin}}`          | Wind speed. The wind speed in km/h                                            | Number   | -
 //! `direction{,_{favg,fmin,fmax,ffin}}`         | Wind direction, e.g. "NE"                                                     | Text     | -
-//! `sunrise`                                    | Time of sunrise                                                                | DateTime | -
+//! `sunrise`                                    | Time of sunrise                                                               | DateTime | -
 //! `sunset`                                     | Time of sunset                                                                | DateTime | -
 //!
 //! You can use the suffixes noted above to get the following:
@@ -145,7 +145,8 @@ use std::fmt;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Datelike, Utc};
+use sunrise::{SolarDay, SolarEvent};
 
 use crate::formatting::Format;
 
@@ -183,7 +184,6 @@ trait WeatherProvider {
         &self,
         autolocated_location: Option<&Coordinates>,
         need_forecast: bool,
-        need_sunrise_and_sunset: bool,
     ) -> Result<WeatherResult>;
 }
 
@@ -271,8 +271,8 @@ struct WeatherResult {
     location: String,
     current_weather: WeatherMoment,
     forecast: Option<Forecast>,
-    sunrise: Option<DateTime<Utc>>,
-    sunset: Option<DateTime<Utc>>,
+    sunrise: DateTime<Utc>,
+    sunset: DateTime<Utc>,
 }
 
 impl WeatherResult {
@@ -289,6 +289,8 @@ impl WeatherResult {
             "wind" => Value::number(self.current_weather.wind),
             "wind_kmh" => Value::number(self.current_weather.wind_kmh),
             "direction" => Value::text(convert_wind_direction(self.current_weather.wind_direction).into()),
+            "sunrise" => Value::datetime(self.sunrise, None),
+            "sunset" => Value::datetime(self.sunset, None),
         };
 
         if let Some(forecast) = self.forecast {
@@ -320,13 +322,6 @@ impl WeatherResult {
             }
         }
 
-        if let Some(sunset) = self.sunset {
-            values.insert("sunset".into(), Value::datetime(sunset, None));
-        }
-
-        if let Some(sunrise) = self.sunrise {
-            values.insert("sunrise".into(), Value::datetime(sunrise, None));
-        }
         values
     }
 }
@@ -465,7 +460,6 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     let autolocate_interval = config.autolocate_interval.unwrap_or(config.interval);
     let need_forecast = need_forecast(&format, format_alt.as_ref());
-    let need_sunrise_and_sunset = need_sunrise_and_sunset(&format, format_alt.as_ref());
 
     let mut timer = config.interval.timer();
 
@@ -477,8 +471,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             None
         };
 
-        let fetch =
-            || provider.get_weather(location.as_ref(), need_forecast, need_sunrise_and_sunset);
+        let fetch = || provider.get_weather(location.as_ref(), need_forecast);
         let data = fetch.retry(ExponentialBuilder::default()).await?;
         let data_values = data.into_values();
 
@@ -527,11 +520,21 @@ fn need_forecast(format: &Format, format_alt: Option<&Format>) -> bool {
     has_forecast_key(format) || format_alt.is_some_and(has_forecast_key)
 }
 
-fn need_sunrise_and_sunset(format: &Format, format_alt: Option<&Format>) -> bool {
-    fn has_sunrise_or_sunset_keys(format: &Format) -> bool {
-        format.contains_key("sunrise") || format.contains_key("sunset")
-    }
-    has_sunrise_or_sunset_keys(format) || format_alt.is_some_and(has_sunrise_or_sunset_keys)
+fn calculate_sunrise_sunset(
+    lat: f64,
+    lon: f64,
+    altitude: Option<f64>,
+) -> Result<(DateTime<Utc>, DateTime<Utc>)> {
+    let date = Utc::now();
+    let solar_day = SolarDay::new(lat, lon, date.year(), date.month(), date.day())
+        .with_altitude(altitude.unwrap_or_default());
+
+    Ok((
+        DateTime::<Utc>::from_timestamp(solar_day.event_time(SolarEvent::Sunrise), 0)
+            .error("Unable to convert timestamp to DateTime")?,
+        DateTime::<Utc>::from_timestamp(solar_day.event_time(SolarEvent::Sunset), 0)
+            .error("Unable to convert timestamp to DateTime")?,
+    ))
 }
 
 #[derive(Debug, Deserialize, Clone, Copy, PartialEq, Eq, SmartDefault)]
