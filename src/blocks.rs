@@ -35,6 +35,7 @@ use serde::de::{self, Deserialize};
 use tokio::sync::{mpsc, Notify};
 
 use std::borrow::Cow;
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -42,6 +43,8 @@ use crate::click::MouseButton;
 use crate::errors::*;
 use crate::widget::Widget;
 use crate::{BoxedFuture, Request, RequestCmd};
+
+use crate::util;
 
 macro_rules! define_blocks {
     {
@@ -135,7 +138,17 @@ macro_rules! define_blocks {
                             ))),
                         )?
                     )*
-                    other => Err(D::Error::custom(format!("unknown block '{other}'")))
+                    other => {
+                        match util::find_file(other, Some("blocks"), Some("toml")) {
+                            Some(file) => match util::deserialize_toml_file::<BlockConfig, PathBuf>(file) {
+                                Ok(config) => Ok(config),
+                                Err(err) => Err(D::Error::custom(format!("error in block file '{other}': {err}")))
+                            }
+                            None => {
+                                Err(D::Error::custom(format!("unknown block '{other}'")))
+                            }
+                        }
+                    }
                 }
             }
         }
