@@ -165,7 +165,7 @@ define_blocks!(
     amd_gpu,
     #[deprecated(
         since = "0.33.0",
-        note = "The block has been deprecated in favor of the the packages block"
+        note = "The block has been deprecated in favor of the packages block"
     )]
     apt,
     backlight,
@@ -178,7 +178,7 @@ define_blocks!(
     disk_space,
     #[deprecated(
         since = "0.33.0",
-        note = "The block has been deprecated in favor of the the packages block"
+        note = "The block has been deprecated in favor of the packages block"
     )]
     dnf,
     docker,
@@ -201,7 +201,7 @@ define_blocks!(
     packages,
     #[deprecated(
         since = "0.33.0",
-        note = "The block has been deprecated in favor of the the packages block"
+        note = "The block has been deprecated in favor of the packages block"
     )]
     pacman,
     pomodoro,
