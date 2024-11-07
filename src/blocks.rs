@@ -35,7 +35,6 @@ use serde::de::{self, Deserialize};
 use tokio::sync::{mpsc, Notify};
 
 use std::borrow::Cow;
-use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -140,7 +139,7 @@ macro_rules! define_blocks {
                     )*
                     other => {
                         match util::find_file(other, Some("blocks"), Some("toml")) {
-                            Some(file) => match util::deserialize_toml_file::<BlockConfig, PathBuf>(file) {
+                            Some(file) => match util::deserialize_toml_file::<BlockConfig, _>(file) {
                                 Ok(config) => {
                                     if table.is_empty() {
                                         Ok(config)
