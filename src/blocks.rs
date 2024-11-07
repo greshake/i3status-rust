@@ -141,7 +141,13 @@ macro_rules! define_blocks {
                     other => {
                         match util::find_file(other, Some("blocks"), Some("toml")) {
                             Some(file) => match util::deserialize_toml_file::<BlockConfig, PathBuf>(file) {
-                                Ok(config) => Ok(config),
+                                Ok(config) => {
+                                    if table.is_empty() {
+                                        Ok(config)
+                                    } else {
+                                        Err(D::Error::custom(format!("specifying additional options for {other} at location of inclusion is unsupported")))
+                                    }
+                                },
                                 Err(err) => Err(D::Error::custom(format!("error in block file '{other}': {err}")))
                             }
                             None => {
