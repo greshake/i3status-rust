@@ -16,7 +16,7 @@
     interface = <span class="string">"org.kde.kdeconnect.device.connectivity_report"</span>,
     default_service = <span class="string">"org.kde.kdeconnect"
 </span>)]
-</span><span class="kw">trait </span>ConnectivityDbus {
+</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">trait </span>ConnectivityDbus {
     <span class="attr">#[zbus(signal, name = <span class="string">"refreshed"</span>)]
     </span><span class="kw">fn </span>refreshed(<span class="kw-2">&amp;</span><span class="self">self</span>, network_type: String, network_strength: i32) -&gt; zbus::Result&lt;()&gt;;
 

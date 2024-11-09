@@ -723,7 +723,7 @@
 
 <span class="kw">struct </span>WlGammarelayRs {
     proxy: WlGammarelayRsBusProxy&lt;<span class="lifetime">'static</span>&gt;,
-    updates: zbus::PropertyStream&lt;<span class="lifetime">'static</span>, u16&gt;,
+    updates: zbus::proxy::PropertyStream&lt;<span class="lifetime">'static</span>, u16&gt;,
 }
 
 <span class="kw">impl </span>WlGammarelayRs {

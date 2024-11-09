@@ -349,7 +349,7 @@
 
 </span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
 <span class="kw">use </span>tokio::try_join;
-<span class="kw">use </span>zbus::PropertyStream;
+<span class="kw">use </span>zbus::proxy::PropertyStream;
 
 <span class="kw">const </span>ICON_ON: <span class="kw-2">&amp;</span>str = <span class="string">"bell"</span>;
 <span class="kw">const </span>ICON_OFF: <span class="kw-2">&amp;</span>str = <span class="string">"bell-slash"</span>;
@@ -499,8 +499,8 @@
 }
 <span class="kw">struct </span>SwayNCDriver {
     proxy: SwayNCDbusProxy&lt;<span class="lifetime">'static</span>&gt;,
-    changes: SubscribeStream&lt;<span class="lifetime">'static</span>&gt;,
-    changes_v2: SubscribeV2Stream&lt;<span class="lifetime">'static</span>&gt;,
+    changes: SubscribeStream,
+    changes_v2: SubscribeV2Stream,
 }
 
 <span class="kw">impl </span>SwayNCDriver {

@@ -839,14 +839,14 @@
                     </span>.error(<span class="string">"Failed to create PropertiesProxy"</span>)<span class="question-mark">?</span>,
                 device: Device1Proxy::builder(manager_proxy.inner().connection())
                     <span class="comment">// No caching because https://github.com/greshake/i3status-rust/issues/1565#issuecomment-1379308681
-                    </span>.cache_properties(zbus::CacheProperties::No)
+                    </span>.cache_properties(zbus::proxy::CacheProperties::No)
                     .path(path.clone())
                     .unwrap()
                     .build()
                     .<span class="kw">await
                     </span>.error(<span class="string">"Failed to create Device1Proxy"</span>)<span class="question-mark">?</span>,
                 battery: Battery1Proxy::builder(manager_proxy.inner().connection())
-                    .cache_properties(zbus::CacheProperties::No)
+                    .cache_properties(zbus::proxy::CacheProperties::No)
                     .path(path)
                     .unwrap()
                     .build()

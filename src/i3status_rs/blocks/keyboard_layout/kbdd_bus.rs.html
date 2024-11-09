@@ -68,7 +68,7 @@
 </pre></div><pre class="rust"><code><span class="kw">use super</span>::<span class="kw-2">*</span>;
 
 <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct </span>KbddBus {
-    stream: layoutNameChangedStream&lt;<span class="lifetime">'static</span>&gt;,
+    stream: layoutNameChangedStream,
     info: Info,
 }
 
@@ -76,7 +76,7 @@
     <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">async fn </span>new() -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
         <span class="kw">let </span>conn = new_dbus_connection().<span class="kw">await</span><span class="question-mark">?</span>;
         <span class="kw">let </span>proxy = KbddBusInterfaceProxy::builder(<span class="kw-2">&amp;</span>conn)
-            .cache_properties(zbus::CacheProperties::No)
+            .cache_properties(zbus::proxy::CacheProperties::No)
             .build()
             .<span class="kw">await
             </span>.error(<span class="string">"Failed to create KbddBusInterfaceProxy"</span>)<span class="question-mark">?</span>;

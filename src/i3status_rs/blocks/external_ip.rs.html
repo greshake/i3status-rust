@@ -333,7 +333,7 @@
         proxy
             .add_match_rule(
                 MatchRule::builder()
-                    .msg_type(zbus::MessageType::Signal)
+                    .msg_type(zbus::message::Type::Signal)
                     .path(<span class="string">"/org/freedesktop/NetworkManager"</span>)
                     .and_then(|x| x.interface(<span class="string">"org.freedesktop.DBus.Properties"</span>))
                     .and_then(|x| x.member(<span class="string">"PropertiesChanged"</span>))
@@ -345,7 +345,7 @@
         proxy
             .add_match_rule(
                 MatchRule::builder()
-                    .msg_type(zbus::MessageType::Signal)
+                    .msg_type(zbus::message::Type::Signal)
                     .path_namespace(<span class="string">"/org/freedesktop/NetworkManager/ActiveConnection"</span>)
                     .and_then(|x| x.interface(<span class="string">"org.freedesktop.DBus.Properties"</span>))
                     .and_then(|x| x.member(<span class="string">"PropertiesChanged"</span>))
@@ -357,7 +357,7 @@
         proxy
             .add_match_rule(
                 MatchRule::builder()
-                    .msg_type(zbus::MessageType::Signal)
+                    .msg_type(zbus::message::Type::Signal)
                     .path_namespace(<span class="string">"/org/freedesktop/NetworkManager/IP4Config"</span>)
                     .and_then(|x| x.interface(<span class="string">"org.freedesktop.DBus.Properties"</span>))
                     .and_then(|x| x.member(<span class="string">"PropertiesChanged"</span>))

@@ -59,8 +59,8 @@
 
 <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct </span>LocaleBus {
     proxy: LocaleBusInterfaceProxy&lt;<span class="lifetime">'static</span>&gt;,
-    stream1: zbus::PropertyStream&lt;<span class="lifetime">'static</span>, String&gt;,
-    stream2: zbus::PropertyStream&lt;<span class="lifetime">'static</span>, String&gt;,
+    stream1: zbus::proxy::PropertyStream&lt;<span class="lifetime">'static</span>, String&gt;,
+    stream2: zbus::proxy::PropertyStream&lt;<span class="lifetime">'static</span>, String&gt;,
 }
 
 <span class="kw">impl </span>LocaleBus {

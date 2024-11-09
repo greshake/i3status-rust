@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["DriverType"],"fn":["run"],"struct":["Config","DunstDbusProxy","DunstDbusProxyBlocking","Subscribe","SubscribeArgs","SubscribeIterator","SubscribeStream","SubscribeV2","SubscribeV2Args","SubscribeV2Iterator","SubscribeV2Stream","SwayNCDbusProxy","SwayNCDbusProxyBlocking"]};
+window.SIDEBAR_ITEMS = {"enum":["DriverType"],"fn":["run"],"struct":["Config"]};

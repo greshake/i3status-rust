@@ -686,8 +686,8 @@
     connectivity_proxy: ConnectivityDbusProxy&lt;<span class="lifetime">'static</span>&gt;,
     device_signals: zbus::proxy::SignalStream&lt;<span class="lifetime">'static</span>&gt;,
     notifications_signals: zbus::proxy::SignalStream&lt;<span class="lifetime">'static</span>&gt;,
-    battery_refreshed: battery::refreshedStream&lt;<span class="lifetime">'static</span>&gt;,
-    connectivity_refreshed: connectivity_report::refreshedStream&lt;<span class="lifetime">'static</span>&gt;,
+    battery_refreshed: battery::refreshedStream,
+    connectivity_refreshed: connectivity_report::refreshedStream,
 }
 
 <span class="kw">struct </span>DeviceInfo {
@@ -806,7 +806,7 @@
 
         <span class="kw">for </span>id <span class="kw">in </span>devices {
             <span class="kw">let </span>device_proxy = DeviceDbusProxy::builder(daemon_proxy.inner().connection())
-                .cache_properties(zbus::CacheProperties::No)
+                .cache_properties(zbus::proxy::CacheProperties::No)
                 .path(<span class="macro">format!</span>(<span class="string">"/modules/kdeconnect/devices/{id}"</span>))
                 .unwrap()
                 .build()
@@ -830,7 +830,7 @@
         <span class="kw">let </span>connectivity_path = <span class="macro">format!</span>(<span class="string">"{device_path}/connectivity_report"</span>);
 
         <span class="kw">let </span>battery_proxy = BatteryDbusProxy::builder(daemon_proxy.inner().connection())
-            .cache_properties(zbus::CacheProperties::No)
+            .cache_properties(zbus::proxy::CacheProperties::No)
             .path(battery_path)
             .error(<span class="string">"Failed to set battery path"</span>)<span class="question-mark">?
             </span>.build()
@@ -838,14 +838,14 @@
             </span>.error(<span class="string">"Failed to create BatteryDbusProxy"</span>)<span class="question-mark">?</span>;
         <span class="kw">let </span>notifications_proxy =
             NotificationsDbusProxy::builder(daemon_proxy.inner().connection())
-                .cache_properties(zbus::CacheProperties::No)
+                .cache_properties(zbus::proxy::CacheProperties::No)
                 .path(notifications_path)
                 .error(<span class="string">"Failed to set notifications path"</span>)<span class="question-mark">?
                 </span>.build()
                 .<span class="kw">await
                 </span>.error(<span class="string">"Failed to create BatteryDbusProxy"</span>)<span class="question-mark">?</span>;
         <span class="kw">let </span>connectivity_proxy = ConnectivityDbusProxy::builder(daemon_proxy.inner().connection())
-            .cache_properties(zbus::CacheProperties::No)
+            .cache_properties(zbus::proxy::CacheProperties::No)
             .path(connectivity_path)
             .error(<span class="string">"Failed to set connectivity path"</span>)<span class="question-mark">?
             </span>.build()

@@ -963,7 +963,7 @@
 
     <span class="kw">let </span><span class="kw-2">mut </span>properties_stream = MessageStream::for_match_rule(
         MatchRule::builder()
-            .msg_type(zbus::MessageType::Signal)
+            .msg_type(zbus::message::Type::Signal)
             .interface(<span class="string">"org.freedesktop.DBus.Properties"</span>)
             .and_then(|x| x.member(<span class="string">"PropertiesChanged"</span>))
             .and_then(|x| x.path(<span class="string">"/org/mpris/MediaPlayer2"</span>))
@@ -977,7 +977,7 @@
 
     <span class="kw">let </span><span class="kw-2">mut </span>name_owner_changed_stream = MessageStream::for_match_rule(
         MatchRule::builder()
-            .msg_type(zbus::MessageType::Signal)
+            .msg_type(zbus::message::Type::Signal)
             .interface(<span class="string">"org.freedesktop.DBus"</span>)
             .and_then(|x| x.member(<span class="string">"NameOwnerChanged"</span>))
             .and_then(|x| x.arg0ns(<span class="string">"org.mpris.MediaPlayer2"</span>))

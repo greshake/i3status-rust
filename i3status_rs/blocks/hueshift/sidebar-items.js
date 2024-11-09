@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["HueShifter"],"fn":["run"],"struct":["Config","WlGammarelayRsBusProxy","WlGammarelayRsBusProxyBlocking"]};
+window.SIDEBAR_ITEMS = {"enum":["HueShifter"],"fn":["run"],"struct":["Config"]};

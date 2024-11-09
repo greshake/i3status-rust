@@ -277,7 +277,7 @@
 
 <span class="kw">struct </span>DeviceConnection {
     device_proxy: DeviceProxy&lt;<span class="lifetime">'static</span>&gt;,
-    changes: PropertiesChangedStream&lt;<span class="lifetime">'static</span>&gt;,
+    changes: PropertiesChangedStream,
 }
 
 <span class="kw">impl </span>DeviceConnection {
@@ -364,8 +364,8 @@
     device: DeviceName,
     dev_model: <span class="prelude-ty">Option</span>&lt;String&gt;,
     device_conn: <span class="prelude-ty">Option</span>&lt;DeviceConnection&gt;,
-    device_added_stream: DeviceAddedStream&lt;<span class="lifetime">'static</span>&gt;,
-    device_removed_stream: DeviceRemovedStream&lt;<span class="lifetime">'static</span>&gt;,
+    device_added_stream: DeviceAddedStream,
+    device_removed_stream: DeviceRemovedStream,
 }
 
 <span class="kw">impl </span>Device {

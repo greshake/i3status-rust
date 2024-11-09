@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["DriverType"],"fn":["run"],"struct":["Config","UnitProxy","UnitProxyBlocking"]};
+window.SIDEBAR_ITEMS = {"enum":["DriverType"],"fn":["run"],"struct":["Config"]};
