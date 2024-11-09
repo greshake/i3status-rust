@@ -106,5 +106,6 @@ pub fn events_stream(
 
         Some((event, (events, None)))
     })
+    .fuse()
     .boxed_local()
 }
