@@ -204,7 +204,7 @@ impl<'a> Monitor<'a> {
 }
 
 #[async_trait]
-impl<'a> PrivacyMonitor for Monitor<'a> {
+impl PrivacyMonitor for Monitor<'_> {
     async fn get_info(&mut self) -> Result<PrivacyInfo> {
         let client = CLIENT.as_ref().error("Could not get client")?;
         let data = client.data.lock().unwrap();

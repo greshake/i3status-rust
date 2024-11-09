@@ -40,7 +40,7 @@ impl<'de, const ALLOW_ONCE: bool> Deserialize<'de> for Seconds<ALLOW_ONCE> {
     {
         struct SecondsVisitor<const ALLOW_ONCE: bool>;
 
-        impl<'de, const ALLOW_ONCE: bool> de::Visitor<'de> for SecondsVisitor<ALLOW_ONCE> {
+        impl<const ALLOW_ONCE: bool> de::Visitor<'_> for SecondsVisitor<ALLOW_ONCE> {
             type Value = Seconds<ALLOW_ONCE>;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -96,7 +96,7 @@ impl<'de> Deserialize<'de> for ShellString {
     {
         struct Visitor;
 
-        impl<'de> de::Visitor<'de> for Visitor {
+        impl de::Visitor<'_> for Visitor {
             type Value = ShellString;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -216,7 +216,7 @@ impl<'de> Deserialize<'de> for SerdeRegex {
     {
         struct Visitor;
 
-        impl<'de> de::Visitor<'de> for Visitor {
+        impl de::Visitor<'_> for Visitor {
             type Value = SerdeRegex;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -238,10 +238,10 @@ impl<'de> Deserialize<'de> for SerdeRegex {
 /// Display a slice. Similar to Debug impl for slice, but uses Display impl for elements.
 pub struct DisplaySlice<'a, T>(pub &'a [T]);
 
-impl<'a, T: Display> Display for DisplaySlice<'a, T> {
+impl<T: Display> Display for DisplaySlice<'_, T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         struct DisplayAsDebug<'a, T>(&'a T);
-        impl<'a, T: Display> fmt::Debug for DisplayAsDebug<'a, T> {
+        impl<T: Display> fmt::Debug for DisplayAsDebug<'_, T> {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 fmt::Display::fmt(self.0, f)
             }

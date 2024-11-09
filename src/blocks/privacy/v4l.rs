@@ -96,7 +96,7 @@ impl<'a> Monitor<'a> {
 }
 
 #[async_trait]
-impl<'a> PrivacyMonitor for Monitor<'a> {
+impl PrivacyMonitor for Monitor<'_> {
     async fn get_info(&mut self) -> Result<PrivacyInfo> {
         let mut mapping: PrivacyInfo = PrivacyInfo::new();
 

@@ -31,7 +31,7 @@ impl<'de> Deserialize<'de> for Separator {
     {
         struct SeparatorVisitor;
 
-        impl<'de> Visitor<'de> for SeparatorVisitor {
+        impl Visitor<'_> for SeparatorVisitor {
             type Value = Separator;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {

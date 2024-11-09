@@ -93,7 +93,7 @@ impl<'de> Deserialize<'de> for MouseButton {
     {
         struct MouseButtonVisitor;
 
-        impl<'de> Visitor<'de> for MouseButtonVisitor {
+        impl Visitor<'_> for MouseButtonVisitor {
             type Value = MouseButton;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {

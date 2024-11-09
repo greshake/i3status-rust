@@ -250,7 +250,7 @@ impl<'de> Deserialize<'de> for Color {
     {
         struct ColorVisitor;
 
-        impl<'de> Visitor<'de> for ColorVisitor {
+        impl Visitor<'_> for ColorVisitor {
             type Value = Color;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
