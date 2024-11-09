@@ -32,14 +32,14 @@ rustdoc-args = ["--cfg", "docsrs"]
 async-trait = "0.1"
 backon = { version = "1.2", default-features = false, features = ["tokio-sleep"] }
 base64 = { version = "0.22.1" }
-calibright = { version = "0.1.6", features = ["watch"] }
+calibright = { version = "0.1.9", features = ["watch"] }
 chrono = { version = "0.4", default-features = false, features = ["clock", "unstable-locales"] }
 chrono-tz = { version = "0.9", features = ["serde"] }
 clap = { version = "4.0", default-features = false, features = ["std", "derive", "help", "usage"] }
 debounced = "0.2.0"
 dirs = "5.0"
 env_logger = "0.11"
-futures = { version = "0.3", default-features = false }
+futures = { version = "0.3.31", default-features = false }
 glob = { version = "0.3.1", optional = true }
 hyper = "0.14"
 iana-time-zone = "0.1.60"
@@ -61,7 +61,7 @@ nom = "7.1.2"
 notmuch = { version = "0.8", optional = true }
 oauth2 = { version = "4.4.2" }
 pipewire = { version = "0.8", default-features = false, optional = true }
-quick-xml = { version = "0.31.0", features = ["serialize"] }
+quick-xml = { version = "0.36.1", features = ["serialize"] }
 regex = "1.5"
 reqwest = { version = "0.11", features = ["json"] }
 sensors = "0.2.2"
@@ -77,7 +77,7 @@ toml = { version = "0.8", features = ["preserve_order"] }
 unicode-segmentation = "1.10.1"
 wayrs-client = { version = "1.0", features = ["tokio"] }
 wayrs-protocols = { version = "0.14", features = ["wlr-foreign-toplevel-management-unstable-v1"] }
-zbus = { version = "4", default-features = false, features = ["tokio"] }
+zbus = { version = "5", default-features = false, features = ["tokio"] }
 
 [dependencies.tokio]
 version = "1.12"

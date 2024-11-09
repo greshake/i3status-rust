@@ -2,7 +2,7 @@
     interface = "org.kde.kdeconnect.device.connectivity_report",
     default_service = "org.kde.kdeconnect"
 )]
-trait ConnectivityDbus {
+pub(super) trait ConnectivityDbus {
     #[zbus(signal, name = "refreshed")]
     fn refreshed(&self, network_type: String, network_strength: i32) -> zbus::Result<()>;
 

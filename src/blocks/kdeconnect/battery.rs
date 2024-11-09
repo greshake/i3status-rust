@@ -2,7 +2,7 @@
     interface = "org.kde.kdeconnect.device.battery",
     default_service = "org.kde.kdeconnect"
 )]
-trait BatteryDbus {
+pub(super) trait BatteryDbus {
     #[zbus(signal, name = "refreshed")]
     fn refreshed(&self, is_charging: bool, charge: i32) -> zbus::Result<()>;
 

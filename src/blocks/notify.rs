@@ -58,7 +58,7 @@
 
 use super::prelude::*;
 use tokio::try_join;
-use zbus::PropertyStream;
+use zbus::proxy::PropertyStream;
 
 const ICON_ON: &str = "bell";
 const ICON_OFF: &str = "bell-slash";
@@ -208,8 +208,8 @@ trait DunstDbus {
 }
 struct SwayNCDriver {
     proxy: SwayNCDbusProxy<'static>,
-    changes: SubscribeStream<'static>,
-    changes_v2: SubscribeV2Stream<'static>,
+    changes: SubscribeStream,
+    changes_v2: SubscribeV2Stream,
 }
 
 impl SwayNCDriver {

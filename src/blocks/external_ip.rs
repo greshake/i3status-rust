@@ -91,7 +91,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         proxy
             .add_match_rule(
                 MatchRule::builder()
-                    .msg_type(zbus::MessageType::Signal)
+                    .msg_type(zbus::message::Type::Signal)
                     .path("/org/freedesktop/NetworkManager")
                     .and_then(|x| x.interface("org.freedesktop.DBus.Properties"))
                     .and_then(|x| x.member("PropertiesChanged"))
@@ -103,7 +103,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         proxy
             .add_match_rule(
                 MatchRule::builder()
-                    .msg_type(zbus::MessageType::Signal)
+                    .msg_type(zbus::message::Type::Signal)
                     .path_namespace("/org/freedesktop/NetworkManager/ActiveConnection")
                     .and_then(|x| x.interface("org.freedesktop.DBus.Properties"))
                     .and_then(|x| x.member("PropertiesChanged"))
@@ -115,7 +115,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         proxy
             .add_match_rule(
                 MatchRule::builder()
-                    .msg_type(zbus::MessageType::Signal)
+                    .msg_type(zbus::message::Type::Signal)
                     .path_namespace("/org/freedesktop/NetworkManager/IP4Config")
                     .and_then(|x| x.interface("org.freedesktop.DBus.Properties"))
                     .and_then(|x| x.member("PropertiesChanged"))
