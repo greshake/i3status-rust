@@ -38,20 +38,12 @@ where
 
     let mut prev_merge_with_next = false;
 
-    if let Separator::Custom(start_separator) = &config.theme.start_separator {
-        rendered_blocks.push(I3BarBlock {
-            full_text: start_separator.clone(),
-            background: Color::None,
-            color: prev_last_bg,
-            ..Default::default()
-        });
-    }
-
-    for widgets in blocks
+    for (i, widgets) in blocks
         .iter()
         .map(|x| x.borrow())
         .filter(|x| !x.segments.is_empty())
         .cloned()
+        .enumerate()
     {
         let RenderedBlock {
             mut segments,
@@ -73,7 +65,12 @@ where
             alt = !alt;
         }
 
-        if let Separator::Custom(separator) = &config.theme.separator {
+        let separator = match &config.theme.start_separator {
+            Separator::Custom(_) if i == 0 => &config.theme.start_separator,
+            _ => &config.theme.separator,
+        };
+
+        if let Separator::Custom(separator) = separator {
             if !prev_merge_with_next {
                 // The first widget's BG is used to get the FG color for the current separator
                 let sep_fg = if config.theme.separator_fg == Color::Auto {
