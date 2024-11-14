@@ -1,5 +1,5 @@
 use chrono::format::{Fixed, Item, StrftimeItems};
-use chrono::{DateTime, Datelike, Local, LocalResult, Locale, TimeZone, Timelike};
+use chrono::{DateTime, Local, Locale, TimeZone};
 use chrono_tz::{OffsetName, Tz};
 
 use std::fmt::Display;
@@ -117,31 +117,7 @@ impl TimezoneName for Local {
         let tz = tz_name
             .parse::<Tz>()
             .error("Could not parse local timezone")?;
-
-        match tz.with_ymd_and_hms(
-            datetime.year(),
-            datetime.month(),
-            datetime.day(),
-            datetime.hour(),
-            datetime.minute(),
-            datetime.second(),
-        ) {
-            LocalResult::Single(tz_datetime) => Ok(Item::OwnedLiteral(
-                tz_datetime
-                    .offset()
-                    .abbreviation()
-                    .error("Timezone name unknown")?
-                    .into(),
-            )),
-            LocalResult::Ambiguous(..) => {
-                error!("Timezone is ambiguous");
-                todo!();
-            }
-            LocalResult::None => {
-                error!("Timezone is none");
-                todo!();
-            }
-        }
+        Tz::timezone_name(&datetime.with_timezone(&tz)).map(|x| x.to_owned())
     }
 }
 
