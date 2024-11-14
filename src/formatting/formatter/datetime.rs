@@ -1,5 +1,5 @@
 use chrono::format::{Fixed, Item, StrftimeItems};
-use chrono::{DateTime, Datelike, Local, LocalResult, Locale, TimeZone, Timelike};
+use chrono::{DateTime, Local, Locale, TimeZone};
 use chrono_tz::{OffsetName, Tz};
 
 use std::fmt::Display;
@@ -95,52 +95,29 @@ impl DatetimeFormatter {
 }
 
 pub(crate) trait TimezoneName {
-    fn timezone_name(datetime: &DateTime<Self>) -> Item
+    fn timezone_name(datetime: &DateTime<Self>) -> Result<Item>
     where
         Self: TimeZone;
 }
 
 impl TimezoneName for Tz {
-    fn timezone_name(datetime: &DateTime<Tz>) -> Item {
-        Item::Literal(datetime.offset().abbreviation())
+    fn timezone_name(datetime: &DateTime<Tz>) -> Result<Item> {
+        Ok(Item::Literal(
+            datetime
+                .offset()
+                .abbreviation()
+                .error("Timezone name unknown")?,
+        ))
     }
 }
 
 impl TimezoneName for Local {
-    fn timezone_name(datetime: &DateTime<Local>) -> Item {
-        let fallback = Item::Fixed(Fixed::TimezoneName);
-        let Ok(tz_name) = iana_time_zone::get_timezone() else {
-            error!("Could not get local timezone");
-            return fallback;
-        };
-        let tz = match tz_name.parse::<Tz>() {
-            Ok(tz) => tz,
-            Err(e) => {
-                error!("{}", e);
-                return fallback;
-            }
-        };
-
-        match tz.with_ymd_and_hms(
-            datetime.year(),
-            datetime.month(),
-            datetime.day(),
-            datetime.hour(),
-            datetime.minute(),
-            datetime.second(),
-        ) {
-            LocalResult::Single(tz_datetime) => {
-                Item::OwnedLiteral(tz_datetime.offset().abbreviation().into())
-            }
-            LocalResult::Ambiguous(..) => {
-                error!("Timezone is ambiguous");
-                fallback
-            }
-            LocalResult::None => {
-                error!("Timezone is none");
-                fallback
-            }
-        }
+    fn timezone_name(datetime: &DateTime<Local>) -> Result<Item> {
+        let tz_name = iana_time_zone::get_timezone().error("Could not get local timezone")?;
+        let tz = tz_name
+            .parse::<Tz>()
+            .error("Could not parse local timezone")?;
+        Tz::timezone_name(&datetime.with_timezone(&tz)).map(|x| x.to_owned())
     }
 }
 
@@ -170,7 +147,13 @@ impl Formatter for DatetimeFormatter {
             Ok(match this {
                 DatetimeFormatter::Chrono { items, locale } => {
                     let new_items = items.iter().map(|item| match item {
-                        Item::Fixed(Fixed::TimezoneName) => T::timezone_name(&datetime),
+                        Item::Fixed(Fixed::TimezoneName) => match T::timezone_name(&datetime) {
+                            Ok(name) => name,
+                            Err(e) => {
+                                error!("{e}");
+                                Item::Fixed(Fixed::TimezoneName)
+                            }
+                        },
                         item => borrow_item(item),
                     });
                     match *locale {

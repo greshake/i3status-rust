@@ -34,7 +34,7 @@ backon = { version = "1.2", default-features = false, features = ["tokio-sleep"]
 base64 = { version = "0.22.1" }
 calibright = { version = "0.1.9", features = ["watch"] }
 chrono = { version = "0.4", default-features = false, features = ["clock", "unstable-locales"] }
-chrono-tz = { version = "0.9", features = ["serde"] }
+chrono-tz = { version = "0.10", features = ["serde"] }
 clap = { version = "4.0", default-features = false, features = ["std", "derive", "help", "usage"] }
 debounced = "0.2.0"
 dirs = "5.0"
