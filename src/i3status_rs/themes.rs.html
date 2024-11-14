@@ -213,6 +213,11 @@
 <a href="#213" id="213">213</a>
 <a href="#214" id="214">214</a>
 <a href="#215" id="215">215</a>
+<a href="#216" id="216">216</a>
+<a href="#217" id="217">217</a>
+<a href="#218" id="218">218</a>
+<a href="#219" id="219">219</a>
+<a href="#220" id="220">220</a>
 </pre></div><pre class="rust"><code><span class="kw">pub mod </span>color;
 <span class="kw">pub mod </span>separator;
 
@@ -269,6 +274,7 @@
     <span class="kw">pub </span>alternating_tint_bg: Color,
     <span class="kw">pub </span>alternating_tint_fg: Color,
     <span class="kw">pub </span>end_separator: Separator,
+    <span class="kw">pub </span>start_separator: Separator,
 }
 
 <span class="kw">impl </span>Theme {
@@ -290,6 +296,9 @@
         }
         <span class="kw">if let </span><span class="prelude-val">Some</span>(end_separator) = overrides.end_separator {
             <span class="self">self</span>.end_separator = end_separator;
+        }
+        <span class="kw">if let </span><span class="prelude-val">Some</span>(start_separator) = overrides.start_separator {
+            <span class="self">self</span>.start_separator = start_separator;
         }
 
         <span class="macro">macro_rules!</span> apply {
@@ -343,6 +352,7 @@
     <span class="kw">pub </span>alternating_tint_bg: <span class="prelude-ty">Option</span>&lt;ColorOrLink&gt;,
     <span class="kw">pub </span>alternating_tint_fg: <span class="prelude-ty">Option</span>&lt;ColorOrLink&gt;,
     <span class="kw">pub </span>end_separator: <span class="prelude-ty">Option</span>&lt;Separator&gt;,
+    <span class="kw">pub </span>start_separator: <span class="prelude-ty">Option</span>&lt;Separator&gt;,
 }
 
 <span class="kw">impl </span>TryFrom&lt;ThemeUserConfig&gt; <span class="kw">for </span>Theme {

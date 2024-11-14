@@ -116,6 +116,12 @@
 <a href="#116" id="116">116</a>
 <a href="#117" id="117">117</a>
 <a href="#118" id="118">118</a>
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
 </pre></div><pre class="rust"><code><span class="kw">pub mod </span>i3bar_block;
 <span class="kw">pub mod </span>i3bar_event;
 
@@ -156,11 +162,12 @@
 
     <span class="kw">let </span><span class="kw-2">mut </span>prev_merge_with_next = <span class="bool-val">false</span>;
 
-    <span class="kw">for </span>widgets <span class="kw">in </span>blocks
+    <span class="kw">for </span>(i, widgets) <span class="kw">in </span>blocks
         .iter()
         .map(|x| x.borrow())
         .filter(|x| !x.segments.is_empty())
         .cloned()
+        .enumerate()
     {
         <span class="kw">let </span>RenderedBlock {
             <span class="kw-2">mut </span>segments,
@@ -182,7 +189,12 @@
             alt = !alt;
         }
 
-        <span class="kw">if let </span>Separator::Custom(separator) = <span class="kw-2">&amp;</span>config.theme.separator {
+        <span class="kw">let </span>separator = <span class="kw">match </span><span class="kw-2">&amp;</span>config.theme.start_separator {
+            Separator::Custom(<span class="kw">_</span>) <span class="kw">if </span>i == <span class="number">0 </span>=&gt; <span class="kw-2">&amp;</span>config.theme.start_separator,
+            <span class="kw">_ </span>=&gt; <span class="kw-2">&amp;</span>config.theme.separator,
+        };
+
+        <span class="kw">if let </span>Separator::Custom(separator) = separator {
             <span class="kw">if </span>!prev_merge_with_next {
                 <span class="comment">// The first widget's BG is used to get the FG color for the current separator
                 </span><span class="kw">let </span>sep_fg = <span class="kw">if </span>config.theme.separator_fg == Color::Auto {
