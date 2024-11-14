@@ -196,25 +196,8 @@
 <a href="#196" id="196">196</a>
 <a href="#197" id="197">197</a>
 <a href="#198" id="198">198</a>
-<a href="#199" id="199">199</a>
-<a href="#200" id="200">200</a>
-<a href="#201" id="201">201</a>
-<a href="#202" id="202">202</a>
-<a href="#203" id="203">203</a>
-<a href="#204" id="204">204</a>
-<a href="#205" id="205">205</a>
-<a href="#206" id="206">206</a>
-<a href="#207" id="207">207</a>
-<a href="#208" id="208">208</a>
-<a href="#209" id="209">209</a>
-<a href="#210" id="210">210</a>
-<a href="#211" id="211">211</a>
-<a href="#212" id="212">212</a>
-<a href="#213" id="213">213</a>
-<a href="#214" id="214">214</a>
-<a href="#215" id="215">215</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>chrono::format::{Fixed, Item, StrftimeItems};
-<span class="kw">use </span>chrono::{DateTime, Datelike, Local, LocalResult, Locale, TimeZone, Timelike};
+<span class="kw">use </span>chrono::{DateTime, Local, Locale, TimeZone};
 <span class="kw">use </span>chrono_tz::{OffsetName, Tz};
 
 <span class="kw">use </span>std::fmt::Display;
@@ -310,52 +293,29 @@
 }
 
 <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">trait </span>TimezoneName {
-    <span class="kw">fn </span>timezone_name(datetime: <span class="kw-2">&amp;</span>DateTime&lt;<span class="self">Self</span>&gt;) -&gt; Item
+    <span class="kw">fn </span>timezone_name(datetime: <span class="kw-2">&amp;</span>DateTime&lt;<span class="self">Self</span>&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Item&gt;
     <span class="kw">where
         </span><span class="self">Self</span>: TimeZone;
 }
 
 <span class="kw">impl </span>TimezoneName <span class="kw">for </span>Tz {
-    <span class="kw">fn </span>timezone_name(datetime: <span class="kw-2">&amp;</span>DateTime&lt;Tz&gt;) -&gt; Item {
-        Item::Literal(datetime.offset().abbreviation())
+    <span class="kw">fn </span>timezone_name(datetime: <span class="kw-2">&amp;</span>DateTime&lt;Tz&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Item&gt; {
+        <span class="prelude-val">Ok</span>(Item::Literal(
+            datetime
+                .offset()
+                .abbreviation()
+                .error(<span class="string">"Timezone name unknown"</span>)<span class="question-mark">?</span>,
+        ))
     }
 }
 
 <span class="kw">impl </span>TimezoneName <span class="kw">for </span>Local {
-    <span class="kw">fn </span>timezone_name(datetime: <span class="kw-2">&amp;</span>DateTime&lt;Local&gt;) -&gt; Item {
-        <span class="kw">let </span>fallback = Item::Fixed(Fixed::TimezoneName);
-        <span class="kw">let </span><span class="prelude-val">Ok</span>(tz_name) = iana_time_zone::get_timezone() <span class="kw">else </span>{
-            <span class="macro">error!</span>(<span class="string">"Could not get local timezone"</span>);
-            <span class="kw">return </span>fallback;
-        };
-        <span class="kw">let </span>tz = <span class="kw">match </span>tz_name.parse::&lt;Tz&gt;() {
-            <span class="prelude-val">Ok</span>(tz) =&gt; tz,
-            <span class="prelude-val">Err</span>(e) =&gt; {
-                <span class="macro">error!</span>(<span class="string">"{}"</span>, e);
-                <span class="kw">return </span>fallback;
-            }
-        };
-
-        <span class="kw">match </span>tz.with_ymd_and_hms(
-            datetime.year(),
-            datetime.month(),
-            datetime.day(),
-            datetime.hour(),
-            datetime.minute(),
-            datetime.second(),
-        ) {
-            LocalResult::Single(tz_datetime) =&gt; {
-                Item::OwnedLiteral(tz_datetime.offset().abbreviation().into())
-            }
-            LocalResult::Ambiguous(..) =&gt; {
-                <span class="macro">error!</span>(<span class="string">"Timezone is ambiguous"</span>);
-                fallback
-            }
-            LocalResult::None =&gt; {
-                <span class="macro">error!</span>(<span class="string">"Timezone is none"</span>);
-                fallback
-            }
-        }
+    <span class="kw">fn </span>timezone_name(datetime: <span class="kw-2">&amp;</span>DateTime&lt;Local&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Item&gt; {
+        <span class="kw">let </span>tz_name = iana_time_zone::get_timezone().error(<span class="string">"Could not get local timezone"</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span>tz = tz_name
+            .parse::&lt;Tz&gt;()
+            .error(<span class="string">"Could not parse local timezone"</span>)<span class="question-mark">?</span>;
+        Tz::timezone_name(<span class="kw-2">&amp;</span>datetime.with_timezone(<span class="kw-2">&amp;</span>tz)).map(|x| x.to_owned())
     }
 }
 
@@ -385,7 +345,13 @@
             <span class="prelude-val">Ok</span>(<span class="kw">match </span>this {
                 DatetimeFormatter::Chrono { items, locale } =&gt; {
                     <span class="kw">let </span>new_items = items.iter().map(|item| <span class="kw">match </span>item {
-                        Item::Fixed(Fixed::TimezoneName) =&gt; T::timezone_name(<span class="kw-2">&amp;</span>datetime),
+                        Item::Fixed(Fixed::TimezoneName) =&gt; <span class="kw">match </span>T::timezone_name(<span class="kw-2">&amp;</span>datetime) {
+                            <span class="prelude-val">Ok</span>(name) =&gt; name,
+                            <span class="prelude-val">Err</span>(e) =&gt; {
+                                <span class="macro">error!</span>(<span class="string">"{e}"</span>);
+                                Item::Fixed(Fixed::TimezoneName)
+                            }
+                        },
                         item =&gt; borrow_item(item),
                     });
                     <span class="kw">match </span><span class="kw-2">*</span>locale {
