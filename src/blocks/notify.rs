@@ -57,7 +57,7 @@
 //! [^dunst_version_note]: when using `notification_count` with the `dunst` driver use dunst > 1.9.0
 
 use super::prelude::*;
-use tokio::try_join;
+use tokio::{join, try_join};
 use zbus::proxy::PropertyStream;
 
 const ICON_ON: &str = "bell";
@@ -195,6 +195,7 @@ impl Driver for DunstDriver {
     default_service = "org.freedesktop.Notifications",
     default_path = "/org/freedesktop/Notifications"
 )]
+
 trait DunstDbus {
     #[zbus(property, name = "paused")]
     fn paused(&self) -> zbus::Result<bool>;
@@ -235,14 +236,20 @@ impl SwayNCDriver {
 #[async_trait]
 impl Driver for SwayNCDriver {
     async fn is_paused(&self) -> Result<bool> {
-        self.proxy.get_dnd().await.error("Failed to call 'GetDnd'")
+        let (is_dnd, is_inhibited) = join!(self.proxy.get_dnd(), self.proxy.is_inhibited());
+
+        is_dnd
+            .error("Failed to call 'GetDnd'")
+            .map(|is_dnd| is_dnd || is_inhibited.unwrap_or_default())
     }
 
     async fn set_paused(&self, paused: bool) -> Result<()> {
-        self.proxy
-            .set_dnd(paused)
-            .await
-            .error("Failed to call 'SetDnd'")
+        if paused {
+            self.proxy.set_dnd(paused).await
+        } else {
+            join!(self.proxy.set_dnd(paused), self.proxy.clear_inhibitors()).0
+        }
+        .error("Failed to call 'SetDnd'")
     }
 
     async fn notification_show(&self) -> Result<()> {
@@ -280,6 +287,11 @@ trait SwayNCDbus {
     fn notification_count(&self) -> zbus::Result<u32>;
     #[zbus(signal)]
     fn subscribe(&self, count: u32, dnd: bool, cc_open: bool) -> zbus::Result<()>;
+
+    // inhibitors were introduced in v0.8.0
+    fn is_inhibited(&self) -> zbus::Result<bool>;
+    fn clear_inhibitors(&self) -> zbus::Result<bool>;
+    // subscribe_v2 replaced subscribe in v0.8.0
     #[zbus(signal)]
     fn subscribe_v2(
         &self,
