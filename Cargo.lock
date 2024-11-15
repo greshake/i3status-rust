@@ -1164,6 +1164,7 @@ dependencies = [
  "signal-hook",
  "signal-hook-tokio",
  "smart-default",
+ "sunrise-next",
  "swayipc-async",
  "thiserror",
  "tokio",
@@ -2676,6 +2677,15 @@ name = "strsim"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
+
+[[package]]
+name = "sunrise-next"
+version = "1.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ad483e4ba6ee5d9f9c4b7c25d75f0c3b73e5b5fa86d6f6d00302cd093f800cf5"
+dependencies = [
+ "chrono",
+]
 
 [[package]]
 name = "swayipc-async"

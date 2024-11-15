@@ -70,18 +70,20 @@
 //!
 //! # Available Format Keys
 //!
-//!  Key                                         | Value                                                                         | Type   | Unit
-//! ---------------------------------------------|-------------------------------------------------------------------------------|--------|-----
-//! `location`                                   | Location name (exact format depends on the service)                           | Text   | -
-//! `icon{,_ffin}`                               | Icon representing the weather                                                 | Icon   | -
-//! `weather{,_ffin}`                            | Textual brief description of the weather, e.g. "Raining"                      | Text   | -
-//! `weather_verbose{,_ffin}`                    | Textual verbose description of the weather, e.g. "overcast clouds"            | Text   | -
-//! `temp{,_{favg,fmin,fmax,ffin}}`              | Temperature                                                                   | Number | degrees
-//! `apparent{,_{favg,fmin,fmax,ffin}}`          | Australian Apparent Temperature                                               | Number | degrees
-//! `humidity{,_{favg,fmin,fmax,ffin}}`          | Humidity                                                                      | Number | %
-//! `wind{,_{favg,fmin,fmax,ffin}}`              | Wind speed                                                                    | Number | -
-//! `wind_kmh{,_{favg,fmin,fmax,ffin}}`          | Wind speed. The wind speed in km/h                                            | Number | -
-//! `direction{,_{favg,fmin,fmax,ffin}}`         | Wind direction, e.g. "NE"                                                     | Text   | -
+//!  Key                                         | Value                                                                         | Type     | Unit
+//! ---------------------------------------------|-------------------------------------------------------------------------------|----------|-----
+//! `location`                                   | Location name (exact format depends on the service)                           | Text     | -
+//! `icon{,_ffin}`                               | Icon representing the weather                                                 | Icon     | -
+//! `weather{,_ffin}`                            | Textual brief description of the weather, e.g. "Raining"                      | Text     | -
+//! `weather_verbose{,_ffin}`                    | Textual verbose description of the weather, e.g. "overcast clouds"            | Text     | -
+//! `temp{,_{favg,fmin,fmax,ffin}}`              | Temperature                                                                   | Number   | degrees
+//! `apparent{,_{favg,fmin,fmax,ffin}}`          | Australian Apparent Temperature                                               | Number   | degrees
+//! `humidity{,_{favg,fmin,fmax,ffin}}`          | Humidity                                                                      | Number   | %
+//! `wind{,_{favg,fmin,fmax,ffin}}`              | Wind speed                                                                    | Number   | -
+//! `wind_kmh{,_{favg,fmin,fmax,ffin}}`          | Wind speed. The wind speed in km/h                                            | Number   | -
+//! `direction{,_{favg,fmin,fmax,ffin}}`         | Wind direction, e.g. "NE"                                                     | Text     | -
+//! `sunrise`                                    | Time of sunrise                                                               | DateTime | -
+//! `sunset`                                     | Time of sunset                                                                | DateTime | -
 //!
 //! You can use the suffixes noted above to get the following:
 //!
@@ -97,7 +99,7 @@
 //! ----------------|-------------------------------------------|---------------
 //! `toggle_format` | Toggles between `format` and `format_alt` | Left
 //!
-//! # Example
+//! # Examples
 //!
 //! Show detailed weather in San Francisco through the OpenWeatherMap service:
 //!
@@ -112,6 +114,17 @@
 //! city_id = "5398563"
 //! units = "metric"
 //! forecast_hours = 9
+//! ```
+//!
+//! Show sunrise and sunset times in null island
+//!
+//! ```toml
+//! [[block]]
+//! block = "weather"
+//! format = "up $sunrise.datetime(f:'%R') down $sunset.datetime(f:'%R')"
+//! [block.service]
+//! name = "metno"
+//! coordinates = ["0", "0"]
 //! ```
 //!
 //! # Used Icons
@@ -131,6 +144,9 @@
 use std::fmt;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
+
+use chrono::{DateTime, Datelike, Utc};
+use sunrise::{SolarDay, SolarEvent};
 
 use crate::formatting::Format;
 
@@ -255,6 +271,8 @@ struct WeatherResult {
     location: String,
     current_weather: WeatherMoment,
     forecast: Option<Forecast>,
+    sunrise: DateTime<Utc>,
+    sunset: DateTime<Utc>,
 }
 
 impl WeatherResult {
@@ -271,6 +289,8 @@ impl WeatherResult {
             "wind" => Value::number(self.current_weather.wind),
             "wind_kmh" => Value::number(self.current_weather.wind_kmh),
             "direction" => Value::text(convert_wind_direction(self.current_weather.wind_direction).into()),
+            "sunrise" => Value::datetime(self.sunrise, None),
+            "sunset" => Value::datetime(self.sunset, None),
         };
 
         if let Some(forecast) = self.forecast {
@@ -301,6 +321,7 @@ impl WeatherResult {
                 "weather_verbose_ffin" => Value::text(forecast.fin.weather_verbose.clone()),
             }
         }
+
         values
     }
 }
@@ -497,6 +518,23 @@ fn need_forecast(format: &Format, format_alt: Option<&Format>) -> bool {
             || format.contains_key("weather_verbose_ffin")
     }
     has_forecast_key(format) || format_alt.is_some_and(has_forecast_key)
+}
+
+fn calculate_sunrise_sunset(
+    lat: f64,
+    lon: f64,
+    altitude: Option<f64>,
+) -> Result<(DateTime<Utc>, DateTime<Utc>)> {
+    let date = Utc::now();
+    let solar_day = SolarDay::new(lat, lon, date.year(), date.month(), date.day())
+        .with_altitude(altitude.unwrap_or_default());
+
+    Ok((
+        DateTime::<Utc>::from_timestamp(solar_day.event_time(SolarEvent::Sunrise), 0)
+            .error("Unable to convert timestamp to DateTime")?,
+        DateTime::<Utc>::from_timestamp(solar_day.event_time(SolarEvent::Sunset), 0)
+            .error("Unable to convert timestamp to DateTime")?,
+    ))
 }
 
 #[derive(Debug, Deserialize, Clone, Copy, PartialEq, Eq, SmartDefault)]

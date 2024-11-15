@@ -32,6 +32,8 @@ pub struct Config {
 struct LocationInfo {
     query: String,
     name: String,
+    lat: f64,
+    lon: f64,
 }
 
 pub(super) struct Service<'a> {
@@ -45,12 +47,19 @@ impl<'a> Service<'a> {
             None
         } else {
             let coords = config.coordinates.as_ref().error("no location given")?;
-            Some(Self::get_location_query(&coords.0, &coords.1, config.units).await?)
+            Some(
+                Self::get_location_query(
+                    coords.0.parse().error("Unable to convert string to f64")?,
+                    coords.1.parse().error("Unable to convert string to f64")?,
+                    config.units,
+                )
+                .await?,
+            )
         };
         Ok(Self { config, location })
     }
 
-    async fn get_location_query(lat: &str, lon: &str, units: UnitSystem) -> Result<LocationInfo> {
+    async fn get_location_query(lat: f64, lon: f64, units: UnitSystem) -> Result<LocationInfo> {
         let points_url = format!("{API_URL}/points/{lat},{lon}");
 
         let response: ApiPoints = REQWEST_CLIENT
@@ -68,7 +77,12 @@ impl<'a> Service<'a> {
         });
         let location = response.properties.relative_location.properties;
         let name = format!("{}, {}", location.city, location.state);
-        Ok(LocationInfo { query, name })
+        Ok(LocationInfo {
+            query,
+            name,
+            lat,
+            lon,
+        })
     }
 }
 
@@ -233,15 +247,12 @@ impl WeatherProvider for Service<'_> {
         need_forecast: bool,
     ) -> Result<WeatherResult> {
         let location = if let Some(coords) = autolocated {
-            Self::get_location_query(
-                &coords.latitude.to_string(),
-                &coords.longitude.to_string(),
-                self.config.units,
-            )
-            .await?
+            Self::get_location_query(coords.latitude, coords.longitude, self.config.units).await?
         } else {
             self.location.clone().error("No location was provided")?
         };
+
+        let (sunrise, sunset) = calculate_sunrise_sunset(location.lat, location.lon, None)?;
 
         let data: ApiForecastResponse = REQWEST_CLIENT
             .get(location.query)
@@ -264,6 +275,8 @@ impl WeatherProvider for Service<'_> {
                 location: location.name,
                 current_weather,
                 forecast: None,
+                sunrise,
+                sunset,
             });
         }
 
@@ -281,6 +294,8 @@ impl WeatherProvider for Service<'_> {
             location: location.name,
             current_weather,
             forecast,
+            sunrise,
+            sunset,
         })
     }
 }

@@ -189,9 +189,21 @@ impl WeatherProvider for Service<'_> {
             .or_else(|| self.config.coordinates.clone())
             .error("No location given")?;
 
+        let altitude = if let Some(altitude) = &self.config.altitude {
+            Some(altitude.parse().error("Unable to convert string to f64")?)
+        } else {
+            None
+        };
+
+        let (sunrise, sunset) = calculate_sunrise_sunset(
+            lat.parse().error("Unable to convert string to f64")?,
+            lon.parse().error("Unable to convert string to f64")?,
+            altitude,
+        )?;
+
         let querystr: HashMap<&str, String> = map! {
-            "lat" => lat,
-            "lon" => lon,
+            "lat" => &lat,
+            "lon" => &lon,
             [if let Some(alt) = &self.config.altitude] "altitude" => alt,
         };
 
@@ -216,6 +228,8 @@ impl WeatherProvider for Service<'_> {
                 location: location_name,
                 current_weather,
                 forecast: None,
+                sunrise,
+                sunset,
             });
         }
 
@@ -241,6 +255,8 @@ impl WeatherProvider for Service<'_> {
             location: location_name,
             current_weather,
             forecast,
+            sunset,
+            sunrise,
         })
     }
 }
