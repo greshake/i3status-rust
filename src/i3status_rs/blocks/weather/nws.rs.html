@@ -318,6 +318,21 @@
 <a href="#318" id="318">318</a>
 <a href="#319" id="319">319</a>
 <a href="#320" id="320">320</a>
+<a href="#321" id="321">321</a>
+<a href="#322" id="322">322</a>
+<a href="#323" id="323">323</a>
+<a href="#324" id="324">324</a>
+<a href="#325" id="325">325</a>
+<a href="#326" id="326">326</a>
+<a href="#327" id="327">327</a>
+<a href="#328" id="328">328</a>
+<a href="#329" id="329">329</a>
+<a href="#330" id="330">330</a>
+<a href="#331" id="331">331</a>
+<a href="#332" id="332">332</a>
+<a href="#333" id="333">333</a>
+<a href="#334" id="334">334</a>
+<a href="#335" id="335">335</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Support for using the US National Weather Service API.
 //!
 //! The API is documented [here](https://www.weather.gov/documentation/services-web-api).
@@ -352,6 +367,8 @@
 </span><span class="kw">struct </span>LocationInfo {
     query: String,
     name: String,
+    lat: f64,
+    lon: f64,
 }
 
 <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct </span>Service&lt;<span class="lifetime">'a</span>&gt; {
@@ -365,12 +382,19 @@
             <span class="prelude-val">None
         </span>} <span class="kw">else </span>{
             <span class="kw">let </span>coords = config.coordinates.as_ref().error(<span class="string">"no location given"</span>)<span class="question-mark">?</span>;
-            <span class="prelude-val">Some</span>(<span class="self">Self</span>::get_location_query(<span class="kw-2">&amp;</span>coords.<span class="number">0</span>, <span class="kw-2">&amp;</span>coords.<span class="number">1</span>, config.units).<span class="kw">await</span><span class="question-mark">?</span>)
+            <span class="prelude-val">Some</span>(
+                <span class="self">Self</span>::get_location_query(
+                    coords.<span class="number">0</span>.parse().error(<span class="string">"Unable to convert string to f64"</span>)<span class="question-mark">?</span>,
+                    coords.<span class="number">1</span>.parse().error(<span class="string">"Unable to convert string to f64"</span>)<span class="question-mark">?</span>,
+                    config.units,
+                )
+                .<span class="kw">await</span><span class="question-mark">?</span>,
+            )
         };
         <span class="prelude-val">Ok</span>(<span class="self">Self </span>{ config, location })
     }
 
-    <span class="kw">async fn </span>get_location_query(lat: <span class="kw-2">&amp;</span>str, lon: <span class="kw-2">&amp;</span>str, units: UnitSystem) -&gt; <span class="prelude-ty">Result</span>&lt;LocationInfo&gt; {
+    <span class="kw">async fn </span>get_location_query(lat: f64, lon: f64, units: UnitSystem) -&gt; <span class="prelude-ty">Result</span>&lt;LocationInfo&gt; {
         <span class="kw">let </span>points_url = <span class="macro">format!</span>(<span class="string">"{API_URL}/points/{lat},{lon}"</span>);
 
         <span class="kw">let </span>response: ApiPoints = REQWEST_CLIENT
@@ -388,7 +412,12 @@
         });
         <span class="kw">let </span>location = response.properties.relative_location.properties;
         <span class="kw">let </span>name = <span class="macro">format!</span>(<span class="string">"{}, {}"</span>, location.city, location.state);
-        <span class="prelude-val">Ok</span>(LocationInfo { query, name })
+        <span class="prelude-val">Ok</span>(LocationInfo {
+            query,
+            name,
+            lat,
+            lon,
+        })
     }
 }
 
@@ -553,15 +582,12 @@
         need_forecast: bool,
     ) -&gt; <span class="prelude-ty">Result</span>&lt;WeatherResult&gt; {
         <span class="kw">let </span>location = <span class="kw">if let </span><span class="prelude-val">Some</span>(coords) = autolocated {
-            <span class="self">Self</span>::get_location_query(
-                <span class="kw-2">&amp;</span>coords.latitude.to_string(),
-                <span class="kw-2">&amp;</span>coords.longitude.to_string(),
-                <span class="self">self</span>.config.units,
-            )
-            .<span class="kw">await</span><span class="question-mark">?
+            <span class="self">Self</span>::get_location_query(coords.latitude, coords.longitude, <span class="self">self</span>.config.units).<span class="kw">await</span><span class="question-mark">?
         </span>} <span class="kw">else </span>{
             <span class="self">self</span>.location.clone().error(<span class="string">"No location was provided"</span>)<span class="question-mark">?
         </span>};
+
+        <span class="kw">let </span>(sunrise, sunset) = calculate_sunrise_sunset(location.lat, location.lon, <span class="prelude-val">None</span>)<span class="question-mark">?</span>;
 
         <span class="kw">let </span>data: ApiForecastResponse = REQWEST_CLIENT
             .get(location.query)
@@ -584,6 +610,8 @@
                 location: location.name,
                 current_weather,
                 forecast: <span class="prelude-val">None</span>,
+                sunrise,
+                sunset,
             });
         }
 
@@ -601,6 +629,8 @@
             location: location.name,
             current_weather,
             forecast,
+            sunrise,
+            sunset,
         })
     }
 }

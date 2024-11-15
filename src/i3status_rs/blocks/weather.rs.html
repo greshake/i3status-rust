@@ -716,6 +716,44 @@
 <a href="#716" id="716">716</a>
 <a href="#717" id="717">717</a>
 <a href="#718" id="718">718</a>
+<a href="#719" id="719">719</a>
+<a href="#720" id="720">720</a>
+<a href="#721" id="721">721</a>
+<a href="#722" id="722">722</a>
+<a href="#723" id="723">723</a>
+<a href="#724" id="724">724</a>
+<a href="#725" id="725">725</a>
+<a href="#726" id="726">726</a>
+<a href="#727" id="727">727</a>
+<a href="#728" id="728">728</a>
+<a href="#729" id="729">729</a>
+<a href="#730" id="730">730</a>
+<a href="#731" id="731">731</a>
+<a href="#732" id="732">732</a>
+<a href="#733" id="733">733</a>
+<a href="#734" id="734">734</a>
+<a href="#735" id="735">735</a>
+<a href="#736" id="736">736</a>
+<a href="#737" id="737">737</a>
+<a href="#738" id="738">738</a>
+<a href="#739" id="739">739</a>
+<a href="#740" id="740">740</a>
+<a href="#741" id="741">741</a>
+<a href="#742" id="742">742</a>
+<a href="#743" id="743">743</a>
+<a href="#744" id="744">744</a>
+<a href="#745" id="745">745</a>
+<a href="#746" id="746">746</a>
+<a href="#747" id="747">747</a>
+<a href="#748" id="748">748</a>
+<a href="#749" id="749">749</a>
+<a href="#750" id="750">750</a>
+<a href="#751" id="751">751</a>
+<a href="#752" id="752">752</a>
+<a href="#753" id="753">753</a>
+<a href="#754" id="754">754</a>
+<a href="#755" id="755">755</a>
+<a href="#756" id="756">756</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Current weather
 //!
 //! This block displays local weather and temperature information. In order to use this block, you
@@ -788,18 +826,20 @@
 //!
 //! # Available Format Keys
 //!
-//!  Key                                         | Value                                                                         | Type   | Unit
-//! ---------------------------------------------|-------------------------------------------------------------------------------|--------|-----
-//! `location`                                   | Location name (exact format depends on the service)                           | Text   | -
-//! `icon{,_ffin}`                               | Icon representing the weather                                                 | Icon   | -
-//! `weather{,_ffin}`                            | Textual brief description of the weather, e.g. "Raining"                      | Text   | -
-//! `weather_verbose{,_ffin}`                    | Textual verbose description of the weather, e.g. "overcast clouds"            | Text   | -
-//! `temp{,_{favg,fmin,fmax,ffin}}`              | Temperature                                                                   | Number | degrees
-//! `apparent{,_{favg,fmin,fmax,ffin}}`          | Australian Apparent Temperature                                               | Number | degrees
-//! `humidity{,_{favg,fmin,fmax,ffin}}`          | Humidity                                                                      | Number | %
-//! `wind{,_{favg,fmin,fmax,ffin}}`              | Wind speed                                                                    | Number | -
-//! `wind_kmh{,_{favg,fmin,fmax,ffin}}`          | Wind speed. The wind speed in km/h                                            | Number | -
-//! `direction{,_{favg,fmin,fmax,ffin}}`         | Wind direction, e.g. "NE"                                                     | Text   | -
+//!  Key                                         | Value                                                                         | Type     | Unit
+//! ---------------------------------------------|-------------------------------------------------------------------------------|----------|-----
+//! `location`                                   | Location name (exact format depends on the service)                           | Text     | -
+//! `icon{,_ffin}`                               | Icon representing the weather                                                 | Icon     | -
+//! `weather{,_ffin}`                            | Textual brief description of the weather, e.g. "Raining"                      | Text     | -
+//! `weather_verbose{,_ffin}`                    | Textual verbose description of the weather, e.g. "overcast clouds"            | Text     | -
+//! `temp{,_{favg,fmin,fmax,ffin}}`              | Temperature                                                                   | Number   | degrees
+//! `apparent{,_{favg,fmin,fmax,ffin}}`          | Australian Apparent Temperature                                               | Number   | degrees
+//! `humidity{,_{favg,fmin,fmax,ffin}}`          | Humidity                                                                      | Number   | %
+//! `wind{,_{favg,fmin,fmax,ffin}}`              | Wind speed                                                                    | Number   | -
+//! `wind_kmh{,_{favg,fmin,fmax,ffin}}`          | Wind speed. The wind speed in km/h                                            | Number   | -
+//! `direction{,_{favg,fmin,fmax,ffin}}`         | Wind direction, e.g. "NE"                                                     | Text     | -
+//! `sunrise`                                    | Time of sunrise                                                               | DateTime | -
+//! `sunset`                                     | Time of sunset                                                                | DateTime | -
 //!
 //! You can use the suffixes noted above to get the following:
 //!
@@ -815,7 +855,7 @@
 //! ----------------|-------------------------------------------|---------------
 //! `toggle_format` | Toggles between `format` and `format_alt` | Left
 //!
-//! # Example
+//! # Examples
 //!
 //! Show detailed weather in San Francisco through the OpenWeatherMap service:
 //!
@@ -830,6 +870,17 @@
 //! city_id = "5398563"
 //! units = "metric"
 //! forecast_hours = 9
+//! ```
+//!
+//! Show sunrise and sunset times in null island
+//!
+//! ```toml
+//! [[block]]
+//! block = "weather"
+//! format = "up $sunrise.datetime(f:'%R') down $sunset.datetime(f:'%R')"
+//! [block.service]
+//! name = "metno"
+//! coordinates = ["0", "0"]
 //! ```
 //!
 //! # Used Icons
@@ -849,6 +900,9 @@
 </span><span class="kw">use </span>std::fmt;
 <span class="kw">use </span>std::sync::{Arc, Mutex};
 <span class="kw">use </span>std::time::Instant;
+
+<span class="kw">use </span>chrono::{DateTime, Datelike, Utc};
+<span class="kw">use </span>sunrise::{SolarDay, SolarEvent};
 
 <span class="kw">use </span><span class="kw">crate</span>::formatting::Format;
 
@@ -973,6 +1027,8 @@
     location: String,
     current_weather: WeatherMoment,
     forecast: <span class="prelude-ty">Option</span>&lt;Forecast&gt;,
+    sunrise: DateTime&lt;Utc&gt;,
+    sunset: DateTime&lt;Utc&gt;,
 }
 
 <span class="kw">impl </span>WeatherResult {
@@ -989,6 +1045,8 @@
             <span class="string">"wind" </span>=&gt; Value::number(<span class="self">self</span>.current_weather.wind),
             <span class="string">"wind_kmh" </span>=&gt; Value::number(<span class="self">self</span>.current_weather.wind_kmh),
             <span class="string">"direction" </span>=&gt; Value::text(convert_wind_direction(<span class="self">self</span>.current_weather.wind_direction).into()),
+            <span class="string">"sunrise" </span>=&gt; Value::datetime(<span class="self">self</span>.sunrise, <span class="prelude-val">None</span>),
+            <span class="string">"sunset" </span>=&gt; Value::datetime(<span class="self">self</span>.sunset, <span class="prelude-val">None</span>),
         };
 
         <span class="kw">if let </span><span class="prelude-val">Some</span>(forecast) = <span class="self">self</span>.forecast {
@@ -1019,6 +1077,7 @@
                 <span class="string">"weather_verbose_ffin" </span>=&gt; Value::text(forecast.fin.weather_verbose.clone()),
             }
         }
+
         values
     }
 }
@@ -1215,6 +1274,23 @@
             || format.contains_key(<span class="string">"weather_verbose_ffin"</span>)
     }
     has_forecast_key(format) || format_alt.is_some_and(has_forecast_key)
+}
+
+<span class="kw">fn </span>calculate_sunrise_sunset(
+    lat: f64,
+    lon: f64,
+    altitude: <span class="prelude-ty">Option</span>&lt;f64&gt;,
+) -&gt; <span class="prelude-ty">Result</span>&lt;(DateTime&lt;Utc&gt;, DateTime&lt;Utc&gt;)&gt; {
+    <span class="kw">let </span>date = Utc::now();
+    <span class="kw">let </span>solar_day = SolarDay::new(lat, lon, date.year(), date.month(), date.day())
+        .with_altitude(altitude.unwrap_or_default());
+
+    <span class="prelude-val">Ok</span>((
+        DateTime::&lt;Utc&gt;::from_timestamp(solar_day.event_time(SolarEvent::Sunrise), <span class="number">0</span>)
+            .error(<span class="string">"Unable to convert timestamp to DateTime"</span>)<span class="question-mark">?</span>,
+        DateTime::&lt;Utc&gt;::from_timestamp(solar_day.event_time(SolarEvent::Sunset), <span class="number">0</span>)
+            .error(<span class="string">"Unable to convert timestamp to DateTime"</span>)<span class="question-mark">?</span>,
+    ))
 }
 
 <span class="attr">#[derive(Debug, Deserialize, Clone, Copy, PartialEq, Eq, SmartDefault)]

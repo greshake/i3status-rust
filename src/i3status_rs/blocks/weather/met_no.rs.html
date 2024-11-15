@@ -278,6 +278,22 @@
 <a href="#278" id="278">278</a>
 <a href="#279" id="279">279</a>
 <a href="#280" id="280">280</a>
+<a href="#281" id="281">281</a>
+<a href="#282" id="282">282</a>
+<a href="#283" id="283">283</a>
+<a href="#284" id="284">284</a>
+<a href="#285" id="285">285</a>
+<a href="#286" id="286">286</a>
+<a href="#287" id="287">287</a>
+<a href="#288" id="288">288</a>
+<a href="#289" id="289">289</a>
+<a href="#290" id="290">290</a>
+<a href="#291" id="291">291</a>
+<a href="#292" id="292">292</a>
+<a href="#293" id="293">293</a>
+<a href="#294" id="294">294</a>
+<a href="#295" id="295">295</a>
+<a href="#296" id="296">296</a>
 </pre></div><pre class="rust"><code><span class="kw">use super</span>::<span class="kw-2">*</span>;
 
 <span class="kw">type </span>LegendsStore = HashMap&lt;String, LegendsResult&gt;;
@@ -469,9 +485,21 @@
             .or_else(|| <span class="self">self</span>.config.coordinates.clone())
             .error(<span class="string">"No location given"</span>)<span class="question-mark">?</span>;
 
+        <span class="kw">let </span>altitude = <span class="kw">if let </span><span class="prelude-val">Some</span>(altitude) = <span class="kw-2">&amp;</span><span class="self">self</span>.config.altitude {
+            <span class="prelude-val">Some</span>(altitude.parse().error(<span class="string">"Unable to convert string to f64"</span>)<span class="question-mark">?</span>)
+        } <span class="kw">else </span>{
+            <span class="prelude-val">None
+        </span>};
+
+        <span class="kw">let </span>(sunrise, sunset) = calculate_sunrise_sunset(
+            lat.parse().error(<span class="string">"Unable to convert string to f64"</span>)<span class="question-mark">?</span>,
+            lon.parse().error(<span class="string">"Unable to convert string to f64"</span>)<span class="question-mark">?</span>,
+            altitude,
+        )<span class="question-mark">?</span>;
+
         <span class="kw">let </span>querystr: HashMap&lt;<span class="kw-2">&amp;</span>str, String&gt; = <span class="macro">map!</span> {
-            <span class="string">"lat" </span>=&gt; lat,
-            <span class="string">"lon" </span>=&gt; lon,
+            <span class="string">"lat" </span>=&gt; <span class="kw-2">&amp;</span>lat,
+            <span class="string">"lon" </span>=&gt; <span class="kw-2">&amp;</span>lon,
             [<span class="kw">if let </span><span class="prelude-val">Some</span>(alt) = <span class="kw-2">&amp;</span><span class="self">self</span>.config.altitude] <span class="string">"altitude" </span>=&gt; alt,
         };
 
@@ -496,6 +524,8 @@
                 location: location_name,
                 current_weather,
                 forecast: <span class="prelude-val">None</span>,
+                sunrise,
+                sunset,
             });
         }
 
@@ -521,6 +551,8 @@
             location: location_name,
             current_weather,
             forecast,
+            sunset,
+            sunrise,
         })
     }
 }

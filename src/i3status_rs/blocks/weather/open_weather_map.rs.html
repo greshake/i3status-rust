@@ -337,7 +337,19 @@
 <a href="#337" id="337">337</a>
 <a href="#338" id="338">338</a>
 <a href="#339" id="339">339</a>
+<a href="#340" id="340">340</a>
+<a href="#341" id="341">341</a>
+<a href="#342" id="342">342</a>
+<a href="#343" id="343">343</a>
+<a href="#344" id="344">344</a>
+<a href="#345" id="345">345</a>
+<a href="#346" id="346">346</a>
+<a href="#347" id="347">347</a>
+<a href="#348" id="348">348</a>
+<a href="#349" id="349">349</a>
+<a href="#350" id="350">350</a>
 </pre></div><pre class="rust"><code><span class="kw">use super</span>::<span class="kw-2">*</span>;
+<span class="kw">use </span>chrono::{DateTime, Utc};
 <span class="kw">use </span>serde::{de, Deserializer};
 
 <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">const </span>GEO_URL: <span class="kw-2">&amp;</span>str = <span class="string">"https://api.openweathermap.org/geo/1.0"</span>;
@@ -613,11 +625,19 @@
 
         <span class="kw">let </span>current_weather = current_data.to_moment(<span class="self">self</span>.units);
 
+        <span class="kw">let </span>sunrise = DateTime::&lt;Utc&gt;::from_timestamp(current_data.sys.sunrise, <span class="number">0</span>)
+            .error(<span class="string">"Unable to convert timestamp to DateTime"</span>)<span class="question-mark">?</span>;
+
+        <span class="kw">let </span>sunset = DateTime::&lt;Utc&gt;::from_timestamp(current_data.sys.sunset, <span class="number">0</span>)
+            .error(<span class="string">"Unable to convert timestamp to DateTime"</span>)<span class="question-mark">?</span>;
+
         <span class="kw">if </span>!need_forecast || <span class="self">self</span>.forecast_hours == <span class="number">0 </span>{
             <span class="kw">return </span><span class="prelude-val">Ok</span>(WeatherResult {
                 location: current_data.name,
                 current_weather,
                 forecast: <span class="prelude-val">None</span>,
+                sunrise,
+                sunset,
             });
         }
 
@@ -661,6 +681,8 @@
             location: current_data.name,
             current_weather,
             forecast,
+            sunrise,
+            sunset,
         })
     }
 }
