@@ -289,6 +289,18 @@
 <a href="#289" id="289">289</a>
 <a href="#290" id="290">290</a>
 <a href="#291" id="291">291</a>
+<a href="#292" id="292">292</a>
+<a href="#293" id="293">293</a>
+<a href="#294" id="294">294</a>
+<a href="#295" id="295">295</a>
+<a href="#296" id="296">296</a>
+<a href="#297" id="297">297</a>
+<a href="#298" id="298">298</a>
+<a href="#299" id="299">299</a>
+<a href="#300" id="300">300</a>
+<a href="#301" id="301">301</a>
+<a href="#302" id="302">302</a>
+<a href="#303" id="303">303</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Display and toggle the state of notifications daemon
 //!
 //! Left-clicking on this block will enable/disable notifications.
@@ -348,7 +360,7 @@
 //! [^dunst_version_note]: when using `notification_count` with the `dunst` driver use dunst &gt; 1.9.0
 
 </span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
-<span class="kw">use </span>tokio::try_join;
+<span class="kw">use </span>tokio::{join, try_join};
 <span class="kw">use </span>zbus::proxy::PropertyStream;
 
 <span class="kw">const </span>ICON_ON: <span class="kw-2">&amp;</span>str = <span class="string">"bell"</span>;
@@ -486,6 +498,7 @@
     default_service = <span class="string">"org.freedesktop.Notifications"</span>,
     default_path = <span class="string">"/org/freedesktop/Notifications"
 </span>)]
+
 </span><span class="kw">trait </span>DunstDbus {
     <span class="attr">#[zbus(property, name = <span class="string">"paused"</span>)]
     </span><span class="kw">fn </span>paused(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;
@@ -526,14 +539,20 @@
 <span class="attr">#[async_trait]
 </span><span class="kw">impl </span>Driver <span class="kw">for </span>SwayNCDriver {
     <span class="kw">async fn </span>is_paused(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;bool&gt; {
-        <span class="self">self</span>.proxy.get_dnd().<span class="kw">await</span>.error(<span class="string">"Failed to call 'GetDnd'"</span>)
+        <span class="kw">let </span>(is_dnd, is_inhibited) = <span class="macro">join!</span>(<span class="self">self</span>.proxy.get_dnd(), <span class="self">self</span>.proxy.is_inhibited());
+
+        is_dnd
+            .error(<span class="string">"Failed to call 'GetDnd'"</span>)
+            .map(|is_dnd| is_dnd || is_inhibited.unwrap_or_default())
     }
 
     <span class="kw">async fn </span>set_paused(<span class="kw-2">&amp;</span><span class="self">self</span>, paused: bool) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-        <span class="self">self</span>.proxy
-            .set_dnd(paused)
-            .<span class="kw">await
-            </span>.error(<span class="string">"Failed to call 'SetDnd'"</span>)
+        <span class="kw">if </span>paused {
+            <span class="self">self</span>.proxy.set_dnd(paused).<span class="kw">await
+        </span>} <span class="kw">else </span>{
+            <span class="macro">join!</span>(<span class="self">self</span>.proxy.set_dnd(paused), <span class="self">self</span>.proxy.clear_inhibitors()).<span class="number">0
+        </span>}
+        .error(<span class="string">"Failed to call 'SetDnd'"</span>)
     }
 
     <span class="kw">async fn </span>notification_show(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
@@ -571,7 +590,12 @@
     <span class="kw">fn </span>notification_count(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;u32&gt;;
     <span class="attr">#[zbus(signal)]
     </span><span class="kw">fn </span>subscribe(<span class="kw-2">&amp;</span><span class="self">self</span>, count: u32, dnd: bool, cc_open: bool) -&gt; zbus::Result&lt;()&gt;;
-    <span class="attr">#[zbus(signal)]
+
+    <span class="comment">// inhibitors were introduced in v0.8.0
+    </span><span class="kw">fn </span>is_inhibited(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;
+    <span class="kw">fn </span>clear_inhibitors(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; zbus::Result&lt;bool&gt;;
+    <span class="comment">// subscribe_v2 replaced subscribe in v0.8.0
+    </span><span class="attr">#[zbus(signal)]
     </span><span class="kw">fn </span>subscribe_v2(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         count: u32,
