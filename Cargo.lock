@@ -301,9 +301,9 @@ dependencies = [
 
 [[package]]
 name = "calibright"
-version = "0.1.9"
+version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f4be58c171034d3e138dfba7038e42c33919e6c5c51de364136fcaa00c68eee"
+checksum = "2dc8e876806cadb1b6a01a4cc259b8e35f35a37c31dfd7482ac9aec793ecaba1"
 dependencies = [
  "dirs",
  "futures-util",
