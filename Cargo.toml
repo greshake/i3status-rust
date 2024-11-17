@@ -61,7 +61,7 @@ nom = "7.1.2"
 notmuch = { version = "0.8", optional = true }
 oauth2 = { version = "4.4.2" }
 pipewire = { version = "0.8", default-features = false, optional = true }
-quick-xml = { version = "0.36.1", features = ["serialize"] }
+quick-xml = { version = "0.37", features = ["serialize"] }
 regex = "1.5"
 reqwest = { version = "0.11", features = ["json"] }
 sensors = "0.2.2"
@@ -73,7 +73,7 @@ signal-hook-tokio = { version = "0.3", features = ["futures-v0_3"] }
 smart-default = "0.7"
 sunrise-next = "1.2.3"
 swayipc-async = "2.0"
-thiserror = "1.0"
+thiserror = "2.0"
 toml = { version = "0.8", features = ["preserve_order"] }
 unicode-segmentation = "1.10.1"
 wayrs-client = { version = "1.0", features = ["tokio"] }
