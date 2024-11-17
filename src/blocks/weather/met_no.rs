@@ -89,9 +89,7 @@ impl ForecastTimeStep {
         let summary = symbol_code_split.next().unwrap();
 
         // Times of day can be day, night, and polartwilight
-        let is_night = symbol_code_split
-            .next()
-            .map_or(false, |time_of_day| time_of_day == "night");
+        let is_night = symbol_code_split.next() == Some("night");
 
         let translated = service.translate(summary);
 
