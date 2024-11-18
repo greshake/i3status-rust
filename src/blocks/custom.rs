@@ -173,7 +173,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             for file in files {
                 let file = file.expand()?;
                 watches
-                    .add(&*file, WatchMask::MODIFY | WatchMask::CLOSE_WRITE)
+                    .add(
+                        &*file,
+                        WatchMask::MODIFY
+                            | WatchMask::CLOSE_WRITE
+                            | WatchMask::DELETE
+                            | WatchMask::MOVE,
+                    )
                     .error("Failed to add file watch")?;
             }
             Box::pin(
