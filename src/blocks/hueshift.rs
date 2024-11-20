@@ -316,7 +316,7 @@ impl HueShiftDriver for Wlsunset {
         // night temp: 4000K
         // latitude/longitude: NaN
         //     ^ results in sun_condition == POLAR_NIGHT at time of testing
-        // With these defaults, this results in the the color temperature
+        // With these defaults, this results in the color temperature
         // getting set to 4000K.
         spawn_process("pkill", &["wlsunset"])
             .error("Failed to set new color temperature using wlsunset.")

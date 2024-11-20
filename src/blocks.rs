@@ -43,6 +43,8 @@ use crate::errors::*;
 use crate::widget::Widget;
 use crate::{BoxedFuture, Request, RequestCmd};
 
+use crate::util;
+
 macro_rules! define_blocks {
     {
         $(
@@ -135,7 +137,23 @@ macro_rules! define_blocks {
                             ))),
                         )?
                     )*
-                    other => Err(D::Error::custom(format!("unknown block '{other}'")))
+                    other => {
+                        match util::find_file(other, Some("blocks"), Some("toml")) {
+                            Some(file) => match util::deserialize_toml_file::<BlockConfig, _>(file) {
+                                Ok(config) => {
+                                    if table.is_empty() {
+                                        Ok(config)
+                                    } else {
+                                        Err(D::Error::custom(format!("specifying additional options for {other} at location of inclusion is unsupported")))
+                                    }
+                                },
+                                Err(err) => Err(D::Error::custom(format!("error in block file '{other}': {err}")))
+                            }
+                            None => {
+                                Err(D::Error::custom(format!("unknown block '{other}'")))
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -146,7 +164,7 @@ define_blocks!(
     amd_gpu,
     #[deprecated(
         since = "0.33.0",
-        note = "The block has been deprecated in favor of the the packages block"
+        note = "The block has been deprecated in favor of the packages block"
     )]
     apt,
     backlight,
@@ -159,7 +177,7 @@ define_blocks!(
     disk_space,
     #[deprecated(
         since = "0.33.0",
-        note = "The block has been deprecated in favor of the the packages block"
+        note = "The block has been deprecated in favor of the packages block"
     )]
     dnf,
     docker,
@@ -182,7 +200,7 @@ define_blocks!(
     packages,
     #[deprecated(
         since = "0.33.0",
-        note = "The block has been deprecated in favor of the the packages block"
+        note = "The block has been deprecated in favor of the packages block"
     )]
     pacman,
     pomodoro,
