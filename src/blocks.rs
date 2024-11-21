@@ -196,6 +196,7 @@ define_blocks!(
     taskwarrior,
     temperature,
     time,
+    timewarrior,
     tea_timer,
     toggle,
     uptime,
