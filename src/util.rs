@@ -7,6 +7,10 @@ use tokio::process::Command;
 
 use crate::errors::*;
 
+pub async fn file_exists(path: impl AsRef<Path>) -> bool {
+    tokio::fs::metadata(path).await.is_ok()
+}
+
 /// Tries to find a file in standard locations:
 /// - Fist try to find a file by full path (only if path is absolute)
 /// - Then try XDG_CONFIG_HOME (e.g. `~/.config`)
@@ -95,6 +99,27 @@ where
     let contents = std::fs::read_to_string(path)
         .or_error(|| format!("Failed to read file: {}", path.display()))?;
 
+    deserialize_toml_file_string(contents, path)
+}
+
+pub async fn async_deserialize_toml_file<T, P>(path: P) -> Result<T>
+where
+    T: DeserializeOwned,
+    P: AsRef<Path>,
+{
+    let path = path.as_ref();
+
+    let contents = read_file(path)
+        .await
+        .or_error(|| format!("Failed to read file: {}", path.display()))?;
+
+    deserialize_toml_file_string(contents, path)
+}
+
+fn deserialize_toml_file_string<T>(contents: String, path: &Path) -> Result<T>
+where
+    T: DeserializeOwned,
+{
     toml::from_str(&contents).map_err(|err| {
         let location_msg = err
             .span()

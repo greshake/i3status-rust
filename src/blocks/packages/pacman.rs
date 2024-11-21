@@ -72,7 +72,7 @@ impl Backend for Pacman {
 
         // Create symlink to local cache in `checkup-db` if required
         let local_cache = PACMAN_UPDATES_DB.join("local");
-        if !local_cache.exists() {
+        if !file_exists(&local_cache).await {
             symlink(PACMAN_DB.join("local"), local_cache)
                 .await
                 .error("Failed to created required symlink")?;
