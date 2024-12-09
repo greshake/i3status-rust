@@ -56,6 +56,7 @@
 //! `force_prefix`  | force the prefix value instead of setting a "minimal prefix"                                     | `false`
 //! `pad_with`      | the character that is used to pad the number to be `width` long                                  | ` ` (a space)
 //! `range`         | a range of allowed values, in the format `<start>..<end>`, inclusive. Both start and end are optional. Can be used to, for example, hide the block when the value is not in a given range. | `..`
+//! `show`          | show this value. Can be used with `range` for conditional formatting                             | `true`
 //!
 //! ## `bar` - Display numbers as progress bars
 //!
