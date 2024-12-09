@@ -9,6 +9,7 @@ use super::*;
 const DEFAULT_NUMBER_WIDTH: usize = 2;
 
 pub const DEFAULT_NUMBER_FORMATTER: EngFormatter = EngFormatter {
+    show: true,
     width: DEFAULT_NUMBER_WIDTH,
     unit: None,
     unit_has_space: false,
@@ -23,6 +24,7 @@ pub const DEFAULT_NUMBER_FORMATTER: EngFormatter = EngFormatter {
 
 #[derive(Debug)]
 pub struct EngFormatter {
+    show: bool,
     width: usize,
     unit: Option<Unit>,
     unit_has_space: bool,
@@ -105,6 +107,9 @@ impl EngFormatter {
                             ..=end.parse::<f64>().error("invalid range end")?;
                     }
                 }
+                "show" => {
+                    result.show = arg.val.parse().ok().error("show must be true or false")?;
+                }
                 other => {
                     return Err(Error::new(format!("Unknown argument for 'eng': '{other}'")));
                 }
@@ -121,6 +126,10 @@ impl Formatter for EngFormatter {
             Value::Number { mut val, mut unit } => {
                 if !self.range.contains(&val) {
                     return Err(FormatError::NumberOutOfRange(val));
+                }
+
+                if !self.show {
+                    return Ok(String::new());
                 }
 
                 let is_negative = val.is_sign_negative();
