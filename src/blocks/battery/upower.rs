@@ -22,7 +22,7 @@ impl DeviceConnection {
         expected_model: Option<&str>,
     ) -> Result<Option<Self>> {
         let device_proxy =
-            if device.exact().map_or(true, |d| d == "DisplayDevice") && expected_model.is_none() {
+            if device.exact().is_none_or(|d| d == "DisplayDevice") && expected_model.is_none() {
                 DeviceProxy::builder(dbus_conn)
                     .path(DISPLAY_DEVICE_PATH)
                     .unwrap()
