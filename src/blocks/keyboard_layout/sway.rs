@@ -19,8 +19,7 @@ impl Sway {
             .error("failed to get current input")?
             .iter()
             .find_map(|i| {
-                if i.input_type == "keyboard"
-                    && kbd.as_deref().map_or(true, |id| id == i.identifier)
+                if i.input_type == "keyboard" && kbd.as_deref().is_none_or(|id| id == i.identifier)
                 {
                     i.xkb_active_layout_name.clone()
                 } else {
@@ -58,7 +57,7 @@ impl Backend for Sway {
                 if self
                     .kbd
                     .as_deref()
-                    .map_or(true, |id| id == event.input.identifier)
+                    .is_none_or(|id| id == event.input.identifier)
                 {
                     if let Some(new_layout) = event.input.xkb_active_layout_name {
                         if new_layout != self.cur_layout {

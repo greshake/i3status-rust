@@ -314,7 +314,7 @@ async fn get_interfaces(
             }
         }
         let name: String = name.unwrap();
-        if filter.map_or(true, |f| f.is_match(&name)) {
+        if filter.is_none_or(|f| f.is_match(&name)) {
             interfaces.push(Interface {
                 index: msg.ifi_index,
                 operstate,
