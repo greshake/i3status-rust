@@ -1152,6 +1152,7 @@ dependencies = [
  "nix 0.29.0",
  "nom",
  "notmuch",
+ "num-traits",
  "oauth2",
  "pipewire",
  "quick-xml",
