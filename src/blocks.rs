@@ -144,11 +144,6 @@ macro_rules! define_blocks {
 
 define_blocks!(
     amd_gpu,
-    #[deprecated(
-        since = "0.33.0",
-        note = "The block has been deprecated in favor of the the packages block"
-    )]
-    apt,
     backlight,
     battery,
     bluetooth,
@@ -157,11 +152,6 @@ define_blocks!(
     custom,
     custom_dbus,
     disk_space,
-    #[deprecated(
-        since = "0.33.0",
-        note = "The block has been deprecated in favor of the the packages block"
-    )]
-    dnf,
     docker,
     external_ip,
     focused_window,
@@ -180,11 +170,6 @@ define_blocks!(
     notmuch,
     nvidia_gpu,
     packages,
-    #[deprecated(
-        since = "0.33.0",
-        note = "The block has been deprecated in favor of the the packages block"
-    )]
-    pacman,
     pomodoro,
     privacy,
     rofication,
