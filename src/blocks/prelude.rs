@@ -3,7 +3,7 @@ pub use super::{BlockAction, CommonApi};
 pub use crate::click::MouseButton;
 pub use crate::errors::*;
 pub use crate::formatting::{config::Config as FormatConfig, value::Value, Values};
-pub use crate::util::{default, new_dbus_connection, new_system_dbus_connection};
+pub use crate::util::{default, file_exists, new_dbus_connection, new_system_dbus_connection};
 pub use crate::widget::{State, Widget};
 pub use crate::wrappers::{Seconds, ShellString};
 pub(crate) use crate::REQWEST_CLIENT;
