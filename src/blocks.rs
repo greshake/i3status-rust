@@ -156,6 +156,7 @@ define_blocks!(
     cpu,
     custom,
     custom_dbus,
+    disk_stats,
     disk_space,
     #[deprecated(
         since = "0.33.0",
