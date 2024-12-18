@@ -112,12 +112,28 @@ where
     }
 
     if let Separator::Custom(end_separator) = &config.theme.end_separator {
-        rendered_blocks.push(I3BarBlock {
+        // The separator's FG is the last block's last widget's BG
+        let sep_fg = if config.theme.separator_fg == Color::Auto {
+            prev_last_bg
+        } else {
+            config.theme.separator_fg
+        };
+
+        // The separator has no background color
+        let sep_bg = if config.theme.separator_bg == Color::Auto {
+            Color::None
+        } else {
+            config.theme.separator_bg
+        };
+
+        let separator = I3BarBlock {
             full_text: end_separator.clone(),
-            background: Color::None,
-            color: prev_last_bg,
+            background: sep_bg,
+            color: sep_fg,
             ..Default::default()
-        });
+        };
+
+        rendered_blocks.push(separator);
     }
 
     println!("{},", serde_json::to_string(&rendered_blocks).unwrap());
