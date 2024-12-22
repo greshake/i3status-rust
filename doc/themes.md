@@ -66,7 +66,7 @@ Note: screenshots were generated using [this config](../gen-screenshots/screensh
 * `ctp-mocha`
 ![ctp-mocha](../img/themes/ctp-mocha.png)
 * `femboy`
-![femboy](../img/themes/femboy)
+![femboy](../img/themes/femboy.png)
 
 # Available icon sets
 
