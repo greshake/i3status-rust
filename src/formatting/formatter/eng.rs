@@ -139,7 +139,7 @@ impl Formatter for EngFormatter {
                     (None, _) => (Prefix::min_available(), Prefix::max_available()),
                 };
 
-                let prefix = unit
+                let mut prefix = unit
                     .clamp_prefix(if min_prefix.is_binary() {
                         Prefix::eng_binary(val)
                     } else {
@@ -160,8 +160,27 @@ impl Formatter for EngFormatter {
 
                 let sign = if is_negative { "-" } else { "" };
                 let mut retval = match self.width as i32 - digits {
-                    i32::MIN..=0 => format!("{sign}{}", val.round()),
-                    1 => format!("{}{sign}{}", self.pad_with, val.round() as i64),
+                    i32::MIN..=1 => {
+                        // Remove prefix after rounding value to be displayed
+                        val = prefix.unapply(val.round());
+
+                        prefix = unit
+                            .clamp_prefix(if min_prefix.is_binary() {
+                                Prefix::eng_binary(val)
+                            } else {
+                                Prefix::eng(val)
+                            })
+                            .clamp(min_prefix, max_prefix);
+                        val = prefix.apply(val);
+
+                        digits = (val.max(1.).log10().floor() + 1.0) as i32 + is_negative as i32;
+
+                        match self.width as i32 - digits {
+                            i32::MIN..=0 => format!("{sign}{}", val),
+                            1 => format!("{}{sign}{}", self.pad_with, val as i64),
+                            rest => format!("{sign}{val:.*}", rest as usize - 1),
+                        }
+                    }
                     rest => format!("{sign}{val:.*}", rest as usize - 1),
                 };
 
@@ -278,6 +297,40 @@ mod tests {
             )
             .unwrap();
         assert_eq!(result, "321.6GB");
+
+        let fmt = new_fmt!(eng, w: 3, p: K).unwrap();
+        let result = fmt
+            .format(
+                &Value::Number {
+                    val: 998_888.,
+                    unit: Unit::Bytes,
+                },
+                &config,
+            )
+            .unwrap();
+        assert_eq!(result, "999KB");
+
+        let result = fmt
+            .format(
+                &Value::Number {
+                    val: 999_888.,
+                    unit: Unit::Bytes,
+                },
+                &config,
+            )
+            .unwrap();
+        assert_eq!(result, "1.0MB");
+
+        let result = fmt
+            .format(
+                &Value::Number {
+                    val: 1_000_000.,
+                    unit: Unit::Bytes,
+                },
+                &config,
+            )
+            .unwrap();
+        assert_eq!(result, "1.0MB");
     }
 
     #[test]

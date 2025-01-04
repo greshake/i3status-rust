@@ -31,6 +31,7 @@ words:
   - bugz
   - busctl
   - caldav
+  - ccache
   - chrono
   - clippy
   - CLOEXEC
@@ -167,6 +168,7 @@ words:
   - tzset
   - udev
   - uevent
+  - unapply
   - unshift
   - unspec
   - upower
@@ -188,9 +190,8 @@ words:
   - xrandr
   - xtask
   - zbus
+  - zram
+  - zswap
+  - Zswapped
   - zvariant
   - zwlr
-  - zswap
-  - zram
-  - Zswapped
-  - ccache
