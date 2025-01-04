@@ -8,7 +8,7 @@ use crate::protocol::i3bar_event::I3BarEvent;
 use crate::subprocess::{spawn_shell, spawn_shell_sync};
 use crate::wrappers::SerdeRegex;
 
-/// Can be one of `left`, `middle`, `right`, `up`, `down`, `forward`, `back` or `double_left`.
+/// Can be one of `left`, `middle`, `right`, `up`/`wheel_up`, `down`/`wheel_down`, `wheel_left`, `wheel_right`, `forward`, `back` or `double_left`.
 ///
 /// Note that in order for double clicks to be registered, you have to set `double_click_delay` to a
 /// non-zero value. `200` might be a good choice. Note that enabling this functionality will
@@ -20,6 +20,8 @@ pub enum MouseButton {
     Right,
     WheelUp,
     WheelDown,
+    WheelLeft,
+    WheelRight,
     Forward,
     Back,
     DoubleLeft,
@@ -112,8 +114,10 @@ impl<'de> Deserialize<'de> for MouseButton {
                     "left" => Left,
                     "middle" => Middle,
                     "right" => Right,
-                    "up" => WheelUp,
-                    "down" => WheelDown,
+                    "up" | "wheel_up" => WheelUp,
+                    "down" | "wheel_down" => WheelDown,
+                    "wheel_left" => WheelLeft,
+                    "wheel_right" => WheelRight,
                     "forward" => Forward,
                     "back" => Back,
                     // Experimental
@@ -136,6 +140,8 @@ impl<'de> Deserialize<'de> for MouseButton {
                     3 => Right,
                     4 => WheelUp,
                     5 => WheelDown,
+                    6 => WheelLeft,
+                    7 => WheelRight,
                     8 => Back,
                     9 => Forward,
                     other => return Err(E::custom(format!("unknown button '{other}'"))),
