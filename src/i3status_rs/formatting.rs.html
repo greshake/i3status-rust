@@ -230,7 +230,8 @@
 <a href="#229" id="229">229</a>
 <a href="#230" id="230">230</a>
 <a href="#231" id="231">231</a>
-<a href="#232" id="232">232</a></pre></div><pre class="rust"><code><span class="doccomment">//! # Formatting system
+<a href="#232" id="232">232</a>
+<a href="#233" id="233">233</a></pre></div><pre class="rust"><code><span class="doccomment">//! # Formatting system
 //! Many blocks have a `format` configuration option, which allows to heavily customize the block's
 //! appearance. In short, each block with `format` option provides a set of values, which are
 //! displayed according to `format`. `format`'s value is just a text with embedded variables.
@@ -288,6 +289,7 @@
 //! `force_prefix`  | force the prefix value instead of setting a "minimal prefix"                                     | `false`
 //! `pad_with`      | the character that is used to pad the number to be `width` long                                  | ` ` (a space)
 //! `range`         | a range of allowed values, in the format `&lt;start&gt;..&lt;end&gt;`, inclusive. Both start and end are optional. Can be used to, for example, hide the block when the value is not in a given range. | `..`
+//! `show`          | show this value. Can be used with `range` for conditional formatting                             | `true`
 //!
 //! ## `bar` - Display numbers as progress bars
 //!

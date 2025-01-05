@@ -306,7 +306,16 @@
 <a href="#305" id="305">305</a>
 <a href="#306" id="306">306</a>
 <a href="#307" id="307">307</a>
-<a href="#308" id="308">308</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::formatting::prefix::Prefix;
+<a href="#308" id="308">308</a>
+<a href="#309" id="309">309</a>
+<a href="#310" id="310">310</a>
+<a href="#311" id="311">311</a>
+<a href="#312" id="312">312</a>
+<a href="#313" id="313">313</a>
+<a href="#314" id="314">314</a>
+<a href="#315" id="315">315</a>
+<a href="#316" id="316">316</a>
+<a href="#317" id="317">317</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::formatting::prefix::Prefix;
 <span class="kw">use </span><span class="kw">crate</span>::formatting::unit::Unit;
 
 <span class="kw">use </span>std::borrow::Cow;
@@ -317,6 +326,7 @@
 <span class="kw">const </span>DEFAULT_NUMBER_WIDTH: usize = <span class="number">2</span>;
 
 <span class="kw">pub const </span>DEFAULT_NUMBER_FORMATTER: EngFormatter = EngFormatter {
+    show: <span class="bool-val">true</span>,
     width: DEFAULT_NUMBER_WIDTH,
     unit: <span class="prelude-val">None</span>,
     unit_has_space: <span class="bool-val">false</span>,
@@ -331,6 +341,7 @@
 
 <span class="attr">#[derive(Debug)]
 </span><span class="kw">pub struct </span>EngFormatter {
+    show: bool,
     width: usize,
     unit: <span class="prelude-ty">Option</span>&lt;Unit&gt;,
     unit_has_space: bool,
@@ -413,6 +424,9 @@
                             ..=end.parse::&lt;f64&gt;().error(<span class="string">"invalid range end"</span>)<span class="question-mark">?</span>;
                     }
                 }
+                <span class="string">"show" </span>=&gt; {
+                    result.show = arg.val.parse().ok().error(<span class="string">"show must be true or false"</span>)<span class="question-mark">?</span>;
+                }
                 other =&gt; {
                     <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">"Unknown argument for 'eng': '{other}'"</span>)));
                 }
@@ -429,6 +443,10 @@
             Value::Number { <span class="kw-2">mut </span>val, <span class="kw-2">mut </span>unit } =&gt; {
                 <span class="kw">if </span>!<span class="self">self</span>.range.contains(<span class="kw-2">&amp;</span>val) {
                     <span class="kw">return </span><span class="prelude-val">Err</span>(FormatError::NumberOutOfRange(val));
+                }
+
+                <span class="kw">if </span>!<span class="self">self</span>.show {
+                    <span class="kw">return </span><span class="prelude-val">Ok</span>(String::new());
                 }
 
                 <span class="kw">let </span>is_negative = val.is_sign_negative();
