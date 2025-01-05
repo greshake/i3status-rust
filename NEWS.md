@@ -1,3 +1,12 @@
+# i3status-rust 0.34.0 [unreleased]
+
+### New Blocks and Features
+`.eng` formatter: add show parameter
+### Bug Fixes and Improvements
+
+### Breaking Changes
+* Removed `apt`, `dnf`, and `pacman` blocks, use `packages` block instead
+
 # i3status-rust 0.33.2
 
 ### New Blocks and Features
