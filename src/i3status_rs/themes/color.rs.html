@@ -268,7 +268,13 @@
 <a href="#267" id="267">267</a>
 <a href="#268" id="268">268</a>
 <a href="#269" id="269">269</a>
-<a href="#270" id="270">270</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::errors::<span class="kw-2">*</span>;
+<a href="#270" id="270">270</a>
+<a href="#271" id="271">271</a>
+<a href="#272" id="272">272</a>
+<a href="#273" id="273">273</a>
+<a href="#274" id="274">274</a>
+<a href="#275" id="275">275</a>
+<a href="#276" id="276">276</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::errors::<span class="kw-2">*</span>;
 <span class="kw">use </span>serde::de::{<span class="self">self</span>, Deserializer, Visitor};
 <span class="kw">use </span>serde::{Deserialize, Serialize, Serializer};
 <span class="kw">use </span>smart_default::SmartDefault;
@@ -486,7 +492,13 @@
             <span class="kw">let </span>v = components.next().or_error(err_msg)<span class="question-mark">??</span>;
             <span class="kw">let </span>a = components.next().unwrap_or(<span class="prelude-val">Ok</span>(<span class="number">100.</span>))<span class="question-mark">?</span>;
             Color::Hsva(Hsva::new(h, s / <span class="number">100.</span>, v / <span class="number">100.</span>, (a / <span class="number">100. </span>* <span class="number">255.</span>) <span class="kw">as </span>u8))
-        } <span class="kw">else </span>{
+        } <span class="kw">else if </span>color.starts_with(<span class="string">"x:"</span>) {
+            <span class="kw">let </span>name = color.split_at(<span class="number">2</span>).<span class="number">1</span>;
+            <span class="kw">super</span>::xresources::get_color(name)<span class="question-mark">?
+                </span>.or_error(|| <span class="macro">format!</span>(<span class="string">"color '{name}' not defined in ~/.Xresources"</span>))<span class="question-mark">?
+                </span>.parse()
+                .or_error(|| <span class="macro">format!</span>(<span class="string">"invalid color definition '{name}'"</span>))<span class="question-mark">?
+        </span>} <span class="kw">else </span>{
             <span class="kw">let </span>err_msg = || <span class="macro">format!</span>(<span class="string">"'{color}' is not a valid RGBA color"</span>);
             <span class="kw">let </span>rgb = color.get(<span class="number">1</span>..<span class="number">7</span>).or_error(err_msg)<span class="question-mark">?</span>;
             <span class="kw">let </span>a = color.get(<span class="number">7</span>..<span class="number">9</span>).unwrap_or(<span class="string">"FF"</span>);
