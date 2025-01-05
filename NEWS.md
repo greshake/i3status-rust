@@ -1,12 +1,16 @@
 # i3status-rust 0.34.0 [unreleased]
 
 ### New Blocks and Features
+
 * `.eng` formatter: add show parameter
 * when using theme overrides you can now reference a color name defined in `~/.Xresources`, e.g., `x:background` looks for a line like `*background: #aabbcc` in `~/.Xresources` (see also [.Xresources](https://wiki.debian.org/Xresources))
 
 ### Bug Fixes and Improvements
 
+* Fix `bad event` errors in `focused_window` block.
+
 ### Breaking Changes
+
 * Removed `apt`, `dnf`, and `pacman` blocks, use `packages` block instead
 
 # i3status-rust 0.33.2
