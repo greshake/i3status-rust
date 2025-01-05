@@ -141,7 +141,7 @@ impl TryFrom<ThemeUserConfig> for Theme {
 
     fn try_from(user_config: ThemeUserConfig) -> Result<Self, Self::Error> {
         let name = user_config.theme.as_deref().unwrap_or("plain");
-        let file = util::find_file(name, Some("themes"), Some("toml"))
+        let file = util::find_file(name, Some("themes"), Some("toml"))?
             .or_error(|| format!("Theme '{name}' not found"))?;
         let theme: ThemeInner = util::deserialize_toml_file(file)?;
         let mut theme = Theme(theme);
