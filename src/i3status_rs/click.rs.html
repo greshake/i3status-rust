@@ -152,7 +152,13 @@
 <a href="#151" id="151">151</a>
 <a href="#152" id="152">152</a>
 <a href="#153" id="153">153</a>
-<a href="#154" id="154">154</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::fmt;
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+<a href="#157" id="157">157</a>
+<a href="#158" id="158">158</a>
+<a href="#159" id="159">159</a>
+<a href="#160" id="160">160</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::fmt;
 
 <span class="kw">use </span>serde::de::{<span class="self">self</span>, Deserializer, Visitor};
 <span class="kw">use </span>serde::Deserialize;
@@ -162,7 +168,7 @@
 <span class="kw">use </span><span class="kw">crate</span>::subprocess::{spawn_shell, spawn_shell_sync};
 <span class="kw">use </span><span class="kw">crate</span>::wrappers::SerdeRegex;
 
-<span class="doccomment">/// Can be one of `left`, `middle`, `right`, `up`, `down`, `forward`, `back` or `double_left`.
+<span class="doccomment">/// Can be one of `left`, `middle`, `right`, `up`/`wheel_up`, `down`/`wheel_down`, `wheel_left`, `wheel_right`, `forward`, `back` or `double_left`.
 ///
 /// Note that in order for double clicks to be registered, you have to set `double_click_delay` to a
 /// non-zero value. `200` might be a good choice. Note that enabling this functionality will
@@ -174,6 +180,8 @@
     Right,
     WheelUp,
     WheelDown,
+    WheelLeft,
+    WheelRight,
     Forward,
     Back,
     DoubleLeft,
@@ -266,8 +274,10 @@
                     <span class="string">"left" </span>=&gt; Left,
                     <span class="string">"middle" </span>=&gt; Middle,
                     <span class="string">"right" </span>=&gt; Right,
-                    <span class="string">"up" </span>=&gt; WheelUp,
-                    <span class="string">"down" </span>=&gt; WheelDown,
+                    <span class="string">"up" </span>| <span class="string">"wheel_up" </span>=&gt; WheelUp,
+                    <span class="string">"down" </span>| <span class="string">"wheel_down" </span>=&gt; WheelDown,
+                    <span class="string">"wheel_left" </span>=&gt; WheelLeft,
+                    <span class="string">"wheel_right" </span>=&gt; WheelRight,
                     <span class="string">"forward" </span>=&gt; Forward,
                     <span class="string">"back" </span>=&gt; Back,
                     <span class="comment">// Experimental
@@ -290,6 +300,8 @@
                     <span class="number">3 </span>=&gt; Right,
                     <span class="number">4 </span>=&gt; WheelUp,
                     <span class="number">5 </span>=&gt; WheelDown,
+                    <span class="number">6 </span>=&gt; WheelLeft,
+                    <span class="number">7 </span>=&gt; WheelRight,
                     <span class="number">8 </span>=&gt; Back,
                     <span class="number">9 </span>=&gt; Forward,
                     other =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(E::custom(<span class="macro">format!</span>(<span class="string">"unknown button '{other}'"</span>))),
