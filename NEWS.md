@@ -4,6 +4,7 @@
 
 * `.eng` formatter: add show parameter
 * when using theme overrides you can now reference a color name defined in `~/.Xresources`, e.g., `x:background` looks for a line like `*background: #aabbcc` in `~/.Xresources` (see also [.Xresources](https://wiki.debian.org/Xresources))
+* Add support for wheel left and right clicks
 
 ### Bug Fixes and Improvements
 
