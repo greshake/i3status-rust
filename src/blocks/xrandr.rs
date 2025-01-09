@@ -11,6 +11,7 @@
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $display $brightness_icon $brightness "`
 //! `step_width` | The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50). | `5`
 //! `interval` | Update interval in seconds. | `5`
+//! `invert_icons` | Invert icons' ordering, useful if you have colorful emoji | `false`
 //!
 //! Placeholder       | Value                        | Type   | Unit
 //! ------------------|------------------------------|--------|---------------
@@ -53,6 +54,7 @@ pub struct Config {
     pub format: FormatConfig,
     #[default(5)]
     pub step_width: u32,
+    pub invert_icons: bool,
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
@@ -80,11 +82,14 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             let mut widget = Widget::new().with_format(format.clone());
 
             if let Some(mon) = monitors.get(cur_indx) {
+                let mut icon_value = (mon.brightness as f64) / 100.0;
+                if config.invert_icons {
+                    icon_value = 1.0 - icon_value;
+                }
                 widget.set_values(map! {
                     "display" => Value::text(mon.name.clone()),
                     "brightness" => Value::percents(mon.brightness),
-                    //TODO: change `brightness_icon` based on `brightness`
-                    "brightness_icon" => Value::icon("backlight"),
+                    "brightness_icon" => Value::icon_progression("backlight", icon_value),
                     "resolution" => Value::text(mon.resolution.clone()),
                     "icon" => Value::icon("xrandr"),
                     "res_icon" => Value::icon("resolution"),
