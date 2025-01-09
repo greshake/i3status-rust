@@ -169,6 +169,7 @@ words:
   - tzset
   - udev
   - uevent
+  - unapply
   - unshift
   - unspec
   - upower
