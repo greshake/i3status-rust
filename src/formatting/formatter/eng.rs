@@ -44,52 +44,54 @@ impl EngFormatter {
         for arg in args {
             match arg.key {
                 "width" | "w" => {
-                    result.width = arg.val.parse().error("Width must be a positive integer")?;
+                    result.width = arg
+                        .val
+                        .error("width must be specified")?
+                        .parse()
+                        .error("width must be a positive integer")?;
                 }
                 "unit" | "u" => {
-                    result.unit = Some(arg.val.parse()?);
+                    result.unit = Some(arg.val.error("unit must be specified")?.parse()?);
                 }
                 "hide_unit" => {
-                    result.unit_hidden = arg
-                        .val
-                        .parse()
-                        .ok()
-                        .error("hide_unit must be true or false")?;
+                    result.unit_hidden = match arg.val {
+                        Some(v) => v.parse().error("hide_unit must be true or false")?,
+                        None => true,
+                    };
                 }
                 "unit_space" => {
                     result.unit_has_space = arg
                         .val
+                        .error("unit_space must be specified")?
                         .parse()
                         .ok()
                         .error("unit_space must be true or false")?;
                 }
                 "prefix" | "p" => {
-                    result.prefix = Some(arg.val.parse()?);
+                    result.prefix = Some(arg.val.error("prefix must be specified")?.parse()?);
                 }
                 "hide_prefix" => {
-                    result.prefix_hidden = arg
-                        .val
-                        .parse()
-                        .ok()
-                        .error("hide_prefix must be true or false")?;
+                    result.prefix_hidden = match arg.val {
+                        Some(v) => v.parse().error("hide_prefix must be true or false")?,
+                        None => true,
+                    };
                 }
                 "prefix_space" => {
-                    result.prefix_has_space = arg
-                        .val
-                        .parse()
-                        .ok()
-                        .error("prefix_space must be true or false")?;
+                    result.prefix_has_space = match arg.val {
+                        Some(v) => v.parse().error("prefix_space must be true or false")?,
+                        None => true,
+                    };
                 }
                 "force_prefix" => {
-                    result.prefix_forced = arg
-                        .val
-                        .parse()
-                        .ok()
-                        .error("force_prefix must be true or false")?;
+                    result.prefix_forced = match arg.val {
+                        Some(v) => v.parse().error("force_prefix must be true or false")?,
+                        None => true,
+                    };
                 }
                 "pad_with" => {
-                    if arg.val.graphemes(true).count() < 2 {
-                        result.pad_with = Cow::Owned(arg.val.into());
+                    let pad_with_str = arg.val.error("pad_with must be specified")?;
+                    if pad_with_str.graphemes(true).count() < 2 {
+                        result.pad_with = Cow::Owned(pad_with_str.into());
                     } else {
                         return Err(Error::new(
                             "pad_with must be an empty string or a single character",
@@ -97,7 +99,11 @@ impl EngFormatter {
                     }
                 }
                 "range" => {
-                    let (start, end) = arg.val.split_once("..").error("invalid range")?;
+                    let (start, end) = arg
+                        .val
+                        .error("range must be specified")?
+                        .split_once("..")
+                        .error("invalid range")?;
                     if !start.is_empty() {
                         result.range = start.parse::<f64>().error("invalid range start")?
                             ..=*result.range.end();
@@ -108,7 +114,10 @@ impl EngFormatter {
                     }
                 }
                 "show" => {
-                    result.show = arg.val.parse().ok().error("show must be true or false")?;
+                    result.show = match arg.val {
+                        Some(v) => v.parse().error("show must be true or false")?,
+                        None => true,
+                    };
                 }
                 other => {
                     return Err(Error::new(format!("Unknown argument for 'eng': '{other}'")));

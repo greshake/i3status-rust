@@ -36,24 +36,41 @@ impl StrFormatter {
         for arg in args {
             match arg.key {
                 "min_width" | "min_w" => {
-                    min_width = arg.val.parse().error("Width must be a positive integer")?;
+                    min_width = arg
+                        .val
+                        .error("min_width must be specified")?
+                        .parse()
+                        .error("min_width must be a positive integer")?;
                 }
                 "max_width" | "max_w" => {
-                    max_width = arg.val.parse().error("Width must be a positive integer")?;
+                    max_width = arg
+                        .val
+                        .error("max_width must be specified")?
+                        .parse()
+                        .error("max_width must be a positive integer")?;
                 }
                 "width" | "w" => {
-                    min_width = arg.val.parse().error("Width must be a positive integer")?;
+                    min_width = arg
+                        .val
+                        .error("width must be specified")?
+                        .parse()
+                        .error("width must be a positive integer")?;
                     max_width = min_width;
                 }
                 "rot_interval" => {
                     rot_interval = Some(
                         arg.val
+                            .error("rot_interval must be specified")?
                             .parse()
-                            .error("Interval must be a positive number")?,
+                            .error("rot_interval must be a positive number")?,
                     );
                 }
                 "rot_separator" => {
-                    rot_separator = Some(arg.val.to_string());
+                    rot_separator = Some(
+                        arg.val
+                            .error("rot_separator must be specified")?
+                            .to_string(),
+                    );
                 }
                 other => {
                     return Err(Error::new(format!("Unknown argument for 'str': '{other}'")));

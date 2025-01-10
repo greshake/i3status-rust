@@ -51,39 +51,42 @@ impl DurationFormatter {
         for arg in args {
             match arg.key {
                 "hms" => {
-                    hms = arg.val.parse().ok().error("hms must be true or false")?;
+                    hms = match arg.val {
+                        Some(val) => val.parse().ok().error("hms must be true or false")?,
+                        None => true,
+                    };
                 }
                 "max_unit" => {
-                    max_unit = Some(arg.val);
+                    max_unit = Some(arg.val.error("max_unit must be specified")?);
                 }
                 "min_unit" => {
-                    min_unit = arg.val;
+                    min_unit = arg.val.error("min_unit must be specified")?;
                 }
                 "units" => {
                     units = Some(
                         arg.val
+                            .error("units must be specified")?
                             .parse()
                             .ok()
                             .error("units must be a positive integer")?,
                     );
                 }
                 "round_up" => {
-                    round_up = arg
-                        .val
-                        .parse()
-                        .ok()
-                        .error("round_up must be true or false")?;
+                    round_up = match arg.val {
+                        Some(val) => val.parse().ok().error("round_up must be true or false")?,
+                        None => true,
+                    };
                 }
                 "unit_space" => {
-                    unit_has_space = arg
-                        .val
-                        .parse()
-                        .ok()
-                        .error("unit_space must be true or false")?;
+                    unit_has_space = match arg.val {
+                        Some(val) => val.parse().ok().error("unit_space must be true or false")?,
+                        None => true,
+                    };
                 }
                 "pad_with" => {
-                    if arg.val.graphemes(true).count() < 2 {
-                        pad_with = Some(Cow::Owned(arg.val.into()));
+                    let pad_with_str = arg.val.error("pad_with must be specified")?;
+                    if pad_with_str.graphemes(true).count() < 2 {
+                        pad_with = Some(Cow::Owned(pad_with_str.into()));
                     } else {
                         return Err(Error::new(
                             "pad_with must be an empty string or a single character",
@@ -91,7 +94,13 @@ impl DurationFormatter {
                     };
                 }
                 "leading_zeroes" => {
-                    leading_zeroes = arg.val.parse().ok().error("units must be true or false")?;
+                    leading_zeroes = match arg.val {
+                        Some(val) => val
+                            .parse()
+                            .ok()
+                            .error("leading_zeroes must be true or false")?,
+                        None => true,
+                    };
                 }
 
                 _ => return Err(Error::new(format!("Unexpected argument {:?}", arg.key))),
