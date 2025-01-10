@@ -34,10 +34,10 @@ impl DatetimeFormatter {
         for arg in args {
             match arg.key {
                 "format" | "f" => {
-                    format = Some(arg.val);
+                    format = Some(arg.val.error("format must be specified")?);
                 }
                 "locale" | "l" => {
-                    locale = Some(arg.val);
+                    locale = Some(arg.val.error("locale must be specified")?);
                 }
                 other => {
                     return Err(Error::new(format!(

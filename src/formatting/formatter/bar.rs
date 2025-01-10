@@ -20,13 +20,13 @@ impl BarFormatter {
         for arg in args {
             match arg.key {
                 "width" | "w" => {
-                    width = Some(arg.val.parse().error("Width must be a positive integer")?);
+                    width = Some(arg.parse_value()?);
                 }
                 "max_value" => {
-                    max_value = arg.val.parse().error("Max value must be a number")?;
+                    max_value = arg.parse_value()?;
                 }
                 "vertical" | "v" => {
-                    vertical = arg.val.parse().error("Vertical value must be a bool")?;
+                    vertical = arg.parse_value()?;
                 }
                 other => {
                     return Err(Error::new(format!("Unknown argument for 'bar': '{other}'")));

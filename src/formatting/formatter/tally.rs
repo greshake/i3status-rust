@@ -37,7 +37,7 @@ impl TallyFormatter {
         for arg in args {
             match arg.key {
                 "style" | "s" => {
-                    style = arg.val.parse()?;
+                    style = arg.parse_value()?;
                 }
                 other => {
                     return Err(Error::new(format!(

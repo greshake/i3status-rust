@@ -1,3 +1,5 @@
+use std::{any::TypeId, str::FromStr};
+
 use nom::{
     branch::alt,
     bytes::complete::{escaped_transform, tag, take_while, take_while1},
@@ -13,7 +15,24 @@ use crate::errors::*;
 #[derive(Debug, PartialEq, Eq)]
 pub struct Arg<'a> {
     pub key: &'a str,
-    pub val: &'a str,
+    pub val: Option<&'a str>,
+}
+
+impl Arg<'_> {
+    pub fn parse_value<T>(&self) -> Result<T>
+    where
+        T: FromStr + 'static,
+        T::Err: StdError + Send + Sync + 'static,
+    {
+        if TypeId::of::<T>() == TypeId::of::<bool>() && self.val.is_none() {
+            Ok("true".parse().expect("'true' is valid bool"))
+        } else {
+            self.val
+                .or_error(|| format!("missing value for argument '{}'", self.key))?
+                .parse()
+                .or_error(|| format!("invalid value for argument '{}'", self.key))
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -94,11 +113,18 @@ fn arg1(i: &str) -> IResult<&str, &str, PError> {
 }
 
 // `key:val`
+// `abc`
 fn parse_arg(i: &str) -> IResult<&str, Arg, PError> {
-    map(
-        separated_pair(alphanum1, cut(char(':')), cut(arg1)),
-        |(key, val)| Arg { key, val },
-    )(i)
+    alt((
+        map(
+            separated_pair(alphanum1, char(':'), cut(arg1)),
+            |(key, val)| Arg {
+                key,
+                val: Some(val),
+            },
+        ),
+        map(alphanum1, |key| Arg { key, val: None }),
+    ))(i)
 }
 
 // `(arg,key:val)`
@@ -112,7 +138,7 @@ fn parse_args(i: &str) -> IResult<&str, Vec<Arg>, PError> {
 }
 
 // `.str(width:2)`
-// `.eng(unit:bits,bin)`
+// `.eng(unit:bits,show)`
 fn parse_formatter(i: &str) -> IResult<&str, Formatter, PError> {
     preceded(char('.'), cut(tuple((alphanum1, opt(parse_args)))))
         .map(|(name, args)| Formatter {
@@ -123,7 +149,7 @@ fn parse_formatter(i: &str) -> IResult<&str, Formatter, PError> {
 }
 
 // `$var`
-// `$key.eng(unit:bits,bin)`
+// `$key.eng(unit:bits,show)`
 fn parse_placeholder(i: &str) -> IResult<&str, Placeholder, PError> {
     preceded(char('$'), cut(tuple((alphanum1, opt(parse_formatter)))))
         .map(|(name, formatter)| Placeholder { name, formatter })
@@ -211,7 +237,7 @@ mod tests {
                 ",",
                 Arg {
                     key: "key",
-                    val: "val"
+                    val: Some("val")
                 }
             ))
         );
@@ -221,7 +247,7 @@ mod tests {
                 ",",
                 Arg {
                     key: "key",
-                    val: "val ue"
+                    val: Some("val ue")
                 }
             ))
         );
@@ -231,11 +257,27 @@ mod tests {
                 ",",
                 Arg {
                     key: "key",
-                    val: ""
+                    val: Some("")
                 }
             ))
         );
-        assert!(parse_arg("key:,").is_err());
+        assert_eq!(
+            parse_arg("key,"),
+            Ok((
+                ",",
+                Arg {
+                    key: "key",
+                    val: None
+                }
+            ))
+        );
+        assert_eq!(
+            parse_arg("key:,"),
+            Err(nom::Err::Failure(PError::Expected {
+                expected: '\'',
+                actual: Some(',')
+            }))
+        );
     }
 
     #[test]
@@ -246,7 +288,7 @@ mod tests {
                 "",
                 vec![Arg {
                     key: "key",
-                    val: "val"
+                    val: Some("val")
                 }]
             ))
         );
@@ -257,14 +299,31 @@ mod tests {
                 vec![
                     Arg {
                         key: "abc",
-                        val: "d",
+                        val: Some("d"),
                     },
                     Arg {
                         key: "key",
-                        val: "val"
+                        val: Some("val")
                     }
                 ]
             ))
+        );
+        assert_eq!(
+            parse_args("(abc)"),
+            Ok((
+                "",
+                vec![Arg {
+                    key: "abc",
+                    val: None
+                }]
+            ))
+        );
+        assert_eq!(
+            parse_args("( key:, )"),
+            Err(nom::Err::Failure(PError::Expected {
+                expected: '\'',
+                actual: Some(',')
+            }))
         );
     }
 
@@ -278,22 +337,44 @@ mod tests {
                     name: "str",
                     args: vec![Arg {
                         key: "key",
-                        val: "val"
+                        val: Some("val")
                     }]
                 }
             ))
         );
         assert_eq!(
-            parse_formatter(".eng(w:3 , bin:true )"),
+            parse_formatter(".eng(w:3 , show:true )"),
             Ok((
                 "",
                 Formatter {
                     name: "eng",
                     args: vec![
-                        Arg { key: "w", val: "3" },
                         Arg {
-                            key: "bin",
-                            val: "true"
+                            key: "w",
+                            val: Some("3")
+                        },
+                        Arg {
+                            key: "show",
+                            val: Some("true")
+                        }
+                    ]
+                }
+            ))
+        );
+        assert_eq!(
+            parse_formatter(".eng(w:3 , show)"),
+            Ok((
+                "",
+                Formatter {
+                    name: "eng",
+                    args: vec![
+                        Arg {
+                            key: "w",
+                            val: Some("3")
+                        },
+                        Arg {
+                            key: "show",
+                            val: None
                         }
                     ]
                 }
@@ -334,7 +415,16 @@ mod tests {
                     name: "var",
                     formatter: Some(Formatter {
                         name: "str",
-                        args: vec![Arg { key: "a", val: "b" }, Arg { key: "c", val: "d" }]
+                        args: vec![
+                            Arg {
+                                key: "a",
+                                val: Some("b")
+                            },
+                            Arg {
+                                key: "c",
+                                val: Some("d")
+                            }
+                        ]
                     }),
                 }
             ))
@@ -362,7 +452,10 @@ mod tests {
                         name: "var",
                         formatter: Some(Formatter {
                             name: "str",
-                            args: vec![Arg { key: "a", val: "b" }]
+                            args: vec![Arg {
+                                key: "a",
+                                val: Some("b")
+                            }]
                         })
                     }),
                     Token::Placeholder(Placeholder {

@@ -28,6 +28,8 @@
 //! to method calls in many programming languages: `<variable>.<formatter>(<args>)`. For example:
 //! `$title.str(min_w:10, max_w:20)`.
 //!
+//! Note: for arguments that accept a boolean value, just specifying the argument will be treated as `arg:true`.
+//!
 //! ## `str` - Format text
 //!
 //! Argument               | Description                                       |Default value
