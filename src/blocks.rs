@@ -151,6 +151,7 @@ define_blocks!(
     cpu,
     custom,
     custom_dbus,
+    disk_stats,
     disk_space,
     docker,
     external_ip,
