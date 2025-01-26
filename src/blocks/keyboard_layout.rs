@@ -13,7 +13,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `driver` | One of `"setxkbmap"`, `"xkbswitch"`, "localebus"`, `"kbddbus"` or `"sway"`, depending on your system. | `"setxkbmap"`
+//! `driver` | One of `"setxkbmap"`, `"xkbswitch"`, `"localebus"`, `"kbddbus"` or `"sway"`, depending on your system. | `"setxkbmap"`
 //! `interval` | Update interval, in seconds. Only used by the `"setxkbmap"` driver. | `60`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `" $layout "`
 //! `sway_kb_identifier` | Identifier of the device you want to monitor, as found in the output of `swaymsg -t get_inputs`. | Defaults to first input found
