@@ -187,6 +187,7 @@ words:
   - xcolors
   - xesam
   - xkbswitch
+  - xkbevent
   - XKCD
   - xrandr
   - xresources
