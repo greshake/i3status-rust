@@ -13,6 +13,7 @@ pub mod config;
 pub mod errors;
 pub mod escape;
 pub mod formatting;
+pub mod geolocator;
 pub mod icons;
 mod netlink;
 pub mod protocol;
@@ -268,6 +269,7 @@ impl BarState {
             update_request: update_request.clone(),
             request_sender: self.request_sender.clone(),
             error_interval: Duration::from_secs(block_config.common.error_interval),
+            geolocator: self.config.geolocator.clone(),
         };
 
         let error_format = block_config

@@ -178,10 +178,10 @@ const FORECAST_URL: &str = "https://api.met.no/weatherapi/locationforecast/2.0/c
 impl WeatherProvider for Service<'_> {
     async fn get_weather(
         &self,
-        location: Option<&Coordinates>,
+        autolocated: Option<&IPAddressInfo>,
         need_forecast: bool,
     ) -> Result<WeatherResult> {
-        let (lat, lon) = location
+        let (lat, lon) = autolocated
             .as_ref()
             .map(|loc| (loc.latitude.to_string(), loc.longitude.to_string()))
             .or_else(|| self.config.coordinates.clone())
@@ -217,7 +217,7 @@ impl WeatherProvider for Service<'_> {
             .error("Forecast request failed")?;
 
         let forecast_hours = self.config.forecast_hours;
-        let location_name = location.map_or("Unknown".to_string(), |c| c.city.clone());
+        let location_name = autolocated.map_or("Unknown".to_string(), |c| c.city.clone());
 
         let current_weather = data.properties.timeseries.first().unwrap().to_moment(self);
 
