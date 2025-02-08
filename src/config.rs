@@ -8,6 +8,7 @@ use crate::click::ClickHandler;
 use crate::errors::*;
 use crate::formatting::config::Config as FormatConfig;
 use crate::icons::{Icon, Icons};
+use crate::locator::Locator;
 use crate::themes::{Theme, ThemeOverrides, ThemeUserConfig};
 
 #[derive(Deserialize, Debug)]
@@ -18,6 +19,8 @@ pub struct Config {
     /// Set to `true` to invert mouse wheel direction
     #[serde(default)]
     pub invert_scrolling: bool,
+
+    pub locator: Option<Locator>,
 
     /// The maximum delay (ms) between two clicks that are considered as double click
     #[serde(default)]

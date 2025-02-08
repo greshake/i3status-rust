@@ -13,6 +13,7 @@ pub mod errors;
 pub mod escape;
 pub mod formatting;
 pub mod icons;
+pub mod locator;
 mod netlink;
 pub mod protocol;
 mod signals;
