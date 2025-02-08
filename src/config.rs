@@ -7,10 +7,12 @@ use crate::blocks::BlockConfig;
 use crate::click::ClickHandler;
 use crate::errors::*;
 use crate::formatting::config::Config as FormatConfig;
+use crate::geolocator::Geolocator;
 use crate::icons::{Icon, Icons};
 use crate::themes::{Theme, ThemeOverrides, ThemeUserConfig};
 
 #[derive(Deserialize, Debug)]
+#[serde(deny_unknown_fields)]
 pub struct Config {
     #[serde(flatten)]
     pub shared: SharedConfig,
@@ -18,6 +20,9 @@ pub struct Config {
     /// Set to `true` to invert mouse wheel direction
     #[serde(default)]
     pub invert_scrolling: bool,
+
+    #[serde(default)]
+    pub geolocator: Arc<Geolocator>,
 
     /// The maximum delay (ms) between two clicks that are considered as double click
     #[serde(default)]
