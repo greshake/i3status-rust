@@ -59,12 +59,14 @@ short_error_message | The short error message, if available
 - [Blocks](https://docs.rs/i3status-rs/latest/i3status_rs/blocks/index.html)
 - [Formatting](https://docs.rs/i3status-rs/latest/i3status_rs/formatting/index.html)
 - [Themes and Icons](https://github.com/greshake/i3status-rust/blob/v0.32.0/doc/themes.md)
+- [Geolocator](https://docs.rs/i3status-rs/latest/i3status_rs/geolocator/index.html)
 
 #### Master
 
 - [Blocks](https://greshake.github.io/i3status-rust/i3status_rs/blocks/index.html)
 - [Formatting](https://greshake.github.io/i3status-rust/i3status_rs/formatting/index.html)
 - [Themes and Icons](doc/themes.md)
+- [Geolocator](https://greshake.github.io/i3status-rust/i3status_rs/geolocator/index.html)
 
 ## Integrate it into i3/sway
 

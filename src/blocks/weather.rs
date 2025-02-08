@@ -141,24 +141,17 @@
 //! - `weather_thunder` (when weather is reported as "Thunderstorm" during the day)
 //! - `weather_thunder_night` (when weather is reported as "Thunderstorm" at night)
 
-use std::fmt;
-use std::sync::{Arc, Mutex};
-use std::time::Instant;
-
 use chrono::{DateTime, Utc};
 use sunrise::{SolarDay, SolarEvent};
 
 use crate::formatting::Format;
+pub(super) use crate::geolocator::IPAddressInfo;
 
 use super::prelude::*;
 
 pub mod met_no;
 pub mod nws;
 pub mod open_weather_map;
-
-const IP_API_URL: &str = "https://ipapi.co/json";
-
-static LAST_AUTOLOCATE: Mutex<Option<AutolocateResult>> = Mutex::new(None);
 
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
@@ -182,7 +175,7 @@ fn default_interval() -> Seconds {
 trait WeatherProvider {
     async fn get_weather(
         &self,
-        autolocated_location: Option<&Coordinates>,
+        autolocated_location: Option<&IPAddressInfo>,
         need_forecast: bool,
     ) -> Result<WeatherResult>;
 }
@@ -465,7 +458,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     loop {
         let location = if config.autolocate {
-            let fetch = || find_ip_location(autolocate_interval.0);
+            let fetch = || api.find_ip_location(&REQWEST_CLIENT, autolocate_interval.0);
             Some(fetch.retry(ExponentialBuilder::default()).await?)
         } else {
             None
@@ -541,82 +534,6 @@ enum UnitSystem {
     #[default]
     Metric,
     Imperial,
-}
-
-#[derive(Deserialize, Clone)]
-struct Coordinates {
-    latitude: f64,
-    longitude: f64,
-    city: String,
-}
-
-struct AutolocateResult {
-    location: Coordinates,
-    timestamp: Instant,
-}
-
-// TODO: might be good to allow for different geolocation services to be used, similar to how we have `service` for the weather API
-/// No-op if last API call was made in the last `interval` seconds.
-async fn find_ip_location(interval: Duration) -> Result<Coordinates> {
-    {
-        let guard = LAST_AUTOLOCATE.lock().unwrap();
-        if let Some(cached) = &*guard {
-            if cached.timestamp.elapsed() < interval {
-                return Ok(cached.location.clone());
-            }
-        }
-    }
-
-    #[derive(Deserialize)]
-    struct ApiResponse {
-        #[serde(flatten)]
-        location: Option<Coordinates>,
-        #[serde(default)]
-        error: bool,
-        #[serde(default)]
-        reason: ApiError,
-    }
-
-    #[derive(Deserialize, Default, Debug)]
-    #[serde(transparent)]
-    struct ApiError(Option<String>);
-
-    impl fmt::Display for ApiError {
-        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            f.write_str(self.0.as_deref().unwrap_or("Unknown Error"))
-        }
-    }
-    impl StdError for ApiError {}
-
-    let response: ApiResponse = REQWEST_CLIENT
-        .get(IP_API_URL)
-        .send()
-        .await
-        .error("Failed during request for current location")?
-        .json()
-        .await
-        .error("Failed while parsing location API result")?;
-
-    let location = if response.error {
-        return Err(Error {
-            message: Some("ipapi.co error".into()),
-            cause: Some(Arc::new(response.reason)),
-        });
-    } else {
-        response
-            .location
-            .error("Failed while parsing location API result")?
-    };
-
-    {
-        let mut guard = LAST_AUTOLOCATE.lock().unwrap();
-        *guard = Some(AutolocateResult {
-            location: location.clone(),
-            timestamp: Instant::now(),
-        });
-    }
-
-    Ok(location)
 }
 
 // Convert wind direction in azimuth degrees to abbreviation names
