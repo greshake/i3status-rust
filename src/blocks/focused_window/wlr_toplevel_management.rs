@@ -1,10 +1,8 @@
 use super::{Backend, Info};
 use crate::blocks::prelude::*;
 
-use wayrs_protocols::wlr_foreign_toplevel_management_unstable_v1::*;
-
-use wayrs_client::global::GlobalsExt;
 use wayrs_client::{Connection, EventCtx};
+use wayrs_protocols::wlr_foreign_toplevel_management_unstable_v1::*;
 
 pub(super) struct WlrToplevelManagement {
     conn: Connection<State>,
@@ -27,12 +25,14 @@ struct Toplevel {
 
 impl WlrToplevelManagement {
     pub(super) async fn new() -> Result<Self> {
-        let (mut conn, globals) = Connection::async_connect_and_collect_globals()
-            .await
-            .error("failed to connect to wayland")?;
+        let mut conn = Connection::connect().error("failed to connect to wayland")?;
 
-        let _: ZwlrForeignToplevelManagerV1 = globals
-            .bind_with_cb(&mut conn, 1..=3, toplevel_manager_cb)
+        conn.async_roundtrip()
+            .await
+            .error("wayland roundrip failed")?;
+
+        let _: ZwlrForeignToplevelManagerV1 = conn
+            .bind_singleton_with_cb(1..=3, toplevel_manager_cb)
             .error("unsupported compositor")?;
 
         Ok(Self {
