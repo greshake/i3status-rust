@@ -120,10 +120,8 @@
 <a href="#119" id="119">119</a></pre></div><pre class="rust"><code><span class="kw">use super</span>::{Backend, Info};
 <span class="kw">use </span><span class="kw">crate</span>::blocks::prelude::<span class="kw-2">*</span>;
 
-<span class="kw">use </span>wayrs_protocols::wlr_foreign_toplevel_management_unstable_v1::<span class="kw-2">*</span>;
-
-<span class="kw">use </span>wayrs_client::global::GlobalsExt;
 <span class="kw">use </span>wayrs_client::{Connection, EventCtx};
+<span class="kw">use </span>wayrs_protocols::wlr_foreign_toplevel_management_unstable_v1::<span class="kw-2">*</span>;
 
 <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct </span>WlrToplevelManagement {
     conn: Connection&lt;State&gt;,
@@ -146,12 +144,14 @@
 
 <span class="kw">impl </span>WlrToplevelManagement {
     <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">async fn </span>new() -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>&gt; {
-        <span class="kw">let </span>(<span class="kw-2">mut </span>conn, globals) = Connection::async_connect_and_collect_globals()
-            .<span class="kw">await
-            </span>.error(<span class="string">"failed to connect to wayland"</span>)<span class="question-mark">?</span>;
+        <span class="kw">let </span><span class="kw-2">mut </span>conn = Connection::connect().error(<span class="string">"failed to connect to wayland"</span>)<span class="question-mark">?</span>;
 
-        <span class="kw">let _</span>: ZwlrForeignToplevelManagerV1 = globals
-            .bind_with_cb(<span class="kw-2">&amp;mut </span>conn, <span class="number">1</span>..=<span class="number">3</span>, toplevel_manager_cb)
+        conn.async_roundtrip()
+            .<span class="kw">await
+            </span>.error(<span class="string">"wayland roundrip failed"</span>)<span class="question-mark">?</span>;
+
+        <span class="kw">let _</span>: ZwlrForeignToplevelManagerV1 = conn
+            .bind_singleton_with_cb(<span class="number">1</span>..=<span class="number">3</span>, toplevel_manager_cb)
             .error(<span class="string">"unsupported compositor"</span>)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="self">Self </span>{
