@@ -197,7 +197,12 @@
 <a href="#196" id="196">196</a>
 <a href="#197" id="197">197</a>
 <a href="#198" id="198">198</a>
-<a href="#199" id="199">199</a></pre></div><pre class="rust"><code><span class="doccomment">//! X11 screen information
+<a href="#199" id="199">199</a>
+<a href="#200" id="200">200</a>
+<a href="#201" id="201">201</a>
+<a href="#202" id="202">202</a>
+<a href="#203" id="203">203</a>
+<a href="#204" id="204">204</a></pre></div><pre class="rust"><code><span class="doccomment">//! X11 screen information
 //!
 //! X11 screen information (name, brightness, resolution). With a click you can toggle through your active screens and with wheel up and down you can adjust the selected screens brightness. Regarding brightness control, xrandr changes the brightness of the display using gamma rather than changing the brightness in hardware, so if that is not desirable then consider using the `backlight` block instead.
 //!
@@ -210,6 +215,7 @@
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $display $brightness_icon $brightness "`
 //! `step_width` | The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50). | `5`
 //! `interval` | Update interval in seconds. | `5`
+//! `invert_icons` | Invert icons' ordering, useful if you have colorful emoji | `false`
 //!
 //! Placeholder       | Value                        | Type   | Unit
 //! ------------------|------------------------------|--------|---------------
@@ -252,6 +258,7 @@
     <span class="kw">pub </span>format: FormatConfig,
     <span class="attr">#[default(<span class="number">5</span>)]
     </span><span class="kw">pub </span>step_width: u32,
+    <span class="kw">pub </span>invert_icons: bool,
 }
 
 <span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
@@ -279,11 +286,14 @@
             <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
 
             <span class="kw">if let </span><span class="prelude-val">Some</span>(mon) = monitors.get(cur_indx) {
+                <span class="kw">let </span><span class="kw-2">mut </span>icon_value = (mon.brightness <span class="kw">as </span>f64) / <span class="number">100.0</span>;
+                <span class="kw">if </span>config.invert_icons {
+                    icon_value = <span class="number">1.0 </span>- icon_value;
+                }
                 widget.set_values(<span class="macro">map!</span> {
                     <span class="string">"display" </span>=&gt; Value::text(mon.name.clone()),
                     <span class="string">"brightness" </span>=&gt; Value::percents(mon.brightness),
-                    <span class="comment">//TODO: change `brightness_icon` based on `brightness`
-                    </span><span class="string">"brightness_icon" </span>=&gt; Value::icon(<span class="string">"backlight"</span>),
+                    <span class="string">"brightness_icon" </span>=&gt; Value::icon_progression(<span class="string">"backlight"</span>, icon_value),
                     <span class="string">"resolution" </span>=&gt; Value::text(mon.resolution.clone()),
                     <span class="string">"icon" </span>=&gt; Value::icon(<span class="string">"xrandr"</span>),
                     <span class="string">"res_icon" </span>=&gt; Value::icon(<span class="string">"resolution"</span>),
