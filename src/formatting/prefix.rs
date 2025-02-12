@@ -71,6 +71,10 @@ impl Prefix {
         value / MUL[self as usize]
     }
 
+    pub fn unapply(self, value: f64) -> f64 {
+        value * MUL[self as usize]
+    }
+
     pub fn eng(mut number: f64) -> Self {
         if number == 0.0 {
             Self::One
