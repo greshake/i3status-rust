@@ -232,10 +232,10 @@
         <span class="kw">for </span>arg <span class="kw">in </span>args {
             <span class="kw">match </span>arg.key {
                 <span class="string">"format" </span>| <span class="string">"f" </span>=&gt; {
-                    format = <span class="prelude-val">Some</span>(arg.val);
+                    format = <span class="prelude-val">Some</span>(arg.val.error(<span class="string">"format must be specified"</span>)<span class="question-mark">?</span>);
                 }
                 <span class="string">"locale" </span>| <span class="string">"l" </span>=&gt; {
-                    locale = <span class="prelude-val">Some</span>(arg.val);
+                    locale = <span class="prelude-val">Some</span>(arg.val.error(<span class="string">"locale must be specified"</span>)<span class="question-mark">?</span>);
                 }
                 other =&gt; {
                     <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(

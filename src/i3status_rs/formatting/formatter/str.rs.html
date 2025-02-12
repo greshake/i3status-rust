@@ -122,11 +122,7 @@
 <a href="#121" id="121">121</a>
 <a href="#122" id="122">122</a>
 <a href="#123" id="123">123</a>
-<a href="#124" id="124">124</a>
-<a href="#125" id="125">125</a>
-<a href="#126" id="126">126</a>
-<a href="#127" id="127">127</a>
-<a href="#128" id="128">128</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::iter::repeat;
+<a href="#124" id="124">124</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::iter::repeat;
 <span class="kw">use </span>std::time::Instant;
 
 <span class="kw">use </span><span class="kw">crate</span>::escape::CollectEscaped;
@@ -164,24 +160,20 @@
         <span class="kw">for </span>arg <span class="kw">in </span>args {
             <span class="kw">match </span>arg.key {
                 <span class="string">"min_width" </span>| <span class="string">"min_w" </span>=&gt; {
-                    min_width = arg.val.parse().error(<span class="string">"Width must be a positive integer"</span>)<span class="question-mark">?</span>;
+                    min_width = arg.parse_value()<span class="question-mark">?</span>;
                 }
                 <span class="string">"max_width" </span>| <span class="string">"max_w" </span>=&gt; {
-                    max_width = arg.val.parse().error(<span class="string">"Width must be a positive integer"</span>)<span class="question-mark">?</span>;
+                    max_width = arg.parse_value()<span class="question-mark">?</span>;
                 }
                 <span class="string">"width" </span>| <span class="string">"w" </span>=&gt; {
-                    min_width = arg.val.parse().error(<span class="string">"Width must be a positive integer"</span>)<span class="question-mark">?</span>;
+                    min_width = arg.parse_value()<span class="question-mark">?</span>;
                     max_width = min_width;
                 }
                 <span class="string">"rot_interval" </span>=&gt; {
-                    rot_interval = <span class="prelude-val">Some</span>(
-                        arg.val
-                            .parse()
-                            .error(<span class="string">"Interval must be a positive number"</span>)<span class="question-mark">?</span>,
-                    );
+                    rot_interval = <span class="prelude-val">Some</span>(arg.parse_value()<span class="question-mark">?</span>);
                 }
                 <span class="string">"rot_separator" </span>=&gt; {
-                    rot_separator = <span class="prelude-val">Some</span>(arg.val.to_string());
+                    rot_separator = <span class="prelude-val">Some</span>(arg.parse_value()<span class="question-mark">?</span>);
                 }
                 other =&gt; {
                     <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">"Unknown argument for 'str': '{other}'"</span>)));

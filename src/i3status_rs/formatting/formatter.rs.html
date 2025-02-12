@@ -84,7 +84,7 @@
     }};
     (<span class="macro-nonterminal">$name</span>:ident, $(<span class="macro-nonterminal">$key</span>:ident : <span class="macro-nonterminal">$value</span>:tt),* $(,)<span class="question-mark">?</span>) =&gt; {
         new_formatter(<span class="macro">stringify!</span>(<span class="macro-nonterminal">$name</span>), <span class="kw-2">&amp;</span>[
-            $( Arg { key: <span class="macro">stringify!</span>(<span class="macro-nonterminal">$key</span>), val: <span class="macro">stringify!</span>(<span class="macro-nonterminal">$value</span>) } ),*
+            $( Arg { key: <span class="macro">stringify!</span>(<span class="macro-nonterminal">$key</span>), val: <span class="prelude-val">Some</span>(<span class="macro">stringify!</span>(<span class="macro-nonterminal">$value</span>)) } ),*
         ])
     };
 }

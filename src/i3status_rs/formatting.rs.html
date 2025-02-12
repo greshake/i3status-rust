@@ -231,7 +231,9 @@
 <a href="#230" id="230">230</a>
 <a href="#231" id="231">231</a>
 <a href="#232" id="232">232</a>
-<a href="#233" id="233">233</a></pre></div><pre class="rust"><code><span class="doccomment">//! # Formatting system
+<a href="#233" id="233">233</a>
+<a href="#234" id="234">234</a>
+<a href="#235" id="235">235</a></pre></div><pre class="rust"><code><span class="doccomment">//! # Formatting system
 //! Many blocks have a `format` configuration option, which allows to heavily customize the block's
 //! appearance. In short, each block with `format` option provides a set of values, which are
 //! displayed according to `format`. `format`'s value is just a text with embedded variables.
@@ -260,6 +262,8 @@
 //! this, a number of formatters is available. Formatter can be specified using the syntax similar
 //! to method calls in many programming languages: `&lt;variable&gt;.&lt;formatter&gt;(&lt;args&gt;)`. For example:
 //! `$title.str(min_w:10, max_w:20)`.
+//!
+//! Note: for arguments that accept a boolean value, just specifying the argument will be treated as `arg:true`.
 //!
 //! ## `str` - Format text
 //!

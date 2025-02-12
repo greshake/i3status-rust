@@ -300,22 +300,7 @@
 <a href="#299" id="299">299</a>
 <a href="#300" id="300">300</a>
 <a href="#301" id="301">301</a>
-<a href="#302" id="302">302</a>
-<a href="#303" id="303">303</a>
-<a href="#304" id="304">304</a>
-<a href="#305" id="305">305</a>
-<a href="#306" id="306">306</a>
-<a href="#307" id="307">307</a>
-<a href="#308" id="308">308</a>
-<a href="#309" id="309">309</a>
-<a href="#310" id="310">310</a>
-<a href="#311" id="311">311</a>
-<a href="#312" id="312">312</a>
-<a href="#313" id="313">313</a>
-<a href="#314" id="314">314</a>
-<a href="#315" id="315">315</a>
-<a href="#316" id="316">316</a>
-<a href="#317" id="317">317</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::formatting::prefix::Prefix;
+<a href="#302" id="302">302</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::formatting::prefix::Prefix;
 <span class="kw">use </span><span class="kw">crate</span>::formatting::unit::Unit;
 
 <span class="kw">use </span>std::borrow::Cow;
@@ -361,52 +346,33 @@
         <span class="kw">for </span>arg <span class="kw">in </span>args {
             <span class="kw">match </span>arg.key {
                 <span class="string">"width" </span>| <span class="string">"w" </span>=&gt; {
-                    result.width = arg.val.parse().error(<span class="string">"Width must be a positive integer"</span>)<span class="question-mark">?</span>;
+                    result.width = arg.parse_value()<span class="question-mark">?</span>;
                 }
                 <span class="string">"unit" </span>| <span class="string">"u" </span>=&gt; {
-                    result.unit = <span class="prelude-val">Some</span>(arg.val.parse()<span class="question-mark">?</span>);
+                    result.unit = <span class="prelude-val">Some</span>(arg.parse_value()<span class="question-mark">?</span>);
                 }
                 <span class="string">"hide_unit" </span>=&gt; {
-                    result.unit_hidden = arg
-                        .val
-                        .parse()
-                        .ok()
-                        .error(<span class="string">"hide_unit must be true or false"</span>)<span class="question-mark">?</span>;
+                    result.unit_hidden = arg.parse_value()<span class="question-mark">?</span>;
                 }
                 <span class="string">"unit_space" </span>=&gt; {
-                    result.unit_has_space = arg
-                        .val
-                        .parse()
-                        .ok()
-                        .error(<span class="string">"unit_space must be true or false"</span>)<span class="question-mark">?</span>;
+                    result.unit_has_space = arg.parse_value()<span class="question-mark">?</span>;
                 }
                 <span class="string">"prefix" </span>| <span class="string">"p" </span>=&gt; {
-                    result.prefix = <span class="prelude-val">Some</span>(arg.val.parse()<span class="question-mark">?</span>);
+                    result.prefix = <span class="prelude-val">Some</span>(arg.parse_value()<span class="question-mark">?</span>);
                 }
                 <span class="string">"hide_prefix" </span>=&gt; {
-                    result.prefix_hidden = arg
-                        .val
-                        .parse()
-                        .ok()
-                        .error(<span class="string">"hide_prefix must be true or false"</span>)<span class="question-mark">?</span>;
+                    result.prefix_hidden = arg.parse_value()<span class="question-mark">?</span>;
                 }
                 <span class="string">"prefix_space" </span>=&gt; {
-                    result.prefix_has_space = arg
-                        .val
-                        .parse()
-                        .ok()
-                        .error(<span class="string">"prefix_space must be true or false"</span>)<span class="question-mark">?</span>;
+                    result.prefix_has_space = arg.parse_value()<span class="question-mark">?</span>;
                 }
                 <span class="string">"force_prefix" </span>=&gt; {
-                    result.prefix_forced = arg
-                        .val
-                        .parse()
-                        .ok()
-                        .error(<span class="string">"force_prefix must be true or false"</span>)<span class="question-mark">?</span>;
+                    result.prefix_forced = arg.parse_value()<span class="question-mark">?</span>;
                 }
                 <span class="string">"pad_with" </span>=&gt; {
-                    <span class="kw">if </span>arg.val.graphemes(<span class="bool-val">true</span>).count() &lt; <span class="number">2 </span>{
-                        result.pad_with = Cow::Owned(arg.val.into());
+                    <span class="kw">let </span>pad_with_str = arg.val.error(<span class="string">"pad_with must be specified"</span>)<span class="question-mark">?</span>;
+                    <span class="kw">if </span>pad_with_str.graphemes(<span class="bool-val">true</span>).count() &lt; <span class="number">2 </span>{
+                        result.pad_with = Cow::Owned(pad_with_str.into());
                     } <span class="kw">else </span>{
                         <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(
                             <span class="string">"pad_with must be an empty string or a single character"</span>,
@@ -414,7 +380,11 @@
                     }
                 }
                 <span class="string">"range" </span>=&gt; {
-                    <span class="kw">let </span>(start, end) = arg.val.split_once(<span class="string">".."</span>).error(<span class="string">"invalid range"</span>)<span class="question-mark">?</span>;
+                    <span class="kw">let </span>(start, end) = arg
+                        .val
+                        .error(<span class="string">"range must be specified"</span>)<span class="question-mark">?
+                        </span>.split_once(<span class="string">".."</span>)
+                        .error(<span class="string">"invalid range"</span>)<span class="question-mark">?</span>;
                     <span class="kw">if </span>!start.is_empty() {
                         result.range = start.parse::&lt;f64&gt;().error(<span class="string">"invalid range start"</span>)<span class="question-mark">?
                             </span>..=<span class="kw-2">*</span>result.range.end();
@@ -425,7 +395,7 @@
                     }
                 }
                 <span class="string">"show" </span>=&gt; {
-                    result.show = arg.val.parse().ok().error(<span class="string">"show must be true or false"</span>)<span class="question-mark">?</span>;
+                    result.show = arg.parse_value()<span class="question-mark">?</span>;
                 }
                 other =&gt; {
                     <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">"Unknown argument for 'eng': '{other}'"</span>)));

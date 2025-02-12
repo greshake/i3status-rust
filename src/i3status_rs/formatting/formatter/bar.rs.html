@@ -101,13 +101,13 @@
         <span class="kw">for </span>arg <span class="kw">in </span>args {
             <span class="kw">match </span>arg.key {
                 <span class="string">"width" </span>| <span class="string">"w" </span>=&gt; {
-                    width = <span class="prelude-val">Some</span>(arg.val.parse().error(<span class="string">"Width must be a positive integer"</span>)<span class="question-mark">?</span>);
+                    width = <span class="prelude-val">Some</span>(arg.parse_value()<span class="question-mark">?</span>);
                 }
                 <span class="string">"max_value" </span>=&gt; {
-                    max_value = arg.val.parse().error(<span class="string">"Max value must be a number"</span>)<span class="question-mark">?</span>;
+                    max_value = arg.parse_value()<span class="question-mark">?</span>;
                 }
                 <span class="string">"vertical" </span>| <span class="string">"v" </span>=&gt; {
-                    vertical = arg.val.parse().error(<span class="string">"Vertical value must be a bool"</span>)<span class="question-mark">?</span>;
+                    vertical = arg.parse_value()<span class="question-mark">?</span>;
                 }
                 other =&gt; {
                     <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">"Unknown argument for 'bar': '{other}'"</span>)));

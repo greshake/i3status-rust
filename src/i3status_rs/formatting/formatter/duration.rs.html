@@ -513,19 +513,7 @@
 <a href="#512" id="512">512</a>
 <a href="#513" id="513">513</a>
 <a href="#514" id="514">514</a>
-<a href="#515" id="515">515</a>
-<a href="#516" id="516">516</a>
-<a href="#517" id="517">517</a>
-<a href="#518" id="518">518</a>
-<a href="#519" id="519">519</a>
-<a href="#520" id="520">520</a>
-<a href="#521" id="521">521</a>
-<a href="#522" id="522">522</a>
-<a href="#523" id="523">523</a>
-<a href="#524" id="524">524</a>
-<a href="#525" id="525">525</a>
-<a href="#526" id="526">526</a>
-<a href="#527" id="527">527</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::cmp::min;
+<a href="#515" id="515">515</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::cmp::min;
 
 <span class="kw">use super</span>::<span class="kw-2">*</span>;
 
@@ -578,39 +566,27 @@
         <span class="kw">for </span>arg <span class="kw">in </span>args {
             <span class="kw">match </span>arg.key {
                 <span class="string">"hms" </span>=&gt; {
-                    hms = arg.val.parse().ok().error(<span class="string">"hms must be true or false"</span>)<span class="question-mark">?</span>;
+                    hms = arg.parse_value()<span class="question-mark">?</span>;
                 }
                 <span class="string">"max_unit" </span>=&gt; {
-                    max_unit = <span class="prelude-val">Some</span>(arg.val);
+                    max_unit = <span class="prelude-val">Some</span>(arg.val.error(<span class="string">"max_unit must be specified"</span>)<span class="question-mark">?</span>);
                 }
                 <span class="string">"min_unit" </span>=&gt; {
-                    min_unit = arg.val;
+                    min_unit = arg.val.error(<span class="string">"min_unit must be specified"</span>)<span class="question-mark">?</span>;
                 }
                 <span class="string">"units" </span>=&gt; {
-                    units = <span class="prelude-val">Some</span>(
-                        arg.val
-                            .parse()
-                            .ok()
-                            .error(<span class="string">"units must be a positive integer"</span>)<span class="question-mark">?</span>,
-                    );
+                    units = <span class="prelude-val">Some</span>(arg.parse_value()<span class="question-mark">?</span>);
                 }
                 <span class="string">"round_up" </span>=&gt; {
-                    round_up = arg
-                        .val
-                        .parse()
-                        .ok()
-                        .error(<span class="string">"round_up must be true or false"</span>)<span class="question-mark">?</span>;
+                    round_up = arg.parse_value()<span class="question-mark">?</span>;
                 }
                 <span class="string">"unit_space" </span>=&gt; {
-                    unit_has_space = arg
-                        .val
-                        .parse()
-                        .ok()
-                        .error(<span class="string">"unit_space must be true or false"</span>)<span class="question-mark">?</span>;
+                    unit_has_space = arg.parse_value()<span class="question-mark">?</span>;
                 }
                 <span class="string">"pad_with" </span>=&gt; {
-                    <span class="kw">if </span>arg.val.graphemes(<span class="bool-val">true</span>).count() &lt; <span class="number">2 </span>{
-                        pad_with = <span class="prelude-val">Some</span>(Cow::Owned(arg.val.into()));
+                    <span class="kw">let </span>pad_with_str = arg.val.error(<span class="string">"pad_with must be specified"</span>)<span class="question-mark">?</span>;
+                    <span class="kw">if </span>pad_with_str.graphemes(<span class="bool-val">true</span>).count() &lt; <span class="number">2 </span>{
+                        pad_with = <span class="prelude-val">Some</span>(Cow::Owned(pad_with_str.into()));
                     } <span class="kw">else </span>{
                         <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(
                             <span class="string">"pad_with must be an empty string or a single character"</span>,
@@ -618,7 +594,7 @@
                     };
                 }
                 <span class="string">"leading_zeroes" </span>=&gt; {
-                    leading_zeroes = arg.val.parse().ok().error(<span class="string">"units must be true or false"</span>)<span class="question-mark">?</span>;
+                    leading_zeroes = arg.parse_value()<span class="question-mark">?</span>;
                 }
 
                 <span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(<span class="string">"Unexpected argument {:?}"</span>, arg.key))),
