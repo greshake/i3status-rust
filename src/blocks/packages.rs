@@ -5,6 +5,7 @@
 //! - `pacman` for Arch based system
 //! - `aur` for Arch based system
 //! - `dnf` for Fedora based system
+//! - `xbps` for Void Linux
 //!
 //! # Configuration
 //!
@@ -28,6 +29,7 @@
 //! `pacman`     | Number of updates available in Arch based system                                 | Number | -
 //! `aur`        | Number of updates available in Arch based system                                 | Number | -
 //! `dnf`        | Number of updates available in Fedora based system                               | Number | -
+//! `xbps`       | Number of updates available in Void Linux                                        | Number | -
 //! `total`      | Number of updates available in all package manager listed                        | Number | -
 //!
 //! # Apt
@@ -146,6 +148,23 @@
 //! cmd = "dnf list -q --upgrades | tail -n +2 | rofi -dmenu"
 //! ```
 //!
+//!
+//! Xbps only config:
+//!
+//! ```toml
+//! [[block]]
+//! block = "packages"
+//! package_manager = ["xbps"]
+//! interval = 1800
+//! format = " $icon $xbps.eng(w:1) updates available "
+//! format_singular = " $icon One update available "
+//! format_up_to_date = " $icon system up to date "
+//! [[block.click]]
+//! # shows dmenu with available updates. Any dmenu alternative should also work.
+//! button = "left"
+//! cmd = "xbps-install -Mun | dmenu -l 10"
+//! ```
+//!
 //! Multiple package managers config:
 //!
 //! Update the list of pending updates every thirty minutes (1800 seconds):
@@ -153,9 +172,9 @@
 //! ```toml
 //! [[block]]
 //! block = "packages"
-//! package_manager = ["apt", "pacman", "aur","dnf"]
+//! package_manager = ["apt", "pacman", "aur", "dnf", "xbps"]
 //! interval = 1800
-//! format = " $icon $apt + $pacman + $aur + $dnf = $total updates available "
+//! format = " $icon $apt + $pacman + $aur + $dnf + $xbps = $total updates available "
 //! format_singular = " $icon One update available "
 //! format_up_to_date = " $icon system up to date "
 //! # If a linux update is available, but no ZFS package, it won't be possible to
@@ -178,6 +197,9 @@ use pacman::{Aur, Pacman};
 
 pub mod dnf;
 use dnf::Dnf;
+
+pub mod xbps;
+use xbps::Xbps;
 
 use regex::Regex;
 
@@ -206,6 +228,7 @@ pub enum PackageManager {
     Pacman,
     Aur,
     Dnf,
+    Xbps,
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
@@ -232,6 +255,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let aur = any_format_contains!("aur");
     let pacman = any_format_contains!("pacman");
     let dnf = any_format_contains!("dnf");
+    let xbps = any_format_contains!("xbps");
 
     if !config.package_manager.contains(&PackageManager::Apt) && apt {
         config.package_manager.push(PackageManager::Apt);
@@ -244,6 +268,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     }
     if !config.package_manager.contains(&PackageManager::Dnf) && dnf {
         config.package_manager.push(PackageManager::Dnf);
+    }
+    if !config.package_manager.contains(&PackageManager::Xbps) && xbps {
+        config.package_manager.push(PackageManager::Xbps);
     }
 
     let warning_updates_regex = config
@@ -275,6 +302,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 config.aur_command.clone().error("aur_command is not set")?,
             )),
             PackageManager::Dnf => Box::new(Dnf::new()),
+            PackageManager::Xbps => Box::new(Xbps::new()),
         });
     }
 
