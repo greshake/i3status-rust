@@ -348,13 +348,42 @@
 <a href="#347" id="347">347</a>
 <a href="#348" id="348">348</a>
 <a href="#349" id="349">349</a>
-<a href="#350" id="350">350</a></pre></div><pre class="rust"><code><span class="doccomment">//! Pending updates for different package manager like apt, pacman, etc.
+<a href="#350" id="350">350</a>
+<a href="#351" id="351">351</a>
+<a href="#352" id="352">352</a>
+<a href="#353" id="353">353</a>
+<a href="#354" id="354">354</a>
+<a href="#355" id="355">355</a>
+<a href="#356" id="356">356</a>
+<a href="#357" id="357">357</a>
+<a href="#358" id="358">358</a>
+<a href="#359" id="359">359</a>
+<a href="#360" id="360">360</a>
+<a href="#361" id="361">361</a>
+<a href="#362" id="362">362</a>
+<a href="#363" id="363">363</a>
+<a href="#364" id="364">364</a>
+<a href="#365" id="365">365</a>
+<a href="#366" id="366">366</a>
+<a href="#367" id="367">367</a>
+<a href="#368" id="368">368</a>
+<a href="#369" id="369">369</a>
+<a href="#370" id="370">370</a>
+<a href="#371" id="371">371</a>
+<a href="#372" id="372">372</a>
+<a href="#373" id="373">373</a>
+<a href="#374" id="374">374</a>
+<a href="#375" id="375">375</a>
+<a href="#376" id="376">376</a>
+<a href="#377" id="377">377</a>
+<a href="#378" id="378">378</a></pre></div><pre class="rust"><code><span class="doccomment">//! Pending updates for different package manager like apt, pacman, etc.
 //!
 //! Currently these package managers are available:
 //! - `apt` for Debian/Ubuntu based system
 //! - `pacman` for Arch based system
 //! - `aur` for Arch based system
 //! - `dnf` for Fedora based system
+//! - `xbps` for Void Linux
 //!
 //! # Configuration
 //!
@@ -378,6 +407,7 @@
 //! `pacman`     | Number of updates available in Arch based system                                 | Number | -
 //! `aur`        | Number of updates available in Arch based system                                 | Number | -
 //! `dnf`        | Number of updates available in Fedora based system                               | Number | -
+//! `xbps`       | Number of updates available in Void Linux                                        | Number | -
 //! `total`      | Number of updates available in all package manager listed                        | Number | -
 //!
 //! # Apt
@@ -496,6 +526,23 @@
 //! cmd = "dnf list -q --upgrades | tail -n +2 | rofi -dmenu"
 //! ```
 //!
+//!
+//! Xbps only config:
+//!
+//! ```toml
+//! [[block]]
+//! block = "packages"
+//! package_manager = ["xbps"]
+//! interval = 1800
+//! format = " $icon $xbps.eng(w:1) updates available "
+//! format_singular = " $icon One update available "
+//! format_up_to_date = " $icon system up to date "
+//! [[block.click]]
+//! # shows dmenu with available updates. Any dmenu alternative should also work.
+//! button = "left"
+//! cmd = "xbps-install -Mun | dmenu -l 10"
+//! ```
+//!
 //! Multiple package managers config:
 //!
 //! Update the list of pending updates every thirty minutes (1800 seconds):
@@ -503,9 +550,9 @@
 //! ```toml
 //! [[block]]
 //! block = "packages"
-//! package_manager = ["apt", "pacman", "aur","dnf"]
+//! package_manager = ["apt", "pacman", "aur", "dnf", "xbps"]
 //! interval = 1800
-//! format = " $icon $apt + $pacman + $aur + $dnf = $total updates available "
+//! format = " $icon $apt + $pacman + $aur + $dnf + $xbps = $total updates available "
 //! format_singular = " $icon One update available "
 //! format_up_to_date = " $icon system up to date "
 //! # If a linux update is available, but no ZFS package, it won't be possible to
@@ -528,6 +575,9 @@
 
 <span class="kw">pub mod </span>dnf;
 <span class="kw">use </span>dnf::Dnf;
+
+<span class="kw">pub mod </span>xbps;
+<span class="kw">use </span>xbps::Xbps;
 
 <span class="kw">use </span>regex::Regex;
 
@@ -556,6 +606,7 @@
     Pacman,
     Aur,
     Dnf,
+    Xbps,
 }
 
 <span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
@@ -582,6 +633,7 @@
     <span class="kw">let </span>aur = <span class="macro">any_format_contains!</span>(<span class="string">"aur"</span>);
     <span class="kw">let </span>pacman = <span class="macro">any_format_contains!</span>(<span class="string">"pacman"</span>);
     <span class="kw">let </span>dnf = <span class="macro">any_format_contains!</span>(<span class="string">"dnf"</span>);
+    <span class="kw">let </span>xbps = <span class="macro">any_format_contains!</span>(<span class="string">"xbps"</span>);
 
     <span class="kw">if </span>!config.package_manager.contains(<span class="kw-2">&amp;</span>PackageManager::Apt) &amp;&amp; apt {
         config.package_manager.push(PackageManager::Apt);
@@ -594,6 +646,9 @@
     }
     <span class="kw">if </span>!config.package_manager.contains(<span class="kw-2">&amp;</span>PackageManager::Dnf) &amp;&amp; dnf {
         config.package_manager.push(PackageManager::Dnf);
+    }
+    <span class="kw">if </span>!config.package_manager.contains(<span class="kw-2">&amp;</span>PackageManager::Xbps) &amp;&amp; xbps {
+        config.package_manager.push(PackageManager::Xbps);
     }
 
     <span class="kw">let </span>warning_updates_regex = config
@@ -625,6 +680,7 @@
                 config.aur_command.clone().error(<span class="string">"aur_command is not set"</span>)<span class="question-mark">?</span>,
             )),
             PackageManager::Dnf =&gt; Box::new(Dnf::new()),
+            PackageManager::Xbps =&gt; Box::new(Xbps::new()),
         });
     }
 
