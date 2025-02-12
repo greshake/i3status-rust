@@ -18,7 +18,7 @@ macro_rules! new_fmt {
     }};
     ($name:ident, $($key:ident : $value:tt),* $(,)?) => {
         new_formatter(stringify!($name), &[
-            $( Arg { key: stringify!($key), val: stringify!($value) } ),*
+            $( Arg { key: stringify!($key), val: Some(stringify!($value)) } ),*
         ])
     };
 }

@@ -36,24 +36,20 @@ impl StrFormatter {
         for arg in args {
             match arg.key {
                 "min_width" | "min_w" => {
-                    min_width = arg.val.parse().error("Width must be a positive integer")?;
+                    min_width = arg.parse_value()?;
                 }
                 "max_width" | "max_w" => {
-                    max_width = arg.val.parse().error("Width must be a positive integer")?;
+                    max_width = arg.parse_value()?;
                 }
                 "width" | "w" => {
-                    min_width = arg.val.parse().error("Width must be a positive integer")?;
+                    min_width = arg.parse_value()?;
                     max_width = min_width;
                 }
                 "rot_interval" => {
-                    rot_interval = Some(
-                        arg.val
-                            .parse()
-                            .error("Interval must be a positive number")?,
-                    );
+                    rot_interval = Some(arg.parse_value()?);
                 }
                 "rot_separator" => {
-                    rot_separator = Some(arg.val.to_string());
+                    rot_separator = Some(arg.parse_value()?);
                 }
                 other => {
                     return Err(Error::new(format!("Unknown argument for 'str': '{other}'")));
