@@ -35,11 +35,12 @@ use serde::de::{self, Deserialize};
 use tokio::sync::{mpsc, Notify};
 
 use std::borrow::Cow;
-use std::sync::Arc;
-use std::time::Duration;
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 
 use crate::click::MouseButton;
 use crate::errors::*;
+use crate::locator::{AutolocateResult, Backend, IPAddressInfo, Locator};
 use crate::widget::Widget;
 use crate::{BoxedFuture, Request, RequestCmd};
 
@@ -207,6 +208,8 @@ pub struct CommonApi {
     pub(crate) update_request: Arc<Notify>,
     pub(crate) request_sender: mpsc::UnboundedSender<Request>,
     pub(crate) error_interval: Duration,
+    pub(crate) locator: Arc<Locator>,
+    pub(crate) last_autolocate: Arc<Mutex<Option<AutolocateResult>>>,
 }
 
 impl CommonApi {
@@ -265,5 +268,37 @@ impl CommonApi {
 
     pub async fn wait_for_update_request(&self) {
         self.update_request.notified().await;
+    }
+
+    fn locator_name(&self) -> Cow<'static, str> {
+        self.locator.name()
+    }
+
+    /// No-op if last API call was made in the last `interval` seconds.
+    pub async fn find_ip_location(
+        &self,
+        client: &reqwest::Client,
+        interval: Duration,
+    ) -> Result<IPAddressInfo> {
+        {
+            let guard = self.last_autolocate.lock().unwrap();
+            if let Some(cached) = &*guard {
+                if cached.timestamp.elapsed() < interval {
+                    return Ok(cached.location.clone());
+                }
+            }
+        }
+
+        let location = self.locator.get_info(client).await?;
+
+        {
+            let mut guard = self.last_autolocate.lock().unwrap();
+            *guard = Some(AutolocateResult {
+                location: location.clone(),
+                timestamp: Instant::now(),
+            });
+        }
+
+        Ok(location)
     }
 }

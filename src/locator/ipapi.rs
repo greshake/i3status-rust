@@ -2,6 +2,11 @@ use super::*;
 
 const IP_API_URL: &str = "https://ipapi.co/json";
 
+// This config is here just to make sure that no other config is provided
+#[derive(Deserialize, Debug, Default, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct Config {}
+
 #[derive(Deserialize)]
 struct ApiResponse {
     #[serde(flatten)]
@@ -90,17 +95,13 @@ impl StdError for ApiError {}
 #[derive(Deserialize, Debug, Default, Clone)]
 pub struct Ipapi;
 
-#[async_trait]
 impl Backend for Ipapi {
     fn name(&self) -> Cow<'static, str> {
         Cow::Borrowed("ipapi.co")
     }
-
-    async fn get_info(
-        &self,
-        client: &reqwest::Client,
-        _api_key: &Option<String>,
-    ) -> Result<IPAddressInfo> {
+}
+impl Ipapi {
+    pub async fn get_info(&self, client: &reqwest::Client) -> Result<IPAddressInfo> {
         let response: ApiResponse = client
             .get(IP_API_URL)
             .send()

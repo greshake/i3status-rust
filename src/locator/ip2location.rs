@@ -1,6 +1,18 @@
 use super::*;
 
 const IP_API_URL: &str = "https://api.ip2location.io/";
+pub(super) const API_KEY_ENV: &str = "IP2LOCATION_API_KEY";
+
+#[derive(Deserialize, Debug, Default, Clone)]
+#[serde(deny_unknown_fields)]
+pub struct Config {
+    #[serde(default = "getenv_api_key")]
+    pub api_key: Arc<Option<String>>,
+}
+
+fn getenv_api_key() -> Arc<Option<String>> {
+    Arc::new(std::env::var(API_KEY_ENV).ok())
+}
 
 #[derive(Deserialize)]
 struct ApiResponse {
@@ -185,13 +197,14 @@ impl StdError for ApiError {}
 #[derive(Deserialize, Debug, Default, Clone)]
 pub struct Ip2Location;
 
-#[async_trait]
 impl Backend for Ip2Location {
     fn name(&self) -> Cow<'static, str> {
         Cow::Borrowed("ip2location.io")
     }
+}
 
-    async fn get_info(
+impl Ip2Location {
+    pub async fn get_info(
         &self,
         client: &reqwest::Client,
         api_key: &Option<String>,

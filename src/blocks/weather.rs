@@ -145,7 +145,7 @@ use chrono::{DateTime, Datelike, Utc};
 use sunrise::{SolarDay, SolarEvent};
 
 use crate::formatting::Format;
-pub use crate::locator::{find_ip_location, IPAddressInfo};
+pub(super) use crate::locator::IPAddressInfo;
 
 use super::prelude::*;
 
@@ -458,7 +458,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     loop {
         let location = if config.autolocate {
-            let fetch = || find_ip_location(&REQWEST_CLIENT, autolocate_interval.0);
+            let fetch = || api.find_ip_location(&REQWEST_CLIENT, autolocate_interval.0);
             Some(fetch.retry(ExponentialBuilder::default()).await?)
         } else {
             None

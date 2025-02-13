@@ -269,6 +269,8 @@ impl BarState {
             update_request: update_request.clone(),
             request_sender: self.request_sender.clone(),
             error_interval: Duration::from_secs(block_config.common.error_interval),
+            locator: self.config.locator.clone(),
+            last_autolocate: Default::default(),
         };
 
         let error_format = block_config

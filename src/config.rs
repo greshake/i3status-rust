@@ -20,7 +20,7 @@ pub struct Config {
     #[serde(default)]
     pub invert_scrolling: bool,
 
-    pub locator: Option<Locator>,
+    pub locator: Arc<Locator>,
 
     /// The maximum delay (ms) between two clicks that are considered as double click
     #[serde(default)]

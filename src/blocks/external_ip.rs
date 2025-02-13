@@ -63,7 +63,6 @@
 use zbus::MatchRule;
 
 use super::prelude::*;
-use crate::locator::{find_ip_location, get_global_locator_driver_name};
 use crate::util::{country_flag_from_iso_code, new_system_dbus_connection};
 
 #[derive(Deserialize, Debug, SmartDefault)]
@@ -136,7 +135,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     };
 
     loop {
-        let fetch_info = || find_ip_location(client, Duration::from_secs(0));
+        let fetch_info = || api.find_ip_location(client, Duration::from_secs(0));
         let info = fetch_info.retry(ExponentialBuilder::default()).await?;
 
         let mut values = map! {
@@ -154,7 +153,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 } else if format.contains_key(key) {
                     return Err(Error::new(format!(
                         "The format string contains '{key}', but the {key} field is not provided by {} (an api key may be required)",
-                        get_global_locator_driver_name()
+                        api.locator_name()
                     )));
                 }
             })*
@@ -192,7 +191,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         } else if format.contains_key("country_code") || format.contains_key("country_flag") {
             return Err(Error::new(format!(
                 "The format string contains 'country_code' or 'country_flag', but the country_code field is not provided by {}",
-                get_global_locator_driver_name()
+                api.locator_name()
             )));
         }
 
@@ -203,7 +202,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         } else if format.contains_key("in_eu") {
             return Err(Error::new(format!(
                 "The format string contains 'in_eu', but the in_eu field is not provided by {}",
-                get_global_locator_driver_name()
+                api.locator_name()
             )));
         }
 
