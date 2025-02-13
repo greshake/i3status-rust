@@ -8,7 +8,7 @@ use crate::click::ClickHandler;
 use crate::errors::*;
 use crate::formatting::config::Config as FormatConfig;
 use crate::icons::{Icon, Icons};
-use crate::locator::Locator;
+use crate::locator::LocatorBackend;
 use crate::themes::{Theme, ThemeOverrides, ThemeUserConfig};
 
 #[derive(Deserialize, Debug)]
@@ -20,7 +20,7 @@ pub struct Config {
     #[serde(default)]
     pub invert_scrolling: bool,
 
-    pub locator: Arc<Locator>,
+    pub locator: Option<LocatorBackend>,
 
     /// The maximum delay (ms) between two clicks that are considered as double click
     #[serde(default)]

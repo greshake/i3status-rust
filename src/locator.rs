@@ -1,8 +1,8 @@
 use crate::errors::{Error, ErrorContext, Result, StdError};
 use std::borrow::Cow;
 use std::fmt;
-use std::sync::Arc;
-use std::time::Instant;
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 
 use serde::Deserialize;
 use smart_default::SmartDefault;
@@ -10,9 +10,9 @@ use smart_default::SmartDefault;
 mod ip2location;
 mod ipapi;
 
-pub struct AutolocateResult {
-    pub location: IPAddressInfo,
-    pub timestamp: Instant,
+struct AutolocateResult {
+    location: IPAddressInfo,
+    timestamp: Instant,
 }
 
 #[derive(Deserialize, Clone, Default)]
@@ -48,32 +48,72 @@ pub struct IPAddressInfo {
     pub org: Option<String>,
 }
 
+pub struct Locator {
+    backend: LocatorBackend,
+    last_autolocate: Mutex<Option<AutolocateResult>>,
+}
+
+impl Locator {
+    pub fn new(backend: LocatorBackend) -> Self {
+        Self {
+            backend,
+            last_autolocate: Mutex::new(None),
+        }
+    }
+
+    pub fn name(&self) -> Cow<'static, str> {
+        self.backend.name()
+    }
+
+    /// No-op if last API call was made in the last `interval` seconds.
+    pub async fn find_ip_location(
+        &self,
+        client: &reqwest::Client,
+        interval: Duration,
+    ) -> Result<IPAddressInfo> {
+        {
+            let guard = self.last_autolocate.lock().unwrap();
+            if let Some(cached) = &*guard {
+                if cached.timestamp.elapsed() < interval {
+                    return Ok(cached.location.clone());
+                }
+            }
+        }
+
+        let location = self.backend.get_info(client).await?;
+
+        {
+            let mut guard = self.last_autolocate.lock().unwrap();
+            *guard = Some(AutolocateResult {
+                location: location.clone(),
+                timestamp: Instant::now(),
+            });
+        }
+
+        Ok(location)
+    }
+}
+
 #[derive(Deserialize, Debug, SmartDefault, Clone)]
 #[serde(tag = "name", rename_all = "lowercase", deny_unknown_fields)]
-pub enum Locator {
+pub enum LocatorBackend {
     #[default]
     Ipapi(ipapi::Config),
     Ip2Location(ip2location::Config),
 }
 
-pub trait Backend {
-    fn name(&self) -> Cow<'static, str>;
-}
-
-impl Backend for Locator {
+impl LocatorBackend {
     fn name(&self) -> Cow<'static, str> {
         match self {
-            Locator::Ipapi(_) => ipapi::Ipapi.name(),
-            Locator::Ip2Location(_) => ip2location::Ip2Location.name(),
+            LocatorBackend::Ipapi(_) => ipapi::Ipapi.name(),
+            LocatorBackend::Ip2Location(_) => ip2location::Ip2Location.name(),
         }
     }
-}
 
-impl Locator {
-    pub async fn get_info(&self, client: &reqwest::Client) -> Result<IPAddressInfo> {
+    async fn get_info(&self, client: &reqwest::Client) -> Result<IPAddressInfo> {
         match self {
-            Locator::Ipapi(_) => ipapi::Ipapi.get_info(client).await,
-            Locator::Ip2Location(config) => {
+            LocatorBackend::Ipapi(_) => ipapi::Ipapi.get_info(client).await,
+            LocatorBackend::Ip2Location(config) => {
                 ip2location::Ip2Location
                     .get_info(client, &config.api_key)
                     .await

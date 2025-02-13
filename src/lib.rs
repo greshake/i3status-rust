@@ -23,6 +23,7 @@ pub mod widget;
 mod wrappers;
 
 pub use env_logger;
+use locator::Locator;
 pub use serde_json;
 pub use tokio;
 
@@ -269,8 +270,9 @@ impl BarState {
             update_request: update_request.clone(),
             request_sender: self.request_sender.clone(),
             error_interval: Duration::from_secs(block_config.common.error_interval),
-            locator: self.config.locator.clone(),
-            last_autolocate: Default::default(),
+            locator: Arc::new(Locator::new(
+                self.config.locator.clone().unwrap_or_default(),
+            )),
         };
 
         let error_format = block_config

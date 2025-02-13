@@ -92,15 +92,13 @@ impl fmt::Display for ApiError {
 }
 impl StdError for ApiError {}
 
-#[derive(Deserialize, Debug, Default, Clone)]
 pub struct Ipapi;
 
-impl Backend for Ipapi {
-    fn name(&self) -> Cow<'static, str> {
+impl Ipapi {
+    pub fn name(&self) -> Cow<'static, str> {
         Cow::Borrowed("ipapi.co")
     }
-}
-impl Ipapi {
+
     pub async fn get_info(&self, client: &reqwest::Client) -> Result<IPAddressInfo> {
         let response: ApiResponse = client
             .get(IP_API_URL)

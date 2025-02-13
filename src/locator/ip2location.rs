@@ -7,11 +7,11 @@ pub(super) const API_KEY_ENV: &str = "IP2LOCATION_API_KEY";
 #[serde(deny_unknown_fields)]
 pub struct Config {
     #[serde(default = "getenv_api_key")]
-    pub api_key: Arc<Option<String>>,
+    pub api_key: Option<String>,
 }
 
-fn getenv_api_key() -> Arc<Option<String>> {
-    Arc::new(std::env::var(API_KEY_ENV).ok())
+fn getenv_api_key() -> Option<String> {
+    std::env::var(API_KEY_ENV).ok()
 }
 
 #[derive(Deserialize)]
@@ -194,16 +194,13 @@ impl fmt::Display for ApiError {
 }
 impl StdError for ApiError {}
 
-#[derive(Deserialize, Debug, Default, Clone)]
 pub struct Ip2Location;
 
-impl Backend for Ip2Location {
-    fn name(&self) -> Cow<'static, str> {
+impl Ip2Location {
+    pub fn name(&self) -> Cow<'static, str> {
         Cow::Borrowed("ip2location.io")
     }
-}
 
-impl Ip2Location {
     pub async fn get_info(
         &self,
         client: &reqwest::Client,
