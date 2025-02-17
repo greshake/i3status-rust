@@ -36,7 +36,6 @@ calibright = { version = "0.1.9", features = ["watch"] }
 chrono = { version = "0.4", default-features = false, features = ["clock", "unstable-locales"] }
 chrono-tz = { version = "0.10", features = ["serde"] }
 clap = { version = "4.0", default-features = false, features = ["std", "derive", "help", "usage"] }
-debounced = "0.2.0"
 dirs = "5.0"
 env_logger = "0.11"
 futures = { version = "0.3.31", default-features = false }
