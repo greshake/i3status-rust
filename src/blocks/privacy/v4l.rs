@@ -1,4 +1,3 @@
-use debounced::{Debounced, debounced};
 use inotify::{EventStream, Inotify, WatchDescriptor, WatchMask, Watches};
 use tokio::fs::{File, read_dir};
 use tokio::time::{Interval, interval};
@@ -20,7 +19,7 @@ pub(super) struct Monitor<'a> {
     devices: HashMap<PathBuf, WatchDescriptor>,
     interval: Interval,
     watches: Watches,
-    updates: Debounced<EventStream<[u8; 1024]>>,
+    stream: EventStream<[u8; 1024]>,
 }
 
 impl<'a> Monitor<'a> {
@@ -28,19 +27,16 @@ impl<'a> Monitor<'a> {
         let notify = Inotify::init().error("Failed to start inotify")?;
         let watches = notify.watches();
 
-        let updates = debounced(
-            notify
-                .into_event_stream([0; 1024])
-                .error("Failed to create event stream")?,
-            Duration::from_millis(100),
-        );
+        let stream = notify
+            .into_event_stream([0; 1024])
+            .error("Failed to create event stream")?;
 
         let mut s = Self {
             config,
             devices: HashMap::new(),
             interval: interval(duration),
             watches,
-            updates,
+            stream,
         };
         s.update_devices().await?;
 
@@ -149,7 +145,13 @@ impl PrivacyMonitor for Monitor<'_> {
                         break;
                     }
                 },
-                _ = self.updates.next() => break,
+                _ = self.stream.next() => {
+                // avoid too frequent updates
+                let _ = tokio::time::timeout(Duration::from_millis(100), async {
+                    loop { let _ = self.stream.next().await; }
+                }).await;
+                break;
+            }
             }
         }
         Ok(())
