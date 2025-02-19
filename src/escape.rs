@@ -2,7 +2,7 @@
 
 use std::fmt::Write;
 
-use unicode_segmentation::UnicodeSegmentation;
+use unicode_segmentation::UnicodeSegmentation as _;
 
 pub trait CollectEscaped {
     /// Write escaped version of `self` to `out`

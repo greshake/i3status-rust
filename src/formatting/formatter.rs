@@ -1,4 +1,4 @@
-use unicode_segmentation::UnicodeSegmentation;
+use unicode_segmentation::UnicodeSegmentation as _;
 
 use std::time::Duration;
 use std::{borrow::Cow, fmt::Debug};

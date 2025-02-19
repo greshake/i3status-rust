@@ -1,5 +1,5 @@
 use std::io;
-use std::os::unix::process::CommandExt;
+use std::os::unix::process::CommandExt as _;
 use std::process::{Command, Stdio};
 
 /// Spawn a new detached process

@@ -1,7 +1,7 @@
 use std::iter::repeat;
 use std::time::Instant;
 
-use crate::escape::CollectEscaped;
+use crate::escape::CollectEscaped as _;
 
 use super::*;
 

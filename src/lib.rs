@@ -1,6 +1,7 @@
 #![warn(clippy::match_same_arms)]
 #![warn(clippy::semicolon_if_nothing_returned)]
 #![warn(clippy::unnecessary_wraps)]
+#![warn(clippy::unused_trait_names)]
 #![allow(clippy::single_match)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
@@ -31,7 +32,7 @@ use std::pin::Pin;
 use std::sync::{Arc, LazyLock};
 use std::time::Duration;
 
-use futures::stream::{FuturesUnordered, StreamExt};
+use futures::stream::{FuturesUnordered, StreamExt as _};
 use futures::Stream;
 use tokio::process::Command;
 use tokio::sync::{mpsc, Notify};
