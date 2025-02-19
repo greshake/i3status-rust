@@ -145,13 +145,7 @@ impl PrivacyMonitor for Monitor<'_> {
                         break;
                     }
                 },
-                _ = self.stream.next() => {
-                // avoid too frequent updates
-                let _ = tokio::time::timeout(Duration::from_millis(100), async {
-                    loop { let _ = self.stream.next().await; }
-                }).await;
-                break;
-            }
+                _ = self.stream.next_debounced() => break
             }
         }
         Ok(())
