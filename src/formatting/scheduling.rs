@@ -1,5 +1,5 @@
 use crate::BoxedStream;
-use futures::stream::StreamExt;
+use futures::stream::StreamExt as _;
 use std::time::{Duration, Instant};
 use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
 

@@ -227,6 +227,6 @@ pub fn deserialize_local_timestamp<'de, D>(deserializer: D) -> Result<DateTime<L
 where
     D: Deserializer<'de>,
 {
-    use chrono::TimeZone;
+    use chrono::TimeZone as _;
     i64::deserialize(deserializer).map(|seconds| Local.timestamp_opt(seconds, 0).single().unwrap())
 }

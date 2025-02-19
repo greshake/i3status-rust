@@ -3,7 +3,7 @@ use std::fmt;
 use serde::de::{self, Deserializer, Visitor};
 use serde::Deserialize;
 
-use crate::errors::{ErrorContext, Result};
+use crate::errors::{ErrorContext as _, Result};
 use crate::protocol::i3bar_event::I3BarEvent;
 use crate::subprocess::{spawn_shell, spawn_shell_sync};
 use crate::wrappers::SerdeRegex;

@@ -44,10 +44,10 @@
 //! - `cpu_boost_on`
 //! - `cpu_boost_off`
 
-use std::str::FromStr;
+use std::str::FromStr as _;
 
 use tokio::fs::File;
-use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::io::{AsyncBufReadExt as _, BufReader};
 
 use super::prelude::*;
 use crate::util::read_file;

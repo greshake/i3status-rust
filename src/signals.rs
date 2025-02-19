@@ -1,4 +1,4 @@
-use futures::stream::StreamExt;
+use futures::stream::StreamExt as _;
 use libc::{SIGRTMAX, SIGRTMIN};
 use signal_hook::consts::{SIGUSR1, SIGUSR2};
 use signal_hook_tokio::Signals;

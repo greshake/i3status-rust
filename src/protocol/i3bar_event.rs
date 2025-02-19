@@ -1,11 +1,11 @@
-use std::os::unix::io::FromRawFd;
+use std::os::unix::io::FromRawFd as _;
 use std::time::Duration;
 
 use serde::Deserialize;
 
-use futures::StreamExt;
+use futures::StreamExt as _;
 use tokio::fs::File;
-use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::io::{AsyncBufReadExt as _, BufReader};
 
 use crate::click::MouseButton;
 use crate::BoxedStream;

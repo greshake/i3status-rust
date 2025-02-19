@@ -7,7 +7,7 @@ use nom::{
     combinator::{cut, eof, map, not, opt},
     multi::{many0, separated_list0},
     sequence::{preceded, separated_pair, terminated, tuple},
-    IResult, Parser,
+    IResult, Parser as _,
 };
 
 use crate::errors::*;

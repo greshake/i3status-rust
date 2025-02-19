@@ -8,7 +8,7 @@ use ::pipewire::{
     context::Context, keys, main_loop::MainLoop, properties::properties, spa::utils::dict::DictRef,
     types::ObjectType,
 };
-use itertools::Itertools;
+use itertools::Itertools as _;
 use tokio::sync::Notify;
 
 use super::*;

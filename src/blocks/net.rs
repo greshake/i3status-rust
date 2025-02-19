@@ -62,7 +62,7 @@
 use super::prelude::*;
 use crate::netlink::NetDevice;
 use crate::util;
-use itertools::Itertools;
+use itertools::Itertools as _;
 use regex::Regex;
 use std::time::Instant;
 

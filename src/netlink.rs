@@ -1,4 +1,4 @@
-use neli::attr::Attribute;
+use neli::attr::Attribute as _;
 use neli::consts::{nl::*, rtnl::*, socket::*};
 use neli::nl::{NlPayload, Nlmsghdr};
 use neli::rtnl::{Ifaddrmsg, Ifinfomsg, Rtmsg};

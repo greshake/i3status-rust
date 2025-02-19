@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use dirs::{config_dir, data_dir};
 use serde::de::DeserializeOwned;
-use tokio::io::AsyncReadExt;
+use tokio::io::AsyncReadExt as _;
 use tokio::process::Command;
 
 use crate::errors::*;

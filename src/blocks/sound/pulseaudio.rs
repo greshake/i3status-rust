@@ -1,7 +1,7 @@
 use std::cmp::{max, min};
 use std::convert::{TryFrom, TryInto};
 use std::io;
-use std::os::fd::{IntoRawFd, RawFd};
+use std::os::fd::{IntoRawFd as _, RawFd};
 use std::sync::{Arc, Mutex, Weak};
 use std::thread;
 

@@ -1,6 +1,6 @@
 use chrono::format::{Fixed, Item, StrftimeItems};
 use chrono::{DateTime, Local, Locale, TimeZone};
-use chrono_tz::{OffsetName, Tz};
+use chrono_tz::{OffsetName as _, Tz};
 
 use std::fmt::Display;
 use std::sync::LazyLock;

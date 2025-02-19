@@ -145,7 +145,7 @@ use std::fmt;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
-use chrono::{DateTime, Datelike, Utc};
+use chrono::{DateTime, Datelike as _, Utc};
 use sunrise::{SolarDay, SolarEvent};
 
 use crate::formatting::Format;

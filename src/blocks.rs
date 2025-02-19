@@ -29,7 +29,7 @@
 
 mod prelude;
 
-use futures::future::FutureExt;
+use futures::future::FutureExt as _;
 use futures::stream::FuturesUnordered;
 use serde::de::{self, Deserialize};
 use tokio::sync::{mpsc, Notify};
@@ -112,7 +112,7 @@ macro_rules! define_blocks {
             where
                 D: de::Deserializer<'de>,
             {
-                use de::Error;
+                use de::Error as _;
 
                 let mut table = toml::Table::deserialize(deserializer)?;
                 let block_name = table.remove("block").ok_or_else(|| D::Error::missing_field("block"))?;
