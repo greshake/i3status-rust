@@ -46,11 +46,17 @@
 //! `volume_icon` | Icon based on volume. Missing if unsupported.    | Icon
 //! `volume`      | Current volume. Missing if muted or unsupported. | Number
 //!
+//! Widget           | Placeholder
+//! -----------------|-------------
+//! `play_pause_btn` | `$play`
+//! `next_btn`       | `$next`
+//! `prev_btn`       | `$prev`
+//!
 //! Action          | Default button
 //! ----------------|------------------
-//! `play_pause`    | Left on `$play`
-//! `next`          | Left on `$next`
-//! `prev`          | Left on `$prev`
+//! `play_pause`    | Left on `play_pause_btn`
+//! `next`          | Left on `next_btn`
+//! `prev`          | Left on `prev_btn`
 //! `next_player`   | Right
 //! `seek_forward`  | Wheel Up
 //! `seek_backward` | Wheel Down

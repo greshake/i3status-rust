@@ -33,12 +33,17 @@
 //! `clocks`      | Number | Hertz
 //! `power`       | Number | Watts
 //!
+//! Widget    | Placeholder
+//! ----------|-------------
+//! `mem_btn` | `$memory`
+//! `fan_btn` | `$fan_speed`
+//!
 //! Action                  | Default button
 //! ------------------------|----------------
-//! `toggle_mem_total`      | Left on `$memory`
-//! `toggle_fan_controlled` | Left on `$fan_speed`
-//! `fan_speed_up`          | Wheel Up on `$fan_speed`
-//! `fan_speed_down`        | Wheel Down on `$fan_speed`
+//! `toggle_mem_total`      | Left on `mem_btn`
+//! `toggle_fan_controlled` | Left on `fan_btn`
+//! `fan_speed_up`          | Wheel Up on `fan_btn`
+//! `fan_speed_down`        | Wheel Down on `fan_btn`
 //!
 //! # Example
 //!
