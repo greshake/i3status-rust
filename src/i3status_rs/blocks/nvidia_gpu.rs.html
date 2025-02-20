@@ -258,7 +258,12 @@
 <a href="#257" id="257">257</a>
 <a href="#258" id="258">258</a>
 <a href="#259" id="259">259</a>
-<a href="#260" id="260">260</a></pre></div><pre class="rust"><code><span class="doccomment">//! Display the stats of your NVidia GPU
+<a href="#260" id="260">260</a>
+<a href="#261" id="261">261</a>
+<a href="#262" id="262">262</a>
+<a href="#263" id="263">263</a>
+<a href="#264" id="264">264</a>
+<a href="#265" id="265">265</a></pre></div><pre class="rust"><code><span class="doccomment">//! Display the stats of your NVidia GPU
 //!
 //! By default `show_temperature` shows the used memory. Clicking the left mouse on the
 //! "temperature" part of the block will alternate it between showing used or total available
@@ -293,12 +298,17 @@
 //! `clocks`      | Number | Hertz
 //! `power`       | Number | Watts
 //!
+//! Widget    | Placeholder
+//! ----------|-------------
+//! `mem_btn` | `$memory`
+//! `fan_btn` | `$fan_speed`
+//!
 //! Action                  | Default button
 //! ------------------------|----------------
-//! `toggle_mem_total`      | Left on `$memory`
-//! `toggle_fan_controlled` | Left on `$fan_speed`
-//! `fan_speed_up`          | Wheel Up on `$fan_speed`
-//! `fan_speed_down`        | Wheel Down on `$fan_speed`
+//! `toggle_mem_total`      | Left on `mem_btn`
+//! `toggle_fan_controlled` | Left on `fan_btn`
+//! `fan_speed_up`          | Wheel Up on `fan_btn`
+//! `fan_speed_down`        | Wheel Down on `fan_btn`
 //!
 //! # Example
 //!
