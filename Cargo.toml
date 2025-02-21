@@ -9,11 +9,11 @@ authors = [
   "Kai Greshake <development@kai-greshake.de>",
   "Contributors on GitHub (https://github.com/greshake/i3status-rust/graphs/contributors)",
 ]
-edition = "2021"
+edition = "2024"
 
 [workspace]
 members = [".", "xtask"]
-resolver = "2"
+resolver = "3"
 
 [features]
 default = ["pulseaudio"]

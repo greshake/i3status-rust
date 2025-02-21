@@ -265,9 +265,11 @@ mod tests {
     #[tokio::test]
     async fn test_has_command_err() {
         // we assume thequickbrownfoxjumpsoverthelazydog command does not exist
-        assert!(!has_command("thequickbrownfoxjumpsoverthelazydog")
-            .await
-            .unwrap());
+        assert!(
+            !has_command("thequickbrownfoxjumpsoverthelazydog")
+                .await
+                .unwrap()
+        );
     }
 
     #[test]

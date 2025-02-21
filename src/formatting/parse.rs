@@ -1,13 +1,13 @@
 use std::{any::TypeId, str::FromStr};
 
 use nom::{
+    IResult, Parser as _,
     branch::alt,
     bytes::complete::{escaped_transform, tag, take_while, take_while1},
     character::complete::{anychar, char},
     combinator::{cut, eof, map, not, opt},
     multi::{many0, separated_list0},
     sequence::{preceded, separated_pair, terminated, tuple},
-    IResult, Parser as _,
 };
 
 use crate::errors::*;

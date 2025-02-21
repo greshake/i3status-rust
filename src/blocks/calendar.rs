@@ -288,7 +288,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         _ => {
             return Err(Error::new(
                 "Currently only one calendar source is supported",
-            ))
+            ));
         }
     };
 
@@ -344,7 +344,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                                 _ => {
                                     return Err(Error::new(
                                         "Authorization failed. Check your configurations",
-                                    ))
+                                    ));
                                 }
                             }
                         }
@@ -352,7 +352,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                             return Err(Error {
                                 message: None,
                                 cause: Some(Arc::new(e)),
-                            })
+                            });
                         }
                     },
                 };

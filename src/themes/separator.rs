@@ -1,6 +1,6 @@
 use crate::errors::*;
-use serde::de::{self, Deserializer, Visitor};
 use serde::Deserialize;
+use serde::de::{self, Deserializer, Visitor};
 use smart_default::SmartDefault;
 use std::fmt;
 use std::str::FromStr;

@@ -1,9 +1,9 @@
 use std::borrow::Cow;
 use std::time::Duration;
 
+use super::Metadata;
 use super::formatter;
 use super::unit::Unit;
-use super::Metadata;
 use chrono::{DateTime, Utc};
 use chrono_tz::Tz;
 

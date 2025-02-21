@@ -108,7 +108,7 @@ impl EngFormatter {
 impl Formatter for EngFormatter {
     fn format(&self, val: &Value, _config: &SharedConfig) -> Result<String, FormatError> {
         match val {
-            Value::Number { mut val, mut unit } => {
+            &Value::Number { mut val, mut unit } => {
                 if !self.range.contains(&val) {
                     return Err(FormatError::NumberOutOfRange(val));
                 }

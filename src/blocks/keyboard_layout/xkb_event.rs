@@ -2,12 +2,12 @@ use super::*;
 use x11rb_async::{
     connection::{Connection as _, RequestConnection as _},
     protocol::{
+        Event,
         xkb::{
-            self, ConnectionExt as _, EventType, MapPart, NameDetail, SelectEventsAux,
-            UseExtensionReply, ID,
+            self, ConnectionExt as _, EventType, ID, MapPart, NameDetail, SelectEventsAux,
+            UseExtensionReply,
         },
         xproto::ConnectionExt as _,
-        Event,
     },
     rust_connection::RustConnection,
 };
