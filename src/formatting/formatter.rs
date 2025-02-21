@@ -3,9 +3,9 @@ use unicode_segmentation::UnicodeSegmentation as _;
 use std::time::Duration;
 use std::{borrow::Cow, fmt::Debug};
 
+use super::FormatError;
 use super::parse::Arg;
 use super::value::ValueInner as Value;
-use super::FormatError;
 use crate::config::SharedConfig;
 use crate::errors::*;
 
@@ -28,17 +28,17 @@ pub use bar::BarFormatter;
 mod tally;
 pub use tally::TallyFormatter;
 mod datetime;
-pub use datetime::{DatetimeFormatter, DEFAULT_DATETIME_FORMATTER};
+pub use datetime::{DEFAULT_DATETIME_FORMATTER, DatetimeFormatter};
 mod duration;
-pub use duration::{DurationFormatter, DEFAULT_DURATION_FORMATTER};
+pub use duration::{DEFAULT_DURATION_FORMATTER, DurationFormatter};
 mod eng;
-pub use eng::{EngFormatter, DEFAULT_NUMBER_FORMATTER};
+pub use eng::{DEFAULT_NUMBER_FORMATTER, EngFormatter};
 mod flag;
-pub use flag::{FlagFormatter, DEFAULT_FLAG_FORMATTER};
+pub use flag::{DEFAULT_FLAG_FORMATTER, FlagFormatter};
 mod pango;
 pub use pango::PangoStrFormatter;
 mod str;
-pub use str::{StrFormatter, DEFAULT_STRING_FORMATTER};
+pub use str::{DEFAULT_STRING_FORMATTER, StrFormatter};
 
 type PadWith = Cow<'static, str>;
 

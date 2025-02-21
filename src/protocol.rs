@@ -3,10 +3,10 @@ pub mod i3bar_event;
 
 use std::borrow::Borrow;
 
+use crate::RenderedBlock;
 use crate::config::SharedConfig;
 use crate::themes::color::Color;
 use crate::themes::separator::Separator;
-use crate::RenderedBlock;
 
 use i3bar_block::I3BarBlock;
 

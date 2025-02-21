@@ -1,5 +1,5 @@
-use super::formatter::{new_formatter, Formatter};
-use super::{parse, FormatError, Fragment, Values};
+use super::formatter::{Formatter, new_formatter};
+use super::{FormatError, Fragment, Values, parse};
 use crate::config::SharedConfig;
 use crate::errors::*;
 

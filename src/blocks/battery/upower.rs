@@ -1,6 +1,6 @@
 use tokio::try_join;
 use zbus::fdo::{PropertiesChangedStream, PropertiesProxy};
-use zbus::{zvariant, Connection};
+use zbus::{Connection, zvariant};
 use zvariant::ObjectPath;
 
 use super::{BatteryDevice, BatteryInfo, BatteryStatus, DeviceName};

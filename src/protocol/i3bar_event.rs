@@ -7,8 +7,8 @@ use futures::StreamExt as _;
 use tokio::fs::File;
 use tokio::io::{AsyncBufReadExt as _, BufReader};
 
-use crate::click::MouseButton;
 use crate::BoxedStream;
+use crate::click::MouseButton;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct I3BarEvent {

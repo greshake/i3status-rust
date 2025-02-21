@@ -1,7 +1,7 @@
-use super::{template::FormatTemplate, Format};
+use super::{Format, template::FormatTemplate};
 use crate::errors::*;
 use serde::de::{MapAccess, Visitor};
-use serde::{de, Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, de};
 use std::fmt;
 use std::str::FromStr;
 

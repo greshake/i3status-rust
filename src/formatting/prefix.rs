@@ -60,11 +60,7 @@ impl Prefix {
     }
 
     pub fn max(self, other: Self) -> Self {
-        if other > self {
-            other
-        } else {
-            self
-        }
+        if other > self { other } else { self }
     }
 
     pub fn apply(self, value: f64) -> f64 {

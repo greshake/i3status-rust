@@ -1,7 +1,7 @@
-use debounced::{debounced, Debounced};
+use debounced::{Debounced, debounced};
 use inotify::{EventStream, Inotify, WatchDescriptor, WatchMask, Watches};
-use tokio::fs::{read_dir, File};
-use tokio::time::{interval, Interval};
+use tokio::fs::{File, read_dir};
+use tokio::time::{Interval, interval};
 
 use std::path::PathBuf;
 

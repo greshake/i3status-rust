@@ -1,7 +1,7 @@
 use crate::BoxedStream;
 use futures::stream::StreamExt as _;
 use std::time::{Duration, Instant};
-use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
+use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 
 pub fn manage_widgets_updates() -> (UnboundedSender<(usize, Vec<u64>)>, BoxedStream<Vec<usize>>) {
     let (intervals_tx, intervals_rx) = unbounded_channel::<(usize, Vec<u64>)>();

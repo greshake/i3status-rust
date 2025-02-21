@@ -72,7 +72,7 @@
 
 use std::cmp::min;
 use std::str::FromStr as _;
-use tokio::fs::{read_dir, File};
+use tokio::fs::{File, read_dir};
 use tokio::io::{AsyncBufReadExt as _, BufReader};
 
 use super::prelude::*;
