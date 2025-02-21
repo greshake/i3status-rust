@@ -1,7 +1,7 @@
-use std::{str::FromStr, time::Duration, vec};
+use std::{str::FromStr as _, time::Duration, vec};
 
 use chrono::{DateTime, Local, Utc};
-use icalendar::{Component, EventLike};
+use icalendar::{Component as _, EventLike as _};
 use reqwest::{
     self,
     header::{HeaderMap, HeaderValue, CONTENT_TYPE},

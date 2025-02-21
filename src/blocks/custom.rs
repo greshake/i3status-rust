@@ -100,7 +100,7 @@ use crate::formatting::Format;
 use super::prelude::*;
 use inotify::{Inotify, WatchMask};
 use std::process::Stdio;
-use tokio::io::{self, AsyncBufReadExt, BufReader};
+use tokio::io::{self, BufReader};
 use tokio::process::Command;
 
 #[derive(Deserialize, Debug, SmartDefault)]

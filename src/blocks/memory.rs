@@ -71,9 +71,9 @@
 //! - `memory_swap`
 
 use std::cmp::min;
-use std::str::FromStr;
+use std::str::FromStr as _;
 use tokio::fs::{read_dir, File};
-use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::io::{AsyncBufReadExt as _, BufReader};
 
 use super::prelude::*;
 use crate::util::read_file;

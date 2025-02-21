@@ -49,7 +49,7 @@
 //! # Icons Used
 //! - `time`
 
-use chrono::{Timelike, Utc};
+use chrono::{Timelike as _, Utc};
 use chrono_tz::Tz;
 
 use super::prelude::*;
