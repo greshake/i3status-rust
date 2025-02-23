@@ -13,6 +13,7 @@ pub mod config;
 pub mod errors;
 pub mod escape;
 pub mod formatting;
+pub mod geolocator;
 pub mod icons;
 mod netlink;
 pub mod protocol;
@@ -23,6 +24,7 @@ pub mod widget;
 mod wrappers;
 
 pub use env_logger;
+use geolocator::Geolocator;
 pub use serde_json;
 pub use tokio;
 
@@ -269,6 +271,7 @@ impl BarState {
             update_request: update_request.clone(),
             request_sender: self.request_sender.clone(),
             error_interval: Duration::from_secs(block_config.common.error_interval),
+            geolocator: Arc::new(Geolocator::new(self.config.geolocator.clone())),
         };
 
         let error_format = block_config
