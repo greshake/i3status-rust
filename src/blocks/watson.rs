@@ -31,7 +31,7 @@
 //! # TODO
 //! - Extend functionality: start / stop watson using this block
 
-use chrono::{offset::Local, DateTime};
+use chrono::{DateTime, offset::Local};
 use dirs::config_dir;
 use inotify::{Inotify, WatchMask};
 use serde::de::Deserializer;

@@ -5,7 +5,7 @@ use i3status_rs::config::Config;
 use i3status_rs::errors::*;
 use i3status_rs::escape::Escaped;
 use i3status_rs::widget::{State, Widget};
-use i3status_rs::{protocol, util, BarState};
+use i3status_rs::{BarState, protocol, util};
 
 #[derive(Debug, thiserror::Error)]
 enum ErrorMaybeInBlock {

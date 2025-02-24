@@ -27,22 +27,21 @@ pub use serde_json;
 pub use tokio;
 
 use std::borrow::Cow;
-use std::future::Future;
 use std::pin::Pin;
 use std::sync::{Arc, LazyLock};
 use std::time::Duration;
 
-use futures::stream::{FuturesUnordered, StreamExt as _};
 use futures::Stream;
+use futures::stream::{FuturesUnordered, StreamExt as _};
 use tokio::process::Command;
-use tokio::sync::{mpsc, Notify};
+use tokio::sync::{Notify, mpsc};
 
 use crate::blocks::{BlockAction, BlockError, CommonApi};
 use crate::click::{ClickHandler, MouseButton};
 use crate::config::{BlockConfigEntry, Config, SharedConfig};
 use crate::errors::*;
-use crate::formatting::value::Value;
 use crate::formatting::Format;
+use crate::formatting::value::Value;
 use crate::protocol::i3bar_block::I3BarBlock;
 use crate::protocol::i3bar_event::{self, I3BarEvent};
 use crate::signals::Signal;

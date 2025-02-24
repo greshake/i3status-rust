@@ -50,6 +50,7 @@ repos:
       language: system
       types: [rust]
       args: ["--"]
+      require_serial: true
     - id: cargo-clippy
       name: cargo clippy
       description: Run cargo clippy

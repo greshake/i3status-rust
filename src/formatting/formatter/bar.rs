@@ -57,7 +57,7 @@ const VERTICAL_BAR_CHARS: [char; 9] = [
 impl Formatter for BarFormatter {
     fn format(&self, val: &Value, _config: &SharedConfig) -> Result<String, FormatError> {
         match val {
-            Value::Number { mut val, .. } => {
+            &Value::Number { mut val, .. } => {
                 val = (val / self.max_value).clamp(0., 1.);
                 if self.vertical {
                     let vert_char = VERTICAL_BAR_CHARS[(val * 8.) as usize];

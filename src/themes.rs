@@ -5,7 +5,7 @@ pub mod xresources;
 use std::fmt;
 use std::ops::{Deref, DerefMut};
 
-use serde::{de, Deserialize};
+use serde::{Deserialize, de};
 
 use crate::errors::*;
 use crate::util;

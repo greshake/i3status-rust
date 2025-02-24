@@ -1,7 +1,7 @@
 use std::env;
 use std::process::Stdio;
 
-use tokio::fs::{create_dir_all, File};
+use tokio::fs::{File, create_dir_all};
 use tokio::process::Command;
 
 use super::*;

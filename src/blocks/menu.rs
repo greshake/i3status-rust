@@ -33,7 +33,7 @@
 
 use tokio::sync::mpsc::UnboundedReceiver;
 
-use super::{prelude::*, BlockAction};
+use super::{BlockAction, prelude::*};
 use crate::subprocess::spawn_shell;
 
 #[derive(Deserialize, Debug)]

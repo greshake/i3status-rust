@@ -232,9 +232,11 @@ impl WeatherProvider for Service<'_> {
         }
 
         if data.properties.timeseries.len() < forecast_hours {
-            return Err(Error::new(
-                format!("Unable to fetch the specified number of forecast_hours specified {}, only {} hours available", forecast_hours, data.properties.timeseries.len()),
-            ))?;
+            return Err(Error::new(format!(
+                "Unable to fetch the specified number of forecast_hours specified {}, only {} hours available",
+                forecast_hours,
+                data.properties.timeseries.len()
+            )))?;
         }
 
         let data_agg: Vec<ForecastAggregateSegment> = data

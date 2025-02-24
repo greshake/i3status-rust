@@ -3,15 +3,14 @@ use std::{str::FromStr as _, time::Duration, vec};
 use chrono::{DateTime, Local, Utc};
 use icalendar::{Component as _, EventLike as _};
 use reqwest::{
-    self,
-    header::{HeaderMap, HeaderValue, CONTENT_TYPE},
-    ClientBuilder, Method, Url,
+    self, ClientBuilder, Method, Url,
+    header::{CONTENT_TYPE, HeaderMap, HeaderValue},
 };
 use serde::Deserialize;
 
 use super::{
-    auth::{Auth, Authorize},
     CalendarError,
+    auth::{Auth, Authorize},
 };
 
 #[derive(Clone, Debug)]

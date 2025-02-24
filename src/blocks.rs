@@ -32,7 +32,7 @@ mod prelude;
 use futures::future::FutureExt as _;
 use futures::stream::FuturesUnordered;
 use serde::de::{self, Deserialize};
-use tokio::sync::{mpsc, Notify};
+use tokio::sync::{Notify, mpsc};
 
 use std::borrow::Cow;
 use std::sync::Arc;

@@ -1,7 +1,7 @@
 use std::fmt;
 
-use serde::de::{self, Deserializer, Visitor};
 use serde::Deserialize;
+use serde::de::{self, Deserializer, Visitor};
 
 use crate::errors::{ErrorContext as _, Result};
 use crate::protocol::i3bar_event::I3BarEvent;
