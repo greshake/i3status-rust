@@ -254,11 +254,7 @@
 <a href="#253" id="253">253</a>
 <a href="#254" id="254">254</a>
 <a href="#255" id="255">255</a>
-<a href="#256" id="256">256</a>
-<a href="#257" id="257">257</a>
-<a href="#258" id="258">258</a>
-<a href="#259" id="259">259</a>
-<a href="#260" id="260">260</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::errors::<span class="kw-2">*</span>;
+<a href="#256" id="256">256</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::errors::<span class="kw-2">*</span>;
 <span class="kw">use </span>std::fmt;
 <span class="kw">use </span>std::str::FromStr;
 
@@ -320,11 +316,7 @@
     }
 
     <span class="kw">pub fn </span>max(<span class="self">self</span>, other: <span class="self">Self</span>) -&gt; <span class="self">Self </span>{
-        <span class="kw">if </span>other &gt; <span class="self">self </span>{
-            other
-        } <span class="kw">else </span>{
-            <span class="self">self
-        </span>}
+        <span class="kw">if </span>other &gt; <span class="self">self </span>{ other } <span class="kw">else </span>{ <span class="self">self </span>}
     }
 
     <span class="kw">pub fn </span>apply(<span class="self">self</span>, value: f64) -&gt; f64 {

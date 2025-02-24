@@ -528,13 +528,13 @@
 <a href="#527" id="527">527</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::{any::TypeId, str::FromStr};
 
 <span class="kw">use </span>nom::{
+    IResult, Parser <span class="kw">as _</span>,
     branch::alt,
     bytes::complete::{escaped_transform, tag, take_while, take_while1},
     character::complete::{anychar, char},
     combinator::{cut, eof, map, not, opt},
     multi::{many0, separated_list0},
     sequence::{preceded, separated_pair, terminated, tuple},
-    IResult, Parser <span class="kw">as _</span>,
 };
 
 <span class="kw">use </span><span class="kw">crate</span>::errors::<span class="kw-2">*</span>;

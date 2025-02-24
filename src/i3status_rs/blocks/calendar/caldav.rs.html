@@ -370,21 +370,19 @@
 <a href="#369" id="369">369</a>
 <a href="#370" id="370">370</a>
 <a href="#371" id="371">371</a>
-<a href="#372" id="372">372</a>
-<a href="#373" id="373">373</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::{str::FromStr <span class="kw">as _</span>, time::Duration, vec};
+<a href="#372" id="372">372</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::{str::FromStr <span class="kw">as _</span>, time::Duration, vec};
 
 <span class="kw">use </span>chrono::{DateTime, Local, Utc};
 <span class="kw">use </span>icalendar::{Component <span class="kw">as _</span>, EventLike <span class="kw">as _</span>};
 <span class="kw">use </span>reqwest::{
-    <span class="self">self</span>,
-    header::{HeaderMap, HeaderValue, CONTENT_TYPE},
-    ClientBuilder, Method, Url,
+    <span class="self">self</span>, ClientBuilder, Method, Url,
+    header::{CONTENT_TYPE, HeaderMap, HeaderValue},
 };
 <span class="kw">use </span>serde::Deserialize;
 
 <span class="kw">use super</span>::{
-    auth::{Auth, Authorize},
     CalendarError,
+    auth::{Auth, Authorize},
 };
 
 <span class="attr">#[derive(Clone, Debug)]

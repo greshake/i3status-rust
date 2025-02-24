@@ -277,7 +277,9 @@
 <a href="#276" id="276">276</a>
 <a href="#277" id="277">277</a>
 <a href="#278" id="278">278</a>
-<a href="#279" id="279">279</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::path::{Path, PathBuf};
+<a href="#279" id="279">279</a>
+<a href="#280" id="280">280</a>
+<a href="#281" id="281">281</a></pre></div><pre class="rust"><code><span class="kw">use </span>std::path::{Path, PathBuf};
 
 <span class="kw">use </span>dirs::{config_dir, data_dir};
 <span class="kw">use </span>serde::de::DeserializeOwned;
@@ -544,9 +546,11 @@
     <span class="attr">#[tokio::test]
     </span><span class="kw">async fn </span>test_has_command_err() {
         <span class="comment">// we assume thequickbrownfoxjumpsoverthelazydog command does not exist
-        </span><span class="macro">assert!</span>(!has_command(<span class="string">"thequickbrownfoxjumpsoverthelazydog"</span>)
-            .<span class="kw">await
-            </span>.unwrap());
+        </span><span class="macro">assert!</span>(
+            !has_command(<span class="string">"thequickbrownfoxjumpsoverthelazydog"</span>)
+                .<span class="kw">await
+                </span>.unwrap()
+        );
     }
 
     <span class="attr">#[test]

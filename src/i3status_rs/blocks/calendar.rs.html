@@ -898,7 +898,7 @@
         <span class="kw">_ </span>=&gt; {
             <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(
                 <span class="string">"Currently only one calendar source is supported"</span>,
-            ))
+            ));
         }
     };
 
@@ -954,7 +954,7 @@
                                 <span class="kw">_ </span>=&gt; {
                                     <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(
                                         <span class="string">"Authorization failed. Check your configurations"</span>,
-                                    ))
+                                    ));
                                 }
                             }
                         }
@@ -962,7 +962,7 @@
                             <span class="kw">return </span><span class="prelude-val">Err</span>(Error {
                                 message: <span class="prelude-val">None</span>,
                                 cause: <span class="prelude-val">Some</span>(Arc::new(e)),
-                            })
+                            });
                         }
                     },
                 };

@@ -465,8 +465,7 @@
 <a href="#464" id="464">464</a>
 <a href="#465" id="465">465</a>
 <a href="#466" id="466">466</a>
-<a href="#467" id="467">467</a>
-<a href="#468" id="468">468</a></pre></div><pre class="rust"><code><span class="attr">#![warn(clippy::match_same_arms)]
+<a href="#467" id="467">467</a></pre></div><pre class="rust"><code><span class="attr">#![warn(clippy::match_same_arms)]
 #![warn(clippy::semicolon_if_nothing_returned)]
 #![warn(clippy::unnecessary_wraps)]
 #![warn(clippy::unused_trait_names)]
@@ -495,22 +494,21 @@
 <span class="kw">pub use </span>tokio;
 
 <span class="kw">use </span>std::borrow::Cow;
-<span class="kw">use </span>std::future::Future;
 <span class="kw">use </span>std::pin::Pin;
 <span class="kw">use </span>std::sync::{Arc, LazyLock};
 <span class="kw">use </span>std::time::Duration;
 
-<span class="kw">use </span>futures::stream::{FuturesUnordered, StreamExt <span class="kw">as _</span>};
 <span class="kw">use </span>futures::Stream;
+<span class="kw">use </span>futures::stream::{FuturesUnordered, StreamExt <span class="kw">as _</span>};
 <span class="kw">use </span>tokio::process::Command;
-<span class="kw">use </span>tokio::sync::{mpsc, Notify};
+<span class="kw">use </span>tokio::sync::{Notify, mpsc};
 
 <span class="kw">use </span><span class="kw">crate</span>::blocks::{BlockAction, BlockError, CommonApi};
 <span class="kw">use </span><span class="kw">crate</span>::click::{ClickHandler, MouseButton};
 <span class="kw">use </span><span class="kw">crate</span>::config::{BlockConfigEntry, Config, SharedConfig};
 <span class="kw">use </span><span class="kw">crate</span>::errors::<span class="kw-2">*</span>;
-<span class="kw">use </span><span class="kw">crate</span>::formatting::value::Value;
 <span class="kw">use </span><span class="kw">crate</span>::formatting::Format;
+<span class="kw">use </span><span class="kw">crate</span>::formatting::value::Value;
 <span class="kw">use </span><span class="kw">crate</span>::protocol::i3bar_block::I3BarBlock;
 <span class="kw">use </span><span class="kw">crate</span>::protocol::i3bar_event::{<span class="self">self</span>, I3BarEvent};
 <span class="kw">use </span><span class="kw">crate</span>::signals::Signal;

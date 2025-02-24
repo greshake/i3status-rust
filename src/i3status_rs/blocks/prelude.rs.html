@@ -31,14 +31,14 @@
 <a href="#30" id="30">30</a>
 <a href="#31" id="31">31</a></pre></div><pre class="rust"><code><span class="kw">pub use super</span>::{BlockAction, CommonApi};
 
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">use </span><span class="kw">crate</span>::REQWEST_CLIENT;
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">use </span><span class="kw">crate</span>::REQWEST_CLIENT_IPV4;
 <span class="kw">pub use </span><span class="kw">crate</span>::click::MouseButton;
 <span class="kw">pub use </span><span class="kw">crate</span>::errors::<span class="kw-2">*</span>;
-<span class="kw">pub use </span><span class="kw">crate</span>::formatting::{config::Config <span class="kw">as </span>FormatConfig, value::Value, Values};
+<span class="kw">pub use </span><span class="kw">crate</span>::formatting::{Values, config::Config <span class="kw">as </span>FormatConfig, value::Value};
 <span class="kw">pub use </span><span class="kw">crate</span>::util::{default, new_dbus_connection, new_system_dbus_connection};
 <span class="kw">pub use </span><span class="kw">crate</span>::widget::{State, Widget};
 <span class="kw">pub use </span><span class="kw">crate</span>::wrappers::{Seconds, ShellString};
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">use </span><span class="kw">crate</span>::REQWEST_CLIENT;
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">use </span><span class="kw">crate</span>::REQWEST_CLIENT_IPV4;
 
 <span class="kw">pub use </span>serde::Deserialize;
 

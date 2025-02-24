@@ -302,7 +302,7 @@
 <span class="kw">use </span>futures::future::FutureExt <span class="kw">as _</span>;
 <span class="kw">use </span>futures::stream::FuturesUnordered;
 <span class="kw">use </span>serde::de::{<span class="self">self</span>, Deserialize};
-<span class="kw">use </span>tokio::sync::{mpsc, Notify};
+<span class="kw">use </span>tokio::sync::{Notify, mpsc};
 
 <span class="kw">use </span>std::borrow::Cow;
 <span class="kw">use </span>std::sync::Arc;

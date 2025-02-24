@@ -292,7 +292,9 @@
 <a href="#291" id="291">291</a>
 <a href="#292" id="292">292</a>
 <a href="#293" id="293">293</a>
-<a href="#294" id="294">294</a></pre></div><pre class="rust"><code><span class="kw">use super</span>::<span class="kw-2">*</span>;
+<a href="#294" id="294">294</a>
+<a href="#295" id="295">295</a>
+<a href="#296" id="296">296</a></pre></div><pre class="rust"><code><span class="kw">use super</span>::<span class="kw-2">*</span>;
 
 <span class="kw">type </span>LegendsStore = HashMap&lt;String, LegendsResult&gt;;
 
@@ -526,9 +528,11 @@
         }
 
         <span class="kw">if </span>data.properties.timeseries.len() &lt; forecast_hours {
-            <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(
-                <span class="macro">format!</span>(<span class="string">"Unable to fetch the specified number of forecast_hours specified {}, only {} hours available"</span>, forecast_hours, data.properties.timeseries.len()),
-            ))<span class="question-mark">?</span>;
+            <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(
+                <span class="string">"Unable to fetch the specified number of forecast_hours specified {}, only {} hours available"</span>,
+                forecast_hours,
+                data.properties.timeseries.len()
+            )))<span class="question-mark">?</span>;
         }
 
         <span class="kw">let </span>data_agg: Vec&lt;ForecastAggregateSegment&gt; = data

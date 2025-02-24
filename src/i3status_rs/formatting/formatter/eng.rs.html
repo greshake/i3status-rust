@@ -410,7 +410,7 @@
 <span class="kw">impl </span>Formatter <span class="kw">for </span>EngFormatter {
     <span class="kw">fn </span>format(<span class="kw-2">&amp;</span><span class="self">self</span>, val: <span class="kw-2">&amp;</span>Value, _config: <span class="kw-2">&amp;</span>SharedConfig) -&gt; <span class="prelude-ty">Result</span>&lt;String, FormatError&gt; {
         <span class="kw">match </span>val {
-            Value::Number { <span class="kw-2">mut </span>val, <span class="kw-2">mut </span>unit } =&gt; {
+            <span class="kw-2">&amp;</span>Value::Number { <span class="kw-2">mut </span>val, <span class="kw-2">mut </span>unit } =&gt; {
                 <span class="kw">if </span>!<span class="self">self</span>.range.contains(<span class="kw-2">&amp;</span>val) {
                     <span class="kw">return </span><span class="prelude-val">Err</span>(FormatError::NumberOutOfRange(val));
                 }

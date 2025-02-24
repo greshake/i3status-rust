@@ -301,8 +301,8 @@
     PkceCodeChallenge, PkceCodeVerifier, RedirectUrl, RefreshToken, Scope, StandardTokenResponse,
     TokenResponse <span class="kw">as _</span>, TokenUrl,
 };
-<span class="kw">use </span>reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION};
 <span class="kw">use </span>reqwest::Url;
+<span class="kw">use </span>reqwest::header::{AUTHORIZATION, HeaderMap, HeaderValue};
 <span class="kw">use </span>std::path::{Path, PathBuf};
 <span class="kw">use </span>tokio::fs::File;
 <span class="kw">use </span>tokio::io::{AsyncBufReadExt <span class="kw">as _</span>, AsyncReadExt <span class="kw">as _</span>, AsyncWriteExt <span class="kw">as _</span>, BufReader};

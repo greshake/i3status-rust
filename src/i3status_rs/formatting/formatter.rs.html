@@ -69,9 +69,9 @@
 <span class="kw">use </span>std::time::Duration;
 <span class="kw">use </span>std::{borrow::Cow, fmt::Debug};
 
+<span class="kw">use </span><span class="kw">super</span>::FormatError;
 <span class="kw">use </span><span class="kw">super</span>::parse::Arg;
 <span class="kw">use </span><span class="kw">super</span>::value::ValueInner <span class="kw">as </span>Value;
-<span class="kw">use </span><span class="kw">super</span>::FormatError;
 <span class="kw">use </span><span class="kw">crate</span>::config::SharedConfig;
 <span class="kw">use </span><span class="kw">crate</span>::errors::<span class="kw-2">*</span>;
 
@@ -94,17 +94,17 @@
 <span class="kw">mod </span>tally;
 <span class="kw">pub use </span>tally::TallyFormatter;
 <span class="kw">mod </span>datetime;
-<span class="kw">pub use </span>datetime::{DatetimeFormatter, DEFAULT_DATETIME_FORMATTER};
+<span class="kw">pub use </span>datetime::{DEFAULT_DATETIME_FORMATTER, DatetimeFormatter};
 <span class="kw">mod </span>duration;
-<span class="kw">pub use </span>duration::{DurationFormatter, DEFAULT_DURATION_FORMATTER};
+<span class="kw">pub use </span>duration::{DEFAULT_DURATION_FORMATTER, DurationFormatter};
 <span class="kw">mod </span>eng;
-<span class="kw">pub use </span>eng::{EngFormatter, DEFAULT_NUMBER_FORMATTER};
+<span class="kw">pub use </span>eng::{DEFAULT_NUMBER_FORMATTER, EngFormatter};
 <span class="kw">mod </span>flag;
-<span class="kw">pub use </span>flag::{FlagFormatter, DEFAULT_FLAG_FORMATTER};
+<span class="kw">pub use </span>flag::{DEFAULT_FLAG_FORMATTER, FlagFormatter};
 <span class="kw">mod </span>pango;
 <span class="kw">pub use </span>pango::PangoStrFormatter;
 <span class="kw">mod </span>str;
-<span class="kw">pub use </span>str::{StrFormatter, DEFAULT_STRING_FORMATTER};
+<span class="kw">pub use </span>str::{DEFAULT_STRING_FORMATTER, StrFormatter};
 
 <span class="kw">type </span>PadWith = Cow&lt;<span class="lifetime">'static</span>, str&gt;;
 

@@ -534,12 +534,12 @@
 <span class="kw">use </span>libc::c_void;
 <span class="kw">use </span>libpulse_binding::callbacks::ListResult;
 <span class="kw">use </span>libpulse_binding::context::{
-    introspect::ServerInfo, introspect::SinkInfo, introspect::SourceInfo, subscribe::Facility,
-    subscribe::InterestMaskSet, Context, FlagSet, State <span class="kw">as </span>PulseState,
+    Context, FlagSet, State <span class="kw">as </span>PulseState, introspect::ServerInfo, introspect::SinkInfo,
+    introspect::SourceInfo, subscribe::Facility, subscribe::InterestMaskSet,
 };
 <span class="kw">use </span>libpulse_binding::mainloop::api::MainloopApi;
 <span class="kw">use </span>libpulse_binding::mainloop::standard::{IterateResult, Mainloop};
-<span class="kw">use </span>libpulse_binding::proplist::{properties, Proplist};
+<span class="kw">use </span>libpulse_binding::proplist::{Proplist, properties};
 <span class="kw">use </span>libpulse_binding::volume::{ChannelVolumes, Volume};
 <span class="kw">use </span>tokio::sync::Notify;
 

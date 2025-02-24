@@ -103,7 +103,7 @@
 <a href="#102" id="102">102</a></pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::BoxedStream;
 <span class="kw">use </span>futures::stream::StreamExt <span class="kw">as _</span>;
 <span class="kw">use </span>std::time::{Duration, Instant};
-<span class="kw">use </span>tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
+<span class="kw">use </span>tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 
 <span class="kw">pub fn </span>manage_widgets_updates() -&gt; (UnboundedSender&lt;(usize, Vec&lt;u64&gt;)&gt;, BoxedStream&lt;Vec&lt;usize&gt;&gt;) {
     <span class="kw">let </span>(intervals_tx, intervals_rx) = unbounded_channel::&lt;(usize, Vec&lt;u64&gt;)&gt;();

@@ -155,10 +155,10 @@
 <a href="#154" id="154">154</a>
 <a href="#155" id="155">155</a>
 <a href="#156" id="156">156</a>
-<a href="#157" id="157">157</a></pre></div><pre class="rust"><code><span class="kw">use </span>debounced::{debounced, Debounced};
+<a href="#157" id="157">157</a></pre></div><pre class="rust"><code><span class="kw">use </span>debounced::{Debounced, debounced};
 <span class="kw">use </span>inotify::{EventStream, Inotify, WatchDescriptor, WatchMask, Watches};
-<span class="kw">use </span>tokio::fs::{read_dir, File};
-<span class="kw">use </span>tokio::time::{interval, Interval};
+<span class="kw">use </span>tokio::fs::{File, read_dir};
+<span class="kw">use </span>tokio::time::{Interval, interval};
 
 <span class="kw">use </span>std::path::PathBuf;
 

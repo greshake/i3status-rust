@@ -145,12 +145,12 @@
 <span class="kw">use </span>x11rb_async::{
     connection::{Connection <span class="kw">as _</span>, RequestConnection <span class="kw">as _</span>},
     protocol::{
+        Event,
         xkb::{
-            <span class="self">self</span>, ConnectionExt <span class="kw">as _</span>, EventType, MapPart, NameDetail, SelectEventsAux,
-            UseExtensionReply, ID,
+            <span class="self">self</span>, ConnectionExt <span class="kw">as _</span>, EventType, ID, MapPart, NameDetail, SelectEventsAux,
+            UseExtensionReply,
         },
         xproto::ConnectionExt <span class="kw">as _</span>,
-        Event,
     },
     rust_connection::RustConnection,
 };
