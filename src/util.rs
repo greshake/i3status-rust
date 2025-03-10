@@ -252,6 +252,23 @@ pub fn default<T: Default>() -> T {
     Default::default()
 }
 
+pub trait StreamExtDebounced: futures::StreamExt {
+    fn next_debounced(&mut self) -> impl Future<Output = Option<Self::Item>>;
+}
+
+impl<T: futures::StreamExt + Unpin> StreamExtDebounced for T {
+    async fn next_debounced(&mut self) -> Option<Self::Item> {
+        let mut result = self.next().await?;
+        let mut noop_ctx = std::task::Context::from_waker(std::task::Waker::noop());
+        loop {
+            match self.poll_next_unpin(&mut noop_ctx) {
+                std::task::Poll::Ready(Some(x)) => result = x,
+                std::task::Poll::Ready(None) | std::task::Poll::Pending => return Some(result),
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

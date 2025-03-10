@@ -260,11 +260,7 @@ impl DeviceMonitor {
 
                 loop {
                     select! {
-                        _ = updates.next() => {
-                            // avoid too frequent updates
-                            let _ = tokio::time::timeout(Duration::from_millis(100), async {
-                                loop { let _ = updates.next().await; }
-                            }).await;
+                        _ = updates.next_debounced() => {
                             debug!("Got update for device");
                             return Ok(());
                         }

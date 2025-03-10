@@ -180,12 +180,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         select! {
             _ = sleep(config.interval.0) => (),
             _ = api.wait_for_update_request() => (),
-            _ = stream.next() => {
-                // avoid too frequent updates
-                let _ = tokio::time::timeout(Duration::from_millis(100), async {
-                    loop { let _ = stream.next().await; }
-                }).await;
-            }
+            _ = stream.next_debounced() => ()
         }
     }
 }
