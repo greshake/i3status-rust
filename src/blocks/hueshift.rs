@@ -90,7 +90,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         (MouseButton::WheelDown, None, "temperature_down"),
     ])?;
 
-    let format = config.format.with_default(" $temperature ")?;
+    let format = config.format.with_default(" $icon $temperature ")?;
 
     // limit too big steps at 500K to avoid too brutal changes
     let step = config.step.min(500);
@@ -131,7 +131,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     loop {
         let mut widget = Widget::new().with_format(format.clone());
-        widget.set_values(map!("temperature" => Value::number(current_temp)));
+        widget.set_values(map! {
+            "icon" => Value::icon("hueshift"),
+            "temperature" => Value::number(current_temp)
+        });
         api.set_widget(widget)?;
 
         select! {

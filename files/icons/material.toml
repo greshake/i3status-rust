@@ -38,6 +38,7 @@ docker = "\ue532" # directions_boat
 github = "\ue86f" # code
 gpu = "\ue333" # tv
 headphones = "\ue60f" # bluetooth_audio
+hueshift = "\ue0f0" # lightbulb
 joystick = "\ue30f" # gamepad
 keyboard = "\ue312" # keyboard
 mail = "\ue0be" # email
