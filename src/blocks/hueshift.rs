@@ -79,6 +79,8 @@ pub struct Config {
     pub step: u16,
     #[default(6_500)]
     pub click_temp: u16,
+    #[default("💡".to_string())]
+    pub icon: String, // Add this line
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
@@ -90,7 +92,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         (MouseButton::WheelDown, None, "temperature_down"),
     ])?;
 
-    let format = config.format.with_default(" $temperature ")?;
+    let format = config
+        .format
+        .with_default(&format!("{} $temperature", config.icon))?;
 
     // limit too big steps at 500K to avoid too brutal changes
     let step = config.step.min(500);
