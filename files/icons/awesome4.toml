@@ -28,6 +28,7 @@ docker = "\uf21a" # fa-ship
 github = "\uf09b" # fa-github
 gpu = "\uf26c" # fa-television
 headphones = "\uf025" # fa-headphones
+hueshift = "\uf0eb" # fa-lightbulb-o
 joystick = "\uf11b" # fa-gamepad
 keyboard = "\uf11c" # fa-keyboard-o
 mail = "\uf0e0" # fa-envelope

@@ -48,6 +48,7 @@ docker = "\uf308" # nf-linux-docker
 github = "\U000f02a4" # nf-md-github
 gpu = "\U000f0379" # nf-md-monitor
 headphones = "\U000f02cb" # nf-md-headphones
+hueshift = "\U000f0336" # nf-md-lightbulb_outline
 joystick = "\U000f0297" # nf-md-gamepad_variant
 keyboard = "\U000f030c" # nf-md-keyboard
 mail = "\U000f01ee" # nf-md-email

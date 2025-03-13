@@ -28,6 +28,7 @@ docker = "\uf21a"
 github = "\uf09b"
 gpu = "\uf26c"
 headphones = "\uf025"
+hueshift = "\uf0eb" # fa-lightbulb-o
 joystick = "\uf11b"
 keyboard = "\uf11c"
 mail = "\uf0e0"

@@ -47,6 +47,7 @@ impl Default for Icons {
             "github" => "GITHUB",
             "gpu" => "GPU",
             "headphones" => "HEAD",
+            "hueshift" => "HUE",
             "joystick" => "JOY",
             "keyboard" => "KBD",
             "mail" => "MAIL",
