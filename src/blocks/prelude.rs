@@ -29,3 +29,5 @@ pub use futures::{Stream, StreamExt};
 pub use smart_default::SmartDefault;
 
 pub use async_trait::async_trait;
+
+pub use crate::util::StreamExtDebounced as _;
