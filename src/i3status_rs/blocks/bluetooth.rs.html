@@ -435,11 +435,7 @@
 <a href="#434" id="434">434</a>
 <a href="#435" id="435">435</a>
 <a href="#436" id="436">436</a>
-<a href="#437" id="437">437</a>
-<a href="#438" id="438">438</a>
-<a href="#439" id="439">439</a>
-<a href="#440" id="440">440</a>
-<a href="#441" id="441">441</a></pre></div><pre class="rust"><code><span class="doccomment">//! Monitor Bluetooth device
+<a href="#437" id="437">437</a></pre></div><pre class="rust"><code><span class="doccomment">//! Monitor Bluetooth device
 //!
 //! This block displays the connectivity of a given Bluetooth device and the battery level if this
 //! is supported. Relies on the Bluez D-Bus API.
@@ -701,11 +697,7 @@
 
                 <span class="kw">loop </span>{
                     <span class="macro">select!</span> {
-                        <span class="kw">_ </span>= updates.next() =&gt; {
-                            <span class="comment">// avoid too frequent updates
-                            </span><span class="kw">let _ </span>= tokio::time::timeout(Duration::from_millis(<span class="number">100</span>), <span class="kw">async </span>{
-                                <span class="kw">loop </span>{ <span class="kw">let _ </span>= updates.next().<span class="kw">await</span>; }
-                            }).<span class="kw">await</span>;
+                        <span class="kw">_ </span>= updates.next_debounced() =&gt; {
                             <span class="macro">debug!</span>(<span class="string">"Got update for device"</span>);
                             <span class="kw">return </span><span class="prelude-val">Ok</span>(());
                         }

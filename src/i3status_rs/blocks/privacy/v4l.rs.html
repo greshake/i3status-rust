@@ -151,12 +151,7 @@
 <a href="#150" id="150">150</a>
 <a href="#151" id="151">151</a>
 <a href="#152" id="152">152</a>
-<a href="#153" id="153">153</a>
-<a href="#154" id="154">154</a>
-<a href="#155" id="155">155</a>
-<a href="#156" id="156">156</a>
-<a href="#157" id="157">157</a></pre></div><pre class="rust"><code><span class="kw">use </span>debounced::{Debounced, debounced};
-<span class="kw">use </span>inotify::{EventStream, Inotify, WatchDescriptor, WatchMask, Watches};
+<a href="#153" id="153">153</a></pre></div><pre class="rust"><code><span class="kw">use </span>inotify::{EventStream, Inotify, WatchDescriptor, WatchMask, Watches};
 <span class="kw">use </span>tokio::fs::{File, read_dir};
 <span class="kw">use </span>tokio::time::{Interval, interval};
 
@@ -177,7 +172,7 @@
     devices: HashMap&lt;PathBuf, WatchDescriptor&gt;,
     interval: Interval,
     watches: Watches,
-    updates: Debounced&lt;EventStream&lt;[u8; <span class="number">1024</span>]&gt;&gt;,
+    stream: EventStream&lt;[u8; <span class="number">1024</span>]&gt;,
 }
 
 <span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; Monitor&lt;<span class="lifetime">'a</span>&gt; {
@@ -185,19 +180,16 @@
         <span class="kw">let </span>notify = Inotify::init().error(<span class="string">"Failed to start inotify"</span>)<span class="question-mark">?</span>;
         <span class="kw">let </span>watches = notify.watches();
 
-        <span class="kw">let </span>updates = debounced(
-            notify
-                .into_event_stream([<span class="number">0</span>; <span class="number">1024</span>])
-                .error(<span class="string">"Failed to create event stream"</span>)<span class="question-mark">?</span>,
-            Duration::from_millis(<span class="number">100</span>),
-        );
+        <span class="kw">let </span>stream = notify
+            .into_event_stream([<span class="number">0</span>; <span class="number">1024</span>])
+            .error(<span class="string">"Failed to create event stream"</span>)<span class="question-mark">?</span>;
 
         <span class="kw">let </span><span class="kw-2">mut </span>s = <span class="self">Self </span>{
             config,
             devices: HashMap::new(),
             interval: interval(duration),
             watches,
-            updates,
+            stream,
         };
         s.update_devices().<span class="kw">await</span><span class="question-mark">?</span>;
 
@@ -306,8 +298,8 @@
                         <span class="kw">break</span>;
                     }
                 },
-                <span class="kw">_ </span>= <span class="self">self</span>.updates.next() =&gt; <span class="kw">break</span>,
-            }
+                <span class="kw">_ </span>= <span class="self">self</span>.stream.next_debounced() =&gt; <span class="kw">break
+            </span>}
         }
         <span class="prelude-val">Ok</span>(())
     }
