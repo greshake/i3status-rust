@@ -88,18 +88,11 @@ pub struct Config {
     pub driver: Vec<PrivacyDriver>,
 }
 
-#[cfg(feature = "pipewire")]
 #[derive(Deserialize, Debug)]
 #[serde(tag = "name", rename_all = "snake_case")]
 pub enum PrivacyDriver {
+    #[cfg(feature = "pipewire")]
     Pipewire(pipewire::Config),
-    V4l(v4l::Config),
-}
-
-#[cfg(not(feature = "pipewire"))]
-#[derive(Deserialize, Debug)]
-#[serde(tag = "name", rename_all = "snake_case")]
-pub enum PrivacyDriver {
     V4l(v4l::Config),
 }
 
