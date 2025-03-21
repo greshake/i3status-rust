@@ -248,14 +248,7 @@
 <a href="#247" id="247">247</a>
 <a href="#248" id="248">248</a>
 <a href="#249" id="249">249</a>
-<a href="#250" id="250">250</a>
-<a href="#251" id="251">251</a>
-<a href="#252" id="252">252</a>
-<a href="#253" id="253">253</a>
-<a href="#254" id="254">254</a>
-<a href="#255" id="255">255</a>
-<a href="#256" id="256">256</a>
-<a href="#257" id="257">257</a></pre></div><pre class="rust"><code><span class="doccomment">//! Privacy Monitor
+<a href="#250" id="250">250</a></pre></div><pre class="rust"><code><span class="doccomment">//! Privacy Monitor
 //!
 //! # Configuration
 //!
@@ -345,18 +338,11 @@
     <span class="kw">pub </span>driver: Vec&lt;PrivacyDriver&gt;,
 }
 
-<span class="attr">#[cfg(feature = <span class="string">"pipewire"</span>)]
-#[derive(Deserialize, Debug)]
+<span class="attr">#[derive(Deserialize, Debug)]
 #[serde(tag = <span class="string">"name"</span>, rename_all = <span class="string">"snake_case"</span>)]
 </span><span class="kw">pub enum </span>PrivacyDriver {
-    Pipewire(pipewire::Config),
-    V4l(v4l::Config),
-}
-
-<span class="attr">#[cfg(not(feature = <span class="string">"pipewire"</span>))]
-#[derive(Deserialize, Debug)]
-#[serde(tag = <span class="string">"name"</span>, rename_all = <span class="string">"snake_case"</span>)]
-</span><span class="kw">pub enum </span>PrivacyDriver {
+    <span class="attr">#[cfg(feature = <span class="string">"pipewire"</span>)]
+    </span>Pipewire(pipewire::Config),
     V4l(v4l::Config),
 }
 
