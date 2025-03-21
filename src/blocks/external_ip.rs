@@ -65,8 +65,6 @@ use zbus::MatchRule;
 use super::prelude::*;
 use crate::util::{country_flag_from_iso_code, new_system_dbus_connection};
 
-const API_ENDPOINT: &str = "https://ipapi.co/json/";
-
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
@@ -137,40 +135,75 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     };
 
     loop {
-        let fetch_info = || IPAddressInfo::new(client);
+        let fetch_info = || api.find_ip_location(client, Duration::from_secs(0));
         let info = fetch_info.retry(ExponentialBuilder::default()).await?;
 
         let mut values = map! {
             "ip" => Value::text(info.ip),
-            "version" => Value::text(info.version),
             "city" => Value::text(info.city),
-            "region" => Value::text(info.region),
-            "region_code" => Value::text(info.region_code),
-            "country" => Value::text(info.country),
-            "country_name" => Value::text(info.country_name),
-            "country_flag" => Value::text(country_flag_from_iso_code(&info.country_code)),
-            "country_code" => Value::text(info.country_code),
-            "country_code_iso3" => Value::text(info.country_code_iso3),
-            "country_capital" => Value::text(info.country_capital),
-            "country_tld" => Value::text(info.country_tld),
-            "continent_code" => Value::text(info.continent_code),
             "latitude" => Value::number(info.latitude),
             "longitude" => Value::number(info.longitude),
-            "timezone" => Value::text(info.timezone),
-            "utc_offset" => Value::text(info.utc_offset),
-            "country_calling_code" => Value::text(info.country_calling_code),
-            "currency" => Value::text(info.currency),
-            "currency_name" => Value::text(info.currency_name),
-            "languages" => Value::text(info.languages),
-            "country_area" => Value::number(info.country_area),
-            "country_population" => Value::number(info.country_population),
-            "asn" => Value::text(info.asn),
-            "org" => Value::text(info.org),
         };
-        info.postal
-            .map(|x| values.insert("postal".into(), Value::text(x)));
-        if info.in_eu {
-            values.insert("in_eu".into(), Value::flag());
+
+        macro_rules! map_push_if_some { ($($key:ident: $type:ident),* $(,)?) => {
+            $({
+                let key = stringify!($key);
+                if let Some(value) = info.$key {
+                    values.insert(key.into(), Value::$type(value));
+                } else if format.contains_key(key) {
+                    return Err(Error::new(format!(
+                        "The format string contains '{key}', but the {key} field is not provided by {} (an api key may be required)",
+                        api.locator_name()
+                    )));
+                }
+            })*
+        } }
+
+        map_push_if_some!(
+            version: text,
+            region: text,
+            region_code: text,
+            country: text,
+            country_name: text,
+            country_code_iso3: text,
+            country_capital: text,
+            country_tld: text,
+            continent_code: text,
+            postal: text,
+            timezone: text,
+            utc_offset: text,
+            country_calling_code: text,
+            currency: text,
+            currency_name: text,
+            languages: text,
+            country_area: number,
+            country_population: number,
+            asn: text,
+            org: text,
+        );
+
+        if let Some(country_code) = info.country_code {
+            values.insert(
+                "country_flag".into(),
+                Value::text(country_flag_from_iso_code(&country_code)),
+            );
+            values.insert("country_code".into(), Value::text(country_code));
+        } else if format.contains_key("country_code") || format.contains_key("country_flag") {
+            return Err(Error::new(format!(
+                "The format string contains 'country_code' or 'country_flag', but the country_code field is not provided by {}",
+                api.locator_name()
+            )));
+        }
+
+        if let Some(in_eu) = info.in_eu {
+            if in_eu {
+                values.insert("in_eu".into(), Value::flag());
+            }
+        } else if format.contains_key("in_eu") {
+            return Err(Error::new(format!(
+                "The format string contains 'in_eu', but the in_eu field is not provided by {}",
+                api.locator_name()
+            )));
         }
 
         let mut widget = Widget::new().with_format(format.clone());
@@ -181,57 +214,6 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             _ = sleep(config.interval.0) => (),
             _ = api.wait_for_update_request() => (),
             _ = stream.next_debounced() => ()
-        }
-    }
-}
-
-#[derive(Deserialize, Default)]
-#[serde(default)]
-struct IPAddressInfo {
-    error: bool,
-    reason: String,
-    ip: String,
-    version: String,
-    city: String,
-    region: String,
-    region_code: String,
-    country: String,
-    country_name: String,
-    country_code: String,
-    country_code_iso3: String,
-    country_capital: String,
-    country_tld: String,
-    continent_code: String,
-    in_eu: bool,
-    postal: Option<String>,
-    latitude: f64,
-    longitude: f64,
-    timezone: String,
-    utc_offset: String,
-    country_calling_code: String,
-    currency: String,
-    currency_name: String,
-    languages: String,
-    country_area: f64,
-    country_population: f64,
-    asn: String,
-    org: String,
-}
-
-impl IPAddressInfo {
-    async fn new(client: &reqwest::Client) -> Result<Self> {
-        let info: Self = client
-            .get(API_ENDPOINT)
-            .send()
-            .await
-            .error("Failed to request current location")?
-            .json::<Self>()
-            .await
-            .error("Failed to parse JSON")?;
-        if info.error {
-            Err(Error::new(info.reason))
-        } else {
-            Ok(info)
         }
     }
 }
