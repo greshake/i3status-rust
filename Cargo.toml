@@ -22,7 +22,7 @@ pipewire = ["dep:pipewire"]
 notmuch = ["dep:notmuch"]
 maildir = ["dep:maildir", "glob"]
 icu_calendar = ["dep:icu_datetime", "dep:icu_calendar", "dep:icu_locid"]
-debug_borders = []                # Make widgets' borders visible
+debug_borders = []                                                       # Make widgets' borders visible
 
 [package.metadata.docs.rs]
 features = ["maildir", "notmuch"]
@@ -30,12 +30,22 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 async-trait = "0.1"
-backon = { version = "1.2", default-features = false, features = ["tokio-sleep"] }
+backon = { version = "1.2", default-features = false, features = [
+  "tokio-sleep",
+] }
 base64 = { version = "0.22.1" }
 calibright = { version = "0.1.9", features = ["watch"] }
-chrono = { version = "0.4", default-features = false, features = ["clock", "unstable-locales"] }
+chrono = { version = "0.4", default-features = false, features = [
+  "clock",
+  "unstable-locales",
+] }
 chrono-tz = { version = "0.10", features = ["serde"] }
-clap = { version = "4.0", default-features = false, features = ["std", "derive", "help", "usage"] }
+clap = { version = "4.0", default-features = false, features = [
+  "std",
+  "derive",
+  "help",
+  "usage",
+] }
 dirs = "5.0"
 env_logger = "0.11"
 futures = { version = "0.3.31", default-features = false }
@@ -77,8 +87,11 @@ thiserror = "2.0"
 toml = { version = "0.8", features = ["preserve_order"] }
 unicode-segmentation = "1.10.1"
 wayrs-client = { version = "1.0", features = ["tokio"] }
-wayrs-protocols = { version = "0.14", features = ["wlr-foreign-toplevel-management-unstable-v1"] }
-zbus = { version = "5", default-features = false, features = ["tokio"] }
+wayrs-protocols = { version = "0.14", features = [
+  "wlr-foreign-toplevel-management-unstable-v1",
+] }
+zbus = { version = "5.1.1", default-features = false, features = ["tokio"] }
+zbus_macros = "5.1.1"
 x11rb-async = { version = "0.13.1", features = ["xkb"] }
 
 [dependencies.tokio]
