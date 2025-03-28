@@ -545,6 +545,15 @@ enum UnitSystem {
     Imperial,
 }
 
+impl AsRef<str> for UnitSystem {
+    fn as_ref(&self) -> &str {
+        match self {
+            UnitSystem::Metric => "metric",
+            UnitSystem::Imperial => "imperial",
+        }
+    }
+}
+
 #[derive(Deserialize, Clone)]
 struct Coordinates {
     latitude: f64,
