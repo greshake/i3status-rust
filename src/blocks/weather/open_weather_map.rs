@@ -1,5 +1,6 @@
 use super::*;
 use chrono::{DateTime, Utc};
+use reqwest::Url;
 use serde::{Deserializer, de};
 
 pub(super) const GEO_URL: &str = "https://api.openweathermap.org/geo/1.0";
@@ -54,8 +55,54 @@ pub(super) struct Service<'a> {
     api_key: &'a String,
     units: &'a UnitSystem,
     lang: &'a String,
-    location_query: Option<String>,
+    location_query: Option<LocationSpecifier>,
     forecast_hours: usize,
+}
+
+#[derive(Clone)]
+enum LocationSpecifier {
+    CityCoord(CityCoord),
+    LocationId(u32),
+}
+
+impl LocationSpecifier {
+    fn as_query_params(&self) -> Vec<(&str, String)> {
+        match self {
+            LocationSpecifier::CityCoord(city) => {
+                vec![("lat", city.lat.to_string()), ("lon", city.lon.to_string())]
+            }
+            LocationSpecifier::LocationId(id) => vec![("id", id.to_string())],
+        }
+    }
+}
+
+fn parse_coord(value: &str, name: &str) -> Result<f64, Error> {
+    value
+        .parse::<f64>()
+        .or_error(|| format!("Invalid {} '{}': expected an f64", name, value))
+}
+
+impl TryFrom<(&String, &String)> for LocationSpecifier {
+    type Error = Error;
+
+    fn try_from(coords: (&String, &String)) -> Result<Self, Self::Error> {
+        let lat = parse_coord(coords.0, "latitude")?;
+        let lon = parse_coord(coords.1, "longitude")?;
+
+        Ok(LocationSpecifier::CityCoord(CityCoord { lat, lon }))
+    }
+}
+
+impl TryFrom<&String> for LocationSpecifier {
+    type Error = Error;
+
+    fn try_from(id: &String) -> Result<Self, Self::Error> {
+        let id = id
+            .parse::<u32>()
+            .or_error(|| format!("Invalid city id '{}': expected a u32", id))?;
+
+        Ok(LocationSpecifier::LocationId(id))
+    }
 }
 
 impl<'a> Service<'a> {
@@ -76,59 +123,71 @@ impl<'a> Service<'a> {
         autolocate: bool,
         api_key: &String,
         config: &Config,
-    ) -> Result<Option<String>> {
+    ) -> Result<Option<LocationSpecifier>> {
         if autolocate {
             return Ok(None);
         }
 
-        let mut location_query = config
-            .coordinates
-            .as_ref()
-            .map(|(lat, lon)| format!("lat={lat}&lon={lon}"))
-            .or_else(|| config.city_id.as_ref().map(|x| format!("id={x}")));
+        // Try by coordinates from config
+        if let Some((lat, lon)) = config.coordinates.as_ref() {
+            return Ok(Some(LocationSpecifier::try_from((lat, lon)).error(
+                "Invalid coordinates: failed to parse latitude or longitude from string to f64",
+            )?));
+        }
 
-        location_query = match location_query {
-            Some(x) => Some(x),
-            None => match config.place.as_ref() {
-                Some(place) => {
-                    let url = format!("{GEO_URL}/direct?q={place}&appid={api_key}");
+        // Try by city ID from config
+        if let Some(id) = config.city_id.as_ref() {
+            return Ok(Some(LocationSpecifier::try_from(id).error(
+                "Invalid city id: failed to parse it from string to u32",
+            )?));
+        }
 
-                    REQWEST_CLIENT
-                        .get(url)
-                        .send()
-                        .await
-                        .error("Geo request failed")?
-                        .json::<Vec<CityCoord>>()
-                        .await
-                        .error("Geo failed to parse json")?
-                        .first()
-                        .map(|city| format!("lat={}&lon={}", city.lat, city.lon))
-                }
-                None => None,
-            },
-        };
+        let geo_url =
+            Url::parse(GEO_URL).error("Failed to parse the hard-coded constant GEO_URL")?;
 
-        location_query = match location_query {
-            Some(x) => Some(x),
-            None => match config.zip.as_ref() {
-                Some(zip) => {
-                    let url = format!("{GEO_URL}/zip?zip={zip}&appid={api_key}");
-                    let city: CityCoord = REQWEST_CLIENT
-                        .get(url)
-                        .send()
-                        .await
-                        .error("Geo request failed")?
-                        .json()
-                        .await
-                        .error("Geo failed to parse json")?;
+        // Try by place name
+        if let Some(place) = config.place.as_ref() {
+            // "{GEO_URL}/direct?q={place}&appid={api_key}"
+            let mut url = geo_url.join("direct").error("Failed to join geo_url")?;
+            url.query_pairs_mut()
+                .append_pair("q", place)
+                .append_pair("appid", api_key);
 
-                    Some(format!("lat={}&lon={}", city.lat, city.lon))
-                }
-                None => None,
-            },
-        };
+            let city: Option<LocationSpecifier> = REQWEST_CLIENT
+                .get(url)
+                .send()
+                .await
+                .error("Geo request failed")?
+                .json::<Vec<CityCoord>>()
+                .await
+                .error("Geo failed to parse JSON")?
+                .first()
+                .map(|city| LocationSpecifier::CityCoord(*city));
 
-        Ok(location_query)
+            return Ok(city);
+        }
+
+        // Try by zip code
+        if let Some(zip) = config.zip.as_ref() {
+            // "{GEO_URL}/zip?zip={zip}&appid={api_key}"
+            let mut url = geo_url.join("zip").error("Failed to join geo_url")?;
+            url.query_pairs_mut()
+                .append_pair("zip", zip)
+                .append_pair("appid", api_key);
+
+            let city: CityCoord = REQWEST_CLIENT
+                .get(url)
+                .send()
+                .await
+                .error("Geo request failed")?
+                .json()
+                .await
+                .error("Geo failed to parse JSON")?;
+
+            return Ok(Some(LocationSpecifier::CityCoord(city)));
+        }
+
+        Ok(None)
     }
 }
 
@@ -234,7 +293,7 @@ struct ApiWeather {
     description: String,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Copy, Clone)]
 struct CityCoord {
     lat: f64,
     lon: f64,
@@ -247,22 +306,32 @@ impl WeatherProvider for Service<'_> {
         autolocated: Option<&IPAddressInfo>,
         need_forecast: bool,
     ) -> Result<WeatherResult> {
-        let location_query = autolocated
+        let location_specifier = autolocated
             .as_ref()
-            .map(|al| format!("lat={}&lon={}", al.latitude, al.longitude))
+            .map(|al| {
+                LocationSpecifier::CityCoord(CityCoord {
+                    lat: al.latitude,
+                    lon: al.longitude,
+                })
+            })
             .or_else(|| self.location_query.clone())
             .error("no location was provided")?;
 
         // Refer to https://openweathermap.org/current
-        let current_url = format!(
-            "{CURRENT_URL}?{location_query}&appid={api_key}&units={units}&lang={lang}",
-            api_key = self.api_key,
-            units = self.units.as_ref(),
-            lang = self.lang,
-        );
+        let current_url =
+            Url::parse(CURRENT_URL).error("Failed to parse the hard-coded constant CURRENT_URL")?;
 
+        let common_query_params = [
+            ("appid", self.api_key.as_str()),
+            ("units", self.units.as_ref()),
+            ("lang", self.lang.as_str()),
+        ];
+
+        // "{CURRENT_URL}?{location_query}&appid={api_key}&units={units}&lang={lang}"
         let current_data: ApiCurrentResponse = REQWEST_CLIENT
             .get(current_url)
+            .query(&location_specifier.as_query_params())
+            .query(&common_query_params)
             .send()
             .await
             .error("Current weather request failed")?
@@ -289,19 +358,17 @@ impl WeatherProvider for Service<'_> {
         }
 
         // Refer to https://openweathermap.org/forecast5
-        let forecast_url = format!(
-            "{FORECAST_URL}?{location_query}&appid={api_key}&units={units}&lang={lang}&cnt={cnt}",
-            api_key = self.api_key,
-            units = match self.units {
-                UnitSystem::Metric => "metric",
-                UnitSystem::Imperial => "imperial",
-            },
-            lang = self.lang,
-            cnt = self.forecast_hours / 3,
-        );
+        let forecast_url = Url::parse(FORECAST_URL)
+            .error("Failed to parse the hard-coded constant FORECAST_URL")?;
 
+        let forecast_query_params = [("cnt", &(self.forecast_hours / 3).to_string())];
+
+        // "{FORECAST_URL}?{location_query}&appid={api_key}&units={units}&lang={lang}&cnt={cnt}",
         let forecast_data: ApiForecastResponse = REQWEST_CLIENT
             .get(forecast_url)
+            .query(&location_specifier.as_query_params())
+            .query(&common_query_params)
+            .query(&forecast_query_params)
             .send()
             .await
             .error("Forecast weather request failed")?
