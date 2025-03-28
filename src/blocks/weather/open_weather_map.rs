@@ -257,10 +257,7 @@ impl WeatherProvider for Service<'_> {
         let current_url = format!(
             "{CURRENT_URL}?{location_query}&appid={api_key}&units={units}&lang={lang}",
             api_key = self.api_key,
-            units = match self.units {
-                UnitSystem::Metric => "metric",
-                UnitSystem::Imperial => "imperial",
-            },
+            units = self.units.as_ref(),
             lang = self.lang,
         );
 

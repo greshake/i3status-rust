@@ -538,6 +538,15 @@ enum UnitSystem {
     Imperial,
 }
 
+impl AsRef<str> for UnitSystem {
+    fn as_ref(&self) -> &str {
+        match self {
+            UnitSystem::Metric => "metric",
+            UnitSystem::Imperial => "imperial",
+        }
+    }
+}
+
 // Convert wind direction in azimuth degrees to abbreviation names
 fn convert_wind_direction(direction_opt: Option<f64>) -> &'static str {
     match direction_opt {
