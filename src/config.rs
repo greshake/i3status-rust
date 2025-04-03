@@ -10,6 +10,15 @@ use crate::formatting::config::Config as FormatConfig;
 use crate::icons::{Icon, Icons};
 use crate::themes::{Theme, ThemeOverrides, ThemeUserConfig};
 
+use dirs;               //used in implementing parsing logic for the sway override function
+
+
+// === Optional sway integration ===
+#[derive(Deserialize, Debug)]
+pub struct SwayIntegration {
+    pub use_sway_bar_colors: Option<bool>,
+}
+
 #[derive(Deserialize, Debug)]
 pub struct Config {
     #[serde(flatten)]
@@ -31,6 +40,9 @@ pub struct Config {
     #[serde(default)]
     #[serde(rename = "block")]
     pub blocks: Vec<BlockConfigEntry>,
+
+    #[serde(default)]
+    pub sway_integration: Option<SwayIntegration>, 
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -114,4 +126,46 @@ where
     let theme_config = ThemeUserConfig::deserialize(deserializer)?;
     let theme = Theme::try_from(theme_config).serde_error()?;
     Ok(Arc::new(theme))
+}
+
+use crate::themes::color::Color;
+
+pub fn try_parse_sway_bar_colors() -> Option<(Color, Color)> {
+    let config_path = dirs::home_dir()?.join(".config/sway/config");
+    let contents = std::fs::read_to_string(config_path).ok()?;
+
+    let mut in_bar_block = false;
+    let mut in_colors_block = false;
+    let mut background = None;
+    let mut statusline = None;
+
+    for line in contents.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with("bar") && trimmed.ends_with("{") {
+            in_bar_block = true;
+            continue;
+        }
+        if in_bar_block && trimmed.starts_with("colors") && trimmed.ends_with("{") {
+            in_colors_block = true;
+            continue;
+        }
+        if in_colors_block {
+            if trimmed.starts_with("}") {
+                break;
+            }
+            if trimmed.starts_with("background") {
+                background = trimmed.split_whitespace().nth(1).map(str::to_string);
+            } else if trimmed.starts_with("statusline") {
+                statusline = trimmed.split_whitespace().nth(1).map(str::to_string);
+            }
+        }
+    }
+
+    if let (Some(bg_str), Some(fg_str)) = (background, statusline) {
+        let bg: Color = bg_str.parse().ok()?;
+        let fg: Color = fg_str.parse().ok()?;
+        Some((bg, fg))
+    } else {
+        None
+    }
 }
