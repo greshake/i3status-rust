@@ -1,717 +1,358 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/sound.rs`."><title>sound.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-46132b98.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.85.1 (4eb161250 2025-03-15)" data-channel="1.85.1" data-search-js="search-75f5ac3e.js" data-settings-js="settings-0f613d39.js" ><script src="../../../static.files/storage-59e33391.js"></script><script defer src="../../../static.files/src-script-56102188.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">i3status_rs/blocks/</div>sound.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
-<a href="#1" id="1">1</a>
-<a href="#2" id="2">2</a>
-<a href="#3" id="3">3</a>
-<a href="#4" id="4">4</a>
-<a href="#5" id="5">5</a>
-<a href="#6" id="6">6</a>
-<a href="#7" id="7">7</a>
-<a href="#8" id="8">8</a>
-<a href="#9" id="9">9</a>
-<a href="#10" id="10">10</a>
-<a href="#11" id="11">11</a>
-<a href="#12" id="12">12</a>
-<a href="#13" id="13">13</a>
-<a href="#14" id="14">14</a>
-<a href="#15" id="15">15</a>
-<a href="#16" id="16">16</a>
-<a href="#17" id="17">17</a>
-<a href="#18" id="18">18</a>
-<a href="#19" id="19">19</a>
-<a href="#20" id="20">20</a>
-<a href="#21" id="21">21</a>
-<a href="#22" id="22">22</a>
-<a href="#23" id="23">23</a>
-<a href="#24" id="24">24</a>
-<a href="#25" id="25">25</a>
-<a href="#26" id="26">26</a>
-<a href="#27" id="27">27</a>
-<a href="#28" id="28">28</a>
-<a href="#29" id="29">29</a>
-<a href="#30" id="30">30</a>
-<a href="#31" id="31">31</a>
-<a href="#32" id="32">32</a>
-<a href="#33" id="33">33</a>
-<a href="#34" id="34">34</a>
-<a href="#35" id="35">35</a>
-<a href="#36" id="36">36</a>
-<a href="#37" id="37">37</a>
-<a href="#38" id="38">38</a>
-<a href="#39" id="39">39</a>
-<a href="#40" id="40">40</a>
-<a href="#41" id="41">41</a>
-<a href="#42" id="42">42</a>
-<a href="#43" id="43">43</a>
-<a href="#44" id="44">44</a>
-<a href="#45" id="45">45</a>
-<a href="#46" id="46">46</a>
-<a href="#47" id="47">47</a>
-<a href="#48" id="48">48</a>
-<a href="#49" id="49">49</a>
-<a href="#50" id="50">50</a>
-<a href="#51" id="51">51</a>
-<a href="#52" id="52">52</a>
-<a href="#53" id="53">53</a>
-<a href="#54" id="54">54</a>
-<a href="#55" id="55">55</a>
-<a href="#56" id="56">56</a>
-<a href="#57" id="57">57</a>
-<a href="#58" id="58">58</a>
-<a href="#59" id="59">59</a>
-<a href="#60" id="60">60</a>
-<a href="#61" id="61">61</a>
-<a href="#62" id="62">62</a>
-<a href="#63" id="63">63</a>
-<a href="#64" id="64">64</a>
-<a href="#65" id="65">65</a>
-<a href="#66" id="66">66</a>
-<a href="#67" id="67">67</a>
-<a href="#68" id="68">68</a>
-<a href="#69" id="69">69</a>
-<a href="#70" id="70">70</a>
-<a href="#71" id="71">71</a>
-<a href="#72" id="72">72</a>
-<a href="#73" id="73">73</a>
-<a href="#74" id="74">74</a>
-<a href="#75" id="75">75</a>
-<a href="#76" id="76">76</a>
-<a href="#77" id="77">77</a>
-<a href="#78" id="78">78</a>
-<a href="#79" id="79">79</a>
-<a href="#80" id="80">80</a>
-<a href="#81" id="81">81</a>
-<a href="#82" id="82">82</a>
-<a href="#83" id="83">83</a>
-<a href="#84" id="84">84</a>
-<a href="#85" id="85">85</a>
-<a href="#86" id="86">86</a>
-<a href="#87" id="87">87</a>
-<a href="#88" id="88">88</a>
-<a href="#89" id="89">89</a>
-<a href="#90" id="90">90</a>
-<a href="#91" id="91">91</a>
-<a href="#92" id="92">92</a>
-<a href="#93" id="93">93</a>
-<a href="#94" id="94">94</a>
-<a href="#95" id="95">95</a>
-<a href="#96" id="96">96</a>
-<a href="#97" id="97">97</a>
-<a href="#98" id="98">98</a>
-<a href="#99" id="99">99</a>
-<a href="#100" id="100">100</a>
-<a href="#101" id="101">101</a>
-<a href="#102" id="102">102</a>
-<a href="#103" id="103">103</a>
-<a href="#104" id="104">104</a>
-<a href="#105" id="105">105</a>
-<a href="#106" id="106">106</a>
-<a href="#107" id="107">107</a>
-<a href="#108" id="108">108</a>
-<a href="#109" id="109">109</a>
-<a href="#110" id="110">110</a>
-<a href="#111" id="111">111</a>
-<a href="#112" id="112">112</a>
-<a href="#113" id="113">113</a>
-<a href="#114" id="114">114</a>
-<a href="#115" id="115">115</a>
-<a href="#116" id="116">116</a>
-<a href="#117" id="117">117</a>
-<a href="#118" id="118">118</a>
-<a href="#119" id="119">119</a>
-<a href="#120" id="120">120</a>
-<a href="#121" id="121">121</a>
-<a href="#122" id="122">122</a>
-<a href="#123" id="123">123</a>
-<a href="#124" id="124">124</a>
-<a href="#125" id="125">125</a>
-<a href="#126" id="126">126</a>
-<a href="#127" id="127">127</a>
-<a href="#128" id="128">128</a>
-<a href="#129" id="129">129</a>
-<a href="#130" id="130">130</a>
-<a href="#131" id="131">131</a>
-<a href="#132" id="132">132</a>
-<a href="#133" id="133">133</a>
-<a href="#134" id="134">134</a>
-<a href="#135" id="135">135</a>
-<a href="#136" id="136">136</a>
-<a href="#137" id="137">137</a>
-<a href="#138" id="138">138</a>
-<a href="#139" id="139">139</a>
-<a href="#140" id="140">140</a>
-<a href="#141" id="141">141</a>
-<a href="#142" id="142">142</a>
-<a href="#143" id="143">143</a>
-<a href="#144" id="144">144</a>
-<a href="#145" id="145">145</a>
-<a href="#146" id="146">146</a>
-<a href="#147" id="147">147</a>
-<a href="#148" id="148">148</a>
-<a href="#149" id="149">149</a>
-<a href="#150" id="150">150</a>
-<a href="#151" id="151">151</a>
-<a href="#152" id="152">152</a>
-<a href="#153" id="153">153</a>
-<a href="#154" id="154">154</a>
-<a href="#155" id="155">155</a>
-<a href="#156" id="156">156</a>
-<a href="#157" id="157">157</a>
-<a href="#158" id="158">158</a>
-<a href="#159" id="159">159</a>
-<a href="#160" id="160">160</a>
-<a href="#161" id="161">161</a>
-<a href="#162" id="162">162</a>
-<a href="#163" id="163">163</a>
-<a href="#164" id="164">164</a>
-<a href="#165" id="165">165</a>
-<a href="#166" id="166">166</a>
-<a href="#167" id="167">167</a>
-<a href="#168" id="168">168</a>
-<a href="#169" id="169">169</a>
-<a href="#170" id="170">170</a>
-<a href="#171" id="171">171</a>
-<a href="#172" id="172">172</a>
-<a href="#173" id="173">173</a>
-<a href="#174" id="174">174</a>
-<a href="#175" id="175">175</a>
-<a href="#176" id="176">176</a>
-<a href="#177" id="177">177</a>
-<a href="#178" id="178">178</a>
-<a href="#179" id="179">179</a>
-<a href="#180" id="180">180</a>
-<a href="#181" id="181">181</a>
-<a href="#182" id="182">182</a>
-<a href="#183" id="183">183</a>
-<a href="#184" id="184">184</a>
-<a href="#185" id="185">185</a>
-<a href="#186" id="186">186</a>
-<a href="#187" id="187">187</a>
-<a href="#188" id="188">188</a>
-<a href="#189" id="189">189</a>
-<a href="#190" id="190">190</a>
-<a href="#191" id="191">191</a>
-<a href="#192" id="192">192</a>
-<a href="#193" id="193">193</a>
-<a href="#194" id="194">194</a>
-<a href="#195" id="195">195</a>
-<a href="#196" id="196">196</a>
-<a href="#197" id="197">197</a>
-<a href="#198" id="198">198</a>
-<a href="#199" id="199">199</a>
-<a href="#200" id="200">200</a>
-<a href="#201" id="201">201</a>
-<a href="#202" id="202">202</a>
-<a href="#203" id="203">203</a>
-<a href="#204" id="204">204</a>
-<a href="#205" id="205">205</a>
-<a href="#206" id="206">206</a>
-<a href="#207" id="207">207</a>
-<a href="#208" id="208">208</a>
-<a href="#209" id="209">209</a>
-<a href="#210" id="210">210</a>
-<a href="#211" id="211">211</a>
-<a href="#212" id="212">212</a>
-<a href="#213" id="213">213</a>
-<a href="#214" id="214">214</a>
-<a href="#215" id="215">215</a>
-<a href="#216" id="216">216</a>
-<a href="#217" id="217">217</a>
-<a href="#218" id="218">218</a>
-<a href="#219" id="219">219</a>
-<a href="#220" id="220">220</a>
-<a href="#221" id="221">221</a>
-<a href="#222" id="222">222</a>
-<a href="#223" id="223">223</a>
-<a href="#224" id="224">224</a>
-<a href="#225" id="225">225</a>
-<a href="#226" id="226">226</a>
-<a href="#227" id="227">227</a>
-<a href="#228" id="228">228</a>
-<a href="#229" id="229">229</a>
-<a href="#230" id="230">230</a>
-<a href="#231" id="231">231</a>
-<a href="#232" id="232">232</a>
-<a href="#233" id="233">233</a>
-<a href="#234" id="234">234</a>
-<a href="#235" id="235">235</a>
-<a href="#236" id="236">236</a>
-<a href="#237" id="237">237</a>
-<a href="#238" id="238">238</a>
-<a href="#239" id="239">239</a>
-<a href="#240" id="240">240</a>
-<a href="#241" id="241">241</a>
-<a href="#242" id="242">242</a>
-<a href="#243" id="243">243</a>
-<a href="#244" id="244">244</a>
-<a href="#245" id="245">245</a>
-<a href="#246" id="246">246</a>
-<a href="#247" id="247">247</a>
-<a href="#248" id="248">248</a>
-<a href="#249" id="249">249</a>
-<a href="#250" id="250">250</a>
-<a href="#251" id="251">251</a>
-<a href="#252" id="252">252</a>
-<a href="#253" id="253">253</a>
-<a href="#254" id="254">254</a>
-<a href="#255" id="255">255</a>
-<a href="#256" id="256">256</a>
-<a href="#257" id="257">257</a>
-<a href="#258" id="258">258</a>
-<a href="#259" id="259">259</a>
-<a href="#260" id="260">260</a>
-<a href="#261" id="261">261</a>
-<a href="#262" id="262">262</a>
-<a href="#263" id="263">263</a>
-<a href="#264" id="264">264</a>
-<a href="#265" id="265">265</a>
-<a href="#266" id="266">266</a>
-<a href="#267" id="267">267</a>
-<a href="#268" id="268">268</a>
-<a href="#269" id="269">269</a>
-<a href="#270" id="270">270</a>
-<a href="#271" id="271">271</a>
-<a href="#272" id="272">272</a>
-<a href="#273" id="273">273</a>
-<a href="#274" id="274">274</a>
-<a href="#275" id="275">275</a>
-<a href="#276" id="276">276</a>
-<a href="#277" id="277">277</a>
-<a href="#278" id="278">278</a>
-<a href="#279" id="279">279</a>
-<a href="#280" id="280">280</a>
-<a href="#281" id="281">281</a>
-<a href="#282" id="282">282</a>
-<a href="#283" id="283">283</a>
-<a href="#284" id="284">284</a>
-<a href="#285" id="285">285</a>
-<a href="#286" id="286">286</a>
-<a href="#287" id="287">287</a>
-<a href="#288" id="288">288</a>
-<a href="#289" id="289">289</a>
-<a href="#290" id="290">290</a>
-<a href="#291" id="291">291</a>
-<a href="#292" id="292">292</a>
-<a href="#293" id="293">293</a>
-<a href="#294" id="294">294</a>
-<a href="#295" id="295">295</a>
-<a href="#296" id="296">296</a>
-<a href="#297" id="297">297</a>
-<a href="#298" id="298">298</a>
-<a href="#299" id="299">299</a>
-<a href="#300" id="300">300</a>
-<a href="#301" id="301">301</a>
-<a href="#302" id="302">302</a>
-<a href="#303" id="303">303</a>
-<a href="#304" id="304">304</a>
-<a href="#305" id="305">305</a>
-<a href="#306" id="306">306</a>
-<a href="#307" id="307">307</a>
-<a href="#308" id="308">308</a>
-<a href="#309" id="309">309</a>
-<a href="#310" id="310">310</a>
-<a href="#311" id="311">311</a>
-<a href="#312" id="312">312</a>
-<a href="#313" id="313">313</a>
-<a href="#314" id="314">314</a>
-<a href="#315" id="315">315</a>
-<a href="#316" id="316">316</a>
-<a href="#317" id="317">317</a>
-<a href="#318" id="318">318</a>
-<a href="#319" id="319">319</a>
-<a href="#320" id="320">320</a>
-<a href="#321" id="321">321</a>
-<a href="#322" id="322">322</a>
-<a href="#323" id="323">323</a>
-<a href="#324" id="324">324</a>
-<a href="#325" id="325">325</a>
-<a href="#326" id="326">326</a>
-<a href="#327" id="327">327</a>
-<a href="#328" id="328">328</a>
-<a href="#329" id="329">329</a>
-<a href="#330" id="330">330</a>
-<a href="#331" id="331">331</a>
-<a href="#332" id="332">332</a>
-<a href="#333" id="333">333</a>
-<a href="#334" id="334">334</a>
-<a href="#335" id="335">335</a>
-<a href="#336" id="336">336</a>
-<a href="#337" id="337">337</a>
-<a href="#338" id="338">338</a>
-<a href="#339" id="339">339</a>
-<a href="#340" id="340">340</a>
-<a href="#341" id="341">341</a>
-<a href="#342" id="342">342</a>
-<a href="#343" id="343">343</a>
-<a href="#344" id="344">344</a>
-<a href="#345" id="345">345</a>
-<a href="#346" id="346">346</a>
-<a href="#347" id="347">347</a>
-<a href="#348" id="348">348</a>
-<a href="#349" id="349">349</a>
-<a href="#350" id="350">350</a>
-<a href="#351" id="351">351</a>
-<a href="#352" id="352">352</a>
-<a href="#353" id="353">353</a>
-<a href="#354" id="354">354</a>
-<a href="#355" id="355">355</a>
-<a href="#356" id="356">356</a>
-<a href="#357" id="357">357</a>
-<a href="#358" id="358">358</a></pre></div><pre class="rust"><code><span class="doccomment">//! Volume level
-//!
-//! This block displays the volume level (according to PulseAudio or ALSA). Right click to toggle mute, scroll to adjust volume.
-//!
-//! Requires a PulseAudio installation or `alsa-utils` for ALSA.
-//!
-//! Note that if you are using PulseAudio commands (such as `pactl`) to control your volume, you should select the `"pulseaudio"` (or `"auto"`) driver to see volume changes that exceed 100%.
-//!
-//! # Configuration
-//!
-//! Key | Values | Default
-//! ----|--------|--------
-//! `driver` | `"auto"`, `"pulseaudio"`, `"alsa"`. | `"auto"` (Pulseaudio with ALSA fallback)
-//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;\" $icon {$volume.eng(w:2) \|}\"&lt;/code&gt;
-//! `format_alt` | If set, block will switch between `format` and `format_alt` on every click. | `None`
-//! `name` | PulseAudio device name, or the ALSA control name as found in the output of `amixer -D yourdevice scontrols`. | PulseAudio: `@DEFAULT_SINK@` / ALSA: `Master`
-//! `device` | ALSA device name, usually in the form "hw:X" or "hw:X,Y" where `X` is the card number and `Y` is the device number as found in the output of `aplay -l`. | `default`
-//! `device_kind` | PulseAudio device kind: `source` or `sink`. | `"sink"`
-//! `natural_mapping` | When using the ALSA driver, display the "mapped volume" as given by `alsamixer`/`amixer -M`, which represents the volume level more naturally with respect for the human ear. | `false`
-//! `step_width` | The percent volume level is increased/decreased for the selected audio device when scrolling. Capped automatically at 50. | `5`
-//! `max_vol` | Max volume in percent that can be set via scrolling. Note it can still be set above this value if changed by another application. | `None`
-//! `show_volume_when_muted` | Show the volume even if it is currently muted. | `false`
-//! `headphones_indicator` | Change icon when headphones are plugged in (pulseaudio only) | `false`
-//! `mappings` | Map `output_name` to a custom name. | `None`
-//! `mappings_use_regex` | Let `mappings` match using regex instead of string equality. The replacement will be regex aware and can contain capture groups. | `true`
-//! `active_port_mappings` | Map `active_port` to a custom name. The replacement will be regex aware and can contain capture groups. | `None`
-//!
-//! Placeholder          | Value                             | Type   | Unit
-//! ---------------------|-----------------------------------|--------|---------------
-//! `icon`               | Icon based on volume              | Icon   | -
-//! `volume`             | Current volume. Missing if muted. | Number | %
-//! `output_name`        | PulseAudio or ALSA device name    | Text   | -
-//! `output_description` | PulseAudio device description, will fallback to `output_name` if no description is available and will be overwritten by mappings (mappings will still use `output_name`) | Text | -
-//! `active_port`        | Active port (same as information in Ports section of `pactl list cards`). Will be absent if not supported by `driver` or if mapped to `""` in `active_port_mappings`. | Text | -
-//!
-//! Action          | Default button
-//! ----------------|---------------
-//! `toggle_format` | Left
-//! `toggle_mute`   | Right
-//! `volume_down`   | Wheel Down
-//! `volume_up`     | Wheel Up
-//!
-//! # Examples
-//!
-//! Change the default scrolling step width to 3 percent:
-//!
-//! ```toml
-//! [[block]]
-//! block = "sound"
-//! step_width = 3
-//! ```
-//!
-//! Change the output name shown:
-//!
-//! ```toml
-//! [[block]]
-//! block = "sound"
-//! format = " $icon $output_name{ $volume|} "
-//! [block.mappings]
-//! "alsa_output.usb-Harman_Multimedia_JBL_Pebbles_1.0.0-00.analog-stereo" = "Speakers"
-//! "alsa_output.pci-0000_00_1b.0.analog-stereo" = "Headset"
-//! ```
-//!
-//! Since the default value for the `device_kind` key is `sink`,
-//! to display ***microphone*** block you have to use the `source` value:
-//!
-//! ```toml
-//! [[block]]
-//! block = "sound"
-//! driver = "pulseaudio"
-//! device_kind = "source"
-//! ```
-//!
-//! Display warning in block if microphone if using the wrong port:
-//!
-//! ```toml
-//! [[block]]
-//! block = "sound"
-//! driver = "pulseaudio"
-//! device_kind = "source"
-//! format = " $icon { $volume|} {$active_port |}"
-//! [block.active_port_mappings]
-//! "analog-input-rear-mic" = "" # Mapping to an empty string makes `$active_port` absent
-//! "analog-input-front-mic" = "ERR!"
-//! ```
-//!
-//! #  Icons Used
-//!
-//! - `microphone_muted` (as a progression)
-//! - `microphone` (as a progression)
-//! - `volume_muted` (as a progression)
-//! - `volume` (as a progression)
-//! - `headphones`
-
-</span><span class="kw">mod </span>alsa;
-<span class="attr">#[cfg(feature = <span class="string">"pulseaudio"</span>)]
-</span><span class="kw">mod </span>pulseaudio;
-
-<span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
-<span class="kw">use </span><span class="kw">crate</span>::wrappers::SerdeRegex;
-<span class="kw">use </span>indexmap::IndexMap;
-<span class="kw">use </span>regex::Regex;
-
-<span class="macro">make_log_macro!</span>(debug, <span class="string">"sound"</span>);
-
-<span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
-</span><span class="kw">pub struct </span>Config {
-    <span class="kw">pub </span>driver: SoundDriver,
-    <span class="kw">pub </span>name: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    <span class="kw">pub </span>device: <span class="prelude-ty">Option</span>&lt;String&gt;,
-    <span class="kw">pub </span>device_kind: DeviceKind,
-    <span class="kw">pub </span>natural_mapping: bool,
-    <span class="attr">#[default(<span class="number">5</span>)]
-    </span><span class="kw">pub </span>step_width: u32,
-    <span class="kw">pub </span>format: FormatConfig,
-    <span class="kw">pub </span>format_alt: <span class="prelude-ty">Option</span>&lt;FormatConfig&gt;,
-    <span class="kw">pub </span>headphones_indicator: bool,
-    <span class="kw">pub </span>show_volume_when_muted: bool,
-    <span class="kw">pub </span>mappings: <span class="prelude-ty">Option</span>&lt;IndexMap&lt;String, String&gt;&gt;,
-    <span class="attr">#[default(<span class="bool-val">true</span>)]
-    </span><span class="kw">pub </span>mappings_use_regex: bool,
-    <span class="kw">pub </span>max_vol: <span class="prelude-ty">Option</span>&lt;u32&gt;,
-    <span class="kw">pub </span>active_port_mappings: IndexMap&lt;SerdeRegex, String&gt;,
-}
-
-<span class="kw">enum </span>Mappings&lt;<span class="lifetime">'a</span>&gt; {
-    Exact(<span class="kw-2">&amp;</span><span class="lifetime">'a </span>IndexMap&lt;String, String&gt;),
-    Regex(Vec&lt;(Regex, <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str)&gt;),
-}
-
-<span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-    <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions()<span class="question-mark">?</span>;
-    api.set_default_actions(<span class="kw-2">&amp;</span>[
-        (MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">"toggle_format"</span>),
-        (MouseButton::Right, <span class="prelude-val">None</span>, <span class="string">"toggle_mute"</span>),
-        (MouseButton::WheelUp, <span class="prelude-val">None</span>, <span class="string">"volume_up"</span>),
-        (MouseButton::WheelDown, <span class="prelude-val">None</span>, <span class="string">"volume_down"</span>),
-    ])<span class="question-mark">?</span>;
-
-    <span class="kw">let </span><span class="kw-2">mut </span>format = config.format.with_default(<span class="string">" $icon {$volume.eng(w:2)|} "</span>)<span class="question-mark">?</span>;
-    <span class="kw">let </span><span class="kw-2">mut </span>format_alt = <span class="kw">match </span><span class="kw-2">&amp;</span>config.format_alt {
-        <span class="prelude-val">Some</span>(f) =&gt; <span class="prelude-val">Some</span>(f.with_default(<span class="string">""</span>)<span class="question-mark">?</span>),
-        <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
-    };
-
-    <span class="kw">let </span>device_kind = config.device_kind;
-    <span class="kw">let </span>step_width = config.step_width.clamp(<span class="number">0</span>, <span class="number">50</span>) <span class="kw">as </span>i32;
-
-    <span class="kw">let </span>icon = |muted: bool, device: <span class="kw-2">&amp;</span><span class="kw">dyn </span>SoundDevice| -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str {
-        <span class="kw">if </span>config.headphones_indicator &amp;&amp; device_kind == DeviceKind::Sink {
-            <span class="kw">let </span>form_factor = device.form_factor();
-            <span class="kw">let </span>active_port = device.active_port();
-            <span class="macro">debug!</span>(<span class="string">"form_factor = {form_factor:?} active_port = {active_port:?}"</span>);
-            <span class="kw">let </span>headphones = <span class="kw">match </span>form_factor {
-                <span class="comment">// form_factor's possible values are listed at:
-                // https://docs.rs/libpulse-binding/2.25.0/libpulse_binding/proplist/properties/constant.DEVICE_FORM_FACTOR.html
-                </span><span class="prelude-val">Some</span>(<span class="string">"headset"</span>) | <span class="prelude-val">Some</span>(<span class="string">"headphone"</span>) | <span class="prelude-val">Some</span>(<span class="string">"hands-free"</span>) | <span class="prelude-val">Some</span>(<span class="string">"portable"</span>) =&gt; <span class="bool-val">true</span>,
-                <span class="comment">// Per discussion at
-                // https://github.com/greshake/i3status-rust/pull/1363#issuecomment-1046095869,
-                // some sinks may not have the form_factor property, so we should fall back to the
-                // active_port if that property is not present.
-                </span><span class="prelude-val">None </span>=&gt; active_port.is_some_and(|p| p.to_lowercase().contains(<span class="string">"headphones"</span>)),
-                <span class="comment">// form_factor is present and is some non-headphone value
-                </span><span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
-            };
-            <span class="kw">if </span>headphones {
-                <span class="kw">return </span><span class="string">"headphones"</span>;
-            }
-        }
-        <span class="kw">if </span>muted {
-            <span class="kw">match </span>device_kind {
-                DeviceKind::Source =&gt; <span class="string">"microphone_muted"</span>,
-                DeviceKind::Sink =&gt; <span class="string">"volume_muted"</span>,
-            }
-        } <span class="kw">else </span>{
-            <span class="kw">match </span>device_kind {
-                DeviceKind::Source =&gt; <span class="string">"microphone"</span>,
-                DeviceKind::Sink =&gt; <span class="string">"volume"</span>,
-            }
-        }
-    };
-
-    <span class="kw">type </span>DeviceType = Box&lt;<span class="kw">dyn </span>SoundDevice&gt;;
-    <span class="kw">let </span><span class="kw-2">mut </span>device: DeviceType = <span class="kw">match </span>config.driver {
-        SoundDriver::Alsa =&gt; Box::new(alsa::Device::new(
-            config.name.clone().unwrap_or_else(|| <span class="string">"Master"</span>.into()),
-            config.device.clone().unwrap_or_else(|| <span class="string">"default"</span>.into()),
-            config.natural_mapping,
-        )<span class="question-mark">?</span>),
-        <span class="attr">#[cfg(feature = <span class="string">"pulseaudio"</span>)]
-        </span>SoundDriver::PulseAudio =&gt; Box::new(pulseaudio::Device::new(
-            config.device_kind,
-            config.name.clone(),
-        )<span class="question-mark">?</span>),
-        <span class="attr">#[cfg(feature = <span class="string">"pulseaudio"</span>)]
-        </span>SoundDriver::Auto =&gt; {
-            <span class="kw">if let </span><span class="prelude-val">Ok</span>(pulse) = pulseaudio::Device::new(config.device_kind, config.name.clone()) {
-                Box::new(pulse)
-            } <span class="kw">else </span>{
-                Box::new(alsa::Device::new(
-                    config.name.clone().unwrap_or_else(|| <span class="string">"Master"</span>.into()),
-                    config.device.clone().unwrap_or_else(|| <span class="string">"default"</span>.into()),
-                    config.natural_mapping,
-                )<span class="question-mark">?</span>)
-            }
-        }
-        <span class="attr">#[cfg(not(feature = <span class="string">"pulseaudio"</span>))]
-        </span>SoundDriver::Auto =&gt; Box::new(alsa::Device::new(
-            config.name.clone().unwrap_or_else(|| <span class="string">"Master"</span>.into()),
-            config.device.clone().unwrap_or_else(|| <span class="string">"default"</span>.into()),
-            config.natural_mapping,
-        )<span class="question-mark">?</span>),
-    };
-
-    <span class="kw">let </span>mappings = <span class="kw">match </span><span class="kw-2">&amp;</span>config.mappings {
-        <span class="prelude-val">Some</span>(m) =&gt; {
-            <span class="kw">if </span>config.mappings_use_regex {
-                <span class="prelude-val">Some</span>(Mappings::Regex(
-                    m.iter()
-                        .map(|(key, val)| {
-                            <span class="prelude-val">Ok</span>((
-                                Regex::new(key)
-                                    .error(<span class="string">"Failed to parse `{key}` in mappings as regex"</span>)<span class="question-mark">?</span>,
-                                val.as_str(),
-                            ))
-                        })
-                        .collect::&lt;<span class="prelude-ty">Result</span>&lt;<span class="kw">_</span>&gt;&gt;()<span class="question-mark">?</span>,
-                ))
-            } <span class="kw">else </span>{
-                <span class="prelude-val">Some</span>(Mappings::Exact(m))
-            }
-        }
-        <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
-    };
-
-    <span class="kw">loop </span>{
-        device.get_info().<span class="kw">await</span><span class="question-mark">?</span>;
-        <span class="kw">let </span>volume = device.volume();
-        <span class="kw">let </span>muted = device.muted();
-        <span class="kw">let </span><span class="kw-2">mut </span>output_name = device.output_name();
-        <span class="kw">let </span><span class="kw-2">mut </span>active_port = device.active_port();
-        <span class="kw">match </span><span class="kw-2">&amp;</span>mappings {
-            <span class="prelude-val">Some</span>(Mappings::Regex(m)) =&gt; {
-                <span class="kw">if let </span><span class="prelude-val">Some</span>((regex, mapped)) =
-                    m.iter().find(|(regex, <span class="kw">_</span>)| regex.is_match(<span class="kw-2">&amp;</span>output_name))
-                {
-                    output_name = regex.replace(<span class="kw-2">&amp;</span>output_name, <span class="kw-2">*</span>mapped).into_owned();
-                }
-            }
-            <span class="prelude-val">Some</span>(Mappings::Exact(m)) =&gt; {
-                <span class="kw">if let </span><span class="prelude-val">Some</span>(mapped) = m.get(<span class="kw-2">&amp;</span>output_name) {
-                    output_name.clone_from(mapped);
-                }
-            }
-            <span class="prelude-val">None </span>=&gt; (),
-        }
-        <span class="kw">if let </span><span class="prelude-val">Some</span>(ap) = <span class="kw-2">&amp;</span>active_port {
-            <span class="kw">if let </span><span class="prelude-val">Some</span>((regex, mapped)) = config
-                .active_port_mappings
-                .iter()
-                .find(|(regex, <span class="kw">_</span>)| regex.<span class="number">0</span>.is_match(ap))
-            {
-                <span class="kw">let </span>mapped = regex.<span class="number">0</span>.replace(ap, mapped);
-                <span class="kw">if </span>mapped.is_empty() {
-                    active_port = <span class="prelude-val">None</span>;
-                } <span class="kw">else </span>{
-                    active_port = <span class="prelude-val">Some</span>(mapped.into_owned());
-                }
-            }
-        }
-
-        <span class="kw">let </span>output_description = device
-            .output_description()
-            .unwrap_or_else(|| output_name.clone());
-
-        <span class="kw">let </span><span class="kw-2">mut </span>values = <span class="macro">map!</span> {
-            <span class="string">"icon" </span>=&gt; Value::icon_progression(icon(muted, <span class="kw-2">&amp;*</span>device), volume <span class="kw">as </span>f64 / <span class="number">100.0</span>),
-            <span class="string">"volume" </span>=&gt; Value::percents(volume),
-            <span class="string">"output_name" </span>=&gt; Value::text(output_name),
-            <span class="string">"output_description" </span>=&gt; Value::text(output_description),
-            [<span class="kw">if let </span><span class="prelude-val">Some</span>(ap) = active_port] <span class="string">"active_port" </span>=&gt; Value::text(ap),
-        };
-
-        <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
-
-        <span class="kw">if </span>muted {
-            widget.state = State::Warning;
-            <span class="kw">if </span>!config.show_volume_when_muted {
-                values.remove(<span class="string">"volume"</span>);
-            }
-        }
-
-        widget.set_values(values);
-        api.set_widget(widget)<span class="question-mark">?</span>;
-
-        <span class="kw">loop </span>{
-            <span class="macro">select!</span> {
-                val = device.wait_for_update() =&gt; {
-                    val<span class="question-mark">?</span>;
-                    <span class="kw">break</span>;
-                }
-                <span class="kw">_ </span>= api.wait_for_update_request() =&gt; <span class="kw">break</span>,
-                <span class="prelude-val">Some</span>(action) = actions.recv() =&gt; <span class="kw">match </span>action.as_ref() {
-                    <span class="string">"toggle_format" </span>=&gt; {
-                        <span class="kw">if let </span><span class="prelude-val">Some</span>(format_alt) = <span class="kw-2">&amp;mut </span>format_alt {
-                            std::mem::swap(format_alt, <span class="kw-2">&amp;mut </span>format);
-                            <span class="kw">break</span>;
-                        }
-                    }
-                    <span class="string">"toggle_mute" </span>=&gt; {
-                        device.toggle().<span class="kw">await</span><span class="question-mark">?</span>;
-                    }
-                    <span class="string">"volume_up" </span>=&gt; {
-                        device.set_volume(step_width, config.max_vol).<span class="kw">await</span><span class="question-mark">?</span>;
-                    }
-                    <span class="string">"volume_down" </span>=&gt; {
-                        device.set_volume(-step_width, config.max_vol).<span class="kw">await</span><span class="question-mark">?</span>;
-                    }
-                    <span class="kw">_ </span>=&gt; (),
-                }
-            }
-        }
-    }
-}
-
-<span class="attr">#[derive(Deserialize, Debug, SmartDefault, Clone, Copy)]
-#[serde(rename_all = <span class="string">"lowercase"</span>)]
-</span><span class="kw">pub enum </span>SoundDriver {
-    <span class="attr">#[default]
-    </span>Auto,
-    Alsa,
-    <span class="attr">#[cfg(feature = <span class="string">"pulseaudio"</span>)]
-    </span>PulseAudio,
-}
-
-<span class="attr">#[derive(Deserialize, Debug, SmartDefault, Clone, Copy, PartialEq, Eq, Hash)]
-#[serde(rename_all = <span class="string">"lowercase"</span>)]
-</span><span class="kw">pub enum </span>DeviceKind {
-    <span class="attr">#[default]
-    </span>Sink,
-    Source,
-}
-
-<span class="attr">#[async_trait::async_trait]
-</span><span class="kw">trait </span>SoundDevice {
-    <span class="kw">fn </span>volume(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u32;
-    <span class="kw">fn </span>muted(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool;
-    <span class="kw">fn </span>output_name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String;
-    <span class="kw">fn </span>output_description(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt;;
-    <span class="kw">fn </span>active_port(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt;;
-    <span class="kw">fn </span>form_factor(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt;;
-
-    <span class="kw">async fn </span>get_info(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
-    <span class="kw">async fn </span>set_volume(<span class="kw-2">&amp;mut </span><span class="self">self</span>, step: i32, max_vol: <span class="prelude-ty">Option</span>&lt;u32&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
-    <span class="kw">async fn </span>toggle(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
-    <span class="kw">async fn </span>wait_for_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
-}
-</code></pre></div></section></main></body></html>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/blocks/sound.rs`."><title>sound.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-6c3ea77c.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.86.0 (05f9846f8 2025-03-31)" data-channel="1.86.0" data-search-js="search-581efc7a.js" data-settings-js="settings-6dad6058.js" ><script src="../../../static.files/storage-3a5871a4.js"></script><script defer src="../../../static.files/src-script-b8d3f215.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-4d63596a.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">i3status_rs/blocks/</div>sound.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="doccomment">//! Volume level
+<a href=#2 id=2 data-nosnippet>2</a>//!
+<a href=#3 id=3 data-nosnippet>3</a>//! This block displays the volume level (according to PulseAudio or ALSA). Right click to toggle mute, scroll to adjust volume.
+<a href=#4 id=4 data-nosnippet>4</a>//!
+<a href=#5 id=5 data-nosnippet>5</a>//! Requires a PulseAudio installation or `alsa-utils` for ALSA.
+<a href=#6 id=6 data-nosnippet>6</a>//!
+<a href=#7 id=7 data-nosnippet>7</a>//! Note that if you are using PulseAudio commands (such as `pactl`) to control your volume, you should select the `"pulseaudio"` (or `"auto"`) driver to see volume changes that exceed 100%.
+<a href=#8 id=8 data-nosnippet>8</a>//!
+<a href=#9 id=9 data-nosnippet>9</a>//! # Configuration
+<a href=#10 id=10 data-nosnippet>10</a>//!
+<a href=#11 id=11 data-nosnippet>11</a>//! Key | Values | Default
+<a href=#12 id=12 data-nosnippet>12</a>//! ----|--------|--------
+<a href=#13 id=13 data-nosnippet>13</a>//! `driver` | `"auto"`, `"pulseaudio"`, `"alsa"`. | `"auto"` (Pulseaudio with ALSA fallback)
+<a href=#14 id=14 data-nosnippet>14</a>//! `format` | A string to customise the output of this block. See below for available placeholders. | &lt;code&gt;\" $icon {$volume.eng(w:2) \|}\"&lt;/code&gt;
+<a href=#15 id=15 data-nosnippet>15</a>//! `format_alt` | If set, block will switch between `format` and `format_alt` on every click. | `None`
+<a href=#16 id=16 data-nosnippet>16</a>//! `name` | PulseAudio device name, or the ALSA control name as found in the output of `amixer -D yourdevice scontrols`. | PulseAudio: `@DEFAULT_SINK@` / ALSA: `Master`
+<a href=#17 id=17 data-nosnippet>17</a>//! `device` | ALSA device name, usually in the form "hw:X" or "hw:X,Y" where `X` is the card number and `Y` is the device number as found in the output of `aplay -l`. | `default`
+<a href=#18 id=18 data-nosnippet>18</a>//! `device_kind` | PulseAudio device kind: `source` or `sink`. | `"sink"`
+<a href=#19 id=19 data-nosnippet>19</a>//! `natural_mapping` | When using the ALSA driver, display the "mapped volume" as given by `alsamixer`/`amixer -M`, which represents the volume level more naturally with respect for the human ear. | `false`
+<a href=#20 id=20 data-nosnippet>20</a>//! `step_width` | The percent volume level is increased/decreased for the selected audio device when scrolling. Capped automatically at 50. | `5`
+<a href=#21 id=21 data-nosnippet>21</a>//! `max_vol` | Max volume in percent that can be set via scrolling. Note it can still be set above this value if changed by another application. | `None`
+<a href=#22 id=22 data-nosnippet>22</a>//! `show_volume_when_muted` | Show the volume even if it is currently muted. | `false`
+<a href=#23 id=23 data-nosnippet>23</a>//! `headphones_indicator` | Change icon when headphones are plugged in (pulseaudio only) | `false`
+<a href=#24 id=24 data-nosnippet>24</a>//! `mappings` | Map `output_name` to a custom name. | `None`
+<a href=#25 id=25 data-nosnippet>25</a>//! `mappings_use_regex` | Let `mappings` match using regex instead of string equality. The replacement will be regex aware and can contain capture groups. | `true`
+<a href=#26 id=26 data-nosnippet>26</a>//! `active_port_mappings` | Map `active_port` to a custom name. The replacement will be regex aware and can contain capture groups. | `None`
+<a href=#27 id=27 data-nosnippet>27</a>//!
+<a href=#28 id=28 data-nosnippet>28</a>//! Placeholder          | Value                             | Type   | Unit
+<a href=#29 id=29 data-nosnippet>29</a>//! ---------------------|-----------------------------------|--------|---------------
+<a href=#30 id=30 data-nosnippet>30</a>//! `icon`               | Icon based on volume              | Icon   | -
+<a href=#31 id=31 data-nosnippet>31</a>//! `volume`             | Current volume. Missing if muted. | Number | %
+<a href=#32 id=32 data-nosnippet>32</a>//! `output_name`        | PulseAudio or ALSA device name    | Text   | -
+<a href=#33 id=33 data-nosnippet>33</a>//! `output_description` | PulseAudio device description, will fallback to `output_name` if no description is available and will be overwritten by mappings (mappings will still use `output_name`) | Text | -
+<a href=#34 id=34 data-nosnippet>34</a>//! `active_port`        | Active port (same as information in Ports section of `pactl list cards`). Will be absent if not supported by `driver` or if mapped to `""` in `active_port_mappings`. | Text | -
+<a href=#35 id=35 data-nosnippet>35</a>//!
+<a href=#36 id=36 data-nosnippet>36</a>//! Action          | Default button
+<a href=#37 id=37 data-nosnippet>37</a>//! ----------------|---------------
+<a href=#38 id=38 data-nosnippet>38</a>//! `toggle_format` | Left
+<a href=#39 id=39 data-nosnippet>39</a>//! `toggle_mute`   | Right
+<a href=#40 id=40 data-nosnippet>40</a>//! `volume_down`   | Wheel Down
+<a href=#41 id=41 data-nosnippet>41</a>//! `volume_up`     | Wheel Up
+<a href=#42 id=42 data-nosnippet>42</a>//!
+<a href=#43 id=43 data-nosnippet>43</a>//! # Examples
+<a href=#44 id=44 data-nosnippet>44</a>//!
+<a href=#45 id=45 data-nosnippet>45</a>//! Change the default scrolling step width to 3 percent:
+<a href=#46 id=46 data-nosnippet>46</a>//!
+<a href=#47 id=47 data-nosnippet>47</a>//! ```toml
+<a href=#48 id=48 data-nosnippet>48</a>//! [[block]]
+<a href=#49 id=49 data-nosnippet>49</a>//! block = "sound"
+<a href=#50 id=50 data-nosnippet>50</a>//! step_width = 3
+<a href=#51 id=51 data-nosnippet>51</a>//! ```
+<a href=#52 id=52 data-nosnippet>52</a>//!
+<a href=#53 id=53 data-nosnippet>53</a>//! Change the output name shown:
+<a href=#54 id=54 data-nosnippet>54</a>//!
+<a href=#55 id=55 data-nosnippet>55</a>//! ```toml
+<a href=#56 id=56 data-nosnippet>56</a>//! [[block]]
+<a href=#57 id=57 data-nosnippet>57</a>//! block = "sound"
+<a href=#58 id=58 data-nosnippet>58</a>//! format = " $icon $output_name{ $volume|} "
+<a href=#59 id=59 data-nosnippet>59</a>//! [block.mappings]
+<a href=#60 id=60 data-nosnippet>60</a>//! "alsa_output.usb-Harman_Multimedia_JBL_Pebbles_1.0.0-00.analog-stereo" = "Speakers"
+<a href=#61 id=61 data-nosnippet>61</a>//! "alsa_output.pci-0000_00_1b.0.analog-stereo" = "Headset"
+<a href=#62 id=62 data-nosnippet>62</a>//! ```
+<a href=#63 id=63 data-nosnippet>63</a>//!
+<a href=#64 id=64 data-nosnippet>64</a>//! Since the default value for the `device_kind` key is `sink`,
+<a href=#65 id=65 data-nosnippet>65</a>//! to display ***microphone*** block you have to use the `source` value:
+<a href=#66 id=66 data-nosnippet>66</a>//!
+<a href=#67 id=67 data-nosnippet>67</a>//! ```toml
+<a href=#68 id=68 data-nosnippet>68</a>//! [[block]]
+<a href=#69 id=69 data-nosnippet>69</a>//! block = "sound"
+<a href=#70 id=70 data-nosnippet>70</a>//! driver = "pulseaudio"
+<a href=#71 id=71 data-nosnippet>71</a>//! device_kind = "source"
+<a href=#72 id=72 data-nosnippet>72</a>//! ```
+<a href=#73 id=73 data-nosnippet>73</a>//!
+<a href=#74 id=74 data-nosnippet>74</a>//! Display warning in block if microphone if using the wrong port:
+<a href=#75 id=75 data-nosnippet>75</a>//!
+<a href=#76 id=76 data-nosnippet>76</a>//! ```toml
+<a href=#77 id=77 data-nosnippet>77</a>//! [[block]]
+<a href=#78 id=78 data-nosnippet>78</a>//! block = "sound"
+<a href=#79 id=79 data-nosnippet>79</a>//! driver = "pulseaudio"
+<a href=#80 id=80 data-nosnippet>80</a>//! device_kind = "source"
+<a href=#81 id=81 data-nosnippet>81</a>//! format = " $icon { $volume|} {$active_port |}"
+<a href=#82 id=82 data-nosnippet>82</a>//! [block.active_port_mappings]
+<a href=#83 id=83 data-nosnippet>83</a>//! "analog-input-rear-mic" = "" # Mapping to an empty string makes `$active_port` absent
+<a href=#84 id=84 data-nosnippet>84</a>//! "analog-input-front-mic" = "ERR!"
+<a href=#85 id=85 data-nosnippet>85</a>//! ```
+<a href=#86 id=86 data-nosnippet>86</a>//!
+<a href=#87 id=87 data-nosnippet>87</a>//! #  Icons Used
+<a href=#88 id=88 data-nosnippet>88</a>//!
+<a href=#89 id=89 data-nosnippet>89</a>//! - `microphone_muted` (as a progression)
+<a href=#90 id=90 data-nosnippet>90</a>//! - `microphone` (as a progression)
+<a href=#91 id=91 data-nosnippet>91</a>//! - `volume_muted` (as a progression)
+<a href=#92 id=92 data-nosnippet>92</a>//! - `volume` (as a progression)
+<a href=#93 id=93 data-nosnippet>93</a>//! - `headphones`
+<a href=#94 id=94 data-nosnippet>94</a>
+<a href=#95 id=95 data-nosnippet>95</a></span><span class="kw">mod </span>alsa;
+<a href=#96 id=96 data-nosnippet>96</a><span class="attr">#[cfg(feature = <span class="string">"pulseaudio"</span>)]
+<a href=#97 id=97 data-nosnippet>97</a></span><span class="kw">mod </span>pulseaudio;
+<a href=#98 id=98 data-nosnippet>98</a>
+<a href=#99 id=99 data-nosnippet>99</a><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+<a href=#100 id=100 data-nosnippet>100</a><span class="kw">use </span><span class="kw">crate</span>::wrappers::SerdeRegex;
+<a href=#101 id=101 data-nosnippet>101</a><span class="kw">use </span>indexmap::IndexMap;
+<a href=#102 id=102 data-nosnippet>102</a><span class="kw">use </span>regex::Regex;
+<a href=#103 id=103 data-nosnippet>103</a>
+<a href=#104 id=104 data-nosnippet>104</a><span class="macro">make_log_macro!</span>(debug, <span class="string">"sound"</span>);
+<a href=#105 id=105 data-nosnippet>105</a>
+<a href=#106 id=106 data-nosnippet>106</a><span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
+<a href=#107 id=107 data-nosnippet>107</a>#[serde(deny_unknown_fields, default)]
+<a href=#108 id=108 data-nosnippet>108</a></span><span class="kw">pub struct </span>Config {
+<a href=#109 id=109 data-nosnippet>109</a>    <span class="kw">pub </span>driver: SoundDriver,
+<a href=#110 id=110 data-nosnippet>110</a>    <span class="kw">pub </span>name: <span class="prelude-ty">Option</span>&lt;String&gt;,
+<a href=#111 id=111 data-nosnippet>111</a>    <span class="kw">pub </span>device: <span class="prelude-ty">Option</span>&lt;String&gt;,
+<a href=#112 id=112 data-nosnippet>112</a>    <span class="kw">pub </span>device_kind: DeviceKind,
+<a href=#113 id=113 data-nosnippet>113</a>    <span class="kw">pub </span>natural_mapping: bool,
+<a href=#114 id=114 data-nosnippet>114</a>    <span class="attr">#[default(<span class="number">5</span>)]
+<a href=#115 id=115 data-nosnippet>115</a>    </span><span class="kw">pub </span>step_width: u32,
+<a href=#116 id=116 data-nosnippet>116</a>    <span class="kw">pub </span>format: FormatConfig,
+<a href=#117 id=117 data-nosnippet>117</a>    <span class="kw">pub </span>format_alt: <span class="prelude-ty">Option</span>&lt;FormatConfig&gt;,
+<a href=#118 id=118 data-nosnippet>118</a>    <span class="kw">pub </span>headphones_indicator: bool,
+<a href=#119 id=119 data-nosnippet>119</a>    <span class="kw">pub </span>show_volume_when_muted: bool,
+<a href=#120 id=120 data-nosnippet>120</a>    <span class="kw">pub </span>mappings: <span class="prelude-ty">Option</span>&lt;IndexMap&lt;String, String&gt;&gt;,
+<a href=#121 id=121 data-nosnippet>121</a>    <span class="attr">#[default(<span class="bool-val">true</span>)]
+<a href=#122 id=122 data-nosnippet>122</a>    </span><span class="kw">pub </span>mappings_use_regex: bool,
+<a href=#123 id=123 data-nosnippet>123</a>    <span class="kw">pub </span>max_vol: <span class="prelude-ty">Option</span>&lt;u32&gt;,
+<a href=#124 id=124 data-nosnippet>124</a>    <span class="kw">pub </span>active_port_mappings: IndexMap&lt;SerdeRegex, String&gt;,
+<a href=#125 id=125 data-nosnippet>125</a>}
+<a href=#126 id=126 data-nosnippet>126</a>
+<a href=#127 id=127 data-nosnippet>127</a><span class="kw">enum </span>Mappings&lt;<span class="lifetime">'a</span>&gt; {
+<a href=#128 id=128 data-nosnippet>128</a>    Exact(<span class="kw-2">&amp;</span><span class="lifetime">'a </span>IndexMap&lt;String, String&gt;),
+<a href=#129 id=129 data-nosnippet>129</a>    Regex(Vec&lt;(Regex, <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str)&gt;),
+<a href=#130 id=130 data-nosnippet>130</a>}
+<a href=#131 id=131 data-nosnippet>131</a>
+<a href=#132 id=132 data-nosnippet>132</a><span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+<a href=#133 id=133 data-nosnippet>133</a>    <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions()<span class="question-mark">?</span>;
+<a href=#134 id=134 data-nosnippet>134</a>    api.set_default_actions(<span class="kw-2">&amp;</span>[
+<a href=#135 id=135 data-nosnippet>135</a>        (MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">"toggle_format"</span>),
+<a href=#136 id=136 data-nosnippet>136</a>        (MouseButton::Right, <span class="prelude-val">None</span>, <span class="string">"toggle_mute"</span>),
+<a href=#137 id=137 data-nosnippet>137</a>        (MouseButton::WheelUp, <span class="prelude-val">None</span>, <span class="string">"volume_up"</span>),
+<a href=#138 id=138 data-nosnippet>138</a>        (MouseButton::WheelDown, <span class="prelude-val">None</span>, <span class="string">"volume_down"</span>),
+<a href=#139 id=139 data-nosnippet>139</a>    ])<span class="question-mark">?</span>;
+<a href=#140 id=140 data-nosnippet>140</a>
+<a href=#141 id=141 data-nosnippet>141</a>    <span class="kw">let </span><span class="kw-2">mut </span>format = config.format.with_default(<span class="string">" $icon {$volume.eng(w:2)|} "</span>)<span class="question-mark">?</span>;
+<a href=#142 id=142 data-nosnippet>142</a>    <span class="kw">let </span><span class="kw-2">mut </span>format_alt = <span class="kw">match </span><span class="kw-2">&amp;</span>config.format_alt {
+<a href=#143 id=143 data-nosnippet>143</a>        <span class="prelude-val">Some</span>(f) =&gt; <span class="prelude-val">Some</span>(f.with_default(<span class="string">""</span>)<span class="question-mark">?</span>),
+<a href=#144 id=144 data-nosnippet>144</a>        <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
+<a href=#145 id=145 data-nosnippet>145</a>    };
+<a href=#146 id=146 data-nosnippet>146</a>
+<a href=#147 id=147 data-nosnippet>147</a>    <span class="kw">let </span>device_kind = config.device_kind;
+<a href=#148 id=148 data-nosnippet>148</a>    <span class="kw">let </span>step_width = config.step_width.clamp(<span class="number">0</span>, <span class="number">50</span>) <span class="kw">as </span>i32;
+<a href=#149 id=149 data-nosnippet>149</a>
+<a href=#150 id=150 data-nosnippet>150</a>    <span class="kw">let </span>icon = |muted: bool, device: <span class="kw-2">&amp;</span><span class="kw">dyn </span>SoundDevice| -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str {
+<a href=#151 id=151 data-nosnippet>151</a>        <span class="kw">if </span>config.headphones_indicator &amp;&amp; device_kind == DeviceKind::Sink {
+<a href=#152 id=152 data-nosnippet>152</a>            <span class="kw">let </span>form_factor = device.form_factor();
+<a href=#153 id=153 data-nosnippet>153</a>            <span class="kw">let </span>active_port = device.active_port();
+<a href=#154 id=154 data-nosnippet>154</a>            <span class="macro">debug!</span>(<span class="string">"form_factor = {form_factor:?} active_port = {active_port:?}"</span>);
+<a href=#155 id=155 data-nosnippet>155</a>            <span class="kw">let </span>headphones = <span class="kw">match </span>form_factor {
+<a href=#156 id=156 data-nosnippet>156</a>                <span class="comment">// form_factor's possible values are listed at:
+<a href=#157 id=157 data-nosnippet>157</a>                // https://docs.rs/libpulse-binding/2.25.0/libpulse_binding/proplist/properties/constant.DEVICE_FORM_FACTOR.html
+<a href=#158 id=158 data-nosnippet>158</a>                </span><span class="prelude-val">Some</span>(<span class="string">"headset"</span>) | <span class="prelude-val">Some</span>(<span class="string">"headphone"</span>) | <span class="prelude-val">Some</span>(<span class="string">"hands-free"</span>) | <span class="prelude-val">Some</span>(<span class="string">"portable"</span>) =&gt; <span class="bool-val">true</span>,
+<a href=#159 id=159 data-nosnippet>159</a>                <span class="comment">// Per discussion at
+<a href=#160 id=160 data-nosnippet>160</a>                // https://github.com/greshake/i3status-rust/pull/1363#issuecomment-1046095869,
+<a href=#161 id=161 data-nosnippet>161</a>                // some sinks may not have the form_factor property, so we should fall back to the
+<a href=#162 id=162 data-nosnippet>162</a>                // active_port if that property is not present.
+<a href=#163 id=163 data-nosnippet>163</a>                </span><span class="prelude-val">None </span>=&gt; active_port.is_some_and(|p| p.to_lowercase().contains(<span class="string">"headphones"</span>)),
+<a href=#164 id=164 data-nosnippet>164</a>                <span class="comment">// form_factor is present and is some non-headphone value
+<a href=#165 id=165 data-nosnippet>165</a>                </span><span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
+<a href=#166 id=166 data-nosnippet>166</a>            };
+<a href=#167 id=167 data-nosnippet>167</a>            <span class="kw">if </span>headphones {
+<a href=#168 id=168 data-nosnippet>168</a>                <span class="kw">return </span><span class="string">"headphones"</span>;
+<a href=#169 id=169 data-nosnippet>169</a>            }
+<a href=#170 id=170 data-nosnippet>170</a>        }
+<a href=#171 id=171 data-nosnippet>171</a>        <span class="kw">if </span>muted {
+<a href=#172 id=172 data-nosnippet>172</a>            <span class="kw">match </span>device_kind {
+<a href=#173 id=173 data-nosnippet>173</a>                DeviceKind::Source =&gt; <span class="string">"microphone_muted"</span>,
+<a href=#174 id=174 data-nosnippet>174</a>                DeviceKind::Sink =&gt; <span class="string">"volume_muted"</span>,
+<a href=#175 id=175 data-nosnippet>175</a>            }
+<a href=#176 id=176 data-nosnippet>176</a>        } <span class="kw">else </span>{
+<a href=#177 id=177 data-nosnippet>177</a>            <span class="kw">match </span>device_kind {
+<a href=#178 id=178 data-nosnippet>178</a>                DeviceKind::Source =&gt; <span class="string">"microphone"</span>,
+<a href=#179 id=179 data-nosnippet>179</a>                DeviceKind::Sink =&gt; <span class="string">"volume"</span>,
+<a href=#180 id=180 data-nosnippet>180</a>            }
+<a href=#181 id=181 data-nosnippet>181</a>        }
+<a href=#182 id=182 data-nosnippet>182</a>    };
+<a href=#183 id=183 data-nosnippet>183</a>
+<a href=#184 id=184 data-nosnippet>184</a>    <span class="kw">type </span>DeviceType = Box&lt;<span class="kw">dyn </span>SoundDevice&gt;;
+<a href=#185 id=185 data-nosnippet>185</a>    <span class="kw">let </span><span class="kw-2">mut </span>device: DeviceType = <span class="kw">match </span>config.driver {
+<a href=#186 id=186 data-nosnippet>186</a>        SoundDriver::Alsa =&gt; Box::new(alsa::Device::new(
+<a href=#187 id=187 data-nosnippet>187</a>            config.name.clone().unwrap_or_else(|| <span class="string">"Master"</span>.into()),
+<a href=#188 id=188 data-nosnippet>188</a>            config.device.clone().unwrap_or_else(|| <span class="string">"default"</span>.into()),
+<a href=#189 id=189 data-nosnippet>189</a>            config.natural_mapping,
+<a href=#190 id=190 data-nosnippet>190</a>        )<span class="question-mark">?</span>),
+<a href=#191 id=191 data-nosnippet>191</a>        <span class="attr">#[cfg(feature = <span class="string">"pulseaudio"</span>)]
+<a href=#192 id=192 data-nosnippet>192</a>        </span>SoundDriver::PulseAudio =&gt; Box::new(pulseaudio::Device::new(
+<a href=#193 id=193 data-nosnippet>193</a>            config.device_kind,
+<a href=#194 id=194 data-nosnippet>194</a>            config.name.clone(),
+<a href=#195 id=195 data-nosnippet>195</a>        )<span class="question-mark">?</span>),
+<a href=#196 id=196 data-nosnippet>196</a>        <span class="attr">#[cfg(feature = <span class="string">"pulseaudio"</span>)]
+<a href=#197 id=197 data-nosnippet>197</a>        </span>SoundDriver::Auto =&gt; {
+<a href=#198 id=198 data-nosnippet>198</a>            <span class="kw">if let </span><span class="prelude-val">Ok</span>(pulse) = pulseaudio::Device::new(config.device_kind, config.name.clone()) {
+<a href=#199 id=199 data-nosnippet>199</a>                Box::new(pulse)
+<a href=#200 id=200 data-nosnippet>200</a>            } <span class="kw">else </span>{
+<a href=#201 id=201 data-nosnippet>201</a>                Box::new(alsa::Device::new(
+<a href=#202 id=202 data-nosnippet>202</a>                    config.name.clone().unwrap_or_else(|| <span class="string">"Master"</span>.into()),
+<a href=#203 id=203 data-nosnippet>203</a>                    config.device.clone().unwrap_or_else(|| <span class="string">"default"</span>.into()),
+<a href=#204 id=204 data-nosnippet>204</a>                    config.natural_mapping,
+<a href=#205 id=205 data-nosnippet>205</a>                )<span class="question-mark">?</span>)
+<a href=#206 id=206 data-nosnippet>206</a>            }
+<a href=#207 id=207 data-nosnippet>207</a>        }
+<a href=#208 id=208 data-nosnippet>208</a>        <span class="attr">#[cfg(not(feature = <span class="string">"pulseaudio"</span>))]
+<a href=#209 id=209 data-nosnippet>209</a>        </span>SoundDriver::Auto =&gt; Box::new(alsa::Device::new(
+<a href=#210 id=210 data-nosnippet>210</a>            config.name.clone().unwrap_or_else(|| <span class="string">"Master"</span>.into()),
+<a href=#211 id=211 data-nosnippet>211</a>            config.device.clone().unwrap_or_else(|| <span class="string">"default"</span>.into()),
+<a href=#212 id=212 data-nosnippet>212</a>            config.natural_mapping,
+<a href=#213 id=213 data-nosnippet>213</a>        )<span class="question-mark">?</span>),
+<a href=#214 id=214 data-nosnippet>214</a>    };
+<a href=#215 id=215 data-nosnippet>215</a>
+<a href=#216 id=216 data-nosnippet>216</a>    <span class="kw">let </span>mappings = <span class="kw">match </span><span class="kw-2">&amp;</span>config.mappings {
+<a href=#217 id=217 data-nosnippet>217</a>        <span class="prelude-val">Some</span>(m) =&gt; {
+<a href=#218 id=218 data-nosnippet>218</a>            <span class="kw">if </span>config.mappings_use_regex {
+<a href=#219 id=219 data-nosnippet>219</a>                <span class="prelude-val">Some</span>(Mappings::Regex(
+<a href=#220 id=220 data-nosnippet>220</a>                    m.iter()
+<a href=#221 id=221 data-nosnippet>221</a>                        .map(|(key, val)| {
+<a href=#222 id=222 data-nosnippet>222</a>                            <span class="prelude-val">Ok</span>((
+<a href=#223 id=223 data-nosnippet>223</a>                                Regex::new(key)
+<a href=#224 id=224 data-nosnippet>224</a>                                    .error(<span class="string">"Failed to parse `{key}` in mappings as regex"</span>)<span class="question-mark">?</span>,
+<a href=#225 id=225 data-nosnippet>225</a>                                val.as_str(),
+<a href=#226 id=226 data-nosnippet>226</a>                            ))
+<a href=#227 id=227 data-nosnippet>227</a>                        })
+<a href=#228 id=228 data-nosnippet>228</a>                        .collect::&lt;<span class="prelude-ty">Result</span>&lt;<span class="kw">_</span>&gt;&gt;()<span class="question-mark">?</span>,
+<a href=#229 id=229 data-nosnippet>229</a>                ))
+<a href=#230 id=230 data-nosnippet>230</a>            } <span class="kw">else </span>{
+<a href=#231 id=231 data-nosnippet>231</a>                <span class="prelude-val">Some</span>(Mappings::Exact(m))
+<a href=#232 id=232 data-nosnippet>232</a>            }
+<a href=#233 id=233 data-nosnippet>233</a>        }
+<a href=#234 id=234 data-nosnippet>234</a>        <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
+<a href=#235 id=235 data-nosnippet>235</a>    };
+<a href=#236 id=236 data-nosnippet>236</a>
+<a href=#237 id=237 data-nosnippet>237</a>    <span class="kw">loop </span>{
+<a href=#238 id=238 data-nosnippet>238</a>        device.get_info().<span class="kw">await</span><span class="question-mark">?</span>;
+<a href=#239 id=239 data-nosnippet>239</a>        <span class="kw">let </span>volume = device.volume();
+<a href=#240 id=240 data-nosnippet>240</a>        <span class="kw">let </span>muted = device.muted();
+<a href=#241 id=241 data-nosnippet>241</a>        <span class="kw">let </span><span class="kw-2">mut </span>output_name = device.output_name();
+<a href=#242 id=242 data-nosnippet>242</a>        <span class="kw">let </span><span class="kw-2">mut </span>active_port = device.active_port();
+<a href=#243 id=243 data-nosnippet>243</a>        <span class="kw">match </span><span class="kw-2">&amp;</span>mappings {
+<a href=#244 id=244 data-nosnippet>244</a>            <span class="prelude-val">Some</span>(Mappings::Regex(m)) =&gt; {
+<a href=#245 id=245 data-nosnippet>245</a>                <span class="kw">if let </span><span class="prelude-val">Some</span>((regex, mapped)) =
+<a href=#246 id=246 data-nosnippet>246</a>                    m.iter().find(|(regex, <span class="kw">_</span>)| regex.is_match(<span class="kw-2">&amp;</span>output_name))
+<a href=#247 id=247 data-nosnippet>247</a>                {
+<a href=#248 id=248 data-nosnippet>248</a>                    output_name = regex.replace(<span class="kw-2">&amp;</span>output_name, <span class="kw-2">*</span>mapped).into_owned();
+<a href=#249 id=249 data-nosnippet>249</a>                }
+<a href=#250 id=250 data-nosnippet>250</a>            }
+<a href=#251 id=251 data-nosnippet>251</a>            <span class="prelude-val">Some</span>(Mappings::Exact(m)) =&gt; {
+<a href=#252 id=252 data-nosnippet>252</a>                <span class="kw">if let </span><span class="prelude-val">Some</span>(mapped) = m.get(<span class="kw-2">&amp;</span>output_name) {
+<a href=#253 id=253 data-nosnippet>253</a>                    output_name.clone_from(mapped);
+<a href=#254 id=254 data-nosnippet>254</a>                }
+<a href=#255 id=255 data-nosnippet>255</a>            }
+<a href=#256 id=256 data-nosnippet>256</a>            <span class="prelude-val">None </span>=&gt; (),
+<a href=#257 id=257 data-nosnippet>257</a>        }
+<a href=#258 id=258 data-nosnippet>258</a>        <span class="kw">if let </span><span class="prelude-val">Some</span>(ap) = <span class="kw-2">&amp;</span>active_port {
+<a href=#259 id=259 data-nosnippet>259</a>            <span class="kw">if let </span><span class="prelude-val">Some</span>((regex, mapped)) = config
+<a href=#260 id=260 data-nosnippet>260</a>                .active_port_mappings
+<a href=#261 id=261 data-nosnippet>261</a>                .iter()
+<a href=#262 id=262 data-nosnippet>262</a>                .find(|(regex, <span class="kw">_</span>)| regex.<span class="number">0</span>.is_match(ap))
+<a href=#263 id=263 data-nosnippet>263</a>            {
+<a href=#264 id=264 data-nosnippet>264</a>                <span class="kw">let </span>mapped = regex.<span class="number">0</span>.replace(ap, mapped);
+<a href=#265 id=265 data-nosnippet>265</a>                <span class="kw">if </span>mapped.is_empty() {
+<a href=#266 id=266 data-nosnippet>266</a>                    active_port = <span class="prelude-val">None</span>;
+<a href=#267 id=267 data-nosnippet>267</a>                } <span class="kw">else </span>{
+<a href=#268 id=268 data-nosnippet>268</a>                    active_port = <span class="prelude-val">Some</span>(mapped.into_owned());
+<a href=#269 id=269 data-nosnippet>269</a>                }
+<a href=#270 id=270 data-nosnippet>270</a>            }
+<a href=#271 id=271 data-nosnippet>271</a>        }
+<a href=#272 id=272 data-nosnippet>272</a>
+<a href=#273 id=273 data-nosnippet>273</a>        <span class="kw">let </span>output_description = device
+<a href=#274 id=274 data-nosnippet>274</a>            .output_description()
+<a href=#275 id=275 data-nosnippet>275</a>            .unwrap_or_else(|| output_name.clone());
+<a href=#276 id=276 data-nosnippet>276</a>
+<a href=#277 id=277 data-nosnippet>277</a>        <span class="kw">let </span><span class="kw-2">mut </span>values = <span class="macro">map!</span> {
+<a href=#278 id=278 data-nosnippet>278</a>            <span class="string">"icon" </span>=&gt; Value::icon_progression(icon(muted, <span class="kw-2">&amp;*</span>device), volume <span class="kw">as </span>f64 / <span class="number">100.0</span>),
+<a href=#279 id=279 data-nosnippet>279</a>            <span class="string">"volume" </span>=&gt; Value::percents(volume),
+<a href=#280 id=280 data-nosnippet>280</a>            <span class="string">"output_name" </span>=&gt; Value::text(output_name),
+<a href=#281 id=281 data-nosnippet>281</a>            <span class="string">"output_description" </span>=&gt; Value::text(output_description),
+<a href=#282 id=282 data-nosnippet>282</a>            [<span class="kw">if let </span><span class="prelude-val">Some</span>(ap) = active_port] <span class="string">"active_port" </span>=&gt; Value::text(ap),
+<a href=#283 id=283 data-nosnippet>283</a>        };
+<a href=#284 id=284 data-nosnippet>284</a>
+<a href=#285 id=285 data-nosnippet>285</a>        <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
+<a href=#286 id=286 data-nosnippet>286</a>
+<a href=#287 id=287 data-nosnippet>287</a>        <span class="kw">if </span>muted {
+<a href=#288 id=288 data-nosnippet>288</a>            widget.state = State::Warning;
+<a href=#289 id=289 data-nosnippet>289</a>            <span class="kw">if </span>!config.show_volume_when_muted {
+<a href=#290 id=290 data-nosnippet>290</a>                values.remove(<span class="string">"volume"</span>);
+<a href=#291 id=291 data-nosnippet>291</a>            }
+<a href=#292 id=292 data-nosnippet>292</a>        }
+<a href=#293 id=293 data-nosnippet>293</a>
+<a href=#294 id=294 data-nosnippet>294</a>        widget.set_values(values);
+<a href=#295 id=295 data-nosnippet>295</a>        api.set_widget(widget)<span class="question-mark">?</span>;
+<a href=#296 id=296 data-nosnippet>296</a>
+<a href=#297 id=297 data-nosnippet>297</a>        <span class="kw">loop </span>{
+<a href=#298 id=298 data-nosnippet>298</a>            <span class="macro">select!</span> {
+<a href=#299 id=299 data-nosnippet>299</a>                val = device.wait_for_update() =&gt; {
+<a href=#300 id=300 data-nosnippet>300</a>                    val<span class="question-mark">?</span>;
+<a href=#301 id=301 data-nosnippet>301</a>                    <span class="kw">break</span>;
+<a href=#302 id=302 data-nosnippet>302</a>                }
+<a href=#303 id=303 data-nosnippet>303</a>                <span class="kw">_ </span>= api.wait_for_update_request() =&gt; <span class="kw">break</span>,
+<a href=#304 id=304 data-nosnippet>304</a>                <span class="prelude-val">Some</span>(action) = actions.recv() =&gt; <span class="kw">match </span>action.as_ref() {
+<a href=#305 id=305 data-nosnippet>305</a>                    <span class="string">"toggle_format" </span>=&gt; {
+<a href=#306 id=306 data-nosnippet>306</a>                        <span class="kw">if let </span><span class="prelude-val">Some</span>(format_alt) = <span class="kw-2">&amp;mut </span>format_alt {
+<a href=#307 id=307 data-nosnippet>307</a>                            std::mem::swap(format_alt, <span class="kw-2">&amp;mut </span>format);
+<a href=#308 id=308 data-nosnippet>308</a>                            <span class="kw">break</span>;
+<a href=#309 id=309 data-nosnippet>309</a>                        }
+<a href=#310 id=310 data-nosnippet>310</a>                    }
+<a href=#311 id=311 data-nosnippet>311</a>                    <span class="string">"toggle_mute" </span>=&gt; {
+<a href=#312 id=312 data-nosnippet>312</a>                        device.toggle().<span class="kw">await</span><span class="question-mark">?</span>;
+<a href=#313 id=313 data-nosnippet>313</a>                    }
+<a href=#314 id=314 data-nosnippet>314</a>                    <span class="string">"volume_up" </span>=&gt; {
+<a href=#315 id=315 data-nosnippet>315</a>                        device.set_volume(step_width, config.max_vol).<span class="kw">await</span><span class="question-mark">?</span>;
+<a href=#316 id=316 data-nosnippet>316</a>                    }
+<a href=#317 id=317 data-nosnippet>317</a>                    <span class="string">"volume_down" </span>=&gt; {
+<a href=#318 id=318 data-nosnippet>318</a>                        device.set_volume(-step_width, config.max_vol).<span class="kw">await</span><span class="question-mark">?</span>;
+<a href=#319 id=319 data-nosnippet>319</a>                    }
+<a href=#320 id=320 data-nosnippet>320</a>                    <span class="kw">_ </span>=&gt; (),
+<a href=#321 id=321 data-nosnippet>321</a>                }
+<a href=#322 id=322 data-nosnippet>322</a>            }
+<a href=#323 id=323 data-nosnippet>323</a>        }
+<a href=#324 id=324 data-nosnippet>324</a>    }
+<a href=#325 id=325 data-nosnippet>325</a>}
+<a href=#326 id=326 data-nosnippet>326</a>
+<a href=#327 id=327 data-nosnippet>327</a><span class="attr">#[derive(Deserialize, Debug, SmartDefault, Clone, Copy)]
+<a href=#328 id=328 data-nosnippet>328</a>#[serde(rename_all = <span class="string">"lowercase"</span>)]
+<a href=#329 id=329 data-nosnippet>329</a></span><span class="kw">pub enum </span>SoundDriver {
+<a href=#330 id=330 data-nosnippet>330</a>    <span class="attr">#[default]
+<a href=#331 id=331 data-nosnippet>331</a>    </span>Auto,
+<a href=#332 id=332 data-nosnippet>332</a>    Alsa,
+<a href=#333 id=333 data-nosnippet>333</a>    <span class="attr">#[cfg(feature = <span class="string">"pulseaudio"</span>)]
+<a href=#334 id=334 data-nosnippet>334</a>    </span>PulseAudio,
+<a href=#335 id=335 data-nosnippet>335</a>}
+<a href=#336 id=336 data-nosnippet>336</a>
+<a href=#337 id=337 data-nosnippet>337</a><span class="attr">#[derive(Deserialize, Debug, SmartDefault, Clone, Copy, PartialEq, Eq, Hash)]
+<a href=#338 id=338 data-nosnippet>338</a>#[serde(rename_all = <span class="string">"lowercase"</span>)]
+<a href=#339 id=339 data-nosnippet>339</a></span><span class="kw">pub enum </span>DeviceKind {
+<a href=#340 id=340 data-nosnippet>340</a>    <span class="attr">#[default]
+<a href=#341 id=341 data-nosnippet>341</a>    </span>Sink,
+<a href=#342 id=342 data-nosnippet>342</a>    Source,
+<a href=#343 id=343 data-nosnippet>343</a>}
+<a href=#344 id=344 data-nosnippet>344</a>
+<a href=#345 id=345 data-nosnippet>345</a><span class="attr">#[async_trait::async_trait]
+<a href=#346 id=346 data-nosnippet>346</a></span><span class="kw">trait </span>SoundDevice {
+<a href=#347 id=347 data-nosnippet>347</a>    <span class="kw">fn </span>volume(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u32;
+<a href=#348 id=348 data-nosnippet>348</a>    <span class="kw">fn </span>muted(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool;
+<a href=#349 id=349 data-nosnippet>349</a>    <span class="kw">fn </span>output_name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String;
+<a href=#350 id=350 data-nosnippet>350</a>    <span class="kw">fn </span>output_description(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt;;
+<a href=#351 id=351 data-nosnippet>351</a>    <span class="kw">fn </span>active_port(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt;;
+<a href=#352 id=352 data-nosnippet>352</a>    <span class="kw">fn </span>form_factor(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt;;
+<a href=#353 id=353 data-nosnippet>353</a>
+<a href=#354 id=354 data-nosnippet>354</a>    <span class="kw">async fn </span>get_info(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
+<a href=#355 id=355 data-nosnippet>355</a>    <span class="kw">async fn </span>set_volume(<span class="kw-2">&amp;mut </span><span class="self">self</span>, step: i32, max_vol: <span class="prelude-ty">Option</span>&lt;u32&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
+<a href=#356 id=356 data-nosnippet>356</a>    <span class="kw">async fn </span>toggle(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
+<a href=#357 id=357 data-nosnippet>357</a>    <span class="kw">async fn </span>wait_for_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
+<a href=#358 id=358 data-nosnippet>358</a>}</code></pre></div></section></main></body></html>
