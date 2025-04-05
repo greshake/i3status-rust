@@ -1,4 +1,4 @@
-use std::iter::repeat;
+use std::iter::repeat_n;
 use std::time::Instant;
 
 use crate::escape::CollectEscaped as _;
@@ -105,7 +105,7 @@ impl Formatter for StrFormatter {
                     }
                     _ => text
                         .iter()
-                        .chain(repeat(&" ").take(self.min_width.saturating_sub(width)))
+                        .chain(repeat_n(&" ", self.min_width.saturating_sub(width)))
                         .take(self.max_width)
                         .collect_pango_escaped(),
                 })
