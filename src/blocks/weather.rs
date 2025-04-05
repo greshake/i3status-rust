@@ -145,7 +145,7 @@ use std::fmt;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
-use chrono::{DateTime, Datelike as _, Utc};
+use chrono::{DateTime, Utc};
 use sunrise::{SolarDay, SolarEvent};
 
 use crate::formatting::Format;
@@ -525,15 +525,13 @@ fn calculate_sunrise_sunset(
     lon: f64,
     altitude: Option<f64>,
 ) -> Result<(DateTime<Utc>, DateTime<Utc>)> {
-    let date = Utc::now();
-    let solar_day = SolarDay::new(lat, lon, date.year(), date.month(), date.day())
-        .with_altitude(altitude.unwrap_or_default());
+    let date = Utc::now().date_naive();
+    let coordinates = sunrise::Coordinates::new(lat, lon).error("Invalid coordinates")?;
+    let solar_day = SolarDay::new(coordinates, date).with_altitude(altitude.unwrap_or_default());
 
     Ok((
-        DateTime::<Utc>::from_timestamp(solar_day.event_time(SolarEvent::Sunrise), 0)
-            .error("Unable to convert timestamp to DateTime")?,
-        DateTime::<Utc>::from_timestamp(solar_day.event_time(SolarEvent::Sunset), 0)
-            .error("Unable to convert timestamp to DateTime")?,
+        solar_day.event_time(SolarEvent::Sunrise),
+        solar_day.event_time(SolarEvent::Sunset),
     ))
 }
 
