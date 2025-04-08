@@ -82,7 +82,7 @@ zbus = { version = "5", default-features = false, features = ["tokio"] }
 x11rb-async = { version = "0.13.1", features = ["xkb"] }
 
 [dependencies.tokio]
-version = "1.12"
+version = "1.43"
 features = [
   "fs",
   #"io-util",
