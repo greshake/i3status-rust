@@ -244,7 +244,7 @@ struct CityCoord {
 impl WeatherProvider for Service<'_> {
     async fn get_weather(
         &self,
-        autolocated: Option<&Coordinates>,
+        autolocated: Option<&IPAddressInfo>,
         need_forecast: bool,
     ) -> Result<WeatherResult> {
         let location_query = autolocated
