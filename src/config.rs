@@ -108,6 +108,7 @@ pub struct CommonBlockConfig {
     pub error_interval: u64,
     pub error_format: FormatConfig,
     pub error_fullscreen_format: FormatConfig,
+    pub max_retries: Option<u8>,
 
     pub if_command: Option<String>,
 }

@@ -12,6 +12,7 @@
 //! `error_format` | Overrides global `error_format` | None
 //! `error_fullscreen_format` | Overrides global `error_fullscreen_format` | None
 //! `error_interval` | How long to wait until restarting the block after an error occurred. | `5`
+//! `max_retries` | How many times should a block be restarted the block after an error occurred. If no limit is specified none will be enforced. | `None`
 //! `[block.theme_overrides]` | Same as the top-level config option, but for this block only. Refer to `Themes and Icons` below. | None
 //! `[block.icons_overrides]` | Same as the top-level config option, but for this block only. Refer to `Themes and Icons` below. | None
 //! `[[block.click]]` | Set or override click action for the block. See below for details. | Block default / None
@@ -87,14 +88,25 @@ macro_rules! define_blocks {
                         $(#[cfg(feature = $feat)])?
                         #[allow(deprecated)]
                         Self::$block(config) => futures.push(async move {
-                            while let Err(err) = $block::run(&config, &api).await {
+                            let mut error_count: u8 = 0;
+                            while let Err(mut err) = $block::run(&config, &api).await {
+                                let should_retry = api
+                                    .max_retries
+                                    .map_or(true, |max_retries| error_count < max_retries);
+                                if !should_retry {
+                                    err = Error {
+                                        message: Some("Block failed too many times, giving up".into()),
+                                        cause: Some(Arc::new(err)),
+                                    };
+                                }
                                 if api.set_error(err).is_err() {
                                     return;
                                 }
                                 tokio::select! {
-                                    _ = tokio::time::sleep(api.error_interval) => (),
+                                    _ = tokio::time::sleep(api.error_interval), if should_retry => (),
                                     _ = api.wait_for_update_request() => (),
                                 }
+                                error_count = error_count.saturating_add(1);
                             }
                         }.boxed_local()),
                     )*
@@ -210,6 +222,7 @@ pub struct CommonApi {
     pub(crate) request_sender: mpsc::UnboundedSender<Request>,
     pub(crate) error_interval: Duration,
     pub(crate) geolocator: Arc<Geolocator>,
+    pub(crate) max_retries: Option<u8>,
 }
 
 impl CommonApi {

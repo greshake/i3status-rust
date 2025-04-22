@@ -270,6 +270,7 @@ impl BarState {
             request_sender: self.request_sender.clone(),
             error_interval: Duration::from_secs(block_config.common.error_interval),
             geolocator: self.config.geolocator.clone(),
+            max_retries: block_config.common.max_retries,
         };
 
         let error_format = block_config
