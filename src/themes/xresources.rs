@@ -11,9 +11,7 @@ use std::{env, path::PathBuf};
 
 #[cfg(not(test))]
 fn read_xresources() -> std::io::Result<String> {
-    use std::io::{Error, ErrorKind};
-    let home =
-        env::var("HOME").map_err(|_| Error::new(ErrorKind::Other, "HOME env var was not set"))?;
+    let home = env::var("HOME").map_err(|_| std::io::Error::other("HOME env var was not set"))?;
     let xresources = PathBuf::from(home + "/.Xresources");
     debug!(".Xresources @ {:?}", xresources);
     std::fs::read_to_string(xresources)

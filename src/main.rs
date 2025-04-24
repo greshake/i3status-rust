@@ -80,7 +80,7 @@ fn restart() -> ! {
 
     // Add "--no-init" argument if not already added
     let no_init_arg = CString::new("--no-init").unwrap();
-    if !arg.iter().any(|a| *a == no_init_arg) {
+    if !arg.contains(&no_init_arg) {
         arg.push(no_init_arg);
     }
 
