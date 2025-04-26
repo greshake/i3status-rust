@@ -243,7 +243,7 @@
 <a href=#243 id=243 data-nosnippet>243</a></span><span class="kw">impl </span>WeatherProvider <span class="kw">for </span>Service&lt;<span class="lifetime">'_</span>&gt; {
 <a href=#244 id=244 data-nosnippet>244</a>    <span class="kw">async fn </span>get_weather(
 <a href=#245 id=245 data-nosnippet>245</a>        <span class="kw-2">&amp;</span><span class="self">self</span>,
-<a href=#246 id=246 data-nosnippet>246</a>        autolocated: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Coordinates&gt;,
+<a href=#246 id=246 data-nosnippet>246</a>        autolocated: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>IPAddressInfo&gt;,
 <a href=#247 id=247 data-nosnippet>247</a>        need_forecast: bool,
 <a href=#248 id=248 data-nosnippet>248</a>    ) -&gt; <span class="prelude-ty">Result</span>&lt;WeatherResult&gt; {
 <a href=#249 id=249 data-nosnippet>249</a>        <span class="kw">let </span>location = <span class="kw">if let </span><span class="prelude-val">Some</span>(coords) = autolocated {

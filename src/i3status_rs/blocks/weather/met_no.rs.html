@@ -178,10 +178,10 @@
 <a href=#178 id=178 data-nosnippet>178</a></span><span class="kw">impl </span>WeatherProvider <span class="kw">for </span>Service&lt;<span class="lifetime">'_</span>&gt; {
 <a href=#179 id=179 data-nosnippet>179</a>    <span class="kw">async fn </span>get_weather(
 <a href=#180 id=180 data-nosnippet>180</a>        <span class="kw-2">&amp;</span><span class="self">self</span>,
-<a href=#181 id=181 data-nosnippet>181</a>        location: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Coordinates&gt;,
+<a href=#181 id=181 data-nosnippet>181</a>        autolocated: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>IPAddressInfo&gt;,
 <a href=#182 id=182 data-nosnippet>182</a>        need_forecast: bool,
 <a href=#183 id=183 data-nosnippet>183</a>    ) -&gt; <span class="prelude-ty">Result</span>&lt;WeatherResult&gt; {
-<a href=#184 id=184 data-nosnippet>184</a>        <span class="kw">let </span>(lat, lon) = location
+<a href=#184 id=184 data-nosnippet>184</a>        <span class="kw">let </span>(lat, lon) = autolocated
 <a href=#185 id=185 data-nosnippet>185</a>            .as_ref()
 <a href=#186 id=186 data-nosnippet>186</a>            .map(|loc| (loc.latitude.to_string(), loc.longitude.to_string()))
 <a href=#187 id=187 data-nosnippet>187</a>            .or_else(|| <span class="self">self</span>.config.coordinates.clone())
@@ -217,7 +217,7 @@
 <a href=#217 id=217 data-nosnippet>217</a>            </span>.error(<span class="string">"Forecast request failed"</span>)<span class="question-mark">?</span>;
 <a href=#218 id=218 data-nosnippet>218</a>
 <a href=#219 id=219 data-nosnippet>219</a>        <span class="kw">let </span>forecast_hours = <span class="self">self</span>.config.forecast_hours;
-<a href=#220 id=220 data-nosnippet>220</a>        <span class="kw">let </span>location_name = location.map_or(<span class="string">"Unknown"</span>.to_string(), |c| c.city.clone());
+<a href=#220 id=220 data-nosnippet>220</a>        <span class="kw">let </span>location_name = autolocated.map_or(<span class="string">"Unknown"</span>.to_string(), |c| c.city.clone());
 <a href=#221 id=221 data-nosnippet>221</a>
 <a href=#222 id=222 data-nosnippet>222</a>        <span class="kw">let </span>current_weather = data.properties.timeseries.first().unwrap().to_moment(<span class="self">self</span>);
 <a href=#223 id=223 data-nosnippet>223</a>
