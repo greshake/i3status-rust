@@ -351,27 +351,36 @@ async fn get_default_interface(
     ))
     .await?;
 
-    let mut default_index = 0;
+    let mut best_index = 0;
+    let mut best_metric = u32::MAX;
 
     recv_until_done!(sock, msg: Rtmsg => {
         if msg.rtm_type != Rtn::Unicast {
             continue;
         }
+        // Only check default routes (rtm_dst_len == 0)
+        if msg.rtm_dst_len != 0 {
+            continue;
+        }
+
         let mut index = None;
-        let mut is_default = false;
+        let mut metric = 0u32;
         for attr in msg.rtattrs.iter() {
             match attr.rta_type {
                 Rta::Oif => index = Some(attr.get_payload_as::<i32>()?),
-                Rta::Gateway => is_default = true,
+                Rta::Priority => metric = attr.get_payload_as::<u32>()?,
                 _ => (),
             }
         }
-        if is_default && default_index == 0 {
-            default_index = index.unwrap();
+        if let Some(i) = index {
+            if metric < best_metric {
+                best_metric = metric;
+                best_index = i;
+            }
         }
     });
 
-    Ok(default_index)
+    Ok(best_index)
 }
 
 async fn ip_payload<const BYTES: usize>(
