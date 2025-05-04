@@ -158,7 +158,7 @@ impl GeolocatorBackend {
             GeolocatorBackend::Ipapi(_) => ipapi::Ipapi.get_info(client).await,
             GeolocatorBackend::Ip2Location(config) => {
                 ip2location::Ip2Location
-                    .get_info(client, &config.api_key)
+                    .get_info(client, config.api_key.as_ref())
                     .await
             }
         }

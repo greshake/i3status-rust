@@ -204,7 +204,7 @@ impl Ip2Location {
     pub async fn get_info(
         &self,
         client: &reqwest::Client,
-        api_key: &Option<String>,
+        api_key: Option<&String>,
     ) -> Result<IPAddressInfo> {
         let mut request_builder = client.get(IP_API_URL);
 
