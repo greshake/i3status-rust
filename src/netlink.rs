@@ -16,6 +16,14 @@ use std::path::Path;
 use crate::errors::*;
 use crate::util;
 
+use zbus::Connection; // Add zbus for D-Bus communication
+use zbus_macros::proxy; // Use the proxy attribute macro instead of dbus_proxy
+
+#[proxy(interface = "org.freedesktop.NetworkManager.Connection.Active")]
+trait ActiveConnection {
+    fn id(&self) -> zbus::Result<String>;
+}
+
 // From `linux/rtnetlink.h`
 const RT_SCOPE_HOST: c_uchar = 254;
 
@@ -28,6 +36,7 @@ pub struct NetDevice {
     pub icon: &'static str,
     pub tun_wg_ppp: bool,
     pub nameservers: Vec<IpAddr>,
+    pub ethernet_id: Option<String>,
 }
 
 #[derive(Debug, Default)]
@@ -72,6 +81,12 @@ impl NetDevice {
             .await
             .error("Failed to read nameservers")?;
 
+        let connection_name = if wifi_info.is_none() {
+            get_connection_name(&iface.name).await?
+        } else {
+            None
+        };
+
         // TODO: use netlink for the these too
         // I don't believe that this should ever change, so set it now:
         let path = Path::new("/sys/class/net").join(&iface.name);
@@ -102,6 +117,7 @@ impl NetDevice {
             icon,
             tun_wg_ppp: tun | wg | ppp,
             nameservers,
+            ethernet_id: connection_name, // Store connection name for Ethernet
         }))
     }
 
@@ -453,6 +469,67 @@ async fn read_nameservers() -> Result<Vec<IpAddr>> {
     }
 
     Ok(nameservers)
+}
+
+async fn get_connection_name(iface_name: &str) -> Result<Option<String>> {
+    let connection = Connection::system()
+        .await
+        .error("Failed to connect to D-Bus")?;
+    let proxy = zbus::Proxy::new(
+        &connection,
+        "org.freedesktop.NetworkManager",
+        "/org/freedesktop/NetworkManager",
+        "org.freedesktop.NetworkManager",
+    )
+    .await
+    .error("Failed to create D-Bus proxy")?;
+
+    let active_connections: Vec<zbus::zvariant::OwnedObjectPath> = proxy
+        .call("ActiveConnections", &())
+        .await
+        .error("Failed to get active connections")?;
+
+    for path in active_connections {
+        let active_proxy = zbus::Proxy::new(
+            &connection,
+            "org.freedesktop.NetworkManager",
+            path.as_str(),
+            "org.freedesktop.NetworkManager.Connection.Active",
+        )
+        .await
+        .error("Failed to create active connection proxy")?;
+
+        let devices: Vec<zbus::zvariant::OwnedObjectPath> = active_proxy
+            .get_property("Devices")
+            .await
+            .error("Failed to get devices for connection")?;
+
+        for device_path in devices {
+            let device_proxy = zbus::Proxy::new(
+                &connection,
+                "org.freedesktop.NetworkManager",
+                device_path.as_str(),
+                "org.freedesktop.NetworkManager.Device",
+            )
+            .await
+            .error("Failed to create device proxy")?;
+
+            let device_iface: String = device_proxy
+                .get_property("Interface")
+                .await
+                .error("Failed to get device interface")?;
+
+            if device_iface == iface_name {
+                let connection_id: String = active_proxy
+                    .get_property("Id")
+                    .await
+                    .error("Failed to get connection ID")?;
+                return Ok(Some(connection_id));
+            }
+        }
+    }
+
+    Ok(None)
 }
 
 // Source: https://www.kernel.org/doc/Documentation/networking/operstates.txt
