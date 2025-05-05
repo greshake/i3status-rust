@@ -2716,9 +2716,9 @@ checksum = "7da8b5736845d9f2fcb837ea5d9e2628564b3b043a70948a3f0b778838c5fb4f"
 
 [[package]]
 name = "sunrise"
-version = "1.2.1"
+version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "08871f1db1390f915b7bb2ab2f1ac7370e8c78667857a15ae5cfea25da3262f2"
+checksum = "5fa294819e2fafc32303070a59a89ee81640f444e4935e7b8548dbc74457cee9"
 dependencies = [
  "chrono",
 ]
