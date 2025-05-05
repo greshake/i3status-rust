@@ -42,7 +42,7 @@ interval = 3600
 
 ### Capslock status indicator
 
-Displays 'CAPS' when Capslock is active, hidden otherwise.
+Displays 'CAPS' when Capslock is active, hidden otherwise.  
 Requires this binding to be added to your sway config:
 `bindsym --release Caps_Lock exec pkill -SIGRTMIN+11 i3status-rs`
 
