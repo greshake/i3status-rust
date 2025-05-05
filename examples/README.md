@@ -40,7 +40,7 @@ command = "echo 🐛 $(bugz --quiet --skip-auth search --assigned-to user@exampl
 interval = 3600
 ```
 
-### Caps lock status indicator
+### Capslock status indicator
 
 Displays 'CAPS' when Capslock is active, hidden otherwise.
 Requires this binding to be added to your sway config:
