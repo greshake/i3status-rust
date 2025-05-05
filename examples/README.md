@@ -10,6 +10,7 @@ Feel free to add to the list below by sending a PR. Additional scripts can be ad
 ## Custom Blocks
 
 - [Bugs assigned to user](#bugs-assigned-to-user)
+- [Capslock status indicator](#capslock-status-indicator)
 - [Hostname](#hostname)
 - [HTTP Status Code](#http-status-code)
 - [Intel GPU Usage](#intel-gpu-usage)
@@ -37,6 +38,22 @@ Display number of unresolved bugs assigned to user in Bugzilla using `pybugz`.
 block = "custom"
 command = "echo 🐛 $(bugz --quiet --skip-auth search --assigned-to user@example.com | wc -l)"
 interval = 3600
+```
+
+### Caps lock status indicator
+
+Displays 'CAPS' when Capslock is active, hidden otherwise.
+Requires this binding to be added to your sway config:
+`bindsym --release Caps_Lock exec pkill -SIGRTMIN+11 i3status-rs`
+
+```toml
+[[block]]
+block = "custom"
+signal = 11
+command = ''' if [[ "$(cat /sys/class/leds/input*::capslock/brightness | sort --numeric-sort --reverse | uniq --count | awk '{print $2}' | head --lines 1)" -eq 1 ]]; then printf "CAPS"; fi '''
+shell = "bash"
+format = " <span color='yellow'>$text</span>"
+hide_when_empty = true
 ```
 
 ### Hostname
