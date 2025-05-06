@@ -82,6 +82,8 @@
 //! [[block]]
 //! block = "packages"
 //! interval = 1800
+//! error_interval = 300
+//! max_retries = 5
 //! package_manager = ["apt"]
 //! format = " $icon $apt updates available"
 //! format_singular = " $icon One update available "
@@ -103,6 +105,8 @@
 //! block = "packages"
 //! package_manager = ["pacman"]
 //! interval = 600
+//! error_interval = 300
+//! max_retries = 5
 //! format = " $icon $pacman updates available "
 //! format_singular = " $icon $pacman update available "
 //! format_up_to_date = " $icon system up to date "
@@ -124,6 +128,7 @@
 //! package_manager = ["pacman", "aur"]
 //! interval = 600
 //! error_interval = 300
+//! max_retries = 5
 //! format = " $icon $pacman + $aur = $total updates available "
 //! format_singular = " $icon $total update available "
 //! format_up_to_date = " $icon system up to date "
@@ -139,6 +144,8 @@
 //! block = "packages"
 //! package_manager = ["dnf"]
 //! interval = 1800
+//! error_interval = 300
+//! max_retries = 5
 //! format = " $icon $dnf.eng(w:1) updates available "
 //! format_singular = " $icon One update available "
 //! format_up_to_date = " $icon system up to date "
@@ -156,6 +163,8 @@
 //! block = "packages"
 //! package_manager = ["xbps"]
 //! interval = 1800
+//! error_interval = 300
+//! max_retries = 5
 //! format = " $icon $xbps.eng(w:1) updates available "
 //! format_singular = " $icon One update available "
 //! format_up_to_date = " $icon system up to date "
@@ -174,6 +183,8 @@
 //! block = "packages"
 //! package_manager = ["apt", "pacman", "aur", "dnf", "xbps"]
 //! interval = 1800
+//! error_interval = 300
+//! max_retries = 5
 //! format = " $icon $apt + $pacman + $aur + $dnf + $xbps = $total updates available "
 //! format_singular = " $icon One update available "
 //! format_up_to_date = " $icon system up to date "
