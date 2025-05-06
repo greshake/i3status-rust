@@ -60,11 +60,15 @@ impl Default for SharedConfig {
 }
 
 fn default_error_format() -> FormatConfig {
-    " {$short_error_message|X} ".parse().unwrap()
+    " {$restart_block_icon |}{$short_error_message|X} "
+        .parse()
+        .unwrap()
 }
 
 fn default_error_fullscreen() -> FormatConfig {
-    " $full_error_message ".parse().unwrap()
+    " {$restart_block_icon |}$full_error_message "
+        .parse()
+        .unwrap()
 }
 
 fn default_icons_format() -> Arc<String> {
