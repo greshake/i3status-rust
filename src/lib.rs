@@ -37,7 +37,7 @@ use futures::stream::{FuturesUnordered, StreamExt as _};
 use tokio::process::Command;
 use tokio::sync::{Notify, mpsc};
 
-use crate::blocks::{BlockAction, BlockError, CommonApi};
+use crate::blocks::{BlockAction, BlockError, CommonApi, RESTART_BLOCK_BTN};
 use crate::click::{ClickHandler, MouseButton};
 use crate::config::{BlockConfigEntry, Config, SharedConfig};
 use crate::errors::*;
@@ -131,7 +131,7 @@ struct Request {
 enum RequestCmd {
     SetWidget(Widget),
     UnsetWidget,
-    SetError(Error),
+    SetError { error: Error, restartable: bool },
     SetDefaultActions(&'static [(MouseButton, Option<&'static str>, &'static str)]),
     SubscribeToActions(mpsc::UnboundedSender<BlockAction>),
 }
@@ -186,6 +186,10 @@ impl Block {
     }
 
     fn set_error(&mut self, fullscreen: bool, error: Error) {
+        self.set_error_with_restartable(fullscreen, false, error);
+    }
+
+    fn set_error_with_restartable(&mut self, fullscreen: bool, restartable: bool, error: Error) {
         let error = BlockError {
             block_id: self.id,
             block_name: self.name,
@@ -202,6 +206,7 @@ impl Block {
         widget.set_values(map! {
             "full_error_message" => Value::text(error.to_string()),
             [if let Some(v) = &error.error.message] "short_error_message" => Value::text(v.to_string()),
+            [if restartable] "restart_block_icon" => Value::icon("refresh").with_instance(RESTART_BLOCK_BTN),
         });
         self.state = BlockState::Error { widget };
     }
@@ -326,8 +331,12 @@ impl BarState {
                     self.fullscreen_block = None;
                 }
             }
-            RequestCmd::SetError(error) => {
-                block.set_error(self.fullscreen_block == Some(request.block_id), error);
+            RequestCmd::SetError { error, restartable } => {
+                block.set_error_with_restartable(
+                    self.fullscreen_block == Some(request.block_id),
+                    restartable,
+                    error,
+                );
             }
             RequestCmd::SetDefaultActions(actions) => {
                 block.default_actions = actions;
@@ -415,16 +424,22 @@ impl BarState {
                         }
                     }
                     BlockState::Error { widget } => {
-                        if self.fullscreen_block == Some(event.id) {
-                            self.fullscreen_block = None;
-                            widget.set_format(block.error_format.clone());
+                        if let Some((_, _, action)) = block.default_actions
+                            .iter()
+                            .find(|(btn, widget, _)| *btn == event.button && *widget == event.instance.as_deref()) {
+                            block.send_action(Cow::Borrowed(action));
                         } else {
-                            self.fullscreen_block = Some(event.id);
-                            widget.set_format(block.error_fullscreen_format.clone());
+                            if self.fullscreen_block == Some(event.id) {
+                                self.fullscreen_block = None;
+                                widget.set_format(block.error_format.clone());
+                            } else {
+                                self.fullscreen_block = Some(event.id);
+                                widget.set_format(block.error_fullscreen_format.clone());
+                            }
+                            block.notify_intervals(&self.widget_updates_sender);
+                            self.render_block(event.id)?;
+                            self.render();
                         }
-                        block.notify_intervals(&self.widget_updates_sender);
-                        self.render_block(event.id)?;
-                        self.render();
                     }
                 }
             }

@@ -84,6 +84,7 @@ impl Default for Icons {
             "pomodoro_paused" => "PAUSED",
             "pomodoro_started" => "STARTED",
             "pomodoro_stopped" => "STOPPED",
+            "refresh" => "REFRESH",
             "resolution" => "RES",
             "scratchpad" => "[]",
             "tasks" => "TSK",
