@@ -112,8 +112,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     loop {
         let mem_state = Memstate::new().await?;
 
-        let mem_total = mem_state.mem_total as f64 * 1024.;
-        let mem_free = mem_state.mem_free as f64 * 1024.;
+        let mem_total = mem_state.mem_total as f64;
+        let mem_free = mem_state.mem_free as f64;
 
         // TODO: possibly remove this as it is confusing to have `mem_total_used` and `mem_used`
         // htop and such only display equivalent of `mem_used`
@@ -126,8 +126,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             min(mem_state.mem_available, mem_state.mem_total)
         } else {
             mem_state.mem_free
-        } as f64
-            * 1024.;
+        } as f64;
 
         // While zfs_arc_cache can be considered "available" memory,
         // it can only free a maximum of (zfs_arc_cache - zfs_arc_min) amount.
@@ -137,14 +136,14 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             .saturating_sub(mem_state.zfs_arc_min) as f64;
         let mem_avail = mem_avail + zfs_shrinkable_size;
 
-        let pagecache = mem_state.pagecache as f64 * 1024.;
-        let reclaimable = mem_state.s_reclaimable as f64 * 1024.;
-        let shmem = mem_state.shmem as f64 * 1024.;
+        let pagecache = mem_state.pagecache as f64;
+        let reclaimable = mem_state.s_reclaimable as f64;
+        let shmem = mem_state.shmem as f64;
 
         // See https://lore.kernel.org/lkml/1455827801-13082-1-git-send-email-hannes@cmpxchg.org/
         let cached = pagecache + reclaimable - shmem + zfs_shrinkable_size;
 
-        let buffers = mem_state.buffers as f64 * 1024.;
+        let buffers = mem_state.buffers as f64;
 
         // same logic as htop
         let used_diff = mem_free + buffers + pagecache + reclaimable;
@@ -157,14 +156,14 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         // account for ZFS ARC cache
         let mem_used = mem_used - zfs_shrinkable_size;
 
-        let swap_total = mem_state.swap_total as f64 * 1024.;
-        let swap_free = mem_state.swap_free as f64 * 1024.;
-        let swap_cached = mem_state.swap_cached as f64 * 1024.;
+        let swap_total = mem_state.swap_total as f64;
+        let swap_free = mem_state.swap_free as f64;
+        let swap_cached = mem_state.swap_cached as f64;
         let swap_used = swap_total - swap_free - swap_cached;
 
         // Zswap usage
-        let zswap_compressed = mem_state.zswap_compressed as f64 * 1024.;
-        let zswap_decompressed = mem_state.zswap_decompressed as f64 * 1024.;
+        let zswap_compressed = mem_state.zswap_compressed as f64;
+        let zswap_decompressed = mem_state.zswap_decompressed as f64;
 
         let zswap_comp_ratio = if zswap_compressed != 0.0 {
             zswap_decompressed / zswap_compressed
@@ -310,19 +309,23 @@ impl Memstate {
                 .and_then(|x| u64::from_str(x).ok())
                 .error("failed to parse /proc/meminfo")?;
 
+            // These values are reported as “kB” but are actually “kiB”.
+            // Convert them into bytes to avoid having to handle this later.
+            // Source: https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/6/html/deployment_guide/s2-proc-meminfo#s2-proc-meminfo
+            const KIB: u64 = 1024;
             match name {
-                "MemTotal:" => mem_state.mem_total = val,
-                "MemFree:" => mem_state.mem_free = val,
-                "MemAvailable:" => mem_state.mem_available = val,
-                "Buffers:" => mem_state.buffers = val,
-                "Cached:" => mem_state.pagecache = val,
-                "SReclaimable:" => mem_state.s_reclaimable = val,
-                "Shmem:" => mem_state.shmem = val,
-                "SwapTotal:" => mem_state.swap_total = val,
-                "SwapFree:" => mem_state.swap_free = val,
-                "SwapCached:" => mem_state.swap_cached = val,
-                "Zswap:" => mem_state.zswap_compressed = val,
-                "Zswapped:" => mem_state.zswap_decompressed = val,
+                "MemTotal:" => mem_state.mem_total = val * KIB,
+                "MemFree:" => mem_state.mem_free = val * KIB,
+                "MemAvailable:" => mem_state.mem_available = val * KIB,
+                "Buffers:" => mem_state.buffers = val * KIB,
+                "Cached:" => mem_state.pagecache = val * KIB,
+                "SReclaimable:" => mem_state.s_reclaimable = val * KIB,
+                "Shmem:" => mem_state.shmem = val * KIB,
+                "SwapTotal:" => mem_state.swap_total = val * KIB,
+                "SwapFree:" => mem_state.swap_free = val * KIB,
+                "SwapCached:" => mem_state.swap_cached = val * KIB,
+                "Zswap:" => mem_state.zswap_compressed = val * KIB,
+                "Zswapped:" => mem_state.zswap_decompressed = val * KIB,
                 _ => (),
             }
 
