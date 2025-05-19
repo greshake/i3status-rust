@@ -145,13 +145,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         let buffers = mem_state.buffers as f64;
 
-        // same logic as htop
-        let used_diff = mem_free + buffers + pagecache + reclaimable;
-        let mem_used = if mem_total >= used_diff {
-            mem_total - used_diff
-        } else {
-            mem_total - mem_free
-        };
+        // Userspace should use `mem_avail` for estimating the memory that is available.
+        // See: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=34e431b0ae398fc54ea69ff85ec700722c9da773
+        let mem_used = mem_total - mem_avail;
 
         // account for ZFS ARC cache
         let mem_used = mem_used - zfs_shrinkable_size;
