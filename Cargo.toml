@@ -32,6 +32,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 async-trait = "0.1"
 backon = { version = "1.2", default-features = false, features = ["tokio-sleep"] }
 base64 = { version = "0.22.1" }
+bytes = "1.8"
 calibright = { version = "0.1.13", features = ["watch"] }
 chrono = { version = "0.4", default-features = false, features = ["clock", "unstable-locales"] }
 chrono-tz = { version = "0.10", features = ["serde"] }
@@ -74,6 +75,7 @@ smart-default = "0.7"
 sunrise = "2.1"
 swayipc-async = "2.0.1"
 thiserror = "2.0"
+tokio-util = { version = "0.7", features = ["codec"] }
 toml = { version = "0.8", features = ["preserve_order"] }
 unicode-segmentation = "1.10.1"
 wayrs-client = { version = "1.0", features = ["tokio"] }
