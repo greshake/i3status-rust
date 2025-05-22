@@ -1,93 +1,58 @@
-use std::str::FromStr;
+use bytes::Bytes;
+use futures::SinkExt as _;
+
+use serde::de;
 use tokio::net::TcpStream;
 use tokio::time::Interval;
+use tokio_util::codec::{Framed, LengthDelimitedCodec};
 
 use super::{BatteryDevice, BatteryInfo, BatteryStatus, DeviceName};
 use crate::blocks::prelude::*;
 
-#[derive(Debug, Default)]
-struct PropertyMap(HashMap<String, String>);
-
 make_log_macro!(debug, "battery[apc_ups]");
 
-impl PropertyMap {
-    fn insert(&mut self, k: String, v: String) -> Option<String> {
-        self.0.insert(k, v)
-    }
+#[derive(Debug, SmartDefault)]
+enum Value {
+    String(String),
+    // The value is a percentage (0-100)
+    Percent(f64),
+    Watts(f64),
+    Seconds(f64),
+    #[default]
+    None,
+}
 
-    fn get(&self, k: &str) -> Option<&str> {
-        self.0.get(k).map(|v| v.as_str())
-    }
-
-    fn get_property<T: FromStr + Send + Sync>(
-        &self,
-        property_name: &str,
-        required_unit: &str,
-    ) -> Result<T> {
-        let stat = self
-            .get(property_name)
-            .or_error(|| format!("{property_name} not in apc ups data"))?;
-        let (value, unit) = stat
-            .split_once(' ')
-            .or_error(|| format!("could not split {property_name}"))?;
-        if unit == required_unit {
-            value
-                .parse::<T>()
-                .map_err(|_| Error::new("Could not parse data"))
-        } else {
-            Err(Error::new(format!(
-                "Expected unit for {property_name} are {required_unit}, but got {unit}"
-            )))
+impl<'de> Deserialize<'de> for Value {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: de::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        for unit in ["Percent", "Watts", "Seconds", "Minutes", "Hours"] {
+            if let Some(stripped) = s.strip_suffix(unit) {
+                let value = stripped.trim().parse::<f64>().map_err(de::Error::custom)?;
+                return Ok(match unit {
+                    "Percent" => Value::Percent(value),
+                    "Watts" => Value::Watts(value),
+                    "Seconds" => Value::Seconds(value),
+                    "Minutes" => Value::Seconds(value * 60.0),
+                    "Hours" => Value::Seconds(value * 3600.0),
+                    _ => unreachable!(),
+                });
+            }
         }
+        Ok(Value::String(s))
     }
 }
 
-#[derive(Debug)]
-struct ApcConnection(TcpStream);
-
-impl ApcConnection {
-    async fn connect(addr: &str) -> Result<Self> {
-        Ok(Self(
-            TcpStream::connect(addr)
-                .await
-                .error("Failed to connect to socket")?,
-        ))
-    }
-
-    async fn write(&mut self, msg: &[u8]) -> Result<()> {
-        let msg_len = u16::try_from(msg.len())
-            .error("msg is too long, it must be less than 2^16 characters long")?;
-
-        self.0
-            .write_u16(msg_len)
-            .await
-            .error("Could not write message length to socket")?;
-        self.0
-            .write_all(msg)
-            .await
-            .error("Could not write message to socket")?;
-        Ok(())
-    }
-
-    async fn read_line<'a>(&'_ mut self, buf: &'a mut Vec<u8>) -> Result<Option<&'a str>> {
-        let read_size = self
-            .0
-            .read_u16()
-            .await
-            .error("Could not read response length from socket")?
-            .into();
-        if read_size == 0 {
-            return Ok(None);
-        }
-
-        buf.resize(read_size, 0);
-        self.0
-            .read_exact(buf)
-            .await
-            .error("Could not read from socket")?;
-
-        std::str::from_utf8(buf).error("invalid UTF8").map(Some)
-    }
+#[derive(Debug, Deserialize, Default)]
+#[serde(rename_all = "UPPERCASE", default)]
+struct Properties {
+    status: Value,
+    bcharge: Value,
+    nompower: Value,
+    loadpct: Value,
+    timeleft: Value,
 }
 
 pub(super) struct Device {
@@ -104,21 +69,40 @@ impl Device {
         })
     }
 
-    async fn get_status(&mut self) -> Result<PropertyMap> {
-        let mut conn = ApcConnection::connect(&self.addr).await?;
+    async fn get_status(&mut self) -> Result<Properties> {
+        let mut conn = Framed::new(
+            TcpStream::connect(&self.addr)
+                .await
+                .error("Failed to connect to socket")?,
+            LengthDelimitedCodec::builder()
+                .length_field_type::<u16>()
+                .new_codec(),
+        );
 
-        conn.write(b"status").await?;
+        conn.send(Bytes::from_static(b"status"))
+            .await
+            .error("Could not send message to socket")?;
+        conn.close().await.error("Could not close socket sink")?;
 
-        let mut buf = vec![];
-        let mut property_map = PropertyMap::default();
+        let mut map = serde_json::Map::new();
 
-        while let Some(line) = conn.read_line(&mut buf).await? {
-            if let Some((key, value)) = line.split_once(':') {
-                property_map.insert(key.trim().to_string(), value.trim().to_string());
+        while let Some(frame) = conn.next().await {
+            let frame = frame.error("Failed to read from socket")?;
+            if frame.is_empty() {
+                continue;
             }
+            let line = std::str::from_utf8(&frame).error("Failed to convert to UTF-8")?;
+            let Some((key, value)) = line.split_once(':') else {
+                debug!("Invalid field format: {line:?}");
+                continue;
+            };
+            map.insert(
+                key.trim().to_uppercase(),
+                serde_json::Value::String(value.trim().to_string()),
+            );
         }
 
-        Ok(property_map)
+        serde_json::from_value(serde_json::Value::Object(map)).error("Failed to deserialize")
     }
 }
 
@@ -134,48 +118,33 @@ impl BatteryDevice for Device {
             })
             .unwrap_or_default();
 
-        let status_str = status_data.get("STATUS").unwrap_or("COMMLOST");
+        let Value::String(status_str) = status_data.status else {
+            return Ok(None);
+        };
+
+        let status = match &*status_str {
+            "ONBATT" => BatteryStatus::Discharging,
+            "ONLINE" => BatteryStatus::Charging,
+            _ => BatteryStatus::Unknown,
+        };
 
         // Even if the connection is valid, in the first few seconds
         // after apcupsd starts BCHARGE may not be present
-        let capacity = status_data
-            .get_property::<f64>("BCHARGE", "Percent")
-            .unwrap_or(f64::MIN);
-
-        if status_str == "COMMLOST" || capacity == f64::MIN {
+        let Value::Percent(capacity) = status_data.bcharge else {
             return Ok(None);
-        }
-
-        let status = if status_str == "ONBATT" {
-            if capacity == 0.0 {
-                BatteryStatus::Empty
-            } else {
-                BatteryStatus::Discharging
-            }
-        } else if status_str == "ONLINE" {
-            if capacity == 100.0 {
-                BatteryStatus::Full
-            } else {
-                BatteryStatus::Charging
-            }
-        } else {
-            BatteryStatus::Unknown
         };
 
-        let power = status_data
-            .get_property::<f64>("NOMPOWER", "Watts")
-            .ok()
-            .and_then(|nominal_power| {
-                status_data
-                    .get_property::<f64>("LOADPCT", "Percent")
-                    .ok()
-                    .map(|load_percent| nominal_power * load_percent / 100.0)
-            });
+        let power = match (status_data.nompower, status_data.loadpct) {
+            (Value::Watts(nominal_power), Value::Percent(load_percent)) => {
+                Some(nominal_power * load_percent / 100.0)
+            }
+            _ => None,
+        };
 
-        let time_remaining = status_data
-            .get_property::<f64>("TIMELEFT", "Minutes")
-            .ok()
-            .map(|e| e * 60_f64);
+        let time_remaining = match status_data.timeleft {
+            Value::Seconds(time_left) => Some(time_left),
+            _ => None,
+        };
 
         Ok(Some(BatteryInfo {
             status,
