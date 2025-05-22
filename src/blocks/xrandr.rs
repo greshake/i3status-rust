@@ -176,13 +176,13 @@ async fn get_monitors() -> Result<Vec<Monitor>> {
 
 mod parser {
     use super::*;
-    use nom::IResult;
     use nom::branch::alt;
     use nom::bytes::complete::{tag, take_until, take_while1};
     use nom::character::complete::{i32, space0, space1, u32};
     use nom::combinator::opt;
     use nom::number::complete::{double, float};
     use nom::sequence::preceded;
+    use nom::{IResult, Parser as _};
 
     /// Parses an output name, e.g. "HDMI-0", "eDP-1", etc.
     fn name(input: &str) -> IResult<&str, &str> {
@@ -207,8 +207,8 @@ mod parser {
     fn parse_output_header(input: &str) -> IResult<&str, (String, u32, u32, i32, i32)> {
         let (input, name) = name(input)?;
         let (input, _) = space1(input)?;
-        let (input, _) = alt((tag("connected"), tag("disconnected")))(input)?;
-        let (input, _) = opt(preceded(space1, tag("primary")))(input)?;
+        let (input, _) = alt((tag("connected"), tag("disconnected"))).parse(input)?;
+        let (input, _) = opt(preceded(space1, tag("primary"))).parse(input)?;
         let (input, _) = space1(input)?;
         let (input, (width, height, x, y)) = parse_mode_position(input)?;
         Ok((input, (name.to_owned(), width, height, x, y)))

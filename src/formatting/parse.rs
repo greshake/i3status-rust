@@ -7,7 +7,7 @@ use nom::{
     character::complete::{anychar, char},
     combinator::{cut, eof, map, not, opt},
     multi::{many0, separated_list0},
-    sequence::{preceded, separated_pair, terminated, tuple},
+    sequence::{preceded, separated_pair, terminated},
 };
 
 use crate::errors::*;
@@ -109,7 +109,8 @@ fn arg1(i: &str) -> IResult<&str, &str, PError<'_>> {
             char('\''),
             cut(terminated(take_while(|x: char| x != '\''), char('\''))),
         ),
-    ))(i)
+    ))
+    .parse(i)
 }
 
 // `key:val`
@@ -124,7 +125,8 @@ fn parse_arg(i: &str) -> IResult<&str, Arg<'_>, PError<'_>> {
             },
         ),
         map(alphanum1, |key| Arg { key, val: None }),
-    ))(i)
+    ))
+    .parse(i)
 }
 
 // `(arg,key:val)`
@@ -134,13 +136,14 @@ fn parse_args(i: &str) -> IResult<&str, Vec<Arg<'_>>, PError<'_>> {
     preceded(
         char('('),
         cut(terminated(inner, preceded(spaces, char(')')))),
-    )(i)
+    )
+    .parse(i)
 }
 
 // `.str(width:2)`
 // `.eng(unit:bits,show)`
 fn parse_formatter(i: &str) -> IResult<&str, Formatter<'_>, PError<'_>> {
-    preceded(char('.'), cut(tuple((alphanum1, opt(parse_args)))))
+    preceded(char('.'), cut((alphanum1, opt(parse_args))))
         .map(|(name, args)| Formatter {
             name,
             args: args.unwrap_or_default(),
@@ -151,7 +154,7 @@ fn parse_formatter(i: &str) -> IResult<&str, Formatter<'_>, PError<'_>> {
 // `$var`
 // `$key.eng(unit:bits,show)`
 fn parse_placeholder(i: &str) -> IResult<&str, Placeholder<'_>, PError<'_>> {
-    preceded(char('$'), cut(tuple((alphanum1, opt(parse_formatter)))))
+    preceded(char('$'), cut((alphanum1, opt(parse_formatter))))
         .map(|(name, formatter)| Placeholder { name, formatter })
         .parse(i)
 }
@@ -165,17 +168,18 @@ fn parse_string(i: &str) -> IResult<&str, String, PError<'_>> {
             '\\',
             anychar,
         ),
-    )(i)
+    )
+    .parse(i)
 }
 
 // `^icon_name`
 fn parse_icon(i: &str) -> IResult<&str, &str, PError<'_>> {
-    preceded(char('^'), cut(preceded(tag("icon_"), alphanum1)))(i)
+    preceded(char('^'), cut(preceded(tag("icon_"), alphanum1))).parse(i)
 }
 
 // `{ a | b | c }`
 fn parse_recursive_template(i: &str) -> IResult<&str, FormatTemplate<'_>, PError<'_>> {
-    preceded(char('{'), cut(terminated(parse_format_template, char('}'))))(i)
+    preceded(char('{'), cut(terminated(parse_format_template, char('}')))).parse(i)
 }
 
 fn parse_token_list(i: &str) -> IResult<&str, TokenList<'_>, PError<'_>> {
@@ -187,11 +191,12 @@ fn parse_token_list(i: &str) -> IResult<&str, TokenList<'_>, PError<'_>> {
             map(parse_recursive_template, Token::Recursive),
         ))),
         TokenList,
-    )(i)
+    )
+    .parse(i)
 }
 
 fn parse_format_template(i: &str) -> IResult<&str, FormatTemplate<'_>, PError<'_>> {
-    map(separated_list0(char('|'), parse_token_list), FormatTemplate)(i)
+    map(separated_list0(char('|'), parse_token_list), FormatTemplate).parse(i)
 }
 
 pub fn parse_full(i: &str) -> Result<FormatTemplate<'_>> {
