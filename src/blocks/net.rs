@@ -25,13 +25,15 @@
 //! `graph_down`      | Download speed graph        | Text   | -
 //! `graph_up`        | Upload speed graph          | Text   | -
 //! `device`          | The name of device          | Text   | -
-//! `ssid`            | Netfork SSID (WiFi only)    | Text   | -
+//! `ssid`            | Network SSID (WiFi only)    | Text   | -
+//! `connection_name` | Connection name for Ethernet| Text   | -
 //! `frequency`       | WiFi frequency              | Number | Hz
 //! `signal_strength` | WiFi signal                 | Number | %
 //! `bitrate`         | WiFi connection bitrate     | Number | Bits per second
 //! `ip`              | IPv4 address of the iface   | Text   | -
 //! `ipv6`            | IPv6 address of the iface   | Text   | -
 //! `nameserver`      | Nameserver                  | Text   | -
+//! `connection_name` | Connection name for Ethernet| Text   | -
 //!
 //! # Example
 //!
@@ -157,7 +159,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     "graph_up" => Value::text(util::format_bar_graph(&tx_hist)),
                     [if let Some(v) = device.ip] "ip" => Value::text(v.to_string()),
                     [if let Some(v) = device.ipv6] "ipv6" => Value::text(v.to_string()),
-                    [if let Some(v) = device.ssid()] "ssid" => Value::text(v),
+                    [if let Some(v) = device.ssid()] "ssid" => Value::text(v), // Display SSID for WiFi
+                    [if let Some(ref v) = device.ethernet_id] "connection_name" => Value::text(v.clone()), // Convert &String to String
                     [if let Some(v) = device.frequency()] "frequency" => Value::hertz(v),
                     [if let Some(v) = device.bitrate()] "bitrate" => Value::bits(v),
                     [if let Some(v) = device.signal()] "signal_strength" => Value::percents(v),
