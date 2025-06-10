@@ -72,7 +72,7 @@ signal-hook = "0.3"
 signal-hook-tokio = { version = "0.3", features = ["futures-v0_3"] }
 smart-default = "0.7"
 sunrise = "2.1"
-swayipc-async = "2.0"
+swayipc-async = "2.0.1"
 thiserror = "2.0"
 toml = { version = "0.8", features = ["preserve_order"] }
 unicode-segmentation = "1.10.1"
