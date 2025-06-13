@@ -5,10 +5,21 @@
 * `.eng` formatter: add show parameter
 * when using theme overrides you can now reference a color name defined in `~/.Xresources`, e.g., `x:background` looks for a line like `*background: #aabbcc` in `~/.Xresources` (see also [.Xresources](https://wiki.debian.org/Xresources))
 * Add support for wheel left and right clicks
+* New `disk_iostats` block, provides disk I/O statistics
+* `keyboard_layout`: Add xkb events support
+* `keyboard_layout`: Deprecated setxkbmap and xkbswitch in favor of xkbevent, will be removed in 0.35.0
+* `xrandr`: Use icon progression for brightness_icon
+* `pomodoro`: Add support for setting several kinds of formats
+* `packages`: Add support for `xbps` package manager
+* `hueshift`: added icon
+* Add global geolocator
 
 ### Bug Fixes and Improvements
 
-* Fix `bad event` errors in `focused_window` block.
+* Fixed `bad event` errors in `focused_window` block.
+* Formatting: treat key as a shortcut for key:true
+* Documented widgets in music and nvidia_gpu blocks
+* Bumped version of `swayipc-async` so that `Input`s with `DragLock::EnabledSticky` can be parsed
 
 ### Breaking Changes
 
