@@ -78,10 +78,11 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let remaining_time = timer_end - Instant::now();
         let is_timer_active = !remaining_time.is_zero();
 
-        if !is_timer_active && timer_was_active {
-            if let Some(cmd) = &config.done_cmd {
-                spawn_shell(cmd).error("done_cmd error")?;
-            }
+        if !is_timer_active
+            && timer_was_active
+            && let Some(cmd) = &config.done_cmd
+        {
+            spawn_shell(cmd).error("done_cmd error")?;
         }
         timer_was_active = is_timer_active;
 

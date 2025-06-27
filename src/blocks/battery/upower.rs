@@ -46,12 +46,11 @@ impl DeviceConnection {
                         .error("Failed to create DeviceProxy")?;
 
                     // Filter by model if needed
-                    if let Some(expected_model) = &expected_model {
-                        if let Ok(device_model) = proxy.model().await {
-                            if !expected_model.eq(&device_model) {
-                                continue;
-                            }
-                        }
+                    if let Some(expected_model) = &expected_model
+                        && let Ok(device_model) = proxy.model().await
+                        && !expected_model.eq(&device_model)
+                    {
+                        continue;
                     }
                     // Verify device type
                     // https://upower.freedesktop.org/docs/Device.html#Device:Type

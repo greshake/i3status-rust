@@ -61,10 +61,10 @@ impl StrFormatter {
                 "Max width must be greater of equal to min width",
             ));
         }
-        if let Some(rot_interval) = rot_interval {
-            if rot_interval < 0.1 {
-                return Err(Error::new("Interval must be greater than 0.1"));
-            }
+        if let Some(rot_interval) = rot_interval
+            && rot_interval < 0.1
+        {
+            return Err(Error::new("Interval must be greater than 0.1"));
         }
         Ok(StrFormatter {
             min_width,

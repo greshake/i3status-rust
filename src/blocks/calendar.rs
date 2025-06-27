@@ -359,18 +359,19 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             }
         }
 
-        if let Some(event) = next_events.current().cloned() {
-            if let (Some(start_date), Some(end_date)) = (event.start_at, event.end_at) {
-                let warn_datetime = start_date - warning_threshold;
-                if warn_datetime < Utc::now() && Utc::now() < start_date {
-                    widget.state = State::Warning;
-                }
-                if start_date < Utc::now() && Utc::now() < end_date {
-                    widget.set_format(ongoing_event_format.clone());
-                } else {
-                    widget.set_format(next_event_format.clone());
-                }
-                widget.set_values(map! {
+        if let Some(event) = next_events.current().cloned()
+            && let (Some(start_date), Some(end_date)) = (event.start_at, event.end_at)
+        {
+            let warn_datetime = start_date - warning_threshold;
+            if warn_datetime < Utc::now() && Utc::now() < start_date {
+                widget.state = State::Warning;
+            }
+            if start_date < Utc::now() && Utc::now() < end_date {
+                widget.set_format(ongoing_event_format.clone());
+            } else {
+                widget.set_format(next_event_format.clone());
+            }
+            widget.set_values(map! {
                   "icon" => Value::icon("calendar"),
                    [if let Some(summary) = event.summary] "summary" => Value::text(summary),
                    [if let Some(description) = event.description] "description" => Value::text(description),
@@ -379,7 +380,6 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                    "start" => Value::datetime(start_date, None),
                    "end" => Value::datetime(end_date, None),
                 });
-            }
         }
 
         api.set_widget(widget)?;
@@ -397,11 +397,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 _ = api.wait_for_update_request() => break,
                 Some(action) = actions.recv() => match action.as_ref() {
                       "open_link" => {
-                          if let Some(Event { url: Some(url), .. }) = next_events.current(){
-                              if let Ok(url) = Url::parse(url) {
+                          if let Some(Event { url: Some(url), .. }) = next_events.current()
+                              && let Ok(url) = Url::parse(url) {
                                   open_browser(config, &url).await?;
                               }
-                          }
                       }
                       _ => ()
                 }
