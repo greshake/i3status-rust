@@ -141,7 +141,7 @@ impl std::fmt::Display for PrivacyInfoInner {
                                 .map(|(destination, count)| if count == &1 {
                                     destination.into()
                                 } else {
-                                    format!("{} (x{})", destination, count)
+                                    format!("{destination} (x{count})")
                                 }),
                             ", "
                         )
@@ -204,31 +204,31 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         if let Some(info_by_type) = info.get(&Type::Audio) {
             map! { @extend values
                 "icon_audio" => Value::icon("microphone"),
-                "info_audio" => Value::text(format!("{}", info_by_type))
+                "info_audio" => Value::text(info_by_type.to_string())
             }
         }
         if let Some(info_by_type) = info.get(&Type::AudioSink) {
             map! { @extend values
                 "icon_audio_sink" => Value::icon("volume"),
-                "info_audio_sink" => Value::text(format!("{}", info_by_type))
+                "info_audio_sink" => Value::text(info_by_type.to_string())
             }
         }
         if let Some(info_by_type) = info.get(&Type::Video) {
             map! { @extend values
                 "icon_video" => Value::icon("xrandr"),
-                "info_video" => Value::text(format!("{}", info_by_type))
+                "info_video" => Value::text(info_by_type.to_string())
             }
         }
         if let Some(info_by_type) = info.get(&Type::Webcam) {
             map! { @extend values
                 "icon_webcam" => Value::icon("webcam"),
-                "info_webcam" => Value::text(format!("{}", info_by_type))
+                "info_webcam" => Value::text(info_by_type.to_string())
             }
         }
         if let Some(info_by_type) = info.get(&Type::Unknown) {
             map! { @extend values
                 "icon_unknown" => Value::icon("unknown"),
-                "info_unknown" => Value::text(format!("{}", info_by_type))
+                "info_unknown" => Value::text(info_by_type.to_string())
             }
         }
 

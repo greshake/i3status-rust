@@ -190,7 +190,7 @@ impl OAuth2Flow {
     ) -> Result<OAuth2TokenResponse, CalendarError> {
         let client = self.client.clone();
         let redirect_port = self.redirect_port;
-        let listener = TcpListener::bind(format!("127.0.0.1:{}", redirect_port)).await?;
+        let listener = TcpListener::bind(format!("127.0.0.1:{redirect_port}")).await?;
         let (mut stream, _) = listener.accept().await?;
         let mut request_line = String::new();
         let mut reader = BufReader::new(&mut stream);
