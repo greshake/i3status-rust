@@ -8,6 +8,7 @@
 //! ----|--------|--------
 //! `driver` | Which init system is running the service. Available drivers are: `"systemd"` | `"systemd"`
 //! `service` | The name of the service | **Required**
+//! `user` | If true, monitor the status of a user service instead of a system service. | `false`
 //! `active_format` | A string to customise the output of this block. See below for available placeholders. | `" $service active "`
 //! `inactive_format` | A string to customise the output of this block. See below for available placeholders. | `" $service inactive "`
 //! `active_state` | A valid [`State`] | [`State::Idle`]
@@ -49,6 +50,7 @@ use zbus::proxy::PropertyStream;
 pub struct Config {
     pub driver: DriverType,
     pub service: String,
+    pub user: bool,
     pub active_format: FormatConfig,
     pub inactive_format: FormatConfig,
     pub active_state: Option<State>,
@@ -70,7 +72,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let inactive_state = config.inactive_state.unwrap_or(State::Critical);
 
     let mut driver: Box<dyn Driver> = match config.driver {
-        DriverType::Systemd => Box::new(SystemdDriver::new(config.service.clone()).await?),
+        DriverType::Systemd => {
+            Box::new(SystemdDriver::new(config.user, config.service.clone()).await?)
+        }
     };
 
     loop {
@@ -108,8 +112,12 @@ struct SystemdDriver {
 }
 
 impl SystemdDriver {
-    async fn new(service: String) -> Result<Self> {
-        let dbus_conn = new_system_dbus_connection().await?;
+    async fn new(user: bool, service: String) -> Result<Self> {
+        let dbus_conn = if user {
+            new_dbus_connection().await?
+        } else {
+            new_system_dbus_connection().await?
+        };
 
         if !service.is_ascii() {
             return Err(Error::new(format!(
