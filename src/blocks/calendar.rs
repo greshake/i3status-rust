@@ -360,7 +360,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         }
 
         if let Some(event) = next_events.current().cloned()
-            && let (Some(start_date), Some(end_date)) = (event.start_at, event.end_at)
+            && let Some(start_date) = event.start_at
+            && let Some(end_date) = event.end_at
         {
             let warn_datetime = start_date - warning_threshold;
             if warn_datetime < Utc::now() && Utc::now() < start_date {
