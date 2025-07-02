@@ -108,13 +108,10 @@ impl PrivacyMonitor for Monitor<'_> {
                 continue;
             };
             while let Ok(Some(fd_path)) = fd_paths.next_entry().await {
-                let Ok(link_path) = fd_path.path().read_link() else {
-                    continue;
-                };
-                if self.devices.contains_key(&link_path) {
-                    let Ok(mut file) = File::open(proc_path.join("comm")).await else {
-                        continue;
-                    };
+                if let Ok(link_path) = fd_path.path().read_link()
+                    && self.devices.contains_key(&link_path)
+                    && let Ok(mut file) = File::open(proc_path.join("comm")).await
+                {
                     let mut contents = String::new();
                     if file.read_to_string(&mut contents).await.is_ok() {
                         let reader = contents.trim_end().to_string();
