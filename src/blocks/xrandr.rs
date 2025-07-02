@@ -170,7 +170,9 @@ async fn get_monitors() -> Result<Vec<Monitor>> {
 
     let mut it = monitors_info.lines().filter(|line| regex.is_match(line));
 
-    while let (Some(line1), Some(line2)) = (it.next(), it.next()) {
+    while let Some(line1) = it.next()
+        && let Some(line2) = it.next()
+    {
         let mut tokens = line1.split_ascii_whitespace().peekable();
         let name = tokens.next().error("Failed to parse xrandr output")?.into();
         let _ = tokens.next();

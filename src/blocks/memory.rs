@@ -357,8 +357,7 @@ impl Memstate {
             }
 
             let mut values = line.split_whitespace().map(|s| s.parse::<u64>());
-            if let (Some(Ok(zram_swap_size)), Some(Ok(zram_comp_size))) =
-                (values.next(), values.next())
+            if let Some(Ok(zram_swap_size)) = values.next() && let Some(Ok(zram_comp_size)) = values.next()
                 // zram initializes with small amount by default, return 0 then
                 && zram_swap_size >= 65_536
             {
