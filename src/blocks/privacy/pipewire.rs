@@ -221,13 +221,10 @@ impl PrivacyMonitor for Monitor<'_> {
             ..
         } in data.links.values().sorted().dedup()
         {
-            let (Some(output_node), Some(input_node)) = (
+            if let (Some(output_node), Some(input_node)) = (
                 data.nodes.get(link_output_node),
                 data.nodes.get(link_input_node),
-            ) else {
-                continue;
-            };
-            if input_node.media_class != Some("Audio/Sink".into())
+            ) && input_node.media_class != Some("Audio/Sink".into())
                 && !self.config.exclude_output.contains(&output_node.name)
                 && !self.config.exclude_input.contains(&input_node.name)
             {

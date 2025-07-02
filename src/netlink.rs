@@ -166,15 +166,10 @@ impl WifiInfo {
             .error("Failed to get nl80211 interfaces")?;
 
         for interface in interfaces {
-            if let Some(index) = interface.index {
-                if index != if_index {
-                    continue;
-                }
-
-                let Ok(ap) = socket.get_station_info(index).await else {
-                    continue;
-                };
-
+            if let Some(index) = interface.index
+                && index == if_index
+                && let Ok(ap) = socket.get_station_info(index).await
+            {
                 // TODO: are there any situations when there is more than one station?
                 let Some(ap) = ap.into_iter().next() else {
                     continue;
@@ -413,11 +408,10 @@ async fn ip_payload<const BYTES: usize>(
 
         let attr_handle = msg.rtattrs.get_attr_handle();
 
-        let Some(attr) = attr_handle.get_attribute(Ifa::Local)
+        if let Some(attr) = attr_handle.get_attribute(Ifa::Local)
             .or_else(|| attr_handle.get_attribute(Ifa::Address))
-        else { continue };
-
-        if let Ok(p) = attr.rta_payload.as_ref().try_into() {
+            && let Ok(p) = attr.rta_payload.as_ref().try_into()
+        {
             payload = Some(p);
         }
     });

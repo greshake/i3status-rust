@@ -144,11 +144,9 @@ impl Device {
             let mut path = entry.path();
             path.push("device");
 
-            let Ok(uevent) = read_file(path.join("uevent")).await else {
-                continue;
-            };
-
-            if uevent.contains("PCI_ID=1002") {
+            if let Ok(uevent) = read_file(path.join("uevent")).await
+                && uevent.contains("PCI_ID=1002")
+            {
                 return Ok(Some(Self { path }));
             }
         }
