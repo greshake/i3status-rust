@@ -1150,7 +1150,7 @@ dependencies = [
 
 [[package]]
 name = "i3status-rs"
-version = "0.33.2"
+version = "0.34.0"
 dependencies = [
  "async-trait",
  "backon",

@@ -1,4 +1,4 @@
-# i3status-rust 0.34.0 [unreleased]
+# i3status-rust 0.34.0
 
 ### New Blocks and Features
 
