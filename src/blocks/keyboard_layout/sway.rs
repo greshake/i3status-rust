@@ -53,19 +53,16 @@ impl Backend for Sway {
                 .await
                 .error("swayipc channel closed")?
                 .error("bad event")?;
-            if let Event::Input(event) = event {
-                if self
+            if let Event::Input(event) = event
+                && self
                     .kbd
                     .as_deref()
                     .is_none_or(|id| id == event.input.identifier)
-                {
-                    if let Some(new_layout) = event.input.xkb_active_layout_name {
-                        if new_layout != self.cur_layout {
-                            self.cur_layout = new_layout;
-                            return Ok(());
-                        }
-                    }
-                }
+                && let Some(new_layout) = event.input.xkb_active_layout_name
+                && new_layout != self.cur_layout
+            {
+                self.cur_layout = new_layout;
+                return Ok(());
             }
         }
     }
