@@ -9,17 +9,29 @@
 //! `interval` | Update interval in seconds | `600` (10min)
 //! `warning_threshold` | The threshold of pending (or started) tasks when the block turns into a warning state | `10`
 //! `critical_threshold` | The threshold of pending (or started) tasks when the block turns into a critical state | `20`
-//! `filters` | A list of tables with the keys `name` and `filter`. `filter` specifies the criteria that must be met for a task to be counted towards this filter. | ```[{name = "pending", filter = "-COMPLETED -DELETED"}]```
+//! `filters` | A list of tables describing filters (see bellow) | ```[{name = "pending", filter = "-COMPLETED -DELETED"}]```
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $count.eng(w:1) "`
 //! `format_singular` | Same as `format` but for when exactly one task is pending. | `" $icon $count.eng(w:1) "`
 //! `format_everything_done` | Same as `format` but for when all tasks are completed. | `" $icon $count.eng(w:1) "`
 //! `data_location`| Directory in which taskwarrior stores its data files. Supports path expansions e.g. `~`. | `"~/.task"`
+//!
+//! ## Filter configuration
+//!
+//! Key | Values | Default
+//! ----|--------|--------
+//! `name` | The name of the filter |
+//! `filter` | Specifies the criteria that must be met for a task to be counted towards this filter |
+//! `config_override` | An array containing configuration overrides, useful for explicitly setting context or other configuration variables | `[]`
+//!
+//! # Placeholders
 //!
 //! Placeholder   | Value                                       | Type   | Unit
 //! --------------|---------------------------------------------|--------|-----
 //! `icon`        | A static icon                               | Icon   | -
 //! `count`       | The number of tasks matching current filter | Number | -
 //! `filter_name` | The name of current filter                  | Text   | -
+//!
+//! # Actions
 //!
 //! Action        | Default button
 //! --------------|---------------
@@ -44,6 +56,7 @@
 //! [[block.filters]]
 //! name = "some-project"
 //! filter = "project:some-project +PENDING"
+//! config_override = ["rc.context:none"]
 //! ```
 //!
 //! # Icons Used
@@ -75,6 +88,7 @@ impl Default for Config {
             filters: vec![Filter {
                 name: "pending".into(),
                 filter: "-COMPLETED -DELETED".into(),
+                config_override: Default::default(),
             }],
             format: default(),
             format_singular: default(),
@@ -109,7 +123,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         .error("Failed to create event stream")?;
 
     loop {
-        let number_of_tasks = get_number_of_tasks(&filter.filter).await?;
+        let number_of_tasks = get_number_of_tasks(filter).await?;
 
         let mut widget = Widget::new();
 
@@ -147,9 +161,14 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     }
 }
 
-async fn get_number_of_tasks(filter: &str) -> Result<u32> {
+async fn get_number_of_tasks(filter: &Filter) -> Result<u32> {
+    let args_iter = filter.config_override.iter().map(String::as_str).chain([
+        "rc.gc=off",
+        &filter.filter,
+        "count",
+    ]);
     let output = Command::new("task")
-        .args(["rc.gc=off", filter, "count"])
+        .args(args_iter)
         .output()
         .await
         .error("failed to run taskwarrior for getting the number of tasks")?
@@ -166,4 +185,6 @@ async fn get_number_of_tasks(filter: &str) -> Result<u32> {
 pub struct Filter {
     pub name: String,
     pub filter: String,
+    #[serde(default)]
+    pub config_override: Vec<String>,
 }
