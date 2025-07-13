@@ -166,15 +166,10 @@ impl WifiInfo {
             .error("Failed to get nl80211 interfaces")?;
 
         for interface in interfaces {
-            if let Some(index) = interface.index {
-                if index != if_index {
-                    continue;
-                }
-
-                let Ok(ap) = socket.get_station_info(index).await else {
-                    continue;
-                };
-
+            if let Some(index) = interface.index
+                && index == if_index
+                && let Ok(ap) = socket.get_station_info(index).await
+            {
                 // TODO: are there any situations when there is more than one station?
                 let Some(ap) = ap.into_iter().next() else {
                     continue;
@@ -405,11 +400,10 @@ async fn ip_payload<const BYTES: usize>(
 
         let attr_handle = msg.rtattrs.get_attr_handle();
 
-        let Some(attr) = attr_handle.get_attribute(Ifa::Local)
+        if let Some(attr) = attr_handle.get_attribute(Ifa::Local)
             .or_else(|| attr_handle.get_attribute(Ifa::Address))
-        else { continue };
-
-        if let Ok(p) = attr.rta_payload.as_ref().try_into() {
+            && let Ok(p) = attr.rta_payload.as_ref().try_into()
+        {
             payload = Some(p);
         }
     });
@@ -441,14 +435,14 @@ async fn read_nameservers() -> Result<Vec<IpAddr>> {
 
     for line in file.lines() {
         let mut line_parts = line.split_whitespace();
-        if line_parts.next() == Some("nameserver") {
-            if let Some(mut ip) = line_parts.next() {
-                // TODO: use the zone id somehow?
-                if let Some((without_zone_id, _zone_id)) = ip.split_once('%') {
-                    ip = without_zone_id;
-                }
-                nameservers.push(ip.parse().error("Unable to parse ip")?);
+        if line_parts.next() == Some("nameserver")
+            && let Some(mut ip) = line_parts.next()
+        {
+            // TODO: use the zone id somehow?
+            if let Some((without_zone_id, _zone_id)) = ip.split_once('%') {
+                ip = without_zone_id;
             }
+            nameservers.push(ip.parse().error("Unable to parse ip")?);
         }
     }
 

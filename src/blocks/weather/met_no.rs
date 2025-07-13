@@ -113,11 +113,10 @@ impl ForecastTimeStep {
     fn to_aggregate(&self) -> ForecastAggregateSegment {
         let instant = &self.data.instant.details;
 
-        let apparent = if let (Some(air_temperature), Some(relative_humidity), Some(wind_speed)) = (
-            instant.air_temperature,
-            instant.relative_humidity,
-            instant.wind_speed,
-        ) {
+        let apparent = if let Some(air_temperature) = instant.air_temperature
+            && let Some(relative_humidity) = instant.relative_humidity
+            && let Some(wind_speed) = instant.wind_speed
+        {
             Some(australian_apparent_temp(
                 air_temperature,
                 relative_humidity,

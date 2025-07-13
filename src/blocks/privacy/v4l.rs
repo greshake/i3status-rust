@@ -52,10 +52,10 @@ impl<'a> Monitor<'a> {
             .await
             .error("Unable to get next device in /dev")?
         {
-            if let Some(file_name) = entry.file_name().to_str() {
-                if !file_name.starts_with("video") {
-                    continue;
-                }
+            if let Some(file_name) = entry.file_name().to_str()
+                && !file_name.starts_with("video")
+            {
+                continue;
             }
 
             let sysfs_path = entry.path();
@@ -108,29 +108,25 @@ impl PrivacyMonitor for Monitor<'_> {
                 continue;
             };
             while let Ok(Some(fd_path)) = fd_paths.next_entry().await {
-                let Ok(link_path) = fd_path.path().read_link() else {
-                    continue;
-                };
-                if self.devices.contains_key(&link_path) {
-                    let Ok(mut file) = File::open(proc_path.join("comm")).await else {
+                let mut contents = String::new();
+                if let Ok(link_path) = fd_path.path().read_link()
+                    && self.devices.contains_key(&link_path)
+                    && let Ok(mut file) = File::open(proc_path.join("comm")).await
+                    && file.read_to_string(&mut contents).await.is_ok()
+                {
+                    let reader = contents.trim_end().to_string();
+                    if self.config.exclude_consumer.contains(&reader) {
                         continue;
-                    };
-                    let mut contents = String::new();
-                    if file.read_to_string(&mut contents).await.is_ok() {
-                        let reader = contents.trim_end().to_string();
-                        if self.config.exclude_consumer.contains(&reader) {
-                            continue;
-                        }
-                        debug!("{} {:?}", reader, link_path);
-                        *mapping
-                            .entry(Type::Webcam)
-                            .or_default()
-                            .entry(link_path.to_string_lossy().to_string())
-                            .or_default()
-                            .entry(reader)
-                            .or_default() += 1;
-                        debug!("{:?}", mapping);
                     }
+                    debug!("{} {:?}", reader, link_path);
+                    *mapping
+                        .entry(Type::Webcam)
+                        .or_default()
+                        .entry(link_path.to_string_lossy().to_string())
+                        .or_default()
+                        .entry(reader)
+                        .or_default() += 1;
+                    debug!("{:?}", mapping);
                 }
             }
         }

@@ -275,12 +275,12 @@ impl TokenStore {
     }
 
     pub async fn get(&mut self) -> Option<OAuth2TokenResponse> {
-        if self.token.is_none() {
-            if let Ok(mut file) = File::open(&self.path).await {
-                let mut content = vec![];
-                file.read_to_end(&mut content).await.ok()?;
-                self.token = serde_json::from_slice(&content).ok();
-            }
+        if self.token.is_none()
+            && let Ok(mut file) = File::open(&self.path).await
+        {
+            let mut content = vec![];
+            file.read_to_end(&mut content).await.ok()?;
+            self.token = serde_json::from_slice(&content).ok();
         }
         self.token.clone()
     }
