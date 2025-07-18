@@ -219,7 +219,7 @@ impl BatteryDevice for Device {
         let energy_now = energy_now.map(|e| e * 1e-6); // uWh -> Wh
         let energy_full = energy_full.map(|e| e * 1e-6); // uWh -> Wh
         let power_now = power_now.map(|e| e * 1e-6); // uW -> W
-        let current_now = current_now.map(|e| e * 1e-6); // uA -> A
+        let current_now = current_now.map(|e| (e * 1e-6).abs()); // uA -> A
         let voltage_now = voltage_now.map(|e| e * 1e-6); // uV -> V
 
         let status = status.unwrap_or_default();
