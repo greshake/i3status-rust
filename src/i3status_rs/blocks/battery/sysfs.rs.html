@@ -219,7 +219,7 @@
 <a href=#219 id=219 data-nosnippet>219</a>        </span><span class="kw">let </span>energy_now = energy_now.map(|e| e * <span class="number">1e-6</span>); <span class="comment">// uWh -&gt; Wh
 <a href=#220 id=220 data-nosnippet>220</a>        </span><span class="kw">let </span>energy_full = energy_full.map(|e| e * <span class="number">1e-6</span>); <span class="comment">// uWh -&gt; Wh
 <a href=#221 id=221 data-nosnippet>221</a>        </span><span class="kw">let </span>power_now = power_now.map(|e| e * <span class="number">1e-6</span>); <span class="comment">// uW -&gt; W
-<a href=#222 id=222 data-nosnippet>222</a>        </span><span class="kw">let </span>current_now = current_now.map(|e| e * <span class="number">1e-6</span>); <span class="comment">// uA -&gt; A
+<a href=#222 id=222 data-nosnippet>222</a>        </span><span class="kw">let </span>current_now = current_now.map(|e| (e * <span class="number">1e-6</span>).abs()); <span class="comment">// uA -&gt; A
 <a href=#223 id=223 data-nosnippet>223</a>        </span><span class="kw">let </span>voltage_now = voltage_now.map(|e| e * <span class="number">1e-6</span>); <span class="comment">// uV -&gt; V
 <a href=#224 id=224 data-nosnippet>224</a>
 <a href=#225 id=225 data-nosnippet>225</a>        </span><span class="kw">let </span>status = status.unwrap_or_default();
