@@ -228,11 +228,12 @@ enum ResourceType {
 
 #[derive(Debug, Deserialize)]
 struct SupportedCalendarComponentSet {
-    comp: Option<Comp>,
+    #[serde(rename = "$value", default)]
+    pub values: Vec<Comp>,
 }
 impl SupportedCalendarComponentSet {
     fn supports_events(&self) -> bool {
-        self.comp.as_ref().is_some_and(|v| v.name == "VEVENT")
+        self.values.iter().any(|v| v.name == "VEVENT")
     }
 }
 
