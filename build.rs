@@ -11,7 +11,9 @@ fn main() {
         .env("GIT_CONFIG_GLOBAL", "/dev/null")
         .output()
         .map(|o| String::from_utf8(o.stdout).unwrap());
-    if let (Ok(hash), Ok(date)) = (hash, date) {
+    if let Ok(hash) = hash
+        && let Ok(date) = date
+    {
         let ver = format!(
             "{} (commit {} {})",
             env!("CARGO_PKG_VERSION"),

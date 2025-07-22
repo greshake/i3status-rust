@@ -178,10 +178,10 @@ impl Block {
     }
 
     fn send_action(&mut self, action: BlockAction) {
-        if let Some(sender) = &self.action_sender {
-            if sender.send(action).is_err() {
-                self.action_sender = None;
-            }
+        if let Some(sender) = &self.action_sender
+            && sender.send(action).is_err()
+        {
+            self.action_sender = None;
         }
     }
 

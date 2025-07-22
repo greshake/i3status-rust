@@ -375,7 +375,9 @@ impl Forecast {
                 humidity_count += 1.0;
             }
 
-            if let (Some(wind), Some(wind_kmh)) = (val.wind, val.wind_kmh) {
+            if let Some(wind) = val.wind
+                && let Some(wind_kmh) = val.wind_kmh
+            {
                 if let Some(degrees) = val.wind_direction {
                     let (sin, cos) = degrees.to_radians().sin_cos();
                     wind_north_avg += wind * cos;
