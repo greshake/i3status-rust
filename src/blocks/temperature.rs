@@ -18,8 +18,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders | `" $icon $average avg, $max max "`
-//! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
+//! `format` | A MultiFormat string to customise the output of this block. See below for available placeholders | `[" $icon $average avg, $max max "]`
 //! `interval` | Update interval in seconds | `5`
 //! `scale` | Either `"celsius"` or `"fahrenheit"` | `"celsius"`
 //! `good` | Maximum temperature to set state to good | `20` °C (`68` °F)
@@ -31,7 +30,9 @@
 //!
 //! Action          | Description                               | Default button
 //! ----------------|-------------------------------------------|---------------
-//! `toggle_format` | Toggles between `format` and `format_alt` | Left
+//! `toggle_format` **DEPRECATED** | Toggles between `format` and `format_alt` | -
+//! `next_format`  | Switches to the next format in the list     | Left
+//! `prev_format`  | Switches to the previous format in the list | Right
 //!
 //! Placeholder | Value                                | Type   | Unit
 //! ------------|--------------------------------------|--------|--------
@@ -67,10 +68,10 @@ const DEFAULT_INFO: f64 = 60.0;
 const DEFAULT_WARN: f64 = 80.0;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
+#[serde(default)]
 pub struct Config {
-    pub format: FormatConfig,
-    pub format_alt: Option<FormatConfig>,
+    #[serde(flatten)]
+    pub formats: MaybeMultiFormatConfig,
     #[default(5.into())]
     pub interval: Seconds,
     pub scale: TemperatureScale,
@@ -109,15 +110,14 @@ impl TemperatureScale {
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut actions = api.get_actions()?;
-    api.set_default_actions(&[(MouseButton::Left, None, "toggle_format")])?;
+    api.set_default_actions(&[
+        (MouseButton::Left, None, "next_format"),
+        (MouseButton::Right, None, "prev_format"),
+    ])?;
 
-    let mut format = config
-        .format
+    let mut formats = config
+        .formats
         .with_default(" $icon $average avg, $max max ")?;
-    let mut format_alt = match &config.format_alt {
-        Some(f) => Some(f.with_default("")?),
-        None => None,
-    };
 
     let good = config
         .good
@@ -186,7 +186,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             .unwrap_or(0.0);
         let avg_temp = temp.iter().sum::<f64>() / temp.len() as f64;
 
-        let mut widget = Widget::new().with_format(format.clone());
+        let mut widget = Widget::new().with_format(formats.get_format());
 
         widget.state = match max_temp {
             x if x <= good => State::Good,
@@ -209,10 +209,11 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             _ = sleep(config.interval.0) => (),
             _ = api.wait_for_update_request() => (),
             Some(action) = actions.recv() => match action.as_ref() {
-                "toggle_format" => {
-                    if let Some(format_alt) = &mut format_alt {
-                        std::mem::swap(format_alt, &mut format);
-                    }
+                "next_format" | "toggle_format" => {
+                    formats.next_format();
+                }
+                "prev_format" => {
+                    formats.prev_format();
                 }
                 _ => (),
             }

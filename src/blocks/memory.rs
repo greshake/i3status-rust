@@ -4,8 +4,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block when in "Memory" view. See below for available placeholders. | `" $icon $mem_used.eng(prefix:Mi)/$mem_total.eng(prefix:Mi)($mem_used_percents.eng(w:2)) "`
-//! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
+//! `format` | A MultiFormat string to customise the output of this block when in "Memory" view. See below for available placeholders. | `[" $icon $mem_used.eng(prefix:Mi)/$mem_total.eng(prefix:Mi)($mem_used_percents.eng(w:2)) "]`
 //! `interval` | Update interval in seconds | `5`
 //! `warning_mem` | Percentage of memory usage, where state is set to warning | `80.0`
 //! `warning_swap` | Percentage of swap usage, where state is set to warning | `80.0`
@@ -44,7 +43,9 @@
 //!
 //! Action          | Description                               | Default button
 //! ----------------|-------------------------------------------|---------------
-//! `toggle_format` | Toggles between `format` and `format_alt` | Left
+//! `toggle_format` **DEPRECATED** | Toggles between `format` and `format_alt` | -
+//! `next_format`  | Switches to the next format in the list     | Left
+//! `prev_format`  | Switches to the previous format in the list | Right
 //!
 //! # Examples
 //!
@@ -79,10 +80,10 @@ use super::prelude::*;
 use crate::util::read_file;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
+#[serde(default)]
 pub struct Config {
-    pub format: FormatConfig,
-    pub format_alt: Option<FormatConfig>,
+    #[serde(flatten)]
+    pub formats: MaybeMultiFormatConfig,
     #[default(5.into())]
     pub interval: Seconds,
     #[default(80.0)]
@@ -97,15 +98,14 @@ pub struct Config {
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut actions = api.get_actions()?;
-    api.set_default_actions(&[(MouseButton::Left, None, "toggle_format")])?;
+    api.set_default_actions(&[
+        (MouseButton::Left, None, "next_format"),
+        (MouseButton::Right, None, "prev_format"),
+    ])?;
 
-    let mut format = config.format.with_default(
+    let mut formats = config.formats.with_default(
         " $icon $mem_used.eng(prefix:Mi)/$mem_total.eng(prefix:Mi)($mem_used_percents.eng(w:2)) ",
     )?;
-    let mut format_alt = match &config.format_alt {
-        Some(f) => Some(f.with_default("")?),
-        None => None,
-    };
 
     let mut timer = config.interval.timer();
 
@@ -179,7 +179,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             0.0
         };
 
-        let mut widget = Widget::new().with_format(format.clone());
+        let mut widget = Widget::new().with_format(formats.get_format());
         widget.set_values(map! {
             "icon" => Value::icon("memory_mem"),
             "icon_swap" => Value::icon("memory_swap"),
@@ -237,11 +237,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 _ = timer.tick() => break,
                 _ = api.wait_for_update_request() => break,
                 Some(action) = actions.recv() => match action.as_ref() {
-                    "toggle_format" => {
-                        if let Some(ref mut format_alt) = format_alt {
-                            std::mem::swap(format_alt, &mut format);
-                            break;
-                        }
+                    "next_format" | "toggle_format" => {
+                        formats.next_format();
+                        break;
+                    }
+                    "prev_format" => {
+                        formats.prev_format();
+                        break;
                     }
                     _ => (),
                 }

@@ -6,8 +6,7 @@
 //! ----|--------|--------
 //! `path` | Path to collect information from. Supports path expansions e.g. `~`. | `"/"`
 //! `interval` | Update time in seconds | `20`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $available "`
-//! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
+//! `format` | A MultiFormat string to customise the output of this block. See below for available placeholders. | `[" $icon $available "]`
 //! `warning` | A value which will trigger warning block state | `20.0`
 //! `alert` | A value which will trigger critical block state | `10.0`
 //! `info_type` | Determines which information will affect the block state. Possible values are `"available"`, `"free"` and `"used"` | `"available"`
@@ -26,7 +25,9 @@
 //!
 //! Action          | Description                               | Default button
 //! ----------------|-------------------------------------------|---------------
-//! `toggle_format` | Toggles between `format` and `format_alt` | Left
+//! `toggle_format` **DEPRECATED** | Toggles between `format` and `format_alt` | -
+//! `next_format`  | Switches to the next format in the list     | Left
+//! `prev_format`  | Switches to the previous format in the list | Right
 //!
 //! # Examples
 //!
@@ -89,14 +90,14 @@ pub enum Backend {
 }
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
+#[serde(default)]
 pub struct Config {
     #[default("/".into())]
     pub path: ShellString,
     pub backend: Backend,
     pub info_type: InfoType,
-    pub format: FormatConfig,
-    pub format_alt: Option<FormatConfig>,
+    #[serde(flatten)]
+    pub formats: MaybeMultiFormatConfig,
     pub alert_unit: Option<String>,
     #[default(20.into())]
     pub interval: Seconds,
@@ -108,13 +109,12 @@ pub struct Config {
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut actions = api.get_actions()?;
-    api.set_default_actions(&[(MouseButton::Left, None, "toggle_format")])?;
+    api.set_default_actions(&[
+        (MouseButton::Left, None, "next_format"),
+        (MouseButton::Right, None, "prev_format"),
+    ])?;
 
-    let mut format = config.format.with_default(" $icon $available ")?;
-    let mut format_alt = match &config.format_alt {
-        Some(f) => Some(f.with_default("")?),
-        None => None,
-    };
+    let mut formats = config.formats.with_default(" $icon $available ")?;
 
     let unit = match config.alert_unit.as_deref() {
         // Decimal
@@ -139,7 +139,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut timer = config.interval.timer();
 
     loop {
-        let mut widget = Widget::new().with_format(format.clone());
+        let mut widget = Widget::new().with_format(formats.get_format());
 
         let (total, used, available, free) = match config.backend {
             Backend::Vfs => get_vfs(&*path)?,
@@ -198,11 +198,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 _ = timer.tick() => break,
                 _ = api.wait_for_update_request() => break,
                 Some(action) = actions.recv() => match action.as_ref() {
-                    "toggle_format" => {
-                        if let Some(format_alt) = &mut format_alt {
-                            std::mem::swap(format_alt, &mut format);
-                            break;
-                        }
+                    "next_format" | "toggle_format" => {
+                        formats.next_format();
+                        break;
+                    }
+                    "prev_format" => {
+                        formats.prev_format();
+                        break;
                     }
                     _ => (),
                 }

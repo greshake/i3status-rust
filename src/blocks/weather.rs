@@ -14,8 +14,7 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `service` | The configuration of a weather service (see below). | **Required**
-//! `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | `" $icon $weather $temp "`
-//! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
+//! `format` | A MultiFormat string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | `[" $icon $weather $temp "]`
 //! `interval` | Update interval, in seconds. | `600`
 //! `autolocate` | Gets your location using the ipapi.co IP location service (no API key required). If the API call fails then the block will fallback to service specific location config. | `false`
 //! `autolocate_interval` | Update interval for `autolocate` in seconds or "once" | `interval`
@@ -102,7 +101,9 @@
 //!
 //! Action          | Description                               | Default button
 //! ----------------|-------------------------------------------|---------------
-//! `toggle_format` | Toggles between `format` and `format_alt` | Left
+//! `toggle_format` **DEPRECATED** | Toggles between `format` and `format_alt` | -
+//! `next_format`  | Switches to the next format in the list     | Left
+//! `prev_format`  | Switches to the previous format in the list | Right
 //!
 //! # Examples
 //!
@@ -150,7 +151,7 @@ use chrono::{DateTime, Utc};
 use sunrise::{SolarDay, SolarEvent};
 
 use super::prelude::*;
-use crate::formatting::Format;
+use crate::formatting::{Format, MultiFormat};
 pub(super) use crate::geolocator::IPAddressInfo;
 use crate::util::{celsius_to_fahrenheit, kmh_to_mph, kmh_to_mps};
 
@@ -159,13 +160,11 @@ pub mod nws;
 pub mod open_weather_map;
 
 #[derive(Deserialize, Debug)]
-#[serde(deny_unknown_fields)]
 pub struct Config {
     #[serde(default = "default_interval")]
     pub interval: Seconds,
-    #[serde(default)]
-    pub format: FormatConfig,
-    pub format_alt: Option<FormatConfig>,
+    #[serde(flatten)]
+    pub formats: MaybeMultiFormatConfig,
     pub service: WeatherService,
     #[serde(default)]
     pub autolocate: bool,
@@ -426,13 +425,12 @@ impl Forecast {
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut actions = api.get_actions()?;
-    api.set_default_actions(&[(MouseButton::Left, None, "toggle_format")])?;
+    api.set_default_actions(&[
+        (MouseButton::Left, None, "next_format"),
+        (MouseButton::Right, None, "prev_format"),
+    ])?;
 
-    let mut format = config.format.with_default(" $icon $weather $temp ")?;
-    let mut format_alt = match &config.format_alt {
-        Some(f) => Some(f.with_default("")?),
-        None => None,
-    };
+    let mut formats = config.formats.with_default(" $icon $weather $temp ")?;
 
     let (provider, service_units): (Box<dyn WeatherProvider + Send + Sync>, UnitSystem) =
         match &config.service {
@@ -452,7 +450,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let units = config.units.unwrap_or(service_units);
 
     let autolocate_interval = config.autolocate_interval.unwrap_or(config.interval);
-    let need_forecast = need_forecast(&format, format_alt.as_ref());
+    let need_forecast = need_forecast(&formats);
 
     let mut timer = config.interval.timer();
 
@@ -469,7 +467,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let data_values = data.into_values(&units);
 
         loop {
-            let mut widget = Widget::new().with_format(format.clone());
+            let mut widget = Widget::new().with_format(formats.get_format());
             widget.set_values(data_values.clone());
             api.set_widget(widget)?;
 
@@ -477,10 +475,11 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 _ = timer.tick() => break,
                 _ = api.wait_for_update_request() => break,
                 Some(action) = actions.recv() => match action.as_ref() {
-                        "toggle_format" => {
-                            if let Some(ref mut format_alt) = format_alt {
-                                std::mem::swap(format_alt, &mut format);
-                            }
+                        "next_format" | "toggle_format" => {
+                            formats.next_format();
+                        }
+                        "prev_format" => {
+                            formats.prev_format();
                         }
                         _ => (),
                     }
@@ -489,7 +488,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     }
 }
 
-fn need_forecast(format: &Format, format_alt: Option<&Format>) -> bool {
+fn need_forecast(formats: &MultiFormat) -> bool {
     fn has_forecast_key(format: &Format) -> bool {
         macro_rules! format_suffix {
             ($($suffix: literal),* $(,)?) => {
@@ -510,7 +509,7 @@ fn need_forecast(format: &Format, format_alt: Option<&Format>) -> bool {
             || format.contains_key("weather_ffin")
             || format.contains_key("weather_verbose_ffin")
     }
-    has_forecast_key(format) || format_alt.is_some_and(has_forecast_key)
+    formats.iter().any(has_forecast_key)
 }
 
 fn calculate_sunrise_sunset(

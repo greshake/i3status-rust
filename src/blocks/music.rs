@@ -18,8 +18,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>\" $icon {$combo.str(max_w:25,rot_interval:0.5) $play \|}\"</code>
-//! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
+//! `format` | A MultiFormat string to customise the output of this block. See below for available placeholders. | <code>[\" $icon {$combo.str(max_w:25,rot_interval:0.5) $play \|}\"]</code>
 //! `player` | Name(s) of the music player(s) MPRIS interface. This can be either a music player name or an array of music player names. Run <code>busctl \--user list \| grep \"org.mpris.MediaPlayer2.\" \| cut -d\' \' -f1</code> and the name is the part after "org.mpris.MediaPlayer2.". | `None`
 //! `interface_name_exclude` | A list of regex patterns for player MPRIS interface names to ignore. | `["playerctld"]`
 //! `separator` | String to insert between artist and title. | `" - "`
@@ -62,7 +61,9 @@
 //! `seek_backward` | Wheel Down
 //! `volume_up`     | -
 //! `volume_down`   | -
-//! `toggle_format` | Left
+//! `toggle_format` **DEPRECATED** | -
+//! `next_format`  | Left
+//! `prev_format`  | -
 //!
 //! # Examples
 //!
@@ -107,7 +108,7 @@
 //! [[block.click]]
 //! button = "middle"
 //! widget = "."
-//! action = "toggle_format"
+//! action = "next_format"
 //! ```
 //!
 //! Scroll to change the player volume, use the forward and back buttons to seek:
@@ -160,10 +161,10 @@ const NEXT_BTN: &str = "next_btn";
 const PREV_BTN: &str = "prev_btn";
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
+#[serde(default)]
 pub struct Config {
-    pub format: FormatConfig,
-    pub format_alt: Option<FormatConfig>,
+    #[serde(flatten)]
+    pub formats: MaybeMultiFormatConfig,
     pub player: PlayerName,
     #[default(vec!["playerctld".into()])]
     pub interface_name_exclude: Vec<String>,
@@ -194,18 +195,14 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         (MouseButton::Right, None, "next_player"),
         (MouseButton::WheelUp, None, "seek_forward"),
         (MouseButton::WheelDown, None, "seek_backward"),
-        (MouseButton::Left, None, "toggle_format"),
+        (MouseButton::Left, None, "next_format"),
     ])?;
 
     let dbus_conn = new_dbus_connection().await?;
 
-    let mut format = config
-        .format
+    let mut formats = config
+        .formats
         .with_default(" $icon {$combo.str(max_w:25,rot_interval:0.5) $play |}")?;
-    let mut format_alt = match &config.format_alt {
-        Some(f) => Some(f.with_default("")?),
-        None => None,
-    };
 
     let volume_step = config.volume_step.clamp(0.0, 50.0) / 100.0;
 
@@ -363,13 +360,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     );
                     values.insert("volume".into(), Value::percents(volume * 100.0));
                 }
-                let mut widget = Widget::new().with_format(format.clone());
+                let mut widget = Widget::new().with_format(formats.get_format());
                 widget.set_values(values);
                 widget.state = state;
                 api.set_widget(widget)?;
             }
             None => {
-                let mut widget = Widget::new().with_format(format.clone());
+                let mut widget = Widget::new().with_format(formats.get_format());
                 widget.set_values(map!("icon" => Value::icon("music")));
                 api.set_widget(widget)?;
             }
@@ -488,11 +485,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                             "volume_down" => {
                                 player.set_volume(-volume_step).await?;
                             }
-                            "toggle_format" => {
-                                if let Some(format_alt) = &mut format_alt {
-                                    std::mem::swap(format_alt, &mut format);
-                                    break;
-                                }
+                            "next_format" | "toggle_format" => {
+                                formats.next_format();
+                                break;
+                            }
+                            "prev_format" => {
+                                formats.prev_format();
+                                break;
                             }
                             _ => (),
                         }

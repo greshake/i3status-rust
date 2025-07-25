@@ -142,6 +142,7 @@ pub mod value;
 
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::str::FromStr;
 
 use crate::config::SharedConfig;
 use crate::errors::*;
@@ -162,6 +163,37 @@ pub enum FormatError {
     Other(#[from] Error),
 }
 
+#[derive(Debug)]
+pub struct MultiFormat {
+    // The length is always at least one, so we don't need to worry about
+    // dividing by zero when doing the modulo math to calculate the
+    // previous and next formats.
+    formats: Vec<Format>,
+    index: usize,
+}
+
+impl MultiFormat {
+    pub fn new(formats: Vec<Format>) -> Self {
+        Self { formats, index: 0 }
+    }
+
+    pub fn iter(&self) -> std::slice::Iter<'_, Format> {
+        self.formats.iter()
+    }
+
+    pub fn get_format(&self) -> Format {
+        self.formats[self.index].clone()
+    }
+
+    pub fn next_format(&mut self) {
+        self.index = (self.index + 1) % self.formats.len();
+    }
+
+    pub fn prev_format(&mut self) {
+        self.index = (self.index + (self.formats.len() - 1)) % self.formats.len();
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Format {
     full: FormatTemplate,
@@ -170,6 +202,18 @@ pub struct Format {
 }
 
 impl Format {
+    pub fn new(full: FormatTemplate, short: FormatTemplate) -> Self {
+        let mut intervals = Vec::new();
+        full.init_intervals(&mut intervals);
+        short.init_intervals(&mut intervals);
+
+        Self {
+            full,
+            short,
+            intervals,
+        }
+    }
+
     pub fn contains_key(&self, key: &str) -> bool {
         self.full.contains_key(key) || self.short.contains_key(key)
     }
@@ -192,6 +236,14 @@ impl Format {
             .render(values, config)
             .error("Failed to render short text")?;
         Ok((full, short))
+    }
+}
+
+impl FromStr for Format {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self> {
+        Ok(Self::new(s.parse()?, FormatTemplate::default()))
     }
 }
 
