@@ -1,0 +1,28 @@
+# Tomorrow (Night)
+#
+# Foreground: #c5c8c6
+# Background: #1d1f21
+# Selection: #373b41
+# Current line: #282a2e
+# Comment: #969896
+# Red: #cc6666
+# Orange: #de935f
+# Yellow: #f0c674
+# Green: #b5bd68
+# Aqua: #8abeb7
+# Blue: #81a2be
+# Purple: #b294bb
+
+idle_bg = "#373b41" # Selection
+idle_fg = "#c5c8c6" # Foreground
+info_bg = "#81a2be" # Blue
+info_fg = "#1d1f21" # Background
+good_bg = "#b5bd68" # Green
+good_fg = "#1d1f21" # Background
+warning_bg = "#f0c674" # Yellow
+warning_fg = "#1d1f21" # Background
+critical_bg = "#cc6666" # Red
+critical_fg = "#1d1f21" # Background
+separator = "\ue0b2"
+separator_bg = "auto"
+separator_fg = "auto"

@@ -65,6 +65,8 @@ Note: screenshots were generated using [this config](../gen-screenshots/screensh
 ![ctp-macchiato](../img/themes/ctp-macchiato.png)
 * `ctp-mocha`
 ![ctp-mocha](../img/themes/ctp-mocha.png)
+* `tomorrow-night`
+![tomorrow-night](../img/themes/tomorrow-night.png)
 
 # Available icon sets
 
