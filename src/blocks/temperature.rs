@@ -149,15 +149,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                         }
                     }
                     for subfeat in feat {
-                        if *subfeat.subfeature_type() == SENSORS_SUBFEATURE_TEMP_INPUT {
-                            if let Ok(value) = subfeat.get_value() {
-                                if (-100.0..=150.0).contains(&value) {
-                                    vals.push(config_scale.from_celsius(value));
-                                } else {
-                                    eprintln!(
-                                        "Temperature ({value}) outside of range ([-100, 150])"
-                                    );
-                                }
+                        if *subfeat.subfeature_type() == SENSORS_SUBFEATURE_TEMP_INPUT
+                            && let Ok(value) = subfeat.get_value()
+                        {
+                            if (-100.0..=150.0).contains(&value) {
+                                vals.push(config_scale.from_celsius(value));
+                            } else {
+                                eprintln!("Temperature ({value}) outside of range ([-100, 150])");
                             }
                         }
                     }

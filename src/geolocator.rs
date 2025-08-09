@@ -116,10 +116,10 @@ impl Geolocator {
     ) -> Result<IPAddressInfo> {
         {
             let guard = self.last_autolocate.lock().unwrap();
-            if let Some(cached) = &*guard {
-                if cached.timestamp.elapsed() < interval {
-                    return Ok(cached.location.clone());
-                }
+            if let Some(cached) = &*guard
+                && cached.timestamp.elapsed() < interval
+            {
+                return Ok(cached.location.clone());
             }
         }
 

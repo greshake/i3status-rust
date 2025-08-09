@@ -74,11 +74,11 @@ impl Device {
     /// Returns `self.dev_path` if it is still available. Otherwise, find any device that matches
     /// `self.dev_name`.
     async fn get_device_path(&mut self) -> Result<Option<&Path>> {
-        if let Some(path) = &self.dev_path {
-            if Self::device_available(path).await {
-                debug!("battery '{}' is still available", path.display());
-                return Ok(self.dev_path.as_deref());
-            }
+        if let Some(path) = &self.dev_path
+            && Self::device_available(path).await
+        {
+            debug!("battery '{}' is still available", path.display());
+            return Ok(self.dev_path.as_deref());
         }
 
         let mut matching_battery = None;
@@ -109,11 +109,11 @@ impl Device {
                 path.display(),
                 model_name.as_deref()
             );
-            if let Some(dev_model) = &self.dev_model {
-                if model_name.as_deref() != Some(dev_model.as_str()) {
-                    debug!("Skipping based on model.");
-                    continue;
-                }
+            if let Some(dev_model) = &self.dev_model
+                && model_name.as_deref() != Some(dev_model.as_str())
+            {
+                debug!("Skipping based on model.");
+                continue;
             }
 
             debug!(

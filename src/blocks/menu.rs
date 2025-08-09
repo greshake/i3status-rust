@@ -113,10 +113,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         block.reset().await?;
         block.wait_for_click("_left").await?;
         if let Some(res) = block.run_menu().await? {
-            if let Some(msg) = res.confirm_msg {
-                if !block.confirm(msg).await? {
-                    continue;
-                }
+            if let Some(msg) = res.confirm_msg
+                && !block.confirm(msg).await?
+            {
+                continue;
             }
             spawn_shell(&res.cmd).or_error(|| format!("Failed to run '{}'", res.cmd))?;
         }

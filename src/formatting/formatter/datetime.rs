@@ -95,13 +95,13 @@ impl DatetimeFormatter {
 }
 
 pub(crate) trait TimezoneName {
-    fn timezone_name(datetime: &DateTime<Self>) -> Result<Item>
+    fn timezone_name(datetime: &DateTime<Self>) -> Result<Item<'_>>
     where
         Self: TimeZone;
 }
 
 impl TimezoneName for Tz {
-    fn timezone_name(datetime: &DateTime<Tz>) -> Result<Item> {
+    fn timezone_name(datetime: &DateTime<Tz>) -> Result<Item<'_>> {
         Ok(Item::Literal(
             datetime
                 .offset()
@@ -112,7 +112,7 @@ impl TimezoneName for Tz {
 }
 
 impl TimezoneName for Local {
-    fn timezone_name(datetime: &DateTime<Local>) -> Result<Item> {
+    fn timezone_name(datetime: &DateTime<Local>) -> Result<Item<'_>> {
         let tz_name = iana_time_zone::get_timezone().error("Could not get local timezone")?;
         let tz = tz_name
             .parse::<Tz>()

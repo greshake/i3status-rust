@@ -133,10 +133,10 @@ impl Backend for XkbEvent {
                 .await
                 .error("Failed to read the event")?;
 
-            if let Event::XkbStateNotify(e) = event {
-                if e.changed.contains(xkb::StatePart::GROUP_STATE) {
-                    return Ok(());
-                }
+            if let Event::XkbStateNotify(e) = event
+                && e.changed.contains(xkb::StatePart::GROUP_STATE)
+            {
+                return Ok(());
             }
         }
     }

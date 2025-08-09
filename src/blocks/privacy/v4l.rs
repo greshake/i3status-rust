@@ -52,10 +52,10 @@ impl<'a> Monitor<'a> {
             .await
             .error("Unable to get next device in /dev")?
         {
-            if let Some(file_name) = entry.file_name().to_str() {
-                if !file_name.starts_with("video") {
-                    continue;
-                }
+            if let Some(file_name) = entry.file_name().to_str()
+                && !file_name.starts_with("video")
+            {
+                continue;
             }
 
             let sysfs_path = entry.path();

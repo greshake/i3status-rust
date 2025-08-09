@@ -263,12 +263,11 @@ impl DeviceMonitor {
                         _ = dev.wait_for_change() => {
                             if !dev.connected().await {
                                 debug!("device became unreachable, re-searching");
-                                if let Some(dev) = Device::try_find(&self.daemon_proxy, self.device_id.as_deref()).await? {
-                                    if dev.connected().await {
+                                if let Some(dev) = Device::try_find(&self.daemon_proxy, self.device_id.as_deref()).await?
+                                    && dev.connected().await {
                                         debug!("selected {:?}", dev.id);
                                         self.device = Some(dev);
                                     }
-                                }
                             }
                             return Ok(())
                         }
