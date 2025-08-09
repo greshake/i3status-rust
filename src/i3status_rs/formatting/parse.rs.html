@@ -92,17 +92,17 @@
 <a href=#92 id=92 data-nosnippet>92</a>    }
 <a href=#93 id=93 data-nosnippet>93</a>}
 <a href=#94 id=94 data-nosnippet>94</a>
-<a href=#95 id=95 data-nosnippet>95</a><span class="kw">fn </span>spaces(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, <span class="kw-2">&amp;</span>str, PError&gt; {
+<a href=#95 id=95 data-nosnippet>95</a><span class="kw">fn </span>spaces(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, <span class="kw-2">&amp;</span>str, PError&lt;<span class="lifetime">'_</span>&gt;&gt; {
 <a href=#96 id=96 data-nosnippet>96</a>    take_while(|x: char| x.is_ascii_whitespace())(i)
 <a href=#97 id=97 data-nosnippet>97</a>}
 <a href=#98 id=98 data-nosnippet>98</a>
-<a href=#99 id=99 data-nosnippet>99</a><span class="kw">fn </span>alphanum1(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, <span class="kw-2">&amp;</span>str, PError&gt; {
+<a href=#99 id=99 data-nosnippet>99</a><span class="kw">fn </span>alphanum1(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, <span class="kw-2">&amp;</span>str, PError&lt;<span class="lifetime">'_</span>&gt;&gt; {
 <a href=#100 id=100 data-nosnippet>100</a>    take_while1(|x: char| x.is_alphanumeric() || x == <span class="string">'_' </span>|| x == <span class="string">'-'</span>)(i)
 <a href=#101 id=101 data-nosnippet>101</a>}
 <a href=#102 id=102 data-nosnippet>102</a>
 <a href=#103 id=103 data-nosnippet>103</a><span class="comment">//val
 <a href=#104 id=104 data-nosnippet>104</a>//'val ue'
-<a href=#105 id=105 data-nosnippet>105</a></span><span class="kw">fn </span>arg1(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, <span class="kw-2">&amp;</span>str, PError&gt; {
+<a href=#105 id=105 data-nosnippet>105</a></span><span class="kw">fn </span>arg1(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, <span class="kw-2">&amp;</span>str, PError&lt;<span class="lifetime">'_</span>&gt;&gt; {
 <a href=#106 id=106 data-nosnippet>106</a>    alt((
 <a href=#107 id=107 data-nosnippet>107</a>        take_while1(|x: char| x.is_alphanumeric() || x == <span class="string">'_' </span>|| x == <span class="string">'-' </span>|| x == <span class="string">'.' </span>|| x == <span class="string">'%'</span>),
 <a href=#108 id=108 data-nosnippet>108</a>        preceded(
@@ -114,7 +114,7 @@
 <a href=#114 id=114 data-nosnippet>114</a>
 <a href=#115 id=115 data-nosnippet>115</a><span class="comment">// `key:val`
 <a href=#116 id=116 data-nosnippet>116</a>// `abc`
-<a href=#117 id=117 data-nosnippet>117</a></span><span class="kw">fn </span>parse_arg(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, Arg, PError&gt; {
+<a href=#117 id=117 data-nosnippet>117</a></span><span class="kw">fn </span>parse_arg(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, Arg&lt;<span class="lifetime">'_</span>&gt;, PError&lt;<span class="lifetime">'_</span>&gt;&gt; {
 <a href=#118 id=118 data-nosnippet>118</a>    alt((
 <a href=#119 id=119 data-nosnippet>119</a>        map(
 <a href=#120 id=120 data-nosnippet>120</a>            separated_pair(alphanum1, char(<span class="string">':'</span>), cut(arg1)),
@@ -129,7 +129,7 @@
 <a href=#129 id=129 data-nosnippet>129</a>
 <a href=#130 id=130 data-nosnippet>130</a><span class="comment">// `(arg,key:val)`
 <a href=#131 id=131 data-nosnippet>131</a>// `( arg, key:val , abc)`
-<a href=#132 id=132 data-nosnippet>132</a></span><span class="kw">fn </span>parse_args(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, Vec&lt;Arg&gt;, PError&gt; {
+<a href=#132 id=132 data-nosnippet>132</a></span><span class="kw">fn </span>parse_args(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, Vec&lt;Arg&lt;<span class="lifetime">'_</span>&gt;&gt;, PError&lt;<span class="lifetime">'_</span>&gt;&gt; {
 <a href=#133 id=133 data-nosnippet>133</a>    <span class="kw">let </span>inner = separated_list0(preceded(spaces, char(<span class="string">','</span>)), preceded(spaces, parse_arg));
 <a href=#134 id=134 data-nosnippet>134</a>    preceded(
 <a href=#135 id=135 data-nosnippet>135</a>        char(<span class="string">'('</span>),
@@ -139,7 +139,7 @@
 <a href=#139 id=139 data-nosnippet>139</a>
 <a href=#140 id=140 data-nosnippet>140</a><span class="comment">// `.str(width:2)`
 <a href=#141 id=141 data-nosnippet>141</a>// `.eng(unit:bits,show)`
-<a href=#142 id=142 data-nosnippet>142</a></span><span class="kw">fn </span>parse_formatter(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, Formatter, PError&gt; {
+<a href=#142 id=142 data-nosnippet>142</a></span><span class="kw">fn </span>parse_formatter(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, Formatter&lt;<span class="lifetime">'_</span>&gt;, PError&lt;<span class="lifetime">'_</span>&gt;&gt; {
 <a href=#143 id=143 data-nosnippet>143</a>    preceded(char(<span class="string">'.'</span>), cut(tuple((alphanum1, opt(parse_args)))))
 <a href=#144 id=144 data-nosnippet>144</a>        .map(|(name, args)| Formatter {
 <a href=#145 id=145 data-nosnippet>145</a>            name,
@@ -150,14 +150,14 @@
 <a href=#150 id=150 data-nosnippet>150</a>
 <a href=#151 id=151 data-nosnippet>151</a><span class="comment">// `$var`
 <a href=#152 id=152 data-nosnippet>152</a>// `$key.eng(unit:bits,show)`
-<a href=#153 id=153 data-nosnippet>153</a></span><span class="kw">fn </span>parse_placeholder(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, Placeholder, PError&gt; {
+<a href=#153 id=153 data-nosnippet>153</a></span><span class="kw">fn </span>parse_placeholder(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, Placeholder&lt;<span class="lifetime">'_</span>&gt;, PError&lt;<span class="lifetime">'_</span>&gt;&gt; {
 <a href=#154 id=154 data-nosnippet>154</a>    preceded(char(<span class="string">'$'</span>), cut(tuple((alphanum1, opt(parse_formatter)))))
 <a href=#155 id=155 data-nosnippet>155</a>        .map(|(name, formatter)| Placeholder { name, formatter })
 <a href=#156 id=156 data-nosnippet>156</a>        .parse(i)
 <a href=#157 id=157 data-nosnippet>157</a>}
 <a href=#158 id=158 data-nosnippet>158</a>
 <a href=#159 id=159 data-nosnippet>159</a><span class="comment">// `just escaped \| text`
-<a href=#160 id=160 data-nosnippet>160</a></span><span class="kw">fn </span>parse_string(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, String, PError&gt; {
+<a href=#160 id=160 data-nosnippet>160</a></span><span class="kw">fn </span>parse_string(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, String, PError&lt;<span class="lifetime">'_</span>&gt;&gt; {
 <a href=#161 id=161 data-nosnippet>161</a>    preceded(
 <a href=#162 id=162 data-nosnippet>162</a>        not(eof),
 <a href=#163 id=163 data-nosnippet>163</a>        escaped_transform(
@@ -169,16 +169,16 @@
 <a href=#169 id=169 data-nosnippet>169</a>}
 <a href=#170 id=170 data-nosnippet>170</a>
 <a href=#171 id=171 data-nosnippet>171</a><span class="comment">// `^icon_name`
-<a href=#172 id=172 data-nosnippet>172</a></span><span class="kw">fn </span>parse_icon(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, <span class="kw-2">&amp;</span>str, PError&gt; {
+<a href=#172 id=172 data-nosnippet>172</a></span><span class="kw">fn </span>parse_icon(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, <span class="kw-2">&amp;</span>str, PError&lt;<span class="lifetime">'_</span>&gt;&gt; {
 <a href=#173 id=173 data-nosnippet>173</a>    preceded(char(<span class="string">'^'</span>), cut(preceded(tag(<span class="string">"icon_"</span>), alphanum1)))(i)
 <a href=#174 id=174 data-nosnippet>174</a>}
 <a href=#175 id=175 data-nosnippet>175</a>
 <a href=#176 id=176 data-nosnippet>176</a><span class="comment">// `{ a | b | c }`
-<a href=#177 id=177 data-nosnippet>177</a></span><span class="kw">fn </span>parse_recursive_template(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, FormatTemplate, PError&gt; {
+<a href=#177 id=177 data-nosnippet>177</a></span><span class="kw">fn </span>parse_recursive_template(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, FormatTemplate&lt;<span class="lifetime">'_</span>&gt;, PError&lt;<span class="lifetime">'_</span>&gt;&gt; {
 <a href=#178 id=178 data-nosnippet>178</a>    preceded(char(<span class="string">'{'</span>), cut(terminated(parse_format_template, char(<span class="string">'}'</span>))))(i)
 <a href=#179 id=179 data-nosnippet>179</a>}
 <a href=#180 id=180 data-nosnippet>180</a>
-<a href=#181 id=181 data-nosnippet>181</a><span class="kw">fn </span>parse_token_list(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, TokenList, PError&gt; {
+<a href=#181 id=181 data-nosnippet>181</a><span class="kw">fn </span>parse_token_list(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, TokenList&lt;<span class="lifetime">'_</span>&gt;, PError&lt;<span class="lifetime">'_</span>&gt;&gt; {
 <a href=#182 id=182 data-nosnippet>182</a>    map(
 <a href=#183 id=183 data-nosnippet>183</a>        many0(alt((
 <a href=#184 id=184 data-nosnippet>184</a>            map(parse_string, Token::Text),
@@ -190,11 +190,11 @@
 <a href=#190 id=190 data-nosnippet>190</a>    )(i)
 <a href=#191 id=191 data-nosnippet>191</a>}
 <a href=#192 id=192 data-nosnippet>192</a>
-<a href=#193 id=193 data-nosnippet>193</a><span class="kw">fn </span>parse_format_template(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, FormatTemplate, PError&gt; {
+<a href=#193 id=193 data-nosnippet>193</a><span class="kw">fn </span>parse_format_template(i: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, FormatTemplate&lt;<span class="lifetime">'_</span>&gt;, PError&lt;<span class="lifetime">'_</span>&gt;&gt; {
 <a href=#194 id=194 data-nosnippet>194</a>    map(separated_list0(char(<span class="string">'|'</span>), parse_token_list), FormatTemplate)(i)
 <a href=#195 id=195 data-nosnippet>195</a>}
 <a href=#196 id=196 data-nosnippet>196</a>
-<a href=#197 id=197 data-nosnippet>197</a><span class="kw">pub fn </span>parse_full(i: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;FormatTemplate&gt; {
+<a href=#197 id=197 data-nosnippet>197</a><span class="kw">pub fn </span>parse_full(i: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;FormatTemplate&lt;<span class="lifetime">'_</span>&gt;&gt; {
 <a href=#198 id=198 data-nosnippet>198</a>    <span class="kw">match </span>parse_format_template(i) {
 <a href=#199 id=199 data-nosnippet>199</a>        <span class="prelude-val">Ok</span>((rest, template)) =&gt; {
 <a href=#200 id=200 data-nosnippet>200</a>            <span class="kw">if </span>rest.is_empty() {

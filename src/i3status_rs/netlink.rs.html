@@ -372,133 +372,132 @@
 <a href=#372 id=372 data-nosnippet>372</a>                <span class="kw">_ </span>=&gt; (),
 <a href=#373 id=373 data-nosnippet>373</a>            }
 <a href=#374 id=374 data-nosnippet>374</a>        }
-<a href=#375 id=375 data-nosnippet>375</a>        <span class="kw">if let </span><span class="prelude-val">Some</span>(i) = index {
-<a href=#376 id=376 data-nosnippet>376</a>            <span class="kw">if </span>metric &lt; best_metric {
+<a href=#375 id=375 data-nosnippet>375</a>        <span class="kw">if let </span><span class="prelude-val">Some</span>(i) = index
+<a href=#376 id=376 data-nosnippet>376</a>            &amp;&amp; metric &lt; best_metric {
 <a href=#377 id=377 data-nosnippet>377</a>                best_metric = metric;
 <a href=#378 id=378 data-nosnippet>378</a>                best_index = i;
 <a href=#379 id=379 data-nosnippet>379</a>            }
-<a href=#380 id=380 data-nosnippet>380</a>        }
-<a href=#381 id=381 data-nosnippet>381</a>    });
-<a href=#382 id=382 data-nosnippet>382</a>
-<a href=#383 id=383 data-nosnippet>383</a>    <span class="prelude-val">Ok</span>(best_index)
-<a href=#384 id=384 data-nosnippet>384</a>}
-<a href=#385 id=385 data-nosnippet>385</a>
-<a href=#386 id=386 data-nosnippet>386</a><span class="kw">async fn </span>ip_payload&lt;<span class="kw">const </span>BYTES: usize&gt;(
-<a href=#387 id=387 data-nosnippet>387</a>    sock: <span class="kw-2">&amp;mut </span>NlSocket,
-<a href=#388 id=388 data-nosnippet>388</a>    ifa_family: RtAddrFamily,
-<a href=#389 id=389 data-nosnippet>389</a>    ifa_index: i32,
-<a href=#390 id=390 data-nosnippet>390</a>) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;[u8; BYTES]&gt;, Box&lt;<span class="kw">dyn </span>StdError + Send + Sync + <span class="lifetime">'static</span>&gt;&gt; {
-<a href=#391 id=391 data-nosnippet>391</a>    sock.send(<span class="kw-2">&amp;</span>Nlmsghdr::new(
-<a href=#392 id=392 data-nosnippet>392</a>        <span class="prelude-val">None</span>,
-<a href=#393 id=393 data-nosnippet>393</a>        Rtm::Getaddr,
-<a href=#394 id=394 data-nosnippet>394</a>        NlmFFlags::new(<span class="kw-2">&amp;</span>[NlmF::Dump, NlmF::Request]),
+<a href=#380 id=380 data-nosnippet>380</a>    });
+<a href=#381 id=381 data-nosnippet>381</a>
+<a href=#382 id=382 data-nosnippet>382</a>    <span class="prelude-val">Ok</span>(best_index)
+<a href=#383 id=383 data-nosnippet>383</a>}
+<a href=#384 id=384 data-nosnippet>384</a>
+<a href=#385 id=385 data-nosnippet>385</a><span class="kw">async fn </span>ip_payload&lt;<span class="kw">const </span>BYTES: usize&gt;(
+<a href=#386 id=386 data-nosnippet>386</a>    sock: <span class="kw-2">&amp;mut </span>NlSocket,
+<a href=#387 id=387 data-nosnippet>387</a>    ifa_family: RtAddrFamily,
+<a href=#388 id=388 data-nosnippet>388</a>    ifa_index: i32,
+<a href=#389 id=389 data-nosnippet>389</a>) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;[u8; BYTES]&gt;, Box&lt;<span class="kw">dyn </span>StdError + Send + Sync + <span class="lifetime">'static</span>&gt;&gt; {
+<a href=#390 id=390 data-nosnippet>390</a>    sock.send(<span class="kw-2">&amp;</span>Nlmsghdr::new(
+<a href=#391 id=391 data-nosnippet>391</a>        <span class="prelude-val">None</span>,
+<a href=#392 id=392 data-nosnippet>392</a>        Rtm::Getaddr,
+<a href=#393 id=393 data-nosnippet>393</a>        NlmFFlags::new(<span class="kw-2">&amp;</span>[NlmF::Dump, NlmF::Request]),
+<a href=#394 id=394 data-nosnippet>394</a>        <span class="prelude-val">None</span>,
 <a href=#395 id=395 data-nosnippet>395</a>        <span class="prelude-val">None</span>,
-<a href=#396 id=396 data-nosnippet>396</a>        <span class="prelude-val">None</span>,
-<a href=#397 id=397 data-nosnippet>397</a>        NlPayload::Payload(Ifaddrmsg {
-<a href=#398 id=398 data-nosnippet>398</a>            ifa_family,
-<a href=#399 id=399 data-nosnippet>399</a>            ifa_prefixlen: <span class="number">0</span>,
-<a href=#400 id=400 data-nosnippet>400</a>            ifa_flags: IfaFFlags::empty(),
-<a href=#401 id=401 data-nosnippet>401</a>            ifa_scope: <span class="number">0</span>,
-<a href=#402 id=402 data-nosnippet>402</a>            ifa_index: <span class="number">0</span>,
-<a href=#403 id=403 data-nosnippet>403</a>            rtattrs: RtBuffer::new(),
-<a href=#404 id=404 data-nosnippet>404</a>        }),
-<a href=#405 id=405 data-nosnippet>405</a>    ))
-<a href=#406 id=406 data-nosnippet>406</a>    .<span class="kw">await</span><span class="question-mark">?</span>;
-<a href=#407 id=407 data-nosnippet>407</a>
-<a href=#408 id=408 data-nosnippet>408</a>    <span class="kw">let </span><span class="kw-2">mut </span>payload = <span class="prelude-val">None</span>;
-<a href=#409 id=409 data-nosnippet>409</a>
-<a href=#410 id=410 data-nosnippet>410</a>    <span class="macro">recv_until_done!</span>(sock, msg: Ifaddrmsg =&gt; {
-<a href=#411 id=411 data-nosnippet>411</a>        <span class="kw">if </span>msg.ifa_index != ifa_index || msg.ifa_scope &gt;= RT_SCOPE_HOST || payload.is_some() {
-<a href=#412 id=412 data-nosnippet>412</a>            <span class="kw">continue</span>;
-<a href=#413 id=413 data-nosnippet>413</a>        }
-<a href=#414 id=414 data-nosnippet>414</a>
-<a href=#415 id=415 data-nosnippet>415</a>        <span class="kw">let </span>attr_handle = msg.rtattrs.get_attr_handle();
-<a href=#416 id=416 data-nosnippet>416</a>
-<a href=#417 id=417 data-nosnippet>417</a>        <span class="kw">let </span><span class="prelude-val">Some</span>(attr) = attr_handle.get_attribute(Ifa::Local)
-<a href=#418 id=418 data-nosnippet>418</a>            .or_else(|| attr_handle.get_attribute(Ifa::Address))
-<a href=#419 id=419 data-nosnippet>419</a>        <span class="kw">else </span>{ <span class="kw">continue </span>};
-<a href=#420 id=420 data-nosnippet>420</a>
-<a href=#421 id=421 data-nosnippet>421</a>        <span class="kw">if let </span><span class="prelude-val">Ok</span>(p) = attr.rta_payload.as_ref().try_into() {
-<a href=#422 id=422 data-nosnippet>422</a>            payload = <span class="prelude-val">Some</span>(p);
-<a href=#423 id=423 data-nosnippet>423</a>        }
-<a href=#424 id=424 data-nosnippet>424</a>    });
-<a href=#425 id=425 data-nosnippet>425</a>
-<a href=#426 id=426 data-nosnippet>426</a>    <span class="prelude-val">Ok</span>(payload)
-<a href=#427 id=427 data-nosnippet>427</a>}
-<a href=#428 id=428 data-nosnippet>428</a>
-<a href=#429 id=429 data-nosnippet>429</a><span class="kw">async fn </span>ipv4(sock: <span class="kw-2">&amp;mut </span>NlSocket, ifa_index: i32) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Ipv4Addr&gt;&gt; {
-<a href=#430 id=430 data-nosnippet>430</a>    <span class="prelude-val">Ok</span>(ip_payload(sock, RtAddrFamily::Inet, ifa_index)
-<a href=#431 id=431 data-nosnippet>431</a>        .<span class="kw">await
-<a href=#432 id=432 data-nosnippet>432</a>        </span>.map_err(BoxErrorWrapper)
-<a href=#433 id=433 data-nosnippet>433</a>        .error(<span class="string">"Failed to get IP address"</span>)<span class="question-mark">?
-<a href=#434 id=434 data-nosnippet>434</a>        </span>.map(Ipv4Addr::from))
-<a href=#435 id=435 data-nosnippet>435</a>}
-<a href=#436 id=436 data-nosnippet>436</a>
-<a href=#437 id=437 data-nosnippet>437</a><span class="kw">async fn </span>ipv6(sock: <span class="kw-2">&amp;mut </span>NlSocket, ifa_index: i32) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Ipv6Addr&gt;&gt; {
-<a href=#438 id=438 data-nosnippet>438</a>    <span class="prelude-val">Ok</span>(ip_payload(sock, RtAddrFamily::Inet6, ifa_index)
-<a href=#439 id=439 data-nosnippet>439</a>        .<span class="kw">await
-<a href=#440 id=440 data-nosnippet>440</a>        </span>.map_err(BoxErrorWrapper)
-<a href=#441 id=441 data-nosnippet>441</a>        .error(<span class="string">"Failed to get IPv6 address"</span>)<span class="question-mark">?
-<a href=#442 id=442 data-nosnippet>442</a>        </span>.map(Ipv6Addr::from))
-<a href=#443 id=443 data-nosnippet>443</a>}
-<a href=#444 id=444 data-nosnippet>444</a>
-<a href=#445 id=445 data-nosnippet>445</a><span class="kw">async fn </span>read_nameservers() -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;IpAddr&gt;&gt; {
-<a href=#446 id=446 data-nosnippet>446</a>    <span class="kw">let </span>file = util::read_file(<span class="string">"/etc/resolv.conf"</span>)
-<a href=#447 id=447 data-nosnippet>447</a>        .<span class="kw">await
-<a href=#448 id=448 data-nosnippet>448</a>        </span>.error(<span class="string">"Failed to read /etc/resolv.conf"</span>)<span class="question-mark">?</span>;
-<a href=#449 id=449 data-nosnippet>449</a>    <span class="kw">let </span><span class="kw-2">mut </span>nameservers = Vec::new();
-<a href=#450 id=450 data-nosnippet>450</a>
-<a href=#451 id=451 data-nosnippet>451</a>    <span class="kw">for </span>line <span class="kw">in </span>file.lines() {
-<a href=#452 id=452 data-nosnippet>452</a>        <span class="kw">let </span><span class="kw-2">mut </span>line_parts = line.split_whitespace();
-<a href=#453 id=453 data-nosnippet>453</a>        <span class="kw">if </span>line_parts.next() == <span class="prelude-val">Some</span>(<span class="string">"nameserver"</span>) {
-<a href=#454 id=454 data-nosnippet>454</a>            <span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw-2">mut </span>ip) = line_parts.next() {
-<a href=#455 id=455 data-nosnippet>455</a>                <span class="comment">// TODO: use the zone id somehow?
-<a href=#456 id=456 data-nosnippet>456</a>                </span><span class="kw">if let </span><span class="prelude-val">Some</span>((without_zone_id, _zone_id)) = ip.split_once(<span class="string">'%'</span>) {
-<a href=#457 id=457 data-nosnippet>457</a>                    ip = without_zone_id;
-<a href=#458 id=458 data-nosnippet>458</a>                }
-<a href=#459 id=459 data-nosnippet>459</a>                nameservers.push(ip.parse().error(<span class="string">"Unable to parse ip"</span>)<span class="question-mark">?</span>);
-<a href=#460 id=460 data-nosnippet>460</a>            }
-<a href=#461 id=461 data-nosnippet>461</a>        }
-<a href=#462 id=462 data-nosnippet>462</a>    }
-<a href=#463 id=463 data-nosnippet>463</a>
-<a href=#464 id=464 data-nosnippet>464</a>    <span class="prelude-val">Ok</span>(nameservers)
-<a href=#465 id=465 data-nosnippet>465</a>}
-<a href=#466 id=466 data-nosnippet>466</a>
-<a href=#467 id=467 data-nosnippet>467</a><span class="comment">// Source: https://www.kernel.org/doc/Documentation/networking/operstates.txt
-<a href=#468 id=468 data-nosnippet>468</a></span><span class="attr">#[derive(Debug, PartialEq, Eq)]
-<a href=#469 id=469 data-nosnippet>469</a></span><span class="kw">pub enum </span>Operstate {
-<a href=#470 id=470 data-nosnippet>470</a>    <span class="doccomment">/// Interface is in unknown state, neither driver nor userspace has set
-<a href=#471 id=471 data-nosnippet>471</a>    /// operational state. Interface must be considered for user data as
-<a href=#472 id=472 data-nosnippet>472</a>    /// setting operational state has not been implemented in every driver.
-<a href=#473 id=473 data-nosnippet>473</a>    </span>Unknown,
-<a href=#474 id=474 data-nosnippet>474</a>    <span class="doccomment">/// Unused in current kernel (notpresent interfaces normally disappear),
-<a href=#475 id=475 data-nosnippet>475</a>    /// just a numerical placeholder.
-<a href=#476 id=476 data-nosnippet>476</a>    </span>Notpresent,
-<a href=#477 id=477 data-nosnippet>477</a>    <span class="doccomment">/// Interface is unable to transfer data on L1, f.e. ethernet is not
-<a href=#478 id=478 data-nosnippet>478</a>    /// plugged or interface is ADMIN down.
-<a href=#479 id=479 data-nosnippet>479</a>    </span>Down,
-<a href=#480 id=480 data-nosnippet>480</a>    <span class="doccomment">/// Interfaces stacked on an interface that is IF_OPER_DOWN show this
-<a href=#481 id=481 data-nosnippet>481</a>    /// state (f.e. VLAN).
-<a href=#482 id=482 data-nosnippet>482</a>    </span>Lowerlayerdown,
-<a href=#483 id=483 data-nosnippet>483</a>    <span class="doccomment">/// Unused in current kernel.
-<a href=#484 id=484 data-nosnippet>484</a>    </span>Testing,
-<a href=#485 id=485 data-nosnippet>485</a>    <span class="doccomment">/// Interface is L1 up, but waiting for an external event, f.e. for a
-<a href=#486 id=486 data-nosnippet>486</a>    /// protocol to establish. (802.1X)
-<a href=#487 id=487 data-nosnippet>487</a>    </span>Dormant,
-<a href=#488 id=488 data-nosnippet>488</a>    <span class="doccomment">/// Interface is operational up and can be used.
-<a href=#489 id=489 data-nosnippet>489</a>    </span>Up,
-<a href=#490 id=490 data-nosnippet>490</a>}
-<a href=#491 id=491 data-nosnippet>491</a>
-<a href=#492 id=492 data-nosnippet>492</a><span class="kw">impl </span>From&lt;u8&gt; <span class="kw">for </span>Operstate {
-<a href=#493 id=493 data-nosnippet>493</a>    <span class="kw">fn </span>from(value: u8) -&gt; <span class="self">Self </span>{
-<a href=#494 id=494 data-nosnippet>494</a>        <span class="kw">match </span>value {
-<a href=#495 id=495 data-nosnippet>495</a>            <span class="number">1 </span>=&gt; <span class="self">Self</span>::Notpresent,
-<a href=#496 id=496 data-nosnippet>496</a>            <span class="number">2 </span>=&gt; <span class="self">Self</span>::Down,
-<a href=#497 id=497 data-nosnippet>497</a>            <span class="number">3 </span>=&gt; <span class="self">Self</span>::Lowerlayerdown,
-<a href=#498 id=498 data-nosnippet>498</a>            <span class="number">4 </span>=&gt; <span class="self">Self</span>::Testing,
-<a href=#499 id=499 data-nosnippet>499</a>            <span class="number">5 </span>=&gt; <span class="self">Self</span>::Dormant,
-<a href=#500 id=500 data-nosnippet>500</a>            <span class="number">6 </span>=&gt; <span class="self">Self</span>::Up,
-<a href=#501 id=501 data-nosnippet>501</a>            <span class="kw">_ </span>=&gt; <span class="self">Self</span>::Unknown,
-<a href=#502 id=502 data-nosnippet>502</a>        }
-<a href=#503 id=503 data-nosnippet>503</a>    }
-<a href=#504 id=504 data-nosnippet>504</a>}</code></pre></div></section></main></body></html>
+<a href=#396 id=396 data-nosnippet>396</a>        NlPayload::Payload(Ifaddrmsg {
+<a href=#397 id=397 data-nosnippet>397</a>            ifa_family,
+<a href=#398 id=398 data-nosnippet>398</a>            ifa_prefixlen: <span class="number">0</span>,
+<a href=#399 id=399 data-nosnippet>399</a>            ifa_flags: IfaFFlags::empty(),
+<a href=#400 id=400 data-nosnippet>400</a>            ifa_scope: <span class="number">0</span>,
+<a href=#401 id=401 data-nosnippet>401</a>            ifa_index: <span class="number">0</span>,
+<a href=#402 id=402 data-nosnippet>402</a>            rtattrs: RtBuffer::new(),
+<a href=#403 id=403 data-nosnippet>403</a>        }),
+<a href=#404 id=404 data-nosnippet>404</a>    ))
+<a href=#405 id=405 data-nosnippet>405</a>    .<span class="kw">await</span><span class="question-mark">?</span>;
+<a href=#406 id=406 data-nosnippet>406</a>
+<a href=#407 id=407 data-nosnippet>407</a>    <span class="kw">let </span><span class="kw-2">mut </span>payload = <span class="prelude-val">None</span>;
+<a href=#408 id=408 data-nosnippet>408</a>
+<a href=#409 id=409 data-nosnippet>409</a>    <span class="macro">recv_until_done!</span>(sock, msg: Ifaddrmsg =&gt; {
+<a href=#410 id=410 data-nosnippet>410</a>        <span class="kw">if </span>msg.ifa_index != ifa_index || msg.ifa_scope &gt;= RT_SCOPE_HOST || payload.is_some() {
+<a href=#411 id=411 data-nosnippet>411</a>            <span class="kw">continue</span>;
+<a href=#412 id=412 data-nosnippet>412</a>        }
+<a href=#413 id=413 data-nosnippet>413</a>
+<a href=#414 id=414 data-nosnippet>414</a>        <span class="kw">let </span>attr_handle = msg.rtattrs.get_attr_handle();
+<a href=#415 id=415 data-nosnippet>415</a>
+<a href=#416 id=416 data-nosnippet>416</a>        <span class="kw">let </span><span class="prelude-val">Some</span>(attr) = attr_handle.get_attribute(Ifa::Local)
+<a href=#417 id=417 data-nosnippet>417</a>            .or_else(|| attr_handle.get_attribute(Ifa::Address))
+<a href=#418 id=418 data-nosnippet>418</a>        <span class="kw">else </span>{ <span class="kw">continue </span>};
+<a href=#419 id=419 data-nosnippet>419</a>
+<a href=#420 id=420 data-nosnippet>420</a>        <span class="kw">if let </span><span class="prelude-val">Ok</span>(p) = attr.rta_payload.as_ref().try_into() {
+<a href=#421 id=421 data-nosnippet>421</a>            payload = <span class="prelude-val">Some</span>(p);
+<a href=#422 id=422 data-nosnippet>422</a>        }
+<a href=#423 id=423 data-nosnippet>423</a>    });
+<a href=#424 id=424 data-nosnippet>424</a>
+<a href=#425 id=425 data-nosnippet>425</a>    <span class="prelude-val">Ok</span>(payload)
+<a href=#426 id=426 data-nosnippet>426</a>}
+<a href=#427 id=427 data-nosnippet>427</a>
+<a href=#428 id=428 data-nosnippet>428</a><span class="kw">async fn </span>ipv4(sock: <span class="kw-2">&amp;mut </span>NlSocket, ifa_index: i32) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Ipv4Addr&gt;&gt; {
+<a href=#429 id=429 data-nosnippet>429</a>    <span class="prelude-val">Ok</span>(ip_payload(sock, RtAddrFamily::Inet, ifa_index)
+<a href=#430 id=430 data-nosnippet>430</a>        .<span class="kw">await
+<a href=#431 id=431 data-nosnippet>431</a>        </span>.map_err(BoxErrorWrapper)
+<a href=#432 id=432 data-nosnippet>432</a>        .error(<span class="string">"Failed to get IP address"</span>)<span class="question-mark">?
+<a href=#433 id=433 data-nosnippet>433</a>        </span>.map(Ipv4Addr::from))
+<a href=#434 id=434 data-nosnippet>434</a>}
+<a href=#435 id=435 data-nosnippet>435</a>
+<a href=#436 id=436 data-nosnippet>436</a><span class="kw">async fn </span>ipv6(sock: <span class="kw-2">&amp;mut </span>NlSocket, ifa_index: i32) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Ipv6Addr&gt;&gt; {
+<a href=#437 id=437 data-nosnippet>437</a>    <span class="prelude-val">Ok</span>(ip_payload(sock, RtAddrFamily::Inet6, ifa_index)
+<a href=#438 id=438 data-nosnippet>438</a>        .<span class="kw">await
+<a href=#439 id=439 data-nosnippet>439</a>        </span>.map_err(BoxErrorWrapper)
+<a href=#440 id=440 data-nosnippet>440</a>        .error(<span class="string">"Failed to get IPv6 address"</span>)<span class="question-mark">?
+<a href=#441 id=441 data-nosnippet>441</a>        </span>.map(Ipv6Addr::from))
+<a href=#442 id=442 data-nosnippet>442</a>}
+<a href=#443 id=443 data-nosnippet>443</a>
+<a href=#444 id=444 data-nosnippet>444</a><span class="kw">async fn </span>read_nameservers() -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;IpAddr&gt;&gt; {
+<a href=#445 id=445 data-nosnippet>445</a>    <span class="kw">let </span>file = util::read_file(<span class="string">"/etc/resolv.conf"</span>)
+<a href=#446 id=446 data-nosnippet>446</a>        .<span class="kw">await
+<a href=#447 id=447 data-nosnippet>447</a>        </span>.error(<span class="string">"Failed to read /etc/resolv.conf"</span>)<span class="question-mark">?</span>;
+<a href=#448 id=448 data-nosnippet>448</a>    <span class="kw">let </span><span class="kw-2">mut </span>nameservers = Vec::new();
+<a href=#449 id=449 data-nosnippet>449</a>
+<a href=#450 id=450 data-nosnippet>450</a>    <span class="kw">for </span>line <span class="kw">in </span>file.lines() {
+<a href=#451 id=451 data-nosnippet>451</a>        <span class="kw">let </span><span class="kw-2">mut </span>line_parts = line.split_whitespace();
+<a href=#452 id=452 data-nosnippet>452</a>        <span class="kw">if </span>line_parts.next() == <span class="prelude-val">Some</span>(<span class="string">"nameserver"</span>)
+<a href=#453 id=453 data-nosnippet>453</a>            &amp;&amp; <span class="kw">let </span><span class="prelude-val">Some</span>(<span class="kw-2">mut </span>ip) = line_parts.next()
+<a href=#454 id=454 data-nosnippet>454</a>        {
+<a href=#455 id=455 data-nosnippet>455</a>            <span class="comment">// TODO: use the zone id somehow?
+<a href=#456 id=456 data-nosnippet>456</a>            </span><span class="kw">if let </span><span class="prelude-val">Some</span>((without_zone_id, _zone_id)) = ip.split_once(<span class="string">'%'</span>) {
+<a href=#457 id=457 data-nosnippet>457</a>                ip = without_zone_id;
+<a href=#458 id=458 data-nosnippet>458</a>            }
+<a href=#459 id=459 data-nosnippet>459</a>            nameservers.push(ip.parse().error(<span class="string">"Unable to parse ip"</span>)<span class="question-mark">?</span>);
+<a href=#460 id=460 data-nosnippet>460</a>        }
+<a href=#461 id=461 data-nosnippet>461</a>    }
+<a href=#462 id=462 data-nosnippet>462</a>
+<a href=#463 id=463 data-nosnippet>463</a>    <span class="prelude-val">Ok</span>(nameservers)
+<a href=#464 id=464 data-nosnippet>464</a>}
+<a href=#465 id=465 data-nosnippet>465</a>
+<a href=#466 id=466 data-nosnippet>466</a><span class="comment">// Source: https://www.kernel.org/doc/Documentation/networking/operstates.txt
+<a href=#467 id=467 data-nosnippet>467</a></span><span class="attr">#[derive(Debug, PartialEq, Eq)]
+<a href=#468 id=468 data-nosnippet>468</a></span><span class="kw">pub enum </span>Operstate {
+<a href=#469 id=469 data-nosnippet>469</a>    <span class="doccomment">/// Interface is in unknown state, neither driver nor userspace has set
+<a href=#470 id=470 data-nosnippet>470</a>    /// operational state. Interface must be considered for user data as
+<a href=#471 id=471 data-nosnippet>471</a>    /// setting operational state has not been implemented in every driver.
+<a href=#472 id=472 data-nosnippet>472</a>    </span>Unknown,
+<a href=#473 id=473 data-nosnippet>473</a>    <span class="doccomment">/// Unused in current kernel (notpresent interfaces normally disappear),
+<a href=#474 id=474 data-nosnippet>474</a>    /// just a numerical placeholder.
+<a href=#475 id=475 data-nosnippet>475</a>    </span>Notpresent,
+<a href=#476 id=476 data-nosnippet>476</a>    <span class="doccomment">/// Interface is unable to transfer data on L1, f.e. ethernet is not
+<a href=#477 id=477 data-nosnippet>477</a>    /// plugged or interface is ADMIN down.
+<a href=#478 id=478 data-nosnippet>478</a>    </span>Down,
+<a href=#479 id=479 data-nosnippet>479</a>    <span class="doccomment">/// Interfaces stacked on an interface that is IF_OPER_DOWN show this
+<a href=#480 id=480 data-nosnippet>480</a>    /// state (f.e. VLAN).
+<a href=#481 id=481 data-nosnippet>481</a>    </span>Lowerlayerdown,
+<a href=#482 id=482 data-nosnippet>482</a>    <span class="doccomment">/// Unused in current kernel.
+<a href=#483 id=483 data-nosnippet>483</a>    </span>Testing,
+<a href=#484 id=484 data-nosnippet>484</a>    <span class="doccomment">/// Interface is L1 up, but waiting for an external event, f.e. for a
+<a href=#485 id=485 data-nosnippet>485</a>    /// protocol to establish. (802.1X)
+<a href=#486 id=486 data-nosnippet>486</a>    </span>Dormant,
+<a href=#487 id=487 data-nosnippet>487</a>    <span class="doccomment">/// Interface is operational up and can be used.
+<a href=#488 id=488 data-nosnippet>488</a>    </span>Up,
+<a href=#489 id=489 data-nosnippet>489</a>}
+<a href=#490 id=490 data-nosnippet>490</a>
+<a href=#491 id=491 data-nosnippet>491</a><span class="kw">impl </span>From&lt;u8&gt; <span class="kw">for </span>Operstate {
+<a href=#492 id=492 data-nosnippet>492</a>    <span class="kw">fn </span>from(value: u8) -&gt; <span class="self">Self </span>{
+<a href=#493 id=493 data-nosnippet>493</a>        <span class="kw">match </span>value {
+<a href=#494 id=494 data-nosnippet>494</a>            <span class="number">1 </span>=&gt; <span class="self">Self</span>::Notpresent,
+<a href=#495 id=495 data-nosnippet>495</a>            <span class="number">2 </span>=&gt; <span class="self">Self</span>::Down,
+<a href=#496 id=496 data-nosnippet>496</a>            <span class="number">3 </span>=&gt; <span class="self">Self</span>::Lowerlayerdown,
+<a href=#497 id=497 data-nosnippet>497</a>            <span class="number">4 </span>=&gt; <span class="self">Self</span>::Testing,
+<a href=#498 id=498 data-nosnippet>498</a>            <span class="number">5 </span>=&gt; <span class="self">Self</span>::Dormant,
+<a href=#499 id=499 data-nosnippet>499</a>            <span class="number">6 </span>=&gt; <span class="self">Self</span>::Up,
+<a href=#500 id=500 data-nosnippet>500</a>            <span class="kw">_ </span>=&gt; <span class="self">Self</span>::Unknown,
+<a href=#501 id=501 data-nosnippet>501</a>        }
+<a href=#502 id=502 data-nosnippet>502</a>    }
+<a href=#503 id=503 data-nosnippet>503</a>}</code></pre></div></section></main></body></html>

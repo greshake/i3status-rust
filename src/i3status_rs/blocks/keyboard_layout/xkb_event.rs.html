@@ -133,10 +133,10 @@
 <a href=#133 id=133 data-nosnippet>133</a>                .<span class="kw">await
 <a href=#134 id=134 data-nosnippet>134</a>                </span>.error(<span class="string">"Failed to read the event"</span>)<span class="question-mark">?</span>;
 <a href=#135 id=135 data-nosnippet>135</a>
-<a href=#136 id=136 data-nosnippet>136</a>            <span class="kw">if let </span>Event::XkbStateNotify(e) = event {
-<a href=#137 id=137 data-nosnippet>137</a>                <span class="kw">if </span>e.changed.contains(xkb::StatePart::GROUP_STATE) {
-<a href=#138 id=138 data-nosnippet>138</a>                    <span class="kw">return </span><span class="prelude-val">Ok</span>(());
-<a href=#139 id=139 data-nosnippet>139</a>                }
+<a href=#136 id=136 data-nosnippet>136</a>            <span class="kw">if let </span>Event::XkbStateNotify(e) = event
+<a href=#137 id=137 data-nosnippet>137</a>                &amp;&amp; e.changed.contains(xkb::StatePart::GROUP_STATE)
+<a href=#138 id=138 data-nosnippet>138</a>            {
+<a href=#139 id=139 data-nosnippet>139</a>                <span class="kw">return </span><span class="prelude-val">Ok</span>(());
 <a href=#140 id=140 data-nosnippet>140</a>            }
 <a href=#141 id=141 data-nosnippet>141</a>        }
 <a href=#142 id=142 data-nosnippet>142</a>    }

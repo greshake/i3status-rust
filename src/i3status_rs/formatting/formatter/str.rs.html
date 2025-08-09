@@ -61,10 +61,10 @@
 <a href=#61 id=61 data-nosnippet>61</a>                <span class="string">"Max width must be greater of equal to min width"</span>,
 <a href=#62 id=62 data-nosnippet>62</a>            ));
 <a href=#63 id=63 data-nosnippet>63</a>        }
-<a href=#64 id=64 data-nosnippet>64</a>        <span class="kw">if let </span><span class="prelude-val">Some</span>(rot_interval) = rot_interval {
-<a href=#65 id=65 data-nosnippet>65</a>            <span class="kw">if </span>rot_interval &lt; <span class="number">0.1 </span>{
-<a href=#66 id=66 data-nosnippet>66</a>                <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="string">"Interval must be greater than 0.1"</span>));
-<a href=#67 id=67 data-nosnippet>67</a>            }
+<a href=#64 id=64 data-nosnippet>64</a>        <span class="kw">if let </span><span class="prelude-val">Some</span>(rot_interval) = rot_interval
+<a href=#65 id=65 data-nosnippet>65</a>            &amp;&amp; rot_interval &lt; <span class="number">0.1
+<a href=#66 id=66 data-nosnippet>66</a>        </span>{
+<a href=#67 id=67 data-nosnippet>67</a>            <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="string">"Interval must be greater than 0.1"</span>));
 <a href=#68 id=68 data-nosnippet>68</a>        }
 <a href=#69 id=69 data-nosnippet>69</a>        <span class="prelude-val">Ok</span>(StrFormatter {
 <a href=#70 id=70 data-nosnippet>70</a>            min_width,

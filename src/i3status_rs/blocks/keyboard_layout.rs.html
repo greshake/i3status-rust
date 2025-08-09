@@ -140,10 +140,10 @@
 <a href=#140 id=140 data-nosnippet>140</a>        } = backend.get_info().<span class="kw">await</span><span class="question-mark">?</span>;
 <a href=#141 id=141 data-nosnippet>141</a>
 <a href=#142 id=142 data-nosnippet>142</a>        <span class="kw">let </span>variant = variant.unwrap_or_else(|| <span class="string">"N/A"</span>.into());
-<a href=#143 id=143 data-nosnippet>143</a>        <span class="kw">if let </span><span class="prelude-val">Some</span>(mappings) = <span class="kw-2">&amp;</span>config.mappings {
-<a href=#144 id=144 data-nosnippet>144</a>            <span class="kw">if let </span><span class="prelude-val">Some</span>(mapped) = mappings.get(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"{layout} ({variant})"</span>)) {
-<a href=#145 id=145 data-nosnippet>145</a>                layout.clone_from(mapped);
-<a href=#146 id=146 data-nosnippet>146</a>            }
+<a href=#143 id=143 data-nosnippet>143</a>        <span class="kw">if let </span><span class="prelude-val">Some</span>(mappings) = <span class="kw-2">&amp;</span>config.mappings
+<a href=#144 id=144 data-nosnippet>144</a>            &amp;&amp; <span class="kw">let </span><span class="prelude-val">Some</span>(mapped) = mappings.get(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">"{layout} ({variant})"</span>))
+<a href=#145 id=145 data-nosnippet>145</a>        {
+<a href=#146 id=146 data-nosnippet>146</a>            layout.clone_from(mapped);
 <a href=#147 id=147 data-nosnippet>147</a>        }
 <a href=#148 id=148 data-nosnippet>148</a>
 <a href=#149 id=149 data-nosnippet>149</a>        <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());

@@ -149,67 +149,65 @@
 <a href=#149 id=149 data-nosnippet>149</a>                        }
 <a href=#150 id=150 data-nosnippet>150</a>                    }
 <a href=#151 id=151 data-nosnippet>151</a>                    <span class="kw">for </span>subfeat <span class="kw">in </span>feat {
-<a href=#152 id=152 data-nosnippet>152</a>                        <span class="kw">if </span><span class="kw-2">*</span>subfeat.subfeature_type() == SENSORS_SUBFEATURE_TEMP_INPUT {
-<a href=#153 id=153 data-nosnippet>153</a>                            <span class="kw">if let </span><span class="prelude-val">Ok</span>(value) = subfeat.get_value() {
-<a href=#154 id=154 data-nosnippet>154</a>                                <span class="kw">if </span>(-<span class="number">100.0</span>..=<span class="number">150.0</span>).contains(<span class="kw-2">&amp;</span>value) {
-<a href=#155 id=155 data-nosnippet>155</a>                                    vals.push(config_scale.from_celsius(value));
-<a href=#156 id=156 data-nosnippet>156</a>                                } <span class="kw">else </span>{
-<a href=#157 id=157 data-nosnippet>157</a>                                    <span class="macro">eprintln!</span>(
-<a href=#158 id=158 data-nosnippet>158</a>                                        <span class="string">"Temperature ({value}) outside of range ([-100, 150])"
-<a href=#159 id=159 data-nosnippet>159</a>                                    </span>);
-<a href=#160 id=160 data-nosnippet>160</a>                                }
-<a href=#161 id=161 data-nosnippet>161</a>                            }
-<a href=#162 id=162 data-nosnippet>162</a>                        }
-<a href=#163 id=163 data-nosnippet>163</a>                    }
-<a href=#164 id=164 data-nosnippet>164</a>                }
-<a href=#165 id=165 data-nosnippet>165</a>            }
-<a href=#166 id=166 data-nosnippet>166</a>            <span class="prelude-val">Ok</span>(vals)
-<a href=#167 id=167 data-nosnippet>167</a>        })
-<a href=#168 id=168 data-nosnippet>168</a>        .<span class="kw">await
-<a href=#169 id=169 data-nosnippet>169</a>        </span>.error(<span class="string">"Failed to join tokio task"</span>)<span class="question-mark">??</span>;
-<a href=#170 id=170 data-nosnippet>170</a>
-<a href=#171 id=171 data-nosnippet>171</a>        <span class="kw">let </span>min_temp = temp
-<a href=#172 id=172 data-nosnippet>172</a>            .iter()
-<a href=#173 id=173 data-nosnippet>173</a>            .min_by(|a, b| a.partial_cmp(b).unwrap())
-<a href=#174 id=174 data-nosnippet>174</a>            .cloned()
-<a href=#175 id=175 data-nosnippet>175</a>            .unwrap_or(<span class="number">0.0</span>);
-<a href=#176 id=176 data-nosnippet>176</a>        <span class="kw">let </span>max_temp = temp
-<a href=#177 id=177 data-nosnippet>177</a>            .iter()
-<a href=#178 id=178 data-nosnippet>178</a>            .max_by(|a, b| a.partial_cmp(b).unwrap())
-<a href=#179 id=179 data-nosnippet>179</a>            .cloned()
-<a href=#180 id=180 data-nosnippet>180</a>            .unwrap_or(<span class="number">0.0</span>);
-<a href=#181 id=181 data-nosnippet>181</a>        <span class="kw">let </span>avg_temp = temp.iter().sum::&lt;f64&gt;() / temp.len() <span class="kw">as </span>f64;
+<a href=#152 id=152 data-nosnippet>152</a>                        <span class="kw">if </span><span class="kw-2">*</span>subfeat.subfeature_type() == SENSORS_SUBFEATURE_TEMP_INPUT
+<a href=#153 id=153 data-nosnippet>153</a>                            &amp;&amp; <span class="kw">let </span><span class="prelude-val">Ok</span>(value) = subfeat.get_value()
+<a href=#154 id=154 data-nosnippet>154</a>                        {
+<a href=#155 id=155 data-nosnippet>155</a>                            <span class="kw">if </span>(-<span class="number">100.0</span>..=<span class="number">150.0</span>).contains(<span class="kw-2">&amp;</span>value) {
+<a href=#156 id=156 data-nosnippet>156</a>                                vals.push(config_scale.from_celsius(value));
+<a href=#157 id=157 data-nosnippet>157</a>                            } <span class="kw">else </span>{
+<a href=#158 id=158 data-nosnippet>158</a>                                <span class="macro">eprintln!</span>(<span class="string">"Temperature ({value}) outside of range ([-100, 150])"</span>);
+<a href=#159 id=159 data-nosnippet>159</a>                            }
+<a href=#160 id=160 data-nosnippet>160</a>                        }
+<a href=#161 id=161 data-nosnippet>161</a>                    }
+<a href=#162 id=162 data-nosnippet>162</a>                }
+<a href=#163 id=163 data-nosnippet>163</a>            }
+<a href=#164 id=164 data-nosnippet>164</a>            <span class="prelude-val">Ok</span>(vals)
+<a href=#165 id=165 data-nosnippet>165</a>        })
+<a href=#166 id=166 data-nosnippet>166</a>        .<span class="kw">await
+<a href=#167 id=167 data-nosnippet>167</a>        </span>.error(<span class="string">"Failed to join tokio task"</span>)<span class="question-mark">??</span>;
+<a href=#168 id=168 data-nosnippet>168</a>
+<a href=#169 id=169 data-nosnippet>169</a>        <span class="kw">let </span>min_temp = temp
+<a href=#170 id=170 data-nosnippet>170</a>            .iter()
+<a href=#171 id=171 data-nosnippet>171</a>            .min_by(|a, b| a.partial_cmp(b).unwrap())
+<a href=#172 id=172 data-nosnippet>172</a>            .cloned()
+<a href=#173 id=173 data-nosnippet>173</a>            .unwrap_or(<span class="number">0.0</span>);
+<a href=#174 id=174 data-nosnippet>174</a>        <span class="kw">let </span>max_temp = temp
+<a href=#175 id=175 data-nosnippet>175</a>            .iter()
+<a href=#176 id=176 data-nosnippet>176</a>            .max_by(|a, b| a.partial_cmp(b).unwrap())
+<a href=#177 id=177 data-nosnippet>177</a>            .cloned()
+<a href=#178 id=178 data-nosnippet>178</a>            .unwrap_or(<span class="number">0.0</span>);
+<a href=#179 id=179 data-nosnippet>179</a>        <span class="kw">let </span>avg_temp = temp.iter().sum::&lt;f64&gt;() / temp.len() <span class="kw">as </span>f64;
+<a href=#180 id=180 data-nosnippet>180</a>
+<a href=#181 id=181 data-nosnippet>181</a>        <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
 <a href=#182 id=182 data-nosnippet>182</a>
-<a href=#183 id=183 data-nosnippet>183</a>        <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
-<a href=#184 id=184 data-nosnippet>184</a>
-<a href=#185 id=185 data-nosnippet>185</a>        widget.state = <span class="kw">match </span>max_temp {
-<a href=#186 id=186 data-nosnippet>186</a>            x <span class="kw">if </span>x &lt;= good =&gt; State::Good,
-<a href=#187 id=187 data-nosnippet>187</a>            x <span class="kw">if </span>x &lt;= idle =&gt; State::Idle,
-<a href=#188 id=188 data-nosnippet>188</a>            x <span class="kw">if </span>x &lt;= info =&gt; State::Info,
-<a href=#189 id=189 data-nosnippet>189</a>            x <span class="kw">if </span>x &lt;= warn =&gt; State::Warning,
-<a href=#190 id=190 data-nosnippet>190</a>            <span class="kw">_ </span>=&gt; State::Critical,
-<a href=#191 id=191 data-nosnippet>191</a>        };
-<a href=#192 id=192 data-nosnippet>192</a>
-<a href=#193 id=193 data-nosnippet>193</a>        widget.set_values(<span class="macro">map!</span> {
-<a href=#194 id=194 data-nosnippet>194</a>            <span class="string">"icon" </span>=&gt; Value::icon_progression_bound(<span class="string">"thermometer"</span>, max_temp, good, warn),
-<a href=#195 id=195 data-nosnippet>195</a>            <span class="string">"average" </span>=&gt; Value::degrees(avg_temp),
-<a href=#196 id=196 data-nosnippet>196</a>            <span class="string">"min" </span>=&gt; Value::degrees(min_temp),
-<a href=#197 id=197 data-nosnippet>197</a>            <span class="string">"max" </span>=&gt; Value::degrees(max_temp),
-<a href=#198 id=198 data-nosnippet>198</a>        });
+<a href=#183 id=183 data-nosnippet>183</a>        widget.state = <span class="kw">match </span>max_temp {
+<a href=#184 id=184 data-nosnippet>184</a>            x <span class="kw">if </span>x &lt;= good =&gt; State::Good,
+<a href=#185 id=185 data-nosnippet>185</a>            x <span class="kw">if </span>x &lt;= idle =&gt; State::Idle,
+<a href=#186 id=186 data-nosnippet>186</a>            x <span class="kw">if </span>x &lt;= info =&gt; State::Info,
+<a href=#187 id=187 data-nosnippet>187</a>            x <span class="kw">if </span>x &lt;= warn =&gt; State::Warning,
+<a href=#188 id=188 data-nosnippet>188</a>            <span class="kw">_ </span>=&gt; State::Critical,
+<a href=#189 id=189 data-nosnippet>189</a>        };
+<a href=#190 id=190 data-nosnippet>190</a>
+<a href=#191 id=191 data-nosnippet>191</a>        widget.set_values(<span class="macro">map!</span> {
+<a href=#192 id=192 data-nosnippet>192</a>            <span class="string">"icon" </span>=&gt; Value::icon_progression_bound(<span class="string">"thermometer"</span>, max_temp, good, warn),
+<a href=#193 id=193 data-nosnippet>193</a>            <span class="string">"average" </span>=&gt; Value::degrees(avg_temp),
+<a href=#194 id=194 data-nosnippet>194</a>            <span class="string">"min" </span>=&gt; Value::degrees(min_temp),
+<a href=#195 id=195 data-nosnippet>195</a>            <span class="string">"max" </span>=&gt; Value::degrees(max_temp),
+<a href=#196 id=196 data-nosnippet>196</a>        });
+<a href=#197 id=197 data-nosnippet>197</a>
+<a href=#198 id=198 data-nosnippet>198</a>        api.set_widget(widget)<span class="question-mark">?</span>;
 <a href=#199 id=199 data-nosnippet>199</a>
-<a href=#200 id=200 data-nosnippet>200</a>        api.set_widget(widget)<span class="question-mark">?</span>;
-<a href=#201 id=201 data-nosnippet>201</a>
-<a href=#202 id=202 data-nosnippet>202</a>        <span class="macro">select!</span> {
-<a href=#203 id=203 data-nosnippet>203</a>            <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt; (),
-<a href=#204 id=204 data-nosnippet>204</a>            <span class="kw">_ </span>= api.wait_for_update_request() =&gt; (),
-<a href=#205 id=205 data-nosnippet>205</a>            <span class="prelude-val">Some</span>(action) = actions.recv() =&gt; <span class="kw">match </span>action.as_ref() {
-<a href=#206 id=206 data-nosnippet>206</a>                <span class="string">"toggle_format" </span>=&gt; {
-<a href=#207 id=207 data-nosnippet>207</a>                    <span class="kw">if let </span><span class="prelude-val">Some</span>(format_alt) = <span class="kw-2">&amp;mut </span>format_alt {
-<a href=#208 id=208 data-nosnippet>208</a>                        std::mem::swap(format_alt, <span class="kw-2">&amp;mut </span>format);
-<a href=#209 id=209 data-nosnippet>209</a>                    }
-<a href=#210 id=210 data-nosnippet>210</a>                }
-<a href=#211 id=211 data-nosnippet>211</a>                <span class="kw">_ </span>=&gt; (),
-<a href=#212 id=212 data-nosnippet>212</a>            }
-<a href=#213 id=213 data-nosnippet>213</a>        }
-<a href=#214 id=214 data-nosnippet>214</a>    }
-<a href=#215 id=215 data-nosnippet>215</a>}</code></pre></div></section></main></body></html>
+<a href=#200 id=200 data-nosnippet>200</a>        <span class="macro">select!</span> {
+<a href=#201 id=201 data-nosnippet>201</a>            <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt; (),
+<a href=#202 id=202 data-nosnippet>202</a>            <span class="kw">_ </span>= api.wait_for_update_request() =&gt; (),
+<a href=#203 id=203 data-nosnippet>203</a>            <span class="prelude-val">Some</span>(action) = actions.recv() =&gt; <span class="kw">match </span>action.as_ref() {
+<a href=#204 id=204 data-nosnippet>204</a>                <span class="string">"toggle_format" </span>=&gt; {
+<a href=#205 id=205 data-nosnippet>205</a>                    <span class="kw">if let </span><span class="prelude-val">Some</span>(format_alt) = <span class="kw-2">&amp;mut </span>format_alt {
+<a href=#206 id=206 data-nosnippet>206</a>                        std::mem::swap(format_alt, <span class="kw-2">&amp;mut </span>format);
+<a href=#207 id=207 data-nosnippet>207</a>                    }
+<a href=#208 id=208 data-nosnippet>208</a>                }
+<a href=#209 id=209 data-nosnippet>209</a>                <span class="kw">_ </span>=&gt; (),
+<a href=#210 id=210 data-nosnippet>210</a>            }
+<a href=#211 id=211 data-nosnippet>211</a>        }
+<a href=#212 id=212 data-nosnippet>212</a>    }
+<a href=#213 id=213 data-nosnippet>213</a>}</code></pre></div></section></main></body></html>
