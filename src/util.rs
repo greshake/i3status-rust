@@ -204,25 +204,17 @@ macro_rules! make_log_macro {
     };
 }
 
-pub fn format_bar_graph(content: &[f64]) -> String {
+pub fn format_bar_graph(content: &[f64], max: f64) -> String {
     // (x * one eighth block) https://en.wikipedia.org/wiki/Block_Elements
-    static BARS: [char; 8] = [
+    static BARS: [char; 9] = [
+        ' ',
         '\u{2581}', '\u{2582}', '\u{2583}', '\u{2584}', '\u{2585}', '\u{2586}', '\u{2587}',
         '\u{2588}',
     ];
 
-    // Find min and max
-    let mut min = f64::INFINITY;
-    let mut max = f64::NEG_INFINITY;
-    for &v in content {
-        min = min.min(v);
-        max = max.max(v);
-    }
-
-    let range = max - min;
     content
         .iter()
-        .map(|x| BARS[((x - min) / range * 7.).clamp(0., 7.) as usize])
+        .map(|x| BARS[(x / max * 8.).clamp(0., 8.) as usize])
         .collect()
 }
 

@@ -8,6 +8,8 @@
 //! ----|--------|--------
 //! `device` | Network interface to monitor (as specified in `/sys/class/net/`). Supports regex. | If not set, device will be automatically selected every `interval`
 //! `interval` | Update interval in seconds | `2`
+//! `network_speed_down` | Network speed in Mbit / s | `None`
+//! `network_speed_up` | Network speed in Mbit / s | `None`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon ^icon_net_down $speed_down.eng(prefix:K) ^icon_net_up $speed_up.eng(prefix:K) "`
 //! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
 //! `inactive_format` | Same as `format` but for when the interface is inactive | `" $icon Down "`
@@ -76,6 +78,14 @@ pub struct Config {
     pub format_alt: Option<FormatConfig>,
     pub inactive_format: FormatConfig,
     pub missing_format: FormatConfig,
+    pub network_speed_down: Option<f64>,
+    pub network_speed_up: Option<f64>
+}
+
+#[derive(Debug)]
+pub struct NetworkSpeed {
+    pub down: f64,
+    pub up: f64
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
@@ -106,6 +116,16 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut stats_timer = Instant::now();
     let mut tx_hist = [0f64; 8];
     let mut rx_hist = [0f64; 8];
+
+    // Speed graph
+    const SPEED_DECAY: f64 = 0.99; // Decay factor for the running maximum
+    let mut max_network_speeds: NetworkSpeed = config.network_speed_down
+        .zip(config.network_speed_up)
+        .map(|(down, up)| NetworkSpeed { down: down * 125000f64, up: up * 125000f64 })
+        .unwrap_or(NetworkSpeed {
+            down: f64::NEG_INFINITY,
+            up: f64::NEG_INFINITY
+        });
 
     loop {
         match NetDevice::new(device_re.as_ref()).await? {
@@ -143,6 +163,12 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 push_to_hist(&mut rx_hist, speed_down);
                 push_to_hist(&mut tx_hist, speed_up);
 
+                // Update running maximum
+                max_network_speeds = NetworkSpeed {
+                    down: if max_network_speeds.down > speed_down { max_network_speeds.down } else { speed_down * SPEED_DECAY },
+                    up: if max_network_speeds.up > speed_up { max_network_speeds.up } else { speed_up * SPEED_DECAY },
+                };
+
                 let icon = if let Some(signal) = device.signal() {
                     Value::icon_progression(device.icon, signal / 100.0)
                 } else {
@@ -153,8 +179,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     "icon" => icon,
                     "speed_down" => Value::bytes(speed_down),
                     "speed_up" => Value::bytes(speed_up),
-                    "graph_down" => Value::text(util::format_bar_graph(&rx_hist)),
-                    "graph_up" => Value::text(util::format_bar_graph(&tx_hist)),
+                    "graph_down" => Value::text(util::format_bar_graph(&rx_hist, max_network_speeds.down)),
+                    "graph_up" => Value::text(util::format_bar_graph(&tx_hist, max_network_speeds.up)),
                     [if let Some(v) = device.ip] "ip" => Value::text(v.to_string()),
                     [if let Some(v) = device.ipv6] "ipv6" => Value::text(v.to_string()),
                     [if let Some(v) = device.ssid()] "ssid" => Value::text(v),
