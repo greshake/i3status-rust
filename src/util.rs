@@ -214,7 +214,7 @@ pub fn format_bar_graph(content: &[f64], max: f64) -> String {
 
     content
         .iter()
-        .map(|x| BARS[(x / max * 8.).clamp(0., 8.) as usize])
+        .map(|x| BARS[(x / max * 8.).ceil().clamp(0., 8.) as usize])
         .collect()
 }
 
