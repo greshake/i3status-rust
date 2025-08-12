@@ -144,50 +144,48 @@
 <a href=#144 id=144 data-nosnippet>144</a>            <span class="kw">let </span><span class="kw-2">mut </span>path = entry.path();
 <a href=#145 id=145 data-nosnippet>145</a>            path.push(<span class="string">"device"</span>);
 <a href=#146 id=146 data-nosnippet>146</a>
-<a href=#147 id=147 data-nosnippet>147</a>            <span class="kw">let </span><span class="prelude-val">Ok</span>(uevent) = read_file(path.join(<span class="string">"uevent"</span>)).<span class="kw">await else </span>{
-<a href=#148 id=148 data-nosnippet>148</a>                <span class="kw">continue</span>;
-<a href=#149 id=149 data-nosnippet>149</a>            };
-<a href=#150 id=150 data-nosnippet>150</a>
-<a href=#151 id=151 data-nosnippet>151</a>            <span class="kw">if </span>uevent.contains(<span class="string">"PCI_ID=1002"</span>) {
-<a href=#152 id=152 data-nosnippet>152</a>                <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="self">Self </span>{ path }));
-<a href=#153 id=153 data-nosnippet>153</a>            }
-<a href=#154 id=154 data-nosnippet>154</a>        }
-<a href=#155 id=155 data-nosnippet>155</a>
-<a href=#156 id=156 data-nosnippet>156</a>        <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
-<a href=#157 id=157 data-nosnippet>157</a>    }
-<a href=#158 id=158 data-nosnippet>158</a>
-<a href=#159 id=159 data-nosnippet>159</a>    <span class="kw">async fn </span>read_prop&lt;T: FromStr&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, prop: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Option</span>&lt;T&gt; {
-<a href=#160 id=160 data-nosnippet>160</a>        read_file(<span class="self">self</span>.path.join(prop))
-<a href=#161 id=161 data-nosnippet>161</a>            .<span class="kw">await
-<a href=#162 id=162 data-nosnippet>162</a>            </span>.ok()
-<a href=#163 id=163 data-nosnippet>163</a>            .and_then(|x| x.parse().ok())
-<a href=#164 id=164 data-nosnippet>164</a>    }
-<a href=#165 id=165 data-nosnippet>165</a>
-<a href=#166 id=166 data-nosnippet>166</a>    <span class="kw">async fn </span>read_info(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;GpuInfo&gt; {
-<a href=#167 id=167 data-nosnippet>167</a>        <span class="prelude-val">Ok</span>(GpuInfo {
-<a href=#168 id=168 data-nosnippet>168</a>            utilization_percents: <span class="self">self
-<a href=#169 id=169 data-nosnippet>169</a>                </span>.read_prop::&lt;f64&gt;(<span class="string">"gpu_busy_percent"</span>)
-<a href=#170 id=170 data-nosnippet>170</a>                .<span class="kw">await
-<a href=#171 id=171 data-nosnippet>171</a>                </span>.error(<span class="string">"Failed to read gpu_busy_percent"</span>)<span class="question-mark">?</span>,
-<a href=#172 id=172 data-nosnippet>172</a>            vram_total_bytes: <span class="self">self
-<a href=#173 id=173 data-nosnippet>173</a>                </span>.read_prop::&lt;f64&gt;(<span class="string">"mem_info_vram_total"</span>)
-<a href=#174 id=174 data-nosnippet>174</a>                .<span class="kw">await
-<a href=#175 id=175 data-nosnippet>175</a>                </span>.error(<span class="string">"Failed to read mem_info_vram_total"</span>)<span class="question-mark">?</span>,
-<a href=#176 id=176 data-nosnippet>176</a>            vram_used_bytes: <span class="self">self
-<a href=#177 id=177 data-nosnippet>177</a>                </span>.read_prop::&lt;f64&gt;(<span class="string">"mem_info_vram_used"</span>)
-<a href=#178 id=178 data-nosnippet>178</a>                .<span class="kw">await
-<a href=#179 id=179 data-nosnippet>179</a>                </span>.error(<span class="string">"Failed to read mem_info_vram_used"</span>)<span class="question-mark">?</span>,
-<a href=#180 id=180 data-nosnippet>180</a>        })
-<a href=#181 id=181 data-nosnippet>181</a>    }
-<a href=#182 id=182 data-nosnippet>182</a>}
-<a href=#183 id=183 data-nosnippet>183</a>
-<a href=#184 id=184 data-nosnippet>184</a><span class="attr">#[cfg(test)]
-<a href=#185 id=185 data-nosnippet>185</a></span><span class="kw">mod </span>tests {
-<a href=#186 id=186 data-nosnippet>186</a>    <span class="kw">use super</span>::<span class="kw-2">*</span>;
-<a href=#187 id=187 data-nosnippet>187</a>
-<a href=#188 id=188 data-nosnippet>188</a>    <span class="attr">#[test]
-<a href=#189 id=189 data-nosnippet>189</a>    </span><span class="kw">fn </span>test_non_existing_gpu_device() {
-<a href=#190 id=190 data-nosnippet>190</a>        <span class="kw">let </span>device = Device::new(<span class="string">"/nope"</span>);
-<a href=#191 id=191 data-nosnippet>191</a>        <span class="macro">assert!</span>(device.is_err());
-<a href=#192 id=192 data-nosnippet>192</a>    }
-<a href=#193 id=193 data-nosnippet>193</a>}</code></pre></div></section></main></body></html>
+<a href=#147 id=147 data-nosnippet>147</a>            <span class="kw">if let </span><span class="prelude-val">Ok</span>(uevent) = read_file(path.join(<span class="string">"uevent"</span>)).<span class="kw">await
+<a href=#148 id=148 data-nosnippet>148</a>                </span>&amp;&amp; uevent.contains(<span class="string">"PCI_ID=1002"</span>)
+<a href=#149 id=149 data-nosnippet>149</a>            {
+<a href=#150 id=150 data-nosnippet>150</a>                <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="self">Self </span>{ path }));
+<a href=#151 id=151 data-nosnippet>151</a>            }
+<a href=#152 id=152 data-nosnippet>152</a>        }
+<a href=#153 id=153 data-nosnippet>153</a>
+<a href=#154 id=154 data-nosnippet>154</a>        <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>)
+<a href=#155 id=155 data-nosnippet>155</a>    }
+<a href=#156 id=156 data-nosnippet>156</a>
+<a href=#157 id=157 data-nosnippet>157</a>    <span class="kw">async fn </span>read_prop&lt;T: FromStr&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, prop: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Option</span>&lt;T&gt; {
+<a href=#158 id=158 data-nosnippet>158</a>        read_file(<span class="self">self</span>.path.join(prop))
+<a href=#159 id=159 data-nosnippet>159</a>            .<span class="kw">await
+<a href=#160 id=160 data-nosnippet>160</a>            </span>.ok()
+<a href=#161 id=161 data-nosnippet>161</a>            .and_then(|x| x.parse().ok())
+<a href=#162 id=162 data-nosnippet>162</a>    }
+<a href=#163 id=163 data-nosnippet>163</a>
+<a href=#164 id=164 data-nosnippet>164</a>    <span class="kw">async fn </span>read_info(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;GpuInfo&gt; {
+<a href=#165 id=165 data-nosnippet>165</a>        <span class="prelude-val">Ok</span>(GpuInfo {
+<a href=#166 id=166 data-nosnippet>166</a>            utilization_percents: <span class="self">self
+<a href=#167 id=167 data-nosnippet>167</a>                </span>.read_prop::&lt;f64&gt;(<span class="string">"gpu_busy_percent"</span>)
+<a href=#168 id=168 data-nosnippet>168</a>                .<span class="kw">await
+<a href=#169 id=169 data-nosnippet>169</a>                </span>.error(<span class="string">"Failed to read gpu_busy_percent"</span>)<span class="question-mark">?</span>,
+<a href=#170 id=170 data-nosnippet>170</a>            vram_total_bytes: <span class="self">self
+<a href=#171 id=171 data-nosnippet>171</a>                </span>.read_prop::&lt;f64&gt;(<span class="string">"mem_info_vram_total"</span>)
+<a href=#172 id=172 data-nosnippet>172</a>                .<span class="kw">await
+<a href=#173 id=173 data-nosnippet>173</a>                </span>.error(<span class="string">"Failed to read mem_info_vram_total"</span>)<span class="question-mark">?</span>,
+<a href=#174 id=174 data-nosnippet>174</a>            vram_used_bytes: <span class="self">self
+<a href=#175 id=175 data-nosnippet>175</a>                </span>.read_prop::&lt;f64&gt;(<span class="string">"mem_info_vram_used"</span>)
+<a href=#176 id=176 data-nosnippet>176</a>                .<span class="kw">await
+<a href=#177 id=177 data-nosnippet>177</a>                </span>.error(<span class="string">"Failed to read mem_info_vram_used"</span>)<span class="question-mark">?</span>,
+<a href=#178 id=178 data-nosnippet>178</a>        })
+<a href=#179 id=179 data-nosnippet>179</a>    }
+<a href=#180 id=180 data-nosnippet>180</a>}
+<a href=#181 id=181 data-nosnippet>181</a>
+<a href=#182 id=182 data-nosnippet>182</a><span class="attr">#[cfg(test)]
+<a href=#183 id=183 data-nosnippet>183</a></span><span class="kw">mod </span>tests {
+<a href=#184 id=184 data-nosnippet>184</a>    <span class="kw">use super</span>::<span class="kw-2">*</span>;
+<a href=#185 id=185 data-nosnippet>185</a>
+<a href=#186 id=186 data-nosnippet>186</a>    <span class="attr">#[test]
+<a href=#187 id=187 data-nosnippet>187</a>    </span><span class="kw">fn </span>test_non_existing_gpu_device() {
+<a href=#188 id=188 data-nosnippet>188</a>        <span class="kw">let </span>device = Device::new(<span class="string">"/nope"</span>);
+<a href=#189 id=189 data-nosnippet>189</a>        <span class="macro">assert!</span>(device.is_err());
+<a href=#190 id=190 data-nosnippet>190</a>    }
+<a href=#191 id=191 data-nosnippet>191</a>}</code></pre></div></section></main></body></html>

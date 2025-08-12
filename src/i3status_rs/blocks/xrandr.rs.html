@@ -170,35 +170,37 @@
 <a href=#170 id=170 data-nosnippet>170</a>
 <a href=#171 id=171 data-nosnippet>171</a>    <span class="kw">let </span><span class="kw-2">mut </span>it = monitors_info.lines().filter(|line| regex.is_match(line));
 <a href=#172 id=172 data-nosnippet>172</a>
-<a href=#173 id=173 data-nosnippet>173</a>    <span class="kw">while let </span>(<span class="prelude-val">Some</span>(line1), <span class="prelude-val">Some</span>(line2)) = (it.next(), it.next()) {
-<a href=#174 id=174 data-nosnippet>174</a>        <span class="kw">let </span><span class="kw-2">mut </span>tokens = line1.split_ascii_whitespace().peekable();
-<a href=#175 id=175 data-nosnippet>175</a>        <span class="kw">let </span>name = tokens.next().error(<span class="string">"Failed to parse xrandr output"</span>)<span class="question-mark">?</span>.into();
-<a href=#176 id=176 data-nosnippet>176</a>        <span class="kw">let _ </span>= tokens.next();
-<a href=#177 id=177 data-nosnippet>177</a>
-<a href=#178 id=178 data-nosnippet>178</a>        <span class="comment">// The output may be "&lt;name&gt; connected &lt;resolution&gt;" or "&lt;name&gt; connected primary &lt;resolution&gt;"
-<a href=#179 id=179 data-nosnippet>179</a>        </span><span class="kw">let _ </span>= tokens.next_if_eq(<span class="kw-2">&amp;</span><span class="string">"primary"</span>);
-<a href=#180 id=180 data-nosnippet>180</a>
-<a href=#181 id=181 data-nosnippet>181</a>        <span class="kw">let </span>resolution = tokens
-<a href=#182 id=182 data-nosnippet>182</a>            .next()
-<a href=#183 id=183 data-nosnippet>183</a>            .and_then(|x| x.split(<span class="string">'+'</span>).next())
-<a href=#184 id=184 data-nosnippet>184</a>            .error(<span class="string">"Failed to parse xrandr output"</span>)<span class="question-mark">?
-<a href=#185 id=185 data-nosnippet>185</a>            </span>.into();
-<a href=#186 id=186 data-nosnippet>186</a>
-<a href=#187 id=187 data-nosnippet>187</a>        <span class="kw">let </span>brightness = (line2
-<a href=#188 id=188 data-nosnippet>188</a>            .split(<span class="string">':'</span>)
-<a href=#189 id=189 data-nosnippet>189</a>            .nth(<span class="number">1</span>)
-<a href=#190 id=190 data-nosnippet>190</a>            .error(<span class="string">"Failed to parse xrandr output"</span>)<span class="question-mark">?
-<a href=#191 id=191 data-nosnippet>191</a>            </span>.trim()
-<a href=#192 id=192 data-nosnippet>192</a>            .parse::&lt;f64&gt;()
-<a href=#193 id=193 data-nosnippet>193</a>            .error(<span class="string">"Failed to parse xrandr output"</span>)<span class="question-mark">?
-<a href=#194 id=194 data-nosnippet>194</a>            </span>* <span class="number">100.0</span>) <span class="kw">as </span>u32;
-<a href=#195 id=195 data-nosnippet>195</a>
-<a href=#196 id=196 data-nosnippet>196</a>        monitors.push(Monitor {
-<a href=#197 id=197 data-nosnippet>197</a>            name,
-<a href=#198 id=198 data-nosnippet>198</a>            brightness,
-<a href=#199 id=199 data-nosnippet>199</a>            resolution,
-<a href=#200 id=200 data-nosnippet>200</a>        });
-<a href=#201 id=201 data-nosnippet>201</a>    }
-<a href=#202 id=202 data-nosnippet>202</a>
-<a href=#203 id=203 data-nosnippet>203</a>    <span class="prelude-val">Ok</span>(monitors)
-<a href=#204 id=204 data-nosnippet>204</a>}</code></pre></div></section></main></body></html>
+<a href=#173 id=173 data-nosnippet>173</a>    <span class="kw">while let </span><span class="prelude-val">Some</span>(line1) = it.next()
+<a href=#174 id=174 data-nosnippet>174</a>        &amp;&amp; <span class="kw">let </span><span class="prelude-val">Some</span>(line2) = it.next()
+<a href=#175 id=175 data-nosnippet>175</a>    {
+<a href=#176 id=176 data-nosnippet>176</a>        <span class="kw">let </span><span class="kw-2">mut </span>tokens = line1.split_ascii_whitespace().peekable();
+<a href=#177 id=177 data-nosnippet>177</a>        <span class="kw">let </span>name = tokens.next().error(<span class="string">"Failed to parse xrandr output"</span>)<span class="question-mark">?</span>.into();
+<a href=#178 id=178 data-nosnippet>178</a>        <span class="kw">let _ </span>= tokens.next();
+<a href=#179 id=179 data-nosnippet>179</a>
+<a href=#180 id=180 data-nosnippet>180</a>        <span class="comment">// The output may be "&lt;name&gt; connected &lt;resolution&gt;" or "&lt;name&gt; connected primary &lt;resolution&gt;"
+<a href=#181 id=181 data-nosnippet>181</a>        </span><span class="kw">let _ </span>= tokens.next_if_eq(<span class="kw-2">&amp;</span><span class="string">"primary"</span>);
+<a href=#182 id=182 data-nosnippet>182</a>
+<a href=#183 id=183 data-nosnippet>183</a>        <span class="kw">let </span>resolution = tokens
+<a href=#184 id=184 data-nosnippet>184</a>            .next()
+<a href=#185 id=185 data-nosnippet>185</a>            .and_then(|x| x.split(<span class="string">'+'</span>).next())
+<a href=#186 id=186 data-nosnippet>186</a>            .error(<span class="string">"Failed to parse xrandr output"</span>)<span class="question-mark">?
+<a href=#187 id=187 data-nosnippet>187</a>            </span>.into();
+<a href=#188 id=188 data-nosnippet>188</a>
+<a href=#189 id=189 data-nosnippet>189</a>        <span class="kw">let </span>brightness = (line2
+<a href=#190 id=190 data-nosnippet>190</a>            .split(<span class="string">':'</span>)
+<a href=#191 id=191 data-nosnippet>191</a>            .nth(<span class="number">1</span>)
+<a href=#192 id=192 data-nosnippet>192</a>            .error(<span class="string">"Failed to parse xrandr output"</span>)<span class="question-mark">?
+<a href=#193 id=193 data-nosnippet>193</a>            </span>.trim()
+<a href=#194 id=194 data-nosnippet>194</a>            .parse::&lt;f64&gt;()
+<a href=#195 id=195 data-nosnippet>195</a>            .error(<span class="string">"Failed to parse xrandr output"</span>)<span class="question-mark">?
+<a href=#196 id=196 data-nosnippet>196</a>            </span>* <span class="number">100.0</span>) <span class="kw">as </span>u32;
+<a href=#197 id=197 data-nosnippet>197</a>
+<a href=#198 id=198 data-nosnippet>198</a>        monitors.push(Monitor {
+<a href=#199 id=199 data-nosnippet>199</a>            name,
+<a href=#200 id=200 data-nosnippet>200</a>            brightness,
+<a href=#201 id=201 data-nosnippet>201</a>            resolution,
+<a href=#202 id=202 data-nosnippet>202</a>        });
+<a href=#203 id=203 data-nosnippet>203</a>    }
+<a href=#204 id=204 data-nosnippet>204</a>
+<a href=#205 id=205 data-nosnippet>205</a>    <span class="prelude-val">Ok</span>(monitors)
+<a href=#206 id=206 data-nosnippet>206</a>}</code></pre></div></section></main></body></html>
