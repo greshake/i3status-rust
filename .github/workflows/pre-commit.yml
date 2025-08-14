@@ -29,7 +29,7 @@ jobs:
       run: |
         pacman --noconfirm --noprogressbar -Syu base-devel clang git libpipewire libpulse lm_sensors notmuch openssl rsync
         git config --global --add safe.directory "$GITHUB_WORKSPACE"
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - uses: dtolnay/rust-toolchain@stable
       with:
         components: clippy, rustfmt
