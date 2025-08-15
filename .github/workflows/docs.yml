@@ -20,7 +20,7 @@ jobs:
     - uses: dtolnay/rust-toolchain@stable
     - name: Version information
       run: rustc --version; cargo --version
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - name: Generate docs
       run: cargo doc --all-features --no-deps
     - name: Create index.html
