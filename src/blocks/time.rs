@@ -4,7 +4,7 @@
 //!
 //! Key        | Values | Default
 //! -----------|--------|--------
-//! `format`   | Format string. See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. | `" $icon $timestamp.datetime() "`
+//! `format`   | MultiFormat string. See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. | `[" $icon $timestamp.datetime() "]`
 //! `interval` | Update interval in seconds | `10`
 //! `timezone` | A timezone specifier (e.g. "Europe/Lisbon") | Local timezone
 //!
@@ -55,9 +55,10 @@ use chrono_tz::Tz;
 use super::prelude::*;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
+#[serde(default)]
 pub struct Config {
-    pub format: FormatConfig,
+    #[serde(flatten)]
+    pub format: MaybeMultiFormatConfig,
     #[default(10.into())]
     pub interval: Seconds,
     pub timezone: Option<Timezone>,
@@ -77,7 +78,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         (MouseButton::Right, None, "prev_timezone"),
     ])?;
 
-    let format = config
+    let mut formats = config
         .format
         .with_default(" $icon $timestamp.datetime() ")?;
 
@@ -104,7 +105,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     timer.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
 
     loop {
-        let mut widget = Widget::new().with_format(format.clone());
+        let mut widget = Widget::new().with_format(formats.get_format().clone());
         let now = Utc::now();
 
         widget.set_values(map! {
@@ -128,6 +129,12 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 },
                 "prev_timezone" => {
                     timezone = timezone_iter.nth(prev_step_length);
+                },
+                "next_format" => {
+                    formats.next_format();
+                },
+                "prev_format" => {
+                   formats.prev_format();
                 },
                 _ => (),
             }
