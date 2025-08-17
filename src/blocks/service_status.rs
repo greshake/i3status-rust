@@ -108,6 +108,7 @@ trait Driver {
 
 struct SystemdDriver {
     proxy: UnitProxy<'static>,
+    service_proxy: ServiceProxy<'static>,
     active_state_changed: PropertyStream<'static, String>,
 }
 
@@ -141,15 +142,23 @@ impl SystemdDriver {
         let path = format!("/org/freedesktop/systemd1/unit/{encoded_service}");
 
         let proxy = UnitProxy::builder(&dbus_conn)
-            .path(path)
+            .path(path.clone())
             .error("Could not set path")?
             .build()
             .await
             .error("Failed to create UnitProxy")?;
 
+        let service_proxy = ServiceProxy::builder(&dbus_conn)
+            .path(path)
+            .error("Could not set path")?
+            .build()
+            .await
+            .error("Failed to create ServiceProxy")?;
+
         Ok(Self {
             active_state_changed: proxy.receive_active_state_changed().await,
             proxy,
+            service_proxy,
         })
     }
 }
@@ -157,11 +166,25 @@ impl SystemdDriver {
 #[async_trait]
 impl Driver for SystemdDriver {
     async fn is_active(&self) -> Result<bool> {
-        self.proxy
+        let active_state = self
+            .proxy
             .active_state()
             .await
-            .error("Could not get active_state")
-            .map(|state| state == "active")
+            .error("Could not get active_state")?;
+
+        Ok(match &*active_state {
+            "active" => true,
+            "activating" => {
+                let service_type = self
+                    .service_proxy
+                    .type_()
+                    .await
+                    .error("Could not get service type")?;
+
+                service_type == "oneshot"
+            }
+            _ => false,
+        })
     }
 
     async fn wait_for_change(&mut self) -> Result<()> {
@@ -177,4 +200,13 @@ impl Driver for SystemdDriver {
 trait Unit {
     #[zbus(property)]
     fn active_state(&self) -> zbus::Result<String>;
+}
+
+#[zbus::proxy(
+    interface = "org.freedesktop.systemd1.Service",
+    default_service = "org.freedesktop.systemd1"
+)]
+trait Service {
+    #[zbus(property, name = "Type")]
+    fn type_(&self) -> zbus::Result<String>;
 }
