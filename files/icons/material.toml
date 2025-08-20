@@ -8,10 +8,10 @@ backlight = [
     "\ue3a9", # brightness_4
     "\ue3aa", # brightness_5
     "\ue3ab", # brightness_6
-    "\ue3c8", # brightness_7
+    "\ue3ac", # brightness_7
     "\ue1ac", # brightness_high
 ]
-bat_charging = "\ue3ac" # battery_charging_full
+bat_charging = "\ue1a3" # battery_charging_full
 bat_not_available = "\ue1a6" # battery_unknown
 bat = [
     "\ue19c", # battery_alert
@@ -28,7 +28,7 @@ bat = [
 bell = "\ue7f4" # notifications
 bell-slash = "\ue7f8" # notifications_paused
 bluetooth = "\ue1a7" # bluetooth
-calendar = "\ue935" # calendar_today | TODO: broken?
+calendar = "\ue935" # calendar_today
 cogs = "\ue8b8" # settings
 cpu = "\ue640" # network_check
 cpu_boost_on = "\ue837" # radio_button_on
@@ -47,13 +47,13 @@ memory_swap = "\ue8d4" # swap_horiz
 mouse = "\ue323" # mouse
 music = "\ue405" # music_note
 music_next = "\ue044" # skip_next
-music_pause = "\ue034" # skip_next
+music_pause = "\ue034" # pause
 music_play = "\ue037" # play_arrow
 music_prev = "\ue045" # skip_previous
-net_bridge = "\uefe6" # cable | TODO: broken?
+net_bridge = "\uefe6" # cable
 net_down = "\uf090" # download
 net_loopback = "\ue028" # loop
-net_modem = "\uefe6" # cable | TODO: broken?
+net_modem = "\uefe6" # cable
 net_cellular = [
         "\ue1d0", # signal_cellular_off
         "\uf0a8", # signal_cellular_0_bar
@@ -64,26 +64,26 @@ net_cellular = [
 ]
 net_up = "\uf09b" # upload
 net_vpn = "\ue0da" # vpn_key
-net_wired = "\uefe6" # cable | TODO: broken?
+net_wired = "\uefe6" # cable
 net_wireless = "\ue63e" # wifi | TODO: progression based on signal strength
 notification = "\ue7f7" # notifications_active
 phone = "\ue324" # phone_android
 phone_disconnected = "\ue339" # device_unknown
 ping = "\ue62a" # system_update
 pomodoro = "\U0001f345" # https://unicode-table.com/en/1F4F5/
-pomodoro_break = "\uefef" # coffee | TODO: broken?
+pomodoro_break = "\uefef" # coffee
 pomodoro_paused = "\ue034" # pause
 pomodoro_started = "\ue037" # play_arrow
-pomodoro_stopped = "\uef6a" # play_disabled ef6a | TODO: broken?
-resolution = "\uf152" # crop-square-rounded
+pomodoro_stopped = "\uef6a" # play_disabled
+resolution = "\ue3c6" # crop_square
 scratchpad = "\ue883" # flip_to_front
 tasks = "\ue8f9" # work
 tea = "\uefef" # coffee
-thermometer = "\ue1ff" # device_thermostat | TODO: broken?
+thermometer = "\ue1ff" # device_thermostat
 time = "\ue192" # access_time
-toggle_off = "\ue836" # radio_button_on
+toggle_off = "\ue836" # radio_button_off
 toggle_on = "\ue837" # radio_button_on
-unknown = "\ueb8b" # question_mark | TODO: broken?
+unknown = "\ueb8b" # question_mark
 update = "\ue8d7" # system_update_alt
 uptime = "\ue425" # timer
 volume = [
