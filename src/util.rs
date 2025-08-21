@@ -206,15 +206,15 @@ macro_rules! make_log_macro {
 
 pub fn format_bar_graph(content: &[f64], max: f64) -> String {
     // (x * one eighth block) https://en.wikipedia.org/wiki/Block_Elements
-    static BARS: [char; 9] = [
-        ' ',
+    static BARS: [char; 10] = [
+        ' ', '_',
         '\u{2581}', '\u{2582}', '\u{2583}', '\u{2584}', '\u{2585}', '\u{2586}', '\u{2587}',
         '\u{2588}',
     ];
 
     content
         .iter()
-        .map(|x| BARS[(x / max * 8.).round().clamp(0., 8.) as usize])
+        .map(|x| BARS[(x / max * 9.).ceil().clamp(0., 9.) as usize])
         .collect()
 }
 
