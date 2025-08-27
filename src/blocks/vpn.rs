@@ -32,6 +32,9 @@
 //! ## Mullvad
 //! Behind the scenes the mullvad driver uses the `mullvad` command line binary. In order for this to work properly the binary should be executable and mullvad daemon should be running.
 //!
+//! ## Cloudflare WARP
+//! Behind the scenes the WARP driver uses the `warp-cli` command line binary. Just ensure the binary is executable without root privileges.
+//!
 //! # Example
 //!
 //! Shows the current vpn network state:
@@ -71,6 +74,8 @@ mod nordvpn;
 use nordvpn::NordVpnDriver;
 mod mullvad;
 use mullvad::MullvadDriver;
+mod warp;
+use warp::WarpDriver;
 
 use super::prelude::*;
 
@@ -80,6 +85,7 @@ pub enum DriverType {
     #[default]
     Nordvpn,
     Mullvad,
+    Warp,
 }
 
 #[derive(Deserialize, Debug, SmartDefault)]
@@ -123,6 +129,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let driver: Box<dyn Driver> = match config.driver {
         DriverType::Nordvpn => Box::new(NordVpnDriver::new().await),
         DriverType::Mullvad => Box::new(MullvadDriver::new().await),
+        DriverType::Warp => Box::new(WarpDriver::new().await),
     };
 
     loop {
