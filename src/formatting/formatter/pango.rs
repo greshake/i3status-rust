@@ -19,7 +19,8 @@ impl Formatter for PangoStrFormatter {
     fn format(&self, val: &Value, config: &SharedConfig) -> Result<String, FormatError> {
         match val {
             Value::Text(x) => Ok(x.clone()), // No escaping
-            Value::Icon(icon, value) => config.get_icon(icon, *value).map_err(Into::into),
+            Value::Icon(icon, value) => config.get_icon(icon, *value)
+                .or_else(|_| Ok(icon.clone().into_owned())),
             other => Err(FormatError::IncompatibleFormatter {
                 ty: other.type_name(),
                 fmt: "pango-str",

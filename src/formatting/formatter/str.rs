@@ -110,7 +110,8 @@ impl Formatter for StrFormatter {
                         .collect_pango_escaped(),
                 })
             }
-            Value::Icon(icon, value) => config.get_icon(icon, *value).map_err(Into::into),
+            Value::Icon(icon, value) => config.get_icon(icon, *value)
+                .or_else(|_| Ok(icon.clone().into_owned())),
             other => Err(FormatError::IncompatibleFormatter {
                 ty: other.type_name(),
                 fmt: "str",

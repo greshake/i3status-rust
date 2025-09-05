@@ -129,14 +129,18 @@ impl TokenList {
                     }
                 }
                 Token::Icon { name } => {
-                    let icon = config.get_icon(name, None)?;
-                    if cur.metadata.is_default() {
-                        cur.text.push_str(&icon);
-                    } else {
-                        if !cur.text.is_empty() {
-                            retval.push(cur);
-                        }
-                        cur = icon.into();
+                    let icon = config.get_icon(name, None);
+                    match icon {
+                        Ok(icon) =>
+                            if cur.metadata.is_default() {
+                                cur.text.push_str(&icon);
+                            } else {
+                                if !cur.text.is_empty() {
+                                    retval.push(cur);
+                                }
+                                cur = icon.into();
+                            },
+                        Err(_) => cur.text.push_str(&name)
                     }
                 }
             }
