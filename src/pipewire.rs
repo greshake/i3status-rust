@@ -10,10 +10,10 @@ use std::time::Duration;
 pub(crate) use ::pipewire::channel::Sender as PwSender;
 use ::pipewire::{
     channel::{Receiver as PwReceiver, channel as pw_channel},
-    context::Context,
+    context::ContextRc,
     device::Device as DeviceProxy,
     keys,
-    main_loop::MainLoop,
+    main_loop::MainLoopRc,
     metadata::Metadata as MetadataProxy,
     node::{Node as NodeProxy, NodeState},
     properties::properties,
@@ -506,13 +506,12 @@ impl Client {
 
         let proplist = properties! {*keys::APP_NAME => env!("CARGO_PKG_NAME")};
 
-        let main_loop = MainLoop::new(None).expect("Failed to create main loop");
+        let main_loop = MainLoopRc::new(None).expect("Failed to create main loop");
 
-        let context =
-            Context::with_properties(&main_loop, proplist).expect("Failed to create context");
-        let core = context.connect(None).expect("Failed to connect");
-        let registry = Rc::new(core.get_registry().expect("Failed to get registry"));
-        let registry_weak = Rc::downgrade(&registry);
+        let context = ContextRc::new(&main_loop, Some(proplist)).expect("Failed to create context");
+        let core = context.connect_rc(None).expect("Failed to connect");
+        let registry = core.get_registry_rc().expect("Failed to get registry");
+        let registry_weak = registry.downgrade();
 
         let update = Rc::new(RefCell::new(EventKind::empty()));
         let update_copy = update.clone();
