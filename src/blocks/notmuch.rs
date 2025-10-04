@@ -43,8 +43,6 @@
 //! # Icons Used
 //! - `mail`
 
-use std::path::Path;
-
 use inotify::{Inotify, WatchMask};
 
 use super::prelude::*;
@@ -53,8 +51,15 @@ use super::prelude::*;
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
     pub format: FormatConfig,
-    #[default("~/.mail".into())]
-    pub maildir: ShellString,
+    /// Path to the notmuch database.
+    ///
+    /// Defaults to the database used by the notmuch CLI tool.
+    pub database: Option<ShellString>,
+    /// Database profile. Cannot be specified at the same time as `database`.
+    ///
+    /// Defaults to the profile used by the notmuch CLI tool.
+    pub profile: Option<String>,
+    /// The notmuch query to count.
     pub query: String,
     #[default(u32::MAX)]
     pub threshold_warning: u32,
@@ -69,17 +74,27 @@ pub struct Config {
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let format = config.format.with_default(" $icon $count ")?;
 
-    let db = config.maildir.expand()?;
+    if config.database.is_some() && config.profile.is_some() {
+        return Err(Error::new(
+            "cannot specify both a notmuch database and a notmuch profile",
+        ));
+    }
+
+    let profile = config.profile.as_deref();
+
+    let db_path = config.database.as_ref().map(|p| p.expand()).transpose()?;
+    let db_path: Option<&str> = db_path.as_deref();
     let notify = Inotify::init().error("Failed to start inotify")?;
 
-    for lockpath in ["xapian/flintlock", ".notmuch/xapian/flintlock"] {
-        let fname = Path::new(&*db).join(lockpath);
-        if fname.exists() {
-            notify
-                .watches()
-                .add(fname, WatchMask::CLOSE_WRITE)
-                .error("failed to add inotify watch")?;
-        }
+    {
+        let lock_path = open_database(db_path, profile)
+            .error("failed to open the notmuch database")?
+            .path()
+            .join("xapian/flintlock");
+        notify
+            .watches()
+            .add(lock_path, WatchMask::CLOSE_WRITE)
+            .error("failed to watch the notmuch database lock")?;
     }
 
     let mut updates = notify
@@ -88,7 +103,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     loop {
         // TODO: spawn_blocking?
-        let count = run_query(&db, &config.query).error("Failed to get count")?;
+        let count = run_query(db_path, profile, &config.query).error("Failed to get count")?;
 
         let mut widget = Widget::new().with_format(format.clone());
 
@@ -118,12 +133,28 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     }
 }
 
-fn run_query(db_path: &str, query_string: &str) -> std::result::Result<u32, notmuch::Error> {
-    let db = notmuch::Database::open_with_config(
-        Some(db_path),
+fn open_database(
+    db_path: Option<&str>,
+    profile: Option<&str>,
+) -> std::result::Result<notmuch::Database, notmuch::Error> {
+    notmuch::Database::open_with_config(
+        db_path,
         notmuch::DatabaseMode::ReadOnly,
         None::<&str>,
-        None,
+        profile,
+    )
+}
+
+fn run_query(
+    db_path: Option<&str>,
+    profile: Option<&str>,
+    query_string: &str,
+) -> std::result::Result<u32, notmuch::Error> {
+    let db = notmuch::Database::open_with_config(
+        db_path,
+        notmuch::DatabaseMode::ReadOnly,
+        None::<&str>,
+        profile,
     )?;
     let query = db.create_query(query_string)?;
     query.count_messages()

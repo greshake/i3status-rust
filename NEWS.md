@@ -1,8 +1,13 @@
 #  i3status-rust 0.35.0 [unreleased]
 
+### Bug Fixes and Improvements
+
+- The `notmuch` block can now automatically locate the notmuch database (the same way the `notmuch` command does) without being explicitly configured. Furthermore, the block has gained a `profile` option that can be used to specify a notmuch profile other than "default".
+
 ### Breaking Changes
 
 - The `interval` option has been removed from the `notmuch` block in favor of watching the notmuch database for changes.
+- The `maildir` option in the `notmuch` block has been renamed to `database` to better reflect its purpose, and has been made optional.
 
 # i3status-rust 0.34.0
 
