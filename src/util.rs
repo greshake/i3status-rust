@@ -99,11 +99,15 @@ where
         let location_msg = err
             .span()
             .map(|span| {
-                let line = 1 + contents.as_bytes()[..(span.start)]
-                    .iter()
-                    .filter(|b| **b == b'\n')
-                    .count();
-                format!(" at line {line}")
+                if span == (0..0) {
+                    String::new()
+                } else {
+                    let line = 1 + contents.as_bytes()[..(span.start)]
+                        .iter()
+                        .filter(|b| **b == b'\n')
+                        .count();
+                    format!(" at line {line}")
+                }
             })
             .unwrap_or_default();
         Error::new(format!(
