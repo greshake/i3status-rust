@@ -116,8 +116,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 let mut widget = Widget::new();
 
                 if device.is_up() {
+                    widget.state = State::Good;
                     widget.set_format(format.clone());
                 } else {
+                    widget.state = State::Warning;
                     widget.set_format(inactive_format.clone());
                 }
 
