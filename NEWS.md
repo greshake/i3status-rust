@@ -1,3 +1,9 @@
+#  i3status-rust 0.35.0 [unreleased]
+
+### Breaking Changes
+
+- The `interval` option has been removed from the `notmuch` block in favor of watching the notmuch database for changes.
+
 # i3status-rust 0.34.0
 
 ### New Blocks and Features

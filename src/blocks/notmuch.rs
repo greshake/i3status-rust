@@ -43,14 +43,16 @@
 //! # Icons Used
 //! - `mail`
 
+use std::path::Path;
+
+use inotify::{Inotify, WatchMask};
+
 use super::prelude::*;
 
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
     pub format: FormatConfig,
-    #[default(10.into())]
-    pub interval: Seconds,
     #[default("~/.mail".into())]
     pub maildir: ShellString,
     pub query: String,
@@ -68,7 +70,21 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let format = config.format.with_default(" $icon $count ")?;
 
     let db = config.maildir.expand()?;
-    let mut timer = config.interval.timer();
+    let notify = Inotify::init().error("Failed to start inotify")?;
+
+    for lockpath in ["xapian/flintlock", ".notmuch/xapian/flintlock"] {
+        let fname = Path::new(&*db).join(lockpath);
+        if fname.exists() {
+            notify
+                .watches()
+                .add(fname, WatchMask::CLOSE_WRITE)
+                .error("failed to add inotify watch")?;
+        }
+    }
+
+    let mut updates = notify
+        .into_event_stream([0; 1024])
+        .error("Failed to create event stream")?;
 
     loop {
         // TODO: spawn_blocking?
@@ -96,7 +112,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         api.set_widget(widget)?;
 
         tokio::select! {
-            _ = timer.tick() => (),
+            _ = updates.next_debounced() => (),
             _ = api.wait_for_update_request() => (),
         }
     }
