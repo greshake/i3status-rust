@@ -43,16 +43,23 @@
 //! # Icons Used
 //! - `mail`
 
+use inotify::{Inotify, WatchMask};
+
 use super::prelude::*;
 
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
     pub format: FormatConfig,
-    #[default(10.into())]
-    pub interval: Seconds,
-    #[default("~/.mail".into())]
-    pub maildir: ShellString,
+    /// Path to the notmuch database.
+    ///
+    /// Defaults to the database used by the notmuch CLI tool.
+    pub database: Option<ShellString>,
+    /// Database profile. Cannot be specified at the same time as `database`.
+    ///
+    /// Defaults to the profile used by the notmuch CLI tool.
+    pub profile: Option<String>,
+    /// The notmuch query to count.
     pub query: String,
     #[default(u32::MAX)]
     pub threshold_warning: u32,
@@ -67,12 +74,36 @@ pub struct Config {
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let format = config.format.with_default(" $icon $count ")?;
 
-    let db = config.maildir.expand()?;
-    let mut timer = config.interval.timer();
+    if config.database.is_some() && config.profile.is_some() {
+        return Err(Error::new(
+            "cannot specify both a notmuch database and a notmuch profile",
+        ));
+    }
+
+    let profile = config.profile.as_deref();
+
+    let db_path = config.database.as_ref().map(|p| p.expand()).transpose()?;
+    let db_path: Option<&str> = db_path.as_deref();
+    let notify = Inotify::init().error("Failed to start inotify")?;
+
+    {
+        let lock_path = open_database(db_path, profile)
+            .error("failed to open the notmuch database")?
+            .path()
+            .join("xapian/flintlock");
+        notify
+            .watches()
+            .add(lock_path, WatchMask::CLOSE_WRITE)
+            .error("failed to watch the notmuch database lock")?;
+    }
+
+    let mut updates = notify
+        .into_event_stream([0; 1024])
+        .error("Failed to create event stream")?;
 
     loop {
         // TODO: spawn_blocking?
-        let count = run_query(&db, &config.query).error("Failed to get count")?;
+        let count = run_query(db_path, profile, &config.query).error("Failed to get count")?;
 
         let mut widget = Widget::new().with_format(format.clone());
 
@@ -96,18 +127,34 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         api.set_widget(widget)?;
 
         tokio::select! {
-            _ = timer.tick() => (),
+            _ = updates.next_debounced() => (),
             _ = api.wait_for_update_request() => (),
         }
     }
 }
 
-fn run_query(db_path: &str, query_string: &str) -> std::result::Result<u32, notmuch::Error> {
-    let db = notmuch::Database::open_with_config(
-        Some(db_path),
+fn open_database(
+    db_path: Option<&str>,
+    profile: Option<&str>,
+) -> std::result::Result<notmuch::Database, notmuch::Error> {
+    notmuch::Database::open_with_config(
+        db_path,
         notmuch::DatabaseMode::ReadOnly,
         None::<&str>,
-        None,
+        profile,
+    )
+}
+
+fn run_query(
+    db_path: Option<&str>,
+    profile: Option<&str>,
+    query_string: &str,
+) -> std::result::Result<u32, notmuch::Error> {
+    let db = notmuch::Database::open_with_config(
+        db_path,
+        notmuch::DatabaseMode::ReadOnly,
+        None::<&str>,
+        profile,
     )?;
     let query = db.create_query(query_string)?;
     query.count_messages()
