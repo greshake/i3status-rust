@@ -4,7 +4,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `device` | Block device name to monitor (as specified in `/dev/`) | If not set, device will be automatically selected every `interval`
+//! `device` | Block device or partition name to monitor (as specified in `/dev/`) | If not set, device will be automatically selected every `interval`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $speed_read.eng(prefix:K) $speed_write.eng(prefix:K) "`
 //! `interval` | Update interval in seconds | `2`
 //! `missing_format` | Same as `format` but for when the device is missing | `" × "`
@@ -25,6 +25,15 @@
 //! format = " $icon $speed_write.eng(prefix:K) "
 //! ```
 //!
+//! Use labeled Games partition via persistent device names from /dev/disk/by-*/
+//!
+//! ```toml
+//! [[block]]
+//! block = "disk_iostats"
+//! device = "disk/by-partlabel/Games"
+//! format = " $icon $speed_write.eng(prefix:K) "
+//! ```
+//!
 //! # Icons Used
 //!
 //! - `disk_drive`
@@ -36,6 +45,7 @@ use std::ops;
 use std::path::Path;
 use std::time::Instant;
 use tokio::fs::read_dir;
+use tokio::fs::read_link;
 
 /// Path for block devices
 const BLOCK_DEVICES_PATH: &str = "/sys/class/block";
@@ -69,10 +79,17 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             None => {
                 api.set_widget(Widget::new().with_format(missing_format.clone()))?;
             }
-            Some(device) => {
+            Some(mut device) => {
                 let mut widget = Widget::new();
 
                 widget.set_format(format.clone());
+
+                if let Ok(link) = read_link(Path::new("/dev/").join(&device)).await
+                    && let Some(name) = link.file_name()
+                    && let Ok(target) = name.to_os_string().into_string()
+                {
+                    device = target;
+                }
 
                 let new_stats = read_stats(&device).await?;
                 let sector_size = read_sector_size(&device).await?;
@@ -166,12 +183,40 @@ async fn read_stats(device: &str) -> Result<Stats> {
 }
 
 async fn read_sector_size(device: &str) -> Result<u64> {
-    let raw = read_file(
-        Path::new(BLOCK_DEVICES_PATH)
-            .join(device)
-            .join("queue/hw_sector_size"),
-    )
-    .await
-    .error("Failed to read HW sector size")?;
-    raw.parse::<u64>().error("Failed to parse HW sector size")
+    if Path::new(BLOCK_DEVICES_PATH)
+        .join(device)
+        .join("device")
+        .exists()
+    {
+        let raw = read_file(
+            Path::new(BLOCK_DEVICES_PATH)
+                .join(device)
+                .join("queue/hw_sector_size"),
+        )
+        .await
+        .error("Failed to read HW sector size")?;
+        raw.parse::<u64>().error("Failed to parse HW sector size")
+    } else {
+        let mut sysfs_dir = read_dir(BLOCK_DEVICES_PATH)
+            .await
+            .error("Failed to open /sys/class/block directory")?;
+        while let Some(dir) = sysfs_dir
+            .next_entry()
+            .await
+            .error("Failed to read /sys/class/block directory")?
+        {
+            let path = dir.path();
+            if path.join(device).exists() {
+                let raw = read_file(path.join("queue/hw_sector_size"))
+                    .await
+                    .error("Failed to read partition HW sector size")?;
+                return raw
+                    .parse::<u64>()
+                    .error("Failed to parse partition HW sector size");
+            }
+        }
+        Err(Error::new(
+            "Failed to find device for partition HW sector size",
+        ))
+    }
 }
