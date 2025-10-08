@@ -12,6 +12,7 @@
 //! `alert` | A value which will trigger critical block state | `10.0`
 //! `info_type` | Determines which information will affect the block state. Possible values are `"available"`, `"free"` and `"used"` | `"available"`
 //! `alert_unit` | The unit of `alert` and `warning` options. If not set, percents are used. Possible values are `"B"`, `"KB"`, `"KiB"`, `"MB"`, `"MiB"`, `"GB"`, `"Gib"`, `"TB"` and `"TiB"` | `None`
+//! `backend` | The backend to use when querying disk usage. Possible values are `"vfs"` (like `du(1)`) and `"btrfs"` | `"vfs"`
 //!
 //! Placeholder  | Value                                                              | Type   | Unit
 //! -------------|--------------------------------------------------------------------|--------|-------
@@ -63,9 +64,12 @@
 
 // make_log_macro!(debug, "disk_space");
 
+use std::cell::OnceCell;
+
 use super::prelude::*;
 use crate::formatting::prefix::Prefix;
 use nix::sys::statvfs::statvfs;
+use tokio::process::Command;
 
 #[derive(Copy, Clone, Debug, Deserialize, SmartDefault)]
 #[serde(rename_all = "lowercase")]
@@ -76,11 +80,20 @@ pub enum InfoType {
     Used,
 }
 
+#[derive(Copy, Clone, Debug, Deserialize, SmartDefault)]
+#[serde(rename_all = "lowercase")]
+pub enum Backend {
+    #[default]
+    Vfs,
+    Btrfs,
+}
+
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
     #[default("/".into())]
     pub path: ShellString,
+    pub backend: Backend,
     pub info_type: InfoType,
     pub format: FormatConfig,
     pub format_alt: Option<FormatConfig>,
@@ -128,17 +141,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     loop {
         let mut widget = Widget::new().with_format(format.clone());
 
-        let statvfs = statvfs(&*path).error("failed to retrieve statvfs")?;
-
-        // Casting to be compatible with 32-bit systems
-        #[allow(clippy::unnecessary_cast)]
-        let (total, used, available, free) = {
-            let total = (statvfs.blocks() as u64) * (statvfs.fragment_size() as u64);
-            let used = ((statvfs.blocks() as u64) - (statvfs.blocks_free() as u64))
-                * (statvfs.fragment_size() as u64);
-            let available = (statvfs.blocks_available() as u64) * (statvfs.block_size() as u64);
-            let free = (statvfs.blocks_free() as u64) * (statvfs.block_size() as u64);
-            (total, used, available, free)
+        let (total, used, available, free) = match config.backend {
+            Backend::Vfs => get_vfs(&*path)?,
+            Backend::Btrfs => get_btrfs(&path).await?,
         };
 
         let result = match config.info_type {
@@ -203,5 +208,90 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 }
             }
         }
+    }
+}
+
+fn get_vfs<P>(path: &P) -> Result<(u64, u64, u64, u64)>
+where
+    P: ?Sized + nix::NixPath,
+{
+    let statvfs = statvfs(path).error("failed to retrieve statvfs")?;
+
+    // Casting to be compatible with 32-bit systems
+    #[allow(clippy::unnecessary_cast)]
+    {
+        let total = (statvfs.blocks() as u64) * (statvfs.fragment_size() as u64);
+        let used = ((statvfs.blocks() as u64) - (statvfs.blocks_free() as u64))
+            * (statvfs.fragment_size() as u64);
+        let available = (statvfs.blocks_available() as u64) * (statvfs.block_size() as u64);
+        let free = (statvfs.blocks_free() as u64) * (statvfs.block_size() as u64);
+
+        Ok((total, used, available, free))
+    }
+}
+
+async fn get_btrfs(path: &str) -> Result<(u64, u64, u64, u64)> {
+    const OUTPUT_CHANGED: &str = "Btrfs filesystem usage output format changed";
+
+    fn remove_estimate_min(estimate_str: &str) -> Result<&str> {
+        estimate_str.trim_matches('\t')
+            .split_once("\t")
+            .ok_or(Error::new(OUTPUT_CHANGED))
+            .map(|v| v.0)
+    }
+
+    macro_rules! get {
+        ($source:expr, $name:expr, $variable:ident) => {
+            get!(@pre_op (|a| {Ok::<_, Error>(a)}), $source, $name, $variable)
+        };
+        (@pre_op $function:expr, $source:expr, $name:expr, $variable:ident) => {
+            if $source.starts_with(concat!($name, ":")) {
+                let (found_name, variable_str) =
+                    $source.split_once(":").ok_or(Error::new(OUTPUT_CHANGED))?;
+
+                let variable_str = $function(variable_str)?;
+
+                debug_assert_eq!(found_name, $name);
+                $variable
+                    .set(variable_str.trim().parse().error(OUTPUT_CHANGED)?)
+                    .map_err(|_| Error::new(OUTPUT_CHANGED))?;
+            }
+        };
+    }
+
+    let filesystem_usage = Command::new("btrfs")
+        .args(["filesystem", "usage", "--raw", path])
+        .output()
+        .await
+        .error("Failed to collect btrfs filesystem usage info")?
+        .stdout;
+
+    {
+        let final_total = OnceCell::new();
+        let final_used = OnceCell::new();
+        let final_free = OnceCell::new();
+
+        let mut lines = filesystem_usage.lines();
+        while let Some(line) = lines
+            .next_line()
+            .await
+            .error("Failed to read output of btrfs filesystem usage")?
+        {
+            let line = line.trim();
+
+            // See btrfs-filesystem(8) for an explanation for the rows.
+            get!(line, "Device size", final_total);
+            get!(line, "Used", final_used);
+            get!(@pre_op remove_estimate_min, line, "Free (estimated)", final_free);
+        }
+
+        Ok((
+            *final_total.get().ok_or(Error::new(OUTPUT_CHANGED))?,
+            *final_used.get().ok_or(Error::new(OUTPUT_CHANGED))?,
+            // HACK(@bpeetz): We also return the free disk space as the available one, because btrfs
+            // does not tell us which disk space is reserved for the fs. <2025-05-18>
+            *final_free.get().ok_or(Error::new(OUTPUT_CHANGED))?,
+            *final_free.get().ok_or(Error::new(OUTPUT_CHANGED))?,
+        ))
     }
 }
