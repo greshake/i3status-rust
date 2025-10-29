@@ -197,6 +197,12 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     "device" => Value::text(device.iface.name),
                 });
 
+                if speed_down / max_network_speeds.down > 0.8 || speed_up / max_network_speeds.up > 0.8 {
+                    widget.state = State::Info;
+                } else {
+                    widget.state = State::Idle;
+                }
+
                 api.set_widget(widget)?;
             }
         }
