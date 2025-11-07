@@ -140,7 +140,7 @@ async fn update_bar(
                 });
                 widget.state = input.state;
             }
-            Err(error) => return api.set_error(error),
+            Err(error) => return Err(error),
         }
     } else {
         text_empty = stdout.is_empty();
