@@ -165,6 +165,7 @@ words:
   - sysfs
   - tebi
   - tera
+  - timew
   - tzname
   - tzset
   - udev
