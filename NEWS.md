@@ -1,3 +1,9 @@
+# i3status-rust 0.35.0
+
+### Bug Fixes and Improvements
+
+* `memory` block now uses "available memory" estimate provided by the Linux kernel. This matches other tooling other than htop - refer to https://github.com/htop-dev/htop/issues/1307 (#2160)
+
 # i3status-rust 0.34.0
 
 ### New Blocks and Features
