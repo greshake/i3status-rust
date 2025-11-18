@@ -1,0 +1,1 @@
+rd_("ki3status_rs")
