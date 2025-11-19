@@ -31,6 +31,7 @@ words:
   - bugz
   - busctl
   - caldav
+  - cbrt
   - ccache
   - chrono
   - clippy
@@ -86,6 +87,7 @@ words:
   - kibi
   - kmon
   - libc
+  - libdbus
   - liquidctl
   - locid
   - macchiato
@@ -188,8 +190,8 @@ words:
   - xclip
   - xcolors
   - xesam
-  - xkbswitch
   - xkbevent
+  - xkbswitch
   - XKCD
   - xrandr
   - xresources

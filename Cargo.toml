@@ -32,6 +32,7 @@ rustdoc-args = ["--cfg", "docsrs"]
 async-trait = "0.1"
 backon = { version = "1.2", default-features = false, features = ["tokio-sleep"] }
 base64 = { version = "0.22.1" }
+bitflags = "2.9"
 bytes = "1.8"
 calibright = { version = "0.1.13", features = ["watch"] }
 chrono = { version = "0.4", default-features = false, features = ["clock", "unstable-locales"] }
@@ -60,7 +61,7 @@ nom = "7.1.2"
 notmuch = { version = "0.8", optional = true }
 oauth2 = { version = "5.0.0", default-features = false, features = ["reqwest"] }
 num-traits = "0.2"
-pipewire = { version = "0.8", default-features = false, optional = true }
+pipewire = { version = "0.9", default-features = false, optional = true }
 quick-xml = { version = "0.37", features = ["serialize"] }
 regex = "1.5"
 reqwest = { version = "0.12", features = ["json"] }
