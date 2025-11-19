@@ -1,5 +1,6 @@
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::{HashMap, HashSet};
+use std::io::Cursor;
 use std::mem::MaybeUninit;
 use std::rc::Rc;
 use std::str::FromStr;
@@ -19,17 +20,20 @@ use ::pipewire::{
     properties::properties,
     proxy::{Listener, ProxyListener, ProxyT},
     spa::{
-        param::ParamType,
+        param::{ParamType, audio::AudioInfoRaw},
         pod::{
-            Pod, Value, ValueArray, builder::Builder as PodBuilder, deserialize::PodDeserializer,
+            Object, Pod, Value, ValueArray, builder::Builder as PodBuilder,
+            deserialize::PodDeserializer, serialize::PodSerializer,
         },
         sys::{
-            SPA_DIRECTION_INPUT, SPA_DIRECTION_OUTPUT, SPA_PARAM_ROUTE_device,
-            SPA_PARAM_ROUTE_direction, SPA_PARAM_ROUTE_index, SPA_PARAM_ROUTE_name,
-            SPA_PARAM_ROUTE_props, SPA_PARAM_ROUTE_save, SPA_PROP_channelVolumes, SPA_PROP_mute,
+            SPA_DIRECTION_INPUT, SPA_DIRECTION_OUTPUT, SPA_PARAM_EnumFormat,
+            SPA_PARAM_ROUTE_device, SPA_PARAM_ROUTE_direction, SPA_PARAM_ROUTE_index,
+            SPA_PARAM_ROUTE_name, SPA_PARAM_ROUTE_props, SPA_PARAM_ROUTE_save,
+            SPA_PROP_channelVolumes, SPA_PROP_mute, SPA_TYPE_OBJECT_Format,
         },
         utils::{SpaTypes, dict::DictRef},
     },
+    stream::{StreamBox, StreamFlags},
     types::ObjectType,
 };
 use bitflags::bitflags;
@@ -639,10 +643,17 @@ impl Client {
                         update_copy.replace_with(|v| *v | EventKind::NODE_ADDED);
                     }
                     ObjectType::Link => {
+                        let mut client_data = client.data.lock().unwrap();
                         let Some(link) = Link::new(global_props) else {
                             return;
                         };
-                        client.data.lock().unwrap().links.insert(global_id, link);
+                        if let Some(node) = client_data.nodes.get(&link.link_input_node)
+                            && node.name == env!("CARGO_PKG_NAME")
+                        {
+                            return;
+                        }
+
+                        client_data.links.insert(global_id, link);
                         update_copy.replace_with(|v| *v | EventKind::LINK_ADDED);
                     }
                     ObjectType::Port => {
@@ -824,6 +835,124 @@ impl Client {
                 }
             })
             .register();
+
+        /* START WORKAROUND FOR PIPEWIRE LOOPBACK BUG
+
+        This workaround fixes an issue caused by the loopback device.
+        Without this workaround, if nothing has interacted with the sink/source then setting
+        the volume/mute will fail.
+
+        This workaround creates input and output streams which forces pipewire
+        to use the real sink/source instead of the loopback device.
+
+        For context see:
+
+            * https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/4949
+            * https://gitlab.freedesktop.org/pipewire/pipewire/-/issues/4610
+            * https://gitlab.freedesktop.org/pipewire/wireplumber/-/issues/822
+        */
+
+        let output_done = Rc::new(Cell::new(false));
+        let output_done_clone = output_done.clone();
+        let input_done = Rc::new(Cell::new(false));
+        let input_done_clone = input_done.clone();
+
+        let values: Vec<u8> = PodSerializer::serialize(
+            Cursor::new(Vec::new()),
+            &Value::Object(Object {
+                type_: SPA_TYPE_OBJECT_Format,
+                id: SPA_PARAM_EnumFormat,
+                properties: AudioInfoRaw::new().into(),
+            }),
+        )
+        .expect("Failed to serialize pod")
+        .0
+        .into_inner();
+
+        let mut params = [Pod::from_bytes(&values).expect("Failed to create pod")];
+
+        let output_stream = StreamBox::new(
+            &core,
+            "i3status_pipewire_workaround_output_stream",
+            properties! {
+                *keys::MEDIA_TYPE => "Audio",
+                *keys::MEDIA_ROLE => "Music",
+                *keys::MEDIA_CATEGORY => "Playback",
+                *keys::AUDIO_CHANNELS => "2",
+            },
+        )
+        .expect("Could not create output_stream");
+
+        let output_stream_listener = output_stream
+            .add_local_listener()
+            .process(move |_stream, _acc: &mut f64| {
+                output_done_clone.set(true);
+            })
+            .register()
+            .expect("Could not add output_stream listener");
+
+        output_stream
+            .connect(
+                ::pipewire::spa::utils::Direction::Output,
+                None,
+                StreamFlags::AUTOCONNECT | StreamFlags::MAP_BUFFERS | StreamFlags::RT_PROCESS,
+                &mut params,
+            )
+            .expect("Could not connect output_stream");
+
+        let input_stream = StreamBox::new(
+            &core,
+            "i3status_pipewire_workaround_input_stream",
+            properties! {
+                *keys::MEDIA_TYPE => "Audio",
+                *keys::MEDIA_ROLE => "Music",
+                *keys::MEDIA_CATEGORY => "Playback",
+                *keys::AUDIO_CHANNELS => "2",
+            },
+        )
+        .expect("Could not create input_stream");
+        let input_stream_listener = input_stream
+            .add_local_listener()
+            .process(move |_stream, _acc: &mut f64| {
+                input_done_clone.set(true);
+            })
+            .register()
+            .expect("Could not add input_stream listener");
+
+        input_stream
+            .connect(
+                ::pipewire::spa::utils::Direction::Input,
+                None,
+                StreamFlags::AUTOCONNECT | StreamFlags::MAP_BUFFERS | StreamFlags::RT_PROCESS,
+                &mut params,
+            )
+            .expect("Could not connect input_stream");
+
+        while !output_done.get() {
+            main_loop.loop_().iterate(Duration::from_secs(1));
+            let event = update.take();
+            if !event.is_empty() {
+                client.send_update_event(event);
+            }
+        }
+        output_stream
+            .disconnect()
+            .expect("Unable to disconnect output_stream");
+        output_stream_listener.unregister();
+
+        while !input_done.get() {
+            main_loop.loop_().iterate(Duration::from_secs(1));
+            let event = update.take();
+            if !event.is_empty() {
+                client.send_update_event(event);
+            }
+        }
+        input_stream
+            .disconnect()
+            .expect("Unable to disconnect input_stream");
+        input_stream_listener.unregister();
+
+        // END WORKAROUND FOR PIPEWIRE LOOPBACK BUG
 
         loop {
             main_loop.loop_().iterate(Duration::from_hours(24));
