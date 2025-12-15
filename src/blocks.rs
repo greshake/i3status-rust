@@ -12,6 +12,7 @@
 //! `error_format` | Overrides global `error_format` | None
 //! `error_fullscreen_format` | Overrides global `error_fullscreen_format` | None
 //! `error_interval` | How long to wait until restarting the block after an error occurred. | `5`
+//! `max_retries` | How many times should a block be restarted the block after an error occurred. If no limit is specified none will be enforced. | `None`
 //! `[block.theme_overrides]` | Same as the top-level config option, but for this block only. Refer to `Themes and Icons` below. | None
 //! `[block.icons_overrides]` | Same as the top-level config option, but for this block only. Refer to `Themes and Icons` below. | None
 //! `[[block.click]]` | Set or override click action for the block. See below for details. | Block default / None
@@ -43,6 +44,8 @@ use crate::errors::*;
 use crate::geolocator::{Geolocator, IPAddressInfo};
 use crate::widget::Widget;
 use crate::{BoxedFuture, Request, RequestCmd};
+
+pub(super) const RESTART_BLOCK_BTN: &str = "restart_block_btn";
 
 macro_rules! define_blocks {
     {
@@ -87,14 +90,37 @@ macro_rules! define_blocks {
                         $(#[cfg(feature = $feat)])?
                         #[allow(deprecated)]
                         Self::$block(config) => futures.push(async move {
-                            while let Err(err) = $block::run(&config, &api).await {
-                                if api.set_error(err).is_err() {
+                            let mut error_count: u8 = 0;
+                            while let Err(mut err) = $block::run(&config, &api).await {
+                                let Ok(mut actions) = api.get_actions() else { return };
+                                if api.set_default_actions(&[
+                                    (MouseButton::Left, Some(RESTART_BLOCK_BTN), "error_count_reset"),
+                                ]).is_err() {
+                                    return;
+                                }
+                                let should_retry = api
+                                    .max_retries
+                                    .map_or(true, |max_retries| error_count < max_retries);
+                                if !should_retry {
+                                    err = Error {
+                                        message: Some("Block terminated".into()),
+                                        cause: Some(Arc::new(err)),
+                                    };
+                                }
+                                if api.set_error_with_restartable(err, !should_retry).is_err() {
                                     return;
                                 }
                                 tokio::select! {
-                                    _ = tokio::time::sleep(api.error_interval) => (),
+                                    _ = tokio::time::sleep(api.error_interval), if should_retry => (),
+                                    Some(action) = actions.recv(), if !should_retry  => match action.as_ref(){
+                                        "error_count_reset" => {
+                                            error_count = 0;
+                                        },
+                                        _ => (),
+                                    },
                                     _ = api.wait_for_update_request() => (),
                                 }
+                                error_count = error_count.saturating_add(1);
                             }
                         }.boxed_local()),
                     )*
@@ -210,6 +236,7 @@ pub struct CommonApi {
     pub(crate) request_sender: mpsc::UnboundedSender<Request>,
     pub(crate) error_interval: Duration,
     pub(crate) geolocator: Arc<Geolocator>,
+    pub(crate) max_retries: Option<u8>,
 }
 
 impl CommonApi {
@@ -233,12 +260,17 @@ impl CommonApi {
             .error("Failed to send Request")
     }
 
-    /// Sends the error to be displayed.
+    /// Sends the error to be displayed, no restart button will be shown.
     pub fn set_error(&self, error: Error) -> Result<()> {
+        self.set_error_with_restartable(error, false)
+    }
+
+    /// Sends the error to be displayed.
+    pub fn set_error_with_restartable(&self, error: Error, restartable: bool) -> Result<()> {
         self.request_sender
             .send(Request {
                 block_id: self.id,
-                cmd: RequestCmd::SetError(error),
+                cmd: RequestCmd::SetError { error, restartable },
             })
             .error("Failed to send Request")
     }

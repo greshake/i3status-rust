@@ -75,6 +75,7 @@ pomodoro_break = "\uefef" # coffee
 pomodoro_paused = "\ue034" # pause
 pomodoro_started = "\ue037" # play_arrow
 pomodoro_stopped = "\uef6a" # play_disabled
+refresh = "\ue5d5" # refresh
 resolution = "\ue3c6" # crop_square
 scratchpad = "\ue883" # flip_to_front
 tasks = "\ue8f9" # work
