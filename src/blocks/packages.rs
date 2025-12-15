@@ -6,6 +6,7 @@
 //! - `aur` for Arch based system
 //! - `dnf` for Fedora based system
 //! - `xbps` for Void Linux
+//! - `apk` for Alpine Linux
 //!
 //! # Configuration
 //!
@@ -30,6 +31,7 @@
 //! `aur`        | Number of updates available in Arch based system                                 | Number | -
 //! `dnf`        | Number of updates available in Fedora based system                               | Number | -
 //! `xbps`       | Number of updates available in Void Linux                                        | Number | -
+//! `apk`        | Number of updates available in Alpine Linux                                      | Number | -
 //! `total`      | Number of updates available in all package manager listed                        | Number | -
 //!
 //! # Apt
@@ -174,6 +176,25 @@
 //! cmd = "xbps-install -Mun | dmenu -l 10"
 //! ```
 //!
+//!
+//! Apk only config:
+//!
+//! ```toml
+//! [[block]]
+//! block = "packages"
+//! package_manager = ["apk"]
+//! interval = 1800
+//! error_interval = 300
+//! max_retries = 5
+//! format = " $icon $apk.eng(w:1) updates available "
+//! format_singular = " $icon One update available "
+//! format_up_to_date = " $icon system up to date "
+//! [[block.click]]
+//! # shows dmenu with available updates. Any dmenu alternative should also work.
+//! button = "left"
+//! cmd = "apk --no-cache --upgradable list | dmenu -l 10"
+//! ```
+//!
 //! Multiple package managers config:
 //!
 //! Update the list of pending updates every thirty minutes (1800 seconds):
@@ -181,11 +202,11 @@
 //! ```toml
 //! [[block]]
 //! block = "packages"
-//! package_manager = ["apt", "pacman", "aur", "dnf", "xbps"]
+//! package_manager = ["apt", "pacman", "aur", "dnf", "xbps", "apk"]
 //! interval = 1800
 //! error_interval = 300
 //! max_retries = 5
-//! format = " $icon $apt + $pacman + $aur + $dnf + $xbps = $total updates available "
+//! format = " $icon $apt + $pacman + $aur + $dnf + $xbps + $apk = $total updates available "
 //! format_singular = " $icon One update available "
 //! format_up_to_date = " $icon system up to date "
 //! # If a linux update is available, but no ZFS package, it won't be possible to
@@ -211,6 +232,9 @@ use dnf::Dnf;
 
 pub mod xbps;
 use xbps::Xbps;
+
+pub mod apk;
+use apk::Apk;
 
 use regex::Regex;
 
@@ -240,6 +264,7 @@ pub enum PackageManager {
     Aur,
     Dnf,
     Xbps,
+    Apk,
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
@@ -267,6 +292,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let pacman = any_format_contains!("pacman");
     let dnf = any_format_contains!("dnf");
     let xbps = any_format_contains!("xbps");
+    let apk = any_format_contains!("apk");
 
     if !config.package_manager.contains(&PackageManager::Apt) && apt {
         config.package_manager.push(PackageManager::Apt);
@@ -282,6 +308,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     }
     if !config.package_manager.contains(&PackageManager::Xbps) && xbps {
         config.package_manager.push(PackageManager::Xbps);
+    }
+    if !config.package_manager.contains(&PackageManager::Apk) && apk {
+        config.package_manager.push(PackageManager::Apk);
     }
 
     let warning_updates_regex = config
@@ -314,6 +343,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             )),
             PackageManager::Dnf => Box::new(Dnf::new()),
             PackageManager::Xbps => Box::new(Xbps::new()),
+            PackageManager::Apk => Box::new(Apk::new()),
         });
     }
 
