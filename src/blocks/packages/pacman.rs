@@ -85,6 +85,7 @@ impl Backend for Pacman {
                 "--".as_ref(),
                 "pacman".as_ref(),
                 "-Sy".as_ref(),
+                "--disable-sandbox-filesystem".as_ref(),
                 "--dbpath".as_ref(),
                 PACMAN_UPDATES_DB.as_os_str(),
                 "--logfile".as_ref(),
