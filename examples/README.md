@@ -15,7 +15,7 @@ Feel free to add to the list below by sending a PR. Additional scripts can be ad
 - [HTTP Status Code](#http-status-code)
 - [Intel GPU Usage](#intel-gpu-usage)
 - [Kernel](#kernel)
-- [Liquid cooling system status](#Liquid-cooling-system-status)
+- [Liquid cooling system status](#liquid-cooling-system-status)
 - [Maintained by user and outdated](#maintained-by-user-and-outdated)
 - [Monitors](#monitors)
 - [Ping/RTT](#pingrtt)
@@ -28,6 +28,7 @@ Feel free to add to the list below by sending a PR. Additional scripts can be ad
 - [Spotify TUI](#spt)
 - [Nextcloud](#nextcloud)
 - [Wttr.in](#wttrin)
+- [HDR toggle](#hdr-toggle)
 
 ### Bugs assigned to user
 
@@ -248,6 +249,7 @@ cmd = "xdg-open http://pi.hole"
 
 **Note:**
 Replace `http://pi.hole` with a correct url to your Pi-hole instance. Define icon override for `pi_hole`.
+
 ```toml
 [icons.overrides]
 pi_hole = ""
@@ -260,6 +262,7 @@ Displays liquid temperature (celsius), fan and pump RPM. Requires: `liquidctl`.
 ![image](https://user-images.githubusercontent.com/20397027/118128928-7dfe8d00-b436-11eb-96b1-b40f62676933.png)
 
 _Example for NZXT Kraken X series:_
+
 ```toml
 [[block]]
 block = "custom"
@@ -303,4 +306,20 @@ Minimalistic weather block which uses [wttr.in](https://github.com/chubin/wttr.i
 block = "custom"
 command = "sed 's/  //' <(curl 'https://wttr.in/?format=1' -s)"
 interval = 600
+```
+
+### HDR toggle
+
+Toggle HDR mode for a single monitor. Requires `jq`
+
+```
+[[block]]
+block = "toggle"
+format = " $icon HDR "
+command_on = '''swaymsg output "DP-1" hdr on '''
+command_off = '''swaymsg output "DP-1" hdr off'''
+command_state = '''swaymsg -t get_outputs -r | jq '.[] | select(.name == "DP-1") | .hdr' | awk '{ if ($1 == "true") print "HDR"; else if ($1 == "false") print ""; }' '''
+state_on = "good"
+state_off = "idle"
+interval = 15
 ```
