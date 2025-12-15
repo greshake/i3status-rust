@@ -77,7 +77,9 @@ impl NetDevice {
         let path = Path::new("/sys/class/net").join(&iface.name);
         let tun = iface.name.starts_with("tun")
             || iface.name.starts_with("tap")
-            || path.join("tun_flags").exists();
+            || tokio::fs::try_exists(path.join("tun_flags"))
+                .await
+                .error("Unable to stat file")?;
         let (wg, ppp) = util::read_file(path.join("uevent"))
             .await
             .map_or((false, false), |c| {
@@ -166,15 +168,10 @@ impl WifiInfo {
             .error("Failed to get nl80211 interfaces")?;
 
         for interface in interfaces {
-            if let Some(index) = interface.index {
-                if index != if_index {
-                    continue;
-                }
-
-                let Ok(ap) = socket.get_station_info(index).await else {
-                    continue;
-                };
-
+            if let Some(index) = interface.index
+                && index == if_index
+                && let Ok(ap) = socket.get_station_info(index).await
+            {
                 // TODO: are there any situations when there is more than one station?
                 let Some(ap) = ap.into_iter().next() else {
                     continue;
@@ -351,27 +348,35 @@ async fn get_default_interface(
     ))
     .await?;
 
-    let mut default_index = 0;
+    let mut best_index = 0;
+    let mut best_metric = u32::MAX;
 
     recv_until_done!(sock, msg: Rtmsg => {
         if msg.rtm_type != Rtn::Unicast {
             continue;
         }
+        // Only check default routes (rtm_dst_len == 0)
+        if msg.rtm_dst_len != 0 {
+            continue;
+        }
+
         let mut index = None;
-        let mut is_default = false;
+        let mut metric = 0u32;
         for attr in msg.rtattrs.iter() {
             match attr.rta_type {
                 Rta::Oif => index = Some(attr.get_payload_as::<i32>()?),
-                Rta::Gateway => is_default = true,
+                Rta::Priority => metric = attr.get_payload_as::<u32>()?,
                 _ => (),
             }
         }
-        if is_default && default_index == 0 {
-            default_index = index.unwrap();
-        }
+        if let Some(i) = index
+            && metric < best_metric {
+                best_metric = metric;
+                best_index = i;
+            }
     });
 
-    Ok(default_index)
+    Ok(best_index)
 }
 
 async fn ip_payload<const BYTES: usize>(
@@ -405,11 +410,10 @@ async fn ip_payload<const BYTES: usize>(
 
         let attr_handle = msg.rtattrs.get_attr_handle();
 
-        let Some(attr) = attr_handle.get_attribute(Ifa::Local)
+        if let Some(attr) = attr_handle.get_attribute(Ifa::Local)
             .or_else(|| attr_handle.get_attribute(Ifa::Address))
-        else { continue };
-
-        if let Ok(p) = attr.rta_payload.as_ref().try_into() {
+            && let Ok(p) = attr.rta_payload.as_ref().try_into()
+        {
             payload = Some(p);
         }
     });
@@ -441,14 +445,14 @@ async fn read_nameservers() -> Result<Vec<IpAddr>> {
 
     for line in file.lines() {
         let mut line_parts = line.split_whitespace();
-        if line_parts.next() == Some("nameserver") {
-            if let Some(mut ip) = line_parts.next() {
-                // TODO: use the zone id somehow?
-                if let Some((without_zone_id, _zone_id)) = ip.split_once('%') {
-                    ip = without_zone_id;
-                }
-                nameservers.push(ip.parse().error("Unable to parse ip")?);
+        if line_parts.next() == Some("nameserver")
+            && let Some(mut ip) = line_parts.next()
+        {
+            // TODO: use the zone id somehow?
+            if let Some((without_zone_id, _zone_id)) = ip.split_once('%') {
+                ip = without_zone_id;
             }
+            nameservers.push(ip.parse().error("Unable to parse ip")?);
         }
     }
 

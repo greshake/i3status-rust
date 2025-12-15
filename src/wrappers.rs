@@ -120,7 +120,7 @@ impl ShellString {
         Self(value.into())
     }
 
-    pub fn expand(&self) -> Result<Cow<str>> {
+    pub fn expand(&self) -> Result<Cow<'_, str>> {
         shellexpand::full(&self.0).error("Failed to expand string")
     }
 }

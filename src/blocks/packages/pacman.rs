@@ -72,7 +72,10 @@ impl Backend for Pacman {
 
         // Create symlink to local cache in `checkup-db` if required
         let local_cache = PACMAN_UPDATES_DB.join("local");
-        if !local_cache.exists() {
+        if !tokio::fs::try_exists(&local_cache)
+            .await
+            .error("Unable to stat file")?
+        {
             symlink(PACMAN_DB.join("local"), local_cache)
                 .await
                 .error("Failed to created required symlink")?;
@@ -85,6 +88,7 @@ impl Backend for Pacman {
                 "--".as_ref(),
                 "pacman".as_ref(),
                 "-Sy".as_ref(),
+                "--disable-sandbox-filesystem".as_ref(),
                 "--dbpath".as_ref(),
                 PACMAN_UPDATES_DB.as_os_str(),
                 "--logfile".as_ref(),

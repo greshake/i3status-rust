@@ -255,18 +255,17 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             }
             None => (),
         }
-        if let Some(ap) = &active_port {
-            if let Some((regex, mapped)) = config
+        if let Some(ap) = &active_port
+            && let Some((regex, mapped)) = config
                 .active_port_mappings
                 .iter()
                 .find(|(regex, _)| regex.0.is_match(ap))
-            {
-                let mapped = regex.0.replace(ap, mapped);
-                if mapped.is_empty() {
-                    active_port = None;
-                } else {
-                    active_port = Some(mapped.into_owned());
-                }
+        {
+            let mapped = regex.0.replace(ap, mapped);
+            if mapped.is_empty() {
+                active_port = None;
+            } else {
+                active_port = Some(mapped.into_owned());
             }
         }
 

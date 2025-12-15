@@ -147,8 +147,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 },
                 Some(action) = actions.recv() => match action.as_ref() {
                     "toggle" => {
-                        if let Some(dev) = &monitor.device {
-                            if let Ok(connected) = dev.device.connected().await {
+                        if let Some(dev) = &monitor.device
+                            && let Ok(connected) = dev.device.connected().await {
                                 if connected {
                                     let _ = dev.device.disconnect().await;
                                 } else {
@@ -156,7 +156,6 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                                 }
                                 break;
                             }
-                        }
                     }
                     _ => (),
                 }
@@ -363,10 +362,10 @@ impl Device {
         debug!("root object: {:?}", root_object);
 
         for (path, interfaces) in devices {
-            if let Some(root) = &root_object {
-                if !path.starts_with(root) {
-                    continue;
-                }
+            if let Some(root) = &root_object
+                && !path.starts_with(root)
+            {
+                continue;
             }
 
             let Some(device_interface) = interfaces.get("org.bluez.Device1") else {

@@ -4,13 +4,13 @@
 
 `i3status-rs` is a feature-rich and resource-friendly replacement for i3status, written in pure Rust. It provides a way to display "blocks" of system information (time, battery status, volume, etc) on bars that support the [i3bar protocol](https://i3wm.org/docs/i3bar-protocol.html).
 
-## Getting Started
+## Install
 
-Install from one of the packages below:
+Install `i3status-rs` from one of the packages below:
 
 [![Packaging status](https://repology.org/badge/vertical-allrepos/i3status-rust.svg?columns=5&minversion=0.30.0&exclude_unsupported=1)](https://repology.org/project/i3status-rust/versions)
 
-* For Fedora/CentOS, you can install from the [COPR](https://copr.fedorainfracloud.org/coprs/atim/i3status-rust/).
+* For Fedora/CentOS, you can install from a [community supported](https://github.com/greshake/i3status-rust/issues/2109#issuecomment-2616638134) [COPR](https://copr.fedorainfracloud.org/coprs/alternateved/i3status-rust/).
 
 * For NixOS, you can also use [Home Manager](https://github.com/nix-community/home-manager): `programs.i3status-rust.enable = true` [see available options](https://nix-community.github.io/home-manager/options.xhtml#opt-programs.i3status-rust.enable)
 

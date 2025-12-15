@@ -116,10 +116,10 @@ impl Geolocator {
     ) -> Result<IPAddressInfo> {
         {
             let guard = self.last_autolocate.lock().unwrap();
-            if let Some(cached) = &*guard {
-                if cached.timestamp.elapsed() < interval {
-                    return Ok(cached.location.clone());
-                }
+            if let Some(cached) = &*guard
+                && cached.timestamp.elapsed() < interval
+            {
+                return Ok(cached.location.clone());
             }
         }
 
@@ -158,7 +158,7 @@ impl GeolocatorBackend {
             GeolocatorBackend::Ipapi(_) => ipapi::Ipapi.get_info(client).await,
             GeolocatorBackend::Ip2Location(config) => {
                 ip2location::Ip2Location
-                    .get_info(client, &config.api_key)
+                    .get_info(client, config.api_key.as_ref())
                     .await
             }
         }

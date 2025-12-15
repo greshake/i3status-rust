@@ -14,11 +14,15 @@ use crate::errors::*;
 /// - Then try `/usr/share/`
 ///
 /// Automatically append an extension if not presented.
-pub fn find_file(file: &str, subdir: Option<&str>, extension: Option<&str>) -> Option<PathBuf> {
+pub fn find_file(
+    file: &str,
+    subdir: Option<&str>,
+    extension: Option<&str>,
+) -> Result<Option<PathBuf>> {
     let file = Path::new(file);
 
-    if file.is_absolute() && file.exists() {
-        return Some(file.to_path_buf());
+    if file.is_absolute() && file.try_exists().error("Unable to stat file")? {
+        return Ok(Some(file.to_path_buf()));
     }
 
     // Try XDG_CONFIG_HOME (e.g. `~/.config`)
@@ -28,8 +32,8 @@ pub fn find_file(file: &str, subdir: Option<&str>, extension: Option<&str>) -> O
             xdg_config.push(subdir);
         }
         xdg_config.push(file);
-        if let Some(file) = exists_with_opt_extension(&xdg_config, extension) {
-            return Some(file);
+        if let Some(file) = exists_with_opt_extension(&xdg_config, extension)? {
+            return Ok(Some(file));
         }
     }
 
@@ -40,8 +44,8 @@ pub fn find_file(file: &str, subdir: Option<&str>, extension: Option<&str>) -> O
             xdg_data.push(subdir);
         }
         xdg_data.push(file);
-        if let Some(file) = exists_with_opt_extension(&xdg_data, extension) {
-            return Some(file);
+        if let Some(file) = exists_with_opt_extension(&xdg_data, extension)? {
+            return Ok(Some(file));
         }
     }
 
@@ -51,26 +55,26 @@ pub fn find_file(file: &str, subdir: Option<&str>, extension: Option<&str>) -> O
         usr_share_path.push(subdir);
     }
     usr_share_path.push(file);
-    if let Some(file) = exists_with_opt_extension(&usr_share_path, extension) {
-        return Some(file);
+    if let Some(file) = exists_with_opt_extension(&usr_share_path, extension)? {
+        return Ok(Some(file));
     }
 
-    None
+    Ok(None)
 }
 
-fn exists_with_opt_extension(file: &Path, extension: Option<&str>) -> Option<PathBuf> {
-    if file.exists() {
-        return Some(file.into());
+fn exists_with_opt_extension(file: &Path, extension: Option<&str>) -> Result<Option<PathBuf>> {
+    if file.try_exists().error("Unable to stat file")? {
+        return Ok(Some(file.into()));
     }
     // If file has no extension, test with given extension
     if let (None, Some(extension)) = (file.extension(), extension) {
         let file = file.with_extension(extension);
         // Check again with extension added
-        if file.exists() {
-            return Some(file);
+        if file.try_exists().error("Unable to stat file")? {
+            return Ok(Some(file));
         }
     }
-    None
+    Ok(None)
 }
 
 pub async fn new_dbus_connection() -> Result<zbus::Connection> {
@@ -95,15 +99,40 @@ where
     let contents = std::fs::read_to_string(path)
         .or_error(|| format!("Failed to read file: {}", path.display()))?;
 
+    deserialize_toml_file_string(contents, path)
+}
+
+pub async fn async_deserialize_toml_file<T, P>(path: P) -> Result<T>
+where
+    T: DeserializeOwned,
+    P: AsRef<Path>,
+{
+    let path = path.as_ref();
+
+    let contents = read_file(path)
+        .await
+        .or_error(|| format!("Failed to read file: {}", path.display()))?;
+
+    deserialize_toml_file_string(contents, path)
+}
+
+fn deserialize_toml_file_string<T>(contents: String, path: &Path) -> Result<T>
+where
+    T: DeserializeOwned,
+{
     toml::from_str(&contents).map_err(|err| {
         let location_msg = err
             .span()
             .map(|span| {
-                let line = 1 + contents.as_bytes()[..(span.start)]
-                    .iter()
-                    .filter(|b| **b == b'\n')
-                    .count();
-                format!(" at line {line}")
+                if span == (0..0) {
+                    String::new()
+                } else {
+                    let line = 1 + contents.as_bytes()[..(span.start)]
+                        .iter()
+                        .filter(|b| **b == b'\n')
+                        .count();
+                    format!(" at line {line}")
+                }
             })
             .unwrap_or_default();
         Error::new(format!(

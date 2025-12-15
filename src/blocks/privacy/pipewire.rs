@@ -29,7 +29,7 @@ impl Node {
         Self {
             name: global_props
                 .get(&keys::NODE_NAME)
-                .map_or_else(|| format!("node_{}", global_id), |s| s.to_string()),
+                .map_or_else(|| format!("node_{global_id}"), |s| s.to_string()),
             nick: global_props.get(&keys::NODE_NICK).map(|s| s.to_string()),
             media_class: global_props.get(&keys::MEDIA_CLASS).map(|s| s.to_string()),
             media_role: global_props.get(&keys::MEDIA_ROLE).map(|s| s.to_string()),
@@ -48,14 +48,13 @@ struct Link {
 
 impl Link {
     fn new(global_props: &DictRef) -> Option<Self> {
-        if let (Some(link_output_node), Some(link_input_node)) = (
-            global_props
-                .get(&keys::LINK_OUTPUT_NODE)
-                .and_then(|s| s.parse().ok()),
-            global_props
+        if let Some(link_output_node) = global_props
+            .get(&keys::LINK_OUTPUT_NODE)
+            .and_then(|s| s.parse().ok())
+            && let Some(link_input_node) = global_props
                 .get(&keys::LINK_INPUT_NODE)
-                .and_then(|s| s.parse().ok()),
-        ) {
+                .and_then(|s| s.parse().ok())
+        {
             Some(Self {
                 link_output_node,
                 link_input_node,
@@ -221,13 +220,9 @@ impl PrivacyMonitor for Monitor<'_> {
             ..
         } in data.links.values().sorted().dedup()
         {
-            let (Some(output_node), Some(input_node)) = (
-                data.nodes.get(link_output_node),
-                data.nodes.get(link_input_node),
-            ) else {
-                continue;
-            };
-            if input_node.media_class != Some("Audio/Sink".into())
+            if let Some(output_node) = data.nodes.get(link_output_node)
+                && let Some(input_node) = data.nodes.get(link_input_node)
+                && input_node.media_class != Some("Audio/Sink".into())
                 && !self.config.exclude_output.contains(&output_node.name)
                 && !self.config.exclude_input.contains(&input_node.name)
             {

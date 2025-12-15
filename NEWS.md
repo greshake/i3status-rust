@@ -1,14 +1,36 @@
-# i3status-rust 0.34.0 [unreleased]
+# i3status-rust 0.35.0
+
+### Bug Fixes and Improvements
+
+* `battery`: fixed negative remaining time that appears in recent Linux kernels (#2177)
+* `calendar`: fixed calendar retrieval if caldav server replies with multiple <comp ..> entities (#2178)
+* `memory`: fixed "available memory" estimate provided by the Linux kernel. This matches other tooling other than htop - refer to https://github.com/htop-dev/htop/issues/1307 (#2160)
+* `net`: fixed default interface detection to use the one with the lowest metric (#2151)
+* `packages`: fixed to handle recent updates in `pacman` package manager (#2216)
+* `service_status`: added support for systemd user services (#2172)
+
+# i3status-rust 0.34.0
 
 ### New Blocks and Features
 
 * `.eng` formatter: add show parameter
 * when using theme overrides you can now reference a color name defined in `~/.Xresources`, e.g., `x:background` looks for a line like `*background: #aabbcc` in `~/.Xresources` (see also [.Xresources](https://wiki.debian.org/Xresources))
 * Add support for wheel left and right clicks
+* New `disk_iostats` block, provides disk I/O statistics
+* `keyboard_layout`: Add xkb events support
+* `keyboard_layout`: Deprecated setxkbmap and xkbswitch in favor of xkbevent, will be removed in 0.35.0
+* `xrandr`: Use icon progression for brightness_icon
+* `pomodoro`: Add support for setting several kinds of formats
+* `packages`: Add support for `xbps` package manager
+* `hueshift`: added icon
+* Add global geolocator
 
 ### Bug Fixes and Improvements
 
-* Fix `bad event` errors in `focused_window` block.
+* Fixed `bad event` errors in `focused_window` block.
+* Formatting: treat key as a shortcut for key:true
+* Documented widgets in music and nvidia_gpu blocks
+* Bumped version of `swayipc-async` so that `Input`s with `DragLock::EnabledSticky` can be parsed
 
 ### Breaking Changes
 

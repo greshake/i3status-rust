@@ -118,8 +118,7 @@ impl DurationFormatter {
         // UNITS are sorted largest to smallest
         if min_unit_index < max_unit_index {
             return Err(Error::new(format!(
-                "min_unit({}) must be smaller than or equal to max_unit({})",
-                min_unit, max_unit,
+                "min_unit({min_unit}) must be smaller than or equal to max_unit({max_unit})",
             )));
         }
 
@@ -128,8 +127,7 @@ impl DurationFormatter {
 
         if units > units_upper_bound {
             return Err(Error::new(format!(
-                "there aren't {} units between min_unit({}) and max_unit({})",
-                units, min_unit, max_unit,
+                "there aren't {units} units between min_unit({min_unit}) and max_unit({max_unit})",
             )));
         }
 
