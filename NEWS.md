@@ -2,7 +2,12 @@
 
 ### Bug Fixes and Improvements
 
-* `memory` block now uses "available memory" estimate provided by the Linux kernel. This matches other tooling other than htop - refer to https://github.com/htop-dev/htop/issues/1307 (#2160)
+* `battery`: fixed negative remaining time that appears in recent Linux kernels (#2177)
+* `calendar`: fixed calendar retrieval if caldav server replies with multiple <comp ..> entities (#2178)
+* `memory`: fixed "available memory" estimate provided by the Linux kernel. This matches other tooling other than htop - refer to https://github.com/htop-dev/htop/issues/1307 (#2160)
+* `net`: fixed default interface detection to use the one with the lowest metric (#2151)
+* `packages`: fixed to handle recent updates in `pacman` package manager (#2216)
+* `service_status`: added support for systemd user services (#2172)
 
 # i3status-rust 0.34.0
 
