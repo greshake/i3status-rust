@@ -141,8 +141,8 @@
 <a href=#141 id=141 data-nosnippet>141</a>
 <a href=#142 id=142 data-nosnippet>142</a>    <span class="kw">fn </span>try_from(user_config: ThemeUserConfig) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Error&gt; {
 <a href=#143 id=143 data-nosnippet>143</a>        <span class="kw">let </span>name = user_config.theme.as_deref().unwrap_or(<span class="string">"plain"</span>);
-<a href=#144 id=144 data-nosnippet>144</a>        <span class="kw">let </span>file = util::find_file(name, <span class="prelude-val">Some</span>(<span class="string">"themes"</span>), <span class="prelude-val">Some</span>(<span class="string">"toml"</span>))
-<a href=#145 id=145 data-nosnippet>145</a>            .or_error(|| <span class="macro">format!</span>(<span class="string">"Theme '{name}' not found"</span>))<span class="question-mark">?</span>;
+<a href=#144 id=144 data-nosnippet>144</a>        <span class="kw">let </span>file = util::find_file(name, <span class="prelude-val">Some</span>(<span class="string">"themes"</span>), <span class="prelude-val">Some</span>(<span class="string">"toml"</span>))<span class="question-mark">?
+<a href=#145 id=145 data-nosnippet>145</a>            </span>.or_error(|| <span class="macro">format!</span>(<span class="string">"Theme '{name}' not found"</span>))<span class="question-mark">?</span>;
 <a href=#146 id=146 data-nosnippet>146</a>        <span class="kw">let </span>theme: ThemeInner = util::deserialize_toml_file(file)<span class="question-mark">?</span>;
 <a href=#147 id=147 data-nosnippet>147</a>        <span class="kw">let </span><span class="kw-2">mut </span>theme = Theme(theme);
 <a href=#148 id=148 data-nosnippet>148</a>        <span class="kw">if let </span><span class="prelude-val">Some</span>(overrides) = user_config.overrides {

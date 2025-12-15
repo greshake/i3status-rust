@@ -122,8 +122,8 @@
 <a href=#122 id=122 data-nosnippet>122</a>        <span class="kw">if </span>file == <span class="string">"none" </span>{
 <a href=#123 id=123 data-nosnippet>123</a>            <span class="prelude-val">Ok</span>(Icons::default())
 <a href=#124 id=124 data-nosnippet>124</a>        } <span class="kw">else </span>{
-<a href=#125 id=125 data-nosnippet>125</a>            <span class="kw">let </span>file = util::find_file(file, <span class="prelude-val">Some</span>(<span class="string">"icons"</span>), <span class="prelude-val">Some</span>(<span class="string">"toml"</span>))
-<a href=#126 id=126 data-nosnippet>126</a>                .or_error(|| <span class="macro">format!</span>(<span class="string">"Icon set '{file}' not found"</span>))<span class="question-mark">?</span>;
+<a href=#125 id=125 data-nosnippet>125</a>            <span class="kw">let </span>file = util::find_file(file, <span class="prelude-val">Some</span>(<span class="string">"icons"</span>), <span class="prelude-val">Some</span>(<span class="string">"toml"</span>))<span class="question-mark">?
+<a href=#126 id=126 data-nosnippet>126</a>                </span>.or_error(|| <span class="macro">format!</span>(<span class="string">"Icon set '{file}' not found"</span>))<span class="question-mark">?</span>;
 <a href=#127 id=127 data-nosnippet>127</a>            <span class="prelude-val">Ok</span>(Icons(util::deserialize_toml_file(file)<span class="question-mark">?</span>))
 <a href=#128 id=128 data-nosnippet>128</a>        }
 <a href=#129 id=129 data-nosnippet>129</a>    }

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["country_flag_from_iso_code","default","deserialize_toml_file","find_file","format_bar_graph","has_command","new_dbus_connection","new_system_dbus_connection","read_file"],"macro":["map"],"trait":["StreamExtDebounced"]};
+window.SIDEBAR_ITEMS = {"fn":["async_deserialize_toml_file","country_flag_from_iso_code","default","deserialize_toml_file","find_file","format_bar_graph","has_command","new_dbus_connection","new_system_dbus_connection","read_file"],"macro":["map"],"trait":["StreamExtDebounced"]};
