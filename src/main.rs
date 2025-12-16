@@ -65,6 +65,7 @@ fn main() {
 }
 
 /// Restart in-place
+#[allow(unreachable_code)]
 fn restart() -> ! {
     use std::env;
     use std::ffi::CString;
