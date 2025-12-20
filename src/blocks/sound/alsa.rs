@@ -12,23 +12,32 @@ pub(super) struct Device {
     volume: u32,
     muted: bool,
     monitor: ChildStdout,
+    #[expect(
+        dead_code,
+        reason = "Only used in drop to trigger kill and reap of child process"
+    )]
+    process: tokio::process::Child,
 }
 
 impl Device {
     pub(super) fn new(name: String, device: String, natural_mapping: bool) -> Result<Self> {
+        let mut process = Command::new("alsactl")
+            .arg("monitor")
+            .kill_on_drop(true)
+            .stdout(Stdio::piped())
+            .spawn()
+            .error("Failed to start alsactl monitor")?;
         Ok(Device {
             name,
             device,
             natural_mapping,
             volume: 0,
             muted: false,
-            monitor: Command::new("alsactl")
-                .arg("monitor")
-                .stdout(Stdio::piped())
-                .spawn()
-                .error("Failed to start alsactl monitor")?
+            monitor: process
                 .stdout
+                .take()
                 .error("Failed to pipe alsactl monitor output")?,
+            process,
         })
     }
 }
