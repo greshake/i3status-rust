@@ -1,6 +1,6 @@
 use std::cmp::{max, min};
 use std::process::Stdio;
-use tokio::process::{ChildStdout, Command};
+use tokio::process::Command;
 
 use super::super::prelude::*;
 use super::SoundDevice;
@@ -11,7 +11,7 @@ pub(super) struct Device {
     natural_mapping: bool,
     volume: u32,
     muted: bool,
-    monitor: ChildStdout,
+    process: tokio::process::Child,
 }
 
 impl Device {
@@ -22,13 +22,12 @@ impl Device {
             natural_mapping,
             volume: 0,
             muted: false,
-            monitor: Command::new("alsactl")
+            process: Command::new("alsactl")
                 .arg("monitor")
+                .kill_on_drop(true)
                 .stdout(Stdio::piped())
                 .spawn()
-                .error("Failed to start alsactl monitor")?
-                .stdout
-                .error("Failed to pipe alsactl monitor output")?,
+                .error("Failed to start alsactl monitor")?,
         })
     }
 }
@@ -138,7 +137,10 @@ impl SoundDevice for Device {
 
     async fn wait_for_update(&mut self) -> Result<()> {
         let mut buf = [0u8; 1024];
-        self.monitor
+        self.process
+            .stdout
+            .as_mut()
+            .error("Failed to get stdout of alsactl monitor")?
             .read(&mut buf)
             .await
             .error("Failed to read stdbuf output")?;
