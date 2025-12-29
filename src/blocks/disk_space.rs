@@ -234,7 +234,8 @@ async fn get_btrfs(path: &str) -> Result<(u64, u64, u64, u64)> {
     const OUTPUT_CHANGED: &str = "Btrfs filesystem usage output format changed";
 
     fn remove_estimate_min(estimate_str: &str) -> Result<&str> {
-        estimate_str.trim_matches('\t')
+        estimate_str
+            .trim_matches('\t')
             .split_once("\t")
             .ok_or(Error::new(OUTPUT_CHANGED))
             .map(|v| v.0)

@@ -85,6 +85,6 @@ fn restart() -> ! {
     }
 
     // Restart
-    nix::unistd::execvp(&exe, &arg).unwrap();
-    unreachable!();
+    let err = nix::unistd::execvp(&exe, &arg).unwrap_err();
+    panic!("execvp failed: {err}");
 }

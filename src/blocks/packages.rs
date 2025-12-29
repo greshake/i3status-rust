@@ -401,7 +401,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut package_manager_vec: Vec<Box<dyn Backend>> = Vec::new();
 
     for &package_manager in config.package_manager.iter() {
-        package_manager_vec.push(package_manager.build(config).await?);
+        package_manager_vec.push(package_manager.build(&config).await?);
     }
 
     loop {

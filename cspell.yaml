@@ -10,7 +10,7 @@ ignoreRegExpList:
   - /@[\w-]*/g
   #  Ignore names in zbus::proxy
   - /#\[zbus::proxy\([\w\s=\.",\/]*\)\]/gm
-    # Ignore unicode characters
+  # Ignore unicode characters
   - /(\\u[0-9a-fA-F]{4}|\\U[0-9a-fA-F]{8})/g
 words:
   - aarch
@@ -29,6 +29,7 @@ words:
   - BCHARGE
   - bluez
   - bokmaal
+  - btrfs
   - bugz
   - busctl
   - caldav
