@@ -1,12 +1,14 @@
 //! Pending updates for different package manager like apt, pacman, etc.
 //!
-//! Currently these package managers are available:
-//! - `apt` for Debian/Ubuntu based system
-//! - `pacman` for Arch based system
-//! - `aur` for Arch based system
-//! - `dnf` for Fedora based system
-//! - `xbps` for Void Linux
+//! Currently, these package managers are supported:
 //! - `apk` for Alpine Linux
+//! - `apt` for Debian/Ubuntu-based systems
+//! - `aur` for Arch-based systems
+//! - `brew` for the Homebrew Package Manager
+//! - `dnf` for Fedora-based systems
+//! - `pacman` for Arch-based systems
+//! - `snap` for Snap packages
+//! - `xbps` for Void Linux
 //!
 //! # Configuration
 //!
@@ -14,24 +16,26 @@
 //! ----|--------|--------
 //! `interval` | Update interval in seconds. | `600`
 //! `package_manager` | Package manager to check for updates | Automatically derived from format templates, but can be used to influence the `$total` value
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $total.eng(w:1) "`
+//! `format` | A string to customize the output of this block. See below for available placeholders. | `" $icon $total.eng(w:1) "`
 //! `format_singular` | Same as `format`, but for when exactly one update is available. | `" $icon $total.eng(w:1) "`
 //! `format_up_to_date` | Same as `format`, but for when no updates are available. | `" $icon $total.eng(w:1) "`
 //! `warning_updates_regex` | Display block as warning if updates matching regex are available. | `None`
 //! `critical_updates_regex` | Display block as critical if updates matching regex are available. | `None`
 //! `ignore_updates_regex` | Doesn't include updates matching regex in the count. | `None`
-//! `ignore_phased_updates` | Doesn't include potentially held back phased updates in the count. (For Debian/Ubuntu based system) | `false`
-//! `aur_command` | AUR command to check available updates, which outputs in the same format as pacman. e.g. `yay -Qua` (For Arch based system) | Required if `$aur` are used
+//! `ignore_phased_updates` | Doesn't include potentially held back phased updates in the count. (For Debian/Ubuntu-based systems) | `false`
+//! `aur_command` | AUR command to check available updates, which outputs in the same format as pacman. E.g. `yay -Qua` (For Arch-based systems) | Required if `$aur` is used
 //!
 //!  Placeholder | Value                                                                            | Type   | Unit
 //! -------------|----------------------------------------------------------------------------------|--------|-----
 //! `icon`       | A static icon                                                                    | Icon   | -
-//! `apt`        | Number of updates available in Debian/Ubuntu based system                        | Number | -
-//! `pacman`     | Number of updates available in Arch based system                                 | Number | -
-//! `aur`        | Number of updates available in Arch based system                                 | Number | -
-//! `dnf`        | Number of updates available in Fedora based system                               | Number | -
-//! `xbps`       | Number of updates available in Void Linux                                        | Number | -
 //! `apk`        | Number of updates available in Alpine Linux                                      | Number | -
+//! `apt`        | Number of updates available in Debian/Ubuntu-based systems                       | Number | -
+//! `aur`        | Number of updates available in Arch-based systems                                | Number | -
+//! `brew`       | Number of updates available in the Homebrew Package Manager                      | Number | -
+//! `dnf`        | Number of updates available in Fedora-based systems                              | Number | -
+//! `pacman`     | Number of updates available in Arch-based systems                                | Number | -
+//! `snap`       | Number of updates available in Snap packages                                     | Number | -
+//! `xbps`       | Number of updates available in Void Linux                                        | Number | -
 //! `total`      | Number of updates available in all package manager listed                        | Number | -
 //!
 //! # Apt
@@ -54,7 +58,7 @@
 //! Tip: On Arch Linux you can setup a `pacman` hook to signal i3status-rs to update after packages
 //! have been upgraded, so you won't have stale info in your pacman block.
 //!
-//! In the block configuration, set `signal = 1` (or other number if `1` is being used by some
+//! In the block configuration, set `signal = 1` (or another number if `1` is being used by some
 //! other block):
 //!
 //! ```toml
@@ -78,7 +82,25 @@
 //!
 //! # Example
 //!
-//! Apt only config
+//! Apk-only config:
+//!
+//! ```toml
+//! [[block]]
+//! block = "packages"
+//! package_manager = ["apk"]
+//! interval = 1800
+//! error_interval = 300
+//! max_retries = 5
+//! format = " $icon $apk.eng(w:1) updates available "
+//! format_singular = " $icon One update available "
+//! format_up_to_date = " $icon system up to date "
+//! [[block.click]]
+//! # shows dmenu with available updates. Any dmenu alternative should also work.
+//! button = "left"
+//! cmd = "apk --no-cache --upgradable list | dmenu -l 10"
+//! ```
+//!
+//! Apt-only config
 //!
 //! ```toml
 //! [[block]]
@@ -100,7 +122,43 @@
 //! update = true
 //! ```
 //!
-//! Pacman only config:
+//! Brew-only config:
+//!
+//! ```toml
+//! [[block]]
+//! block = "packages"
+//! package_manager = ["brew"]
+//! interval = 1800
+//! error_interval = 300
+//! max_retries = 5
+//! format = " $icon $brew.eng(w:1) updates available "
+//! format_singular = " $icon One update available "
+//! format_up_to_date = " $icon system up to date "
+//! [[block.click]]
+//! # shows dmenu with available updates. Any dmenu alternative should also work.
+//! button = "left"
+//! cmd = "brew outdated | dmenu -l 10"
+//! ```
+//!
+//! Dnf-only config:
+//!
+//! ```toml
+//! [[block]]
+//! block = "packages"
+//! package_manager = ["dnf"]
+//! interval = 1800
+//! error_interval = 300
+//! max_retries = 5
+//! format = " $icon $dnf.eng(w:1) updates available "
+//! format_singular = " $icon One update available "
+//! format_up_to_date = " $icon system up to date "
+//! [[block.click]]
+//! # shows dmenu with cached available updates. Any dmenu alternative should also work.
+//! button = "left"
+//! cmd = "dnf list -q --upgrades | tail -n +2 | rofi -dmenu"
+//! ```
+//!
+//! Pacman-only config:
 //!
 //! ```toml
 //! [[block]]
@@ -138,27 +196,25 @@
 //! aur_command = "yay -Qua"
 //! ```
 //!
-//!
-//! Dnf only config:
+//! Snap-only config:
 //!
 //! ```toml
 //! [[block]]
 //! block = "packages"
-//! package_manager = ["dnf"]
+//! package_manager = ["snap"]
 //! interval = 1800
 //! error_interval = 300
 //! max_retries = 5
-//! format = " $icon $dnf.eng(w:1) updates available "
+//! format = " $icon $snap.eng(w:1) updates available "
 //! format_singular = " $icon One update available "
 //! format_up_to_date = " $icon system up to date "
 //! [[block.click]]
-//! # shows dmenu with cached available updates. Any dmenu alternative should also work.
+//! # shows dmenu with available updates. Any dmenu alternative should also work.
 //! button = "left"
-//! cmd = "dnf list -q --upgrades | tail -n +2 | rofi -dmenu"
+//! cmd = "snap refresh --list | dmenu -l 10"
 //! ```
 //!
-//!
-//! Xbps only config:
+//! Xbps-only config:
 //!
 //! ```toml
 //! [[block]]
@@ -176,25 +232,6 @@
 //! cmd = "xbps-install -Mun | dmenu -l 10"
 //! ```
 //!
-//!
-//! Apk only config:
-//!
-//! ```toml
-//! [[block]]
-//! block = "packages"
-//! package_manager = ["apk"]
-//! interval = 1800
-//! error_interval = 300
-//! max_retries = 5
-//! format = " $icon $apk.eng(w:1) updates available "
-//! format_singular = " $icon One update available "
-//! format_up_to_date = " $icon system up to date "
-//! [[block.click]]
-//! # shows dmenu with available updates. Any dmenu alternative should also work.
-//! button = "left"
-//! cmd = "apk --no-cache --upgradable list | dmenu -l 10"
-//! ```
-//!
 //! Multiple package managers config:
 //!
 //! Update the list of pending updates every thirty minutes (1800 seconds):
@@ -202,11 +239,11 @@
 //! ```toml
 //! [[block]]
 //! block = "packages"
-//! package_manager = ["apt", "pacman", "aur", "dnf", "xbps", "apk"]
+//! package_manager = ["apk", "apt", "aur", "brew", "dnf", "pacman", "snap", "xbps"]
 //! interval = 1800
 //! error_interval = 300
 //! max_retries = 5
-//! format = " $icon $apt + $pacman + $aur + $dnf + $xbps + $apk = $total updates available "
+//! format = " $icon $apk + $apt + $aur + $brew + $dnf + $pacman + $snap + $xbps = $total updates available "
 //! format_singular = " $icon One update available "
 //! format_up_to_date = " $icon system up to date "
 //! # If a linux update is available, but no ZFS package, it won't be possible to
@@ -221,20 +258,26 @@
 //!
 //! - `update`
 
+pub mod apk;
+use apk::Apk;
+
 pub mod apt;
 use apt::Apt;
 
-pub mod pacman;
-use pacman::{Aur, Pacman};
+pub mod brew;
+use brew::Brew;
 
 pub mod dnf;
 use dnf::Dnf;
 
+pub mod pacman;
+use pacman::{Aur, Pacman};
+
 pub mod xbps;
 use xbps::Xbps;
 
-pub mod apk;
-use apk::Apk;
+pub mod snap;
+use snap::Snap;
 
 use regex::Regex;
 
@@ -259,12 +302,46 @@ pub struct Config {
 #[derive(Deserialize, Debug, Clone, Copy, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum PackageManager {
-    Apt,
-    Pacman,
-    Aur,
-    Dnf,
-    Xbps,
     Apk,
+    Apt,
+    Aur,
+    Brew,
+    Dnf,
+    Pacman,
+    Snap,
+    Xbps,
+}
+
+impl PackageManager {
+    /// The name of the package manager, as used in format strings.
+    fn name(&self) -> &'static str {
+        match self {
+            PackageManager::Apk => "apk",
+            PackageManager::Apt => "apt",
+            PackageManager::Aur => "aur",
+            PackageManager::Brew => "brew",
+            PackageManager::Dnf => "dnf",
+            PackageManager::Pacman => "pacman",
+            PackageManager::Snap => "snap",
+            PackageManager::Xbps => "xbps",
+        }
+    }
+
+    /// Builds a backend for the package manager.
+    async fn build(&self, config: &Config) -> Result<Box<dyn Backend>> {
+        Ok(match self {
+            PackageManager::Apk => Box::new(Apk::new()),
+            PackageManager::Apt => Box::new(Apt::new(config.ignore_phased_updates).await?),
+            PackageManager::Aur => Box::new(Aur::new(
+                config.aur_command.clone().error("aur_command is not set")?,
+            )),
+            PackageManager::Brew => Box::new(Brew::new()),
+            PackageManager::Dnf => Box::new(Dnf::new()),
+            PackageManager::Pacman => Box::new(Pacman::new().await?),
+            PackageManager::Snap => Box::new(Snap::new()),
+            PackageManager::Xbps => Box::new(Xbps::new()),
+        })
+    }
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
@@ -278,40 +355,29 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         .format_up_to_date
         .with_default(" $icon $total.eng(w:1) ")?;
 
-    // If user provide package manager in any of the formats then consider that also
-    macro_rules! any_format_contains {
-        ($name:expr) => {
-            format.contains_key($name)
-                || format_singular.contains_key($name)
-                || format_up_to_date.contains_key($name)
-        };
+    // Check if the user specified a package manager in any format string, then
+    // add that package manager to the config list.
+    macro_rules! check_manager {
+        ($manager:expr) => {{
+            let name = $manager.name();
+            let in_format = format.contains_key(name)
+                || format_singular.contains_key(name)
+                || format_up_to_date.contains_key(name);
+
+            if !config.package_manager.contains(&$manager) && in_format {
+                config.package_manager.push($manager);
+            }
+        }};
     }
 
-    let apt = any_format_contains!("apt");
-    let aur = any_format_contains!("aur");
-    let pacman = any_format_contains!("pacman");
-    let dnf = any_format_contains!("dnf");
-    let xbps = any_format_contains!("xbps");
-    let apk = any_format_contains!("apk");
-
-    if !config.package_manager.contains(&PackageManager::Apt) && apt {
-        config.package_manager.push(PackageManager::Apt);
-    }
-    if !config.package_manager.contains(&PackageManager::Pacman) && pacman {
-        config.package_manager.push(PackageManager::Pacman);
-    }
-    if !config.package_manager.contains(&PackageManager::Aur) && aur {
-        config.package_manager.push(PackageManager::Aur);
-    }
-    if !config.package_manager.contains(&PackageManager::Dnf) && dnf {
-        config.package_manager.push(PackageManager::Dnf);
-    }
-    if !config.package_manager.contains(&PackageManager::Xbps) && xbps {
-        config.package_manager.push(PackageManager::Xbps);
-    }
-    if !config.package_manager.contains(&PackageManager::Apk) && apk {
-        config.package_manager.push(PackageManager::Apk);
-    }
+    check_manager!(PackageManager::Apk);
+    check_manager!(PackageManager::Apt);
+    check_manager!(PackageManager::Aur);
+    check_manager!(PackageManager::Brew);
+    check_manager!(PackageManager::Dnf);
+    check_manager!(PackageManager::Pacman);
+    check_manager!(PackageManager::Snap);
+    check_manager!(PackageManager::Xbps);
 
     let warning_updates_regex = config
         .warning_updates_regex
@@ -335,16 +401,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut package_manager_vec: Vec<Box<dyn Backend>> = Vec::new();
 
     for &package_manager in config.package_manager.iter() {
-        package_manager_vec.push(match package_manager {
-            PackageManager::Apt => Box::new(Apt::new(config.ignore_phased_updates).await?),
-            PackageManager::Pacman => Box::new(Pacman::new().await?),
-            PackageManager::Aur => Box::new(Aur::new(
-                config.aur_command.clone().error("aur_command is not set")?,
-            )),
-            PackageManager::Dnf => Box::new(Dnf::new()),
-            PackageManager::Xbps => Box::new(Xbps::new()),
-            PackageManager::Apk => Box::new(Apk::new()),
-        });
+        package_manager_vec.push(package_manager.build(config).await?);
     }
 
     loop {
