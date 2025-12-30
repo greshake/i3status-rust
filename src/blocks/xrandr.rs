@@ -247,7 +247,7 @@ mod parser {
             && (line.contains("*current") || (line.contains("(0x") && line.contains("*")))
     }
 
-    #[derive(Debug)]
+    #[derive(Debug, PartialEq)]
     pub struct Output {
         pub name: String,
         pub width: u32,
@@ -320,5 +320,41 @@ mod parser {
         }
 
         outputs
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn test_extract_outputs() {
+            let xrandr_output = include_str!("../../testdata/xrandr-verbose.txt");
+            let outputs = extract_outputs(xrandr_output);
+            assert_eq!(outputs.len(), 2);
+            assert_eq!(
+                outputs[0],
+                Output {
+                    name: "eDP-1".to_owned(),
+                    width: 1920,
+                    height: 1080,
+                    x: 0,
+                    y: 1080,
+                    brightness: 1.0,
+                    refresh_hz: 59.96,
+                }
+            );
+            assert_eq!(
+                outputs[1],
+                Output {
+                    name: "HDMI-1".to_owned(),
+                    width: 1920,
+                    height: 1080,
+                    x: 0,
+                    y: 0,
+                    brightness: 0.8,
+                    refresh_hz: 59.99,
+                }
+            );
+        }
     }
 }
