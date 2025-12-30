@@ -5,6 +5,7 @@ ignorePaths:
   - _typos.toml
   - target/
   - src/blocks/weather/met_no_legends.json
+  - testdata/
 ignoreRegExpList:
   # Ignore usernames that are @'d
   - /@[\w-]*/g

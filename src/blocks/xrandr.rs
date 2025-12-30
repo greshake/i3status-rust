@@ -178,13 +178,13 @@ async fn get_monitors() -> Result<Vec<Monitor>> {
 }
 
 mod parser {
+    use nom::IResult;
     use nom::branch::alt;
     use nom::bytes::complete::{tag, take_until, take_while1};
     use nom::character::complete::{i32, space0, space1, u32};
     use nom::combinator::opt;
     use nom::number::complete::{double, float};
     use nom::sequence::preceded;
-    use nom::IResult;
 
     /// Parses an output name, e.g. "HDMI-0", "eDP-1", etc.
     fn name(input: &str) -> IResult<&str, &str> {
@@ -266,7 +266,7 @@ mod parser {
         let mut i = 0;
         while i < lines.len() {
             // Find header
-            let Ok((_, (name, width, height, x, y))) = parse_output_header(&lines[i]) else {
+            let Ok((_, (name, width, height, x, y))) = parse_output_header(lines[i]) else {
                 i += 1;
                 continue;
             };
@@ -277,7 +277,7 @@ mod parser {
 
             i += 1;
             while i < lines.len() {
-                if let Ok(_) = parse_output_header(&lines[i]) {
+                if parse_output_header(lines[i]).is_ok() {
                     // found the next header
                     break;
                 }
@@ -290,13 +290,13 @@ mod parser {
                     // find the next v-clock line
                     i += 1;
                     while i < lines.len() {
-                        if let Ok(_) = parse_output_header(&lines[i]) {
+                        if parse_output_header(lines[i]).is_ok() {
                             // found the next header
                             i -= 1;
                             break;
                         }
 
-                        if let Ok((_, hz)) = parse_v_clock_hz(&lines[i]) {
+                        if let Ok((_, hz)) = parse_v_clock_hz(lines[i]) {
                             refresh_hz = Some(hz);
                             break;
                         }
