@@ -110,3 +110,115 @@ impl Formatter for BarFormatter {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::formatting::unit::Unit;
+
+    fn fmt_horiz(width: usize, max_value: f64) -> BarFormatter {
+        BarFormatter {
+            width,
+            max_value,
+            vertical: false,
+        }
+    }
+
+    fn fmt_vert(width: usize, max_value: f64) -> BarFormatter {
+        BarFormatter {
+            width,
+            max_value,
+            vertical: true,
+        }
+    }
+
+    fn number(val: f64) -> Value {
+        Value::Number {
+            val,
+            unit: Unit::None,
+        }
+    }
+
+    fn numbers(vals: &[f64]) -> Value {
+        Value::Numbers {
+            vals: vals.to_vec(),
+            unit: Unit::None,
+        }
+    }
+
+    #[test]
+    fn single_number_horizontal_basic() {
+        let fmt = fmt_horiz(8, 8.0);
+        let out = fmt.format(&number(4.0), &Default::default()).unwrap();
+        assert_eq!(out, "████    ");
+    }
+
+    #[test]
+    fn single_number_horizontal_fractional() {
+        let fmt = fmt_horiz(8, 8.0);
+        let out = fmt.format(&number(3.5), &Default::default()).unwrap();
+        assert_eq!(out, "███▌    ");
+    }
+
+    #[test]
+    fn single_number_vertical_basic() {
+        let fmt = fmt_vert(5, 8.0);
+        let out = fmt.format(&number(4.0), &Default::default()).unwrap();
+        assert_eq!(out, "▄▄▄▄▄");
+    }
+
+    #[test]
+    fn single_number_vertical_clamps() {
+        let fmt = fmt_vert(3, 8.0);
+        let out = fmt
+            .format(&number(999.0), &SharedConfig::default())
+            .unwrap();
+        assert_eq!(out, "███");
+
+        let fmt = fmt_vert(3, 8.0);
+        let out = fmt.format(&number(-1.0), &Default::default()).unwrap();
+        assert_eq!(out, "   ");
+    }
+
+    #[test]
+    fn multiple_values_horizontal_uses_last_value() {
+        let fmt = fmt_horiz(8, 8.0);
+        let out = fmt
+            .format(&numbers(&[1.0, 2.0, 4.0]), &Default::default())
+            .unwrap();
+        assert_eq!(out, "████    ");
+    }
+
+    #[test]
+    fn multiple_values_vertical_graph() {
+        let fmt = fmt_vert(5, 8.0);
+        let out = fmt
+            .format(
+                &numbers(&[0.0, 1.0, 2.0, 4.0, 8.0]),
+                &SharedConfig::default(),
+            )
+            .unwrap();
+        assert_eq!(out, " ▁▂▄█");
+    }
+
+    #[test]
+    fn multiple_values_vertical_pads_when_short() {
+        let fmt = fmt_vert(5, 8.0);
+        let out = fmt
+            .format(&numbers(&[4.0, 8.0]), &Default::default())
+            .unwrap();
+        assert_eq!(out, "   ▄█");
+    }
+
+    #[test]
+    fn multiple_values_vertical_truncates_when_long() {
+        let fmt = fmt_vert(4, 8.0);
+        let out = fmt
+            .format(
+                &numbers(&[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]),
+                &Default::default(),
+            )
+            .unwrap();
+        assert_eq!(out, "▅▆▇█");
+    }
+}
