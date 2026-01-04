@@ -16,7 +16,7 @@
 //! ----|--------|--------
 //! `interval` | Update interval in seconds. | `600`
 //! `package_manager` | Package manager to check for updates | Automatically derived from format templates, but can be used to influence the `$total` value
-//! `format` | A string to customize the output of this block. See below for available placeholders. | `" $icon $total.eng(w:1) "`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $total.eng(w:1) "`
 //! `format_singular` | Same as `format`, but for when exactly one update is available. | `" $icon $total.eng(w:1) "`
 //! `format_up_to_date` | Same as `format`, but for when no updates are available. | `" $icon $total.eng(w:1) "`
 //! `warning_updates_regex` | Display block as warning if updates matching regex are available. | `None`
