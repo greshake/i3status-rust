@@ -18,6 +18,7 @@ pub enum ValueInner {
     Text(String),
     Icon(Cow<'static, str>, Option<f64>),
     Number { val: f64, unit: Unit },
+    Numbers { vals: Vec<f64>, unit: Unit },
     Datetime(DateTime<Utc>, Option<Tz>),
     Duration(Duration),
     Flag,
@@ -29,6 +30,7 @@ impl ValueInner {
             ValueInner::Text(..) => "Text",
             ValueInner::Icon(..) => "Icon",
             ValueInner::Number { .. } => "Number",
+            ValueInner::Numbers { .. } => "Numbers",
             ValueInner::Datetime(..) => "Datetime",
             ValueInner::Duration(..) => "Duration",
             ValueInner::Flag => "Flag",
@@ -152,6 +154,7 @@ impl Value {
         match &self.inner {
             ValueInner::Text(_) | ValueInner::Icon(..) => &formatter::DEFAULT_STRING_FORMATTER,
             ValueInner::Number { .. } => &formatter::DEFAULT_NUMBER_FORMATTER,
+            ValueInner::Numbers { .. } => &formatter::DEFAULT_NUMBER_FORMATTER,
             ValueInner::Datetime { .. } => &*formatter::DEFAULT_DATETIME_FORMATTER,
             ValueInner::Duration { .. } => &formatter::DEFAULT_DURATION_FORMATTER,
             ValueInner::Flag => &formatter::DEFAULT_FLAG_FORMATTER,
