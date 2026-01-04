@@ -191,14 +191,14 @@ mod tests {
 
     #[test]
     fn multiple_values_vertical_graph() {
-        let fmt = fmt_vert(5, 8.0);
+        let fmt = fmt_vert(9, 8.0);
         let out = fmt
             .format(
-                &numbers(&[0.0, 1.0, 2.0, 4.0, 8.0]),
+                &numbers(&[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]),
                 &SharedConfig::default(),
             )
             .unwrap();
-        assert_eq!(out, " ▁▂▄█");
+        assert_eq!(out, " ▁▂▃▄▅▆▇█");
     }
 
     #[test]
