@@ -1,12 +1,14 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Pending updates for different package manager like apt, pacman, etc."><title>i3status_rs::blocks::packages - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-ca0dd0c4.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.92.0 (ded5c06cf 2025-12-08)" data-channel="1.92.0" data-search-js="search-d69d8955.js" data-stringdex-js="stringdex-c3e638e9.js" data-settings-js="settings-c38705f0.js" ><script src="../../../static.files/storage-e2aeef58.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../../static.files/main-ce535bd0.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Module packages</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../i3status_rs/index.html">i3status_<wbr>rs</a><span class="version">0.35.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module packages</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#configuration" title="Configuration">Configuration</a></li><li><a href="#apt" title="Apt">Apt</a></li><li><a href="#pacman" title="Pacman">Pacman</a><ul><li><a href="#pacman-hook" title="Pacman hook">Pacman hook</a></li></ul></li><li><a href="#example" title="Example">Example</a></li><li><a href="#icons-used" title="Icons Used">Icons Used</a></li></ul><h3><a href="#modules">Module Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#traits" title="Traits">Traits</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="../index.html">In i3status_<wbr>rs::<wbr>blocks</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../index.html">i3status_rs</a>::<wbr><a href="../index.html">blocks</a></div><h1>Module <span>packages</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../src/i3status_rs/blocks/packages.rs.html#1-419">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Pending updates for different package manager like apt, pacman, etc.</p>
-<p>Currently these package managers are available:</p>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Pending updates for different package manager like apt, pacman, etc."><title>i3status_rs::blocks::packages - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../../static.files/rustdoc-ca0dd0c4.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.92.0 (ded5c06cf 2025-12-08)" data-channel="1.92.0" data-search-js="search-d69d8955.js" data-stringdex-js="stringdex-c3e638e9.js" data-settings-js="settings-c38705f0.js" ><script src="../../../static.files/storage-e2aeef58.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../../static.files/main-ce535bd0.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-263c88ec.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><rustdoc-topbar><h2><a href="#">Module packages</a></h2></rustdoc-topbar><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../../i3status_rs/index.html">i3status_<wbr>rs</a><span class="version">0.35.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module packages</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#configuration" title="Configuration">Configuration</a></li><li><a href="#apt" title="Apt">Apt</a></li><li><a href="#pacman" title="Pacman">Pacman</a><ul><li><a href="#pacman-hook" title="Pacman hook">Pacman hook</a></li></ul></li><li><a href="#example" title="Example">Example</a></li><li><a href="#icons-used" title="Icons Used">Icons Used</a></li></ul><h3><a href="#modules">Module Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li><li><a href="#structs" title="Structs">Structs</a></li><li><a href="#enums" title="Enums">Enums</a></li><li><a href="#traits" title="Traits">Traits</a></li><li><a href="#functions" title="Functions">Functions</a></li></ul></section><div id="rustdoc-modnav"><h2><a href="../index.html">In i3status_<wbr>rs::<wbr>blocks</a></h2></div></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><div class="width-limiter"><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../../index.html">i3status_rs</a>::<wbr><a href="../index.html">blocks</a></div><h1>Module <span>packages</span>&nbsp;<button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../../src/i3status_rs/blocks/packages.rs.html#1-476">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Pending updates for different package manager like apt, pacman, etc.</p>
+<p>Currently, these package managers are supported:</p>
 <ul>
-<li><code>apt</code> for Debian/Ubuntu based system</li>
-<li><code>pacman</code> for Arch based system</li>
-<li><code>aur</code> for Arch based system</li>
-<li><code>dnf</code> for Fedora based system</li>
-<li><code>xbps</code> for Void Linux</li>
 <li><code>apk</code> for Alpine Linux</li>
+<li><code>apt</code> for Debian/Ubuntu-based systems</li>
+<li><code>aur</code> for Arch-based systems</li>
+<li><code>brew</code> for the Homebrew Package Manager</li>
+<li><code>dnf</code> for Fedora-based systems</li>
+<li><code>pacman</code> for Arch-based systems</li>
+<li><code>snap</code> for Snap packages</li>
+<li><code>xbps</code> for Void Linux</li>
 </ul>
 <h2 id="configuration"><a class="doc-anchor" href="#configuration">§</a>Configuration</h2><div><table><thead><tr><th>Key</th><th>Values</th><th>Default</th></tr></thead><tbody>
 <tr><td><code>interval</code></td><td>Update interval in seconds.</td><td><code>600</code></td></tr>
@@ -17,17 +19,19 @@
 <tr><td><code>warning_updates_regex</code></td><td>Display block as warning if updates matching regex are available.</td><td><code>None</code></td></tr>
 <tr><td><code>critical_updates_regex</code></td><td>Display block as critical if updates matching regex are available.</td><td><code>None</code></td></tr>
 <tr><td><code>ignore_updates_regex</code></td><td>Doesn’t include updates matching regex in the count.</td><td><code>None</code></td></tr>
-<tr><td><code>ignore_phased_updates</code></td><td>Doesn’t include potentially held back phased updates in the count. (For Debian/Ubuntu based system)</td><td><code>false</code></td></tr>
-<tr><td><code>aur_command</code></td><td>AUR command to check available updates, which outputs in the same format as pacman. e.g. <code>yay -Qua</code> (For Arch based system)</td><td>Required if <code>$aur</code> are used</td></tr>
+<tr><td><code>ignore_phased_updates</code></td><td>Doesn’t include potentially held back phased updates in the count. (For Debian/Ubuntu-based systems)</td><td><code>false</code></td></tr>
+<tr><td><code>aur_command</code></td><td>AUR command to check available updates, which outputs in the same format as pacman. E.g. <code>yay -Qua</code> (For Arch-based systems)</td><td>Required if <code>$aur</code> is used</td></tr>
 </tbody></table>
 </div><div><table><thead><tr><th>Placeholder</th><th>Value</th><th>Type</th><th>Unit</th></tr></thead><tbody>
 <tr><td><code>icon</code></td><td>A static icon</td><td>Icon</td><td>-</td></tr>
-<tr><td><code>apt</code></td><td>Number of updates available in Debian/Ubuntu based system</td><td>Number</td><td>-</td></tr>
-<tr><td><code>pacman</code></td><td>Number of updates available in Arch based system</td><td>Number</td><td>-</td></tr>
-<tr><td><code>aur</code></td><td>Number of updates available in Arch based system</td><td>Number</td><td>-</td></tr>
-<tr><td><code>dnf</code></td><td>Number of updates available in Fedora based system</td><td>Number</td><td>-</td></tr>
-<tr><td><code>xbps</code></td><td>Number of updates available in Void Linux</td><td>Number</td><td>-</td></tr>
 <tr><td><code>apk</code></td><td>Number of updates available in Alpine Linux</td><td>Number</td><td>-</td></tr>
+<tr><td><code>apt</code></td><td>Number of updates available in Debian/Ubuntu-based systems</td><td>Number</td><td>-</td></tr>
+<tr><td><code>aur</code></td><td>Number of updates available in Arch-based systems</td><td>Number</td><td>-</td></tr>
+<tr><td><code>brew</code></td><td>Number of updates available in the Homebrew Package Manager</td><td>Number</td><td>-</td></tr>
+<tr><td><code>dnf</code></td><td>Number of updates available in Fedora-based systems</td><td>Number</td><td>-</td></tr>
+<tr><td><code>pacman</code></td><td>Number of updates available in Arch-based systems</td><td>Number</td><td>-</td></tr>
+<tr><td><code>snap</code></td><td>Number of updates available in Snap packages</td><td>Number</td><td>-</td></tr>
+<tr><td><code>xbps</code></td><td>Number of updates available in Void Linux</td><td>Number</td><td>-</td></tr>
 <tr><td><code>total</code></td><td>Number of updates available in all package manager listed</td><td>Number</td><td>-</td></tr>
 </tbody></table>
 </div><h2 id="apt"><a class="doc-anchor" href="#apt">§</a>Apt</h2>
@@ -41,7 +45,7 @@ If you have the <code>CHECKUPDATES_DB</code> env var set on your system then sub
 <h4 id="pacman-hook"><a class="doc-anchor" href="#pacman-hook">§</a>Pacman hook</h4>
 <p>Tip: On Arch Linux you can setup a <code>pacman</code> hook to signal i3status-rs to update after packages
 have been upgraded, so you won’t have stale info in your pacman block.</p>
-<p>In the block configuration, set <code>signal = 1</code> (or other number if <code>1</code> is being used by some
+<p>In the block configuration, set <code>signal = 1</code> (or another number if <code>1</code> is being used by some
 other block):</p>
 <div class="example-wrap"><pre class="language-toml"><code>[[block]]
 block = &quot;packages&quot;
@@ -55,7 +59,21 @@ Target = *
 [Action]
 When = PostTransaction
 Exec = /usr/bin/pkill -SIGRTMIN+1 i3status-rs</code></pre></div><h2 id="example"><a class="doc-anchor" href="#example">§</a>Example</h2>
-<p>Apt only config</p>
+<p>Apk-only config:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[[block]]
+block = &quot;packages&quot;
+package_manager = [&quot;apk&quot;]
+interval = 1800
+error_interval = 300
+max_retries = 5
+format = &quot; $icon $apk.eng(w:1) updates available &quot;
+format_singular = &quot; $icon One update available &quot;
+format_up_to_date = &quot; $icon system up to date &quot;
+[[block.click]]
+# shows dmenu with available updates. Any dmenu alternative should also work.
+button = &quot;left&quot;
+cmd = &quot;apk --no-cache --upgradable list | dmenu -l 10&quot;</code></pre></div>
+<p>Apt-only config</p>
 <div class="example-wrap"><pre class="language-toml"><code>[[block]]
 block = &quot;packages&quot;
 interval = 1800
@@ -73,7 +91,35 @@ cmd = &quot;APT_CONFIG=/tmp/i3rs-apt/apt.conf apt list --upgradable | tail -n +2
 # Updates the block on right click
 button = &quot;right&quot;
 update = true</code></pre></div>
-<p>Pacman only config:</p>
+<p>Brew-only config:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[[block]]
+block = &quot;packages&quot;
+package_manager = [&quot;brew&quot;]
+interval = 1800
+error_interval = 300
+max_retries = 5
+format = &quot; $icon $brew.eng(w:1) updates available &quot;
+format_singular = &quot; $icon One update available &quot;
+format_up_to_date = &quot; $icon system up to date &quot;
+[[block.click]]
+# shows dmenu with available updates. Any dmenu alternative should also work.
+button = &quot;left&quot;
+cmd = &quot;brew outdated | dmenu -l 10&quot;</code></pre></div>
+<p>Dnf-only config:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[[block]]
+block = &quot;packages&quot;
+package_manager = [&quot;dnf&quot;]
+interval = 1800
+error_interval = 300
+max_retries = 5
+format = &quot; $icon $dnf.eng(w:1) updates available &quot;
+format_singular = &quot; $icon One update available &quot;
+format_up_to_date = &quot; $icon system up to date &quot;
+[[block.click]]
+# shows dmenu with cached available updates. Any dmenu alternative should also work.
+button = &quot;left&quot;
+cmd = &quot;dnf list -q --upgrades | tail -n +2 | rofi -dmenu&quot;</code></pre></div>
+<p>Pacman-only config:</p>
 <div class="example-wrap"><pre class="language-toml"><code>[[block]]
 block = &quot;packages&quot;
 package_manager = [&quot;pacman&quot;]
@@ -103,21 +149,21 @@ format_singular = &quot; $icon $total update available &quot;
 format_up_to_date = &quot; $icon system up to date &quot;
 # aur_command should output available updates to stdout (ie behave as echo -ne &quot;update\n&quot;)
 aur_command = &quot;yay -Qua&quot;</code></pre></div>
-<p>Dnf only config:</p>
+<p>Snap-only config:</p>
 <div class="example-wrap"><pre class="language-toml"><code>[[block]]
 block = &quot;packages&quot;
-package_manager = [&quot;dnf&quot;]
+package_manager = [&quot;snap&quot;]
 interval = 1800
 error_interval = 300
 max_retries = 5
-format = &quot; $icon $dnf.eng(w:1) updates available &quot;
+format = &quot; $icon $snap.eng(w:1) updates available &quot;
 format_singular = &quot; $icon One update available &quot;
 format_up_to_date = &quot; $icon system up to date &quot;
 [[block.click]]
-# shows dmenu with cached available updates. Any dmenu alternative should also work.
+# shows dmenu with available updates. Any dmenu alternative should also work.
 button = &quot;left&quot;
-cmd = &quot;dnf list -q --upgrades | tail -n +2 | rofi -dmenu&quot;</code></pre></div>
-<p>Xbps only config:</p>
+cmd = &quot;snap refresh --list | dmenu -l 10&quot;</code></pre></div>
+<p>Xbps-only config:</p>
 <div class="example-wrap"><pre class="language-toml"><code>[[block]]
 block = &quot;packages&quot;
 package_manager = [&quot;xbps&quot;]
@@ -131,29 +177,15 @@ format_up_to_date = &quot; $icon system up to date &quot;
 # shows dmenu with available updates. Any dmenu alternative should also work.
 button = &quot;left&quot;
 cmd = &quot;xbps-install -Mun | dmenu -l 10&quot;</code></pre></div>
-<p>Apk only config:</p>
-<div class="example-wrap"><pre class="language-toml"><code>[[block]]
-block = &quot;packages&quot;
-package_manager = [&quot;apk&quot;]
-interval = 1800
-error_interval = 300
-max_retries = 5
-format = &quot; $icon $apk.eng(w:1) updates available &quot;
-format_singular = &quot; $icon One update available &quot;
-format_up_to_date = &quot; $icon system up to date &quot;
-[[block.click]]
-# shows dmenu with available updates. Any dmenu alternative should also work.
-button = &quot;left&quot;
-cmd = &quot;apk --no-cache --upgradable list | dmenu -l 10&quot;</code></pre></div>
 <p>Multiple package managers config:</p>
 <p>Update the list of pending updates every thirty minutes (1800 seconds):</p>
 <div class="example-wrap"><pre class="language-toml"><code>[[block]]
 block = &quot;packages&quot;
-package_manager = [&quot;apt&quot;, &quot;pacman&quot;, &quot;aur&quot;, &quot;dnf&quot;, &quot;xbps&quot;, &quot;apk&quot;]
+package_manager = [&quot;apk&quot;, &quot;apt&quot;, &quot;aur&quot;, &quot;brew&quot;, &quot;dnf&quot;, &quot;pacman&quot;, &quot;snap&quot;, &quot;xbps&quot;]
 interval = 1800
 error_interval = 300
 max_retries = 5
-format = &quot; $icon $apt + $pacman + $aur + $dnf + $xbps + $apk = $total updates available &quot;
+format = &quot; $icon $apk + $apt + $aur + $brew + $dnf + $pacman + $snap + $xbps = $total updates available &quot;
 format_singular = &quot; $icon One update available &quot;
 format_up_to_date = &quot; $icon system up to date &quot;
 # If a linux update is available, but no ZFS package, it won&#39;t be possible to
@@ -165,4 +197,4 @@ critical_updates_regex = &quot;(zfs|zfs-lts)&quot;</code></pre></div><h2 id="ico
 <ul>
 <li><code>update</code></li>
 </ul>
-</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="apk/index.html" title="mod i3status_rs::blocks::packages::apk">apk</a></dt><dt><a class="mod" href="apt/index.html" title="mod i3status_rs::blocks::packages::apt">apt</a></dt><dt><a class="mod" href="dnf/index.html" title="mod i3status_rs::blocks::packages::dnf">dnf</a></dt><dt><a class="mod" href="pacman/index.html" title="mod i3status_rs::blocks::packages::pacman">pacman</a></dt><dt><a class="mod" href="xbps/index.html" title="mod i3status_rs::blocks::packages::xbps">xbps</a></dt></dl><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.Config.html" title="struct i3status_rs::blocks::packages::Config">Config</a></dt></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.PackageManager.html" title="enum i3status_rs::blocks::packages::PackageManager">Package<wbr>Manager</a></dt></dl><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.Backend.html" title="trait i3status_rs::blocks::packages::Backend">Backend</a></dt></dl><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="fn" href="fn.has_matching_update.html" title="fn i3status_rs::blocks::packages::has_matching_update">has_<wbr>matching_<wbr>update</a></dt><dt><a class="fn" href="fn.run.html" title="fn i3status_rs::blocks::packages::run">run</a></dt></dl></section></div></main></body></html>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="apk/index.html" title="mod i3status_rs::blocks::packages::apk">apk</a></dt><dt><a class="mod" href="apt/index.html" title="mod i3status_rs::blocks::packages::apt">apt</a></dt><dt><a class="mod" href="brew/index.html" title="mod i3status_rs::blocks::packages::brew">brew</a></dt><dt><a class="mod" href="dnf/index.html" title="mod i3status_rs::blocks::packages::dnf">dnf</a></dt><dt><a class="mod" href="pacman/index.html" title="mod i3status_rs::blocks::packages::pacman">pacman</a></dt><dt><a class="mod" href="snap/index.html" title="mod i3status_rs::blocks::packages::snap">snap</a></dt><dt><a class="mod" href="xbps/index.html" title="mod i3status_rs::blocks::packages::xbps">xbps</a></dt></dl><h2 id="structs" class="section-header">Structs<a href="#structs" class="anchor">§</a></h2><dl class="item-table"><dt><a class="struct" href="struct.Config.html" title="struct i3status_rs::blocks::packages::Config">Config</a></dt></dl><h2 id="enums" class="section-header">Enums<a href="#enums" class="anchor">§</a></h2><dl class="item-table"><dt><a class="enum" href="enum.PackageManager.html" title="enum i3status_rs::blocks::packages::PackageManager">Package<wbr>Manager</a></dt></dl><h2 id="traits" class="section-header">Traits<a href="#traits" class="anchor">§</a></h2><dl class="item-table"><dt><a class="trait" href="trait.Backend.html" title="trait i3status_rs::blocks::packages::Backend">Backend</a></dt></dl><h2 id="functions" class="section-header">Functions<a href="#functions" class="anchor">§</a></h2><dl class="item-table"><dt><a class="fn" href="fn.has_matching_update.html" title="fn i3status_rs::blocks::packages::has_matching_update">has_<wbr>matching_<wbr>update</a></dt><dt><a class="fn" href="fn.run.html" title="fn i3status_rs::blocks::packages::run">run</a></dt></dl></section></div></main></body></html>

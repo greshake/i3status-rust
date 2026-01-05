@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["PackageManager"],"fn":["has_matching_update","run"],"mod":["apk","apt","dnf","pacman","xbps"],"struct":["Config"],"trait":["Backend"]};
+window.SIDEBAR_ITEMS = {"enum":["PackageManager"],"fn":["has_matching_update","run"],"mod":["apk","apt","brew","dnf","pacman","snap","xbps"],"struct":["Config"],"trait":["Backend"]};
