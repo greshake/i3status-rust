@@ -8,10 +8,10 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customize the output of this block. See below for available placeholders. | `" $icon $display $brightness_icon $brightness "`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $display $brightness_icon $brightness "`
 //! `step_width` | The steps brightness is in/decreased for the selected screen (When greater than 50 it gets limited to 50). | `5`
 //! `interval` | Update interval in seconds. | `5`
-//! `invert_icons` | Invert icons' ordering, useful if you have colorful emoji | `false`
+//! `invert_icons` | Invert icons' ordering, useful if you have colourful emoji | `false`
 //!
 //! Placeholder       | Value                        | Type   | Unit
 //! ------------------|------------------------------|--------|---------------
