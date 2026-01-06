@@ -27,7 +27,7 @@ impl Backend for Flatpak {
 
         let stdout = Command::new("flatpak")
             .env("LC_ALL", "C")
-            .args(["remote-ls", "--updates", "--no-header", "--columns=ref"])
+            .args(["remote-ls", "--updates", "--columns=ref"])
             .output()
             .await
             .error("Failed to run `flatpak remote-ls`")?

@@ -175,7 +175,7 @@
 //! [[block.click]]
 //! # shows dmenu with cached available updates. Any dmenu alternative should also work.
 //! button = "left"
-//! cmd = "flatpak remote-ls --updates --no-header --columns=ref | tail -n +2 | rofi -dmenu"
+//! cmd = "flatpak remote-ls --updates --columns=ref | rofi -dmenu"
 //! ```
 //!
 //! Pacman-only config:
