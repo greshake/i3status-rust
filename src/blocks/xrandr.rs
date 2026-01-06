@@ -82,18 +82,18 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             let mut widget = Widget::new().with_format(format.clone());
 
             if let Some(mon) = monitors.get(cur_index) {
-                let mut icon_value = mon.output.brightness as f64;
+                let mut icon_value = mon.brightness as f64;
                 if config.invert_icons {
                     icon_value = 1.0 - icon_value;
                 }
                 widget.set_values(map! {
                     "icon" => Value::icon("xrandr"),
-                    "display" => Value::text(mon.output.name.clone()),
-                    "brightness" => Value::percents(mon.brightness()),
+                    "display" => Value::text(mon.name.clone()),
+                    "brightness" => Value::percents(mon.brightness_percent()),
                     "brightness_icon" => Value::icon_progression("backlight", icon_value),
                     "resolution" => Value::text(mon.resolution()),
                     "res_icon" => Value::icon("resolution"),
-                    "refresh_rate" => Value::hertz(mon.output.refresh_hz),
+                    "refresh_rate" => Value::hertz(mon.refresh_hz),
                 });
             }
             api.set_widget(widget)?;
@@ -107,14 +107,14 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     }
                     "brightness_up" => {
                         if let Some(monitor) = monitors.get_mut(cur_index) {
-                            let bright = (monitor.brightness() + config.step_width).min(100);
-                            monitor.set_brightness(bright)?;
+                            let bright = (monitor.brightness_percent() + config.step_width).min(100);
+                            monitor.set_brightness_percent(bright)?;
                         }
                     }
                     "brightness_down" => {
                         if let Some(monitor) = monitors.get_mut(cur_index) {
-                            let bright = monitor.brightness().saturating_sub(config.step_width);
-                            monitor.set_brightness(bright)?;
+                            let bright = monitor.brightness_percent().saturating_sub(config.step_width);
+                            monitor.set_brightness_percent(bright)?;
                         }
                     }
                     _ => (),
@@ -124,40 +124,40 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     }
 }
 
+#[derive(Debug, PartialEq)]
 struct Monitor {
-    output: parser::Output,
+    pub name: String,
+    pub width: u32,
+    pub height: u32,
+    pub x: i32,
+    pub y: i32,
+    pub brightness: f32,
+    pub refresh_hz: f64,
 }
 
 impl Monitor {
-    fn set_brightness(&mut self, brightness: u32) -> Result<()> {
-        let brightness = brightness as f32 / 100.0;
+    fn set_brightness_percent(&mut self, percent: u32) -> Result<()> {
+        let brightness = percent as f32 / 100.0;
         spawn_shell(&format!(
             "xrandr --output {} --brightness {}",
-            self.output.name, brightness
+            self.name, brightness
         ))
         .error(format!(
             "Failed to set brightness {} for output {}",
-            brightness, self.output.name
+            brightness, self.name
         ))?;
-        self.output.brightness = brightness;
+        self.brightness = brightness;
         Ok(())
     }
 
     #[inline]
     fn resolution(&self) -> String {
-        format!("{}x{}", self.output.width, self.output.height)
+        format!("{}x{}", self.width, self.height)
     }
 
     #[inline]
-    fn brightness(&self) -> u32 {
-        (self.output.brightness * 100.0) as u32
-    }
-}
-
-impl From<parser::Output> for Monitor {
-    #[inline]
-    fn from(output: parser::Output) -> Self {
-        Self { output }
+    fn brightness_percent(&self) -> u32 {
+        (self.brightness * 100.0) as u32
     }
 }
 
@@ -171,13 +171,11 @@ async fn get_monitors() -> Result<Vec<Monitor>> {
     let monitors_info =
         String::from_utf8(monitors_info).error("xrandr produced non-UTF8 output")?;
 
-    Ok(parser::extract_outputs(&monitors_info)
-        .into_iter()
-        .map(Monitor::from)
-        .collect())
+    Ok(parser::extract_outputs(&monitors_info))
 }
 
 mod parser {
+    use super::*;
     use nom::IResult;
     use nom::branch::alt;
     use nom::bytes::complete::{tag, take_until, take_while1};
@@ -247,19 +245,8 @@ mod parser {
             && (line.contains("*current") || (line.contains("(0x") && line.contains("*")))
     }
 
-    #[derive(Debug, PartialEq)]
-    pub struct Output {
-        pub name: String,
-        pub width: u32,
-        pub height: u32,
-        pub x: i32,
-        pub y: i32,
-        pub brightness: f32,
-        pub refresh_hz: f64,
-    }
-
     /// Parse the outputs from `xrandr --verbose` output.
-    pub fn extract_outputs(input: &str) -> Vec<Output> {
+    pub fn extract_outputs(input: &str) -> Vec<Monitor> {
         let mut outputs = Vec::new();
 
         let lines = input.lines().collect::<Vec<_>>();
@@ -308,7 +295,7 @@ mod parser {
                 i += 1;
             }
 
-            outputs.push(Output {
+            outputs.push(Monitor {
                 name,
                 width,
                 height,
@@ -333,7 +320,7 @@ mod parser {
             assert_eq!(outputs.len(), 2);
             assert_eq!(
                 outputs[0],
-                Output {
+                Monitor {
                     name: "eDP-1".to_owned(),
                     width: 1920,
                     height: 1080,
@@ -345,7 +332,7 @@ mod parser {
             );
             assert_eq!(
                 outputs[1],
-                Output {
+                Monitor {
                     name: "HDMI-1".to_owned(),
                     width: 1920,
                     height: 1080,
