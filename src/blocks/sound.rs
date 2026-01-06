@@ -160,11 +160,11 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 Some("headset") | Some("headphone") | Some("hands-free") | Some("portable") => true,
                 // Per discussion at
                 // https://github.com/greshake/i3status-rust/pull/1363#issuecomment-1046095869,
-                // some sinks may not have the form_factor property, so we should fall back to the
-                // active_port if that property is not present.
-                None => active_port.is_some_and(|p| p.to_lowercase().contains("headphones")),
-                // form_factor is present and is some non-headphone value
-                _ => false,
+                // fall back to checking active_port if form_factor is absent, unknown, or doesn't match
+                // known headphone values (common on PipeWire/WirePlumber systems).
+                _ => active_port
+                    .as_ref()
+                    .is_some_and(|p| p.to_lowercase().contains("headphone")),
             };
             if headphones {
                 return "headphones";
