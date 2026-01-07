@@ -609,4 +609,6 @@ pub enum CalendarError {
     RequestToken(String),
     #[error("Store token error: {0}")]
     StoreToken(#[from] TokenStoreError),
+    #[error("local time falls in a _gap_ in the local time, or if there was an error")]
+    TzConversion,
 }
