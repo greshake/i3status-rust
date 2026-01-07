@@ -1,9 +1,9 @@
 use std::borrow::Cow;
 use std::time::Duration;
 
-use super::Metadata;
 use super::formatter;
 use super::unit::Unit;
+use super::Metadata;
 use chrono::{DateTime, Utc};
 use chrono_tz::Tz;
 
@@ -130,6 +130,17 @@ impl Value {
     }
     pub fn number(val: impl IntoF64) -> Self {
         Self::number_unit(val, Unit::None)
+    }
+
+    pub fn numbers<T, V>(vals: T, unit: Unit) -> Self
+    where
+        T: IntoIterator<Item = V>,
+        V: IntoF64,
+    {
+        Self::new(ValueInner::Numbers {
+            vals: vals.into_iter().map(IntoF64::into_f64).collect(),
+            unit,
+        })
     }
 }
 
