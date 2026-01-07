@@ -160,11 +160,11 @@
 <a href=#160 id=160 data-nosnippet>160</a>                </span><span class="prelude-val">Some</span>(<span class="string">"headset"</span>) | <span class="prelude-val">Some</span>(<span class="string">"headphone"</span>) | <span class="prelude-val">Some</span>(<span class="string">"hands-free"</span>) | <span class="prelude-val">Some</span>(<span class="string">"portable"</span>) =&gt; <span class="bool-val">true</span>,
 <a href=#161 id=161 data-nosnippet>161</a>                <span class="comment">// Per discussion at
 <a href=#162 id=162 data-nosnippet>162</a>                // https://github.com/greshake/i3status-rust/pull/1363#issuecomment-1046095869,
-<a href=#163 id=163 data-nosnippet>163</a>                // some sinks may not have the form_factor property, so we should fall back to the
-<a href=#164 id=164 data-nosnippet>164</a>                // active_port if that property is not present.
-<a href=#165 id=165 data-nosnippet>165</a>                </span><span class="prelude-val">None </span>=&gt; active_port.is_some_and(|p| p.to_lowercase().contains(<span class="string">"headphones"</span>)),
-<a href=#166 id=166 data-nosnippet>166</a>                <span class="comment">// form_factor is present and is some non-headphone value
-<a href=#167 id=167 data-nosnippet>167</a>                </span><span class="kw">_ </span>=&gt; <span class="bool-val">false</span>,
+<a href=#163 id=163 data-nosnippet>163</a>                // fall back to checking active_port if form_factor is absent, unknown, or doesn't match
+<a href=#164 id=164 data-nosnippet>164</a>                // known headphone values (common on PipeWire/WirePlumber systems).
+<a href=#165 id=165 data-nosnippet>165</a>                </span><span class="kw">_ </span>=&gt; active_port
+<a href=#166 id=166 data-nosnippet>166</a>                    .as_ref()
+<a href=#167 id=167 data-nosnippet>167</a>                    .is_some_and(|p| p.to_lowercase().contains(<span class="string">"headphone"</span>)),
 <a href=#168 id=168 data-nosnippet>168</a>            };
 <a href=#169 id=169 data-nosnippet>169</a>            <span class="kw">if </span>headphones {
 <a href=#170 id=170 data-nosnippet>170</a>                <span class="kw">return </span><span class="string">"headphones"</span>;
