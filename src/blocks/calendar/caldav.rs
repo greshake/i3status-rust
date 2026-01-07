@@ -1,6 +1,6 @@
 use std::{str::FromStr as _, time::Duration, vec};
 
-use chrono::{DateTime, Local, Utc};
+use chrono::{DateTime, Datelike as _, Local, TimeZone as _, Timelike as _, Utc};
 use icalendar::{Component as _, EventLike as _};
 use reqwest::{
     self, ClientBuilder, Method, Url,
@@ -138,7 +138,7 @@ impl Client {
         let multi_status = self
             .report_request(calendar.url.clone(), 1, calendar_events_request(start, end))
             .await?;
-        parse_events(multi_status)
+        parse_events(multi_status, start, end)
     }
 
     pub async fn authorize(&mut self) -> Result<Authorize, CalendarError> {
@@ -292,7 +292,46 @@ fn parse_calendars(
     Ok(result)
 }
 
-fn parse_events(multi_status: Multistatus) -> Result<Vec<Event>, CalendarError> {
+// This function is from PR: https://github.com/hoodie/icalendar/pull/128
+// https://github.com/hoodie/icalendar/blob/46b9a8859b81854c42d823ed21773d77afac63a7/src/components.rs#L392-L422
+// Once this PR has been merged, we can remove this function.
+fn get_recurrence(event: &icalendar::Event) -> Option<rrule::RRuleSet> {
+    let dt_start_str = event.property_value("DTSTART")?;
+    let rrule_str = event.property_value("RRULE")?;
+
+    let mut rdates_str = event
+        .multi_properties()
+        .get("RDATE")
+        .unwrap_or(&vec![])
+        .iter()
+        .map(icalendar::Property::value)
+        .collect::<Vec<_>>()
+        .join(",");
+    if !rdates_str.is_empty() {
+        rdates_str = format!("\nRDATE:{rdates_str}");
+    }
+
+    let mut exdates_str = event
+        .multi_properties()
+        .get("EXDATE")
+        .unwrap_or(&vec![])
+        .iter()
+        .map(icalendar::Property::value)
+        .collect::<Vec<_>>()
+        .join(",");
+    if !exdates_str.is_empty() {
+        exdates_str = format!("\nEXDATE:{exdates_str}");
+    }
+
+    let rrules = format!("DTSTART:{dt_start_str}\nRRULE:{rrule_str}{rdates_str}{exdates_str}");
+    rrules.parse::<rrule::RRuleSet>().ok()
+}
+
+fn parse_events(
+    multi_status: Multistatus,
+    event_search_start: DateTime<Utc>,
+    event_search_end: DateTime<Utc>,
+) -> Result<Vec<Event>, CalendarError> {
     let mut result = vec![];
     for response in multi_status.responses {
         for prop in response.valid_props() {
@@ -301,29 +340,82 @@ fn parse_events(multi_status: Multistatus) -> Result<Vec<Event>, CalendarError> 
                     icalendar::Calendar::from_str(&data).map_err(CalendarError::Parsing)?;
                 for component in calendar.components {
                     if let icalendar::CalendarComponent::Event(event) = component {
-                        let start_at = event.get_start().and_then(|d| match d {
+                        let event_start_at = event.get_start().and_then(|d| match d {
                             icalendar::DatePerhapsTime::DateTime(dt) => dt.try_into_utc(),
                             icalendar::DatePerhapsTime::Date(d) => d
                                 .and_hms_opt(0, 0, 0)
                                 .and_then(|d| d.and_local_timezone(Local).earliest())
                                 .map(|d| d.to_utc()),
                         });
-                        let end_at = event.get_end().and_then(|d| match d {
+                        let event_end_at = event.get_end().and_then(|d| match d {
                             icalendar::DatePerhapsTime::DateTime(dt) => dt.try_into_utc(),
                             icalendar::DatePerhapsTime::Date(d) => d
                                 .and_hms_opt(23, 59, 59)
                                 .and_then(|d| d.and_local_timezone(Local).earliest())
                                 .map(|d| d.to_utc()),
                         });
-                        result.push(Event {
-                            uid: event.get_uid().map(Into::into),
-                            summary: event.get_summary().map(Into::into),
-                            description: event.get_description().map(Into::into),
-                            location: event.get_location().map(Into::into),
-                            url: event.get_url().map(Into::into),
-                            start_at,
-                            end_at,
-                        });
+
+                        if let Some(s) = event_start_at
+                            && let Some(e) = event_end_at
+                            && let Some(rrule_set) = get_recurrence(&event)
+                        {
+                            let duration = e - s;
+                            result.extend(
+                                rrule_set
+                                    .after(
+                                        rrule::Tz::UTC
+                                            .with_ymd_and_hms(
+                                                event_search_start.year(),
+                                                event_search_start.month(),
+                                                event_search_start.day(),
+                                                event_search_start.hour(),
+                                                event_search_start.minute(),
+                                                event_search_start.second(),
+                                            )
+                                            .earliest()
+                                            .ok_or(CalendarError::TzConversion)?,
+                                    )
+                                    .before(
+                                        rrule::Tz::UTC
+                                            .with_ymd_and_hms(
+                                                event_search_end.year(),
+                                                event_search_end.month(),
+                                                event_search_end.day(),
+                                                event_search_end.hour(),
+                                                event_search_end.minute(),
+                                                event_search_end.second(),
+                                            )
+                                            .earliest()
+                                            .ok_or(CalendarError::TzConversion)?,
+                                    )
+                                    .all(u16::MAX)
+                                    .dates
+                                    .into_iter()
+                                    .map(|new_start| {
+                                        let new_start = new_start.to_utc();
+                                        let new_end = new_start + duration;
+                                        Event {
+                                            uid: event.get_uid().map(Into::into),
+                                            summary: event.get_summary().map(Into::into),
+                                            description: event.get_description().map(Into::into),
+                                            location: event.get_location().map(Into::into),
+                                            url: event.get_url().map(Into::into),
+                                            start_at: Some(new_start),
+                                            end_at: Some(new_end),
+                                        }
+                                    }),
+                            );
+                        } else {
+                            result.push(Event {
+                                uid: event.get_uid().map(Into::into),
+                                summary: event.get_summary().map(Into::into),
+                                description: event.get_description().map(Into::into),
+                                location: event.get_location().map(Into::into),
+                                url: event.get_url().map(Into::into),
+                                start_at: event_start_at,
+                                end_at: event_end_at,
+                            });
+                        }
                     }
                 }
             }

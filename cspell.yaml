@@ -22,8 +22,8 @@ words:
   - alsamixer
   - amixer
   - apcupsd
-  - aplay
   - apk
+  - aplay
   - armv
   - arphrd
   - backon
@@ -53,6 +53,8 @@ words:
   - docsrs
   - dtolnay
   - dunst
+  - exdate
+  - exdates
   - execvp
   - favg
   - fcntl
@@ -132,6 +134,8 @@ words:
   - powf
   - powi
   - pybugz
+  - rdate
+  - rdates
   - recip
   - repr
   - reqwest
@@ -139,6 +143,8 @@ words:
   - retval
   - rofi
   - rofication
+  - rrule
+  - rrules
   - rsplit
   - rtattr
   - rtattrs
