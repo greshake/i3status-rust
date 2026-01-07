@@ -44,30 +44,31 @@ impl BarFormatter {
     }
 
     #[inline]
-    fn norm(&self, val: f64) -> f64 {
-        Some(val / self.max_value)
+    fn norm(&self, val: f64, max_value: f64) -> f64 {
+        // NOTE: This has the drawback of potentially ignoring the max_value set by the user.
+        Some(val / max_value)
             .filter(|v| v.is_finite())
             .unwrap_or(0.0)
             .clamp(0.0, 1.0)
     }
 
     #[inline]
-    fn format_single_vertical(&self, val: f64) -> char {
-        let val = self.norm(val);
+    fn format_single_vertical(&self, val: f64, max_value: f64) -> char {
+        let val = self.norm(val, max_value);
         VERTICAL_BAR_CHARS[(val * 8.0) as usize]
     }
 
     #[inline]
-    fn format_horizontal_cell(&self, val: f64, i: usize) -> char {
-        let val = self.norm(val);
+    fn format_horizontal_cell(&self, val: f64, max_value: f64, i: usize) -> char {
+        let val = self.norm(val, max_value);
         let chars_to_fill = val * self.width as f64;
         HORIZONTAL_BAR_CHARS[((chars_to_fill - i as f64).clamp(0.0, 1.0) * 8.0) as usize]
     }
 
     #[inline]
-    fn format_horizontal_bar(&self, val: f64) -> String {
+    fn format_horizontal_bar(&self, val: f64, max_value: f64) -> String {
         (0..self.width)
-            .map(|i| self.format_horizontal_cell(val, i))
+            .map(|i| self.format_horizontal_cell(val, max_value, i))
             .collect()
     }
 }
@@ -80,10 +81,10 @@ impl Formatter for BarFormatter {
         match val {
             Value::Number { val, .. } => {
                 if self.vertical {
-                    let c = self.format_single_vertical(*val);
+                    let c = self.format_single_vertical(*val, self.max_value.max(*val));
                     Ok(std::iter::repeat_n(c, self.width).collect())
                 } else {
-                    Ok(self.format_horizontal_bar(*val))
+                    Ok(self.format_horizontal_bar(*val, self.max_value.max(*val)))
                 }
             }
             Value::Numbers { vals, .. } => {
@@ -91,15 +92,20 @@ impl Formatter for BarFormatter {
                     // NOTE: print at most `width` values as a windowed chart
                     let start = vals.len().saturating_sub(self.width);
                     let shown = vals.len() - start;
+                    let max = vals
+                        .iter()
+                        .copied()
+                        .max_by(f64::total_cmp)
+                        .unwrap_or(self.max_value);
 
                     Ok(std::iter::repeat_n(0.0, self.width - shown)
                         .chain(vals[start..].iter().copied())
-                        .map(|val| self.format_single_vertical(val))
+                        .map(|val| self.format_single_vertical(val, self.max_value.max(max)))
                         .collect())
                 } else {
                     // NOTE: print the last value as a horizontal bar
                     let last = vals.last().copied().unwrap_or(0.0);
-                    Ok(self.format_horizontal_bar(last))
+                    Ok(self.format_horizontal_bar(last, self.max_value.max(last)))
                 }
             }
             other => Err(FormatError::IncompatibleFormatter {
