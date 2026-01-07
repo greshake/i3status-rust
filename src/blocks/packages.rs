@@ -6,6 +6,7 @@
 //! - `aur` for Arch-based systems
 //! - `brew` for the Homebrew Package Manager
 //! - `dnf` for Fedora-based systems
+//! - `flatpak` for Flatpak packages
 //! - `pacman` for Arch-based systems
 //! - `snap` for Snap packages
 //! - `xbps` for Void Linux
@@ -33,6 +34,7 @@
 //! `aur`        | Number of updates available in Arch-based systems                                | Number | -
 //! `brew`       | Number of updates available in the Homebrew Package Manager                      | Number | -
 //! `dnf`        | Number of updates available in Fedora-based systems                              | Number | -
+//! `flatpak`    | Number of updates available in Flatpak packages                                  | Number | -
 //! `pacman`     | Number of updates available in Arch-based systems                                | Number | -
 //! `snap`       | Number of updates available in Snap packages                                     | Number | -
 //! `xbps`       | Number of updates available in Void Linux                                        | Number | -
@@ -158,6 +160,24 @@
 //! cmd = "dnf list -q --upgrades | tail -n +2 | rofi -dmenu"
 //! ```
 //!
+//! Flatpak-only config:
+//!
+//! ```toml
+//! [[block]]
+//! block = "packages"
+//! package_manager = ["flatpak"]
+//! interval = 1800
+//! error_interval = 300
+//! max_retries = 5
+//! format = " $icon $flatpak.eng(w:1) updates available "
+//! format_singular = " $icon One update available "
+//! format_up_to_date = " $icon system up to date "
+//! [[block.click]]
+//! # shows dmenu with cached available updates. Any dmenu alternative should also work.
+//! button = "left"
+//! cmd = "flatpak remote-ls --updates --columns=ref | rofi -dmenu"
+//! ```
+//!
 //! Pacman-only config:
 //!
 //! ```toml
@@ -239,11 +259,11 @@
 //! ```toml
 //! [[block]]
 //! block = "packages"
-//! package_manager = ["apk", "apt", "aur", "brew", "dnf", "pacman", "snap", "xbps"]
+//! package_manager = ["apk", "apt", "aur", "brew", "dnf", "flatpak", "pacman", "snap", "xbps"]
 //! interval = 1800
 //! error_interval = 300
 //! max_retries = 5
-//! format = " $icon $apk + $apt + $aur + $brew + $dnf + $pacman + $snap + $xbps = $total updates available "
+//! format = " $icon $apk + $apt + $aur + $brew + $dnf + $flatpak + $pacman + $snap + $xbps = $total updates available "
 //! format_singular = " $icon One update available "
 //! format_up_to_date = " $icon system up to date "
 //! # If a linux update is available, but no ZFS package, it won't be possible to
@@ -269,6 +289,9 @@ use brew::Brew;
 
 pub mod dnf;
 use dnf::Dnf;
+
+pub mod flatpak;
+use flatpak::Flatpak;
 
 pub mod pacman;
 use pacman::{Aur, Pacman};
@@ -307,6 +330,7 @@ pub enum PackageManager {
     Aur,
     Brew,
     Dnf,
+    Flatpak,
     Pacman,
     Snap,
     Xbps,
@@ -321,6 +345,7 @@ impl PackageManager {
             PackageManager::Aur => "aur",
             PackageManager::Brew => "brew",
             PackageManager::Dnf => "dnf",
+            PackageManager::Flatpak => "flatpak",
             PackageManager::Pacman => "pacman",
             PackageManager::Snap => "snap",
             PackageManager::Xbps => "xbps",
@@ -337,6 +362,7 @@ impl PackageManager {
             )),
             PackageManager::Brew => Box::new(Brew::new()),
             PackageManager::Dnf => Box::new(Dnf::new()),
+            PackageManager::Flatpak => Box::new(Flatpak::new()),
             PackageManager::Pacman => Box::new(Pacman::new().await?),
             PackageManager::Snap => Box::new(Snap::new()),
             PackageManager::Xbps => Box::new(Xbps::new()),
@@ -375,6 +401,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     check_manager!(PackageManager::Aur);
     check_manager!(PackageManager::Brew);
     check_manager!(PackageManager::Dnf);
+    check_manager!(PackageManager::Flatpak);
     check_manager!(PackageManager::Pacman);
     check_manager!(PackageManager::Snap);
     check_manager!(PackageManager::Xbps);
