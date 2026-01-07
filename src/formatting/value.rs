@@ -1,9 +1,9 @@
 use std::borrow::Cow;
 use std::time::Duration;
 
+use super::Metadata;
 use super::formatter;
 use super::unit::Unit;
-use super::Metadata;
 use chrono::{DateTime, Utc};
 use chrono_tz::Tz;
 
@@ -164,8 +164,9 @@ impl Value {
     pub fn default_formatter(&self) -> &'static dyn formatter::Formatter {
         match &self.inner {
             ValueInner::Text(_) | ValueInner::Icon(..) => &formatter::DEFAULT_STRING_FORMATTER,
-            ValueInner::Number { .. } => &formatter::DEFAULT_NUMBER_FORMATTER,
-            ValueInner::Numbers { .. } => &formatter::DEFAULT_NUMBER_FORMATTER,
+            ValueInner::Number { .. } | ValueInner::Numbers { .. } => {
+                &formatter::DEFAULT_NUMBER_FORMATTER
+            }
             ValueInner::Datetime { .. } => &*formatter::DEFAULT_DATETIME_FORMATTER,
             ValueInner::Duration { .. } => &formatter::DEFAULT_DURATION_FORMATTER,
             ValueInner::Flag => &formatter::DEFAULT_FLAG_FORMATTER,

@@ -81,7 +81,7 @@ impl Formatter for BarFormatter {
             Value::Number { val, .. } => {
                 if self.vertical {
                     let c = self.format_single_vertical(*val);
-                    Ok(std::iter::repeat(c).take(self.width).collect())
+                    Ok(std::iter::repeat_n(c, self.width).collect())
                 } else {
                     Ok(self.format_horizontal_bar(*val))
                 }
@@ -92,8 +92,7 @@ impl Formatter for BarFormatter {
                     let start = vals.len().saturating_sub(self.width);
                     let shown = vals.len() - start;
 
-                    Ok(std::iter::repeat(0.0)
-                        .take(self.width - shown)
+                    Ok(std::iter::repeat_n(0.0, self.width - shown)
                         .chain(vals[start..].iter().copied())
                         .map(|val| self.format_single_vertical(val))
                         .collect())
