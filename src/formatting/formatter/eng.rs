@@ -1,4 +1,4 @@
-use crate::formatting::prefix::Prefix;
+use crate::formatting::prefix::{Prefix, ValuePrefix};
 use crate::formatting::unit::Unit;
 
 use std::borrow::Cow;
@@ -84,12 +84,17 @@ impl EngFormatter {
                         .split_once("..")
                         .error("invalid range")?;
                     if !start.is_empty() {
-                        result.range = start.parse::<f64>().error("invalid range start")?
-                            ..=*result.range.end();
+                        result.range = start
+                            .parse::<ValuePrefix>()
+                            .error("invalid range start")?
+                            .result()..=*result.range.end();
                     }
                     if !end.is_empty() {
                         result.range = *result.range.start()
-                            ..=end.parse::<f64>().error("invalid range end")?;
+                            ..=end
+                                .parse::<ValuePrefix>()
+                                .error("invalid range end")?
+                                .result();
                     }
                 }
                 "show" => {
@@ -351,5 +356,32 @@ mod tests {
         let fmt = new_fmt!(eng, w: 2, p: Mi).unwrap();
         let result = fmt.format(&val, &config).unwrap();
         assert_eq!(result, "15GiB");
+    }
+
+    #[test]
+    fn eng_range() {
+        let config = SharedConfig::default();
+        let fmt = new_formatter(
+            "eng",
+            &[Arg {
+                key: "range",
+                val: Some("..10Gi"),
+            }],
+        )
+        .unwrap();
+
+        let val = Value::Number {
+            val: 100. * 1000. * 1000.,
+            unit: Unit::Bytes,
+        };
+        let result = fmt.format(&val, &config).unwrap();
+        assert_eq!(result, "100MB");
+
+        let val = Value::Number {
+            val: 100. * 1000. * 1000. * 1000.,
+            unit: Unit::Bytes,
+        };
+        let result = fmt.format(&val, &config);
+        assert!(result.is_err());
     }
 }
