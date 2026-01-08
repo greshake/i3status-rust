@@ -55,14 +55,14 @@ impl BarFormatter {
     #[inline]
     fn format_single_vertical(&self, val: f64, max_value: f64) -> char {
         let val = self.norm(val, max_value);
-        VERTICAL_BAR_CHARS[(val * 8.0) as usize]
+        VERTICAL_BAR_CHARS[(val * 8.0).ceil() as usize]
     }
 
     #[inline]
     fn format_horizontal_cell(&self, val: f64, max_value: f64, i: usize) -> char {
         let val = self.norm(val, max_value);
         let chars_to_fill = val * self.width as f64;
-        HORIZONTAL_BAR_CHARS[((chars_to_fill - i as f64).clamp(0.0, 1.0) * 8.0) as usize]
+        HORIZONTAL_BAR_CHARS[((chars_to_fill - i as f64).clamp(0.0, 1.0) * 8.0).ceil() as usize]
     }
 
     #[inline]
