@@ -176,13 +176,13 @@
 <a href=#176 id=176 data-nosnippet>176</a>
 <a href=#177 id=177 data-nosnippet>177</a><span class="kw">mod </span>parser {
 <a href=#178 id=178 data-nosnippet>178</a>    <span class="kw">use super</span>::<span class="kw-2">*</span>;
-<a href=#179 id=179 data-nosnippet>179</a>    <span class="kw">use </span>nom::IResult;
-<a href=#180 id=180 data-nosnippet>180</a>    <span class="kw">use </span>nom::branch::alt;
-<a href=#181 id=181 data-nosnippet>181</a>    <span class="kw">use </span>nom::bytes::complete::{tag, take_until, take_while1};
-<a href=#182 id=182 data-nosnippet>182</a>    <span class="kw">use </span>nom::character::complete::{i32, space0, space1, u32};
-<a href=#183 id=183 data-nosnippet>183</a>    <span class="kw">use </span>nom::combinator::opt;
-<a href=#184 id=184 data-nosnippet>184</a>    <span class="kw">use </span>nom::number::complete::{double, float};
-<a href=#185 id=185 data-nosnippet>185</a>    <span class="kw">use </span>nom::sequence::preceded;
+<a href=#179 id=179 data-nosnippet>179</a>    <span class="kw">use </span>nom::branch::alt;
+<a href=#180 id=180 data-nosnippet>180</a>    <span class="kw">use </span>nom::bytes::complete::{tag, take_until, take_while1};
+<a href=#181 id=181 data-nosnippet>181</a>    <span class="kw">use </span>nom::character::complete::{i32, space0, space1, u32};
+<a href=#182 id=182 data-nosnippet>182</a>    <span class="kw">use </span>nom::combinator::opt;
+<a href=#183 id=183 data-nosnippet>183</a>    <span class="kw">use </span>nom::number::complete::{double, float};
+<a href=#184 id=184 data-nosnippet>184</a>    <span class="kw">use </span>nom::sequence::preceded;
+<a href=#185 id=185 data-nosnippet>185</a>    <span class="kw">use </span>nom::{IResult, Parser <span class="kw">as _</span>};
 <a href=#186 id=186 data-nosnippet>186</a>
 <a href=#187 id=187 data-nosnippet>187</a>    <span class="doccomment">/// Parses an output name, e.g. "HDMI-0", "eDP-1", etc.
 <a href=#188 id=188 data-nosnippet>188</a>    </span><span class="kw">fn </span>name(input: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, <span class="kw-2">&amp;</span>str&gt; {
@@ -207,8 +207,8 @@
 <a href=#207 id=207 data-nosnippet>207</a>    </span><span class="kw">fn </span>parse_output_header(input: <span class="kw-2">&amp;</span>str) -&gt; IResult&lt;<span class="kw-2">&amp;</span>str, (String, u32, u32, i32, i32)&gt; {
 <a href=#208 id=208 data-nosnippet>208</a>        <span class="kw">let </span>(input, name) = name(input)<span class="question-mark">?</span>;
 <a href=#209 id=209 data-nosnippet>209</a>        <span class="kw">let </span>(input, <span class="kw">_</span>) = space1(input)<span class="question-mark">?</span>;
-<a href=#210 id=210 data-nosnippet>210</a>        <span class="kw">let </span>(input, <span class="kw">_</span>) = alt((tag(<span class="string">"connected"</span>), tag(<span class="string">"disconnected"</span>)))(input)<span class="question-mark">?</span>;
-<a href=#211 id=211 data-nosnippet>211</a>        <span class="kw">let </span>(input, <span class="kw">_</span>) = opt(preceded(space1, tag(<span class="string">"primary"</span>)))(input)<span class="question-mark">?</span>;
+<a href=#210 id=210 data-nosnippet>210</a>        <span class="kw">let </span>(input, <span class="kw">_</span>) = alt((tag(<span class="string">"connected"</span>), tag(<span class="string">"disconnected"</span>))).parse(input)<span class="question-mark">?</span>;
+<a href=#211 id=211 data-nosnippet>211</a>        <span class="kw">let </span>(input, <span class="kw">_</span>) = opt(preceded(space1, tag(<span class="string">"primary"</span>))).parse(input)<span class="question-mark">?</span>;
 <a href=#212 id=212 data-nosnippet>212</a>        <span class="kw">let </span>(input, <span class="kw">_</span>) = space1(input)<span class="question-mark">?</span>;
 <a href=#213 id=213 data-nosnippet>213</a>        <span class="kw">let </span>(input, (width, height, x, y)) = parse_mode_position(input)<span class="question-mark">?</span>;
 <a href=#214 id=214 data-nosnippet>214</a>        <span class="prelude-val">Ok</span>((input, (name.to_owned(), width, height, x, y)))
