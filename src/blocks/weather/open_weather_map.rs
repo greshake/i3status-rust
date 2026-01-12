@@ -275,11 +275,15 @@ impl WeatherProvider for Service<'_> {
 
         let current_weather = current_data.to_moment(self.units);
 
-        let sunrise = DateTime::<Utc>::from_timestamp(current_data.sys.sunrise, 0)
-            .error("Unable to convert timestamp to DateTime")?;
+        let sunrise = Some(
+            DateTime::<Utc>::from_timestamp(current_data.sys.sunrise, 0)
+                .error("Unable to convert timestamp to DateTime")?,
+        );
 
-        let sunset = DateTime::<Utc>::from_timestamp(current_data.sys.sunset, 0)
-            .error("Unable to convert timestamp to DateTime")?;
+        let sunset = Some(
+            DateTime::<Utc>::from_timestamp(current_data.sys.sunset, 0)
+                .error("Unable to convert timestamp to DateTime")?,
+        );
 
         if !need_forecast || self.forecast_hours == 0 {
             return Ok(WeatherResult {
