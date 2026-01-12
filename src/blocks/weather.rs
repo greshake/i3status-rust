@@ -82,8 +82,12 @@
 //! `wind{,_{favg,fmin,fmax,ffin}}`              | Wind speed                                                                    | Number   | -
 //! `wind_kmh{,_{favg,fmin,fmax,ffin}}`          | Wind speed. The wind speed in km/h                                            | Number   | -
 //! `direction{,_{favg,fmin,fmax,ffin}}`         | Wind direction, e.g. "NE"                                                     | Text     | -
-//! `sunrise`                                    | Time of sunrise                                                               | DateTime | -
-//! `sunset`                                     | Time of sunset                                                                | DateTime | -
+//! `sunrise`                                    | Time of sunrise (may be absent if it's a polar day or polar night)[^polar]            | DateTime | -
+//! `sunset`                                     | Time of sunset (may be absent if it's a polar day or polar night)[^polar]             | DateTime | -
+//!
+//! [^polar]: On polar days and polar nights, sunrise or sunset may not occur on a given day, and thus the corresponding value may be absent.
+//! This behaviour depends on the weather service used.
+//! For met.no and nws, both sunrise and sunset will be absent on polar days and polar nights, but OpenWeatherMap will show the same time for both sunrise and sunset.
 //!
 //! You can use the suffixes noted above to get the following:
 //!
@@ -264,8 +268,8 @@ struct WeatherResult {
     location: String,
     current_weather: WeatherMoment,
     forecast: Option<Forecast>,
-    sunrise: DateTime<Utc>,
-    sunset: DateTime<Utc>,
+    sunrise: Option<DateTime<Utc>>,
+    sunset: Option<DateTime<Utc>>,
 }
 
 impl WeatherResult {
@@ -282,8 +286,8 @@ impl WeatherResult {
             "wind" => Value::number(self.current_weather.wind),
             "wind_kmh" => Value::number(self.current_weather.wind_kmh),
             "direction" => Value::text(convert_wind_direction(self.current_weather.wind_direction).into()),
-            "sunrise" => Value::datetime(self.sunrise, None),
-            "sunset" => Value::datetime(self.sunset, None),
+            [if let Some(sunrise) = self.sunrise] "sunrise" => Value::datetime(sunrise, None),
+            [if let Some(sunset) = self.sunset] "sunset" => Value::datetime(sunset, None),
         };
 
         if let Some(forecast) = self.forecast {
@@ -519,7 +523,7 @@ fn calculate_sunrise_sunset(
     lat: f64,
     lon: f64,
     altitude: Option<f64>,
-) -> Result<(DateTime<Utc>, DateTime<Utc>)> {
+) -> Result<(Option<DateTime<Utc>>, Option<DateTime<Utc>>)> {
     let date = Utc::now().date_naive();
     let coordinates = sunrise::Coordinates::new(lat, lon).error("Invalid coordinates")?;
     let solar_day = SolarDay::new(coordinates, date).with_altitude(altitude.unwrap_or_default());
