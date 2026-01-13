@@ -121,7 +121,7 @@ impl<'a> Service<'a> {
 
     async fn get_location_query(
         autolocate: bool,
-        api_key: &String,
+        api_key: &str,
         config: &Config,
     ) -> Result<Option<LocationSpecifier>> {
         if autolocate {
