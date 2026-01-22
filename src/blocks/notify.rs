@@ -9,16 +9,20 @@
 //! `driver` | Which notifications daemon is running. Available drivers are: `"dunst"` and `"swaync"` | `"dunst"`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon "`
 //!
-//! Placeholder                               | Value                                      | Type   | Unit
-//! ------------------------------------------|--------------------------------------------|--------|-----
-//! `icon`                                    | Icon based on notification's state         | Icon   | -
-//! `notification_count`[^dunst_version_note] | The number of notification (omitted if 0)  | Number | -
-//! `paused`                                  | Present only if notifications are disabled | Flag   | -
+//! Placeholder                               | Value                                                 | Type   | Unit
+//! ------------------------------------------|-------------------------------------------------------|--------|-----
+//! `icon`                                    | Icon based on notification's state                    | Icon   | -
+//! `notification_count`[^dunst_version_note] | The number of notification (omitted if 0)             | Number | -
+//! `history_count`[^history_count_note]      | The number of notification in history (omitted if 0)  | Number | -
+//! `paused`                                  | Present only if notifications are disabled            | Flag   | -
 //!
 //! Action          | Default button
 //! ----------------|---------------
 //! `toggle_paused` | Left
 //! `show`          | -
+//! `show_all`      | -
+//!
+//! The `show` and `show_all` actions are the same for SwayNC.
 //!
 //! # Examples
 //!
@@ -55,6 +59,7 @@
 //! - `bell-slash`
 //!
 //! [^dunst_version_note]: when using `notification_count` with the `dunst` driver use dunst > 1.9.0
+//! [^history_count_note]: `history_count` is the same as `notification_count` in SwayNC
 
 use super::prelude::*;
 use tokio::{join, try_join};
@@ -90,13 +95,14 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     };
 
     loop {
-        let (is_paused, notification_count) =
-            try_join!(driver.is_paused(), driver.notification_count())?;
+        let (is_paused, notification_count, history_count) =
+            try_join!(driver.is_paused(), driver.notification_count(), driver.history_count())?;
 
         let mut widget = Widget::new().with_format(format.clone());
         widget.set_values(map!(
             "icon" => Value::icon(if is_paused { ICON_OFF } else { ICON_ON }),
             [if notification_count != 0] "notification_count" => Value::number(notification_count),
+            [if history_count != 0] "history_count" => Value::number(history_count),
             [if is_paused] "paused" => Value::flag(),
         ));
         widget.state = if notification_count == 0 {
@@ -115,6 +121,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 "show" => {
                     driver.notification_show().await?;
                 }
+                "show_all" => {
+                    driver.notification_show_all().await?;
+                }
                 _ => (),
             }
         }
@@ -126,6 +135,8 @@ trait Driver {
     async fn is_paused(&self) -> Result<bool>;
     async fn set_paused(&self, paused: bool) -> Result<()>;
     async fn notification_show(&self) -> Result<()>;
+    async fn history_count(&self) -> Result<u32>;
+    async fn notification_show_all(&self) -> Result<()>;
     async fn notification_count(&self) -> Result<u32>;
     async fn wait_for_change(&mut self) -> Result<()>;
 }
@@ -172,6 +183,21 @@ impl Driver for DunstDriver {
             .error("Could not call 'NotificationShow'")
     }
 
+    async fn notification_show_all(&self) -> Result<()> {
+        for _ in 0..self.history_count().await? {
+            self.notification_show().await?;
+        }
+        Ok(())
+    }
+
+    async fn history_count(&self) -> Result<u32> {
+        let history_length =
+            self.proxy.history_length().await
+            .error("Failed to get property")?;
+
+        Ok(history_length)
+    }
+
     async fn notification_count(&self) -> Result<u32> {
         let (displayed_length, waiting_length) =
             try_join!(self.proxy.displayed_length(), self.proxy.waiting_length())
@@ -202,6 +228,8 @@ trait DunstDbus {
     #[zbus(property, name = "paused")]
     fn set_paused(&self, value: bool) -> zbus::Result<()>;
     fn notification_show(&self) -> zbus::Result<()>;
+    #[zbus(property, name = "historyLength")]
+    fn history_length(&self) -> zbus::Result<u32>;
     #[zbus(property, name = "displayedLength")]
     fn displayed_length(&self) -> zbus::Result<u32>;
     #[zbus(property, name = "waitingLength")]
@@ -257,6 +285,14 @@ impl Driver for SwayNCDriver {
             .toggle_visibility()
             .await
             .error("Failed to call 'ToggleVisibility'")
+    }
+
+    async fn notification_show_all(&self) -> Result<()> {
+        self.notification_show().await
+    }
+
+    async fn history_count(&self) -> Result<u32> {
+        self.notification_count().await
     }
 
     async fn notification_count(&self) -> Result<u32> {
