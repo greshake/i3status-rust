@@ -21,7 +21,7 @@ fn read_xresources() -> std::io::Result<String> {
 use tests::read_xresources;
 
 static COLOR_REGEX: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"^\s*\*(?<name>[^: ]+)\s*:\s*(?<color>#[a-f0-9]{6,8}).*$").unwrap()
+    Regex::new(r"^\s*\*(?<name>[^: ]+)\s*:\s*(?<color>#[A-Fa-f0-9]{6,8}).*$").unwrap()
 });
 
 static COLORS: LazyLock<Result<HashMap<String, String>, Error>> = LazyLock::new(|| {
