@@ -3,8 +3,9 @@ language: en-US, en-GB
 allowCompoundWords: true
 ignorePaths:
   - _typos.toml
-  - target/
   - src/blocks/weather/met_no_legends.json
+  - src/themes/xorg-rgb.txt
+  - target/
   - testdata/
 ignoreRegExpList:
   # Ignore usernames that are @'d
@@ -37,6 +38,7 @@ words:
   - cbrt
   - ccache
   - chrono
+  - CIEXYZ
   - clippy
   - CLOEXEC
   - cmap
@@ -141,6 +143,7 @@ words:
   - reqwest
   - resolv
   - retval
+  - rgbi
   - rofi
   - rofication
   - rrule
@@ -202,6 +205,7 @@ words:
   - xkbevent
   - xkbswitch
   - XKCD
+  - xorg
   - xrandr
   - xresources
   - xtask
