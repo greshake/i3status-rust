@@ -1,10 +1,10 @@
 use crate::errors::*;
 use nom::IResult;
+use nom::Parser as _;
 use nom::branch::alt;
 use nom::bytes::complete::tag;
 use nom::combinator::{all_consuming, map, opt, value};
 use nom::number::complete::double;
-use nom::sequence::tuple;
 use std::fmt;
 use std::str::FromStr;
 
@@ -226,13 +226,12 @@ fn parse_prefix(input: &str) -> IResult<&str, Prefix> {
             value(Prefix::Tera, tag("T")),
         ))),
         |p| p.unwrap_or_default(),
-    )(input)
+    )
+    .parse(input)
 }
 
 fn parse_value_prefix(input: &str) -> IResult<&str, ValuePrefix> {
-    all_consuming(map(tuple((double, parse_prefix)), |(v, p)| {
-        ValuePrefix(v, p)
-    }))(input)
+    all_consuming(map((double, parse_prefix), |(v, p)| ValuePrefix(v, p))).parse(input)
 }
 
 #[cfg(test)]
