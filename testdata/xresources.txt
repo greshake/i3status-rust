@@ -1,0 +1,67 @@
+! Colors
+
+#define S_yellow        #b58900
+#define S_red           #dc322f
+#define S_green         #ffffff
+#define S_green         #859900
+
+! x11 defined color
+! #fffacd
+*color0:                  lemonchiffon
+
+! defined color
+*color1:                  S_red
+
+! redefined color
+*color2:                  S_green
+
+! redfined color after this point
+*color3:                  S_yellow
+#define S_yellow        #ffffff
+
+! legacy rgb 12-bit
+! #2080d0
+*color4:                  #28d
+
+! legacy rgb 24-bit
+*color5:                  #d33682
+
+! legacy rgb 36-bit
+! #2aa198
+*color6:                  #2a0a1998f
+
+! legacy rgb 48-bit
+! #eee8d5
+*color7:                  #ee00e8aad5ff
+
+! rgb 12-bit
+! #cc4411
+*color8:                  rgb:c/4/1
+
+! rgb 24-bit
+! #002b36
+*color9:                  rgb:0/2b/36
+
+! rgb 36-bit
+! #586e76
+*color10:                 rgb:580/6ea/75f
+
+! rgb 48-bit
+! #829496
+*color11:                 rgb:8300/94aa/96ff
+
+! rgbi
+! The input format for these values is an optional sign, a string of numbers
+! possibly containing a decimal point, and an optional exponent field containing
+! an E or e followed by a possibly signed integer string.
+! #ddb787
+*color12:                 rgbi:.87/+.072e+1/5.3E-1
+
+! invalid length legacy rgb
+*color13:                 #6c71c4ff
+
+! Unimplemented colorspace
+*color14:                 CIEXYZ:.1/.2/.3
+
+! Unknown colorspace
+*color15:                 Unknown:.2/.3/.4
