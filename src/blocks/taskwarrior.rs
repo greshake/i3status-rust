@@ -147,15 +147,32 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         api.set_widget(widget)?;
 
-        select! {
-            _ = sleep(config.interval.0) =>(),
-            _ = updates.next() => (),
-            _ = api.wait_for_update_request() => (),
-            Some(action) = actions.recv() => match action.as_ref() {
-                "next_filter" => {
-                    filter = filters.next().unwrap();
+        loop {
+            select! {
+                _ = sleep(config.interval.0) => break,
+                Some(Ok(event)) = updates.next() => {
+                    // Skip SQLite journal files (-shm, -wal, -journal) to avoid
+                    // feedback loop with TaskWarrior v3's SQLite backend.
+                    // These files are modified on every read operation, which would
+                    // otherwise cause continuous updates.
+                    if let Some(name) = event.name {
+                        let name_str = name.to_string_lossy();
+                        if name_str.ends_with("-shm") || name_str.ends_with("-wal") || name_str.ends_with("-journal") {
+                            continue;
+                        }
+                    }
+                    break;
                 }
-                _ => (),
+                _ = api.wait_for_update_request() => break,
+                Some(action) = actions.recv() => {
+                    match action.as_ref() {
+                        "next_filter" => {
+                            filter = filters.next().unwrap();
+                        }
+                        _ => (),
+                    }
+                    break;
+                }
             }
         }
     }
