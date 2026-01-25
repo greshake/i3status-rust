@@ -1,11 +1,13 @@
 use clap::Parser;
 
 use i3status_rs::blocks::BlockError;
-use i3status_rs::config::Config;
+use i3status_rs::config::{Config, try_parse_sway_bar_colors};
 use i3status_rs::errors::*;
 use i3status_rs::escape::Escaped;
 use i3status_rs::widget::{State, Widget};
 use i3status_rs::{BarState, protocol, util};
+
+use std::sync::Arc;
 
 #[derive(Debug, thiserror::Error)]
 enum ErrorMaybeInBlock {
@@ -34,6 +36,15 @@ fn main() {
             let config_path = util::find_file(&args.config, None, Some("toml"))?
                 .or_error(|| format!("Configuration file '{}' not found", args.config))?;
             let mut config: Config = util::deserialize_toml_file(&config_path)?;
+
+            // === Inject Sway bar color override if enabled ===
+            if let Some((bg, fg)) = try_parse_sway_bar_colors() {
+                let theme = Arc::make_mut(&mut config.shared.theme);
+                theme.idle_bg = bg;
+                theme.idle_fg = fg;
+            }
+            
+
             let blocks = std::mem::take(&mut config.blocks);
             let mut bar = BarState::new(config);
             for block_config in blocks {
@@ -42,6 +53,7 @@ fn main() {
             bar.run_event_loop(restart).await?;
             Ok(())
         });
+
     if let Err(error) = result {
         let error_widget = Widget::new()
             .with_text(error.to_string().pango_escaped())
