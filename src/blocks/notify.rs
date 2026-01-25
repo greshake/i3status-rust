@@ -95,8 +95,11 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     };
 
     loop {
-        let (is_paused, notification_count, history_count) =
-            try_join!(driver.is_paused(), driver.notification_count(), driver.history_count())?;
+        let (is_paused, notification_count, history_count) = try_join!(
+            driver.is_paused(),
+            driver.notification_count(),
+            driver.history_count()
+        )?;
 
         let mut widget = Widget::new().with_format(format.clone());
         widget.set_values(map!(
@@ -191,8 +194,10 @@ impl Driver for DunstDriver {
     }
 
     async fn history_count(&self) -> Result<u32> {
-        let history_length =
-            self.proxy.history_length().await
+        let history_length = self
+            .proxy
+            .history_length()
+            .await
             .error("Failed to get property")?;
 
         Ok(history_length)
