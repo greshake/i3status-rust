@@ -149,9 +149,6 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         // See: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=34e431b0ae398fc54ea69ff85ec700722c9da773
         let mem_used = mem_total - mem_avail;
 
-        // account for ZFS ARC cache
-        let mem_used = mem_used - zfs_shrinkable_size;
-
         let swap_total = mem_state.swap_total as f64;
         let swap_free = mem_state.swap_free as f64;
         let swap_cached = mem_state.swap_cached as f64;
