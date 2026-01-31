@@ -6,7 +6,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `driver` | Which vpn should be used . Available drivers are: `"nordvpn"` and `"mullvad"` | `"nordvpn"`
+//! `driver` | Which vpn should be used . Available drivers are: `"nordvpn"`, `"mullvad"`, `"tailscale"` | `"nordvpn"`
 //! `interval` | Update interval in seconds. | `10`
 //! `format_connected` | A string to customise the output in case the network is connected. See below for available placeholders. | `" VPN: $icon "`
 //! `format_disconnected` | A string to customise the output in case the network is disconnected. See below for available placeholders. | `" VPN: $icon "`
@@ -31,6 +31,13 @@
 //!
 //! ## Mullvad
 //! Behind the scenes the mullvad driver uses the `mullvad` command line binary. In order for this to work properly the binary should be executable and mullvad daemon should be running.
+//!
+//! ## Tailscale
+//! Behind the scenes the tailscale driver uses the `tailscale` command line binary.
+//! In order for this to work properly the tailscale daemon should be running and the user must be configured as operator:
+//! ```sh
+//! sudo tailscale set --operator=$USER
+//! ```
 //!
 //! # Example
 //!
@@ -71,6 +78,8 @@ mod nordvpn;
 use nordvpn::NordVpnDriver;
 mod mullvad;
 use mullvad::MullvadDriver;
+mod tailscale;
+use tailscale::TailscaleDriver;
 
 use super::prelude::*;
 
@@ -80,6 +89,7 @@ pub enum DriverType {
     #[default]
     Nordvpn,
     Mullvad,
+    Tailscale,
 }
 
 #[derive(Deserialize, Debug, SmartDefault)]
@@ -123,6 +133,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let driver: Box<dyn Driver> = match config.driver {
         DriverType::Nordvpn => Box::new(NordVpnDriver::new().await),
         DriverType::Mullvad => Box::new(MullvadDriver::new().await),
+        DriverType::Tailscale => Box::new(TailscaleDriver::new().await),
     };
 
     loop {
