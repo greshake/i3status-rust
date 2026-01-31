@@ -52,7 +52,7 @@ impl Driver for MullvadDriver {
         let status = String::from_utf8(stdout).error("mullvad produced non-UTF8 output")?;
 
         if status.contains("Disconnected") {
-            return Ok(Status::Disconnected);
+            return Ok(Status::Disconnected { profile: None });
         } else if status.contains("Connected") {
             let (country_flag, country) = self
                 .regex_country_code
@@ -78,7 +78,7 @@ impl Driver for MullvadDriver {
     async fn toggle_connection(&self, status: &Status) -> Result<()> {
         match status {
             Status::Connected { .. } => Self::run_network_command("disconnect").await?,
-            Status::Disconnected => Self::run_network_command("connect").await?,
+            Status::Disconnected { .. } => Self::run_network_command("connect").await?,
             Status::Error => (),
         }
         Ok(())

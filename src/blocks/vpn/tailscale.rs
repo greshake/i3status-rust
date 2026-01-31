@@ -69,14 +69,14 @@ impl Driver for TailscaleDriver {
                 country_flag: None,
                 profile,
             }),
-            _ => Ok(Status::Disconnected),
+            _ => Ok(Status::Disconnected { profile }),
         }
     }
 
     async fn toggle_connection(&self, status: &Status) -> Result<()> {
         match status {
             Status::Connected { .. } => Self::run_network_command("down").await?,
-            Status::Disconnected => Self::run_network_command("up").await?,
+            Status::Disconnected { .. } => Self::run_network_command("up").await?,
             Status::Error => (),
         }
         Ok(())

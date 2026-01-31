@@ -111,7 +111,9 @@ enum Status {
         country_flag: Option<String>,
         profile: Option<String>,
     },
-    Disconnected,
+    Disconnected {
+        profile: Option<String>,
+    },
     Error,
 }
 
@@ -119,7 +121,7 @@ impl Status {
     fn icon(&self) -> Cow<'static, str> {
         match self {
             Status::Connected { .. } => "net_vpn".into(),
-            Status::Disconnected => "net_wired".into(),
+            Status::Disconnected { .. } => "net_wired".into(),
             Status::Error => "net_down".into(),
         }
     }
@@ -158,10 +160,11 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 widget.set_format(format_connected.clone());
                 config.state_connected
             }
-            Status::Disconnected => {
-                widget.set_values(map!(
-                        "icon" => Value::icon(status.icon()),
-                ));
+            Status::Disconnected { profile } => {
+                widget.set_values(map! {
+                    "icon" => Value::icon(status.icon()),
+                    [if let Some(profile) = profile] "profile" => Value::text(profile.into()),
+                });
                 widget.set_format(format_disconnected.clone());
                 config.state_disconnected
             }
