@@ -6,7 +6,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `driver` | Which vpn should be used . Available drivers are: `"nordvpn"` and `"mullvad"` | `"nordvpn"`
+//! `driver` | Which vpn should be used . Available drivers are: `"nordvpn"`, `"mullvad"`, `"tailscale"` | `"nordvpn"`
 //! `interval` | Update interval in seconds. | `10`
 //! `format_connected` | A string to customise the output in case the network is connected. See below for available placeholders. | `" VPN: $icon "`
 //! `format_disconnected` | A string to customise the output in case the network is disconnected. See below for available placeholders. | `" VPN: $icon "`
@@ -25,12 +25,19 @@
 //!
 //! # Drivers
 //!
+//! ## Mullvad
+//! Behind the scenes the mullvad driver uses the `mullvad` command line binary. In order for this to work properly the binary should be executable and mullvad daemon should be running.
+//!
 //! ## nordvpn
 //! Behind the scenes the nordvpn driver uses the `nordvpn` command line binary. In order for this to work
 //! properly the binary should be executable without root privileges.
 //!
-//! ## Mullvad
-//! Behind the scenes the mullvad driver uses the `mullvad` command line binary. In order for this to work properly the binary should be executable and mullvad daemon should be running.
+//! ## Tailscale
+//! Behind the scenes the tailscale driver uses the `tailscale` command line binary.
+//! In order for this to work properly the tailscale daemon should be running and the user must be configured as operator:
+//! ```sh
+//! sudo tailscale set --operator=$USER
+//! ```
 //!
 //! ## Cloudflare WARP
 //! Behind the scenes the WARP driver uses the `warp-cli` command line binary. Just ensure the binary is executable without root privileges.
@@ -70,10 +77,12 @@
 //! Flags: They are not icons but unicode glyphs. You will need a font that
 //! includes them. Tested with: <https://www.babelstone.co.uk/Fonts/Flags.html>
 
-mod nordvpn;
-use nordvpn::NordVpnDriver;
 mod mullvad;
 use mullvad::MullvadDriver;
+mod nordvpn;
+use nordvpn::NordVpnDriver;
+mod tailscale;
+use tailscale::TailscaleDriver;
 mod warp;
 use warp::WarpDriver;
 
@@ -82,9 +91,10 @@ use super::prelude::*;
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(rename_all = "snake_case")]
 pub enum DriverType {
+    Mullvad,
     #[default]
     Nordvpn,
-    Mullvad,
+    Tailscale,
     Warp,
 }
 
@@ -127,8 +137,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let format_disconnected = config.format_disconnected.with_default(" VPN: $icon ")?;
 
     let driver: Box<dyn Driver> = match config.driver {
-        DriverType::Nordvpn => Box::new(NordVpnDriver::new().await),
         DriverType::Mullvad => Box::new(MullvadDriver::new().await),
+        DriverType::Nordvpn => Box::new(NordVpnDriver::new().await),
+        DriverType::Tailscale => Box::new(TailscaleDriver::new().await),
         DriverType::Warp => Box::new(WarpDriver::new().await),
     };
 

@@ -41,8 +41,8 @@ impl Driver for WarpDriver {
             return Ok(Status::Disconnected);
         } else if status.contains("Status update: Connected") {
             return Ok(Status::Connected {
-                country: "".to_string(), // because warp-cli doesn't provide country/server info
-                country_flag: "".to_string(), // no country means no flag
+                country: None,      // because warp-cli doesn't provide country/server info
+                country_flag: None, // no country means no flag
             });
         }
         Ok(Status::Error)
