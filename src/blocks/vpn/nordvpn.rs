@@ -59,7 +59,7 @@ impl Driver for NordVpnDriver {
         let line_status = line_status.unwrap();
 
         if line_status.ends_with("Disconnected") {
-            return Ok(Status::Disconnected);
+            return Ok(Status::Disconnected { profile: None });
         } else if line_status.ends_with("Connected") {
             let country = line_country
                 .map(|country_line| country_line.rsplit(": ").next().unwrap().to_string());
@@ -85,7 +85,7 @@ impl Driver for NordVpnDriver {
     async fn toggle_connection(&self, status: &Status) -> Result<()> {
         match status {
             Status::Connected { .. } => Self::run_network_command("disconnect").await?,
-            Status::Disconnected => Self::run_network_command("connect").await?,
+            Status::Disconnected { .. } => Self::run_network_command("connect").await?,
             Status::Error => (),
         }
         Ok(())
