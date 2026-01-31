@@ -18,6 +18,7 @@
 //! `icon`      | A static icon                                             | Icon   | -
 //! `country`   | Country currently connected to                            | Text   | -
 //! `flag`      | Country specific flag (depends on a font supporting them) | Text   | -
+//! `profile`   | Currently selected profile configuration (tailnet)        | Text   | -
 //!
 //! Action    | Default button | Description
 //! ----------|----------------|-----------------------------------
@@ -114,6 +115,7 @@ enum Status {
     Connected {
         country: Option<String>,
         country_flag: Option<String>,
+        profile: Option<String>,
     },
     Disconnected,
     Error,
@@ -152,11 +154,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             Status::Connected {
                 country,
                 country_flag,
+                profile,
             } => {
                 widget.set_values(map!(
                         "icon" => Value::icon(status.icon()),
                         [if let Some(country) = country] "country" => Value::text(country.into()),
                         [if let Some(flag) = country_flag] "flag" => Value::text(flag.into()),
+                        [if let Some(profile) = profile] "profile" => Value::text(profile.into()),
                 ));
                 widget.set_format(format_connected.clone());
                 config.state_connected

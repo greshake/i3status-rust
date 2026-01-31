@@ -69,6 +69,7 @@ impl Driver for MullvadDriver {
             return Ok(Status::Connected {
                 country,
                 country_flag,
+                profile: None,
             });
         }
         Ok(Status::Error)
