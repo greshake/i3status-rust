@@ -6,9 +6,17 @@ use crate::blocks::prelude::*;
 use super::{Driver, Status};
 
 #[derive(Deserialize)]
+struct CurrentTailnet {
+    #[serde(rename = "Name")]
+    name: String,
+}
+
+#[derive(Deserialize)]
 struct TailscaleStatus {
     #[serde(rename = "BackendState")]
     backend_state: String,
+    #[serde(rename = "CurrentTailnet")]
+    current_tailnet: Option<CurrentTailnet>,
 }
 
 pub struct TailscaleDriver {}
@@ -54,10 +62,12 @@ impl Driver for TailscaleDriver {
         let stdout = String::from_utf8(cmd.stdout).error("tailscale produced non-UTF8 output")?;
         let status = serde_json::from_str::<TailscaleStatus>(&stdout)
             .error("Problem parsing tailscale status")?;
+        let profile = status.current_tailnet.map(|t| t.name);
         match status.backend_state.as_str() {
             "Running" => Ok(Status::Connected {
                 country: None,
                 country_flag: None,
+                profile,
             }),
             _ => Ok(Status::Disconnected),
         }
