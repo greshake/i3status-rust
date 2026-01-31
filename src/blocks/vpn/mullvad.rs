@@ -62,9 +62,9 @@ impl Driver for MullvadDriver {
                     let country_code = capture[1].to_uppercase();
                     let country = capture[2].to_owned();
                     let country_flag = country_flag_from_iso_code(&country_code);
-                    (country_flag, country)
+                    (Some(country_flag), Some(country))
                 })
-                .unwrap_or_default();
+                .unwrap_or((None, None));
 
             return Ok(Status::Connected {
                 country,

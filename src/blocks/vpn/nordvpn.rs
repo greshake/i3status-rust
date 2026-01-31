@@ -61,10 +61,8 @@ impl Driver for NordVpnDriver {
         if line_status.ends_with("Disconnected") {
             return Ok(Status::Disconnected);
         } else if line_status.ends_with("Connected") {
-            let country = match line_country {
-                Some(country_line) => country_line.rsplit(": ").next().unwrap().to_string(),
-                None => String::default(),
-            };
+            let country = line_country
+                .map(|country_line| country_line.rsplit(": ").next().unwrap().to_string());
             let country_flag = match line_country_flag {
                 Some(country_line_flag) => self
                     .regex_country_code
@@ -72,9 +70,8 @@ impl Driver for NordVpnDriver {
                     .last()
                     .map(|capture| capture[1].to_owned())
                     .map(|code| code.to_uppercase())
-                    .map(|code| country_flag_from_iso_code(&code))
-                    .unwrap_or_default(),
-                None => String::default(),
+                    .map(|code| country_flag_from_iso_code(&code)),
+                None => None,
             };
             return Ok(Status::Connected {
                 country,
