@@ -96,8 +96,8 @@ pub struct Config {
 
 enum Status {
     Connected {
-        country: String,
-        country_flag: String,
+        country: Option<String>,
+        country_flag: Option<String>,
     },
     Disconnected,
     Error,
@@ -137,9 +137,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             } => {
                 widget.set_values(map!(
                         "icon" => Value::icon(status.icon()),
-                        "country" => Value::text(country.to_string()),
-                        "flag" => Value::text(country_flag.to_string()),
-
+                        [if let Some(country) = country] "country" => Value::text(country.into()),
+                        [if let Some(flag) = country_flag] "flag" => Value::text(flag.into()),
                 ));
                 widget.set_format(format_connected.clone());
                 config.state_connected
