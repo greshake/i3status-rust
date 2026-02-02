@@ -19,6 +19,7 @@
 //! `country`   | Country currently connected to                            | Text   | -
 //! `flag`      | Country specific flag (depends on a font supporting them) | Text   | -
 //! `profile`   | Currently selected profile configuration (tailnet)        | Text   | -
+//! `error`     | Error message if any                                      | Text   | -
 //!
 //! Action    | Default button | Description
 //! ----------|----------------|-----------------------------------
@@ -114,7 +115,7 @@ enum Status {
     Disconnected {
         profile: Option<String>,
     },
-    Error,
+    Error(Option<String>),
 }
 
 impl Status {
@@ -122,7 +123,7 @@ impl Status {
         match self {
             Status::Connected { .. } => "net_vpn".into(),
             Status::Disconnected { .. } => "net_wired".into(),
-            Status::Error => "net_down".into(),
+            Status::Error(_) => "net_down".into(),
         }
     }
 }
@@ -168,9 +169,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 widget.set_format(format_disconnected.clone());
                 config.state_disconnected
             }
-            Status::Error => {
+            Status::Error(error) => {
                 widget.set_values(map!(
                         "icon" => Value::icon(status.icon()),
+                        [if let Some(error) = error] "error" => Value::text(error.into())
                 ));
                 widget.set_format(format_disconnected.clone());
                 State::Critical

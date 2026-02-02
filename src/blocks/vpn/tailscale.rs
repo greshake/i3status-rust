@@ -53,7 +53,7 @@ impl Driver for TailscaleDriver {
             let stderr =
                 String::from_utf8(cmd.stderr).error("tailscale produced non-UTF8 stderr")?;
             if stderr.contains("it doesn't appear to be running") {
-                return Ok(Status::Error);
+                return Ok(Status::Error(Some("Not running".to_string())));
             } else {
                 return Err(Error::new(stderr));
             }
@@ -69,7 +69,9 @@ impl Driver for TailscaleDriver {
                 country_flag: None,
                 profile,
             }),
-            _ => Ok(Status::Disconnected { profile }),
+            "Stopped" => Ok(Status::Disconnected { profile }),
+            "NeedsLogin" => Ok(Status::Error(Some("Needs login".to_string()))),
+            error => Ok(Status::Error(Some(error.to_string()))),
         }
     }
 
@@ -77,7 +79,7 @@ impl Driver for TailscaleDriver {
         match status {
             Status::Connected { .. } => Self::run_network_command("down").await?,
             Status::Disconnected { .. } => Self::run_network_command("up").await?,
-            Status::Error => (),
+            Status::Error(_) => (),
         }
         Ok(())
     }
