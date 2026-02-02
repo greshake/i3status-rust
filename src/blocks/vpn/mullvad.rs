@@ -72,14 +72,14 @@ impl Driver for MullvadDriver {
                 profile: None,
             });
         }
-        Ok(Status::Error)
+        Ok(Status::Error(None))
     }
 
     async fn toggle_connection(&self, status: &Status) -> Result<()> {
         match status {
             Status::Connected { .. } => Self::run_network_command("disconnect").await?,
             Status::Disconnected { .. } => Self::run_network_command("connect").await?,
-            Status::Error => (),
+            Status::Error(_) => (),
         }
         Ok(())
     }

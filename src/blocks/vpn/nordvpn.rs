@@ -54,7 +54,7 @@ impl Driver for NordVpnDriver {
         let line_country = Self::find_line(&stdout, "Country:").await;
         let line_country_flag = Self::find_line(&stdout, "Hostname:").await;
         if line_status.is_none() {
-            return Ok(Status::Error);
+            return Ok(Status::Error(None));
         }
         let line_status = line_status.unwrap();
 
@@ -79,14 +79,14 @@ impl Driver for NordVpnDriver {
                 profile: None,
             });
         }
-        Ok(Status::Error)
+        Ok(Status::Error(None))
     }
 
     async fn toggle_connection(&self, status: &Status) -> Result<()> {
         match status {
             Status::Connected { .. } => Self::run_network_command("disconnect").await?,
             Status::Disconnected { .. } => Self::run_network_command("connect").await?,
-            Status::Error => (),
+            Status::Error(_) => (),
         }
         Ok(())
     }
