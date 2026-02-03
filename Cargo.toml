@@ -33,7 +33,7 @@ async-trait = "0.1"
 backon = { version = "1.2", default-features = false, features = ["tokio-sleep"] }
 base64 = { version = "0.22.1" }
 bitflags = "2.9"
-bytes = "1.8"
+bytes = "1.11"
 calibright = { version = "0.1.13", features = ["watch"] }
 chrono = { version = "0.4", default-features = false, features = ["clock", "unstable-locales"] }
 chrono-tz = { version = "0.10", features = ["serde"] }
