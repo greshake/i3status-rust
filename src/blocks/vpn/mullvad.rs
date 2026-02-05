@@ -52,7 +52,7 @@ impl Driver for MullvadDriver {
         let status = String::from_utf8(stdout).error("mullvad produced non-UTF8 output")?;
 
         if status.contains("Disconnected") {
-            return Ok(Status::Disconnected);
+            return Ok(Status::Disconnected { profile: None });
         } else if status.contains("Connected") {
             let (country_flag, country) = self
                 .regex_country_code
@@ -62,23 +62,24 @@ impl Driver for MullvadDriver {
                     let country_code = capture[1].to_uppercase();
                     let country = capture[2].to_owned();
                     let country_flag = country_flag_from_iso_code(&country_code);
-                    (country_flag, country)
+                    (Some(country_flag), Some(country))
                 })
-                .unwrap_or_default();
+                .unwrap_or((None, None));
 
             return Ok(Status::Connected {
                 country,
                 country_flag,
+                profile: None,
             });
         }
-        Ok(Status::Error)
+        Ok(Status::Error(None))
     }
 
     async fn toggle_connection(&self, status: &Status) -> Result<()> {
         match status {
             Status::Connected { .. } => Self::run_network_command("disconnect").await?,
-            Status::Disconnected => Self::run_network_command("connect").await?,
-            Status::Error => (),
+            Status::Disconnected { .. } => Self::run_network_command("connect").await?,
+            Status::Error(_) => (),
         }
         Ok(())
     }
