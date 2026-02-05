@@ -197,6 +197,16 @@ impl Formatter for EngFormatter {
 
                 Ok(retval)
             }
+            &Value::Numbers { ref vals, unit } => {
+                // NOTE: by default, Value::Numbers will be formatted as the last value in the series
+                Ok(self.format(
+                    &Value::Number {
+                        val: vals.last().copied().unwrap_or(0.0),
+                        unit,
+                    },
+                    _config,
+                )?)
+            }
             other => Err(FormatError::IncompatibleFormatter {
                 ty: other.type_name(),
                 fmt: "eng",
