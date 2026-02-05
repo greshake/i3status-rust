@@ -61,6 +61,7 @@ nom = "8.0.0"
 notmuch = { version = "0.8", optional = true }
 oauth2 = { version = "5.0.0", default-features = false, features = ["reqwest"] }
 num-traits = "0.2"
+phf = { version = "0.12", default-features = false }
 pipewire = { version = "0.9", default-features = false, optional = true }
 quick-xml = { version = "0.37", features = ["serialize"] }
 regex = "1.5"
@@ -100,6 +101,10 @@ features = [
   "sync",
   "time",
 ]
+
+[build-dependencies]
+phf = { version = "0.12", default-features = false }
+phf_codegen = "0.12"
 
 [profile.release]
 lto = "thin"
