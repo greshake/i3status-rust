@@ -16,8 +16,9 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `mac` | MAC address of the Bluetooth device | **Required**
+//! `mac` | MAC address of the Bluetooth device. If set to `None`, first found device that is currently connected will be used. | `None`
 //! `adapter_mac` | MAC Address of the Bluetooth adapter (in case your device was connected to multiple currently available adapters) | `None`
+//! `class` | Filter Bluetooth devices by their type. For convinience, device's icon is used as its class. See below for available icons. | `None`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | <code>\" $icon $name{ $percentage\|} \"</code>
 //! `disconnected_format` | A string to customise the output of this block. See below for available placeholders. | <code>\" $icon{ $name\|} \"</code>
 //! `battery_state` | A mapping from battery percentage to block's [state](State) (color). See example below. | 0..15 -> critical, 16..30 -> warning, 31..60 -> info, 61..100 -> good
@@ -67,15 +68,27 @@ make_log_macro!(debug, "bluetooth");
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct Config {
-    pub mac: String,
+    pub mac: Option<String>,
     #[serde(default)]
     pub adapter_mac: Option<String>,
+    #[serde(default)]
+    pub class: Option<String>,
     #[serde(default)]
     pub format: FormatConfig,
     #[serde(default)]
     pub disconnected_format: FormatConfig,
     #[serde(default)]
     pub battery_state: Option<RangeMap<u8, State>>,
+}
+
+fn bluez_icon_to_icon(icon: Option<&str>) -> &'static str {
+    match icon {
+        Some("audio-card" | "audio-headset" | "audio-headphones") => "headphones",
+        Some("input-gaming") => "joystick",
+        Some("input-keyboard") => "keyboard",
+        Some("input-mouse") => "mouse",
+        _ => "bluetooth",
+    }
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
@@ -87,7 +100,11 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         .disconnected_format
         .with_default(" $icon{ $name|} ")?;
 
-    let mut monitor = DeviceMonitor::new(config.mac.clone(), config.adapter_mac.clone()).await?;
+    let mut monitor = DeviceMonitor::new(
+        config.mac.clone(),
+        config.adapter_mac.clone(),
+        config.class.clone()
+    ).await?;
 
     let battery_states = config.battery_state.clone().unwrap_or_else(|| {
         vec![
@@ -165,8 +182,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 }
 
 struct DeviceMonitor {
-    mac: String,
+    mac: Option<String>,
     adapter_mac: Option<String>,
+    class: Option<String>,
     manager_proxy: ObjectManagerProxy<'static>,
     device: Option<Device>,
 }
@@ -186,7 +204,7 @@ struct DeviceInfo {
 }
 
 impl DeviceMonitor {
-    async fn new(mac: String, adapter_mac: Option<String>) -> Result<Self> {
+    async fn new(mac: Option<String>, adapter_mac: Option<String>, class: Option<String>) -> Result<Self> {
         let dbus_conn = new_system_dbus_connection().await?;
         let manager_proxy = ObjectManagerProxy::builder(&dbus_conn)
             .destination("org.bluez")
@@ -195,10 +213,11 @@ impl DeviceMonitor {
             .build()
             .await
             .error("Failed to create ObjectManagerProxy")?;
-        let device = Device::try_find(&manager_proxy, &mac, adapter_mac.as_deref()).await?;
+        let device = Device::try_find(&manager_proxy, mac.as_deref(), adapter_mac.as_deref(), class.as_deref()).await?;
         Ok(Self {
             mac,
             adapter_mac,
+            class,
             manager_proxy,
             device,
         })
@@ -219,8 +238,9 @@ impl DeviceMonitor {
                         .error("Stream ended unexpectedly")?;
                     if let Some(device) = Device::try_find(
                         &self.manager_proxy,
-                        &self.mac,
+                        self.mac.as_deref(),
                         self.adapter_mac.as_deref(),
+                        self.class.as_deref(),
                     )
                     .await?
                     {
@@ -304,13 +324,7 @@ impl DeviceMonitor {
         };
 
         //icon can be null, so ignore errors when fetching it
-        let icon: &str = match device.device.icon().await.ok().as_deref() {
-            Some("audio-card" | "audio-headset" | "audio-headphones") => "headphones",
-            Some("input-gaming") => "joystick",
-            Some("input-keyboard") => "keyboard",
-            Some("input-mouse") => "mouse",
-            _ => "bluetooth",
-        };
+        let icon: &str = bluez_icon_to_icon(device.device.icon().await.ok().as_deref());
 
         Some(DeviceInfo {
             connected,
@@ -324,8 +338,9 @@ impl DeviceMonitor {
 impl Device {
     async fn try_find(
         manager_proxy: &ObjectManagerProxy<'_>,
-        mac: &str,
+        mac: Option<&str>,
         adapter_mac: Option<&str>,
+        class: Option<&str>,
     ) -> Result<Option<Self>> {
         let Ok(devices) = manager_proxy.get_managed_objects().await else {
             debug!("could not get the list of managed objects");
@@ -373,12 +388,33 @@ impl Device {
                 continue;
             };
 
-            let addr: &str = device_interface
-                .get("Address")
-                .and_then(|a| a.downcast_ref().ok())
-                .unwrap();
-            if addr != mac {
-                continue;
+            if let Some(mac) = mac {
+                let addr: Option<&str> = device_interface
+                    .get("Address")
+                    .and_then(|a| a.downcast_ref().ok());
+                if addr != Some(mac) {
+                    continue;
+                }
+            } else {
+                let connected = device_interface
+                    .get("Connected")
+                    .and_then(|a| a.downcast_ref().ok())
+                    .unwrap_or(false);
+                if !connected {
+                    continue;
+                }
+            }
+
+            if let Some(class) = class {
+                let icon = bluez_icon_to_icon(
+                    device_interface
+                        .get("Icon")
+                        .and_then(|a| a.downcast_ref().ok())
+                );
+
+                if icon != class {
+                    continue;
+                }
             }
 
             debug!("Found device with path {:?}", path);
