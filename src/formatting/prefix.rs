@@ -1,9 +1,15 @@
 use crate::errors::*;
+use nom::IResult;
+use nom::Parser as _;
+use nom::branch::alt;
+use nom::bytes::complete::tag;
+use nom::combinator::{all_consuming, map, opt, value};
+use nom::number::complete::double;
 use std::fmt;
 use std::str::FromStr;
 
 /// SI prefix
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub enum Prefix {
     /// `n`
     Nano,
@@ -12,6 +18,7 @@ pub enum Prefix {
     /// `m`
     Milli,
     /// `1`
+    #[default]
     One,
     /// `1i`
     /// `1i` is a special prefix which means "one but binary". `1i` is to `1` as `Ki` is to `K`.
@@ -51,23 +58,28 @@ const MUL: [f64; 13] = [
 ];
 
 impl Prefix {
-    pub fn min_available() -> Self {
+    #[inline]
+    pub const fn min_available() -> Self {
         Self::Nano
     }
 
-    pub fn max_available() -> Self {
+    #[inline]
+    pub const fn max_available() -> Self {
         Self::Tebi
     }
 
+    #[inline]
     pub fn max(self, other: Self) -> Self {
         if other > self { other } else { self }
     }
 
-    pub fn apply(self, value: f64) -> f64 {
+    #[inline]
+    pub const fn apply(self, value: f64) -> f64 {
         value / MUL[self as usize]
     }
 
-    pub fn unapply(self, value: f64) -> f64 {
+    #[inline]
+    pub const fn unapply(self, value: f64) -> f64 {
         value * MUL[self as usize]
     }
 
@@ -110,7 +122,8 @@ impl Prefix {
         }
     }
 
-    pub fn is_binary(&self) -> bool {
+    #[inline]
+    pub const fn is_binary(&self) -> bool {
         matches!(
             self,
             Self::OneButBinary | Self::Kibi | Self::Mebi | Self::Gibi | Self::Tebi
@@ -158,6 +171,67 @@ impl FromStr for Prefix {
             x => Err(Error::new(format!("Unknown prefix: '{x}'"))),
         }
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+pub struct ValuePrefix(pub f64, pub Prefix);
+
+impl ValuePrefix {
+    #[inline]
+    pub const fn value(&self) -> f64 {
+        self.0
+    }
+
+    #[inline]
+    pub const fn prefix(&self) -> Prefix {
+        self.1
+    }
+
+    #[inline]
+    pub const fn result(&self) -> f64 {
+        self.prefix().unapply(self.value())
+    }
+}
+
+impl fmt::Display for ValuePrefix {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}{}", self.value(), self.prefix())
+    }
+}
+
+impl FromStr for ValuePrefix {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        parse_value_prefix(s)
+            .map(|(_, v)| v)
+            .map_err(|e| Error::new(format!("Failed to parse value prefix: {e}")))
+    }
+}
+
+fn parse_prefix(input: &str) -> IResult<&str, Prefix> {
+    map(
+        opt(alt((
+            value(Prefix::Kibi, tag("Ki")),
+            value(Prefix::Mebi, tag("Mi")),
+            value(Prefix::Gibi, tag("Gi")),
+            value(Prefix::Tebi, tag("Ti")),
+            value(Prefix::Nano, tag("n")),
+            value(Prefix::Micro, tag("u")),
+            value(Prefix::Milli, tag("m")),
+            value(Prefix::OneButBinary, tag("i")),
+            value(Prefix::Kilo, tag("K")),
+            value(Prefix::Mega, tag("M")),
+            value(Prefix::Giga, tag("G")),
+            value(Prefix::Tera, tag("T")),
+        ))),
+        |p| p.unwrap_or_default(),
+    )
+    .parse(input)
+}
+
+fn parse_value_prefix(input: &str) -> IResult<&str, ValuePrefix> {
+    all_consuming(map((double, parse_prefix), |(v, p)| ValuePrefix(v, p))).parse(input)
 }
 
 #[cfg(test)]
@@ -256,5 +330,17 @@ mod tests {
         assert_eq!(Prefix::eng_binary((1_u64 << 40) as f64 - 0.1), Prefix::Tebi);
         assert_eq!(Prefix::eng_binary((1_u64 << 49) as f64 - 0.1), Prefix::Tebi);
         assert_eq!(Prefix::eng_binary((1_u64 << 50) as f64 - 0.1), Prefix::Tebi);
+    }
+
+    #[test]
+    fn value_prefix() -> Result<()> {
+        assert_eq!(ValuePrefix::from_str("1")?.result(), 1.0);
+        assert_eq!(ValuePrefix::from_str("1G")?.result(), 1e9);
+        assert_eq!(ValuePrefix::from_str("1e9")?.result(), 1e9);
+        assert_eq!(ValuePrefix::from_str("10e9")?.result(), 10e9);
+        assert_eq!(ValuePrefix::from_str("10Gi")?.result(), 10737418240.0);
+        assert_eq!(ValuePrefix::from_str("10M")?.result(), 1e7);
+
+        Ok(())
     }
 }
