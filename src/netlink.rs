@@ -279,16 +279,8 @@ fn extract_link_type(linkinfo_bytes: &[u8]) -> Option<String> {
     let mut offset = 0;
 
     while offset + 4 <= linkinfo_bytes.len() {
-        let len = u16::from_ne_bytes(
-            linkinfo_bytes[offset..offset + 2]
-                .try_into()
-                .ok()?,
-        ) as usize;
-        let typ = u16::from_ne_bytes(
-            linkinfo_bytes[offset + 2..offset + 4]
-                .try_into()
-                .ok()?,
-        );
+        let len = u16::from_ne_bytes(linkinfo_bytes[offset..offset + 2].try_into().ok()?) as usize;
+        let typ = u16::from_ne_bytes(linkinfo_bytes[offset + 2..offset + 4].try_into().ok()?);
 
         if typ == IFLA_INFO_KIND && len > 4 {
             let payload_len = len - 4;
