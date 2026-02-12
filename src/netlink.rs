@@ -11,7 +11,6 @@ use libc::c_uchar;
 
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::ops;
-use std::path::Path;
 
 use crate::errors::*;
 use crate::util;
@@ -72,19 +71,16 @@ impl NetDevice {
             .await
             .error("Failed to read nameservers")?;
 
-        // TODO: use netlink for the these too
-        // I don't believe that this should ever change, so set it now:
-        let path = Path::new("/sys/class/net").join(&iface.name);
+        // Detect interface type using netlink link_type data
         let tun = iface.name.starts_with("tun")
             || iface.name.starts_with("tap")
-            || tokio::fs::try_exists(path.join("tun_flags"))
-                .await
-                .error("Unable to stat file")?;
-        let (wg, ppp) = util::read_file(path.join("uevent"))
-            .await
-            .map_or((false, false), |c| {
-                (c.contains("wireguard"), c.contains("ppp"))
-            });
+            || iface.link_type.as_deref() == Some("tun")
+            || iface.link_type.as_deref() == Some("tap");
+        let (wg, ppp) = match iface.link_type.as_deref() {
+            Some("wireguard") => (true, false),
+            Some("ppp") => (false, true),
+            _ => (false, false),
+        };
 
         let icon = if wifi_info.is_some() {
             "net_wireless"
@@ -256,6 +252,7 @@ pub struct Interface {
     pub operstate: Operstate,
     pub name: String,
     pub stats: Option<InterfaceStats>,
+    pub link_type: Option<String>,
 }
 
 macro_rules! recv_until_done {
@@ -273,6 +270,41 @@ macro_rules! recv_until_done {
             }
         }
     };
+}
+
+/// Extract link type (e.g., "tun", "wireguard", "ppp") from IFLA_LINKINFO attribute
+fn extract_link_type(linkinfo_bytes: &[u8]) -> Option<String> {
+    // Parse nested rtattrs in linkinfo to find IFLA_INFO_KIND (type 1)
+    const IFLA_INFO_KIND: u16 = 1;
+    let mut offset = 0;
+
+    while offset + 4 <= linkinfo_bytes.len() {
+        let len = u16::from_ne_bytes(
+            linkinfo_bytes[offset..offset + 2]
+                .try_into()
+                .ok()?,
+        ) as usize;
+        let typ = u16::from_ne_bytes(
+            linkinfo_bytes[offset + 2..offset + 4]
+                .try_into()
+                .ok()?,
+        );
+
+        if typ == IFLA_INFO_KIND && len > 4 {
+            let payload_len = len - 4;
+            let payload = &linkinfo_bytes[offset + 4..offset + 4 + payload_len];
+            let kind = String::from_utf8_lossy(payload)
+                .trim_end_matches('\0')
+                .to_string();
+            return Some(kind);
+        }
+
+        // Move to next attribute (4-byte aligned)
+        let aligned_len = (len + 3) & !3;
+        offset += aligned_len;
+    }
+
+    None
 }
 
 async fn get_interfaces(
@@ -302,11 +334,13 @@ async fn get_interfaces(
         let mut name = None;
         let mut stats = None;
         let mut operstate = Operstate::Unknown;
+        let mut link_type = None;
         for attr in msg.rtattrs.iter() {
             match attr.rta_type {
                 Ifla::Ifname => name = Some(attr.get_payload_as_with_len()?),
                 Ifla::Stats64 => stats = Some(InterfaceStats::from_stats64(attr.payload().as_ref())),
                 Ifla::Operstate => operstate = attr.get_payload_as::<u8>()?.into(),
+                Ifla::Linkinfo => link_type = extract_link_type(attr.payload().as_ref()),
                 _ => (),
             }
         }
@@ -317,6 +351,7 @@ async fn get_interfaces(
                 operstate,
                 name,
                 stats,
+                link_type,
             });
         }
     });
