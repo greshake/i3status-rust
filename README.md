@@ -43,7 +43,7 @@ Key | Description | Default
 `icons_format` | A string to customise the appearance of each icon. Can be used to edit icons' spacing or specify a font that will be applied only to icons via pango markup. For example, `" <span font_family='NotoSans Nerd Font'>{icon}</span> "`. | `" {icon} "`
 `invert_scrolling` | Whether to invert the direction of scrolling, useful for touchpad users. | `false`
 `error_format` | A string to customise how block errors are displayed. See below for available placeholders. | `"$short_error_message\|X"`
-`error_fullscreen_format` | A string to customise how block errors are displayed when clicked. See below for available placeholders. | `"$full_error_message"`
+`error_fullscreen_format` | A string to customise how block errors are displayed when clicked. See below for available placeholders. | `"$full_error_message.str(w:170,rot_interval:0.2)"`
 
 Available `error_format` and `error_fullscreen_format` placeholders:
 

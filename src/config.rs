@@ -66,7 +66,7 @@ fn default_error_format() -> FormatConfig {
 }
 
 fn default_error_fullscreen() -> FormatConfig {
-    " {$restart_block_icon |}$full_error_message "
+    " {$restart_block_icon |}$full_error_message.str(w:170,rot_interval:0.2) "
         .parse()
         .unwrap()
 }
