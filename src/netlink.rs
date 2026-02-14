@@ -275,24 +275,43 @@ macro_rules! recv_until_done {
 /// Extract link type (e.g., "tun", "wireguard", "ppp") from IFLA_LINKINFO attribute
 fn extract_link_type(linkinfo_bytes: &[u8]) -> Option<String> {
     // Parse nested rtattrs in linkinfo to find IFLA_INFO_KIND (type 1)
-    const IFLA_INFO_KIND: u16 = 1;
+    const IFLA_INFO_KIND: u16 = 1; // type 1 for the kind/type of device we want
+    const RTATTR_HEADER_SIZE: usize = 4; // 2 bytes length + 2 bytes type
+    const RTATTR_TYPE_FIELD_SIZE: usize = 2; // size of u16 for length/type
+    const RTATTR_ALIGNMENT_STRIDE: usize = 4; // netlink attributes are 4-byte aligned
+    const RTATTR_MIN_PAYLOAD_SIZE: usize = 4; // minimum size for valid payload
+    
     let mut offset = 0;
 
-    while offset + 4 <= linkinfo_bytes.len() {
-        let len = u16::from_ne_bytes(linkinfo_bytes[offset..offset + 2].try_into().ok()?) as usize;
-        let typ = u16::from_ne_bytes(linkinfo_bytes[offset + 2..offset + 4].try_into().ok()?);
+    // Continue while we have at least the header size left
+    while offset + RTATTR_HEADER_SIZE <= linkinfo_bytes.len() { 
 
-        if typ == IFLA_INFO_KIND && len > 4 {
-            let payload_len = len - 4;
-            let payload = &linkinfo_bytes[offset + 4..offset + 4 + payload_len];
+        // Read the first 2 bytes to get the total length of this attribute (header + payload)
+        let len = u16::from_ne_bytes(
+            linkinfo_bytes[offset..offset + RTATTR_TYPE_FIELD_SIZE]
+                .try_into()
+                .ok()?,
+        ) as usize;
+        
+        // Read the next 2 bytes to get the attribute type identifier
+        let typ = u16::from_ne_bytes(
+            linkinfo_bytes[offset + RTATTR_TYPE_FIELD_SIZE..offset + RTATTR_HEADER_SIZE]
+                .try_into()
+                .ok()?,
+        );
+
+        // Check if this is the IFLA_INFO_KIND attribute (type 1) with valid payload
+        if typ == IFLA_INFO_KIND && len > RTATTR_MIN_PAYLOAD_SIZE {
+            let payload_len = len - RTATTR_HEADER_SIZE;
+            let payload = &linkinfo_bytes[offset + RTATTR_HEADER_SIZE..offset + RTATTR_HEADER_SIZE + payload_len];
             let kind = String::from_utf8_lossy(payload)
                 .trim_end_matches('\0')
                 .to_string();
             return Some(kind);
         }
 
-        // Move to next attribute (4-byte aligned)
-        let aligned_len = (len + 3) & !3;
+        // Calculate the next attribute's offset by rounding current length up to 4-byte alignment
+        let aligned_len = (len + RTATTR_ALIGNMENT_STRIDE - 1) / RTATTR_ALIGNMENT_STRIDE * RTATTR_ALIGNMENT_STRIDE;
         offset += aligned_len;
     }
 
