@@ -378,8 +378,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                    [if let Some(description) = event.description] "description" => Value::text(description),
                    [if let Some(location) = event.location] "location" => Value::text(location),
                    [if let Some(url) = event.url] "url" => Value::text(url),
-                   "start" => Value::datetime(start_date, None),
-                   "end" => Value::datetime(end_date, None),
+                   "start" => Value::chrono_datetime(start_date, None),
+                   "end" => Value::chrono_datetime(end_date, None),
                 });
         }
 

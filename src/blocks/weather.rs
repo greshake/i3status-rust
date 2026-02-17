@@ -147,7 +147,7 @@
 //! - `weather_thunder` (when weather is reported as "Thunderstorm" during the day)
 //! - `weather_thunder_night` (when weather is reported as "Thunderstorm" at night)
 
-use chrono::{DateTime, Utc};
+use jiff::{Timestamp, Zoned};
 use sunrise::{SolarDay, SolarEvent};
 
 use super::prelude::*;
@@ -266,8 +266,8 @@ struct WeatherResult {
     location: String,
     current_weather: WeatherMoment,
     forecast: Option<Forecast>,
-    sunrise: Option<DateTime<Utc>>,
-    sunset: Option<DateTime<Utc>>,
+    sunrise: Option<Timestamp>,
+    sunset: Option<Timestamp>,
 }
 
 impl WeatherResult {
@@ -284,8 +284,8 @@ impl WeatherResult {
             "wind" => unit_system.wind_speed_value(self.current_weather.wind_kmh),
             "wind_kmh" => Value::number(self.current_weather.wind_kmh),
             "direction" => Value::text(convert_wind_direction(self.current_weather.wind_direction).into()),
-            [if let Some(sunrise) = self.sunrise] "sunrise" => Value::datetime(sunrise, None),
-            [if let Some(sunset) = self.sunset] "sunset" => Value::datetime(sunset, None),
+            [if let Some(sunrise) = self.sunrise] "sunrise" => Value::jiff_timestamp(sunrise, None),
+            [if let Some(sunset) = self.sunset] "sunset" => Value::jiff_timestamp(sunset, None),
         };
 
         if let Some(forecast) = self.forecast {
@@ -516,8 +516,8 @@ fn calculate_sunrise_sunset(
     lat: f64,
     lon: f64,
     altitude: Option<f64>,
-) -> Result<(Option<DateTime<Utc>>, Option<DateTime<Utc>>)> {
-    let date = Utc::now().date_naive();
+) -> Result<(Option<Timestamp>, Option<Timestamp>)> {
+    let date = Zoned::now().date();
     let coordinates = sunrise::Coordinates::new(lat, lon).error("Invalid coordinates")?;
     let solar_day = SolarDay::new(coordinates, date).with_altitude(altitude.unwrap_or_default());
 
