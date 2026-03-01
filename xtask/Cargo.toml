@@ -3,10 +3,19 @@ name = "xtask"
 version = "0.1.0"
 edition = "2024"
 
+[features]
+default = ["i3status-rs/default"]
+pulseaudio = ["i3status-rs/pulseaudio"]
+pipewire = ["i3status-rs/pipewire"]
+notmuch = ["i3status-rs/notmuch"]
+maildir = ["i3status-rs/maildir"]
+icu_calendar = ["i3status-rs/icu_calendar"]
+debug_borders = ["i3status-rs/debug_borders"]
+
 [dependencies]
 anyhow = "1.0"
 clap = "4.1"
 clap_mangen = "0.2"
 pandoc = "0.8"
 
-i3status-rs = { path = ".." }
+i3status-rs = { path = "..", default-features = false }
