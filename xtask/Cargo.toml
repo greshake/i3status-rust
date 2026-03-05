@@ -14,7 +14,7 @@ debug_borders = ["i3status-rs/debug_borders"]
 
 [dependencies]
 anyhow = "1.0"
-clap = "4.1"
+clap = { workspace = true }
 clap_mangen = "0.2"
 pandoc = "0.8"
 
