@@ -1,9 +1,9 @@
 (function() {
-    var implementors = Object.fromEntries([["i3status_rs",[]]]);
+    const implementors = Object.fromEntries([["i3status_rs",[]]]);
     if (window.register_implementors) {
         window.register_implementors(implementors);
     } else {
         window.pending_implementors = implementors;
     }
 })()
-//{"start":57,"fragment_lengths":[18]}
+//{"start":59,"fragment_lengths":[18]}
