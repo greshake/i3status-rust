@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["Prefix"]};
+window.SIDEBAR_ITEMS = {"enum":["Prefix"],"struct":["ValuePrefix"]};
