@@ -34,6 +34,7 @@
 //! You can use calendars other than the Gregorian calendar by adding the calendar specifier in the locale string. When using
 //! this feature you can't use chrono style format string, and you should use one of the options provided by
 //! the `icu4x` crate: `short`, `medium`, `long`, `full`.
+//! If you set `precision` to `hours`/`hour`/`h`, `minutes`/`minute`/`m`, or `seconds`/`second`/`s` then then the datetime will be formatted accordingly, otherwise only the date with be displayed.
 //!
 //! ** Only available using feature `icu_calendar`. **
 //!
@@ -43,7 +44,7 @@
 //! [[block]]
 //! block = "time"
 //! interval = 60
-//! format = "$timestamp.datetime(locale:'fa_IR-u-ca-persian', f:'full')"
+//! format = "$timestamp.datetime(locale:'fa_IR-u-ca-persian', f:'full', precision: minutes)"
 //! ```
 //!
 //! # Icons Used
