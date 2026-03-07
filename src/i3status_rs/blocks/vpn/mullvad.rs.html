@@ -52,7 +52,7 @@
 <a href=#52 id=52 data-nosnippet>52</a>        <span class="kw">let </span>status = String::from_utf8(stdout).error(<span class="string">"mullvad produced non-UTF8 output"</span>)<span class="question-mark">?</span>;
 <a href=#53 id=53 data-nosnippet>53</a>
 <a href=#54 id=54 data-nosnippet>54</a>        <span class="kw">if </span>status.contains(<span class="string">"Disconnected"</span>) {
-<a href=#55 id=55 data-nosnippet>55</a>            <span class="kw">return </span><span class="prelude-val">Ok</span>(Status::Disconnected);
+<a href=#55 id=55 data-nosnippet>55</a>            <span class="kw">return </span><span class="prelude-val">Ok</span>(Status::Disconnected { profile: <span class="prelude-val">None </span>});
 <a href=#56 id=56 data-nosnippet>56</a>        } <span class="kw">else if </span>status.contains(<span class="string">"Connected"</span>) {
 <a href=#57 id=57 data-nosnippet>57</a>            <span class="kw">let </span>(country_flag, country) = <span class="self">self
 <a href=#58 id=58 data-nosnippet>58</a>                </span>.regex_country_code
@@ -62,25 +62,26 @@
 <a href=#62 id=62 data-nosnippet>62</a>                    <span class="kw">let </span>country_code = capture[<span class="number">1</span>].to_uppercase();
 <a href=#63 id=63 data-nosnippet>63</a>                    <span class="kw">let </span>country = capture[<span class="number">2</span>].to_owned();
 <a href=#64 id=64 data-nosnippet>64</a>                    <span class="kw">let </span>country_flag = country_flag_from_iso_code(<span class="kw-2">&amp;</span>country_code);
-<a href=#65 id=65 data-nosnippet>65</a>                    (country_flag, country)
+<a href=#65 id=65 data-nosnippet>65</a>                    (<span class="prelude-val">Some</span>(country_flag), <span class="prelude-val">Some</span>(country))
 <a href=#66 id=66 data-nosnippet>66</a>                })
-<a href=#67 id=67 data-nosnippet>67</a>                .unwrap_or_default();
+<a href=#67 id=67 data-nosnippet>67</a>                .unwrap_or((<span class="prelude-val">None</span>, <span class="prelude-val">None</span>));
 <a href=#68 id=68 data-nosnippet>68</a>
 <a href=#69 id=69 data-nosnippet>69</a>            <span class="kw">return </span><span class="prelude-val">Ok</span>(Status::Connected {
 <a href=#70 id=70 data-nosnippet>70</a>                country,
 <a href=#71 id=71 data-nosnippet>71</a>                country_flag,
-<a href=#72 id=72 data-nosnippet>72</a>            });
-<a href=#73 id=73 data-nosnippet>73</a>        }
-<a href=#74 id=74 data-nosnippet>74</a>        <span class="prelude-val">Ok</span>(Status::Error)
-<a href=#75 id=75 data-nosnippet>75</a>    }
-<a href=#76 id=76 data-nosnippet>76</a>
-<a href=#77 id=77 data-nosnippet>77</a>    <span class="kw">async fn </span>toggle_connection(<span class="kw-2">&amp;</span><span class="self">self</span>, status: <span class="kw-2">&amp;</span>Status) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-<a href=#78 id=78 data-nosnippet>78</a>        <span class="kw">match </span>status {
-<a href=#79 id=79 data-nosnippet>79</a>            Status::Connected { .. } =&gt; <span class="self">Self</span>::run_network_command(<span class="string">"disconnect"</span>).<span class="kw">await</span><span class="question-mark">?</span>,
-<a href=#80 id=80 data-nosnippet>80</a>            Status::Disconnected =&gt; <span class="self">Self</span>::run_network_command(<span class="string">"connect"</span>).<span class="kw">await</span><span class="question-mark">?</span>,
-<a href=#81 id=81 data-nosnippet>81</a>            Status::Error =&gt; (),
-<a href=#82 id=82 data-nosnippet>82</a>        }
-<a href=#83 id=83 data-nosnippet>83</a>        <span class="prelude-val">Ok</span>(())
-<a href=#84 id=84 data-nosnippet>84</a>    }
-<a href=#85 id=85 data-nosnippet>85</a>}
+<a href=#72 id=72 data-nosnippet>72</a>                profile: <span class="prelude-val">None</span>,
+<a href=#73 id=73 data-nosnippet>73</a>            });
+<a href=#74 id=74 data-nosnippet>74</a>        }
+<a href=#75 id=75 data-nosnippet>75</a>        <span class="prelude-val">Ok</span>(Status::Error(<span class="prelude-val">None</span>))
+<a href=#76 id=76 data-nosnippet>76</a>    }
+<a href=#77 id=77 data-nosnippet>77</a>
+<a href=#78 id=78 data-nosnippet>78</a>    <span class="kw">async fn </span>toggle_connection(<span class="kw-2">&amp;</span><span class="self">self</span>, status: <span class="kw-2">&amp;</span>Status) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+<a href=#79 id=79 data-nosnippet>79</a>        <span class="kw">match </span>status {
+<a href=#80 id=80 data-nosnippet>80</a>            Status::Connected { .. } =&gt; <span class="self">Self</span>::run_network_command(<span class="string">"disconnect"</span>).<span class="kw">await</span><span class="question-mark">?</span>,
+<a href=#81 id=81 data-nosnippet>81</a>            Status::Disconnected { .. } =&gt; <span class="self">Self</span>::run_network_command(<span class="string">"connect"</span>).<span class="kw">await</span><span class="question-mark">?</span>,
+<a href=#82 id=82 data-nosnippet>82</a>            Status::Error(<span class="kw">_</span>) =&gt; (),
+<a href=#83 id=83 data-nosnippet>83</a>        }
+<a href=#84 id=84 data-nosnippet>84</a>        <span class="prelude-val">Ok</span>(())
+<a href=#85 id=85 data-nosnippet>85</a>    }
+<a href=#86 id=86 data-nosnippet>86</a>}
 </code></pre></div></section></main></body></html>
