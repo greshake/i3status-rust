@@ -54,17 +54,15 @@ impl Driver for NordVpnDriver {
         let line_country = Self::find_line(&stdout, "Country:").await;
         let line_country_flag = Self::find_line(&stdout, "Hostname:").await;
         if line_status.is_none() {
-            return Ok(Status::Error);
+            return Ok(Status::Error(None));
         }
         let line_status = line_status.unwrap();
 
         if line_status.ends_with("Disconnected") {
-            return Ok(Status::Disconnected);
+            return Ok(Status::Disconnected { profile: None });
         } else if line_status.ends_with("Connected") {
-            let country = match line_country {
-                Some(country_line) => country_line.rsplit(": ").next().unwrap().to_string(),
-                None => String::default(),
-            };
+            let country = line_country
+                .map(|country_line| country_line.rsplit(": ").next().unwrap().to_string());
             let country_flag = match line_country_flag {
                 Some(country_line_flag) => self
                     .regex_country_code
@@ -72,23 +70,23 @@ impl Driver for NordVpnDriver {
                     .last()
                     .map(|capture| capture[1].to_owned())
                     .map(|code| code.to_uppercase())
-                    .map(|code| country_flag_from_iso_code(&code))
-                    .unwrap_or_default(),
-                None => String::default(),
+                    .map(|code| country_flag_from_iso_code(&code)),
+                None => None,
             };
             return Ok(Status::Connected {
                 country,
                 country_flag,
+                profile: None,
             });
         }
-        Ok(Status::Error)
+        Ok(Status::Error(None))
     }
 
     async fn toggle_connection(&self, status: &Status) -> Result<()> {
         match status {
             Status::Connected { .. } => Self::run_network_command("disconnect").await?,
-            Status::Disconnected => Self::run_network_command("connect").await?,
-            Status::Error => (),
+            Status::Disconnected { .. } => Self::run_network_command("connect").await?,
+            Status::Error(_) => (),
         }
         Ok(())
     }

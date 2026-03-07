@@ -6,7 +6,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `driver` | Which vpn should be used . Available drivers are: `"nordvpn"` and `"mullvad"` | `"nordvpn"`
+//! `driver` | Which vpn should be used . Available drivers are: `"nordvpn"`, `"mullvad"`, `"tailscale"` | `"nordvpn"`
 //! `interval` | Update interval in seconds. | `10`
 //! `format_connected` | A string to customise the output in case the network is connected. See below for available placeholders. | `" VPN: $icon "`
 //! `format_disconnected` | A string to customise the output in case the network is disconnected. See below for available placeholders. | `" VPN: $icon "`
@@ -18,6 +18,8 @@
 //! `icon`      | A static icon                                             | Icon   | -
 //! `country`   | Country currently connected to                            | Text   | -
 //! `flag`      | Country specific flag (depends on a font supporting them) | Text   | -
+//! `profile`   | Currently selected profile configuration (tailnet)        | Text   | -
+//! `error`     | Error message if any                                      | Text   | -
 //!
 //! Action    | Default button | Description
 //! ----------|----------------|-----------------------------------
@@ -25,12 +27,19 @@
 //!
 //! # Drivers
 //!
+//! ## Mullvad
+//! Behind the scenes the mullvad driver uses the `mullvad` command line binary. In order for this to work properly the binary should be executable and mullvad daemon should be running.
+//!
 //! ## nordvpn
 //! Behind the scenes the nordvpn driver uses the `nordvpn` command line binary. In order for this to work
 //! properly the binary should be executable without root privileges.
 //!
-//! ## Mullvad
-//! Behind the scenes the mullvad driver uses the `mullvad` command line binary. In order for this to work properly the binary should be executable and mullvad daemon should be running.
+//! ## Tailscale
+//! Behind the scenes the tailscale driver uses the `tailscale` command line binary.
+//! In order for this to work properly the tailscale daemon should be running and the user must be configured as operator:
+//! ```sh
+//! sudo tailscale set --operator=$USER
+//! ```
 //!
 //! ## Cloudflare WARP
 //! Behind the scenes the WARP driver uses the `warp-cli` command line binary. Just ensure the binary is executable without root privileges.
@@ -70,10 +79,12 @@
 //! Flags: They are not icons but unicode glyphs. You will need a font that
 //! includes them. Tested with: <https://www.babelstone.co.uk/Fonts/Flags.html>
 
-mod nordvpn;
-use nordvpn::NordVpnDriver;
 mod mullvad;
 use mullvad::MullvadDriver;
+mod nordvpn;
+use nordvpn::NordVpnDriver;
+mod tailscale;
+use tailscale::TailscaleDriver;
 mod warp;
 use warp::WarpDriver;
 
@@ -82,9 +93,10 @@ use super::prelude::*;
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(rename_all = "snake_case")]
 pub enum DriverType {
+    Mullvad,
     #[default]
     Nordvpn,
-    Mullvad,
+    Tailscale,
     Warp,
 }
 
@@ -102,19 +114,22 @@ pub struct Config {
 
 enum Status {
     Connected {
-        country: String,
-        country_flag: String,
+        country: Option<String>,
+        country_flag: Option<String>,
+        profile: Option<String>,
     },
-    Disconnected,
-    Error,
+    Disconnected {
+        profile: Option<String>,
+    },
+    Error(Option<String>),
 }
 
 impl Status {
     fn icon(&self) -> Cow<'static, str> {
         match self {
             Status::Connected { .. } => "net_vpn".into(),
-            Status::Disconnected => "net_wired".into(),
-            Status::Error => "net_down".into(),
+            Status::Disconnected { .. } => "net_wired".into(),
+            Status::Error(_) => "net_down".into(),
         }
     }
 }
@@ -127,8 +142,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let format_disconnected = config.format_disconnected.with_default(" VPN: $icon ")?;
 
     let driver: Box<dyn Driver> = match config.driver {
-        DriverType::Nordvpn => Box::new(NordVpnDriver::new().await),
         DriverType::Mullvad => Box::new(MullvadDriver::new().await),
+        DriverType::Nordvpn => Box::new(NordVpnDriver::new().await),
+        DriverType::Tailscale => Box::new(TailscaleDriver::new().await),
         DriverType::Warp => Box::new(WarpDriver::new().await),
     };
 
@@ -141,26 +157,29 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             Status::Connected {
                 country,
                 country_flag,
+                profile,
             } => {
                 widget.set_values(map!(
                         "icon" => Value::icon(status.icon()),
-                        "country" => Value::text(country.to_string()),
-                        "flag" => Value::text(country_flag.to_string()),
-
+                        [if let Some(country) = country] "country" => Value::text(country.into()),
+                        [if let Some(flag) = country_flag] "flag" => Value::text(flag.into()),
+                        [if let Some(profile) = profile] "profile" => Value::text(profile.into()),
                 ));
                 widget.set_format(format_connected.clone());
                 config.state_connected
             }
-            Status::Disconnected => {
-                widget.set_values(map!(
-                        "icon" => Value::icon(status.icon()),
-                ));
+            Status::Disconnected { profile } => {
+                widget.set_values(map! {
+                    "icon" => Value::icon(status.icon()),
+                    [if let Some(profile) = profile] "profile" => Value::text(profile.into()),
+                });
                 widget.set_format(format_disconnected.clone());
                 config.state_disconnected
             }
-            Status::Error => {
+            Status::Error(error) => {
                 widget.set_values(map!(
                         "icon" => Value::icon(status.icon()),
+                        [if let Some(error) = error] "error" => Value::text(error.into())
                 ));
                 widget.set_format(format_disconnected.clone());
                 State::Critical

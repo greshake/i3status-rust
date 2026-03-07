@@ -38,21 +38,22 @@ impl Driver for WarpDriver {
         let status = String::from_utf8(stdout).error("warp-cli produced non-UTF8 output")?;
 
         if status.contains("Status update: Disconnected") {
-            return Ok(Status::Disconnected);
+            return Ok(Status::Disconnected { profile: None });
         } else if status.contains("Status update: Connected") {
             return Ok(Status::Connected {
-                country: "".to_string(), // because warp-cli doesn't provide country/server info
-                country_flag: "".to_string(), // no country means no flag
+                country: None,      // because warp-cli doesn't provide country/server info
+                country_flag: None, // no country means no flag
+                profile: None,
             });
         }
-        Ok(Status::Error)
+        Ok(Status::Error(None))
     }
 
     async fn toggle_connection(&self, status: &Status) -> Result<()> {
         match status {
             Status::Connected { .. } => Self::run_network_command("disconnect").await?,
-            Status::Disconnected => Self::run_network_command("connect").await?,
-            Status::Error => (),
+            Status::Disconnected { .. } => Self::run_network_command("connect").await?,
+            Status::Error { .. } => (),
         }
         Ok(())
     }
