@@ -13,6 +13,8 @@ ignoreRegExpList:
   - /#\[zbus::proxy\([\w\s=\.",\/]*\)\]/gm
   # Ignore unicode characters
   - /(\\u[0-9a-fA-F]{4}|\\U[0-9a-fA-F]{8})/g
+  # Ignore words with a bolded prefix
+  - /\*\*\w*\*\*\w*/g
 words:
   - aarch
   - alacritty
@@ -155,6 +157,7 @@ words:
   - rustc
   - rustfmt
   - rustify
+  - rustls
   - scontrols
   - scrot
   - serde
