@@ -1,9 +1,45 @@
+# i3status-rust 0.36.0
+
+### New Blocks and Features
+
+* `calendar`: added support for recurring events (#2226)
+* `disk_iostats`: added persistent device name and partition support (#2206)
+* `disk_space`: added support for `btrfs` (#2159)
+* `notify`: added `history_count` variable and `show_all` action (#2232)
+* `packages`: added support for `apk`, `brew`, `flatpak` and `snap` (#2217, #2221, #2222)
+* `sound`: added `pipewire` driver
+* `sound`: improved headphones detection for PipeWire (#2224)
+* `taskwarrior`: fixed high CPU usage with taskwarrior v3 (#2233)
+* `vpn`: added driver for cloudflare's `warp` (#2149)
+* `vpn`: added driver for `tailscale` (#2238)
+* `xrandr`: added `refresh_rate` (#2223)
+
+### Bug Fixes and Improvements
+* Added `max_retries` to block config. Setting `max_retries` causes the block to display an error
+after `max_retries` have been exhausted. A refresh button will be displayed to get the block to reset the retry count and retry again. (#2157)
+* Added example for toggling HDR to examples/README.md (#2215)
+* Omit line number for toml parse error for unknown spans (#2189)
+* Bumped `pipewire` from 0.8 to 0.9 which works with LLVM 22/23 (#2250)
+* Bumped `swayipc-async` from 2.1.0 to 3.0.0 to fix error when using `wtype` (#2218)
+* Added support to parse `xresources` colors with uppercase hex values (#2230)
+* Make sure that `alsactl` process isn't leaked in the `sound` block (#2236)
+* `memory`: removed double subtraction of ZFS ARC shrinkable size (#2237)
+* `xtask`: accept all i3status-rs feature combinations to avoid rebuilds (#2249)
+* Changed the default `error_fullscreen_format` to limit the width to 170 characters and rotate the text every 0.2 seconds if it exceeds that length. (#2243)
+* Disable landlock for `pacman` 7.1 (#2216)
+* Add support for prefixes in the range argument for `EngFormatter` (#2228)
+
+### Breaking changes
+
+* `weather`: `sunrise`/`sunset` will not be set during polar days/nights when using the `metno` or `nws` service (#2231)
+
+
 # i3status-rust 0.35.0
 
 ### Bug Fixes and Improvements
 
 * `battery`: fixed negative remaining time that appears in recent Linux kernels (#2177)
-* `calendar`: fixed calendar retrieval if caldav server replies with multiple <comp ..> entities (#2178)
+* `calendar`: fixed calendar retrieval if caldav server replies with multiple `<comp ..>` entities (#2178)
 * `memory`: fixed "available memory" estimate provided by the Linux kernel. This matches other tooling other than htop - refer to https://github.com/htop-dev/htop/issues/1307 (#2160)
 * `net`: fixed default interface detection to use the one with the lowest metric (#2151)
 * `packages`: fixed to handle recent updates in `pacman` package manager (#2216)
