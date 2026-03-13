@@ -10,6 +10,7 @@
 //! - `pacman` for Arch-based systems
 //! - `snap` for Snap packages
 //! - `xbps` for Void Linux
+//! - `zypper` for openSUSE
 //!
 //! # Configuration
 //!
@@ -38,6 +39,7 @@
 //! `pacman`     | Number of updates available in Arch-based systems                                | Number | -
 //! `snap`       | Number of updates available in Snap packages                                     | Number | -
 //! `xbps`       | Number of updates available in Void Linux                                        | Number | -
+//! `zypper`     | Number of updates available in openSUSE                                          | Number | -
 //! `total`      | Number of updates available in all package manager listed                        | Number | -
 //!
 //! # Apt
@@ -252,6 +254,24 @@
 //! cmd = "xbps-install -Mun | dmenu -l 10"
 //! ```
 //!
+//! Zypper-only config:
+//!
+//! ```toml
+//! [[block]]
+//! block = "packages"
+//! package_manager = ["zypper"]
+//! interval = 1800
+//! error_interval = 300
+//! max_retries = 5
+//! format = " $icon $zypper.eng(w:1) updates available "
+//! format_singular = " $icon One update available "
+//! format_up_to_date = " $icon system up to date "
+//! [[block.click]]
+//! # shows dmenu with available updates. Any dmenu alternative should also work.
+//! button = "left"
+//! cmd = "zypper -q list-updates | tail -n +3 | rofi -dmenu -window-title 'Upgradable packages:'"
+//! ```
+//!
 //! Multiple package managers config:
 //!
 //! Update the list of pending updates every thirty minutes (1800 seconds):
@@ -259,11 +279,11 @@
 //! ```toml
 //! [[block]]
 //! block = "packages"
-//! package_manager = ["apk", "apt", "aur", "brew", "dnf", "flatpak", "pacman", "snap", "xbps"]
+//! package_manager = ["apk", "apt", "aur", "brew", "dnf", "flatpak", "pacman", "snap", "xbps", "zypper"]
 //! interval = 1800
 //! error_interval = 300
 //! max_retries = 5
-//! format = " $icon $apk + $apt + $aur + $brew + $dnf + $flatpak + $pacman + $snap + $xbps = $total updates available "
+//! format = " $icon $apk + $apt + $aur + $brew + $dnf + $flatpak + $pacman + $snap + $xbps + $zypper = $total updates available "
 //! format_singular = " $icon One update available "
 //! format_up_to_date = " $icon system up to date "
 //! # If a linux update is available, but no ZFS package, it won't be possible to
@@ -302,6 +322,9 @@ use xbps::Xbps;
 pub mod snap;
 use snap::Snap;
 
+pub mod zypper;
+use zypper::Zypper;
+
 use regex::Regex;
 
 use super::prelude::*;
@@ -334,6 +357,7 @@ pub enum PackageManager {
     Pacman,
     Snap,
     Xbps,
+    Zypper,
 }
 
 impl PackageManager {
@@ -349,6 +373,7 @@ impl PackageManager {
             PackageManager::Pacman => "pacman",
             PackageManager::Snap => "snap",
             PackageManager::Xbps => "xbps",
+            PackageManager::Zypper => "zypper",
         }
     }
 
@@ -366,6 +391,7 @@ impl PackageManager {
             PackageManager::Pacman => Box::new(Pacman::new().await?),
             PackageManager::Snap => Box::new(Snap::new()),
             PackageManager::Xbps => Box::new(Xbps::new()),
+            PackageManager::Zypper => Box::new(Zypper::new()),
         })
     }
 }
@@ -405,6 +431,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     check_manager!(PackageManager::Pacman);
     check_manager!(PackageManager::Snap);
     check_manager!(PackageManager::Xbps);
+    check_manager!(PackageManager::Zypper);
 
     let warning_updates_regex = config
         .warning_updates_regex
