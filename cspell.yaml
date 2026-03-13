@@ -206,6 +206,9 @@ words:
   - xrandr
   - xresources
   - xtask
+  - YMDE
+  - YMDET
+  - YMDT
   - zbus
   - zram
   - zswap

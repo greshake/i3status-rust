@@ -12,7 +12,7 @@ make_log_macro!(error, "datetime");
 const DEFAULT_DATETIME_FORMAT: &str = "%a %d/%m %R";
 
 pub static DEFAULT_DATETIME_FORMATTER: LazyLock<DatetimeFormatter> =
-    LazyLock::new(|| DatetimeFormatter::new(Some(DEFAULT_DATETIME_FORMAT), None).unwrap());
+    LazyLock::new(|| DatetimeFormatter::new(Some(DEFAULT_DATETIME_FORMAT), None, None).unwrap());
 
 #[derive(Debug)]
 pub enum DatetimeFormatter {
@@ -22,8 +22,8 @@ pub enum DatetimeFormatter {
     },
     #[cfg(feature = "icu_calendar")]
     Icu {
-        length: icu_datetime::options::length::Date,
-        locale: icu_locid::Locale,
+        fieldset: icu_datetime::fieldsets::enums::CompositeDateTimeFieldSet,
+        locale: icu_locale_core::Locale,
     },
 }
 
@@ -31,6 +31,7 @@ impl DatetimeFormatter {
     pub(super) fn from_args(args: &[Arg]) -> Result<Self> {
         let mut format = None;
         let mut locale = None;
+        let mut precision = None;
         for arg in args {
             match arg.key {
                 "format" | "f" => {
@@ -39,6 +40,9 @@ impl DatetimeFormatter {
                 "locale" | "l" => {
                     locale = Some(arg.val.error("locale must be specified")?);
                 }
+                "precision" | "p" => {
+                    precision = Some(arg.val.error("precision must be specified")?);
+                }
                 other => {
                     return Err(Error::new(format!(
                         "Unknown argument for 'datetime': '{other}'"
@@ -46,30 +50,73 @@ impl DatetimeFormatter {
                 }
             }
         }
-        Self::new(format, locale)
+        Self::new(format, locale, precision)
     }
 
-    fn new(format: Option<&str>, locale: Option<&str>) -> Result<Self> {
+    fn new(format: Option<&str>, locale: Option<&str>, precision: Option<&str>) -> Result<Self> {
         let (items, locale) = match locale {
             Some(locale) => {
                 #[cfg(feature = "icu_calendar")]
                 let Ok(locale) = locale.try_into() else {
-                    use std::str::FromStr as _;
                     // try with icu4x
-                    let locale = icu_locid::Locale::from_str(locale)
+                    use icu_datetime::fieldsets::{
+                        self,
+                        enums::{CompositeDateTimeFieldSet, DateAndTimeFieldSet, DateFieldSet},
+                    };
+                    use icu_datetime::options::{Length, TimePrecision};
+                    use std::str::FromStr as _;
+
+                    let precision = match precision {
+                        Some("seconds" | "second" | "s") => Some(TimePrecision::Second),
+                        Some("minutes" | "minute" | "m") => Some(TimePrecision::Minute),
+                        Some("hours" | "hour" | "h") => Some(TimePrecision::Hour),
+                        None => None,
+                        _ => Err(Error::new("Invalid precision value"))?,
+                    };
+                    let locale = icu_locale_core::Locale::from_str(locale)
                         .ok()
                         .error("invalid locale")?;
-                    let length = match format {
-                        Some("full") => icu_datetime::options::length::Date::Full,
-                        None | Some("long") => icu_datetime::options::length::Date::Long,
-                        Some("medium") => icu_datetime::options::length::Date::Medium,
-                        Some("short") => icu_datetime::options::length::Date::Short,
-                        _ => return Err(Error::new("Unknown format option for icu based locale")),
+                    let fieldset = match format {
+                        Some("full") => match precision {
+                            Some(precision) => {
+                                CompositeDateTimeFieldSet::DateTime(DateAndTimeFieldSet::YMDET(
+                                    fieldsets::YMDET::long().with_time_precision(precision),
+                                ))
+                            }
+                            None => CompositeDateTimeFieldSet::Date(DateFieldSet::YMDE(
+                                fieldsets::YMDE::long(),
+                            )),
+                        },
+                        length => {
+                            let length = match length {
+                                Some("short") => Length::Short,
+                                Some("medium") => Length::Medium,
+                                Some("long") | None => Length::Long,
+                                _ => Err(Error::new("Invalid length value"))?,
+                            };
+                            match precision {
+                                Some(precision) => {
+                                    CompositeDateTimeFieldSet::DateTime(DateAndTimeFieldSet::YMDT(
+                                        fieldsets::YMDT::for_length(length)
+                                            .with_time_precision(precision),
+                                    ))
+                                }
+                                None => CompositeDateTimeFieldSet::Date(DateFieldSet::YMD(
+                                    fieldsets::YMD::for_length(length),
+                                )),
+                            }
+                        }
                     };
-                    return Ok(Self::Icu { locale, length });
+
+                    return Ok(Self::Icu { locale, fieldset });
                 };
                 #[cfg(not(feature = "icu_calendar"))]
                 let locale = locale.try_into().ok().error("invalid locale")?;
+                if precision.is_some() {
+                    return Err(Error::new(
+                        "`precision` is only available for icu datetimes",
+                    ));
+                }
                 (
                     StrftimeItems::new_with_locale(
                         format.unwrap_or(DEFAULT_DATETIME_FORMAT),
@@ -78,10 +125,17 @@ impl DatetimeFormatter {
                     Some(locale),
                 )
             }
-            None => (
-                StrftimeItems::new(format.unwrap_or(DEFAULT_DATETIME_FORMAT)),
-                None,
-            ),
+            None => {
+                if precision.is_some() {
+                    return Err(Error::new(
+                        "`precision` is only available for icu datetimes",
+                    ));
+                }
+                (
+                    StrftimeItems::new(format.unwrap_or(DEFAULT_DATETIME_FORMAT)),
+                    None,
+                )
+            }
         };
 
         Ok(Self::Chrono {
@@ -164,23 +218,30 @@ impl Formatter for DatetimeFormatter {
                     }
                 }
                 #[cfg(feature = "icu_calendar")]
-                DatetimeFormatter::Icu { locale, length } => {
-                    use chrono::Datelike as _;
-                    let date = icu_calendar::Date::try_new_iso_date(
-                        datetime.year(),
-                        datetime.month() as u8,
-                        datetime.day() as u8,
-                    )
-                    .ok()
-                    .error("Current date should be a valid date")?;
-                    let date = date.to_any();
-                    let dft =
-                        icu_datetime::DateFormatter::try_new_with_length(&locale.into(), *length)
-                            .ok()
-                            .error("locale should be present in compiled data")?;
-                    dft.format_to_string(&date)
+                DatetimeFormatter::Icu {
+                    locale,
+                    fieldset: length,
+                } => {
+                    use chrono::{Datelike as _, Timelike as _};
+                    let datetime = icu_datetime::input::DateTime {
+                        date: icu_datetime::input::Date::try_new_iso(
+                            datetime.year(),
+                            datetime.month() as u8,
+                            datetime.day() as u8,
+                        )
+                        .error("Current date should be a valid date")?,
+                        time: icu_datetime::input::Time::try_new(
+                            datetime.hour() as u8,
+                            datetime.minute() as u8,
+                            datetime.second() as u8,
+                            datetime.nanosecond(),
+                        )
+                        .error("Current time should be a valid time")?,
+                    };
+                    let dft = icu_datetime::DateTimeFormatter::try_new(locale.into(), *length)
                         .ok()
-                        .error("formatting date using icu failed")?
+                        .error("locale should be present in compiled data")?;
+                    dft.format(&datetime).to_string()
                 }
             })
         }
