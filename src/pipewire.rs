@@ -4,8 +4,9 @@ use std::io::Cursor;
 use std::rc::Rc;
 use std::str::FromStr;
 use std::sync::{LazyLock, Mutex};
-use std::thread;
+use std::thread::JoinHandle;
 use std::time::Duration;
+use std::{panic, thread};
 
 pub(crate) use ::pipewire::channel::Sender as PwSender;
 use ::pipewire::{
@@ -43,6 +44,7 @@ use crate::{Error, ErrorContext as _, Result};
 make_log_macro!(debug, "pipewire");
 
 pub(crate) static CLIENT: LazyLock<Result<Client>> = LazyLock::new(Client::new);
+pub(crate) const PIPEWIRE_CONNECTION_ERROR_MSG: &str = "Could not connect to pipewire";
 
 const NORMAL: f32 = 100.0;
 const DEFAULT_SINK_KEY: &str = "default.audio.sink";
@@ -268,18 +270,19 @@ impl<T: ProxyT + 'static> Proxies<T> {
 bitflags! {
     #[derive(Debug, Clone, Copy, Default)]
     pub(crate) struct EventKind: u16 {
-        const DEFAULT_META_DATA_UPDATED = 1 <<  0;
-        const DEVICE_ADDED              = 1 <<  1;
-        const DEVICE_PARAM_UPDATE       = 1 <<  2;
-        const DEVICE_REMOVED            = 1 <<  3;
-        const LINK_ADDED                = 1 <<  4;
-        const LINK_REMOVED              = 1 <<  5;
-        const NODE_ADDED                = 1 <<  6;
-        const NODE_PARAM_UPDATE         = 1 <<  7;
-        const NODE_REMOVED              = 1 <<  8;
-        const NODE_STATE_UPDATE         = 1 <<  9;
-        const PORT_ADDED                = 1 << 10;
-        const PORT_REMOVED              = 1 << 11;
+        const PIPEWIRE_CONNECTION_ERROR = 1 <<  0;
+        const DEFAULT_META_DATA_UPDATED = 1 <<  1;
+        const DEVICE_ADDED              = 1 <<  2;
+        const DEVICE_PARAM_UPDATE       = 1 <<  3;
+        const DEVICE_REMOVED            = 1 <<  4;
+        const LINK_ADDED                = 1 <<  5;
+        const LINK_REMOVED              = 1 <<  6;
+        const NODE_ADDED                = 1 <<  7;
+        const NODE_PARAM_UPDATE         = 1 <<  8;
+        const NODE_REMOVED              = 1 <<  9;
+        const NODE_STATE_UPDATE         = 1 << 10;
+        const PORT_ADDED                = 1 << 11;
+        const PORT_REMOVED              = 1 << 12;
     }
 }
 
@@ -379,27 +382,37 @@ impl CommandKind {
 pub(crate) struct Client {
     event_senders: Mutex<Vec<UnboundedSender<EventKind>>>,
     command_sender: PwSender<CommandKind>,
+    handle: JoinHandle<()>,
     pub data: Mutex<Data>,
 }
 
 impl Client {
     fn new() -> Result<Client> {
-        let (tx, rx) = pw_channel();
+        let (command_sender, command_receiver) = pw_channel();
 
-        thread::Builder::new()
+        let handle = thread::Builder::new()
             .name("i3status_pipewire".to_string())
-            .spawn(|| Client::main_loop_thread(rx))
+            .spawn(|| Client::main_loop_thread(command_receiver))
             .error("failed to spawn a thread")?;
 
         Ok(Self {
             event_senders: Mutex::new(Vec::new()),
-            command_sender: tx,
+            command_sender,
+            handle,
             data: Mutex::new(Data::default()),
         })
     }
 
-    fn main_loop_thread(command_receiver: PwReceiver<CommandKind>) {
-        let client = CLIENT.as_ref().error("Could not get client").unwrap();
+    pub fn is_terminated(&self) -> bool {
+        self.handle.is_finished()
+    }
+
+    fn main_loop_thread(command_receiver: PwReceiver<CommandKind>) -> ! {
+        let client = CLIENT.as_ref().expect("Could not get client");
+
+        panic::set_hook(Box::new(|_| {
+            client.send_update_event(EventKind::PIPEWIRE_CONNECTION_ERROR);
+        }));
 
         let proplist = properties! {*keys::APP_NAME => env!("CARGO_PKG_NAME")};
 

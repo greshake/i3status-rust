@@ -200,15 +200,15 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             config.name.clone(),
         )?),
         SoundDriver::Auto => 'blk: {
+            #[cfg(feature = "pulseaudio")]
+            if let Ok(pulse) = pulseaudio::Device::new(config.device_kind, config.name.clone()) {
+                break 'blk Box::new(pulse);
+            }
             #[cfg(feature = "pipewire")]
             if let Ok(pipewire) =
                 pipewire::Device::new(config.device_kind, config.name.clone()).await
             {
                 break 'blk Box::new(pipewire);
-            }
-            #[cfg(feature = "pulseaudio")]
-            if let Ok(pulse) = pulseaudio::Device::new(config.device_kind, config.name.clone()) {
-                break 'blk Box::new(pulse);
             }
             Box::new(alsa::Device::new(
                 config.name.clone().unwrap_or_else(|| "Master".into()),
