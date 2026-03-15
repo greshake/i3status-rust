@@ -597,6 +597,8 @@ pub enum CalendarError {
     Http(#[from] reqwest::Error),
     #[error(transparent)]
     Deserialize(#[from] quick_xml::de::DeError),
+    #[error(transparent)]
+    RecurrenceError(#[from] icalendar::RecurrenceError),
     #[error("Parsing error: {0}")]
     Parsing(String),
     #[error("Auth required")]
