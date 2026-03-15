@@ -1,7 +1,6 @@
 use std::cell::{Cell, RefCell};
 use std::collections::{HashMap, HashSet};
 use std::io::Cursor;
-use std::mem::MaybeUninit;
 use std::rc::Rc;
 use std::str::FromStr;
 use std::sync::{LazyLock, Mutex};
@@ -22,8 +21,8 @@ use ::pipewire::{
     spa::{
         param::{ParamType, audio::AudioInfoRaw},
         pod::{
-            Object, Pod, Value, ValueArray, builder::Builder as PodBuilder,
-            deserialize::PodDeserializer, serialize::PodSerializer,
+            Object, Pod, Property, Value, ValueArray, deserialize::PodDeserializer,
+            serialize::PodSerializer,
         },
         sys::{
             SPA_DIRECTION_INPUT, SPA_DIRECTION_OUTPUT, SPA_PARAM_EnumFormat,
@@ -291,6 +290,32 @@ pub(crate) enum CommandKind {
 }
 
 impl CommandKind {
+    fn create_property_value(&self, param_type: ParamType) -> Value {
+        match self {
+            CommandKind::SetVolume(_, volume) => Value::Object(Object {
+                type_: SpaTypes::ObjectParamProps.as_raw(),
+                id: param_type.as_raw(),
+                properties: vec![Property::new(
+                    SPA_PROP_channelVolumes,
+                    Value::ValueArray(ValueArray::Float(
+                        volume
+                            .iter()
+                            .map(|vol| {
+                                let vol = vol / NORMAL;
+                                vol * vol * vol
+                            })
+                            .collect(),
+                    )),
+                )],
+            }),
+            CommandKind::Mute(_, mute) => Value::Object(Object {
+                type_: SpaTypes::ObjectParamProps.as_raw(),
+                id: param_type.as_raw(),
+                properties: vec![Property::new(SPA_PROP_mute, Value::Bool(*mute))],
+            }),
+        }
+    }
+
     fn execute(
         self,
         client: &Client,
@@ -305,65 +330,13 @@ impl CommandKind {
         let client_data = client.data.lock().unwrap();
         if let Some(node) = client_data.nodes.get(&id) {
             if let Some(node_proxy) = node_proxies.borrow_mut().proxies_t.get(&node.proxy_id) {
-                let mut pod_data = Vec::new();
-                let mut pod_builder = PodBuilder::new(&mut pod_data);
+                let node_param = self.create_property_value(ParamType::Props);
+                debug!("Setting Node Props param: {:?}", node_param);
 
-                let mut object_param_props_frame = MaybeUninit::uninit();
-
-                // Safety: Frames must be popped in the reverse order they were pushed.
-                // push_object initializes the frame.
-                // object_param_props_frame is frame 1
-                unsafe {
-                    pod_builder.push_object(
-                        &mut object_param_props_frame,
-                        SpaTypes::ObjectParamProps.as_raw(),
-                        ParamType::Props.as_raw(),
-                    )
-                }
-                .expect("Could not push object");
-
-                match &self {
-                    SetVolume(_, volume) => {
-                        pod_builder
-                            .add_prop(SPA_PROP_channelVolumes, 0)
-                            .expect("Could not add prop");
-
-                        let mut array_frame = MaybeUninit::uninit();
-
-                        // Safety: push_array initializes the frame.
-                        // array_frame is frame 2
-                        unsafe { pod_builder.push_array(&mut array_frame) }
-                            .expect("Could not push object");
-
-                        for vol in volume {
-                            let vol = vol / NORMAL;
-                            pod_builder
-                                .add_float(vol * vol * vol)
-                                .expect("Could not add bool");
-                        }
-
-                        // Safety: array_frame is popped here, which is frame 2
-                        unsafe {
-                            PodBuilder::pop(&mut pod_builder, array_frame.assume_init_mut());
-                        }
-                    }
-                    Mute(_, mute) => {
-                        pod_builder
-                            .add_prop(SPA_PROP_mute, 0)
-                            .expect("Could not add prop");
-                        pod_builder.add_bool(*mute).expect("Could not add bool");
-                    }
-                }
-
-                // Safety: object_param_props_frame is popped here, which is frame 1
-                unsafe {
-                    PodBuilder::pop(&mut pod_builder, object_param_props_frame.assume_init_mut());
-                }
-
-                debug!(
-                    "Setting Node Props param: {:?}",
-                    PodDeserializer::deserialize_from::<Value>(&pod_data)
-                );
+                let pod_data = PodSerializer::serialize(Cursor::new(Vec::new()), &node_param)
+                    .expect("Failed to serialize node props pod")
+                    .0
+                    .into_inner();
                 let pod = Pod::from_bytes(&pod_data).expect("Unable to construct pod");
                 node_proxy.set_param(ParamType::Props, 0, pod);
             }
@@ -377,105 +350,25 @@ impl CommandKind {
                     .proxies_t
                     .get(&directed_routes.proxy_id)
             {
-                let mut pod_data = Vec::new();
-                let mut pod_builder = PodBuilder::new(&mut pod_data);
+                let route_param = Value::Object(Object {
+                    type_: SpaTypes::ObjectParamRoute.as_raw(),
+                    id: ParamType::Route.as_raw(),
+                    properties: vec![
+                        Property::new(SPA_PARAM_ROUTE_index, Value::Int(route.index)),
+                        Property::new(SPA_PARAM_ROUTE_device, Value::Int(route.device)),
+                        Property::new(
+                            SPA_PARAM_ROUTE_props,
+                            self.create_property_value(ParamType::Route),
+                        ),
+                        Property::new(SPA_PARAM_ROUTE_save, Value::Bool(true)),
+                    ],
+                });
+                debug!("Setting Device Route param: {:?}", route_param);
 
-                let mut object_param_route_frame = MaybeUninit::uninit();
-
-                // Safety: Frames must be popped in the reverse order they were pushed.
-                // push_object initializes the frame.
-                // object_param_route_frame is frame 1
-                unsafe {
-                    pod_builder.push_object(
-                        &mut object_param_route_frame,
-                        SpaTypes::ObjectParamRoute.as_raw(),
-                        ParamType::Route.as_raw(),
-                    )
-                }
-                .expect("Could not push object");
-
-                pod_builder
-                    .add_prop(SPA_PARAM_ROUTE_index, 0)
-                    .expect("Could not add prop");
-
-                pod_builder.add_int(route.index).expect("Could not add int");
-
-                pod_builder
-                    .add_prop(SPA_PARAM_ROUTE_device, 0)
-                    .expect("Could not add prop");
-
-                pod_builder
-                    .add_int(route.device)
-                    .expect("Could not add int");
-
-                pod_builder
-                    .add_prop(SPA_PARAM_ROUTE_props, 0)
-                    .expect("Could not add prop");
-
-                let mut object_param_props_frame = MaybeUninit::uninit();
-
-                // Safety: object_param_props_frame is frame 2
-                unsafe {
-                    pod_builder.push_object(
-                        &mut object_param_props_frame,
-                        SpaTypes::ObjectParamProps.as_raw(),
-                        ParamType::Route.as_raw(),
-                    )
-                }
-                .expect("Could not push object");
-
-                match &self {
-                    SetVolume(_, volume) => {
-                        pod_builder
-                            .add_prop(SPA_PROP_channelVolumes, 0)
-                            .expect("Could not add prop");
-
-                        let mut array_frame = MaybeUninit::uninit();
-
-                        // Safety: push_array initializes the frame.
-                        // array_frame is frame 3
-                        unsafe { pod_builder.push_array(&mut array_frame) }
-                            .expect("Could not push object");
-
-                        for vol in volume {
-                            let vol = vol / NORMAL;
-                            pod_builder
-                                .add_float(vol * vol * vol)
-                                .expect("Could not add bool");
-                        }
-
-                        // Safety: array_frame is popped here, which is frame 3
-                        unsafe {
-                            PodBuilder::pop(&mut pod_builder, array_frame.assume_init_mut());
-                        }
-                    }
-                    Mute(_, mute) => {
-                        pod_builder
-                            .add_prop(SPA_PROP_mute, 0)
-                            .expect("Could not add prop");
-                        pod_builder.add_bool(*mute).expect("Could not add bool");
-                    }
-                }
-
-                // Safety: object_param_props_frame is popped here, which is frame 2
-                unsafe {
-                    PodBuilder::pop(&mut pod_builder, object_param_props_frame.assume_init_mut());
-                }
-
-                pod_builder
-                    .add_prop(SPA_PARAM_ROUTE_save, 0)
-                    .expect("Could not add prop");
-                pod_builder.add_bool(true).expect("Could not add bool");
-
-                // Safety: object_param_route_frame is popped here, which is frame 1
-                unsafe {
-                    PodBuilder::pop(&mut pod_builder, object_param_route_frame.assume_init_mut());
-                }
-
-                debug!(
-                    "Setting Device Route param: {:?}",
-                    PodDeserializer::deserialize_from::<Value>(&pod_data)
-                );
+                let pod_data = PodSerializer::serialize(Cursor::new(Vec::new()), &route_param)
+                    .expect("Failed to serialize route pod")
+                    .0
+                    .into_inner();
                 let pod = Pod::from_bytes(&pod_data).expect("Unable to construct pod");
                 device_proxy.set_param(ParamType::Route, 0, pod);
             }
