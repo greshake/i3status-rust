@@ -552,35 +552,35 @@ async fn get_connection_name_networkd(iface_name: &str) -> Option<String> {
     let Ok(connection) = Connection::system().await else {
         return None;
     };
-    let Ok(path) = zbus::zvariant::ObjectPath::try_from(
-          format!("/org/freedesktop/network1/link/{ifindex}"),
-      ) else {
-          return None;
-      };
-      let Ok(proxy) = zbus::Proxy::new(
-          &connection,
-          "org.freedesktop.network1",
-          &path,
-          "org.freedesktop.network1.Link",
-      )
+    let Ok(path) =
+        zbus::zvariant::ObjectPath::try_from(format!("/org/freedesktop/network1/link/{ifindex}"))
+    else {
+        return None;
+    };
+    let Ok(proxy) = zbus::Proxy::new(
+        &connection,
+        "org.freedesktop.network1",
+        &path,
+        "org.freedesktop.network1.Link",
+    )
     .await
     else {
         return None;
     };
     if let Ok(nf) = proxy.get_property::<String>("NetworkFile").await
-          && !nf.is_empty()
-      {
-          return Some(nf);
-      }
-      let Ok(json) = proxy.call::<_, _, String>("Describe", &()).await else {
-          return None;
-      };
-      let parsed: serde_json::Value = serde_json::from_str(&json).ok()?;
-      parsed
-          .get("NetworkFile")
-          .and_then(|v| v.as_str())
-          .filter(|s| !s.is_empty())
-          .map(|s| s.to_string())
+        && !nf.is_empty()
+    {
+        return Some(nf);
+    }
+    let Ok(json) = proxy.call::<_, _, String>("Describe", &()).await else {
+        return None;
+    };
+    let parsed: serde_json::Value = serde_json::from_str(&json).ok()?;
+    parsed
+        .get("NetworkFile")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string())
 }
 
 // Source: https://www.kernel.org/doc/Documentation/networking/operstates.txt
