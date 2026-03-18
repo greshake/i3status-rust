@@ -21,7 +21,11 @@ pulseaudio = ["libpulse-binding"]
 pipewire = ["dep:pipewire"]
 notmuch = ["dep:notmuch"]
 maildir = ["dep:maildir", "glob"]
+<<<<<<< HEAD
 icu_calendar = ["dep:icu_datetime", "dep:icu_locid", "dep:icu_calendar"]
+=======
+icu_calendar = ["dep:icu_datetime", "dep:icu_calendar", "dep:icu_locid"]
+>>>>>>> eb3fda7d2 (chore : dedup comments and revert cargo.toml)
 debug_borders = []                # Make widgets' borders visible
 
 [package.metadata.docs.rs]
@@ -33,9 +37,7 @@ clap = { version = "4.0", default-features = false, features = ["std", "derive",
 
 [dependencies]
 async-trait = "0.1"
-backon = { version = "1.2", default-features = false, features = [
-  "tokio-sleep",
-] }
+backon = { version = "1.2", default-features = false, features = ["tokio-sleep"] }
 base64 = { version = "0.22.1" }
 bitflags = "2.9"
 bytes = "1.11"
