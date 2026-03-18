@@ -1176,7 +1176,6 @@ dependencies = [
  "wayrs-protocols",
  "x11rb-async",
  "zbus",
- "zbus_macros",
 ]
 
 [[package]]
