@@ -470,6 +470,14 @@ async fn read_nameservers() -> Result<Vec<IpAddr>> {
 }
 
 async fn get_connection_name(iface_name: &str) -> Option<String> {
+    if let Some(name) = get_connection_name_nm(iface_name).await {
+        return Some(name);
+    }
+    get_connection_name_networkd(iface_name).await
+}
+
+// for when networkmanager present
+async fn get_connection_name_nm(iface_name: &str) -> Option<String> {
     let Ok(connection) = Connection::system().await else {
         return None;
     };
@@ -533,6 +541,46 @@ async fn get_connection_name(iface_name: &str) -> Option<String> {
     }
 
     None
+}
+
+// for when systemd-networkd present
+async fn get_connection_name_networkd(iface_name: &str) -> Option<String> {
+    let ifindex = std::fs::read_to_string(format!("/sys/class/net/{iface_name}/ifindex"))
+        .ok()?
+        .trim()
+        .to_string();
+    let Ok(connection) = Connection::system().await else {
+        return None;
+    };
+    let Ok(path) = zbus::zvariant::ObjectPath::try_from(
+          format!("/org/freedesktop/network1/link/{ifindex}"),
+      ) else {
+          return None;
+      };
+      let Ok(proxy) = zbus::Proxy::new(
+          &connection,
+          "org.freedesktop.network1",
+          &path,
+          "org.freedesktop.network1.Link",
+      )
+    .await
+    else {
+        return None;
+    };
+    if let Ok(nf) = proxy.get_property::<String>("NetworkFile").await
+          && !nf.is_empty()
+      {
+          return Some(nf);
+      }
+      let Ok(json) = proxy.call::<_, _, String>("Describe", &()).await else {
+          return None;
+      };
+      let parsed: serde_json::Value = serde_json::from_str(&json).ok()?;
+      parsed
+          .get("NetworkFile")
+          .and_then(|v| v.as_str())
+          .filter(|s| !s.is_empty())
+          .map(|s| s.to_string())
 }
 
 // Source: https://www.kernel.org/doc/Documentation/networking/operstates.txt
