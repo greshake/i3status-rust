@@ -200,15 +200,15 @@
 <a href=#200 id=200 data-nosnippet>200</a>            config.name.clone(),
 <a href=#201 id=201 data-nosnippet>201</a>        )<span class="question-mark">?</span>),
 <a href=#202 id=202 data-nosnippet>202</a>        SoundDriver::Auto =&gt; <span class="lifetime">'blk</span>: {
-<a href=#203 id=203 data-nosnippet>203</a>            <span class="attr">#[cfg(feature = <span class="string">"pipewire"</span>)]
-<a href=#204 id=204 data-nosnippet>204</a>            </span><span class="kw">if let </span><span class="prelude-val">Ok</span>(pipewire) =
-<a href=#205 id=205 data-nosnippet>205</a>                pipewire::Device::new(config.device_kind, config.name.clone()).<span class="kw">await
-<a href=#206 id=206 data-nosnippet>206</a>            </span>{
-<a href=#207 id=207 data-nosnippet>207</a>                <span class="kw">break </span><span class="lifetime">'blk </span>Box::new(pipewire);
-<a href=#208 id=208 data-nosnippet>208</a>            }
-<a href=#209 id=209 data-nosnippet>209</a>            <span class="attr">#[cfg(feature = <span class="string">"pulseaudio"</span>)]
-<a href=#210 id=210 data-nosnippet>210</a>            </span><span class="kw">if let </span><span class="prelude-val">Ok</span>(pulse) = pulseaudio::Device::new(config.device_kind, config.name.clone()) {
-<a href=#211 id=211 data-nosnippet>211</a>                <span class="kw">break </span><span class="lifetime">'blk </span>Box::new(pulse);
+<a href=#203 id=203 data-nosnippet>203</a>            <span class="attr">#[cfg(feature = <span class="string">"pulseaudio"</span>)]
+<a href=#204 id=204 data-nosnippet>204</a>            </span><span class="kw">if let </span><span class="prelude-val">Ok</span>(pulse) = pulseaudio::Device::new(config.device_kind, config.name.clone()) {
+<a href=#205 id=205 data-nosnippet>205</a>                <span class="kw">break </span><span class="lifetime">'blk </span>Box::new(pulse);
+<a href=#206 id=206 data-nosnippet>206</a>            }
+<a href=#207 id=207 data-nosnippet>207</a>            <span class="attr">#[cfg(feature = <span class="string">"pipewire"</span>)]
+<a href=#208 id=208 data-nosnippet>208</a>            </span><span class="kw">if let </span><span class="prelude-val">Ok</span>(pipewire) =
+<a href=#209 id=209 data-nosnippet>209</a>                pipewire::Device::new(config.device_kind, config.name.clone()).<span class="kw">await
+<a href=#210 id=210 data-nosnippet>210</a>            </span>{
+<a href=#211 id=211 data-nosnippet>211</a>                <span class="kw">break </span><span class="lifetime">'blk </span>Box::new(pipewire);
 <a href=#212 id=212 data-nosnippet>212</a>            }
 <a href=#213 id=213 data-nosnippet>213</a>            Box::new(alsa::Device::new(
 <a href=#214 id=214 data-nosnippet>214</a>                config.name.clone().unwrap_or_else(|| <span class="string">"Master"</span>.into()),

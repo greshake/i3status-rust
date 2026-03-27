@@ -2,7 +2,7 @@
 <a href=#2 id=2 data-nosnippet>2</a><span class="kw">use </span>tokio::sync::mpsc::{UnboundedReceiver, unbounded_channel};
 <a href=#3 id=3 data-nosnippet>3</a>
 <a href=#4 id=4 data-nosnippet>4</a><span class="kw">use </span>super::<span class="kw-2">*</span>;
-<a href=#5 id=5 data-nosnippet>5</a><span class="kw">use </span><span class="kw">crate</span>::pipewire::{CLIENT, EventKind, Link, Node};
+<a href=#5 id=5 data-nosnippet>5</a><span class="kw">use </span><span class="kw">crate</span>::pipewire::{CLIENT, EventKind, Link, Node, PIPEWIRE_CONNECTION_ERROR_MSG};
 <a href=#6 id=6 data-nosnippet>6</a>
 <a href=#7 id=7 data-nosnippet>7</a><span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
 <a href=#8 id=8 data-nosnippet>8</a>#[serde(rename_all = <span class="string">"lowercase"</span>, deny_unknown_fields, default)]
@@ -52,66 +52,71 @@
 <a href=#52 id=52 data-nosnippet>52</a></span><span class="kw">impl </span>PrivacyMonitor <span class="kw">for </span>Monitor&lt;<span class="lifetime">'_</span>&gt; {
 <a href=#53 id=53 data-nosnippet>53</a>    <span class="kw">async fn </span>get_info(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;PrivacyInfo&gt; {
 <a href=#54 id=54 data-nosnippet>54</a>        <span class="kw">let </span>client = CLIENT.as_ref().error(<span class="string">"Could not get client"</span>)<span class="question-mark">?</span>;
-<a href=#55 id=55 data-nosnippet>55</a>        <span class="kw">let </span>data = client.data.lock().unwrap();
-<a href=#56 id=56 data-nosnippet>56</a>        <span class="kw">let </span><span class="kw-2">mut </span>mapping: PrivacyInfo = PrivacyInfo::new();
-<a href=#57 id=57 data-nosnippet>57</a>
-<a href=#58 id=58 data-nosnippet>58</a>        <span class="kw">for </span>node <span class="kw">in </span>data.nodes.values() {
-<a href=#59 id=59 data-nosnippet>59</a>            <span class="macro">debug!</span> {<span class="string">"{:?}"</span>, node};
-<a href=#60 id=60 data-nosnippet>60</a>        }
-<a href=#61 id=61 data-nosnippet>61</a>
-<a href=#62 id=62 data-nosnippet>62</a>        <span class="comment">// The links must be sorted and then dedup'ed since you can multiple links between any given pair of nodes
-<a href=#63 id=63 data-nosnippet>63</a>        </span><span class="kw">for </span>Link {
-<a href=#64 id=64 data-nosnippet>64</a>            link_output_node,
-<a href=#65 id=65 data-nosnippet>65</a>            link_input_node,
-<a href=#66 id=66 data-nosnippet>66</a>            ..
-<a href=#67 id=67 data-nosnippet>67</a>        } <span class="kw">in </span>data.links.values().sorted().dedup()
-<a href=#68 id=68 data-nosnippet>68</a>        {
-<a href=#69 id=69 data-nosnippet>69</a>            <span class="kw">if let </span><span class="prelude-val">Some</span>(output_node) = data.nodes.get(link_output_node)
-<a href=#70 id=70 data-nosnippet>70</a>                &amp;&amp; <span class="kw">let </span><span class="prelude-val">Some</span>(input_node) = data.nodes.get(link_input_node)
-<a href=#71 id=71 data-nosnippet>71</a>                &amp;&amp; input_node.<span class="macro">media_class !</span>= <span class="prelude-val">Some</span>(<span class="string">"Audio/Sink"</span>.into())
-<a href=#72 id=72 data-nosnippet>72</a>                &amp;&amp; !<span class="self">self</span>.config.exclude_output.contains(<span class="kw-2">&amp;</span>output_node.name)
-<a href=#73 id=73 data-nosnippet>73</a>                &amp;&amp; !<span class="self">self</span>.config.exclude_input.contains(<span class="kw-2">&amp;</span>input_node.name)
-<a href=#74 id=74 data-nosnippet>74</a>            {
-<a href=#75 id=75 data-nosnippet>75</a>                <span class="kw">let </span>type_ = <span class="kw">if </span>input_node.media_class == <span class="prelude-val">Some</span>(<span class="string">"Stream/Input/Video"</span>.into()) {
-<a href=#76 id=76 data-nosnippet>76</a>                    <span class="kw">if </span>output_node.media_role == <span class="prelude-val">Some</span>(<span class="string">"Camera"</span>.into()) {
-<a href=#77 id=77 data-nosnippet>77</a>                        Type::Webcam
-<a href=#78 id=78 data-nosnippet>78</a>                    } <span class="kw">else </span>{
-<a href=#79 id=79 data-nosnippet>79</a>                        Type::Video
-<a href=#80 id=80 data-nosnippet>80</a>                    }
-<a href=#81 id=81 data-nosnippet>81</a>                } <span class="kw">else if </span>input_node.media_class == <span class="prelude-val">Some</span>(<span class="string">"Stream/Input/Audio"</span>.into()) {
-<a href=#82 id=82 data-nosnippet>82</a>                    <span class="kw">if </span>output_node.media_class == <span class="prelude-val">Some</span>(<span class="string">"Audio/Sink"</span>.into()) {
-<a href=#83 id=83 data-nosnippet>83</a>                        Type::AudioSink
-<a href=#84 id=84 data-nosnippet>84</a>                    } <span class="kw">else </span>{
-<a href=#85 id=85 data-nosnippet>85</a>                        Type::Audio
-<a href=#86 id=86 data-nosnippet>86</a>                    }
-<a href=#87 id=87 data-nosnippet>87</a>                } <span class="kw">else </span>{
-<a href=#88 id=88 data-nosnippet>88</a>                    Type::Unknown
-<a href=#89 id=89 data-nosnippet>89</a>                };
-<a href=#90 id=90 data-nosnippet>90</a>                <span class="kw-2">*</span>mapping
-<a href=#91 id=91 data-nosnippet>91</a>                    .entry(type_)
-<a href=#92 id=92 data-nosnippet>92</a>                    .or_default()
-<a href=#93 id=93 data-nosnippet>93</a>                    .entry(<span class="self">self</span>.config.display.map_node(output_node))
-<a href=#94 id=94 data-nosnippet>94</a>                    .or_default()
-<a href=#95 id=95 data-nosnippet>95</a>                    .entry(<span class="self">self</span>.config.display.map_node(input_node))
-<a href=#96 id=96 data-nosnippet>96</a>                    .or_default() += <span class="number">1</span>;
-<a href=#97 id=97 data-nosnippet>97</a>            }
-<a href=#98 id=98 data-nosnippet>98</a>        }
-<a href=#99 id=99 data-nosnippet>99</a>
-<a href=#100 id=100 data-nosnippet>100</a>        <span class="prelude-val">Ok</span>(mapping)
-<a href=#101 id=101 data-nosnippet>101</a>    }
+<a href=#55 id=55 data-nosnippet>55</a>        <span class="kw">if </span>client.is_terminated() {
+<a href=#56 id=56 data-nosnippet>56</a>            <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(PIPEWIRE_CONNECTION_ERROR_MSG));
+<a href=#57 id=57 data-nosnippet>57</a>        }
+<a href=#58 id=58 data-nosnippet>58</a>        <span class="kw">let </span>data = client.data.lock().unwrap();
+<a href=#59 id=59 data-nosnippet>59</a>        <span class="kw">let </span><span class="kw-2">mut </span>mapping: PrivacyInfo = PrivacyInfo::new();
+<a href=#60 id=60 data-nosnippet>60</a>
+<a href=#61 id=61 data-nosnippet>61</a>        <span class="kw">for </span>node <span class="kw">in </span>data.nodes.values() {
+<a href=#62 id=62 data-nosnippet>62</a>            <span class="macro">debug!</span> {<span class="string">"{:?}"</span>, node};
+<a href=#63 id=63 data-nosnippet>63</a>        }
+<a href=#64 id=64 data-nosnippet>64</a>
+<a href=#65 id=65 data-nosnippet>65</a>        <span class="comment">// The links must be sorted and then dedup'ed since you can multiple links between any given pair of nodes
+<a href=#66 id=66 data-nosnippet>66</a>        </span><span class="kw">for </span>Link {
+<a href=#67 id=67 data-nosnippet>67</a>            link_output_node,
+<a href=#68 id=68 data-nosnippet>68</a>            link_input_node,
+<a href=#69 id=69 data-nosnippet>69</a>            ..
+<a href=#70 id=70 data-nosnippet>70</a>        } <span class="kw">in </span>data.links.values().sorted().dedup()
+<a href=#71 id=71 data-nosnippet>71</a>        {
+<a href=#72 id=72 data-nosnippet>72</a>            <span class="kw">if let </span><span class="prelude-val">Some</span>(output_node) = data.nodes.get(link_output_node)
+<a href=#73 id=73 data-nosnippet>73</a>                &amp;&amp; <span class="kw">let </span><span class="prelude-val">Some</span>(input_node) = data.nodes.get(link_input_node)
+<a href=#74 id=74 data-nosnippet>74</a>                &amp;&amp; input_node.<span class="macro">media_class !</span>= <span class="prelude-val">Some</span>(<span class="string">"Audio/Sink"</span>.into())
+<a href=#75 id=75 data-nosnippet>75</a>                &amp;&amp; !<span class="self">self</span>.config.exclude_output.contains(<span class="kw-2">&amp;</span>output_node.name)
+<a href=#76 id=76 data-nosnippet>76</a>                &amp;&amp; !<span class="self">self</span>.config.exclude_input.contains(<span class="kw-2">&amp;</span>input_node.name)
+<a href=#77 id=77 data-nosnippet>77</a>            {
+<a href=#78 id=78 data-nosnippet>78</a>                <span class="kw">let </span>type_ = <span class="kw">if </span>input_node.media_class == <span class="prelude-val">Some</span>(<span class="string">"Stream/Input/Video"</span>.into()) {
+<a href=#79 id=79 data-nosnippet>79</a>                    <span class="kw">if </span>output_node.media_role == <span class="prelude-val">Some</span>(<span class="string">"Camera"</span>.into()) {
+<a href=#80 id=80 data-nosnippet>80</a>                        Type::Webcam
+<a href=#81 id=81 data-nosnippet>81</a>                    } <span class="kw">else </span>{
+<a href=#82 id=82 data-nosnippet>82</a>                        Type::Video
+<a href=#83 id=83 data-nosnippet>83</a>                    }
+<a href=#84 id=84 data-nosnippet>84</a>                } <span class="kw">else if </span>input_node.media_class == <span class="prelude-val">Some</span>(<span class="string">"Stream/Input/Audio"</span>.into()) {
+<a href=#85 id=85 data-nosnippet>85</a>                    <span class="kw">if </span>output_node.media_class == <span class="prelude-val">Some</span>(<span class="string">"Audio/Sink"</span>.into()) {
+<a href=#86 id=86 data-nosnippet>86</a>                        Type::AudioSink
+<a href=#87 id=87 data-nosnippet>87</a>                    } <span class="kw">else </span>{
+<a href=#88 id=88 data-nosnippet>88</a>                        Type::Audio
+<a href=#89 id=89 data-nosnippet>89</a>                    }
+<a href=#90 id=90 data-nosnippet>90</a>                } <span class="kw">else </span>{
+<a href=#91 id=91 data-nosnippet>91</a>                    Type::Unknown
+<a href=#92 id=92 data-nosnippet>92</a>                };
+<a href=#93 id=93 data-nosnippet>93</a>                <span class="kw-2">*</span>mapping
+<a href=#94 id=94 data-nosnippet>94</a>                    .entry(type_)
+<a href=#95 id=95 data-nosnippet>95</a>                    .or_default()
+<a href=#96 id=96 data-nosnippet>96</a>                    .entry(<span class="self">self</span>.config.display.map_node(output_node))
+<a href=#97 id=97 data-nosnippet>97</a>                    .or_default()
+<a href=#98 id=98 data-nosnippet>98</a>                    .entry(<span class="self">self</span>.config.display.map_node(input_node))
+<a href=#99 id=99 data-nosnippet>99</a>                    .or_default() += <span class="number">1</span>;
+<a href=#100 id=100 data-nosnippet>100</a>            }
+<a href=#101 id=101 data-nosnippet>101</a>        }
 <a href=#102 id=102 data-nosnippet>102</a>
-<a href=#103 id=103 data-nosnippet>103</a>    <span class="kw">async fn </span>wait_for_change(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-<a href=#104 id=104 data-nosnippet>104</a>        <span class="kw">while let </span><span class="prelude-val">Some</span>(event) = <span class="self">self</span>.updates.recv().<span class="kw">await </span>{
-<a href=#105 id=105 data-nosnippet>105</a>            <span class="kw">if </span>event.intersects(
-<a href=#106 id=106 data-nosnippet>106</a>                EventKind::NODE_ADDED
-<a href=#107 id=107 data-nosnippet>107</a>                    | EventKind::NODE_REMOVED
-<a href=#108 id=108 data-nosnippet>108</a>                    | EventKind::LINK_ADDED
-<a href=#109 id=109 data-nosnippet>109</a>                    | EventKind::LINK_REMOVED,
-<a href=#110 id=110 data-nosnippet>110</a>            ) {
-<a href=#111 id=111 data-nosnippet>111</a>                <span class="kw">break</span>;
-<a href=#112 id=112 data-nosnippet>112</a>            }
-<a href=#113 id=113 data-nosnippet>113</a>        }
-<a href=#114 id=114 data-nosnippet>114</a>        <span class="prelude-val">Ok</span>(())
-<a href=#115 id=115 data-nosnippet>115</a>    }
-<a href=#116 id=116 data-nosnippet>116</a>}
+<a href=#103 id=103 data-nosnippet>103</a>        <span class="prelude-val">Ok</span>(mapping)
+<a href=#104 id=104 data-nosnippet>104</a>    }
+<a href=#105 id=105 data-nosnippet>105</a>
+<a href=#106 id=106 data-nosnippet>106</a>    <span class="kw">async fn </span>wait_for_change(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+<a href=#107 id=107 data-nosnippet>107</a>        <span class="kw">while let </span><span class="prelude-val">Some</span>(event) = <span class="self">self</span>.updates.recv().<span class="kw">await </span>{
+<a href=#108 id=108 data-nosnippet>108</a>            <span class="kw">if </span>event.intersects(
+<a href=#109 id=109 data-nosnippet>109</a>                EventKind::NODE_ADDED
+<a href=#110 id=110 data-nosnippet>110</a>                    | EventKind::NODE_REMOVED
+<a href=#111 id=111 data-nosnippet>111</a>                    | EventKind::LINK_ADDED
+<a href=#112 id=112 data-nosnippet>112</a>                    | EventKind::LINK_REMOVED,
+<a href=#113 id=113 data-nosnippet>113</a>            ) {
+<a href=#114 id=114 data-nosnippet>114</a>                <span class="kw">break</span>;
+<a href=#115 id=115 data-nosnippet>115</a>            } <span class="kw">else if </span>event.contains(EventKind::PIPEWIRE_CONNECTION_ERROR) {
+<a href=#116 id=116 data-nosnippet>116</a>                <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(PIPEWIRE_CONNECTION_ERROR_MSG));
+<a href=#117 id=117 data-nosnippet>117</a>            }
+<a href=#118 id=118 data-nosnippet>118</a>        }
+<a href=#119 id=119 data-nosnippet>119</a>        <span class="prelude-val">Ok</span>(())
+<a href=#120 id=120 data-nosnippet>120</a>    }
+<a href=#121 id=121 data-nosnippet>121</a>}
 </code></pre></div></section></main></body></html>
