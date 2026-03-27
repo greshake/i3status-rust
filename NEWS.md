@@ -1,3 +1,16 @@
+# i3status-rust 0.36.1
+
+### New Blocks and Features
+
+* `packages`: added support for `zypper` (#2254)
+
+### Bug Fixes and Improvements
+
+* bump `rustls-webpki` from 0.103.4 to 0.103.10
+* `sound`: `auto` driver prefer `pulseaudio` over `pipewire` if both are enabled (#2255)
+* `sound`: handle thread crash in `pipewire` driver (#2255)
+* `sound`: removed unsafe code from `pipewire` driver (#2256)
+
 # i3status-rust 0.36.0
 
 ### New Blocks and Features

@@ -155,6 +155,7 @@ words:
   - rustc
   - rustfmt
   - rustify
+  - rustls
   - scontrols
   - scrot
   - serde
