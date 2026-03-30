@@ -16,6 +16,8 @@ use std::path::Path;
 use crate::errors::*;
 use crate::util;
 
+use zbus::Connection;
+
 // From `linux/rtnetlink.h`
 const RT_SCOPE_HOST: c_uchar = 254;
 
@@ -28,6 +30,7 @@ pub struct NetDevice {
     pub icon: &'static str,
     pub tun_wg_ppp: bool,
     pub nameservers: Vec<IpAddr>,
+    pub ethernet_id: Option<String>,
 }
 
 #[derive(Debug, Default)]
@@ -72,6 +75,12 @@ impl NetDevice {
             .await
             .error("Failed to read nameservers")?;
 
+        let connection_name = if wifi_info.is_none() {
+            get_connection_name(&iface.name).await
+        } else {
+            None
+        };
+
         // TODO: use netlink for the these too
         // I don't believe that this should ever change, so set it now:
         let path = Path::new("/sys/class/net").join(&iface.name);
@@ -104,6 +113,7 @@ impl NetDevice {
             icon,
             tun_wg_ppp: tun | wg | ppp,
             nameservers,
+            ethernet_id: connection_name, // Store connection name for Ethernet
         }))
     }
 
@@ -457,6 +467,120 @@ async fn read_nameservers() -> Result<Vec<IpAddr>> {
     }
 
     Ok(nameservers)
+}
+
+async fn get_connection_name(iface_name: &str) -> Option<String> {
+    if let Some(name) = get_connection_name_nm(iface_name).await {
+        return Some(name);
+    }
+    get_connection_name_networkd(iface_name).await
+}
+
+// for when networkmanager present
+async fn get_connection_name_nm(iface_name: &str) -> Option<String> {
+    let Ok(connection) = Connection::system().await else {
+        return None;
+    };
+    let Ok(proxy) = zbus::Proxy::new(
+        &connection,
+        "org.freedesktop.NetworkManager",
+        "/org/freedesktop/NetworkManager",
+        "org.freedesktop.NetworkManager",
+    )
+    .await
+    else {
+        return None;
+    };
+
+    let Ok(active_connections) = proxy
+        .get_property::<Vec<zbus::zvariant::OwnedObjectPath>>("ActiveConnections")
+        .await
+    else {
+        return None;
+    };
+
+    for path in active_connections {
+        let Ok(active_proxy) = zbus::Proxy::new(
+            &connection,
+            "org.freedesktop.NetworkManager",
+            path.as_str(),
+            "org.freedesktop.NetworkManager.Connection.Active",
+        )
+        .await
+        else {
+            continue;
+        };
+
+        let Ok(devices) = active_proxy
+            .get_property::<Vec<zbus::zvariant::OwnedObjectPath>>("Devices")
+            .await
+        else {
+            continue;
+        };
+
+        for device_path in devices {
+            let Ok(device_proxy) = zbus::Proxy::new(
+                &connection,
+                "org.freedesktop.NetworkManager",
+                device_path.as_str(),
+                "org.freedesktop.NetworkManager.Device",
+            )
+            .await
+            else {
+                continue;
+            };
+
+            let Ok(device_iface) = device_proxy.get_property::<String>("Interface").await else {
+                continue;
+            };
+
+            if device_iface == iface_name {
+                return active_proxy.get_property::<String>("Id").await.ok();
+            }
+        }
+    }
+
+    None
+}
+
+// for when systemd-networkd present
+async fn get_connection_name_networkd(iface_name: &str) -> Option<String> {
+    let ifindex = std::fs::read_to_string(format!("/sys/class/net/{iface_name}/ifindex"))
+        .ok()?
+        .trim()
+        .to_string();
+    let Ok(connection) = Connection::system().await else {
+        return None;
+    };
+    let Ok(path) =
+        zbus::zvariant::ObjectPath::try_from(format!("/org/freedesktop/network1/link/{ifindex}"))
+    else {
+        return None;
+    };
+    let Ok(proxy) = zbus::Proxy::new(
+        &connection,
+        "org.freedesktop.network1",
+        &path,
+        "org.freedesktop.network1.Link",
+    )
+    .await
+    else {
+        return None;
+    };
+    if let Ok(nf) = proxy.get_property::<String>("NetworkFile").await
+        && !nf.is_empty()
+    {
+        return Some(nf);
+    }
+    let Ok(json) = proxy.call::<_, _, String>("Describe", &()).await else {
+        return None;
+    };
+    let parsed: serde_json::Value = serde_json::from_str(&json).ok()?;
+    parsed
+        .get("NetworkFile")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string())
 }
 
 // Source: https://www.kernel.org/doc/Documentation/networking/operstates.txt
