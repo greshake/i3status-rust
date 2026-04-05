@@ -597,19 +597,21 @@
 <a href=#597 id=597 data-nosnippet>597</a>    </span>Http(<span class="attr">#[from] </span>reqwest::Error),
 <a href=#598 id=598 data-nosnippet>598</a>    <span class="attr">#[error(transparent)]
 <a href=#599 id=599 data-nosnippet>599</a>    </span>Deserialize(<span class="attr">#[from] </span>quick_xml::de::DeError),
-<a href=#600 id=600 data-nosnippet>600</a>    <span class="attr">#[error(<span class="string">"Parsing error: {0}"</span>)]
-<a href=#601 id=601 data-nosnippet>601</a>    </span>Parsing(String),
-<a href=#602 id=602 data-nosnippet>602</a>    <span class="attr">#[error(<span class="string">"Auth required"</span>)]
-<a href=#603 id=603 data-nosnippet>603</a>    </span>AuthRequired,
-<a href=#604 id=604 data-nosnippet>604</a>    <span class="attr">#[error(transparent)]
-<a href=#605 id=605 data-nosnippet>605</a>    </span>Io(<span class="attr">#[from] </span>std::io::Error),
+<a href=#600 id=600 data-nosnippet>600</a>    <span class="attr">#[error(transparent)]
+<a href=#601 id=601 data-nosnippet>601</a>    </span>RecurrenceError(<span class="attr">#[from] </span>icalendar::RecurrenceError),
+<a href=#602 id=602 data-nosnippet>602</a>    <span class="attr">#[error(<span class="string">"Parsing error: {0}"</span>)]
+<a href=#603 id=603 data-nosnippet>603</a>    </span>Parsing(String),
+<a href=#604 id=604 data-nosnippet>604</a>    <span class="attr">#[error(<span class="string">"Auth required"</span>)]
+<a href=#605 id=605 data-nosnippet>605</a>    </span>AuthRequired,
 <a href=#606 id=606 data-nosnippet>606</a>    <span class="attr">#[error(transparent)]
-<a href=#607 id=607 data-nosnippet>607</a>    </span>Serialize(<span class="attr">#[from] </span>serde_json::Error),
-<a href=#608 id=608 data-nosnippet>608</a>    <span class="attr">#[error(<span class="string">"Request token error: {0}"</span>)]
-<a href=#609 id=609 data-nosnippet>609</a>    </span>RequestToken(String),
-<a href=#610 id=610 data-nosnippet>610</a>    <span class="attr">#[error(<span class="string">"Store token error: {0}"</span>)]
-<a href=#611 id=611 data-nosnippet>611</a>    </span>StoreToken(<span class="attr">#[from] </span>TokenStoreError),
-<a href=#612 id=612 data-nosnippet>612</a>    <span class="attr">#[error(<span class="string">"local time falls in a _gap_ in the local time, or if there was an error"</span>)]
-<a href=#613 id=613 data-nosnippet>613</a>    </span>TzConversion,
-<a href=#614 id=614 data-nosnippet>614</a>}
+<a href=#607 id=607 data-nosnippet>607</a>    </span>Io(<span class="attr">#[from] </span>std::io::Error),
+<a href=#608 id=608 data-nosnippet>608</a>    <span class="attr">#[error(transparent)]
+<a href=#609 id=609 data-nosnippet>609</a>    </span>Serialize(<span class="attr">#[from] </span>serde_json::Error),
+<a href=#610 id=610 data-nosnippet>610</a>    <span class="attr">#[error(<span class="string">"Request token error: {0}"</span>)]
+<a href=#611 id=611 data-nosnippet>611</a>    </span>RequestToken(String),
+<a href=#612 id=612 data-nosnippet>612</a>    <span class="attr">#[error(<span class="string">"Store token error: {0}"</span>)]
+<a href=#613 id=613 data-nosnippet>613</a>    </span>StoreToken(<span class="attr">#[from] </span>TokenStoreError),
+<a href=#614 id=614 data-nosnippet>614</a>    <span class="attr">#[error(<span class="string">"local time falls in a _gap_ in the local time, or if there was an error"</span>)]
+<a href=#615 id=615 data-nosnippet>615</a>    </span>TzConversion,
+<a href=#616 id=616 data-nosnippet>616</a>}
 </code></pre></div></section></main></body></html>
