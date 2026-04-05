@@ -185,6 +185,7 @@ define_blocks!(
     focused_window,
     github,
     hueshift,
+    iwd,
     kdeconnect,
     load,
     #[cfg(feature = "maildir")]
