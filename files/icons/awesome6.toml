@@ -10,6 +10,7 @@ bat_charging = "\uf1e6"
 bat_not_available = "\uf244"
 bat = [
     "\uf244",
+    "\ue0b1",
     "\uf243",
     "\uf242",
     "\uf241",
