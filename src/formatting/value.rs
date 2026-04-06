@@ -18,6 +18,7 @@ pub enum ValueInner {
     Text(String),
     Icon(Cow<'static, str>, Option<f64>),
     Number { val: f64, unit: Unit },
+    Numbers { vals: Vec<f64>, unit: Unit },
     Datetime(DateTime<Utc>, Option<Tz>),
     Duration(Duration),
     Flag,
@@ -29,6 +30,7 @@ impl ValueInner {
             ValueInner::Text(..) => "Text",
             ValueInner::Icon(..) => "Icon",
             ValueInner::Number { .. } => "Number",
+            ValueInner::Numbers { .. } => "Numbers",
             ValueInner::Datetime(..) => "Datetime",
             ValueInner::Duration(..) => "Duration",
             ValueInner::Flag => "Flag",
@@ -129,6 +131,17 @@ impl Value {
     pub fn number(val: impl IntoF64) -> Self {
         Self::number_unit(val, Unit::None)
     }
+
+    pub fn numbers<T, V>(vals: T, unit: Unit) -> Self
+    where
+        T: IntoIterator<Item = V>,
+        V: IntoF64,
+    {
+        Self::new(ValueInner::Numbers {
+            vals: vals.into_iter().map(IntoF64::into_f64).collect(),
+            unit,
+        })
+    }
 }
 
 /// Set options
@@ -151,7 +164,9 @@ impl Value {
     pub fn default_formatter(&self) -> &'static dyn formatter::Formatter {
         match &self.inner {
             ValueInner::Text(_) | ValueInner::Icon(..) => &formatter::DEFAULT_STRING_FORMATTER,
-            ValueInner::Number { .. } => &formatter::DEFAULT_NUMBER_FORMATTER,
+            ValueInner::Number { .. } | ValueInner::Numbers { .. } => {
+                &formatter::DEFAULT_NUMBER_FORMATTER
+            }
             ValueInner::Datetime { .. } => &*formatter::DEFAULT_DATETIME_FORMATTER,
             ValueInner::Duration { .. } => &formatter::DEFAULT_DURATION_FORMATTER,
             ValueInner::Flag => &formatter::DEFAULT_FLAG_FORMATTER,
