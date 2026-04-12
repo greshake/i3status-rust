@@ -3,7 +3,7 @@ use chrono::{DateTime, Utc};
 use reqwest::Url;
 use serde::{Deserializer, de};
 
-pub(super) const GEO_URL: &str = "https://api.openweathermap.org/geo/1.0";
+pub(super) const GEO_URL: &str = "https://api.openweathermap.org/geo/1.0/";
 pub(super) const CURRENT_URL: &str = "https://api.openweathermap.org/data/2.5/weather";
 pub(super) const FORECAST_URL: &str = "https://api.openweathermap.org/data/2.5/forecast";
 pub(super) const API_KEY_ENV: &str = "OPENWEATHERMAP_API_KEY";
@@ -142,16 +142,18 @@ impl<'a> Service<'a> {
             )?));
         }
 
-        let geo_url =
-            Url::parse(GEO_URL).error("Failed to parse the hard-coded constant GEO_URL")?;
+        let geo_url = Url::parse(GEO_URL).error("Failed to parse the hard-coded GEO_URL")?;
 
         // Try by place name
         if let Some(place) = config.place.as_ref() {
             // "{GEO_URL}/direct?q={place}&appid={api_key}"
-            let mut url = geo_url.join("direct").error("Failed to join geo_url")?;
-            url.query_pairs_mut()
-                .append_pair("q", place)
-                .append_pair("appid", api_key);
+            //
+            // Cannot use reqwest's `query_pairs_mut().append_pair()` because it percent-encodes
+            // the comma in the place name (ie., it turns "London,UK" into "London%2CUK"), which
+            // causes the request to 404.
+            let url = geo_url
+                .join(&format!("direct?q={place}&appid={api_key}"))
+                .error("Failed to join geo_url")?;
 
             let city: Option<LocationSpecifier> = REQWEST_CLIENT
                 .get(url)
@@ -194,12 +196,15 @@ impl<'a> Service<'a> {
 fn getenv_openweathermap_api_key() -> Option<String> {
     std::env::var(API_KEY_ENV).ok()
 }
+
 fn getenv_openweathermap_city_id() -> Option<String> {
     std::env::var(CITY_ID_ENV).ok()
 }
+
 fn getenv_openweathermap_place() -> Option<String> {
     std::env::var(PLACE_ENV).ok()
 }
+
 fn getenv_openweathermap_zip() -> Option<String> {
     std::env::var(ZIP_ENV).ok()
 }
@@ -414,5 +419,32 @@ fn weather_to_icon(weather: &str, is_night: bool) -> WeatherIcon {
         "Thunderstorm" => WeatherIcon::Thunder { is_night },
         "Snow" => WeatherIcon::Snow,
         _ => WeatherIcon::Default,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[ignore]
+    #[tokio::test]
+    async fn using_place_resolves_correctly() -> Result<()> {
+        let api_key = getenv_openweathermap_api_key();
+        let config = Config {
+            api_key,
+            place: Some("Zurich,CH".to_string()),
+            ..Default::default()
+        };
+
+        let Some(LocationSpecifier::CityCoord(CityCoord { lat, lon })) =
+            Service::get_location_query(false, &api_key.unwrap(), &config).await?
+        else {
+            panic!("no location specifier found (eg., OpenWeatherMap returned empty result)");
+        };
+
+        assert_eq!(&format!("{lat:.1}"), "47.4");
+        assert_eq!(&format!("{lon:.1}"), "8.5");
+
+        Ok(())
     }
 }
