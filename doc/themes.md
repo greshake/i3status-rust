@@ -74,6 +74,7 @@ Note: screenshots were generated using [this config](../gen-screenshots/screensh
 * `awesome4` (Font Awesome 4.x)
 * `awesome5` (Font Awesome 5.x)
 * `awesome6` (Font Awesome 6.x)
+* `awesome7pro` (Font Awesome 7.x Pro)
 * `emoji`
 * `material`
 * `material-nf` (Any font from Nerd Fonts collection)
