@@ -6,43 +6,45 @@
 # - Pro icons: https://fontawesome.com/search?ic=pro-collection
 
 backlight = [
-    "\ue0ca", # https://fontawesome.com/icons/brightness-low
-    "\ue0c9", # https://fontawesome.com/icons/brightness
-    "\ue28f", # https://fontawesome.com/icons/sun-bright
+    "\ue0ca", #  https://fontawesome.com/icons/brightness-low
+    "\ue0c9", #  https://fontawesome.com/icons/brightness
+    "\ue28f", #  https://fontawesome.com/icons/sun-bright
 ]
-bat_charging = "\uf376" # https://fontawesome.com/icons/battery-bolt
-bat_not_available = "\uf377" # https://fontawesome.com/icons/battery-slash
+bat_charging = "\uf376" #  https://fontawesome.com/icons/battery-bolt
+bat_not_available = "\uf377" #  https://fontawesome.com/icons/battery-slash
 bat = [
-    "\uf244", # https://fontawesome.com/icons/battery-empty
-    "\ue0b1", # https://fontawesome.com/icons/battery-low
-    "\uf243", # https://fontawesome.com/icons/battery-quarter
-    "\uf242", # https://fontawesome.com/icons/battery-half
-    "\uf241", # https://fontawesome.com/icons/battery-three-quarters
-    "\uf240", # https://fontawesome.com/icons/battery-full
+    "\uf244", #  https://fontawesome.com/icons/battery-empty
+    "\ue0b1", #  https://fontawesome.com/icons/battery-low
+    "\uf243", #  https://fontawesome.com/icons/battery-quarter
+    "\uf242", #  https://fontawesome.com/icons/battery-half
+    "\uf241", #  https://fontawesome.com/icons/battery-three-quarters
+    "\uf240", #  https://fontawesome.com/icons/battery-full
 ]
-bell = "\uf0f3" # https://fontawesome.com/icons/bell
-bell-slash = "\uf1f6" # https://fontawesome.com/icons/bell-slash
-bluetooth = "\uf293" # https://fontawesome.com/icons/bluetooth
-calendar = "\uf073"
-cogs = "\uf085"
-cpu = [ # fa-gauge-{min,max} are not free
-    "\uf624", # fa-gauge
-    "\uf624", # fa-gauge (2 times so that the gauge will go high at 66% which looks appropriate for the icon fa-gauge-high)
-    "\uf625", # fa-gauge-high
+bell = "\uf0f3" #  https://fontawesome.com/icons/bell
+bell-slash = "\uf1f6" #  https://fontawesome.com/icons/bell-slash
+bluetooth = "\uf293" #  https://fontawesome.com/icons/bluetooth
+calendar = "\uf073" #  https://fontawesome.com/icons/calendar-days
+cogs = "\uf085" #  https://fontawesome.com/icons/gears
+cpu = [
+    "\uf628", #  https://fontawesome.com/icons/gauge-min
+    "\uf627", #  https://fontawesome.com/icons/gauge-low
+    "\uf624", #  https://fontawesome.com/icons/gauge
+    "\uf625", #  https://fontawesome.com/icons/gauge-high
+    "\uf626", #  https://fontawesome.com/icons/gauge-max
 ]
-cpu_boost_on = "\uf205"
-cpu_boost_off = "\uf204"
-disk_drive = "\uf0a0"
-docker = "\uf21a"
-github = "\uf09b"
-gpu = "\uf26c"
-headphones = "\uf025"
-hueshift = "\uf0eb" # fa-lightbulb-o
-joystick = "\uf11b"
-keyboard = "\uf11c"
-mail = "\uf0e0"
-memory_mem = "\uf2db"
-memory_swap = "\uf0a0"
+cpu_boost_on = "\uf205" #  https://fontawesome.com/icons/toggle-on
+cpu_boost_off = "\uf204" #  https://fontawesome.com/icons/toggle-off
+disk_drive = "\uf0a0" #  https://fontawesome.com/icons/hard-drive
+docker = "\uf395" #  https://fontawesome.com/icons/docker
+github = "\uf09b" #  https://fontawesome.com/icons/github
+gpu = "\ue843" #  https://fontawesome.com/icons/gpu
+headphones = "\uf025" #  https://fontawesome.com/icons/headphones
+hueshift = "\uf0eb" #  https://fontawesome.com/icons/lightbulb
+joystick = "\uf11b" #  https://fontawesome.com/icons/gamepad
+keyboard = "\uf11c" #  https://fontawesome.com/icons/keyboard
+mail = "\uf0e0" #  https://fontawesome.com/icons/envelope
+memory_mem = "\uf538" #  https://fontawesome.com/icons/memory
+memory_swap = "\uf0a0" #  https://fontawesome.com/icons/hard-drive
 mouse = "\uf245"
 music = "\uf001"
 music_next = "\uf051" # fa-forward-step
