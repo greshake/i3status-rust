@@ -71,9 +71,10 @@ unknown = "\uf128"
 update = "\uf062"
 uptime = "\uf2f2"
 volume = [
-	"\uf026",
-	"\uf027",
-	"\uf028",
+    "\uf026",
+    "\uf027",
+    "\uf6a8",
+    "\uf028",
 ]
 volume_muted = "\uf6a9"
 microphone = "\uf3c9"
