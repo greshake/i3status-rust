@@ -1,0 +1,103 @@
+# Font Awesome 7 Pro (https://fontawesome.com/)
+#
+# The icons used here come from both the Font Awesome 7 "Free" and "Pro" collections.
+#
+# - Free icons: https://fontawesome.com/search?ic=free-collection
+# - Pro icons: https://fontawesome.com/search?ic=pro-collection
+
+backlight = [
+    "\ue0ca", # https://fontawesome.com/icons/brightness-low
+    "\ue0c9", # https://fontawesome.com/icons/brightness
+    "\ue28f", # https://fontawesome.com/icons/sun-bright
+]
+bat_charging = "\uf376" # https://fontawesome.com/icons/battery-bolt
+bat_not_available = "\uf377" # https://fontawesome.com/icons/battery-slash
+bat = [
+    "\uf244", # https://fontawesome.com/icons/battery-empty
+    "\ue0b1", # https://fontawesome.com/icons/battery-low
+    "\uf243", # https://fontawesome.com/icons/battery-quarter
+    "\uf242", # https://fontawesome.com/icons/battery-half
+    "\uf241", # https://fontawesome.com/icons/battery-three-quarters
+    "\uf240", # https://fontawesome.com/icons/battery-full
+]
+bell = "\uf0f3"
+bell-slash = "\uf1f6"
+bluetooth = "\uf294"
+calendar = "\uf073"
+cogs = "\uf085"
+cpu = [ # fa-gauge-{min,max} are not free
+    "\uf624", # fa-gauge
+    "\uf624", # fa-gauge (2 times so that the gauge will go high at 66% which looks appropriate for the icon fa-gauge-high)
+    "\uf625", # fa-gauge-high
+]
+cpu_boost_on = "\uf205"
+cpu_boost_off = "\uf204"
+disk_drive = "\uf0a0"
+docker = "\uf21a"
+github = "\uf09b"
+gpu = "\uf26c"
+headphones = "\uf025"
+hueshift = "\uf0eb" # fa-lightbulb-o
+joystick = "\uf11b"
+keyboard = "\uf11c"
+mail = "\uf0e0"
+memory_mem = "\uf2db"
+memory_swap = "\uf0a0"
+mouse = "\uf245"
+music = "\uf001"
+music_next = "\uf051" # fa-forward-step
+music_pause = "\uf04c" # fa-pause
+music_play = "\uf04b" # fa-play
+music_prev = "\uf048" # fa-backward-step
+net_bridge = "\uf0e8"
+net_down = "\uf019"
+net_loopback = "LO"
+net_modem = "\uf095"
+net_cellular = "\uf012"
+net_up = "\uf093"
+net_vpn = "\uf023"
+net_wired = "\uf6ff"
+net_wireless = "\uf1eb"
+notification = "\uf0f3"
+phone = "\uf3cd"
+phone_disconnected = "\U0001f4f5" # https://unicode-table.com/en/1F4F5/
+ping = "\uf362"
+pomodoro = "\U0001f345"
+pomodoro_break = "\uf0f4"         # fa-coffee
+pomodoro_paused = "\uf04c"        # fa-pause
+pomodoro_started = "\uf04b"       # fa-play
+pomodoro_stopped = "\uf04d"       # fa-stop
+refresh = "\uf021"                # fa-arrows-rotate
+resolution = "\uf096"             # fa-square-o
+scratchpad = "\uf2d2" # fa-window-restore
+tasks = "\uf0ae"
+tea = "\uf0f4"
+thermometer = "\uf2c8"
+time = "\uf017"
+toggle_off = "\uf204"
+toggle_on = "\uf205"
+unknown = "\uf128"
+update = "\uf062"
+uptime = "\uf2f2"
+volume = [
+    "\uf026",
+    "\uf027",
+    "\uf028",
+]
+volume_muted = "\uf6a9"
+microphone = "\uf3c9"
+microphone_muted = "\uf539"
+weather_clouds = "\uf0c2" # fa-cloud
+weather_default = "\uf0c2"        # Cloud symbol as default
+weather_clouds_night = "\uf6c3" # fa-cloud-moon
+weather_fog = "\uf0c2" # fa-cloud
+weather_fog_night = "\uf0c2" # fa-cloud
+weather_moon = "\uf186" # fa-moon
+weather_rain = "\uf743" # fa-cloud-sun-rain
+weather_rain_night = "\uf73c" # fa-cloud-moon-rain
+weather_snow = "\uf2dc" # fa-snowflake
+weather_sun = "\uf185" # fa-sun
+weather_thunder = "\uf0e7" # fa-bolt
+weather_thunder_night = "\uf0e7" # fa-bolt
+webcam = "\uf03d" # fa-video
+xrandr = "\uf26c"
