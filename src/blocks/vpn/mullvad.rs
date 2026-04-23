@@ -1,4 +1,3 @@
-use regex::Regex;
 use std::process::Stdio;
 use tokio::process::Command;
 
@@ -7,15 +6,11 @@ use crate::util::country_flag_from_iso_code;
 
 use super::{Driver, Status};
 
-pub struct MullvadDriver {
-    regex_country_code: Regex,
-}
+pub struct MullvadDriver {}
 
 impl MullvadDriver {
     pub async fn new() -> MullvadDriver {
-        MullvadDriver {
-            regex_country_code: Regex::new("Connected to ([a-z]{2}).*, ([A-Z][a-z]*).*\n").unwrap(),
-        }
+        MullvadDriver {}
     }
 
     async fn run_network_command(arg: &str) -> Result<()> {
@@ -43,36 +38,35 @@ impl MullvadDriver {
 impl Driver for MullvadDriver {
     async fn get_status(&self) -> Result<Status> {
         let stdout = Command::new("mullvad")
-            .args(["status"])
+            .args(["status", "-j"])
             .output()
             .await
             .error("Problem running mullvad command")?
             .stdout;
 
-        let status = String::from_utf8(stdout).error("mullvad produced non-UTF8 output")?;
+        let status: MullvadCliStatus =
+            serde_json::from_slice(&stdout).error("'mullvad status' produced wrong JSON")?;
 
-        if status.contains("Disconnected") {
-            return Ok(Status::Disconnected { profile: None });
-        } else if status.contains("Connected") {
-            let (country_flag, country) = self
-                .regex_country_code
-                .captures_iter(&status)
-                .next()
-                .map(|capture| {
-                    let country_code = capture[1].to_uppercase();
-                    let country = capture[2].to_owned();
-                    let country_flag = country_flag_from_iso_code(&country_code);
-                    (Some(country_flag), Some(country))
+        match status {
+            MullvadCliStatus::Disconnected => Ok(Status::Disconnected { profile: None }),
+            MullvadCliStatus::Connected { details } => {
+                let country_code = details
+                    .location
+                    .hostname
+                    .map(|hostname| hostname[0..2].to_uppercase());
+
+                let country_flag = country_code
+                    .as_ref()
+                    .map(|code| country_flag_from_iso_code(code));
+
+                Ok(Status::Connected {
+                    country: country_code,
+                    country_flag,
+                    profile: None,
                 })
-                .unwrap_or((None, None));
-
-            return Ok(Status::Connected {
-                country,
-                country_flag,
-                profile: None,
-            });
+            }
+            _ => Ok(Status::Error(None)),
         }
-        Ok(Status::Error(None))
     }
 
     async fn toggle_connection(&self, status: &Status) -> Result<()> {
@@ -83,4 +77,27 @@ impl Driver for MullvadDriver {
         }
         Ok(())
     }
+}
+
+#[derive(Deserialize, Debug, Clone)]
+#[serde(tag = "state")]
+#[serde(rename_all = "snake_case")]
+enum MullvadCliStatus {
+    Connected { details: Details },
+
+    Disconnected,
+
+    Connecting,
+
+    Disconnecting,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+struct Details {
+    location: Location,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+struct Location {
+    hostname: Option<String>,
 }
