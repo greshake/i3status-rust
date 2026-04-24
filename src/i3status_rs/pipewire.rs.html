@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/pipewire.rs`."><title>pipewire.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-77263533.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.94.1 (e408947bf 2026-03-25)" data-channel="1.94.1" data-search-js="search-9e2438ea.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-c38705f0.js" ><script src="../../static.files/storage-e2aeef58.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-7bab91a1.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-ffcac47a.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">i3status_rs/</div>pipewire.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span>std::cell::{Cell, RefCell};
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/pipewire.rs`."><title>pipewire.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2"href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-b7b9f40b.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="i3status_rs" data-themes="" data-resource-suffix="" data-rustdoc-version="1.95.0 (59807616e 2026-04-14)" data-channel="1.95.0" data-search-js="search-63369b7b.js" data-stringdex-js="stringdex-b897f86f.js" data-settings-js="settings-170eb4bf.js" ><script src="../../static.files/storage-41dd4d93.js"></script><script defer src="../../static.files/src-script-813739b1.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-5013f961.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-f7c3ffd8.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-eab170b8.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><a class="skip-main-content" href="#main-content">Skip to main content</a><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer" title="Drag to resize sidebar"></div><main><section id="main-content" class="content" tabindex="-1"><div class="main-heading"><h1><div class="sub-heading">i3status_rs/</div>pipewire.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap digits-3"><pre class="rust"><code><a href=#1 id=1 data-nosnippet>1</a><span class="kw">use </span>std::cell::{Cell, RefCell};
 <a href=#2 id=2 data-nosnippet>2</a><span class="kw">use </span>std::collections::{HashMap, HashSet};
 <a href=#3 id=3 data-nosnippet>3</a><span class="kw">use </span>std::io::Cursor;
 <a href=#4 id=4 data-nosnippet>4</a><span class="kw">use </span>std::rc::Rc;
@@ -473,7 +473,7 @@
 <a href=#473 id=473 data-nosnippet>473</a>                                    .nodes
 <a href=#474 id=474 data-nosnippet>474</a>                                    .entry(global_id)
 <a href=#475 id=475 data-nosnippet>475</a>                                    .and_modify(|node| {
-<a href=#476 id=476 data-nosnippet>476</a>                                        <span class="kw">if </span>node.<span class="macro">running !</span>= running {
+<a href=#476 id=476 data-nosnippet>476</a>                                        <span class="kw">if </span>node.running != running {
 <a href=#477 id=477 data-nosnippet>477</a>                                            node.running = running;
 <a href=#478 id=478 data-nosnippet>478</a>                                            update_copy2.replace_with(|v| {
 <a href=#479 id=479 data-nosnippet>479</a>                                                <span class="kw-2">*</span>v | EventKind::NODE_STATE_UPDATE
@@ -503,7 +503,7 @@
 <a href=#503 id=503 data-nosnippet>503</a>                                                    <span class="kw">return</span>;
 <a href=#504 id=504 data-nosnippet>504</a>                                                };
 <a href=#505 id=505 data-nosnippet>505</a>                                                <span class="kw">let </span>muted = <span class="prelude-val">Some</span>(muted);
-<a href=#506 id=506 data-nosnippet>506</a>                                                <span class="kw">if </span>node.<span class="macro">muted !</span>= muted {
+<a href=#506 id=506 data-nosnippet>506</a>                                                <span class="kw">if </span>node.muted != muted {
 <a href=#507 id=507 data-nosnippet>507</a>                                                    node.muted = muted;
 <a href=#508 id=508 data-nosnippet>508</a>                                                    update_copy3.replace_with(|v| {
 <a href=#509 id=509 data-nosnippet>509</a>                                                        <span class="kw-2">*</span>v | EventKind::NODE_PARAM_UPDATE
@@ -522,7 +522,7 @@
 <a href=#522 id=522 data-nosnippet>522</a>                                                        .map(|vol| vol.cbrt() * NORMAL)
 <a href=#523 id=523 data-nosnippet>523</a>                                                        .collect(),
 <a href=#524 id=524 data-nosnippet>524</a>                                                );
-<a href=#525 id=525 data-nosnippet>525</a>                                                <span class="kw">if </span>node.<span class="macro">volume !</span>= volume {
+<a href=#525 id=525 data-nosnippet>525</a>                                                <span class="kw">if </span>node.volume != volume {
 <a href=#526 id=526 data-nosnippet>526</a>                                                    node.volume = volume;
 <a href=#527 id=527 data-nosnippet>527</a>                                                    update_copy3.replace_with(|v| {
 <a href=#528 id=528 data-nosnippet>528</a>                                                        <span class="kw-2">*</span>v | EventKind::NODE_PARAM_UPDATE
@@ -626,9 +626,9 @@
 <a href=#626 id=626 data-nosnippet>626</a>                                            <span class="kw">let </span>route =
 <a href=#627 id=627 data-nosnippet>627</a>                                                directed_routes.get_mut_route(route_direction);
 <a href=#628 id=628 data-nosnippet>628</a>                                            <span class="kw">if let </span><span class="prelude-val">Some</span>(route) = route {
-<a href=#629 id=629 data-nosnippet>629</a>                                                <span class="kw">if </span>route.<span class="macro">index !</span>= route_index
-<a href=#630 id=630 data-nosnippet>630</a>                                                    || route.<span class="macro">device !</span>= route_device
-<a href=#631 id=631 data-nosnippet>631</a>                                                    || route.<span class="macro">name !</span>= route_name
+<a href=#629 id=629 data-nosnippet>629</a>                                                <span class="kw">if </span>route.index != route_index
+<a href=#630 id=630 data-nosnippet>630</a>                                                    || route.device != route_device
+<a href=#631 id=631 data-nosnippet>631</a>                                                    || route.name != route_name
 <a href=#632 id=632 data-nosnippet>632</a>                                                {
 <a href=#633 id=633 data-nosnippet>633</a>                                                    route.index = route_index;
 <a href=#634 id=634 data-nosnippet>634</a>                                                    route.device = route_device;
@@ -678,9 +678,9 @@
 <a href=#678 id=678 data-nosnippet>678</a>                        <span class="kw">let </span>metadata_listener = metadata_proxy
 <a href=#679 id=679 data-nosnippet>679</a>                            .add_listener_local()
 <a href=#680 id=680 data-nosnippet>680</a>                            .property(<span class="kw">move </span>|_subject, key, type_, value| {
-<a href=#681 id=681 data-nosnippet>681</a>                                <span class="kw">if </span><span class="macro">type_ !</span>= <span class="prelude-val">Some</span>(<span class="string">"Spa:String:JSON"</span>)
-<a href=#682 id=682 data-nosnippet>682</a>                                    || (<span class="macro">key !</span>= <span class="prelude-val">Some</span>(DEFAULT_SINK_KEY)
-<a href=#683 id=683 data-nosnippet>683</a>                                        &amp;&amp; <span class="macro">key !</span>= <span class="prelude-val">Some</span>(DEFAULT_SOURCE_KEY))
+<a href=#681 id=681 data-nosnippet>681</a>                                <span class="kw">if </span>type_ != <span class="prelude-val">Some</span>(<span class="string">"Spa:String:JSON"</span>)
+<a href=#682 id=682 data-nosnippet>682</a>                                    || (key != <span class="prelude-val">Some</span>(DEFAULT_SINK_KEY)
+<a href=#683 id=683 data-nosnippet>683</a>                                        &amp;&amp; key != <span class="prelude-val">Some</span>(DEFAULT_SOURCE_KEY))
 <a href=#684 id=684 data-nosnippet>684</a>                                {
 <a href=#685 id=685 data-nosnippet>685</a>                                    <span class="kw">return </span>-<span class="number">1</span>;
 <a href=#686 id=686 data-nosnippet>686</a>                                }
@@ -698,7 +698,7 @@
 <a href=#698 id=698 data-nosnippet>698</a>                                <span class="kw">if </span>key == <span class="prelude-val">Some</span>(DEFAULT_SINK_KEY) {
 <a href=#699 id=699 data-nosnippet>699</a>                                    <span class="kw">let </span>default_medata_sink =
 <a href=#700 id=700 data-nosnippet>700</a>                                        <span class="kw-2">&amp;mut </span>client.data.lock().unwrap().default_metadata.sink;
-<a href=#701 id=701 data-nosnippet>701</a>                                    <span class="kw">if </span><span class="kw-2">*</span><span class="macro">default_medata_sink !</span>= name {
+<a href=#701 id=701 data-nosnippet>701</a>                                    <span class="kw">if </span><span class="kw-2">*</span>default_medata_sink != name {
 <a href=#702 id=702 data-nosnippet>702</a>                                        <span class="kw-2">*</span>default_medata_sink = name;
 <a href=#703 id=703 data-nosnippet>703</a>                                        update_copy2.replace_with(|v| {
 <a href=#704 id=704 data-nosnippet>704</a>                                            <span class="kw-2">*</span>v | EventKind::DEFAULT_META_DATA_UPDATED
@@ -707,7 +707,7 @@
 <a href=#707 id=707 data-nosnippet>707</a>                                } <span class="kw">else </span>{
 <a href=#708 id=708 data-nosnippet>708</a>                                    <span class="kw">let </span>default_medata_source =
 <a href=#709 id=709 data-nosnippet>709</a>                                        <span class="kw-2">&amp;mut </span>client.data.lock().unwrap().default_metadata.source;
-<a href=#710 id=710 data-nosnippet>710</a>                                    <span class="kw">if </span><span class="kw-2">*</span><span class="macro">default_medata_source !</span>= name {
+<a href=#710 id=710 data-nosnippet>710</a>                                    <span class="kw">if </span><span class="kw-2">*</span>default_medata_source != name {
 <a href=#711 id=711 data-nosnippet>711</a>                                        <span class="kw-2">*</span>default_medata_source = name;
 <a href=#712 id=712 data-nosnippet>712</a>                                        update_copy2.replace_with(|v| {
 <a href=#713 id=713 data-nosnippet>713</a>                                            <span class="kw-2">*</span>v | EventKind::DEFAULT_META_DATA_UPDATED
