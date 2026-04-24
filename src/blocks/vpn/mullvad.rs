@@ -25,6 +25,9 @@ impl MullvadDriver {
             .error(format!("Problem running mullvad command: {arg}"))?;
 
         if code.success() {
+            // Sleep 1 sec here to allow the mullvad-daemon some time to update the status
+            // before get_status is called again.
+            sleep(Duration::from_secs(1)).await;
             Ok(())
         } else {
             Err(Error::new(format!(
@@ -48,7 +51,9 @@ impl Driver for MullvadDriver {
             serde_json::from_slice(&stdout).error("'mullvad status' produced wrong JSON")?;
 
         match status {
-            MullvadCliStatus::Disconnected => Ok(Status::Disconnected { profile: None }),
+            MullvadCliStatus::Disconnected | MullvadCliStatus::Disconnecting => {
+                Ok(Status::Disconnected { profile: None })
+            }
             MullvadCliStatus::Connected { details } => {
                 let country_code = details
                     .location
@@ -65,13 +70,15 @@ impl Driver for MullvadDriver {
                     profile: None,
                 })
             }
-            _ => Ok(Status::Error(None)),
+            MullvadCliStatus::Connecting => Ok(Status::Connecting { profile: None }),
         }
     }
 
     async fn toggle_connection(&self, status: &Status) -> Result<()> {
         match status {
-            Status::Connected { .. } => Self::run_network_command("disconnect").await?,
+            Status::Connected { .. } | Status::Connecting { .. } => {
+                Self::run_network_command("disconnect").await?;
+            }
             Status::Disconnected { .. } => Self::run_network_command("connect").await?,
             Status::Error(_) => (),
         }
