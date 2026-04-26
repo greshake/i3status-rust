@@ -197,7 +197,7 @@ signal = 4
 
 ### Intel GPU Usage
 
-Shows usage of the Render/3D pipeline of intel GPUs in percent, rounded to 2 decimal places. Requires `intel_gpu_top` installed and added to `/etc/sudoers` with `NOPASSWD` (Instructions see [here](https://unix.stackexchange.com/questions/18830/how-to-run-a-specific-program-as-root-without-a-password-prompt)).Other engines (video decode, blitter, etc.) are available under the `engines` key in `sudo intel_gpu_top -J` output. 
+Shows usage of the Render/3D pipeline of intel GPUs in percent, rounded to 2 decimal places. Requires `intel_gpu_top` installed and added to `/etc/sudoers` with `NOPASSWD` (Instructions see [here](https://unix.stackexchange.com/questions/18830/how-to-run-a-specific-program-as-root-without-a-password-prompt)). Other engines (e.g. video decode) are available under the `engines` key in `sudo intel_gpu_top -J` output.
 
 **Note:**
 The second sample is used intentionally — intel_gpu_top consistently reports an artificially high spike on its first measurement due to initialization.
