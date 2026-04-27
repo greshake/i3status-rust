@@ -9,8 +9,8 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  default:
-
+  # Build job
+  build:
     runs-on: ubuntu-latest
     container:
       image: archlinux
@@ -25,7 +25,29 @@ jobs:
       run: cargo doc --all-features --no-deps
     - name: Create index.html
       run: echo "<meta http-equiv=\"Refresh\" content=\"0; url='/i3status-rust/i3status_rs'\" />" > target/doc/index.html
-    - name: Deploy 🚀
-      uses: JamesIves/github-pages-deploy-action@v4
+    - name: Upload static files as artifact
+      uses: actions/upload-pages-artifact@v3
       with:
-        folder: target/doc # The folder the action should deploy.
+        path: target/doc
+
+  # Deploy job
+  deploy:
+
+    # Add a dependency to the build job
+    needs: build
+
+    # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
+    permissions:
+      pages: write      # to deploy to Pages
+      id-token: write   # to verify the deployment originates from an appropriate source
+
+    # Deploy to the github-pages environment
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+    steps:
+    - name: Deploy 🚀
+      id: deployment
+      uses: actions/deploy-pages@v4
