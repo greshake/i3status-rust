@@ -86,7 +86,7 @@ impl Driver for NordVpnDriver {
         match status {
             Status::Connected { .. } => Self::run_network_command("disconnect").await?,
             Status::Disconnected { .. } => Self::run_network_command("connect").await?,
-            Status::Error(_) => (),
+            Status::Connecting { .. } | Status::Error(_) => (),
         }
         Ok(())
     }
