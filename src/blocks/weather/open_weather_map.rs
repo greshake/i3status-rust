@@ -3,7 +3,7 @@ use chrono::{DateTime, Utc};
 use reqwest::Url;
 use serde::{Deserializer, de};
 
-pub(super) const GEO_URL: &str = "https://api.openweathermap.org/geo/1.0";
+pub(super) const GEO_URL: &str = "https://api.openweathermap.org/geo/1.0/";
 pub(super) const CURRENT_URL: &str = "https://api.openweathermap.org/data/2.5/weather";
 pub(super) const FORECAST_URL: &str = "https://api.openweathermap.org/data/2.5/forecast";
 pub(super) const API_KEY_ENV: &str = "OPENWEATHERMAP_API_KEY";
@@ -114,94 +114,102 @@ impl<'a> Service<'a> {
             api_key,
             units: &config.units,
             lang: &config.lang,
-            location_query: Service::get_location_query(autolocate, api_key, config).await?,
+            location_query: get_location_query(autolocate, config).await?,
             forecast_hours: config.forecast_hours,
         })
-    }
-
-    async fn get_location_query(
-        autolocate: bool,
-        api_key: &str,
-        config: &Config,
-    ) -> Result<Option<LocationSpecifier>> {
-        if autolocate {
-            return Ok(None);
-        }
-
-        // Try by coordinates from config
-        if let Some((lat, lon)) = config.coordinates.as_ref() {
-            return Ok(Some(LocationSpecifier::try_from((lat, lon)).error(
-                "Invalid coordinates: failed to parse latitude or longitude from string to f64",
-            )?));
-        }
-
-        // Try by city ID from config
-        if let Some(id) = config.city_id.as_ref() {
-            return Ok(Some(LocationSpecifier::try_from(id).error(
-                "Invalid city id: failed to parse it from string to u32",
-            )?));
-        }
-
-        let geo_url =
-            Url::parse(GEO_URL).error("Failed to parse the hard-coded constant GEO_URL")?;
-
-        // Try by place name
-        if let Some(place) = config.place.as_ref() {
-            // "{GEO_URL}/direct?q={place}&appid={api_key}"
-            let mut url = geo_url.join("direct").error("Failed to join geo_url")?;
-            url.query_pairs_mut()
-                .append_pair("q", place)
-                .append_pair("appid", api_key);
-
-            let city: Option<LocationSpecifier> = REQWEST_CLIENT
-                .get(url)
-                .send()
-                .await
-                .error("Geo request failed")?
-                .json::<Vec<CityCoord>>()
-                .await
-                .error("Geo failed to parse JSON")?
-                .first()
-                .map(|city| LocationSpecifier::CityCoord(*city));
-
-            return Ok(city);
-        }
-
-        // Try by zip code
-        if let Some(zip) = config.zip.as_ref() {
-            // "{GEO_URL}/zip?zip={zip}&appid={api_key}"
-            let mut url = geo_url.join("zip").error("Failed to join geo_url")?;
-            url.query_pairs_mut()
-                .append_pair("zip", zip)
-                .append_pair("appid", api_key);
-
-            let city: CityCoord = REQWEST_CLIENT
-                .get(url)
-                .send()
-                .await
-                .error("Geo request failed")?
-                .json()
-                .await
-                .error("Geo failed to parse JSON")?;
-
-            return Ok(Some(LocationSpecifier::CityCoord(city)));
-        }
-
-        Ok(None)
     }
 }
 
 fn getenv_openweathermap_api_key() -> Option<String> {
     std::env::var(API_KEY_ENV).ok()
 }
+
 fn getenv_openweathermap_city_id() -> Option<String> {
     std::env::var(CITY_ID_ENV).ok()
 }
+
 fn getenv_openweathermap_place() -> Option<String> {
     std::env::var(PLACE_ENV).ok()
 }
+
 fn getenv_openweathermap_zip() -> Option<String> {
     std::env::var(ZIP_ENV).ok()
+}
+
+async fn get_location_query(
+    autolocate: bool,
+    config: &Config,
+) -> Result<Option<LocationSpecifier>> {
+    if autolocate {
+        return Ok(None);
+    }
+
+    // Try by coordinates from config
+    if let Some((lat, lon)) = config.coordinates.as_ref() {
+        return Ok(Some(LocationSpecifier::try_from((lat, lon)).error(
+            "Invalid coordinates: failed to parse latitude or longitude from string to f64",
+        )?));
+    }
+
+    // Try by city ID from config
+    if let Some(id) = config.city_id.as_ref() {
+        return Ok(Some(LocationSpecifier::try_from(id).error(
+            "Invalid city id: failed to parse it from string to u32",
+        )?));
+    }
+
+    let geo_url = Url::parse(GEO_URL).error("Failed to parse the hard-coded GEO_URL")?;
+    let api_key = config
+        .api_key
+        .as_ref()
+        .error("API key not provided (eg. via API_KEY_ENV environment variable)")?;
+
+    // Try by place name
+    if let Some(place) = config.place.as_ref() {
+        // "{GEO_URL}/direct?q={place}&appid={api_key}"
+        //
+        // Cannot use reqwest's `query_pairs_mut().append_pair()` because it percent-encodes
+        // the comma in the place name (ie., it turns "London,UK" into "London%2CUK"), which
+        // causes the request to 404.
+        let url = geo_url
+            .join(&format!("direct?q={place}&appid={api_key}"))
+            .error("Failed to join geo_url")?;
+
+        let city: Option<LocationSpecifier> = REQWEST_CLIENT
+            .get(url)
+            .send()
+            .await
+            .error("Geo request failed")?
+            .json::<Vec<CityCoord>>()
+            .await
+            .error("Geo failed to parse JSON")?
+            .first()
+            .map(|city| LocationSpecifier::CityCoord(*city));
+
+        return Ok(city);
+    }
+
+    // Try by zip code
+    if let Some(zip) = config.zip.as_ref() {
+        // "{GEO_URL}/zip?zip={zip}&appid={api_key}"
+        let mut url = geo_url.join("zip").error("Failed to join geo_url")?;
+        url.query_pairs_mut()
+            .append_pair("zip", zip)
+            .append_pair("appid", api_key);
+
+        let city: CityCoord = REQWEST_CLIENT
+            .get(url)
+            .send()
+            .await
+            .error("Geo request failed")?
+            .json()
+            .await
+            .error("Geo failed to parse JSON")?;
+
+        return Ok(Some(LocationSpecifier::CityCoord(city)));
+    }
+
+    Ok(None)
 }
 
 #[derive(Deserialize, Debug)]
@@ -414,5 +422,31 @@ fn weather_to_icon(weather: &str, is_night: bool) -> WeatherIcon {
         "Thunderstorm" => WeatherIcon::Thunder { is_night },
         "Snow" => WeatherIcon::Snow,
         _ => WeatherIcon::Default,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[ignore]
+    #[tokio::test]
+    async fn using_place_resolves_correctly() -> Result<()> {
+        let config = Config {
+            api_key: getenv_openweathermap_api_key(),
+            place: Some("Zurich,CH".to_string()),
+            ..Default::default()
+        };
+
+        let Some(LocationSpecifier::CityCoord(CityCoord { lat, lon })) =
+            get_location_query(false, &config).await?
+        else {
+            panic!("no location specifier found (eg., OpenWeatherMap returned empty result)");
+        };
+
+        assert_eq!(&format!("{lat:.1}"), "47.4");
+        assert_eq!(&format!("{lon:.1}"), "8.5");
+
+        Ok(())
     }
 }
