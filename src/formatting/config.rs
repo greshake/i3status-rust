@@ -1,7 +1,8 @@
-use super::{Format, template::FormatTemplate};
+use super::{Format, MultiFormat, template::FormatTemplate};
 use crate::errors::*;
 use serde::de::{MapAccess, Visitor};
 use serde::{Deserialize, Deserializer, de};
+use smart_default::SmartDefault;
 use std::fmt;
 use std::str::FromStr;
 
@@ -80,6 +81,49 @@ impl Config {
             short,
             intervals,
         }
+    }
+}
+
+#[derive(Deserialize, Debug, Clone, SmartDefault)]
+#[serde(deny_unknown_fields, untagged)]
+pub enum MaybeMultiConfig {
+    #[default]
+    Split {
+        format: Option<Config>,
+        format_alt: Option<Config>,
+    },
+    Multiple {
+        format: Vec<Config>,
+    },
+}
+
+impl MaybeMultiConfig {
+    pub fn with_default(&self, default_full: &str) -> Result<MultiFormat> {
+        self.with_defaults(default_full, "")
+    }
+
+    pub fn with_defaults(&self, default_full: &str, default_short: &str) -> Result<MultiFormat> {
+        Ok(MultiFormat::new(match self {
+            MaybeMultiConfig::Multiple { format: configs } if configs.is_empty() => {
+                vec![Config::default().with_defaults(default_full, default_short)?]
+            }
+            MaybeMultiConfig::Multiple { format: configs } => configs
+                .iter()
+                .map(|config| config.with_defaults("", ""))
+                .collect::<Result<Vec<_>>>()?,
+            MaybeMultiConfig::Split { format, format_alt } => {
+                let mut formats = Vec::new();
+                if let Some(format) = format {
+                    formats.push(format.with_defaults("", "")?);
+                } else {
+                    formats.push(Config::default().with_defaults(default_full, default_short)?);
+                }
+                if let Some(format_alt) = format_alt {
+                    formats.push(format_alt.with_defaults("", "")?);
+                }
+                formats
+            }
+        }))
     }
 }
 
