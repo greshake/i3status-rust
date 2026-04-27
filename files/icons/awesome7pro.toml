@@ -1,0 +1,112 @@
+# Font Awesome 7 Pro (https://fontawesome.com/)
+#
+# The icons used here come from both the Font Awesome 7 "Free" and "Pro" collections.
+#
+# - Free icons: https://fontawesome.com/search?ic=free-collection
+# - Pro icons: https://fontawesome.com/search?ic=pro-collection
+
+backlight = [
+    "\ue0ca", #  https://fontawesome.com/icons/brightness-low
+    "\ue0c9", #  https://fontawesome.com/icons/brightness
+    "\ue28f", #  https://fontawesome.com/icons/sun-bright
+]
+bat_charging = "\uf376" #  https://fontawesome.com/icons/battery-bolt
+bat_not_available = "\uf377" #  https://fontawesome.com/icons/battery-slash
+bat = [
+    "\uf244", #  https://fontawesome.com/icons/battery-empty
+    "\ue0b1", #  https://fontawesome.com/icons/battery-low
+    "\uf243", #  https://fontawesome.com/icons/battery-quarter
+    "\uf242", #  https://fontawesome.com/icons/battery-half
+    "\uf241", #  https://fontawesome.com/icons/battery-three-quarters
+    "\uf240", #  https://fontawesome.com/icons/battery-full
+]
+bell = "\uf0f3" #  https://fontawesome.com/icons/bell
+bell-slash = "\uf1f6" #  https://fontawesome.com/icons/bell-slash
+bluetooth = "\uf293" #  https://fontawesome.com/icons/bluetooth
+calendar = "\uf073" #  https://fontawesome.com/icons/calendar-days
+cogs = "\uf085" #  https://fontawesome.com/icons/gears
+cpu = [
+    "\uf628", #  https://fontawesome.com/icons/gauge-min
+    "\uf627", #  https://fontawesome.com/icons/gauge-low
+    "\uf624", #  https://fontawesome.com/icons/gauge
+    "\uf625", #  https://fontawesome.com/icons/gauge-high
+    "\uf626", #  https://fontawesome.com/icons/gauge-max
+]
+cpu_boost_on = "\uf205" #  https://fontawesome.com/icons/toggle-on
+cpu_boost_off = "\uf204" #  https://fontawesome.com/icons/toggle-off
+disk_drive = "\uf0a0" #  https://fontawesome.com/icons/hard-drive
+docker = "\uf395" #  https://fontawesome.com/icons/docker
+github = "\uf09b" #  https://fontawesome.com/icons/github
+gpu = "\ue843" #  https://fontawesome.com/icons/gpu
+headphones = "\uf025" #  https://fontawesome.com/icons/headphones
+hueshift = "\uf0eb" #  https://fontawesome.com/icons/lightbulb
+joystick = "\uf11b" #  https://fontawesome.com/icons/gamepad
+keyboard = "\uf11c" #  https://fontawesome.com/icons/keyboard
+mail = "\uf0e0" #  https://fontawesome.com/icons/envelope
+memory_mem = "\uf538" #  https://fontawesome.com/icons/memory
+memory_swap = "\uf0a0" #  https://fontawesome.com/icons/hard-drive
+mouse = "\uf245" #  https://fontawesome.com/icons/arrow-pointer
+music = "\uf001" #  https://fontawesome.com/icons/music
+music_next = "\uf051" #  https://fontawesome.com/icons/forward-step
+music_pause = "\uf04c" #  https://fontawesome.com/icons/pause
+music_play = "\uf04b" #  https://fontawesome.com/icons/play
+music_prev = "\uf048" #  https://fontawesome.com/icons/backward-step
+net_bridge = "\uf6ff" #  https://fontawesome.com/icons/network-wired
+net_down = "\ue842" #  https://fontawesome.com/icons/link-broken
+net_loopback = "\ue4bd" #  https://fontawesome.com/icons/arrows-to-circle
+net_modem = "\uf690" #  https://fontawesome.com/icons/signal-bars
+net_cellular = "\ue1ef" #  https://fontawesome.com/icons/mobile-signal
+net_up = "\uf0c1" #  https://fontawesome.com/icons/link
+net_vpn = "\ue248" #  https://fontawesome.com/icons/shield-keyhole
+net_wired = "\uf796" #  https://fontawesome.com/icons/ethernet
+net_wireless = "\ue7df" #  https://fontawesome.com/icons/wireless
+notification = "\ue6df" #  https://fontawesome.com/icons/message-dot
+phone = "\uf095" #  https://fontawesome.com/icons/phone
+phone_disconnected = "\uf3dd" #  https://fontawesome.com/icons/phone-slash
+ping = "\uf362" #  https://fontawesome.com/icons/right-left
+pomodoro = "\uf2f2" #  https://fontawesome.com/icons/stopwatch
+pomodoro_break = "\uf7b6" #  https://fontawesome.com/icons/mug-hot
+pomodoro_paused = "\uf04c" #  https://fontawesome.com/icons/pause
+pomodoro_started = "\uf04b" #  https://fontawesome.com/icons/play
+pomodoro_stopped = "\uf04d" #  https://fontawesome.com/icons/stop
+refresh = "\uf021" #  https://fontawesome.com/icons/arrows-rotate
+resolution = "\ue278" #  https://fontawesome.com/icons/square-o
+scratchpad = "\uf2d2" #  https://fontawesome.com/icons/window-restore
+tasks = "\uf0ae" #  https://fontawesome.com/icons/list-check
+tea = "\uf875" #  https://fontawesome.com/icons/mug-tea
+thermometer = [
+    "\uf2cb", #  https://fontawesome.com/icons/temperature-empty
+    "\uf2ca", #  https://fontawesome.com/icons/temperature-quarter
+    "\uf2c9", #  https://fontawesome.com/icons/temperature-half
+    "\uf2c8", #  https://fontawesome.com/icons/temperature-three-quarters
+    "\uf2c7", #  https://fontawesome.com/icons/temperature-full
+]
+time = "\uf017" #  https://fontawesome.com/icons/clock
+toggle_off = "\uf204" #  https://fontawesome.com/icons/toggle-off
+toggle_on = "\uf205" #  https://fontawesome.com/icons/toggle-on
+unknown = "\u003f" # ? https://fontawesome.com/icons/question
+update = "\uf062" #  https://fontawesome.com/icons/arrow-up
+uptime = "\uf2f2" #  https://fontawesome.com/icons/stopwatch
+volume = [
+    "\uf026", #  https://fontawesome.com/icons/volume-off
+    "\uf027", #  https://fontawesome.com/icons/volume-low
+    "\uf6a8", #  https://fontawesome.com/icons/volume
+    "\uf028", #  https://fontawesome.com/icons/volume-high
+]
+volume_muted = "\uf6a9" #  https://fontawesome.com/icons/volume-xmark
+microphone = "\uf3c9" #  https://fontawesome.com/icons/microphone-lines
+microphone_muted = "\uf539" #  https://fontawesome.com/icons/microphone-lines-slash
+weather_clouds = "\uf744" #  https://fontawesome.com/icons/clouds
+weather_default = "\uf0c2" #  https://fontawesome.com/icons/cloud
+weather_clouds_night = "\uf6c3" #  https://fontawesome.com/icons/cloud-moon
+weather_fog = "\uf74e" #  https://fontawesome.com/icons/cloud-fog
+weather_fog_night = "\uf74e" #  https://fontawesome.com/icons/cloud-fog
+weather_moon = "\uf755" #  https://fontawesome.com/icons/moon-stars
+weather_rain = "\uf73d" #  https://fontawesome.com/icons/cloud-rain
+weather_rain_night = "\uf73c" #  https://fontawesome.com/icons/cloud-moon-rain
+weather_snow = "\uf742" #  https://fontawesome.com/icons/cloud-snow
+weather_sun = "\uf185" #  https://fontawesome.com/icons/sun
+weather_thunder = "\uf76c" #  https://fontawesome.com/icons/cloud-bolt
+weather_thunder_night = "\uf76d" #  https://fontawesome.com/icons/cloud-bolt-moon
+webcam = "\uf832" #  https://fontawesome.com/icons/camera-web
+xrandr = "\ue163" #  https://fontawesome.com/icons/display
