@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use std::process::Stdio;
 use tokio::process::Command;
 
@@ -44,11 +45,20 @@ impl Driver for MullvadDriver {
             .args(["status", "-j"])
             .output()
             .await
-            .error("Problem running mullvad command")?
+            .error("Problem running `mullvad status -j`")?
             .stdout;
 
+        let json_status_output = String::from_utf8_lossy(&stdout);
+
+        // As of 2026-04-29 there's a bug in the `mullvad status -j` command in that it sometimes
+        // prints non-JSON data before the JSON output so we must filter that out here.
+        let json_status = json_status_output
+            .lines()
+            .skip_while(|line| !line.starts_with("{"))
+            .join("\n");
+
         let status: MullvadCliStatus =
-            serde_json::from_slice(&stdout).error("'mullvad status' produced wrong JSON")?;
+            serde_json::from_str(&json_status).error("`mullvad status -j` produced wrong JSON")?;
 
         match status {
             MullvadCliStatus::Disconnected | MullvadCliStatus::Disconnecting => {
@@ -71,6 +81,19 @@ impl Driver for MullvadDriver {
                 })
             }
             MullvadCliStatus::Connecting => Ok(Status::Connecting { profile: None }),
+            MullvadCliStatus::Error { details } => {
+                let error = details.and_then(|details| details.cause).and_then(|cause| {
+                    if let Some(reason) = cause.reason
+                        && let Some(details) = cause.details
+                    {
+                        Some(format!("{}: {}", reason, details))
+                    } else {
+                        None
+                    }
+                });
+
+                Ok(Status::Error(error))
+            }
         }
     }
 
@@ -97,6 +120,8 @@ enum MullvadCliStatus {
     Connecting,
 
     Disconnecting,
+
+    Error { details: Option<ErrorDetails> },
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -107,4 +132,15 @@ struct Details {
 #[derive(Deserialize, Debug, Clone)]
 struct Location {
     hostname: Option<String>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+struct ErrorDetails {
+    cause: Option<ErrorCause>,
+}
+
+#[derive(Deserialize, Debug, Clone)]
+struct ErrorCause {
+    reason: Option<String>,
+    details: Option<String>,
 }
