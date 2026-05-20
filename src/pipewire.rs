@@ -5,15 +5,15 @@ use std::rc::Rc;
 use std::str::FromStr;
 use std::sync::{LazyLock, Mutex};
 use std::thread::JoinHandle;
-use std::time::Duration;
 use std::{panic, thread};
 
 pub(crate) use ::pipewire::channel::Sender as PwSender;
 use ::pipewire::{
-    channel::{Receiver as PwReceiver, channel as pw_channel},
+    channel::{Receiver as PwReceiver, channel},
     context::ContextRc,
     device::Device as DeviceProxy,
     keys,
+    loop_::Timeout,
     main_loop::MainLoopRc,
     metadata::Metadata as MetadataProxy,
     node::{Node as NodeProxy, NodeState},
@@ -388,7 +388,7 @@ pub(crate) struct Client {
 
 impl Client {
     fn new() -> Result<Client> {
-        let (command_sender, command_receiver) = pw_channel();
+        let (command_sender, command_receiver) = channel();
 
         let handle = thread::Builder::new()
             .name("i3status_pipewire".to_string())
@@ -835,7 +835,7 @@ impl Client {
             .expect("Could not connect input_stream");
 
         while !output_done.get() {
-            main_loop.loop_().iterate(Duration::from_secs(1));
+            main_loop.loop_().iterate(Timeout::Infinite);
             let event = update.take();
             if !event.is_empty() {
                 client.send_update_event(event);
@@ -847,7 +847,7 @@ impl Client {
         output_stream_listener.unregister();
 
         while !input_done.get() {
-            main_loop.loop_().iterate(Duration::from_secs(1));
+            main_loop.loop_().iterate(Timeout::Infinite);
             let event = update.take();
             if !event.is_empty() {
                 client.send_update_event(event);
@@ -861,7 +861,7 @@ impl Client {
         // END WORKAROUND FOR PIPEWIRE LOOPBACK BUG
 
         loop {
-            main_loop.loop_().iterate(Duration::from_hours(24));
+            main_loop.loop_().iterate(Timeout::Infinite);
             let event = update.take();
             if !event.is_empty() {
                 client.send_update_event(event);
