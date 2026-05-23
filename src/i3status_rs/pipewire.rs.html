@@ -5,15 +5,15 @@
 <a href=#5 id=5 data-nosnippet>5</a><span class="kw">use </span>std::str::FromStr;
 <a href=#6 id=6 data-nosnippet>6</a><span class="kw">use </span>std::sync::{LazyLock, Mutex};
 <a href=#7 id=7 data-nosnippet>7</a><span class="kw">use </span>std::thread::JoinHandle;
-<a href=#8 id=8 data-nosnippet>8</a><span class="kw">use </span>std::time::Duration;
-<a href=#9 id=9 data-nosnippet>9</a><span class="kw">use </span>std::{panic, thread};
-<a href=#10 id=10 data-nosnippet>10</a>
-<a href=#11 id=11 data-nosnippet>11</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">use </span>::pipewire::channel::Sender <span class="kw">as </span>PwSender;
-<a href=#12 id=12 data-nosnippet>12</a><span class="kw">use </span>::pipewire::{
-<a href=#13 id=13 data-nosnippet>13</a>    channel::{Receiver <span class="kw">as </span>PwReceiver, channel <span class="kw">as </span>pw_channel},
-<a href=#14 id=14 data-nosnippet>14</a>    context::ContextRc,
-<a href=#15 id=15 data-nosnippet>15</a>    device::Device <span class="kw">as </span>DeviceProxy,
-<a href=#16 id=16 data-nosnippet>16</a>    keys,
+<a href=#8 id=8 data-nosnippet>8</a><span class="kw">use </span>std::{panic, thread};
+<a href=#9 id=9 data-nosnippet>9</a>
+<a href=#10 id=10 data-nosnippet>10</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">use </span>::pipewire::channel::Sender <span class="kw">as </span>PwSender;
+<a href=#11 id=11 data-nosnippet>11</a><span class="kw">use </span>::pipewire::{
+<a href=#12 id=12 data-nosnippet>12</a>    channel::{Receiver <span class="kw">as </span>PwReceiver, channel},
+<a href=#13 id=13 data-nosnippet>13</a>    context::ContextRc,
+<a href=#14 id=14 data-nosnippet>14</a>    device::Device <span class="kw">as </span>DeviceProxy,
+<a href=#15 id=15 data-nosnippet>15</a>    keys,
+<a href=#16 id=16 data-nosnippet>16</a>    loop_::Timeout,
 <a href=#17 id=17 data-nosnippet>17</a>    main_loop::MainLoopRc,
 <a href=#18 id=18 data-nosnippet>18</a>    metadata::Metadata <span class="kw">as </span>MetadataProxy,
 <a href=#19 id=19 data-nosnippet>19</a>    node::{Node <span class="kw">as </span>NodeProxy, NodeState},
@@ -388,7 +388,7 @@
 <a href=#388 id=388 data-nosnippet>388</a>
 <a href=#389 id=389 data-nosnippet>389</a><span class="kw">impl </span>Client {
 <a href=#390 id=390 data-nosnippet>390</a>    <span class="kw">fn </span>new() -&gt; <span class="prelude-ty">Result</span>&lt;Client&gt; {
-<a href=#391 id=391 data-nosnippet>391</a>        <span class="kw">let </span>(command_sender, command_receiver) = pw_channel();
+<a href=#391 id=391 data-nosnippet>391</a>        <span class="kw">let </span>(command_sender, command_receiver) = channel();
 <a href=#392 id=392 data-nosnippet>392</a>
 <a href=#393 id=393 data-nosnippet>393</a>        <span class="kw">let </span>handle = thread::Builder::new()
 <a href=#394 id=394 data-nosnippet>394</a>            .name(<span class="string">"i3status_pipewire"</span>.to_string())
@@ -835,7 +835,7 @@
 <a href=#835 id=835 data-nosnippet>835</a>            .expect(<span class="string">"Could not connect input_stream"</span>);
 <a href=#836 id=836 data-nosnippet>836</a>
 <a href=#837 id=837 data-nosnippet>837</a>        <span class="kw">while </span>!output_done.get() {
-<a href=#838 id=838 data-nosnippet>838</a>            main_loop.loop_().iterate(Duration::from_secs(<span class="number">1</span>));
+<a href=#838 id=838 data-nosnippet>838</a>            main_loop.loop_().iterate(Timeout::Infinite);
 <a href=#839 id=839 data-nosnippet>839</a>            <span class="kw">let </span>event = update.take();
 <a href=#840 id=840 data-nosnippet>840</a>            <span class="kw">if </span>!event.is_empty() {
 <a href=#841 id=841 data-nosnippet>841</a>                client.send_update_event(event);
@@ -847,7 +847,7 @@
 <a href=#847 id=847 data-nosnippet>847</a>        output_stream_listener.unregister();
 <a href=#848 id=848 data-nosnippet>848</a>
 <a href=#849 id=849 data-nosnippet>849</a>        <span class="kw">while </span>!input_done.get() {
-<a href=#850 id=850 data-nosnippet>850</a>            main_loop.loop_().iterate(Duration::from_secs(<span class="number">1</span>));
+<a href=#850 id=850 data-nosnippet>850</a>            main_loop.loop_().iterate(Timeout::Infinite);
 <a href=#851 id=851 data-nosnippet>851</a>            <span class="kw">let </span>event = update.take();
 <a href=#852 id=852 data-nosnippet>852</a>            <span class="kw">if </span>!event.is_empty() {
 <a href=#853 id=853 data-nosnippet>853</a>                client.send_update_event(event);
@@ -861,7 +861,7 @@
 <a href=#861 id=861 data-nosnippet>861</a>        <span class="comment">// END WORKAROUND FOR PIPEWIRE LOOPBACK BUG
 <a href=#862 id=862 data-nosnippet>862</a>
 <a href=#863 id=863 data-nosnippet>863</a>        </span><span class="kw">loop </span>{
-<a href=#864 id=864 data-nosnippet>864</a>            main_loop.loop_().iterate(Duration::from_hours(<span class="number">24</span>));
+<a href=#864 id=864 data-nosnippet>864</a>            main_loop.loop_().iterate(Timeout::Infinite);
 <a href=#865 id=865 data-nosnippet>865</a>            <span class="kw">let </span>event = update.take();
 <a href=#866 id=866 data-nosnippet>866</a>            <span class="kw">if </span>!event.is_empty() {
 <a href=#867 id=867 data-nosnippet>867</a>                client.send_update_event(event);
