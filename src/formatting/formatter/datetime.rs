@@ -22,8 +22,8 @@ pub enum DatetimeFormatter {
     },
     #[cfg(feature = "icu_calendar")]
     Icu {
-        length: icu_datetime::options::length::Date,
-        locale: icu_locid::Locale,
+        fieldset: icu_datetime::fieldsets::enums::CompositeDateTimeFieldSet,
+        locale: icu_locale_core::Locale,
     },
 }
 
@@ -54,19 +54,33 @@ impl DatetimeFormatter {
             Some(locale) => {
                 #[cfg(feature = "icu_calendar")]
                 let Ok(locale) = locale.try_into() else {
-                    use std::str::FromStr as _;
                     // try with icu4x
-                    let locale = icu_locid::Locale::from_str(locale)
+                    use icu_datetime::fieldsets::{
+                        self,
+                        enums::{CompositeDateTimeFieldSet, DateFieldSet},
+                    };
+                    use icu_datetime::options::Length;
+                    use std::str::FromStr as _;
+                    let locale = icu_locale_core::Locale::from_str(locale)
                         .ok()
                         .error("invalid locale")?;
-                    let length = match format {
-                        Some("full") => icu_datetime::options::length::Date::Full,
-                        None | Some("long") => icu_datetime::options::length::Date::Long,
-                        Some("medium") => icu_datetime::options::length::Date::Medium,
-                        Some("short") => icu_datetime::options::length::Date::Short,
-                        _ => return Err(Error::new("Unknown format option for icu based locale")),
+                    let fieldset = match format {
+                        Some("full") => CompositeDateTimeFieldSet::Date(DateFieldSet::YMDE(
+                            fieldsets::YMDE::long(),
+                        )),
+                        length => {
+                            let length = match length {
+                                Some("short") => Length::Short,
+                                Some("medium") => Length::Medium,
+                                Some("long") | None => Length::Long,
+                                _ => Err(Error::new("Invalid length value"))?,
+                            };
+                            CompositeDateTimeFieldSet::Date(DateFieldSet::YMD(
+                                fieldsets::YMD::for_length(length),
+                            ))
+                        }
                     };
-                    return Ok(Self::Icu { locale, length });
+                    return Ok(Self::Icu { locale, fieldset });
                 };
                 #[cfg(not(feature = "icu_calendar"))]
                 let locale = locale.try_into().ok().error("invalid locale")?;
@@ -164,23 +178,30 @@ impl Formatter for DatetimeFormatter {
                     }
                 }
                 #[cfg(feature = "icu_calendar")]
-                DatetimeFormatter::Icu { locale, length } => {
-                    use chrono::Datelike as _;
-                    let date = icu_calendar::Date::try_new_iso_date(
-                        datetime.year(),
-                        datetime.month() as u8,
-                        datetime.day() as u8,
-                    )
-                    .ok()
-                    .error("Current date should be a valid date")?;
-                    let date = date.to_any();
-                    let dft =
-                        icu_datetime::DateFormatter::try_new_with_length(&locale.into(), *length)
-                            .ok()
-                            .error("locale should be present in compiled data")?;
-                    dft.format_to_string(&date)
+                DatetimeFormatter::Icu {
+                    locale,
+                    fieldset: length,
+                } => {
+                    use chrono::{Datelike as _, Timelike as _};
+                    let datetime = icu_datetime::input::DateTime {
+                        date: icu_datetime::input::Date::try_new_iso(
+                            datetime.year(),
+                            datetime.month() as u8,
+                            datetime.day() as u8,
+                        )
+                        .error("Current date should be a valid date")?,
+                        time: icu_datetime::input::Time::try_new(
+                            datetime.hour() as u8,
+                            datetime.minute() as u8,
+                            datetime.second() as u8,
+                            datetime.nanosecond(),
+                        )
+                        .error("Current time should be a valid time")?,
+                    };
+                    let dft = icu_datetime::DateTimeFormatter::try_new(locale.into(), *length)
                         .ok()
-                        .error("formatting date using icu failed")?
+                        .error("locale should be present in compiled data")?;
+                    dft.format(&datetime).to_string()
                 }
             })
         }
