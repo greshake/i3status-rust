@@ -12,7 +12,7 @@ make_log_macro!(error, "datetime");
 const DEFAULT_DATETIME_FORMAT: &str = "%a %d/%m %R";
 
 pub static DEFAULT_DATETIME_FORMATTER: LazyLock<DatetimeFormatter> =
-    LazyLock::new(|| DatetimeFormatter::new(Some(DEFAULT_DATETIME_FORMAT), None).unwrap());
+    LazyLock::new(|| DatetimeFormatter::new(Some(DEFAULT_DATETIME_FORMAT), None, None).unwrap());
 
 #[derive(Debug)]
 pub enum DatetimeFormatter {
@@ -31,6 +31,7 @@ impl DatetimeFormatter {
     pub(super) fn from_args(args: &[Arg]) -> Result<Self> {
         let mut format = None;
         let mut locale = None;
+        let mut precision = None;
         for arg in args {
             match arg.key {
                 "format" | "f" => {
@@ -39,6 +40,9 @@ impl DatetimeFormatter {
                 "locale" | "l" => {
                     locale = Some(arg.val.error("locale must be specified")?);
                 }
+                "precision" | "p" => {
+                    precision = Some(arg.val.error("precision must be specified")?);
+                }
                 other => {
                     return Err(Error::new(format!(
                         "Unknown argument for 'datetime': '{other}'"
@@ -46,10 +50,10 @@ impl DatetimeFormatter {
                 }
             }
         }
-        Self::new(format, locale)
+        Self::new(format, locale, precision)
     }
 
-    fn new(format: Option<&str>, locale: Option<&str>) -> Result<Self> {
+    fn new(format: Option<&str>, locale: Option<&str>, precision: Option<&str>) -> Result<Self> {
         let (items, locale) = match locale {
             Some(locale) => {
                 #[cfg(feature = "icu_calendar")]
@@ -57,17 +61,32 @@ impl DatetimeFormatter {
                     // try with icu4x
                     use icu_datetime::fieldsets::{
                         self,
-                        enums::{CompositeDateTimeFieldSet, DateFieldSet},
+                        enums::{CompositeDateTimeFieldSet, DateAndTimeFieldSet, DateFieldSet},
                     };
-                    use icu_datetime::options::Length;
+                    use icu_datetime::options::{Length, TimePrecision};
                     use std::str::FromStr as _;
+
+                    let precision = match precision {
+                        Some("seconds" | "second" | "s") => Some(TimePrecision::Second),
+                        Some("minutes" | "minute" | "m") => Some(TimePrecision::Minute),
+                        Some("hours" | "hour" | "h") => Some(TimePrecision::Hour),
+                        None => None,
+                        _ => Err(Error::new("Invalid precision value"))?,
+                    };
                     let locale = icu_locale_core::Locale::from_str(locale)
                         .ok()
                         .error("invalid locale")?;
                     let fieldset = match format {
-                        Some("full") => CompositeDateTimeFieldSet::Date(DateFieldSet::YMDE(
-                            fieldsets::YMDE::long(),
-                        )),
+                        Some("full") => match precision {
+                            Some(precision) => {
+                                CompositeDateTimeFieldSet::DateTime(DateAndTimeFieldSet::YMDET(
+                                    fieldsets::YMDET::long().with_time_precision(precision),
+                                ))
+                            }
+                            None => CompositeDateTimeFieldSet::Date(DateFieldSet::YMDE(
+                                fieldsets::YMDE::long(),
+                            )),
+                        },
                         length => {
                             let length = match length {
                                 Some("short") => Length::Short,
@@ -75,15 +94,29 @@ impl DatetimeFormatter {
                                 Some("long") | None => Length::Long,
                                 _ => Err(Error::new("Invalid length value"))?,
                             };
-                            CompositeDateTimeFieldSet::Date(DateFieldSet::YMD(
-                                fieldsets::YMD::for_length(length),
-                            ))
+                            match precision {
+                                Some(precision) => {
+                                    CompositeDateTimeFieldSet::DateTime(DateAndTimeFieldSet::YMDT(
+                                        fieldsets::YMDT::for_length(length)
+                                            .with_time_precision(precision),
+                                    ))
+                                }
+                                None => CompositeDateTimeFieldSet::Date(DateFieldSet::YMD(
+                                    fieldsets::YMD::for_length(length),
+                                )),
+                            }
                         }
                     };
+
                     return Ok(Self::Icu { locale, fieldset });
                 };
                 #[cfg(not(feature = "icu_calendar"))]
                 let locale = locale.try_into().ok().error("invalid locale")?;
+                if precision.is_some() {
+                    return Err(Error::new(
+                        "`precision` is only available for icu datetimes",
+                    ));
+                }
                 (
                     StrftimeItems::new_with_locale(
                         format.unwrap_or(DEFAULT_DATETIME_FORMAT),
@@ -92,10 +125,17 @@ impl DatetimeFormatter {
                     Some(locale),
                 )
             }
-            None => (
-                StrftimeItems::new(format.unwrap_or(DEFAULT_DATETIME_FORMAT)),
-                None,
-            ),
+            None => {
+                if precision.is_some() {
+                    return Err(Error::new(
+                        "`precision` is only available for icu datetimes",
+                    ));
+                }
+                (
+                    StrftimeItems::new(format.unwrap_or(DEFAULT_DATETIME_FORMAT)),
+                    None,
+                )
+            }
         };
 
         Ok(Self::Chrono {
