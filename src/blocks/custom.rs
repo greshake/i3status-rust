@@ -272,7 +272,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             loop {
                 select! {
                     _ = timer.tick() => break,
-                    _ = file_updates.next() => break,
+                    _ = file_updates.next_debounced() => break,
                     _ = api.wait_for_update_request() => break,
                     Some(action) = actions.recv() => match action.as_ref() {
                         "cycle" => {
