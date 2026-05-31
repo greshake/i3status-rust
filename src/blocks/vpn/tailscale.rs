@@ -79,7 +79,7 @@ impl Driver for TailscaleDriver {
         match status {
             Status::Connected { .. } => Self::run_network_command("down").await?,
             Status::Disconnected { .. } => Self::run_network_command("up").await?,
-            Status::Error(_) => (),
+            Status::Connecting { .. } | Status::Error(_) => (),
         }
         Ok(())
     }

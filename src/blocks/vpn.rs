@@ -10,6 +10,7 @@
 //! `interval` | Update interval in seconds. | `10`
 //! `format_connected` | A string to customise the output in case the network is connected. See below for available placeholders. | `" VPN: $icon "`
 //! `format_disconnected` | A string to customise the output in case the network is disconnected. See below for available placeholders. | `" VPN: $icon "`
+//! `format_connecting` | A string to customise the output in case the network is in a connecting state. See below for available placeholders. | `" VPN: $icon "`
 //! `state_connected` | The widgets state if the vpn network is connected. | `info`
 //! `state_disconnected` | The widgets state if the vpn network is disconnected | `idle`
 //!
@@ -55,6 +56,7 @@
 //! interval = 10
 //! format_connected = "VPN: $icon "
 //! format_disconnected = "VPN: $icon "
+//! format_connecting = "VPN: $icon "
 //! state_connected = "good"
 //! state_disconnected = "warning"
 //! ```
@@ -73,6 +75,7 @@
 //!
 //! - `net_vpn`
 //! - `net_wired`
+//! - `net_wireless` (for connecting state)
 //! - `net_down`
 //! - country code flags (if supported by font)
 //!
@@ -108,6 +111,7 @@ pub struct Config {
     pub interval: Seconds,
     pub format_connected: FormatConfig,
     pub format_disconnected: FormatConfig,
+    pub format_connecting: FormatConfig,
     pub state_connected: State,
     pub state_disconnected: State,
 }
@@ -116,6 +120,9 @@ enum Status {
     Connected {
         country: Option<String>,
         country_flag: Option<String>,
+        profile: Option<String>,
+    },
+    Connecting {
         profile: Option<String>,
     },
     Disconnected {
@@ -129,6 +136,7 @@ impl Status {
         match self {
             Status::Connected { .. } => "net_vpn".into(),
             Status::Disconnected { .. } => "net_wired".into(),
+            Status::Connecting { .. } => "net_wireless".into(),
             Status::Error(_) => "net_down".into(),
         }
     }
@@ -140,6 +148,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     let format_connected = config.format_connected.with_default(" VPN: $icon ")?;
     let format_disconnected = config.format_disconnected.with_default(" VPN: $icon ")?;
+    let format_connecting = config.format_connecting.with_default(" VPN: $icon ")?;
 
     let driver: Box<dyn Driver> = match config.driver {
         DriverType::Mullvad => Box::new(MullvadDriver::new().await),
@@ -175,6 +184,14 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 });
                 widget.set_format(format_disconnected.clone());
                 config.state_disconnected
+            }
+            Status::Connecting { profile } => {
+                widget.set_values(map!(
+                        "icon" => Value::icon(status.icon()),
+                        [if let Some(profile) = profile] "profile" => Value::text(profile.into()),
+                ));
+                widget.set_format(format_connecting.clone());
+                State::Info
             }
             Status::Error(error) => {
                 widget.set_values(map!(

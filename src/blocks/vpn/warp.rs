@@ -53,7 +53,7 @@ impl Driver for WarpDriver {
         match status {
             Status::Connected { .. } => Self::run_network_command("disconnect").await?,
             Status::Disconnected { .. } => Self::run_network_command("connect").await?,
-            Status::Error { .. } => (),
+            Status::Connecting { .. } | Status::Error(_) => (),
         }
         Ok(())
     }
