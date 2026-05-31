@@ -79,7 +79,7 @@
 <a href=#79 id=79 data-nosnippet>79</a>        <span class="kw">match </span>status {
 <a href=#80 id=80 data-nosnippet>80</a>            Status::Connected { .. } =&gt; <span class="self">Self</span>::run_network_command(<span class="string">"down"</span>).<span class="kw">await</span><span class="question-mark">?</span>,
 <a href=#81 id=81 data-nosnippet>81</a>            Status::Disconnected { .. } =&gt; <span class="self">Self</span>::run_network_command(<span class="string">"up"</span>).<span class="kw">await</span><span class="question-mark">?</span>,
-<a href=#82 id=82 data-nosnippet>82</a>            Status::Error(<span class="kw">_</span>) =&gt; (),
+<a href=#82 id=82 data-nosnippet>82</a>            Status::Connecting { .. } | Status::Error(<span class="kw">_</span>) =&gt; (),
 <a href=#83 id=83 data-nosnippet>83</a>        }
 <a href=#84 id=84 data-nosnippet>84</a>        <span class="prelude-val">Ok</span>(())
 <a href=#85 id=85 data-nosnippet>85</a>    }
