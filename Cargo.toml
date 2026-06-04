@@ -21,7 +21,7 @@ pulseaudio = ["libpulse-binding"]
 pipewire = ["dep:pipewire"]
 notmuch = ["dep:notmuch"]
 maildir = ["dep:maildir", "glob"]
-icu_calendar = ["dep:icu_datetime", "dep:icu_locale_core"]
+icu_calendar = ["dep:icu_datetime", "dep:icu_locale"]
 debug_borders = []                # Make widgets' borders visible
 
 [package.metadata.docs.rs]
@@ -47,8 +47,8 @@ futures = { version = "0.3.31", default-features = false }
 glob = { version = "0.3.1", optional = true }
 iana-time-zone = "0.1.60"
 icalendar = { version = "0.17.9", features = ["chrono-tz", "recurrence"] }
-icu_datetime = { version = "2.2", optional = true }
-icu_locale_core = { version = "2.2", optional = true }
+icu_datetime = { version = "2.2", optional = true, default-features = false, features = ["compiled_data"] }
+icu_locale = { version = "2.2", optional = true }
 indexmap = { version = "2.0", features = ["serde"] }
 inotify = "0.11"
 itertools = "0.13"

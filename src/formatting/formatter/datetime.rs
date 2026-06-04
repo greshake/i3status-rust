@@ -23,7 +23,7 @@ pub enum DatetimeFormatter {
     #[cfg(feature = "icu_calendar")]
     Icu {
         fieldset: icu_datetime::fieldsets::enums::CompositeDateTimeFieldSet,
-        locale: icu_locale_core::Locale,
+        locale: icu_locale::Locale,
     },
 }
 
@@ -73,7 +73,7 @@ impl DatetimeFormatter {
                         None => None,
                         _ => Err(Error::new("Invalid precision value"))?,
                     };
-                    let locale = icu_locale_core::Locale::from_str(locale)
+                    let locale = icu_locale::Locale::from_str(locale)
                         .ok()
                         .error("invalid locale")?;
                     let fieldset = match format {
