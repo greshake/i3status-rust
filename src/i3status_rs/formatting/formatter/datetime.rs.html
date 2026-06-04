@@ -23,7 +23,7 @@
 <a href=#23 id=23 data-nosnippet>23</a>    <span class="attr">#[cfg(feature = <span class="string">"icu_calendar"</span>)]
 <a href=#24 id=24 data-nosnippet>24</a>    </span>Icu {
 <a href=#25 id=25 data-nosnippet>25</a>        fieldset: icu_datetime::fieldsets::enums::CompositeDateTimeFieldSet,
-<a href=#26 id=26 data-nosnippet>26</a>        locale: icu_locale_core::Locale,
+<a href=#26 id=26 data-nosnippet>26</a>        locale: icu_locale::Locale,
 <a href=#27 id=27 data-nosnippet>27</a>    },
 <a href=#28 id=28 data-nosnippet>28</a>}
 <a href=#29 id=29 data-nosnippet>29</a>
@@ -73,7 +73,7 @@
 <a href=#73 id=73 data-nosnippet>73</a>                        <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
 <a href=#74 id=74 data-nosnippet>74</a>                        <span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(Error::new(<span class="string">"Invalid precision value"</span>))<span class="question-mark">?</span>,
 <a href=#75 id=75 data-nosnippet>75</a>                    };
-<a href=#76 id=76 data-nosnippet>76</a>                    <span class="kw">let </span>locale = icu_locale_core::Locale::from_str(locale)
+<a href=#76 id=76 data-nosnippet>76</a>                    <span class="kw">let </span>locale = icu_locale::Locale::from_str(locale)
 <a href=#77 id=77 data-nosnippet>77</a>                        .ok()
 <a href=#78 id=78 data-nosnippet>78</a>                        .error(<span class="string">"invalid locale"</span>)<span class="question-mark">?</span>;
 <a href=#79 id=79 data-nosnippet>79</a>                    <span class="kw">let </span>fieldset = <span class="kw">match </span>format {
