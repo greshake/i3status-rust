@@ -1139,7 +1139,7 @@ dependencies = [
  "iana-time-zone",
  "icalendar",
  "icu_datetime",
- "icu_locale_core",
+ "icu_locale",
  "indexmap",
  "inotify",
  "itertools 0.13.0",
@@ -1229,7 +1229,6 @@ dependencies = [
  "icu_locale",
  "icu_locale_core",
  "icu_provider",
- "ixdtf",
  "tinystr",
  "zerovec",
 ]
@@ -1442,7 +1441,6 @@ dependencies = [
  "icu_locale_core",
  "icu_provider",
  "icu_time_data",
- "ixdtf",
  "serde",
  "zerotrie",
  "zerovec",
@@ -1568,12 +1566,6 @@ name = "itoa"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49f1f14873335454500d59611f1cf4a4b0f786f9ac11f4312a78e4cf2566695b"
-
-[[package]]
-name = "ixdtf"
-version = "0.6.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2ceaf4c6c48465bead8cb6a0b7c4ee0c86ecbb31239032b9c66ab9a08d2f3ee1"
 
 [[package]]
 name = "js-sys"
