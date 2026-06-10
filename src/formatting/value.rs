@@ -114,8 +114,11 @@ impl Value {
     pub fn percents(val: impl IntoF64) -> Self {
         Self::number_unit(val, Unit::Percents)
     }
-    pub fn degrees(val: impl IntoF64) -> Self {
-        Self::number_unit(val, Unit::Degrees)
+    pub fn degrees_c(val: impl IntoF64) -> Self {
+        Self::number_unit(val, Unit::DegreesC)
+    }
+    pub fn degrees_f(val: impl IntoF64) -> Self {
+        Self::number_unit(val, Unit::DegreesF)
     }
     pub fn seconds(val: impl IntoF64) -> Self {
         Self::number_unit(val, Unit::Seconds)
