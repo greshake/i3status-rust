@@ -278,8 +278,8 @@ impl WeatherResult {
             "location" => Value::text(self.location),
             //current_weather
             "icon" => Value::icon(self.current_weather.icon.to_icon_str()),
-            "temp" => Value::degrees(self.current_weather.temp),
-            "apparent" => Value::degrees(self.current_weather.apparent),
+            "temp" => Value::degrees_c(self.current_weather.temp),
+            "apparent" => Value::degrees_c(self.current_weather.apparent),
             "humidity" => Value::percents(self.current_weather.humidity),
             "weather" => Value::text(self.current_weather.weather),
             "weather_verbose" => Value::text(self.current_weather.weather_verbose),
@@ -295,8 +295,8 @@ impl WeatherResult {
                 ({$($suffix: literal => $src: expr),* $(,)?}) => {
                     map!{ @extend values
                         $(
-                            concat!("temp_f", $suffix) => Value::degrees($src.temp),
-                            concat!("apparent_f", $suffix) => Value::degrees($src.apparent),
+                            concat!("temp_f", $suffix) => Value::degrees_c($src.temp),
+                            concat!("apparent_f", $suffix) => Value::degrees_c($src.apparent),
                             concat!("humidity_f", $suffix) => Value::percents($src.humidity),
                             concat!("wind_f", $suffix) => Value::number($src.wind),
                             concat!("wind_kmh_f", $suffix) => Value::number($src.wind_kmh),

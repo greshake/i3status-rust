@@ -56,6 +56,7 @@
 //! - `thermometer`
 
 use super::prelude::*;
+use crate::util::celsius_to_fahrenheit;
 use sensors::FeatureType::SENSORS_FEATURE_TEMP;
 use sensors::Sensors;
 use sensors::SubfeatureType::SENSORS_SUBFEATURE_TEMP_INPUT;
@@ -94,7 +95,14 @@ impl TemperatureScale {
     pub fn from_celsius(self, val: f64) -> f64 {
         match self {
             Self::Celsius => val,
-            Self::Fahrenheit => val * 1.8 + 32.0,
+            Self::Fahrenheit => celsius_to_fahrenheit(val),
+        }
+    }
+
+    pub fn as_value(self, val: f64) -> Value {
+        match self {
+            Self::Celsius => Value::degrees_c(val),
+            Self::Fahrenheit => Value::degrees_f(val),
         }
     }
 }
@@ -190,9 +198,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         widget.set_values(map! {
             "icon" => Value::icon_progression_bound("thermometer", max_temp, good, warn),
-            "average" => Value::degrees(avg_temp),
-            "min" => Value::degrees(min_temp),
-            "max" => Value::degrees(max_temp),
+            "average" => config_scale.as_value(avg_temp),
+            "min" => config_scale.as_value(min_temp),
+            "max" => config_scale.as_value(max_temp),
         });
 
         api.set_widget(widget)?;

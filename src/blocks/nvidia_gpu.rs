@@ -141,7 +141,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             "name" => Value::text(info.name.clone()),
             "utilization" => Value::percents(info.utilization),
             "memory" => Value::bytes(if show_mem_total {info.mem_total} else {info.mem_used}).with_instance(MEM_BTN),
-            "temperature" => Value::degrees(info.temperature),
+            "temperature" => Value::degrees_c(info.temperature),
             "fan_speed" => Value::percents(info.fan_speed).with_instance(FAN_BTN).underline(fan_controlled).italic(fan_controlled),
             "clocks" => Value::hertz(info.clocks),
             "power" => Value::watts(info.power_draw),
