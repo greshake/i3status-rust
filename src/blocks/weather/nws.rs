@@ -12,11 +12,10 @@
 //!
 
 use super::*;
+use crate::util::{fahrenheit_to_celsius, kmh_to_mps, mph_to_kmh};
 use serde::Deserialize;
 
 const API_URL: &str = "https://api.weather.gov/";
-
-const MPH_TO_KPH: f64 = 1.609344;
 
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(tag = "name", rename_all = "lowercase", deny_unknown_fields, default)]
@@ -25,7 +24,7 @@ pub struct Config {
     #[default(12)]
     forecast_hours: usize,
     #[serde(default)]
-    units: UnitSystem,
+    pub(super) units: UnitSystem,
 }
 
 #[derive(Clone, Debug)]
@@ -51,7 +50,6 @@ impl<'a> Service<'a> {
                 Self::get_location_query(
                     coords.0.parse().error("Unable to convert string to f64")?,
                     coords.1.parse().error("Unable to convert string to f64")?,
-                    config.units,
                 )
                 .await?,
             )
@@ -59,7 +57,7 @@ impl<'a> Service<'a> {
         Ok(Self { config, location })
     }
 
-    async fn get_location_query(lat: f64, lon: f64, units: UnitSystem) -> Result<LocationInfo> {
+    async fn get_location_query(lat: f64, lon: f64) -> Result<LocationInfo> {
         let points_url = format!("{API_URL}/points/{lat},{lon}");
 
         let response: ApiPoints = REQWEST_CLIENT
@@ -70,11 +68,7 @@ impl<'a> Service<'a> {
             .json()
             .await
             .error("Failed to parse zone resolution request")?;
-        let mut query = response.properties.forecast_hourly;
-        query.push_str(match units {
-            UnitSystem::Metric => "?units=si",
-            UnitSystem::Imperial => "?units=us",
-        });
+        let query = response.properties.forecast_hourly + "?units=si";
         let location = response.properties.relative_location.properties;
         let name = format!("{}, {}", location.city, location.state);
         Ok(LocationInfo {
@@ -176,39 +170,28 @@ impl ApiForecast {
         .to_string()
     }
 
-    fn wind_speed(&self) -> f64 {
-        if self.wind_speed.unit_code.ends_with("km_h-1") {
-            // m/s
-            self.wind_speed.value / 3.6
-        } else {
-            // mph
-            self.wind_speed.value
-        }
-    }
-
     fn wind_kmh(&self) -> f64 {
         if self.wind_speed.unit_code.ends_with("km_h-1") {
             self.wind_speed.value
         } else {
-            self.wind_speed.value * MPH_TO_KPH
+            mph_to_kmh(self.wind_speed.value)
+        }
+    }
+
+    fn temp(&self) -> f64 {
+        if self.temperature.unit_code.ends_with("degC") {
+            self.temperature.value
+        } else {
+            fahrenheit_to_celsius(self.temperature.value)
         }
     }
 
     fn apparent_temp(&self) -> f64 {
-        let temp = if self.temperature.unit_code.ends_with("degC") {
-            self.temperature.value
-        } else {
-            (self.temperature.value - 32.0) * 5.0 / 9.0
-        };
+        let temp = self.temp();
         let humidity = self.relative_humidity.value;
         // wind_speed in m/s
-        let wind_speed = self.wind_kmh() / 3.6;
-        let apparent = australian_apparent_temp(temp, humidity, wind_speed);
-        if self.temperature.unit_code.ends_with("degC") {
-            apparent
-        } else {
-            (apparent * 9.0 / 5.0) + 32.0
-        }
+        let wind_speed = kmh_to_mps(self.wind_kmh());
+        australian_apparent_temp(temp, humidity, wind_speed)
     }
 
     fn to_moment(&self) -> WeatherMoment {
@@ -218,10 +201,9 @@ impl ApiForecast {
             icon,
             weather,
             weather_verbose: self.short_forecast.clone(),
-            temp: self.temperature.value,
+            temp: self.temp(),
             apparent: self.apparent_temp(),
             humidity: self.relative_humidity.value,
-            wind: self.wind_speed(),
             wind_kmh: self.wind_kmh(),
             wind_direction: self.wind_direction(),
         }
@@ -229,10 +211,9 @@ impl ApiForecast {
 
     fn to_aggregate(&self) -> ForecastAggregateSegment {
         ForecastAggregateSegment {
-            temp: Some(self.temperature.value),
+            temp: Some(self.temp()),
             apparent: Some(self.apparent_temp()),
             humidity: Some(self.relative_humidity.value),
-            wind: Some(self.wind_speed()),
             wind_kmh: Some(self.wind_kmh()),
             wind_direction: self.wind_direction(),
         }
@@ -247,7 +228,7 @@ impl WeatherProvider for Service<'_> {
         need_forecast: bool,
     ) -> Result<WeatherResult> {
         let location = if let Some(coords) = autolocated {
-            Self::get_location_query(coords.latitude, coords.longitude, self.config.units).await?
+            Self::get_location_query(coords.latitude, coords.longitude).await?
         } else {
             self.location.clone().error("No location was provided")?
         };

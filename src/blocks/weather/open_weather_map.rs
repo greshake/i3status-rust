@@ -1,4 +1,5 @@
 use super::*;
+use crate::util::mps_to_kmh;
 use chrono::{DateTime, Utc};
 use reqwest::Url;
 use serde::{Deserializer, de};
@@ -24,7 +25,7 @@ pub struct Config {
     zip: Option<String>,
     coordinates: Option<(String, String)>,
     #[serde(default)]
-    units: UnitSystem,
+    pub(super) units: UnitSystem,
     #[default("en")]
     lang: String,
     #[default(12)]
@@ -53,7 +54,6 @@ where
 
 pub(super) struct Service<'a> {
     api_key: &'a String,
-    units: &'a UnitSystem,
     lang: &'a String,
     location_query: Option<LocationSpecifier>,
     forecast_hours: usize,
@@ -112,7 +112,6 @@ impl<'a> Service<'a> {
         })?;
         Ok(Self {
             api_key,
-            units: &config.units,
             lang: &config.lang,
             location_query: get_location_query(autolocate, config).await?,
             forecast_hours: config.forecast_hours,
@@ -226,15 +225,7 @@ struct ApiInstantResponse {
 }
 
 impl ApiInstantResponse {
-    fn wind_kmh(&self, units: &UnitSystem) -> f64 {
-        self.wind.speed
-            * match units {
-                UnitSystem::Metric => 3.6,
-                UnitSystem::Imperial => 3.6 * 0.447,
-            }
-    }
-
-    fn to_moment(&self, units: &UnitSystem, current_data: &ApiCurrentResponse) -> WeatherMoment {
+    fn to_moment(&self, current_data: &ApiCurrentResponse) -> WeatherMoment {
         let is_night = current_data.sys.sunrise >= self.dt || self.dt >= current_data.sys.sunset;
 
         WeatherMoment {
@@ -244,19 +235,17 @@ impl ApiInstantResponse {
             temp: self.main.temp,
             apparent: self.main.feels_like,
             humidity: self.main.humidity,
-            wind: self.wind.speed,
-            wind_kmh: self.wind_kmh(units),
+            wind_kmh: mps_to_kmh(self.wind.speed),
             wind_direction: self.wind.deg,
         }
     }
 
-    fn to_aggregate(&self, units: &UnitSystem) -> ForecastAggregateSegment {
+    fn to_aggregate(&self) -> ForecastAggregateSegment {
         ForecastAggregateSegment {
             temp: Some(self.main.temp),
             apparent: Some(self.main.feels_like),
             humidity: Some(self.main.humidity),
-            wind: Some(self.wind.speed),
-            wind_kmh: Some(self.wind_kmh(units)),
+            wind_kmh: Some(mps_to_kmh(self.wind.speed)),
             wind_direction: self.wind.deg,
         }
     }
@@ -271,8 +260,8 @@ struct ApiCurrentResponse {
 }
 
 impl ApiCurrentResponse {
-    fn to_moment(&self, units: &UnitSystem) -> WeatherMoment {
-        self.instant.to_moment(units, self)
+    fn to_moment(&self) -> WeatherMoment {
+        self.instant.to_moment(self)
     }
 }
 
@@ -331,7 +320,7 @@ impl WeatherProvider for Service<'_> {
 
         let common_query_params = [
             ("appid", self.api_key.as_str()),
-            ("units", self.units.as_ref()),
+            ("units", "metric"),
             ("lang", self.lang.as_str()),
         ];
 
@@ -347,7 +336,7 @@ impl WeatherProvider for Service<'_> {
             .await
             .error("Current weather request failed")?;
 
-        let current_weather = current_data.to_moment(self.units);
+        let current_weather = current_data.to_moment();
 
         let sunrise = Some(
             DateTime::<Utc>::from_timestamp(current_data.sys.sunrise, 0)
@@ -392,14 +381,14 @@ impl WeatherProvider for Service<'_> {
             .list
             .iter()
             .take(self.forecast_hours)
-            .map(|f| f.to_aggregate(self.units))
+            .map(|f| f.to_aggregate())
             .collect();
 
         let fin = forecast_data
             .list
             .last()
             .error("no weather available")?
-            .to_moment(self.units, &current_data);
+            .to_moment(&current_data);
 
         let forecast = Some(Forecast::new(&data_agg, fin));
 
