@@ -274,55 +274,87 @@
 <a href=#274 id=274 data-nosnippet>274</a>    </span>String::from_utf8(<span class="macro">vec!</span>[<span class="number">0xf0</span>, <span class="number">0x9f</span>, <span class="number">0x87</span>, b1, <span class="number">0xf0</span>, <span class="number">0x9f</span>, <span class="number">0x87</span>, b2]).unwrap()
 <a href=#275 id=275 data-nosnippet>275</a>}
 <a href=#276 id=276 data-nosnippet>276</a>
-<a href=#277 id=277 data-nosnippet>277</a><span class="doccomment">/// A shortcut for `Default::default()`
-<a href=#278 id=278 data-nosnippet>278</a>/// See &lt;https://github.com/rust-lang/rust/issues/73014&gt;
-<a href=#279 id=279 data-nosnippet>279</a></span><span class="attr">#[inline]
-<a href=#280 id=280 data-nosnippet>280</a></span><span class="kw">pub fn </span>default&lt;T: Default&gt;() -&gt; T {
-<a href=#281 id=281 data-nosnippet>281</a>    Default::default()
-<a href=#282 id=282 data-nosnippet>282</a>}
-<a href=#283 id=283 data-nosnippet>283</a>
-<a href=#284 id=284 data-nosnippet>284</a><span class="kw">pub trait </span>StreamExtDebounced: futures::StreamExt {
-<a href=#285 id=285 data-nosnippet>285</a>    <span class="kw">fn </span>next_debounced(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw">impl </span>Future&lt;Output = <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt;&gt;;
-<a href=#286 id=286 data-nosnippet>286</a>}
-<a href=#287 id=287 data-nosnippet>287</a>
-<a href=#288 id=288 data-nosnippet>288</a><span class="kw">impl</span>&lt;T: futures::StreamExt + Unpin&gt; StreamExtDebounced <span class="kw">for </span>T {
-<a href=#289 id=289 data-nosnippet>289</a>    <span class="kw">async fn </span>next_debounced(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt; {
-<a href=#290 id=290 data-nosnippet>290</a>        <span class="kw">let </span><span class="kw-2">mut </span>result = <span class="self">self</span>.next().<span class="kw">await</span><span class="question-mark">?</span>;
-<a href=#291 id=291 data-nosnippet>291</a>        <span class="kw">let </span><span class="kw-2">mut </span>noop_ctx = std::task::Context::from_waker(std::task::Waker::noop());
-<a href=#292 id=292 data-nosnippet>292</a>        <span class="kw">loop </span>{
-<a href=#293 id=293 data-nosnippet>293</a>            <span class="kw">match </span><span class="self">self</span>.poll_next_unpin(<span class="kw-2">&amp;mut </span>noop_ctx) {
-<a href=#294 id=294 data-nosnippet>294</a>                std::task::Poll::Ready(<span class="prelude-val">Some</span>(x)) =&gt; result = x,
-<a href=#295 id=295 data-nosnippet>295</a>                std::task::Poll::Ready(<span class="prelude-val">None</span>) | std::task::Poll::Pending =&gt; <span class="kw">return </span><span class="prelude-val">Some</span>(result),
-<a href=#296 id=296 data-nosnippet>296</a>            }
-<a href=#297 id=297 data-nosnippet>297</a>        }
-<a href=#298 id=298 data-nosnippet>298</a>    }
-<a href=#299 id=299 data-nosnippet>299</a>}
-<a href=#300 id=300 data-nosnippet>300</a>
-<a href=#301 id=301 data-nosnippet>301</a><span class="attr">#[cfg(test)]
-<a href=#302 id=302 data-nosnippet>302</a></span><span class="kw">mod </span>tests {
-<a href=#303 id=303 data-nosnippet>303</a>    <span class="kw">use </span>super::<span class="kw-2">*</span>;
-<a href=#304 id=304 data-nosnippet>304</a>
-<a href=#305 id=305 data-nosnippet>305</a>    <span class="attr">#[tokio::test]
-<a href=#306 id=306 data-nosnippet>306</a>    </span><span class="kw">async fn </span>test_has_command_ok() {
-<a href=#307 id=307 data-nosnippet>307</a>        <span class="comment">// we assume sh is always available
-<a href=#308 id=308 data-nosnippet>308</a>        </span><span class="macro">assert!</span>(has_command(<span class="string">"sh"</span>).<span class="kw">await</span>.unwrap());
-<a href=#309 id=309 data-nosnippet>309</a>    }
-<a href=#310 id=310 data-nosnippet>310</a>
-<a href=#311 id=311 data-nosnippet>311</a>    <span class="attr">#[tokio::test]
-<a href=#312 id=312 data-nosnippet>312</a>    </span><span class="kw">async fn </span>test_has_command_err() {
-<a href=#313 id=313 data-nosnippet>313</a>        <span class="comment">// we assume thequickbrownfoxjumpsoverthelazydog command does not exist
-<a href=#314 id=314 data-nosnippet>314</a>        </span><span class="macro">assert!</span>(
-<a href=#315 id=315 data-nosnippet>315</a>            !has_command(<span class="string">"thequickbrownfoxjumpsoverthelazydog"</span>)
-<a href=#316 id=316 data-nosnippet>316</a>                .<span class="kw">await
-<a href=#317 id=317 data-nosnippet>317</a>                </span>.unwrap()
-<a href=#318 id=318 data-nosnippet>318</a>        );
-<a href=#319 id=319 data-nosnippet>319</a>    }
-<a href=#320 id=320 data-nosnippet>320</a>
-<a href=#321 id=321 data-nosnippet>321</a>    <span class="attr">#[test]
-<a href=#322 id=322 data-nosnippet>322</a>    </span><span class="kw">fn </span>test_flags() {
-<a href=#323 id=323 data-nosnippet>323</a>        <span class="macro">assert!</span>(country_flag_from_iso_code(<span class="string">"ES"</span>) == <span class="string">"🇪🇸"</span>);
-<a href=#324 id=324 data-nosnippet>324</a>        <span class="macro">assert!</span>(country_flag_from_iso_code(<span class="string">"US"</span>) == <span class="string">"🇺🇸"</span>);
-<a href=#325 id=325 data-nosnippet>325</a>        <span class="macro">assert!</span>(country_flag_from_iso_code(<span class="string">"USA"</span>) == <span class="string">"USA"</span>);
-<a href=#326 id=326 data-nosnippet>326</a>    }
-<a href=#327 id=327 data-nosnippet>327</a>}
+<a href=#277 id=277 data-nosnippet>277</a><span class="attr">#[inline]
+<a href=#278 id=278 data-nosnippet>278</a></span><span class="kw">pub fn </span>celsius_to_fahrenheit(c: f64) -&gt; f64 {
+<a href=#279 id=279 data-nosnippet>279</a>    c * (<span class="number">9.0 </span>/ <span class="number">5.0</span>) + <span class="number">32.0
+<a href=#280 id=280 data-nosnippet>280</a></span>}
+<a href=#281 id=281 data-nosnippet>281</a>
+<a href=#282 id=282 data-nosnippet>282</a><span class="attr">#[inline]
+<a href=#283 id=283 data-nosnippet>283</a></span><span class="kw">pub fn </span>fahrenheit_to_celsius(f: f64) -&gt; f64 {
+<a href=#284 id=284 data-nosnippet>284</a>    (f - <span class="number">32.0</span>) * (<span class="number">5.0 </span>/ <span class="number">9.0</span>)
+<a href=#285 id=285 data-nosnippet>285</a>}
+<a href=#286 id=286 data-nosnippet>286</a>
+<a href=#287 id=287 data-nosnippet>287</a><span class="attr">#[inline]
+<a href=#288 id=288 data-nosnippet>288</a></span><span class="kw">pub fn </span>mps_to_kmh(mps: f64) -&gt; f64 {
+<a href=#289 id=289 data-nosnippet>289</a>    mps * <span class="number">3.6
+<a href=#290 id=290 data-nosnippet>290</a></span>}
+<a href=#291 id=291 data-nosnippet>291</a>
+<a href=#292 id=292 data-nosnippet>292</a><span class="attr">#[inline]
+<a href=#293 id=293 data-nosnippet>293</a></span><span class="kw">pub fn </span>kmh_to_mps(kmh: f64) -&gt; f64 {
+<a href=#294 id=294 data-nosnippet>294</a>    kmh / <span class="number">3.6
+<a href=#295 id=295 data-nosnippet>295</a></span>}
+<a href=#296 id=296 data-nosnippet>296</a>
+<a href=#297 id=297 data-nosnippet>297</a><span class="kw">const </span>KM_PER_MILE: f64 = <span class="number">1.609344</span>;
+<a href=#298 id=298 data-nosnippet>298</a>
+<a href=#299 id=299 data-nosnippet>299</a><span class="attr">#[inline]
+<a href=#300 id=300 data-nosnippet>300</a></span><span class="kw">pub fn </span>kmh_to_mph(kmh: f64) -&gt; f64 {
+<a href=#301 id=301 data-nosnippet>301</a>    kmh / KM_PER_MILE
+<a href=#302 id=302 data-nosnippet>302</a>}
+<a href=#303 id=303 data-nosnippet>303</a>
+<a href=#304 id=304 data-nosnippet>304</a><span class="attr">#[inline]
+<a href=#305 id=305 data-nosnippet>305</a></span><span class="kw">pub fn </span>mph_to_kmh(mph: f64) -&gt; f64 {
+<a href=#306 id=306 data-nosnippet>306</a>    mph * KM_PER_MILE
+<a href=#307 id=307 data-nosnippet>307</a>}
+<a href=#308 id=308 data-nosnippet>308</a>
+<a href=#309 id=309 data-nosnippet>309</a><span class="doccomment">/// A shortcut for `Default::default()`
+<a href=#310 id=310 data-nosnippet>310</a>/// See &lt;https://github.com/rust-lang/rust/issues/73014&gt;
+<a href=#311 id=311 data-nosnippet>311</a></span><span class="attr">#[inline]
+<a href=#312 id=312 data-nosnippet>312</a></span><span class="kw">pub fn </span>default&lt;T: Default&gt;() -&gt; T {
+<a href=#313 id=313 data-nosnippet>313</a>    Default::default()
+<a href=#314 id=314 data-nosnippet>314</a>}
+<a href=#315 id=315 data-nosnippet>315</a>
+<a href=#316 id=316 data-nosnippet>316</a><span class="kw">pub trait </span>StreamExtDebounced: futures::StreamExt {
+<a href=#317 id=317 data-nosnippet>317</a>    <span class="kw">fn </span>next_debounced(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw">impl </span>Future&lt;Output = <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt;&gt;;
+<a href=#318 id=318 data-nosnippet>318</a>}
+<a href=#319 id=319 data-nosnippet>319</a>
+<a href=#320 id=320 data-nosnippet>320</a><span class="kw">impl</span>&lt;T: futures::StreamExt + Unpin&gt; StreamExtDebounced <span class="kw">for </span>T {
+<a href=#321 id=321 data-nosnippet>321</a>    <span class="kw">async fn </span>next_debounced(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>::Item&gt; {
+<a href=#322 id=322 data-nosnippet>322</a>        <span class="kw">let </span><span class="kw-2">mut </span>result = <span class="self">self</span>.next().<span class="kw">await</span><span class="question-mark">?</span>;
+<a href=#323 id=323 data-nosnippet>323</a>        <span class="kw">let </span><span class="kw-2">mut </span>noop_ctx = std::task::Context::from_waker(std::task::Waker::noop());
+<a href=#324 id=324 data-nosnippet>324</a>        <span class="kw">loop </span>{
+<a href=#325 id=325 data-nosnippet>325</a>            <span class="kw">match </span><span class="self">self</span>.poll_next_unpin(<span class="kw-2">&amp;mut </span>noop_ctx) {
+<a href=#326 id=326 data-nosnippet>326</a>                std::task::Poll::Ready(<span class="prelude-val">Some</span>(x)) =&gt; result = x,
+<a href=#327 id=327 data-nosnippet>327</a>                std::task::Poll::Ready(<span class="prelude-val">None</span>) | std::task::Poll::Pending =&gt; <span class="kw">return </span><span class="prelude-val">Some</span>(result),
+<a href=#328 id=328 data-nosnippet>328</a>            }
+<a href=#329 id=329 data-nosnippet>329</a>        }
+<a href=#330 id=330 data-nosnippet>330</a>    }
+<a href=#331 id=331 data-nosnippet>331</a>}
+<a href=#332 id=332 data-nosnippet>332</a>
+<a href=#333 id=333 data-nosnippet>333</a><span class="attr">#[cfg(test)]
+<a href=#334 id=334 data-nosnippet>334</a></span><span class="kw">mod </span>tests {
+<a href=#335 id=335 data-nosnippet>335</a>    <span class="kw">use </span>super::<span class="kw-2">*</span>;
+<a href=#336 id=336 data-nosnippet>336</a>
+<a href=#337 id=337 data-nosnippet>337</a>    <span class="attr">#[tokio::test]
+<a href=#338 id=338 data-nosnippet>338</a>    </span><span class="kw">async fn </span>test_has_command_ok() {
+<a href=#339 id=339 data-nosnippet>339</a>        <span class="comment">// we assume sh is always available
+<a href=#340 id=340 data-nosnippet>340</a>        </span><span class="macro">assert!</span>(has_command(<span class="string">"sh"</span>).<span class="kw">await</span>.unwrap());
+<a href=#341 id=341 data-nosnippet>341</a>    }
+<a href=#342 id=342 data-nosnippet>342</a>
+<a href=#343 id=343 data-nosnippet>343</a>    <span class="attr">#[tokio::test]
+<a href=#344 id=344 data-nosnippet>344</a>    </span><span class="kw">async fn </span>test_has_command_err() {
+<a href=#345 id=345 data-nosnippet>345</a>        <span class="comment">// we assume thequickbrownfoxjumpsoverthelazydog command does not exist
+<a href=#346 id=346 data-nosnippet>346</a>        </span><span class="macro">assert!</span>(
+<a href=#347 id=347 data-nosnippet>347</a>            !has_command(<span class="string">"thequickbrownfoxjumpsoverthelazydog"</span>)
+<a href=#348 id=348 data-nosnippet>348</a>                .<span class="kw">await
+<a href=#349 id=349 data-nosnippet>349</a>                </span>.unwrap()
+<a href=#350 id=350 data-nosnippet>350</a>        );
+<a href=#351 id=351 data-nosnippet>351</a>    }
+<a href=#352 id=352 data-nosnippet>352</a>
+<a href=#353 id=353 data-nosnippet>353</a>    <span class="attr">#[test]
+<a href=#354 id=354 data-nosnippet>354</a>    </span><span class="kw">fn </span>test_flags() {
+<a href=#355 id=355 data-nosnippet>355</a>        <span class="macro">assert!</span>(country_flag_from_iso_code(<span class="string">"ES"</span>) == <span class="string">"🇪🇸"</span>);
+<a href=#356 id=356 data-nosnippet>356</a>        <span class="macro">assert!</span>(country_flag_from_iso_code(<span class="string">"US"</span>) == <span class="string">"🇺🇸"</span>);
+<a href=#357 id=357 data-nosnippet>357</a>        <span class="macro">assert!</span>(country_flag_from_iso_code(<span class="string">"USA"</span>) == <span class="string">"USA"</span>);
+<a href=#358 id=358 data-nosnippet>358</a>    }
+<a href=#359 id=359 data-nosnippet>359</a>}
 </code></pre></div></section></main></body></html>
