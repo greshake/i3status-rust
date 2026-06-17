@@ -31,13 +31,23 @@ rustdoc-args = ["--cfg", "docsrs"]
 [workspace.dependencies]
 clap = { version = "4.0", default-features = false, features = ["std", "derive", "help", "usage"] }
 
+# Linux-specific dependencies
+[target.'cfg(target_os = "linux")'.dependencies]
+calibright = { version = "0.1.13", features = ["watch"] }
+inotify = "0.11"
+neli = { version = "0.6", features = ["async"] }
+neli-wifi = { version = "0.6", features = ["async"] }
+notmuch = { version = "0.8", optional = true }
+pipewire = { version = "0.10", default-features = false, optional = true }
+sensors = "0.2.2"
+swayipc-async = "3.0.0"
+
 [dependencies]
 async-trait = "0.1"
 backon = { version = "1.2", default-features = false, features = ["tokio-sleep"] }
 base64 = { version = "0.22.1" }
 bitflags = "2.9"
 bytes = "1.11"
-calibright = { version = "0.1.13", features = ["watch"] }
 chrono = { version = "0.4", default-features = false, features = ["clock", "unstable-locales"] }
 chrono-tz = { version = "0.10", features = ["serde"] }
 clap = { workspace = true }
@@ -50,24 +60,18 @@ icalendar = { version = "0.17.9", features = ["chrono-tz", "recurrence"] }
 icu_datetime = { version = "2.2", optional = true, default-features = false, features = ["compiled_data"] }
 icu_locale = { version = "2.2", optional = true }
 indexmap = { version = "2.0", features = ["serde"] }
-inotify = "0.11"
 itertools = "0.13"
 libc = "0.2"
 libpulse-binding = { version = "2.0", default-features = false, optional = true }
 log = "0.4"
 maildir = { version = "0.6", optional = true }
-neli = { version = "0.6", features = ["async"] }
-neli-wifi = { version = "0.6", features = ["async"] }
 nix = { version = "0.29", features = ["fs", "process"] }
 nom = "8.0.0"
-notmuch = { version = "0.8", optional = true }
 oauth2 = { version = "5.0.0", default-features = false, features = ["reqwest"] }
 num-traits = "0.2"
-pipewire = { version = "0.10", default-features = false, optional = true }
 quick-xml = { version = "0.37", features = ["serialize"] }
 regex = "1.5"
 reqwest = { version = "0.12", features = ["json"] }
-sensors = "0.2.2"
 serde = { version = "1.0", features = ["derive", "rc"] }
 serde_json = "1.0"
 shellexpand = "3.0"
@@ -75,7 +79,6 @@ signal-hook = "0.3"
 signal-hook-tokio = { version = "0.3", features = ["futures-v0_3"] }
 smart-default = "0.7"
 sunrise = "3.0"
-swayipc-async = "3.0.0"
 thiserror = "2.0"
 tokio-util = { version = "0.7", features = ["codec"] }
 toml = { version = "0.8", features = ["preserve_order"] }
