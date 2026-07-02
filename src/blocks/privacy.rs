@@ -5,8 +5,7 @@
 //! Key        | Values | Default|
 //! -----------|--------|--------|
 //! `driver` | The configuration of a driver (see below). | **Required**
-//! `format`   | Format string. | <code>\"{ $icon_audio \|}{ $icon_audio_sink \|}{ $icon_video \|}{ $icon_webcam \|}{ $icon_unknown \|}\"</code> |
-//! `format_alt`   | Format string. | <code>\"{ $icon_audio $info_audio \|}{ $icon_audio_sink $info_audio_sink \|}{ $icon_video $info_video \|}{ $icon_webcam $info_webcam \|}{ $icon_unknown $info_unknown \|}\"</code> |
+//! `format`   | MultiFormat string. | <code>[\"{ $icon_audio \|}{ $icon_audio_sink \|}{ $icon_video \|}{ $icon_webcam \|}{ $icon_unknown \|}\", \"{ $icon_audio $info_audio \|}{ $icon_audio_sink $info_audio_sink \|}{ $icon_video $info_video \|}{ $icon_webcam $info_webcam \|}{ $icon_unknown $info_unknown \|}\"]</code> |
 //!
 //! # pipewire Options (requires the pipewire feature to be enabled)
 //!
@@ -46,7 +45,9 @@
 //!
 //! Action          | Description                               | Default button
 //! ----------------|-------------------------------------------|---------------
-//! `toggle_format` | Toggles between `format` and `format_alt` | Left
+//! `toggle_format` **DEPRECATED** | Toggles between `format` and `format_alt` | -
+//! `next_format`  | Switches to the next format in the list     | Left
+//! `prev_format`  | Switches to the previous format in the list | Right
 //!
 //! # Example
 //!
@@ -79,12 +80,9 @@ mod pipewire;
 mod v4l;
 
 #[derive(Deserialize, Debug)]
-#[serde(deny_unknown_fields)]
 pub struct Config {
-    #[serde(default)]
-    pub format: FormatConfig,
-    #[serde(default)]
-    pub format_alt: FormatConfig,
+    #[serde(flatten)]
+    pub formats: MaybeMultiFormatConfig,
     pub driver: Vec<PrivacyDriver>,
 }
 
@@ -161,12 +159,19 @@ trait PrivacyMonitor {
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut actions = api.get_actions()?;
-    api.set_default_actions(&[(MouseButton::Left, None, "toggle_format")])?;
+    api.set_default_actions(&[
+        (MouseButton::Left, None, "next_format"),
+        (MouseButton::Right, None, "prev_format"),
+    ])?;
 
-    let mut format = config.format.with_default(
-        "{ $icon_audio |}{ $icon_audio_sink |}{ $icon_video |}{ $icon_webcam |}{ $icon_unknown |}",
-    )?;
-    let mut format_alt = config.format_alt.with_default("{ $icon_audio $info_audio |}{ $icon_audio_sink $info_audio_sink |}{ $icon_video $info_video |}{ $icon_webcam $info_webcam |}{ $icon_unknown $info_unknown |}")?;
+    let mut formats = config
+        .formats
+        .with_default_formats(&[
+            "{ $icon_audio |}{ $icon_audio_sink |}{ $icon_video |}{ $icon_webcam |}{ $icon_unknown |}"
+                .parse()?,
+            "{ $icon_audio $info_audio |}{ $icon_audio_sink $info_audio_sink |}{ $icon_video $info_video |}{ $icon_webcam $info_webcam |}{ $icon_unknown $info_unknown |}"
+                .parse()?
+        ]);
 
     let mut drivers: Vec<Box<dyn PrivacyMonitor + Send + Sync>> = Vec::new();
 
@@ -183,7 +188,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     }
 
     loop {
-        let mut widget = Widget::new().with_format(format.clone());
+        let mut widget = Widget::new().with_format(formats.get_format());
 
         let mut info = PrivacyInfo::default();
         //Merge driver info
@@ -240,8 +245,11 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             _ = api.wait_for_update_request() => (),
             _ = select_all(drivers.iter_mut().map(|driver| driver.wait_for_change())) =>(),
             Some(action) = actions.recv() => match action.as_ref() {
-                "toggle_format" => {
-                    std::mem::swap(&mut format_alt, &mut format);
+                "next_format" | "toggle_format" => {
+                    formats.next_format();
+                }
+                "prev_format" => {
+                    formats.prev_format();
                 }
                 _ => (),
             }

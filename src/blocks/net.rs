@@ -8,14 +8,15 @@
 //! ----|--------|--------
 //! `device` | Network interface to monitor (as specified in `/sys/class/net/`). Supports regex. | If not set, device will be automatically selected every `interval`
 //! `interval` | Update interval in seconds | `2`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon ^icon_net_down $speed_down.eng(prefix:K) ^icon_net_up $speed_up.eng(prefix:K) "`
-//! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
+//! `format` | A MultiFormat string to customise the output of this block. See below for available placeholders. | `[" $icon ^icon_net_down $speed_down.eng(prefix:K) ^icon_net_up $speed_up.eng(prefix:K) "]`
 //! `inactive_format` | Same as `format` but for when the interface is inactive | `" $icon Down "`
 //! `missing_format` | Same as `format` but for when the device is missing | `" × "`
 //!
 //! Action          | Description                               | Default button
 //! ----------------|-------------------------------------------|---------------
-//! `toggle_format` | Toggles between `format` and `format_alt` | Left
+//! `toggle_format` **DEPRECATED** | Toggles between `format` and `format_alt` | -
+//! `next_format`  | Switches to the next format in the list     | Left
+//! `prev_format`  | Switches to the previous format in the list | Right
 //!
 //! Placeholder       | Value                       | Type   | Unit
 //! ------------------|-----------------------------|--------|---------------
@@ -25,7 +26,7 @@
 //! `graph_down`      | Download speed graph        | Text   | -
 //! `graph_up`        | Upload speed graph          | Text   | -
 //! `device`          | The name of device          | Text   | -
-//! `ssid`            | Netfork SSID (WiFi only)    | Text   | -
+//! `ssid`            | Network SSID (WiFi only)    | Text   | -
 //! `frequency`       | WiFi frequency              | Number | Hz
 //! `signal_strength` | WiFi signal                 | Number | %
 //! `bitrate`         | WiFi connection bitrate     | Number | Bits per second
@@ -67,30 +68,29 @@ use regex::Regex;
 use std::time::Instant;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
+#[serde(default)]
 pub struct Config {
     pub device: Option<String>,
     #[default(2.into())]
     pub interval: Seconds,
-    pub format: FormatConfig,
-    pub format_alt: Option<FormatConfig>,
+    #[serde(flatten)]
+    pub formats: MaybeMultiFormatConfig,
     pub inactive_format: FormatConfig,
     pub missing_format: FormatConfig,
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut actions = api.get_actions()?;
-    api.set_default_actions(&[(MouseButton::Left, None, "toggle_format")])?;
+    api.set_default_actions(&[
+        (MouseButton::Left, None, "next_format"),
+        (MouseButton::Right, None, "prev_format"),
+    ])?;
 
-    let mut format = config.format.with_default(
+    let mut formats = config.formats.with_default(
         " $icon ^icon_net_down $speed_down.eng(prefix:K) ^icon_net_up $speed_up.eng(prefix:K) ",
     )?;
     let missing_format = config.missing_format.with_default(" × ")?;
     let inactive_format = config.inactive_format.with_default(" $icon Down ")?;
-    let mut format_alt = match &config.format_alt {
-        Some(f) => Some(f.with_default("")?),
-        None => None,
-    };
 
     let mut timer = config.interval.timer();
 
@@ -116,7 +116,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 let mut widget = Widget::new();
 
                 if device.is_up() {
-                    widget.set_format(format.clone());
+                    widget.set_format(formats.get_format());
                 } else {
                     widget.set_format(inactive_format.clone());
                 }
@@ -180,11 +180,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 _ = timer.tick() => break,
                 _ = api.wait_for_update_request() => break,
                 Some(action) = actions.recv() => match action.as_ref() {
-                    "toggle_format" => {
-                        if let Some(format_alt) = &mut format_alt {
-                            std::mem::swap(format_alt, &mut format);
-                            break;
-                        }
+                    "next_format" | "toggle_format" => {
+                        formats.next_format();
+                        break;
+                    }
+                    "prev_format" => {
+                        formats.prev_format();
+                        break;
                     }
                     _ => ()
                 }

@@ -11,8 +11,7 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `driver` | `"auto"`, `pipewire`, `"pulseaudio"`, `"alsa"`. | `"auto"` (Pipewire with Pulseaudio fallback with ALSA fallback)
-//! `format` | A string to customise the output of this block. See below for available placeholders. | <code>\" $icon {$volume.eng(w:2) \|}\"</code>
-//! `format_alt` | If set, block will switch between `format` and `format_alt` on every click. | `None`
+//! `format` | A MultiFormat string to customise the output of this block. See below for available placeholders. | <code>[\" $icon {$volume.eng(w:2) \|}\"]</code>
 //! `name` | PulseAudio device name, or the ALSA control name as found in the output of `amixer -D yourdevice scontrols`. | PulseAudio: `@DEFAULT_SINK@` / ALSA: `Master`
 //! `device` | ALSA device name, usually in the form "hw:X" or "hw:X,Y" where `X` is the card number and `Y` is the device number as found in the output of `aplay -l`. | `default`
 //! `device_kind` | PulseAudio device kind: `source` or `sink`. | `"sink"`
@@ -35,10 +34,12 @@
 //!
 //! Action          | Default button
 //! ----------------|---------------
-//! `toggle_format` | Left
 //! `toggle_mute`   | Right
 //! `volume_down`   | Wheel Down
 //! `volume_up`     | Wheel Up
+//! `toggle_format` **DEPRECATED** | Toggles between `format` and `format_alt` | -
+//! `next_format`  | Switches to the next format in the list     | Left
+//! `prev_format`  | Switches to the previous format in the list | -
 //!
 //! # Examples
 //!
@@ -106,7 +107,7 @@ use indexmap::IndexMap;
 use regex::Regex;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
+#[serde(default)]
 pub struct Config {
     pub driver: SoundDriver,
     pub name: Option<String>,
@@ -115,8 +116,8 @@ pub struct Config {
     pub natural_mapping: bool,
     #[default(5)]
     pub step_width: u32,
-    pub format: FormatConfig,
-    pub format_alt: Option<FormatConfig>,
+    #[serde(flatten)]
+    pub formats: MaybeMultiFormatConfig,
     pub headphones_indicator: bool,
     pub show_volume_when_muted: bool,
     pub mappings: Option<IndexMap<String, String>>,
@@ -134,17 +135,13 @@ enum Mappings<'a> {
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
-        (MouseButton::Left, None, "toggle_format"),
+        (MouseButton::Left, None, "next_format"),
         (MouseButton::Right, None, "toggle_mute"),
         (MouseButton::WheelUp, None, "volume_up"),
         (MouseButton::WheelDown, None, "volume_down"),
     ])?;
 
-    let mut format = config.format.with_default(" $icon {$volume.eng(w:2)|} ")?;
-    let mut format_alt = match &config.format_alt {
-        Some(f) => Some(f.with_default("")?),
-        None => None,
-    };
+    let mut formats = config.formats.with_default(" $icon {$volume.eng(w:2)|} ")?;
 
     let device_kind = config.device_kind;
     let step_width = config.step_width.clamp(0, 50) as i32;
@@ -286,7 +283,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             [if let Some(ap) = active_port] "active_port" => Value::text(ap),
         };
 
-        let mut widget = Widget::new().with_format(format.clone());
+        let mut widget = Widget::new().with_format(formats.get_format());
 
         if muted {
             widget.state = State::Warning;
@@ -306,11 +303,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 }
                 _ = api.wait_for_update_request() => break,
                 Some(action) = actions.recv() => match action.as_ref() {
-                    "toggle_format" => {
-                        if let Some(format_alt) = &mut format_alt {
-                            std::mem::swap(format_alt, &mut format);
-                            break;
-                        }
+                    "next_format" | "toggle_format" => {
+                        formats.next_format();
+                        break;
+                    }
+                    "prev_format" => {
+                        formats.prev_format();
+                        break;
                     }
                     "toggle_mute" => {
                         device.toggle().await?;
