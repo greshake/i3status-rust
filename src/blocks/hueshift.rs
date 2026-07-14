@@ -32,6 +32,7 @@
 //! ---------------------|---------
 //! `"redshift"`         | X11
 //! `"sct"`              | X11
+//! `"xsct"`             | X11
 //! `"gammastep"`        | X11 and Wayland
 //! `"wl_gammarelay"`    | Wayland
 //! `"wl_gammarelay_rs"` | Wayland
@@ -108,6 +109,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 HueShifter::Redshift
             } else if has_command("sct").await? {
                 HueShifter::Sct
+            } else if has_command("xsct").await? {
+                HueShifter::Xsct
             } else if has_command("gammastep").await? {
                 HueShifter::Gammastep
             } else if has_command("wlsunset").await? {
@@ -120,7 +123,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     let mut driver: Box<dyn HueShiftDriver> = match hue_shifter {
         HueShifter::Redshift => Box::new(Redshift::new(config.interval)),
-        HueShifter::Sct => Box::new(Sct::new(config.interval)),
+        HueShifter::Sct => Box::new(Sct::new("sct", config.interval)),
+        HueShifter::Xsct => Box::new(Sct::new("xsct", config.interval)),
         HueShifter::Gammastep => Box::new(Gammastep::new(config.interval)),
         HueShifter::Wlsunset => Box::new(Wlsunset::new(config.interval)),
         HueShifter::WlGammarelay => Box::new(WlGammarelayRs::new("wl-gammarelay").await?),
@@ -179,6 +183,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 pub enum HueShifter {
     Redshift,
     Sct,
+    Xsct,
     Gammastep,
     Wlsunset,
     WlGammarelay,
@@ -225,12 +230,13 @@ impl HueShiftDriver for Redshift {
 }
 
 struct Sct {
+    cmd: &'static str,
     interval: Seconds,
 }
 
 impl Sct {
-    fn new(interval: Seconds) -> Self {
-        Self { interval }
+    fn new(cmd: &'static str, interval: Seconds) -> Self {
+        Self { cmd, interval }
     }
 }
 
@@ -241,11 +247,11 @@ impl HueShiftDriver for Sct {
         Ok(None)
     }
     async fn update(&mut self, temp: u16) -> Result<()> {
-        spawn_shell(&format!("sct {temp} >/dev/null 2>&1"))
+        spawn_shell(&format!("{0} {temp} >/dev/null 2>&1", self.cmd))
             .error("Failed to set new color temperature using sct.")
     }
     async fn reset(&mut self) -> Result<()> {
-        spawn_process("sct", &[]).error("Failed to set new color temperature using sct.")
+        spawn_process(self.cmd, &["0"]).error("Failed to set new color temperature using sct.")
     }
     async fn receive_update(&mut self) -> Result<u16> {
         sleep(self.interval.0).await;
