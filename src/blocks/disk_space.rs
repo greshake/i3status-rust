@@ -11,7 +11,7 @@
 //! `warning` | A value which will trigger warning block state | `20.0`
 //! `alert` | A value which will trigger critical block state | `10.0`
 //! `info_type` | Determines which information will affect the block state. Possible values are `"available"`, `"free"` and `"used"` | `"available"`
-//! `alert_unit` | The unit of `alert` and `warning` options. If not set, percents are used. Possible values are `"B"`, `"KB"`, `"KiB"`, `"MB"`, `"MiB"`, `"GB"`, `"Gib"`, `"TB"` and `"TiB"` | `None`
+//! `alert_unit` | The unit of `alert` and `warning` options. If not set, percents are used. Possible values are `"B"`, `"kB"`, `"KB"`, `"KiB"`, `"MB"`, `"MiB"`, `"GB"`, `"Gib"`, `"TB"` and `"TiB"` | `None`
 //! `backend` | The backend to use when querying disk usage. Possible values are `"vfs"` (like `du(1)`) and `"btrfs"` | `"vfs"`
 //!
 //! Placeholder  | Value                                                              | Type   | Unit
@@ -121,7 +121,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         Some("TB") => Some(Prefix::Tera),
         Some("GB") => Some(Prefix::Giga),
         Some("MB") => Some(Prefix::Mega),
-        Some("KB") => Some(Prefix::Kilo),
+        Some("KB") | Some("kB") => Some(Prefix::Kilo),
         // Binary
         Some("TiB") => Some(Prefix::Tebi),
         Some("GiB") => Some(Prefix::Gibi),

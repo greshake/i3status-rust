@@ -250,7 +250,7 @@ mod tests {
                 &config,
             )
             .unwrap();
-        assert_eq!(result, "1.0KB");
+        assert_eq!(result, "1.0kB");
 
         let result = fmt
             .format(
@@ -307,7 +307,7 @@ mod tests {
                 &config,
             )
             .unwrap();
-        assert_eq!(result, "999KB");
+        assert_eq!(result, "999kB");
 
         let result = fmt
             .format(
