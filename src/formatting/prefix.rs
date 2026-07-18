@@ -23,7 +23,7 @@ pub enum Prefix {
     /// `1i`
     /// `1i` is a special prefix which means "one but binary". `1i` is to `1` as `Ki` is to `K`.
     OneButBinary,
-    /// `K`
+    /// `k`
     Kilo,
     /// `Ki`
     Kibi,
@@ -138,7 +138,7 @@ impl fmt::Display for Prefix {
             Self::Micro => "u",
             Self::Milli => "m",
             Self::One | Self::OneButBinary => "",
-            Self::Kilo => "K",
+            Self::Kilo => "k",
             Self::Kibi => "Ki",
             Self::Mega => "M",
             Self::Mebi => "Mi",
@@ -160,7 +160,7 @@ impl FromStr for Prefix {
             "m" => Ok(Prefix::Milli),
             "1" => Ok(Prefix::One),
             "1i" => Ok(Prefix::OneButBinary),
-            "K" => Ok(Prefix::Kilo),
+            "K" | "k" => Ok(Prefix::Kilo),
             "Ki" => Ok(Prefix::Kibi),
             "M" => Ok(Prefix::Mega),
             "Mi" => Ok(Prefix::Mebi),
@@ -221,6 +221,7 @@ fn parse_prefix(input: &str) -> IResult<&str, Prefix> {
             value(Prefix::Milli, tag("m")),
             value(Prefix::OneButBinary, tag("i")),
             value(Prefix::Kilo, tag("K")),
+            value(Prefix::Kilo, tag("k")),
             value(Prefix::Mega, tag("M")),
             value(Prefix::Giga, tag("G")),
             value(Prefix::Tera, tag("T")),
@@ -335,6 +336,9 @@ mod tests {
     #[test]
     fn value_prefix() -> Result<()> {
         assert_eq!(ValuePrefix::from_str("1")?.result(), 1.0);
+        assert_eq!(ValuePrefix::from_str("1k")?.result(), 1000.0);
+        assert_eq!(ValuePrefix::from_str("1K")?.result(), 1000.0);
+        assert_eq!(ValuePrefix::from_str("1Ki")?.result(), 1024.0);
         assert_eq!(ValuePrefix::from_str("1G")?.result(), 1e9);
         assert_eq!(ValuePrefix::from_str("1e9")?.result(), 1e9);
         assert_eq!(ValuePrefix::from_str("10e9")?.result(), 10e9);
