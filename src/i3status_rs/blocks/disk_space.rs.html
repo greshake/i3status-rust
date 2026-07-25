@@ -11,7 +11,7 @@
 <a href=#11 id=11 data-nosnippet>11</a>//! `warning` | A value which will trigger warning block state | `20.0`
 <a href=#12 id=12 data-nosnippet>12</a>//! `alert` | A value which will trigger critical block state | `10.0`
 <a href=#13 id=13 data-nosnippet>13</a>//! `info_type` | Determines which information will affect the block state. Possible values are `"available"`, `"free"` and `"used"` | `"available"`
-<a href=#14 id=14 data-nosnippet>14</a>//! `alert_unit` | The unit of `alert` and `warning` options. If not set, percents are used. Possible values are `"B"`, `"KB"`, `"KiB"`, `"MB"`, `"MiB"`, `"GB"`, `"Gib"`, `"TB"` and `"TiB"` | `None`
+<a href=#14 id=14 data-nosnippet>14</a>//! `alert_unit` | The unit of `alert` and `warning` options. If not set, percents are used. Possible values are `"B"`, `"kB"`, `"KB"`, `"KiB"`, `"MB"`, `"MiB"`, `"GB"`, `"Gib"`, `"TB"` and `"TiB"` | `None`
 <a href=#15 id=15 data-nosnippet>15</a>//! `backend` | The backend to use when querying disk usage. Possible values are `"vfs"` (like `du(1)`) and `"btrfs"` | `"vfs"`
 <a href=#16 id=16 data-nosnippet>16</a>//!
 <a href=#17 id=17 data-nosnippet>17</a>//! Placeholder  | Value                                                              | Type   | Unit
@@ -121,7 +121,7 @@
 <a href=#121 id=121 data-nosnippet>121</a>        </span><span class="prelude-val">Some</span>(<span class="string">"TB"</span>) =&gt; <span class="prelude-val">Some</span>(Prefix::Tera),
 <a href=#122 id=122 data-nosnippet>122</a>        <span class="prelude-val">Some</span>(<span class="string">"GB"</span>) =&gt; <span class="prelude-val">Some</span>(Prefix::Giga),
 <a href=#123 id=123 data-nosnippet>123</a>        <span class="prelude-val">Some</span>(<span class="string">"MB"</span>) =&gt; <span class="prelude-val">Some</span>(Prefix::Mega),
-<a href=#124 id=124 data-nosnippet>124</a>        <span class="prelude-val">Some</span>(<span class="string">"KB"</span>) =&gt; <span class="prelude-val">Some</span>(Prefix::Kilo),
+<a href=#124 id=124 data-nosnippet>124</a>        <span class="prelude-val">Some</span>(<span class="string">"KB"</span>) | <span class="prelude-val">Some</span>(<span class="string">"kB"</span>) =&gt; <span class="prelude-val">Some</span>(Prefix::Kilo),
 <a href=#125 id=125 data-nosnippet>125</a>        <span class="comment">// Binary
 <a href=#126 id=126 data-nosnippet>126</a>        </span><span class="prelude-val">Some</span>(<span class="string">"TiB"</span>) =&gt; <span class="prelude-val">Some</span>(Prefix::Tebi),
 <a href=#127 id=127 data-nosnippet>127</a>        <span class="prelude-val">Some</span>(<span class="string">"GiB"</span>) =&gt; <span class="prelude-val">Some</span>(Prefix::Gibi),
