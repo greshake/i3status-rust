@@ -53,8 +53,7 @@
 //! - `toggle_on`
 
 use super::prelude::*;
-use std::env;
-use tokio::process::Command;
+use crate::subprocess::get_output;
 
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
@@ -90,13 +89,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let icon_on = config.icon_on.as_deref().unwrap_or("toggle_on");
     let icon_off = config.icon_off.as_deref().unwrap_or("toggle_off");
 
-    let shell = env::var("SHELL").unwrap_or_else(|_| "sh".to_string());
-
     loop {
         // Check state
-        let output = Command::new(&shell)
-            .args(["-c", &config.command_state])
-            .output()
+        let output = get_output(&config.command_state)
             .await
             .error("Failed to run command_state")?;
         let is_on = !std::str::from_utf8(&output.stdout)
@@ -129,9 +124,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                         } else {
                             &config.command_on
                         };
-                        let output = Command::new(&shell)
-                            .args(["-c", cmd])
-                            .output()
+                        let output = get_output(cmd)
                             .await
                             .error("Failed to run command")?;
                         if output.status.success() {

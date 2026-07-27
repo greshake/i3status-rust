@@ -1,9 +1,11 @@
 use clap::Parser;
+use std::path;
 
 use i3status_rs::blocks::BlockError;
 use i3status_rs::config::Config;
 use i3status_rs::errors::*;
 use i3status_rs::escape::Escaped;
+use i3status_rs::subprocess::subprocess_init;
 use i3status_rs::widget::{State, Widget};
 use i3status_rs::{BarState, protocol, util};
 
@@ -34,6 +36,10 @@ fn main() {
             let config_path = util::find_file(&args.config, None, Some("toml"))?
                 .or_error(|| format!("Configuration file '{}' not found", args.config))?;
             let mut config: Config = util::deserialize_toml_file(&config_path)?;
+            subprocess_init(
+                &config.subprocess,
+                path::absolute(config_path).error("Could not resolve config path")?,
+            )?;
             let blocks = std::mem::take(&mut config.blocks);
             let mut bar = BarState::new(config);
             for block_config in blocks {
