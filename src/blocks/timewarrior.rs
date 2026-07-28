@@ -45,10 +45,10 @@ pub struct Config {
     interval: Seconds,
     format: FormatConfig,
 
-    info: Option<u64>,
-    good: Option<u64>,
-    warning: Option<u64>,
-    critical: Option<u64>,
+    info: Option<i64>,
+    good: Option<i64>,
+    warning: Option<i64>,
+    critical: Option<i64>,
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
@@ -78,7 +78,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     (&config.info, State::Info),
                 ] {
                     if let Some(value) = level {
-                        if (elapsed.num_minutes() as u64) >= *value {
+                        if elapsed.num_minutes() >= *value {
                             state = st;
                             break;
                         }
