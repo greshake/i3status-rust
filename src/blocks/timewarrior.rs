@@ -141,12 +141,12 @@ impl From<TimewarriorRAW> for TimewarriorData {
             annotation: item.annotation,
             start: chrono::TimeZone::from_utc_datetime(
                 &chrono::Utc,
-                &chrono::NaiveDateTime::parse_from_str(&item.start, "%Y%m%dT%H%M%SZ").unwrap()
+                &chrono::NaiveDateTime::parse_from_str(&item.start, "%Y%m%dT%H%M%SZ").unwrap(),
             ),
             end: item.end.map(|v| {
                 chrono::TimeZone::from_utc_datetime(
                     &chrono::Utc,
-                    &chrono::NaiveDateTime::parse_from_str(&v, "%Y%m%dT%H%M%SZ").unwrap()
+                    &chrono::NaiveDateTime::parse_from_str(&v, "%Y%m%dT%H%M%SZ").unwrap(),
                 )
             }),
         }
