@@ -62,8 +62,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let mut values = map! {
             "icon" => Value::icon("tasks"),
         };
-        let mut state = State::Idle;
         let mut widget = widget.clone();
+
+        // idle by default
+        widget.state = State::Idle;
 
         let data = get_current_timewarrior_task().await?;
         if let Some(tw) = data {
@@ -80,7 +82,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 ] {
                     if let Some(value) = level {
                         if elapsed.num_minutes() >= *value {
-                            state = st;
+                            widget.state = st;
                             break;
                         }
                     }
@@ -98,7 +100,6 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             }
         }
 
-        widget.state = state;
         widget.set_values(values);
         api.set_widget(widget)?;
 
