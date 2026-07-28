@@ -35,7 +35,8 @@
 //! - `tasks`
 
 use super::prelude::*;
-use chrono::DateTime;
+use chrono::{offset::Utc, DateTime};
+use serde::de::{self, Deserialize, Deserializer};
 use tokio::process::Command;
 
 #[derive(Deserialize, Debug, SmartDefault)]
@@ -68,7 +69,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         if let Some(tw) = data {
             if tw.end.is_none() {
                 // only show active tasks
-                let elapsed = chrono::Utc::now() - tw.start;
+                let elapsed = chrono::Utc::now() - tw.start.0;
 
                 // calculate state
                 for (level, st) in [
@@ -112,44 +113,30 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     }
 }
 
-/// Raw output from timew
-#[derive(Deserialize, Debug)]
-struct TimewarriorRAW {
-    pub id: u32,
-    pub start: String,
-    pub tags: Vec<String>,
-    pub annotation: Option<String>,
-    pub end: Option<String>,
-}
-
 /// TimeWarrior entry
 #[derive(Debug, PartialEq, Deserialize)]
-#[serde(from = "TimewarriorRAW")]
 struct TimewarriorData {
     pub id: u32,
-    pub start: DateTime<chrono::offset::Utc>,
+    pub start: SerdeDateTime,
     pub tags: Vec<String>,
     pub annotation: Option<String>,
-    pub end: Option<DateTime<chrono::offset::Utc>>,
+    pub end: Option<SerdeDateTime>,
 }
 
-impl From<TimewarriorRAW> for TimewarriorData {
-    fn from(item: TimewarriorRAW) -> Self {
-        Self {
-            id: item.id,
-            tags: item.tags,
-            annotation: item.annotation,
-            start: chrono::TimeZone::from_utc_datetime(
-                &chrono::Utc,
-                &chrono::NaiveDateTime::parse_from_str(&item.start, "%Y%m%dT%H%M%SZ").unwrap(),
-            ),
-            end: item.end.map(|v| {
-                chrono::TimeZone::from_utc_datetime(
-                    &chrono::Utc,
-                    &chrono::NaiveDateTime::parse_from_str(&v, "%Y%m%dT%H%M%SZ").unwrap(),
-                )
-            }),
-        }
+#[derive(Debug, PartialEq)]
+struct SerdeDateTime(DateTime<Utc>);
+
+impl<'de> Deserialize<'de> for SerdeDateTime {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        use chrono::NaiveDateTime;
+        use de::Error;
+
+        let s = String::deserialize(deserializer)?;
+        let dt = NaiveDateTime::parse_from_str(&s, "%Y%m%dT%H%M%SZ").map_err(D::Error::custom)?;
+        Ok(Self(DateTime::<Utc>::from_naive_utc_and_offset(dt, Utc)))
     }
 }
 
