@@ -1,7 +1,6 @@
 use std::{str::FromStr as _, time::Duration, vec};
 
-use chrono::{DateTime, Datelike as _, Local, TimeZone as _, Timelike as _, Utc};
-use icalendar::{Component as _, EventLike as _, Tz};
+use chrono::{DateTime, Utc};
 use reqwest::{
     self, ClientBuilder, Method, Url,
     header::{CONTENT_TYPE, HeaderMap, HeaderValue},
@@ -10,19 +9,9 @@ use serde::Deserialize;
 
 use super::{
     CalendarError,
-    auth::{Auth, Authorize},
+    auth::{Auth, Authorize, AuthorizeUrl},
+    ical::{Event, parse_events},
 };
-
-#[derive(Clone, Debug)]
-pub struct Event {
-    pub uid: Option<String>,
-    pub summary: Option<String>,
-    pub description: Option<String>,
-    pub location: Option<String>,
-    pub url: Option<String>,
-    pub start_at: Option<DateTime<Utc>>,
-    pub end_at: Option<DateTime<Utc>>,
-}
 
 #[derive(Deserialize, Debug)]
 pub struct Calendar {
@@ -59,7 +48,7 @@ impl Client {
         let request = self
             .client
             .request(Method::from_str("PROPFIND").expect("A valid method"), url)
-            .body(body.clone())
+            .body(body)
             .headers(self.auth.headers().await)
             .header("Depth", depth)
             .build()
@@ -138,18 +127,15 @@ impl Client {
         let multi_status = self
             .report_request(calendar.url.clone(), 1, calendar_events_request(start, end))
             .await?;
-        parse_events(multi_status, start, end)
+        parse_multistatus_events(multi_status, start, end)
     }
 
     pub async fn authorize(&mut self) -> Result<Authorize, CalendarError> {
         self.auth.authorize().await
     }
 
-    pub async fn ask_user(&mut self, authorize: Authorize) -> Result<(), CalendarError> {
-        match authorize {
-            Authorize::Completed => Ok(()),
-            Authorize::AskUser(authorize_url) => self.auth.ask_user(authorize_url).await,
-        }
+    pub async fn ask_user(&mut self, authorize: AuthorizeUrl) -> Result<(), CalendarError> {
+        self.auth.ask_user(authorize).await
     }
 }
 
@@ -168,12 +154,11 @@ struct Response {
 }
 
 impl Response {
-    fn valid_props(self) -> Vec<PropValue> {
+    fn valid_props(self) -> impl Iterator<Item = PropValue> {
         self.propstats
             .into_iter()
             .filter(|p| p.status.contains("200"))
             .flat_map(|p| p.prop.values.into_iter())
-            .collect()
     }
 }
 
@@ -247,7 +232,7 @@ fn parse_href(multi_status: Multistatus, base_url: Url) -> Result<Url, CalendarE
     let props = multi_status
         .responses
         .into_iter()
-        .flat_map(|r| r.valid_props().into_iter())
+        .flat_map(Response::valid_props)
         .next();
     match props.ok_or_else(|| CalendarError::Parsing("Property not found".into()))? {
         PropValue::CurrentUserPrincipal(href) | PropValue::CalendarHomeSet(href) => base_url
@@ -292,7 +277,7 @@ fn parse_calendars(
     Ok(result)
 }
 
-fn parse_events(
+fn parse_multistatus_events(
     multi_status: Multistatus,
     event_search_start: DateTime<Utc>,
     event_search_end: DateTime<Utc>,
@@ -301,88 +286,11 @@ fn parse_events(
     for response in multi_status.responses {
         for prop in response.valid_props() {
             if let PropValue::CalendarData(data) = prop {
-                let calendar =
-                    icalendar::Calendar::from_str(&data).map_err(CalendarError::Parsing)?;
-                for component in calendar.components {
-                    if let icalendar::CalendarComponent::Event(event) = component {
-                        let event_start_at = event.get_start().and_then(|d| match d {
-                            icalendar::DatePerhapsTime::DateTime(dt) => dt.try_into_utc(),
-                            icalendar::DatePerhapsTime::Date(d) => d
-                                .and_hms_opt(0, 0, 0)
-                                .and_then(|d| d.and_local_timezone(Local).earliest())
-                                .map(|d| d.to_utc()),
-                        });
-                        let event_end_at = event.get_end().and_then(|d| match d {
-                            icalendar::DatePerhapsTime::DateTime(dt) => dt.try_into_utc(),
-                            icalendar::DatePerhapsTime::Date(d) => d
-                                .and_hms_opt(23, 59, 59)
-                                .and_then(|d| d.and_local_timezone(Local).earliest())
-                                .map(|d| d.to_utc()),
-                        });
-
-                        if let Some(s) = event_start_at
-                            && let Some(e) = event_end_at
-                        {
-                            let duration = e - s;
-                            result.extend(
-                                event
-                                    .get_recurrence()?
-                                    .after(
-                                        Tz::UTC
-                                            .with_ymd_and_hms(
-                                                event_search_start.year(),
-                                                event_search_start.month(),
-                                                event_search_start.day(),
-                                                event_search_start.hour(),
-                                                event_search_start.minute(),
-                                                event_search_start.second(),
-                                            )
-                                            .earliest()
-                                            .ok_or(CalendarError::TzConversion)?,
-                                    )
-                                    .before(
-                                        Tz::UTC
-                                            .with_ymd_and_hms(
-                                                event_search_end.year(),
-                                                event_search_end.month(),
-                                                event_search_end.day(),
-                                                event_search_end.hour(),
-                                                event_search_end.minute(),
-                                                event_search_end.second(),
-                                            )
-                                            .earliest()
-                                            .ok_or(CalendarError::TzConversion)?,
-                                    )
-                                    .all(u16::MAX)
-                                    .dates
-                                    .into_iter()
-                                    .map(|new_start| {
-                                        let new_start = new_start.to_utc();
-                                        let new_end = new_start + duration;
-                                        Event {
-                                            uid: event.get_uid().map(Into::into),
-                                            summary: event.get_summary().map(Into::into),
-                                            description: event.get_description().map(Into::into),
-                                            location: event.get_location().map(Into::into),
-                                            url: event.get_url().map(Into::into),
-                                            start_at: Some(new_start),
-                                            end_at: Some(new_end),
-                                        }
-                                    }),
-                            );
-                        } else {
-                            result.push(Event {
-                                uid: event.get_uid().map(Into::into),
-                                summary: event.get_summary().map(Into::into),
-                                description: event.get_description().map(Into::into),
-                                location: event.get_location().map(Into::into),
-                                url: event.get_url().map(Into::into),
-                                start_at: event_start_at,
-                                end_at: event_end_at,
-                            });
-                        }
-                    }
-                }
+                result.extend(parse_events(
+                    &data,
+                    event_search_start,
+                    event_search_end,
+                )?);
             }
         }
     }
@@ -428,4 +336,44 @@ pub fn calendar_events_request(start: DateTime<Utc>, end: DateTime<Utc>) -> Stri
         </c:filter>
         </c:calendar-query>"#
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use chrono::{TimeZone as _, Utc};
+
+    use super::*;
+
+    #[test]
+    fn parses_calendar_data_from_caldav_response() {
+        let response = concat!(
+            r#"<d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">"#,
+            "<d:response>",
+            "<d:href>/event.ics</d:href>",
+            "<d:propstat>",
+            "<d:prop><c:calendar-data>",
+            "BEGIN:VCALENDAR\r\n",
+            "VERSION:2.0\r\n",
+            "BEGIN:VEVENT\r\n",
+            "UID:event\r\n",
+            "DTSTART:20260729T160000Z\r\n",
+            "DTEND:20260729T170000Z\r\n",
+            "SUMMARY:CalDAV event\r\n",
+            "END:VEVENT\r\n",
+            "END:VCALENDAR\r\n",
+            "</c:calendar-data></d:prop>",
+            "<d:status>HTTP/1.1 200 OK</d:status>",
+            "</d:propstat>",
+            "</d:response>",
+            "</d:multistatus>",
+        );
+        let multistatus = quick_xml::de::from_str(response).unwrap();
+        let start = Utc.with_ymd_and_hms(2026, 7, 29, 15, 0, 0).unwrap();
+        let end = Utc.with_ymd_and_hms(2026, 7, 30, 15, 0, 0).unwrap();
+
+        let events = parse_multistatus_events(multistatus, start, end).unwrap();
+
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].summary.as_deref(), Some("CalDAV event"));
+    }
 }
