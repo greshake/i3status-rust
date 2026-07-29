@@ -20,12 +20,18 @@ pub(super) struct XkbEvent {
 }
 
 fn parse_layout(buf: &[u8], index: usize) -> Result<&str> {
-    let colon_i = buf.iter().position(|c| *c == b':').unwrap_or(buf.len());
-    let layout = buf[..colon_i]
+    let segment = buf
         .split(|&c| c == b'+')
-        .skip(1) // layout names start from index 1
+        .skip(1)
         .nth(index)
         .error("Index out of range")?;
+
+    let colon_i = segment
+        .iter()
+        .position(|c| *c == b':')
+        .unwrap_or(segment.len());
+
+    let layout = &segment[..colon_i];
     std::str::from_utf8(layout).error("non utf8 layout")
 }
 
