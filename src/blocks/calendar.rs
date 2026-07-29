@@ -693,16 +693,10 @@ mod tests {
     }
 
     #[test]
-    fn legacy_source_defaults_to_caldav() {
-        let source: SourceConfig =
+    fn deserializes_source_types() {
+        let caldav: SourceConfig =
             toml::from_str(r#"url = "https://caldav.example/calendar/""#).unwrap();
-
-        assert_eq!(source.source_type, SourceType::CalDav);
-    }
-
-    #[test]
-    fn deserializes_ics_source_type() {
-        let source: SourceConfig = toml::from_str(
+        let ics: SourceConfig = toml::from_str(
             r#"
             type = "ics"
             url = "https://calendar.example/private/basic.ics"
@@ -710,19 +704,17 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(source.source_type, SourceType::Ics);
-    }
-
-    #[test]
-    fn rejects_unknown_source_type() {
-        let result = toml::from_str::<SourceConfig>(
-            r#"
+        assert_eq!(caldav.source_type, SourceType::CalDav);
+        assert_eq!(ics.source_type, SourceType::Ics);
+        assert!(
+            toml::from_str::<SourceConfig>(
+                r#"
             type = "webcal"
             url = "https://calendar.example/calendar"
             "#,
+            )
+            .is_err()
         );
-
-        assert!(result.is_err());
     }
 
     #[tokio::test]

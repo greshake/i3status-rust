@@ -142,6 +142,13 @@ mod tests {
         )
     }
 
+    fn search_window() -> (chrono::DateTime<chrono::Utc>, chrono::DateTime<chrono::Utc>) {
+        (
+            "2026-07-29T15:00:00Z".parse().unwrap(),
+            "2026-07-30T15:00:00Z".parse().unwrap(),
+        )
+    }
+
     #[tokio::test]
     async fn fetches_and_parses_ics_over_http() {
         let body = concat!(
@@ -164,12 +171,7 @@ mod tests {
         )
         .await;
         let mut client = Client::new(url, Auth::Unauthenticated);
-        let start = chrono::DateTime::parse_from_rfc3339("2026-07-29T15:00:00Z")
-            .unwrap()
-            .to_utc();
-        let end = chrono::DateTime::parse_from_rfc3339("2026-07-30T15:00:00Z")
-            .unwrap()
-            .to_utc();
+        let (start, end) = search_window();
 
         let events = client.events(start, end).await.unwrap();
         let request = request.await.unwrap();
@@ -194,12 +196,7 @@ mod tests {
         )
         .await;
         let mut client = Client::new(url, Auth::Unauthenticated);
-        let start = chrono::DateTime::parse_from_rfc3339("2026-07-29T15:00:00Z")
-            .unwrap()
-            .to_utc();
-        let end = chrono::DateTime::parse_from_rfc3339("2026-07-30T15:00:00Z")
-            .unwrap()
-            .to_utc();
+        let (start, end) = search_window();
 
         let error = client.events(start, end).await.unwrap_err();
         request.await.unwrap();

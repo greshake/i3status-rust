@@ -270,25 +270,10 @@ fn validate_dtend_form(start: &DatePerhapsTime, end: &DatePerhapsTime) -> Result
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug)]
 struct IcalDuration {
     days: u64,
     clock: Duration,
-}
-
-impl IcalDuration {
-    fn upper_bound(self) -> Result<Duration, String> {
-        // A nominal day can cross a time-zone transition. Twenty-six hours is deliberately
-        // conservative for deciding how far before the display window expansion must begin.
-        let hours = self
-            .days
-            .checked_mul(26)
-            .and_then(|hours| i64::try_from(hours).ok())
-            .ok_or_else(|| "DURATION is too large".to_owned())?;
-        Duration::try_hours(hours)
-            .and_then(|days| days.checked_add(&self.clock))
-            .ok_or_else(|| "DURATION is too large".to_owned())
-    }
 }
 
 fn parse_duration(value: &str) -> Result<IcalDuration, String> {
@@ -485,7 +470,18 @@ impl EventEnd {
     fn search_duration(self) -> Result<Duration, String> {
         match self {
             Self::Exact(duration) => Ok(duration),
-            Self::Nominal { duration, .. } => duration.upper_bound(),
+            Self::Nominal { duration, .. } => {
+                // A nominal day can cross a time-zone transition. Twenty-six hours is deliberately
+                // conservative for deciding how far before the display window expansion must begin.
+                let hours = duration
+                    .days
+                    .checked_mul(26)
+                    .and_then(|hours| i64::try_from(hours).ok())
+                    .ok_or_else(|| "DURATION is too large".to_owned())?;
+                Duration::try_hours(hours)
+                    .and_then(|days| days.checked_add(&duration.clock))
+                    .ok_or_else(|| "DURATION is too large".to_owned())
+            }
         }
     }
 }
@@ -561,6 +557,12 @@ mod tests {
         };
     }
 
+    macro_rules! event {
+        ($($line:literal),* $(,)?) => {
+            calendar!("BEGIN:VEVENT\r\n", $($line,)* "END:VEVENT\r\n")
+        };
+    }
+
     fn utc(year: i32, month: u32, day: u32, hour: u32, minute: u32) -> DateTime<Utc> {
         Utc.with_ymd_and_hms(year, month, day, hour, minute, 0)
             .unwrap()
@@ -580,8 +582,7 @@ mod tests {
 
     #[test]
     fn parses_timed_event_and_metadata() {
-        let data = calendar!(
-            "BEGIN:VEVENT\r\n",
+        let data = event!(
             "UID:meeting\r\n",
             "DTSTART;TZID=America/Los_Angeles:20260729T090000\r\n",
             "DTEND;TZID=America/Los_Angeles:20260729T100000\r\n",
@@ -589,7 +590,6 @@ mod tests {
             "DESCRIPTION:Roadmap review\r\n",
             "LOCATION:Room 1\r\n",
             "URL:https://calendar.example/event\r\n",
-            "END:VEVENT\r\n",
         );
 
         let events = parse_events(data, utc(2026, 7, 29, 15, 0), utc(2026, 7, 30, 0, 0)).unwrap();
@@ -607,8 +607,7 @@ mod tests {
 
     #[test]
     fn expands_rrule_rdate_and_exdate() {
-        let data = calendar!(
-            "BEGIN:VEVENT\r\n",
+        let data = event!(
             "UID:daily\r\n",
             "DTSTART:20260729T160000Z\r\n",
             "DTEND:20260729T163000Z\r\n",
@@ -616,7 +615,6 @@ mod tests {
             "EXDATE:20260730T160000Z\r\n",
             "RDATE:20260801T160000Z\r\n",
             "SUMMARY:Standup\r\n",
-            "END:VEVENT\r\n",
         );
 
         let events = parse_events(data, utc(2026, 7, 29, 15, 0), utc(2026, 8, 2, 0, 0)).unwrap();
@@ -692,13 +690,11 @@ mod tests {
 
     #[test]
     fn uses_exclusive_all_day_end() {
-        let data = calendar!(
-            "BEGIN:VEVENT\r\n",
+        let data = event!(
             "UID:all-day\r\n",
             "DTSTART;VALUE=DATE:20260729\r\n",
             "DTEND;VALUE=DATE:20260730\r\n",
             "SUMMARY:All day\r\n",
-            "END:VEVENT\r\n",
         );
 
         let events = parse_events(data, utc(2026, 7, 29, 0, 0), utc(2026, 7, 31, 0, 0)).unwrap();
@@ -709,13 +705,11 @@ mod tests {
 
     #[test]
     fn supports_duration_and_events_already_in_progress() {
-        let data = calendar!(
-            "BEGIN:VEVENT\r\n",
+        let data = event!(
             "UID:long\r\n",
             "DTSTART:20260728T180000Z\r\n",
             "DURATION:P2D\r\n",
             "SUMMARY:Long event\r\n",
-            "END:VEVENT\r\n",
         );
 
         let events = parse_events(data, utc(2026, 7, 29, 12, 0), utc(2026, 7, 30, 12, 0)).unwrap();
@@ -798,12 +792,10 @@ mod tests {
 
     #[test]
     fn nominal_day_duration_follows_dst_transitions() {
-        let spring = calendar!(
-            "BEGIN:VEVENT\r\n",
+        let spring = event!(
             "UID:spring\r\n",
             "DTSTART;TZID=America/Los_Angeles:20260307T090000\r\n",
             "DURATION:P1D\r\n",
-            "END:VEVENT\r\n",
         );
         let event = parse_events(spring, utc(2026, 3, 7, 0, 0), utc(2026, 3, 10, 0, 0))
             .unwrap()
@@ -811,12 +803,10 @@ mod tests {
             .unwrap();
         assert_eq!(event.end_at - event.start_at, Duration::hours(23));
 
-        let fall = calendar!(
-            "BEGIN:VEVENT\r\n",
+        let fall = event!(
             "UID:fall\r\n",
             "DTSTART;TZID=America/Los_Angeles:20261031T090000\r\n",
             "DURATION:P1D\r\n",
-            "END:VEVENT\r\n",
         );
         let event = parse_events(fall, utc(2026, 10, 31, 0, 0), utc(2026, 11, 3, 0, 0))
             .unwrap()
@@ -827,12 +817,7 @@ mod tests {
 
     #[test]
     fn default_all_day_duration_uses_next_local_midnight() {
-        let data = calendar!(
-            "BEGIN:VEVENT\r\n",
-            "UID:all-day-spring\r\n",
-            "DTSTART;VALUE=DATE:20260308\r\n",
-            "END:VEVENT\r\n",
-        );
+        let data = event!("UID:all-day-spring\r\n", "DTSTART;VALUE=DATE:20260308\r\n",);
         let event = first_event(data);
         let (_, end) = event_bounds(&event).unwrap();
 
@@ -988,13 +973,11 @@ mod tests {
 
     #[test]
     fn count_does_not_bypass_recurrence_work_limit() {
-        let data = calendar!(
-            "BEGIN:VEVENT\r\n",
+        let data = event!(
             "UID:pathological-with-count\r\n",
             "DTSTART:20000101T000000Z\r\n",
             "DURATION:PT1S\r\n",
             "RRULE:FREQ=SECONDLY;COUNT=100000;BYMINUTE=0;BYSECOND=0\r\n",
-            "END:VEVENT\r\n",
         );
         let event = first_event(data);
         let recurrence = event.get_recurrence().unwrap();
@@ -1008,13 +991,11 @@ mod tests {
 
     #[test]
     fn recurrence_work_limit_includes_the_requested_window() {
-        let data = calendar!(
-            "BEGIN:VEVENT\r\n",
+        let data = event!(
             "UID:pathological-in-window\r\n",
             "DTSTART:20260729T000000Z\r\n",
             "DURATION:PT1S\r\n",
             "RRULE:FREQ=SECONDLY;BYMINUTE=0;BYSECOND=0\r\n",
-            "END:VEVENT\r\n",
         );
         let event = first_event(data);
         let recurrence = event.get_recurrence().unwrap();
@@ -1027,12 +1008,10 @@ mod tests {
 
     #[test]
     fn search_window_end_is_exclusive() {
-        let data = calendar!(
-            "BEGIN:VEVENT\r\n",
+        let data = event!(
             "UID:at-end\r\n",
             "DTSTART:20260730T000000Z\r\n",
             "DTEND:20260730T010000Z\r\n",
-            "END:VEVENT\r\n",
         );
 
         let events = parse_events(data, utc(2026, 7, 29, 0, 0), utc(2026, 7, 30, 0, 0)).unwrap();
