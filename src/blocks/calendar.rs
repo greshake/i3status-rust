@@ -378,19 +378,14 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     }
                     Err(err) => match err {
                         CalendarError::AuthRequired => {
-                            let authorization = source
-                                .authorize()
-                                .await
-                                .error("Authorization failed")?;
+                            let authorization =
+                                source.authorize().await.error("Authorization failed")?;
                             match authorization {
                                 Authorize::AskUser(authorize) if retries == 0 => {
                                     widget.set_format(redirect_format.clone());
                                     api.set_widget(widget.clone())?;
                                     open_browser(config, &authorize.url).await?;
-                                    source
-                                        .ask_user(authorize)
-                                        .await
-                                        .error("Ask user failed")?;
+                                    source.ask_user(authorize).await.error("Ask user failed")?;
                                 }
                                 _ => {
                                     return Err(Error::new(
@@ -554,23 +549,19 @@ impl Source {
         let end = now
             .checked_add_signed(within)
             .ok_or_else(|| CalendarError::Parsing("Calendar search window is too large".into()))?;
-        let mut events = match self {
-            Self::CalDav { client, calendars } => {
-                let mut events = vec![];
-                for calendar in client
-                    .calendars()
-                    .await?
-                    .into_iter()
-                    .filter(|calendar| {
+        let mut events =
+            match self {
+                Self::CalDav { client, calendars } => {
+                    let mut events = vec![];
+                    for calendar in client.calendars().await?.into_iter().filter(|calendar| {
                         calendars.is_empty() || calendars.contains(&calendar.name)
-                    })
-                {
-                    events.extend(client.events(&calendar, now, end).await?);
+                    }) {
+                        events.extend(client.events(&calendar, now, end).await?);
+                    }
+                    events
                 }
-                events
-            }
-            Self::Ics(client) => client.events(now, end).await?,
-        };
+                Self::Ics(client) => client.events(now, end).await?,
+            };
         events.sort_by_key(|e| e.start_at);
         Ok(next_overlapping_events(events))
     }
@@ -629,8 +620,7 @@ impl OverlappingEvents {
                     .skip(position + 1)
                     .find(|e| {
                         let is_ongoing = e.start_at < now && e.end_at > now;
-                        let is_warning =
-                            e.start_at - warning_threshold < now && now < e.start_at;
+                        let is_warning = e.start_at - warning_threshold < now && now < e.start_at;
                         same_event(e, current) || is_warning || is_ongoing
                     })
                     .cloned()
@@ -643,16 +633,15 @@ impl OverlappingEvents {
     }
 }
 
-fn next_overlapping_events(events: Vec<Event>) -> OverlappingEvents {
-    let mut events = events.into_iter();
-    let Some(first) = events.next() else {
+fn next_overlapping_events(mut events: Vec<Event>) -> OverlappingEvents {
+    let Some(first_end) = events.first().map(|event| event.end_at) else {
         return OverlappingEvents::default();
     };
-    let first_end = first.end_at;
-    let overlapping = std::iter::once(first)
-        .chain(events.take_while(|event| event.start_at < first_end))
-        .collect();
-    OverlappingEvents::new(overlapping)
+    let overlapping_len = events
+        .partition_point(|event| event.start_at < first_end)
+        .max(1);
+    events.truncate(overlapping_len);
+    OverlappingEvents::new(events)
 }
 
 fn same_event(left: &Event, right: &Event) -> bool {
@@ -691,11 +680,7 @@ pub enum CalendarError {
 mod tests {
     use super::*;
 
-    fn event(
-        uid: &str,
-        start: chrono::DateTime<Utc>,
-        end: chrono::DateTime<Utc>,
-    ) -> Event {
+    fn event(uid: &str, start: chrono::DateTime<Utc>, end: chrono::DateTime<Utc>) -> Event {
         Event {
             uid: uid.into(),
             summary: None,

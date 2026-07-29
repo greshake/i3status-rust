@@ -286,11 +286,7 @@ fn parse_multistatus_events(
     for response in multi_status.responses {
         for prop in response.valid_props() {
             if let PropValue::CalendarData(data) = prop {
-                result.extend(parse_events(
-                    &data,
-                    event_search_start,
-                    event_search_end,
-                )?);
+                result.extend(parse_events(&data, event_search_start, event_search_end)?);
             }
         }
     }

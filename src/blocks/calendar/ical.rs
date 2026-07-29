@@ -31,53 +31,45 @@ pub fn parse_events(
     event_search_end: DateTime<Utc>,
 ) -> Result<Vec<Event>, CalendarError> {
     let calendar = icalendar::Calendar::from_str(data).map_err(CalendarError::Parsing)?;
-    let events: Vec<_> = calendar
-        .components
-        .into_iter()
-        .filter_map(|component| match component {
-            icalendar::CalendarComponent::Event(event) => Some(event),
-            _ => None,
-        })
-        .collect();
-
-    // RANGE=THISANDFUTURE changes this and all later instances. The recurrence library does not
-    // implement those semantics, so reject the affected series instead of showing incorrect
-    // future instances.
-    let unsupported_series: HashSet<_> = events
-        .iter()
-        .filter(|event| recurrence_range(event).is_some_and(|range| {
-            range.eq_ignore_ascii_case("THISANDFUTURE")
-        }))
-        .filter_map(event_uid)
-        .map(ToOwned::to_owned)
-        .collect();
-    for uid in &unsupported_series {
-        log::warn!(
-            "Ignoring calendar event series with UID {uid:?}: \
-             RECURRENCE-ID;RANGE=THISANDFUTURE is not supported"
-        );
-    }
+    let events = || {
+        calendar
+            .components
+            .iter()
+            .filter_map(|component| component.as_event())
+    };
 
     // A modified or cancelled recurrence is represented as another VEVENT with the same UID and
     // a RECURRENCE-ID. Suppress that instant from the master event; a non-cancelled override is
-    // added below at its replacement DTSTART.
-    let mut overridden_recurrences = HashMap::<String, HashSet<DateTime<Utc>>>::new();
+    // added below at its replacement DTSTART. RANGE=THISANDFUTURE changes every later instance;
+    // the recurrence library does not implement that mode, so reject the affected series.
+    let mut unsupported_series = HashSet::new();
+    let mut overridden_recurrences = HashMap::<&str, HashSet<DateTime<Utc>>>::new();
     let mut invalid_overrides = HashSet::new();
-    for (index, event) in events.iter().enumerate() {
+    for (index, event) in events().enumerate() {
         let Some(uid) = event_uid(event) else {
             continue;
         };
-        if unsupported_series.contains(uid) || !event.properties().contains_key("RECURRENCE-ID") {
+        if recurrence_range(event).is_some_and(|range| range.eq_ignore_ascii_case("THISANDFUTURE"))
+        {
+            if unsupported_series.insert(uid) {
+                log::warn!(
+                    "Ignoring calendar event series with UID {uid:?}: \
+                     RECURRENCE-ID;RANGE=THISANDFUTURE is not supported"
+                );
+            }
+            continue;
+        }
+        if !event.properties().contains_key("RECURRENCE-ID") {
             continue;
         }
         let recurrence_id = event
             .get_recurrence_id()
             .ok_or_else(|| "RECURRENCE-ID is invalid".to_owned())
-            .and_then(|value| date_to_utc(value, "RECURRENCE-ID").map(|date| date.utc));
+            .and_then(|value| date_to_utc(&value, "RECURRENCE-ID").map(|date| date.utc));
         match recurrence_id {
             Ok(recurrence_id) => {
                 overridden_recurrences
-                    .entry(uid.to_owned())
+                    .entry(uid)
                     .or_default()
                     .insert(recurrence_id);
             }
@@ -89,8 +81,8 @@ pub fn parse_events(
     }
 
     let mut result = vec![];
-    for (index, event) in events.into_iter().enumerate() {
-        let Some(uid) = event_uid(&event) else {
+    for (index, event) in events().enumerate() {
+        let Some(uid) = event_uid(event) else {
             log::warn!("Ignoring calendar event: UID is missing or empty");
             continue;
         };
@@ -101,7 +93,7 @@ pub fn parse_events(
             continue;
         }
 
-        let (event_start, event_end_spec) = match event_bounds(&event) {
+        let (event_start, event_end_spec) = match event_bounds(event) {
             Ok(bounds) => bounds,
             Err(error) => {
                 warn_event(uid, &error);
@@ -115,16 +107,23 @@ pub fn parse_events(
                 continue;
             }
         };
+        let mut add_if_visible = |start, end| {
+            if overlaps_search_window(start, end, event_search_start, event_search_end) {
+                result.push(event_at(uid, event, start, end));
+            }
+        };
 
         if event.properties().contains_key("RECURRENCE-ID") {
-            if overlaps_search_window(
-                event_start,
-                event_end,
-                event_search_start,
-                event_search_end,
-            ) {
-                result.push(event_at(&event, event_start, event_end));
-            }
+            add_if_visible(event_start, event_end);
+            continue;
+        }
+
+        let multi_properties = event.multi_properties();
+        if !event.properties().contains_key("RRULE")
+            && !multi_properties.contains_key("RDATE")
+            && !multi_properties.contains_key("EXDATE")
+        {
+            add_if_visible(event_start, event_end);
             continue;
         }
 
@@ -142,14 +141,7 @@ pub fn parse_events(
             Ok(recurrence) => recurrence,
             Err(error) => {
                 warn_event(uid, &format!("invalid recurrence: {error}"));
-                if overlaps_search_window(
-                    event_start,
-                    event_end,
-                    event_search_start,
-                    event_search_end,
-                ) {
-                    result.push(event_at(&event, event_start, event_end));
-                }
+                add_if_visible(event_start, event_end);
                 continue;
             }
         };
@@ -158,14 +150,7 @@ pub fn parse_events(
                 uid,
                 "recurrence expansion would require too many frequency intervals",
             );
-            if overlaps_search_window(
-                event_start,
-                event_end,
-                event_search_start,
-                event_search_end,
-            ) {
-                result.push(event_at(&event, event_start, event_end));
-            }
+            add_if_visible(event_start, event_end);
             continue;
         }
         let recurrence_result = recurrence
@@ -195,9 +180,7 @@ pub fn parse_events(
                     continue;
                 }
             };
-            if overlaps_search_window(start, end, event_search_start, event_search_end) {
-                result.push(event_at(&event, start, end));
-            }
+            add_if_visible(start, end);
         }
     }
     Ok(result)
@@ -225,7 +208,7 @@ fn event_bounds(event: &icalendar::Event) -> Result<(DateTime<Utc>, EventEnd), S
         .get_start()
         .ok_or_else(|| "DTSTART is missing or invalid".to_owned())?;
     let is_all_day = matches!(start_value, DatePerhapsTime::Date(_));
-    let start = date_to_utc(start_value.clone(), "DTSTART")?;
+    let start = date_to_utc(&start_value, "DTSTART")?;
 
     let has_end = event.properties().contains_key("DTEND");
     let duration = event.property_value("DURATION");
@@ -238,7 +221,7 @@ fn event_bounds(event: &icalendar::Event) -> Result<(DateTime<Utc>, EventEnd), S
             .get_end()
             .ok_or_else(|| "DTEND is invalid".to_owned())?;
         validate_dtend_form(&start_value, &end_value)?;
-        let end = date_to_utc(end_value, "DTEND")?.utc;
+        let end = date_to_utc(&end_value, "DTEND")?.utc;
         if end <= start.utc {
             return Err("DTEND must be later than DTSTART".into());
         }
@@ -415,10 +398,10 @@ struct ConvertedDate {
     timezone: CalendarTimezone,
 }
 
-fn date_to_utc(value: DatePerhapsTime, property: &str) -> Result<ConvertedDate, String> {
+fn date_to_utc(value: &DatePerhapsTime, property: &str) -> Result<ConvertedDate, String> {
     match value {
         DatePerhapsTime::DateTime(CalendarDateTime::Floating(value)) => {
-            let value = Local.from_local_datetime(&value).single().ok_or_else(|| {
+            let value = Local.from_local_datetime(value).single().ok_or_else(|| {
                 format!("{property} is ambiguous or invalid in the local time zone")
             })?;
             Ok(ConvertedDate {
@@ -427,7 +410,7 @@ fn date_to_utc(value: DatePerhapsTime, property: &str) -> Result<ConvertedDate, 
             })
         }
         DatePerhapsTime::DateTime(CalendarDateTime::Utc(value)) => Ok(ConvertedDate {
-            utc: value,
+            utc: *value,
             timezone: CalendarTimezone::Utc,
         }),
         DatePerhapsTime::DateTime(CalendarDateTime::WithTimezone { date_time, tzid }) => {
@@ -438,7 +421,7 @@ fn date_to_utc(value: DatePerhapsTime, property: &str) -> Result<ConvertedDate, 
                 )
             })?;
             let value = timezone
-                .from_local_datetime(&date_time)
+                .from_local_datetime(date_time)
                 .single()
                 .ok_or_else(|| {
                     format!("{property} is ambiguous or invalid in time zone {tzid:?}")
@@ -449,7 +432,7 @@ fn date_to_utc(value: DatePerhapsTime, property: &str) -> Result<ConvertedDate, 
             })
         }
         DatePerhapsTime::Date(value) => {
-            let value = value
+            let value = (*value)
                 .and_hms_opt(0, 0, 0)
                 .and_then(|value| Local.from_local_datetime(&value).single())
                 .ok_or_else(|| format!("{property} is invalid in the local time zone"))?;
@@ -545,15 +528,13 @@ fn overlaps_search_window(
 }
 
 fn event_at(
+    uid: &str,
     event: &icalendar::Event,
     start_at: DateTime<Utc>,
     end_at: DateTime<Utc>,
 ) -> Event {
     Event {
-        uid: event
-            .get_uid()
-            .expect("event_at is only called for events with a UID")
-            .into(),
+        uid: uid.into(),
         summary: event.get_summary().map(Into::into),
         description: event.get_description().map(Into::into),
         location: event.get_location().map(Into::into),
@@ -568,6 +549,17 @@ mod tests {
     use chrono::{TimeZone as _, Utc};
 
     use super::*;
+
+    macro_rules! calendar {
+        ($($line:literal),* $(,)?) => {
+            concat!(
+                "BEGIN:VCALENDAR\r\n",
+                "VERSION:2.0\r\n",
+                $($line,)*
+                "END:VCALENDAR\r\n",
+            )
+        };
+    }
 
     fn utc(year: i32, month: u32, day: u32, hour: u32, minute: u32) -> DateTime<Utc> {
         Utc.with_ymd_and_hms(year, month, day, hour, minute, 0)
@@ -588,9 +580,7 @@ mod tests {
 
     #[test]
     fn parses_timed_event_and_metadata() {
-        let data = concat!(
-            "BEGIN:VCALENDAR\r\n",
-            "VERSION:2.0\r\n",
+        let data = calendar!(
             "BEGIN:VEVENT\r\n",
             "UID:meeting\r\n",
             "DTSTART;TZID=America/Los_Angeles:20260729T090000\r\n",
@@ -600,11 +590,9 @@ mod tests {
             "LOCATION:Room 1\r\n",
             "URL:https://calendar.example/event\r\n",
             "END:VEVENT\r\n",
-            "END:VCALENDAR\r\n",
         );
 
-        let events =
-            parse_events(data, utc(2026, 7, 29, 15, 0), utc(2026, 7, 30, 0, 0)).unwrap();
+        let events = parse_events(data, utc(2026, 7, 29, 15, 0), utc(2026, 7, 30, 0, 0)).unwrap();
 
         assert_eq!(events.len(), 1);
         let event = &events[0];
@@ -612,19 +600,14 @@ mod tests {
         assert_eq!(event.summary.as_deref(), Some("Planning"));
         assert_eq!(event.description.as_deref(), Some("Roadmap review"));
         assert_eq!(event.location.as_deref(), Some("Room 1"));
-        assert_eq!(
-            event.url.as_deref(),
-            Some("https://calendar.example/event")
-        );
+        assert_eq!(event.url.as_deref(), Some("https://calendar.example/event"));
         assert_eq!(event.start_at, utc(2026, 7, 29, 16, 0));
         assert_eq!(event.end_at, utc(2026, 7, 29, 17, 0));
     }
 
     #[test]
     fn expands_rrule_rdate_and_exdate() {
-        let data = concat!(
-            "BEGIN:VCALENDAR\r\n",
-            "VERSION:2.0\r\n",
+        let data = calendar!(
             "BEGIN:VEVENT\r\n",
             "UID:daily\r\n",
             "DTSTART:20260729T160000Z\r\n",
@@ -634,11 +617,9 @@ mod tests {
             "RDATE:20260801T160000Z\r\n",
             "SUMMARY:Standup\r\n",
             "END:VEVENT\r\n",
-            "END:VCALENDAR\r\n",
         );
 
-        let events =
-            parse_events(data, utc(2026, 7, 29, 15, 0), utc(2026, 8, 2, 0, 0)).unwrap();
+        let events = parse_events(data, utc(2026, 7, 29, 15, 0), utc(2026, 8, 2, 0, 0)).unwrap();
         let starts: Vec<_> = events.iter().map(|event| event.start_at).collect();
 
         assert_eq!(
@@ -652,10 +633,31 @@ mod tests {
     }
 
     #[test]
+    fn expands_rdate_and_exdate_without_rrule() {
+        let data = calendar!(
+            "BEGIN:VEVENT\r\n",
+            "UID:extra-date\r\n",
+            "DTSTART:20260729T160000Z\r\n",
+            "DTEND:20260729T163000Z\r\n",
+            "RDATE:20260730T160000Z\r\n",
+            "END:VEVENT\r\n",
+            "BEGIN:VEVENT\r\n",
+            "UID:excluded-date\r\n",
+            "DTSTART:20260729T170000Z\r\n",
+            "DTEND:20260729T173000Z\r\n",
+            "EXDATE:20260729T170000Z\r\n",
+            "END:VEVENT\r\n",
+        );
+
+        let events = parse_events(data, utc(2026, 7, 29, 15, 0), utc(2026, 7, 31, 0, 0)).unwrap();
+        let starts: Vec<_> = events.iter().map(|event| event.start_at).collect();
+
+        assert_eq!(starts, [utc(2026, 7, 29, 16, 0), utc(2026, 7, 30, 16, 0)]);
+    }
+
+    #[test]
     fn applies_moved_and_cancelled_recurrence_overrides() {
-        let data = concat!(
-            "BEGIN:VCALENDAR\r\n",
-            "VERSION:2.0\r\n",
+        let data = calendar!(
             "BEGIN:VEVENT\r\n",
             "UID:daily\r\n",
             "DTSTART:20260729T160000Z\r\n",
@@ -675,7 +677,6 @@ mod tests {
             "RECURRENCE-ID:20260731T160000Z\r\n",
             "STATUS:CANCELLED\r\n",
             "END:VEVENT\r\n",
-            "END:VCALENDAR\r\n",
         );
 
         let mut events =
@@ -691,48 +692,33 @@ mod tests {
 
     #[test]
     fn uses_exclusive_all_day_end() {
-        let data = concat!(
-            "BEGIN:VCALENDAR\r\n",
-            "VERSION:2.0\r\n",
+        let data = calendar!(
             "BEGIN:VEVENT\r\n",
             "UID:all-day\r\n",
             "DTSTART;VALUE=DATE:20260729\r\n",
             "DTEND;VALUE=DATE:20260730\r\n",
             "SUMMARY:All day\r\n",
             "END:VEVENT\r\n",
-            "END:VCALENDAR\r\n",
         );
 
-        let events = parse_events(
-            data,
-            utc(2026, 7, 29, 0, 0),
-            utc(2026, 7, 31, 0, 0),
-        )
-        .unwrap();
+        let events = parse_events(data, utc(2026, 7, 29, 0, 0), utc(2026, 7, 31, 0, 0)).unwrap();
 
         assert_eq!(events.len(), 1);
-        assert_eq!(
-            events[0].end_at - events[0].start_at,
-            Duration::days(1)
-        );
+        assert_eq!(events[0].end_at - events[0].start_at, Duration::days(1));
     }
 
     #[test]
     fn supports_duration_and_events_already_in_progress() {
-        let data = concat!(
-            "BEGIN:VCALENDAR\r\n",
-            "VERSION:2.0\r\n",
+        let data = calendar!(
             "BEGIN:VEVENT\r\n",
             "UID:long\r\n",
             "DTSTART:20260728T180000Z\r\n",
             "DURATION:P2D\r\n",
             "SUMMARY:Long event\r\n",
             "END:VEVENT\r\n",
-            "END:VCALENDAR\r\n",
         );
 
-        let events =
-            parse_events(data, utc(2026, 7, 29, 12, 0), utc(2026, 7, 30, 12, 0)).unwrap();
+        let events = parse_events(data, utc(2026, 7, 29, 12, 0), utc(2026, 7, 30, 12, 0)).unwrap();
 
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].start_at, utc(2026, 7, 28, 18, 0));
@@ -753,9 +739,7 @@ mod tests {
 
     #[test]
     fn isolates_invalid_recurrence_rules() {
-        let data = concat!(
-            "BEGIN:VCALENDAR\r\n",
-            "VERSION:2.0\r\n",
+        let data = calendar!(
             "BEGIN:VEVENT\r\n",
             "UID:broken-recurrence\r\n",
             "DTSTART:20260730T160000Z\r\n",
@@ -769,7 +753,6 @@ mod tests {
             "DTEND:20260731T170000Z\r\n",
             "SUMMARY:Valid event\r\n",
             "END:VEVENT\r\n",
-            "END:VCALENDAR\r\n",
         );
 
         let mut events =
@@ -815,57 +798,40 @@ mod tests {
 
     #[test]
     fn nominal_day_duration_follows_dst_transitions() {
-        let spring = concat!(
-            "BEGIN:VCALENDAR\r\n",
-            "VERSION:2.0\r\n",
+        let spring = calendar!(
             "BEGIN:VEVENT\r\n",
             "UID:spring\r\n",
             "DTSTART;TZID=America/Los_Angeles:20260307T090000\r\n",
             "DURATION:P1D\r\n",
             "END:VEVENT\r\n",
-            "END:VCALENDAR\r\n",
         );
-        let event = parse_events(
-            spring,
-            utc(2026, 3, 7, 0, 0),
-            utc(2026, 3, 10, 0, 0),
-        )
-        .unwrap()
-        .pop()
-        .unwrap();
+        let event = parse_events(spring, utc(2026, 3, 7, 0, 0), utc(2026, 3, 10, 0, 0))
+            .unwrap()
+            .pop()
+            .unwrap();
         assert_eq!(event.end_at - event.start_at, Duration::hours(23));
 
-        let fall = concat!(
-            "BEGIN:VCALENDAR\r\n",
-            "VERSION:2.0\r\n",
+        let fall = calendar!(
             "BEGIN:VEVENT\r\n",
             "UID:fall\r\n",
             "DTSTART;TZID=America/Los_Angeles:20261031T090000\r\n",
             "DURATION:P1D\r\n",
             "END:VEVENT\r\n",
-            "END:VCALENDAR\r\n",
         );
-        let event = parse_events(
-            fall,
-            utc(2026, 10, 31, 0, 0),
-            utc(2026, 11, 3, 0, 0),
-        )
-        .unwrap()
-        .pop()
-        .unwrap();
+        let event = parse_events(fall, utc(2026, 10, 31, 0, 0), utc(2026, 11, 3, 0, 0))
+            .unwrap()
+            .pop()
+            .unwrap();
         assert_eq!(event.end_at - event.start_at, Duration::hours(25));
     }
 
     #[test]
     fn default_all_day_duration_uses_next_local_midnight() {
-        let data = concat!(
-            "BEGIN:VCALENDAR\r\n",
-            "VERSION:2.0\r\n",
+        let data = calendar!(
             "BEGIN:VEVENT\r\n",
             "UID:all-day-spring\r\n",
             "DTSTART;VALUE=DATE:20260308\r\n",
             "END:VEVENT\r\n",
-            "END:VCALENDAR\r\n",
         );
         let event = first_event(data);
         let (_, end) = event_bounds(&event).unwrap();
@@ -884,9 +850,7 @@ mod tests {
 
     #[test]
     fn malformed_events_do_not_reject_the_feed() {
-        let data = concat!(
-            "BEGIN:VCALENDAR\r\n",
-            "VERSION:2.0\r\n",
+        let data = calendar!(
             "BEGIN:VEVENT\r\n",
             "UID:bad-duration\r\n",
             "DTSTART:20260729T160000Z\r\n",
@@ -913,11 +877,9 @@ mod tests {
             "DTEND:20260730T170000Z\r\n",
             "SUMMARY:Still parsed\r\n",
             "END:VEVENT\r\n",
-            "END:VCALENDAR\r\n",
         );
 
-        let events =
-            parse_events(data, utc(2026, 7, 29, 0, 0), utc(2026, 8, 1, 0, 0)).unwrap();
+        let events = parse_events(data, utc(2026, 7, 29, 0, 0), utc(2026, 8, 1, 0, 0)).unwrap();
 
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].uid, "valid");
@@ -925,9 +887,7 @@ mod tests {
 
     #[test]
     fn rejects_invalid_dtend_without_rejecting_the_feed() {
-        let data = concat!(
-            "BEGIN:VCALENDAR\r\n",
-            "VERSION:2.0\r\n",
+        let data = calendar!(
             "BEGIN:VEVENT\r\n",
             "UID:mismatched-value-type\r\n",
             "DTSTART;VALUE=DATE:20260729\r\n",
@@ -948,11 +908,9 @@ mod tests {
             "DTSTART:20260730T160000Z\r\n",
             "DTEND:20260730T170000Z\r\n",
             "END:VEVENT\r\n",
-            "END:VCALENDAR\r\n",
         );
 
-        let events =
-            parse_events(data, utc(2026, 7, 29, 0, 0), utc(2026, 8, 1, 0, 0)).unwrap();
+        let events = parse_events(data, utc(2026, 7, 29, 0, 0), utc(2026, 8, 1, 0, 0)).unwrap();
 
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].uid, "valid");
@@ -960,9 +918,7 @@ mod tests {
 
     #[test]
     fn skips_events_without_required_uid() {
-        let data = concat!(
-            "BEGIN:VCALENDAR\r\n",
-            "VERSION:2.0\r\n",
+        let data = calendar!(
             "BEGIN:VEVENT\r\n",
             "DTSTART:20260729T160000Z\r\n",
             "DTEND:20260729T170000Z\r\n",
@@ -972,11 +928,9 @@ mod tests {
             "DTSTART:20260730T160000Z\r\n",
             "DTEND:20260730T170000Z\r\n",
             "END:VEVENT\r\n",
-            "END:VCALENDAR\r\n",
         );
 
-        let events =
-            parse_events(data, utc(2026, 7, 29, 0, 0), utc(2026, 8, 1, 0, 0)).unwrap();
+        let events = parse_events(data, utc(2026, 7, 29, 0, 0), utc(2026, 8, 1, 0, 0)).unwrap();
 
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].uid, "valid");
@@ -984,9 +938,7 @@ mod tests {
 
     #[test]
     fn rejects_this_and_future_series() {
-        let data = concat!(
-            "BEGIN:VCALENDAR\r\n",
-            "VERSION:2.0\r\n",
+        let data = calendar!(
             "BEGIN:VEVENT\r\n",
             "UID:series\r\n",
             "DTSTART:20260729T160000Z\r\n",
@@ -1004,11 +956,9 @@ mod tests {
             "DTSTART:20260730T200000Z\r\n",
             "DTEND:20260730T210000Z\r\n",
             "END:VEVENT\r\n",
-            "END:VCALENDAR\r\n",
         );
 
-        let events =
-            parse_events(data, utc(2026, 7, 29, 0, 0), utc(2026, 8, 2, 0, 0)).unwrap();
+        let events = parse_events(data, utc(2026, 7, 29, 0, 0), utc(2026, 8, 2, 0, 0)).unwrap();
 
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].uid, "independent");
@@ -1016,9 +966,7 @@ mod tests {
 
     #[test]
     fn skips_recurrences_that_would_require_excessive_fast_forwarding() {
-        let data = concat!(
-            "BEGIN:VCALENDAR\r\n",
-            "VERSION:2.0\r\n",
+        let data = calendar!(
             "BEGIN:VEVENT\r\n",
             "UID:pathological\r\n",
             "DTSTART:20000101T000000Z\r\n",
@@ -1030,11 +978,9 @@ mod tests {
             "DTSTART:20260730T160000Z\r\n",
             "DTEND:20260730T170000Z\r\n",
             "END:VEVENT\r\n",
-            "END:VCALENDAR\r\n",
         );
 
-        let events =
-            parse_events(data, utc(2026, 7, 29, 0, 0), utc(2026, 8, 1, 0, 0)).unwrap();
+        let events = parse_events(data, utc(2026, 7, 29, 0, 0), utc(2026, 8, 1, 0, 0)).unwrap();
 
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].uid, "valid");
@@ -1042,16 +988,13 @@ mod tests {
 
     #[test]
     fn count_does_not_bypass_recurrence_work_limit() {
-        let data = concat!(
-            "BEGIN:VCALENDAR\r\n",
-            "VERSION:2.0\r\n",
+        let data = calendar!(
             "BEGIN:VEVENT\r\n",
             "UID:pathological-with-count\r\n",
             "DTSTART:20000101T000000Z\r\n",
             "DURATION:PT1S\r\n",
             "RRULE:FREQ=SECONDLY;COUNT=100000;BYMINUTE=0;BYSECOND=0\r\n",
             "END:VEVENT\r\n",
-            "END:VCALENDAR\r\n",
         );
         let event = first_event(data);
         let recurrence = event.get_recurrence().unwrap();
@@ -1065,16 +1008,13 @@ mod tests {
 
     #[test]
     fn recurrence_work_limit_includes_the_requested_window() {
-        let data = concat!(
-            "BEGIN:VCALENDAR\r\n",
-            "VERSION:2.0\r\n",
+        let data = calendar!(
             "BEGIN:VEVENT\r\n",
             "UID:pathological-in-window\r\n",
             "DTSTART:20260729T000000Z\r\n",
             "DURATION:PT1S\r\n",
             "RRULE:FREQ=SECONDLY;BYMINUTE=0;BYSECOND=0\r\n",
             "END:VEVENT\r\n",
-            "END:VCALENDAR\r\n",
         );
         let event = first_event(data);
         let recurrence = event.get_recurrence().unwrap();
@@ -1087,19 +1027,15 @@ mod tests {
 
     #[test]
     fn search_window_end_is_exclusive() {
-        let data = concat!(
-            "BEGIN:VCALENDAR\r\n",
-            "VERSION:2.0\r\n",
+        let data = calendar!(
             "BEGIN:VEVENT\r\n",
             "UID:at-end\r\n",
             "DTSTART:20260730T000000Z\r\n",
             "DTEND:20260730T010000Z\r\n",
             "END:VEVENT\r\n",
-            "END:VCALENDAR\r\n",
         );
 
-        let events =
-            parse_events(data, utc(2026, 7, 29, 0, 0), utc(2026, 7, 30, 0, 0)).unwrap();
+        let events = parse_events(data, utc(2026, 7, 29, 0, 0), utc(2026, 7, 30, 0, 0)).unwrap();
 
         assert!(events.is_empty());
     }
