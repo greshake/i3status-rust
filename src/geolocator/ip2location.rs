@@ -212,10 +212,19 @@ impl Ip2Location {
             request_builder = request_builder.query(&[("key", api_key)]);
         }
 
-        let response: ApiResponse = request_builder
+        let response = request_builder
             .send()
             .await
-            .error("Failed during request for current location")?
+            .error("Failed during request for current location")?;
+
+        if response.status() == reqwest::StatusCode::TOO_MANY_REQUESTS {
+            return Err(Error {
+                message: Some("ip2location.io rate limit exceeded".into()),
+                cause: Some(Arc::new(RateLimited)),
+            });
+        }
+
+        let response: ApiResponse = response
             .json()
             .await
             .error("Failed while parsing location API result")?;

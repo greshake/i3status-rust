@@ -57,13 +57,30 @@
 //! periodic refresh exists to catch IP updates that don't trigger a notification,
 //! for example due to a IP refresh at the router.
 //!
+//! If the service reports rate limiting, the block keeps showing the last
+//! known IP and waits 10 minutes before asking again.
+//!
 //! Flags: They are not icons but unicode glyphs. You will need a font that
 //! includes them. Tested with: <https://www.babelstone.co.uk/Fonts/Flags.html>
 
 use zbus::MatchRule;
 
 use super::prelude::*;
+use crate::geolocator::is_rate_limited;
 use crate::util::{country_flag_from_iso_code, new_system_dbus_connection};
+
+/// Coalesces bursts of update triggers (a single network transition emits
+/// several D-Bus signals) into one API request.
+const CACHE_INTERVAL: Duration = Duration::from_secs(3);
+
+/// How long the network-change signal stream must stay quiet before the IP is
+/// re-queried; a transition keeps emitting signals for a while, often before
+/// connectivity is actually usable.
+const SETTLE_INTERVAL: Duration = Duration::from_secs(2);
+
+/// How long to wait before asking again after the service reported rate
+/// limiting; retrying sooner only prolongs the block.
+const RATE_LIMIT_INTERVAL: Duration = Duration::from_secs(600);
 
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
@@ -123,9 +140,12 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             .await
             .error("Failed to add match")?;
         let stream: zbus::MessageStream = dbus.into();
-        Box::pin(stream.map(|_| ()))
+        // If the D-Bus connection dies the stream ends; without the chained
+        // pending stream, polling it again would resolve instantly forever,
+        // turning the loop below into a busy loop of API requests.
+        Box::pin(stream.map(|_| ()).chain(futures::stream::pending()))
     } else {
-        Box::pin(futures::stream::empty())
+        Box::pin(futures::stream::pending())
     };
 
     let client = if config.use_ipv4 {
@@ -135,8 +155,23 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     };
 
     loop {
-        let fetch_info = || api.find_ip_location(client, Duration::from_secs(0));
-        let info = fetch_info.retry(ExponentialBuilder::default()).await?;
+        let fetch_info = || api.find_ip_location(client, CACHE_INTERVAL);
+        let info = match fetch_info
+            .retry(ExponentialBuilder::default())
+            .when(|err| !is_rate_limited(err))
+            .await
+        {
+            Ok(info) => info,
+            Err(err) if is_rate_limited(&err) => {
+                // Keep displaying the last known IP and try again much later;
+                // erroring out here would make the block restart machinery
+                // re-query every `error_interval` seconds, which keeps the
+                // rate limit from ever lifting.
+                sleep(RATE_LIMIT_INTERVAL).await;
+                continue;
+            }
+            Err(err) => return Err(err),
+        };
 
         let mut values = map! {
             "ip" => Value::text(info.ip),
@@ -213,7 +248,12 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         select! {
             _ = sleep(config.interval.0) => (),
             _ = api.wait_for_update_request() => (),
-            _ = stream.next_debounced() => ()
+            _ = stream.next_debounced() => {
+                // Wait for the burst of signals to die down before re-querying,
+                // so that one network transition results in one request, made
+                // once the new connection is likely up.
+                while let Ok(Some(_)) = tokio::time::timeout(SETTLE_INTERVAL, stream.next()).await {}
+            }
         }
     }
 }

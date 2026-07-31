@@ -63,6 +63,26 @@ struct AutolocateResult {
     timestamp: Instant,
 }
 
+/// Error cause set by backends when the service refuses to answer because of
+/// rate limiting. Callers can detect it with [`is_rate_limited`] and back off
+/// instead of retrying, which would only prolong the block.
+#[derive(Debug, Clone, Copy)]
+pub struct RateLimited;
+
+impl fmt::Display for RateLimited {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("rate limited by the geolocation service")
+    }
+}
+
+impl StdError for RateLimited {}
+
+pub fn is_rate_limited(err: &Error) -> bool {
+    err.cause
+        .as_ref()
+        .is_some_and(|cause| cause.downcast_ref::<RateLimited>().is_some())
+}
+
 #[derive(Deserialize, Clone, Default, Debug)]
 pub struct IPAddressInfo {
     // Required fields
