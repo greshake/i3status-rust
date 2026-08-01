@@ -69,14 +69,21 @@ use super::prelude::*;
 use crate::geolocator::is_rate_limited;
 use crate::util::{country_flag_from_iso_code, new_system_dbus_connection};
 
-/// Coalesces bursts of update triggers (a single network transition emits
+/// Coalesces simultaneous update triggers (a single network transition emits
 /// several D-Bus signals) into one API request.
-const CACHE_INTERVAL: Duration = Duration::from_secs(3);
+const CACHE_INTERVAL: Duration = Duration::from_secs(1);
 
 /// How long the network-change signal stream must stay quiet before the IP is
 /// re-queried; a transition keeps emitting signals for a while, often before
 /// connectivity is actually usable.
-const SETTLE_INTERVAL: Duration = Duration::from_secs(2);
+const SETTLE_QUIET: Duration = Duration::from_secs(1);
+
+/// Upper bound on the settle wait. NetworkManager can keep emitting signals
+/// (IP config, DNS, connectivity checks) for many seconds after a transition;
+/// without a cap the quiet window keeps sliding and the update is delayed
+/// indefinitely. If the network is still not usable when we query, the retry
+/// backoff covers it.
+const SETTLE_MAX: Duration = Duration::from_secs(3);
 
 /// How long to wait before asking again after the service reported rate
 /// limiting; retrying sooner only prolongs the block.
@@ -156,6 +163,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     loop {
         let fetch_info = || api.find_ip_location(client, CACHE_INTERVAL);
+        let fetch_start = tokio::time::Instant::now();
         let info = match fetch_info
             .retry(ExponentialBuilder::default())
             .when(|err| !is_rate_limited(err))
@@ -172,6 +180,11 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             }
             Err(err) => return Err(err),
         };
+        log::debug!(
+            "external_ip: got {} after {:?}",
+            info.ip,
+            fetch_start.elapsed()
+        );
 
         let mut values = map! {
             "ip" => Value::text(info.ip),
@@ -252,7 +265,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 // Wait for the burst of signals to die down before re-querying,
                 // so that one network transition results in one request, made
                 // once the new connection is likely up.
-                while let Ok(Some(_)) = tokio::time::timeout(SETTLE_INTERVAL, stream.next()).await {}
+                let settle_start = tokio::time::Instant::now();
+                while let Ok(Some(_)) = tokio::time::timeout(SETTLE_QUIET, stream.next()).await {
+                    if settle_start.elapsed() >= SETTLE_MAX {
+                        break;
+                    }
+                }
+                log::debug!("external_ip: signals settled after {:?}", settle_start.elapsed());
             }
         }
     }
