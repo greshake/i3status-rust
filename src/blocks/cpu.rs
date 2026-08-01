@@ -46,11 +46,11 @@
 
 use std::str::FromStr as _;
 
-use tokio::fs::File;
-use tokio::io::{AsyncBufReadExt as _, BufReader};
-
 use super::prelude::*;
+use crate::formatting::unit::Unit;
 use crate::util::read_file;
+use tokio::fs::File;
+use tokio::io::BufReader;
 
 const CPU_BOOST_PATH: &str = "/sys/devices/system/cpu/cpufreq/boost";
 const CPU_NO_TURBO_PATH: &str = "/sys/devices/system/cpu/intel_pstate/no_turbo";
@@ -105,13 +105,6 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         }
         cputime = new_cputime;
 
-        // Create barchart indicating per-core utilization
-        let mut barchart = String::new();
-        const BOXCHARS: &[char] = &['▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
-        for utilization in &utilizations {
-            barchart.push(BOXCHARS[(7.5 * utilization) as usize]);
-        }
-
         // Read boost state on intel CPUs
         let boost = boost_status().await.map(|status| match status {
             true => "cpu_boost_on",
@@ -120,7 +113,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         let mut values = map!(
             "icon" => Value::icon_progression("cpu", utilization_avg),
-            "barchart" => Value::text(barchart),
+            "barchart" => Value::numbers(utilizations.iter().map(|u| u * 100.0).collect::<Vec<_>>(), Unit::Percents),
             "utilization" => Value::percents(utilization_avg * 100.),
             [if !freqs.is_empty()] "frequency" => Value::hertz(freqs.iter().sum::<f64>() / (freqs.len() as f64)),
             [if !freqs.is_empty()] "max_frequency" => Value::hertz(freqs.iter().copied().max_by(f64::total_cmp).unwrap()),

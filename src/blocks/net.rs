@@ -60,8 +60,8 @@
 //! - `net_down`
 
 use super::prelude::*;
+use crate::formatting::unit::Unit;
 use crate::netlink::NetDevice;
-use crate::util;
 use itertools::Itertools as _;
 use regex::Regex;
 use std::time::Instant;
@@ -153,8 +153,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     "icon" => icon,
                     "speed_down" => Value::bytes(speed_down),
                     "speed_up" => Value::bytes(speed_up),
-                    "graph_down" => Value::text(util::format_bar_graph(&rx_hist)),
-                    "graph_up" => Value::text(util::format_bar_graph(&tx_hist)),
+                    "graph_down" => Value::numbers(rx_hist, Unit::Bytes),
+                    "graph_up" => Value::numbers(tx_hist, Unit::Bytes),
                     [if let Some(v) = device.ip] "ip" => Value::text(v.to_string()),
                     [if let Some(v) = device.ipv6] "ipv6" => Value::text(v.to_string()),
                     [if let Some(v) = device.ssid()] "ssid" => Value::text(v),

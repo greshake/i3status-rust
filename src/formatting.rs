@@ -17,6 +17,7 @@
 //! --------------------------|------------------
 //! Text                      | `str`
 //! Number                    | `eng`
+//! Numbers                   | `eng`
 //! Datetime                  | `datetime`
 //! Duration                  | `duration`
 //! [Flag](#how-to-use-flags) | N/A
@@ -60,6 +61,8 @@
 //! `range`         | a range of allowed values, in the format `<start>..<end>`, inclusive. Both start and end are optional. Can be used to, for example, hide the block when the value is not in a given range. | `..`
 //! `show`          | show this value. Can be used with `range` for conditional formatting                             | `true`
 //!
+//! Note: For [`Value::Numbers`] only the last value will be used for formatting.
+//!
 //! ## `bar` - Display numbers as progress bars
 //!
 //! Argument               | Description                                                                     |Default value
@@ -67,6 +70,8 @@
 //! `width` or `w`         | the width of the bar (in characters)                                            | `5` (`1` for `vertical`)
 //! `max_value`            | which value is treated as "full". For example, for battery level `100` is full. | `100`
 //! `vertical` or `v`      | whether to render the bar vertically or not                                     | `false`
+//!
+//! Note: For [`Value::Numbers`] the result will be a bar chart: if vertical, each inner value will be a single bar; if horizontal, only the last value will be displayed as a single bar.
 //!
 //! ## `tally` - Display numbers as tally marks
 //!
