@@ -6,6 +6,7 @@
 //! ----|--------|--------
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `" $ip $country_flag "`
 //! `interval` | Interval in seconds for automatic updates | `300`
+//! `autolocate_interval` | How long in seconds to reuse the last result from the geolocation service instead of contacting it again. Kept small by default so that network changes are picked up promptly. | `1`
 //! `with_network_manager` | If 'true', listen for NetworkManager events and update the IP immediately if there was a change | `true`
 //! `use_ipv4` | If 'true', use IPv4 for obtaining all info | `false`
 //!
@@ -58,7 +59,8 @@
 //! for example due to a IP refresh at the router.
 //!
 //! If the service reports rate limiting, the block keeps showing the last
-//! known IP and waits 10 minutes before asking again.
+//! known IP and waits for the geolocator's `rate_limit_interval` (10 minutes
+//! by default) before asking again.
 //!
 //! Flags: They are not icons but unicode glyphs. You will need a font that
 //! includes them. Tested with: <https://www.babelstone.co.uk/Fonts/Flags.html>
@@ -68,10 +70,6 @@ use zbus::MatchRule;
 use super::prelude::*;
 use crate::geolocator::is_rate_limited;
 use crate::util::{country_flag_from_iso_code, new_system_dbus_connection};
-
-/// Coalesces simultaneous update triggers (a single network transition emits
-/// several D-Bus signals) into one API request.
-const CACHE_INTERVAL: Duration = Duration::from_secs(1);
 
 /// How long the network-change signal stream must stay quiet before the IP is
 /// re-queried; a transition keeps emitting signals for a while, often before
@@ -85,16 +83,16 @@ const SETTLE_QUIET: Duration = Duration::from_secs(1);
 /// backoff covers it.
 const SETTLE_MAX: Duration = Duration::from_secs(3);
 
-/// How long to wait before asking again after the service reported rate
-/// limiting; retrying sooner only prolongs the block.
-const RATE_LIMIT_INTERVAL: Duration = Duration::from_secs(600);
-
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
     pub format: FormatConfig,
     #[default(300.into())]
     pub interval: Seconds,
+    /// Unlike the weather block this defaults to 1 second, not `interval`:
+    /// picking up a fresh IP right after a network change is the whole point
+    /// of this block, so cached results must expire quickly.
+    pub autolocate_interval: Option<Seconds>,
     #[default(true)]
     pub with_network_manager: bool,
     #[default(false)]
@@ -161,8 +159,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         &REQWEST_CLIENT
     };
 
+    let autolocate_interval = config.autolocate_interval.unwrap_or(1.into());
+
     loop {
-        let fetch_info = || api.find_ip_location(client, CACHE_INTERVAL);
+        let fetch_info = || api.find_ip_location(client, autolocate_interval.0);
         let fetch_start = tokio::time::Instant::now();
         let info = match fetch_info
             .retry(ExponentialBuilder::default())
@@ -171,11 +171,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         {
             Ok(info) => info,
             Err(err) if is_rate_limited(&err) => {
-                // Keep displaying the last known IP and try again much later;
-                // erroring out here would make the block restart machinery
-                // re-query every `error_interval` seconds, which keeps the
-                // rate limit from ever lifting.
-                sleep(RATE_LIMIT_INTERVAL).await;
+                // Keep displaying the last known IP and try again once the
+                // geolocator's rate limit interval has passed (plus a margin
+                // so we don't wake up just before it expires); erroring out
+                // here would make the block restart machinery re-query every
+                // `error_interval` seconds, which keeps the rate limit from
+                // ever lifting.
+                sleep(api.locator_rate_limit_interval() + Duration::from_secs(1)).await;
                 continue;
             }
             Err(err) => return Err(err),

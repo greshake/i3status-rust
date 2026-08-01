@@ -121,11 +121,7 @@ impl Ipapi {
         if response.error {
             Err(Error {
                 message: Some("ipapi.co error".into()),
-                cause: if response.reason.0.as_deref() == Some("RateLimited") {
-                    Some(Arc::new(RateLimited))
-                } else {
-                    Some(Arc::new(response.reason))
-                },
+                cause: Some(Arc::new(response.reason)),
             })
         } else {
             Ok(response

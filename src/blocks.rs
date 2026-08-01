@@ -306,6 +306,10 @@ impl CommonApi {
         self.geolocator.name()
     }
 
+    fn locator_rate_limit_interval(&self) -> Duration {
+        self.geolocator.rate_limit_interval()
+    }
+
     /// No-op if last API call was made in the last `interval` seconds.
     pub async fn find_ip_location(
         &self,

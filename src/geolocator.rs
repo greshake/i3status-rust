@@ -7,6 +7,12 @@
 //!
 //! # Configuration
 //!
+//! # Common Options
+//!
+//! Key | Values | Required | Default
+//! ----|--------|----------|--------
+//! `rate_limit_interval` | Seconds to wait before contacting the service again after it reported rate limiting. Until then, cached results are served and no new requests are made. | No | `600`
+//!
 //! # ipapi.co Options
 //!
 //! Key | Values | Required | Default
@@ -46,6 +52,7 @@
 //! ```
 
 use crate::errors::{Error, ErrorContext as _, Result, StdError};
+use crate::wrappers::Seconds;
 use std::borrow::Cow;
 use std::fmt;
 use std::sync::{Arc, Mutex};
@@ -116,11 +123,19 @@ pub struct IPAddressInfo {
     pub org: Option<String>,
 }
 
-#[derive(Default, Debug, Deserialize)]
-#[serde(from = "GeolocatorBackend")]
+#[derive(Debug, Deserialize)]
+#[serde(from = "GeolocatorConfig")]
 pub struct Geolocator {
     backend: GeolocatorBackend,
+    rate_limit_interval: Duration,
     last_autolocate: Mutex<Option<AutolocateResult>>,
+    last_rate_limited: Mutex<Option<Instant>>,
+}
+
+impl Default for Geolocator {
+    fn default() -> Self {
+        GeolocatorConfig::default().into()
+    }
 }
 
 impl Geolocator {
@@ -128,7 +143,15 @@ impl Geolocator {
         self.backend.name()
     }
 
+    pub fn rate_limit_interval(&self) -> Duration {
+        self.rate_limit_interval
+    }
+
     /// No-op if last API call was made in the last `interval` seconds.
+    ///
+    /// If the service reported rate limiting less than `rate_limit_interval`
+    /// seconds ago, no request is made and an error with a [`RateLimited`]
+    /// cause is returned, so that all callers collectively respect the limit.
     pub async fn find_ip_location(
         &self,
         client: &reqwest::Client,
@@ -143,7 +166,27 @@ impl Geolocator {
             }
         }
 
-        let location = self.backend.get_info(client).await?;
+        {
+            let guard = self.last_rate_limited.lock().unwrap();
+            if let Some(at) = *guard
+                && at.elapsed() < self.rate_limit_interval
+            {
+                return Err(Error {
+                    message: Some("geolocation service is rate limited, backing off".into()),
+                    cause: Some(Arc::new(RateLimited)),
+                });
+            }
+        }
+
+        let location = match self.backend.get_info(client).await {
+            Ok(location) => location,
+            Err(err) => {
+                if is_rate_limited(&err) {
+                    *self.last_rate_limited.lock().unwrap() = Some(Instant::now());
+                }
+                return Err(err);
+            }
+        };
 
         {
             let mut guard = self.last_autolocate.lock().unwrap();
@@ -155,6 +198,21 @@ impl Geolocator {
 
         Ok(location)
     }
+}
+
+#[derive(Deserialize, Debug, SmartDefault)]
+pub struct GeolocatorConfig {
+    #[serde(flatten)]
+    backend: GeolocatorBackend,
+    /// How long to wait before contacting the service again after it reported
+    /// rate limiting.
+    #[serde(default = "default_rate_limit_interval")]
+    #[default(default_rate_limit_interval())]
+    rate_limit_interval: Seconds,
+}
+
+fn default_rate_limit_interval() -> Seconds {
+    600.into()
 }
 
 #[derive(Deserialize, Debug, SmartDefault, Clone)]
@@ -185,11 +243,38 @@ impl GeolocatorBackend {
     }
 }
 
-impl From<GeolocatorBackend> for Geolocator {
-    fn from(backend: GeolocatorBackend) -> Self {
+impl From<GeolocatorConfig> for Geolocator {
+    fn from(config: GeolocatorConfig) -> Self {
         Self {
-            backend,
+            backend: config.backend,
+            rate_limit_interval: config.rate_limit_interval.0,
             last_autolocate: Mutex::new(None),
+            last_rate_limited: Mutex::new(None),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn deserialize_config() {
+        let geolocator: Geolocator = toml::from_str("geolocator = \"ipapi\"").unwrap();
+        assert!(matches!(geolocator.backend, GeolocatorBackend::Ipapi(_)));
+        assert_eq!(geolocator.rate_limit_interval, Duration::from_secs(600));
+
+        let geolocator: Geolocator =
+            toml::from_str("geolocator = \"ipapi\"\nrate_limit_interval = 120").unwrap();
+        assert_eq!(geolocator.rate_limit_interval, Duration::from_secs(120));
+
+        let geolocator: Geolocator =
+            toml::from_str("geolocator = \"ip2location\"\napi_key = \"xxx\"").unwrap();
+        let GeolocatorBackend::Ip2Location(config) = geolocator.backend else {
+            panic!("wrong backend");
+        };
+        assert_eq!(config.api_key.as_deref(), Some("xxx"));
+
+        assert!(toml::from_str::<Geolocator>("geolocator = \"ipapi\"\nbad_key = 1").is_err());
     }
 }
