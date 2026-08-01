@@ -64,6 +64,12 @@ use smart_default::SmartDefault;
 mod ip2location;
 mod ipapi;
 
+/// Per-request timeout, deliberately much shorter than the shared client's
+/// 10s: lookups normally take well under a second, and when a request is sent
+/// while routes are still changing (the common case for the external_ip
+/// block) it just hangs, so failing fast and retrying beats waiting.
+const REQUEST_TIMEOUT: Duration = Duration::from_secs(3);
+
 #[derive(Debug)]
 struct AutolocateResult {
     location: IPAddressInfo,

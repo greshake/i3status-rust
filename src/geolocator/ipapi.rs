@@ -102,6 +102,7 @@ impl Ipapi {
     pub async fn get_info(&self, client: &reqwest::Client) -> Result<IPAddressInfo> {
         let response = client
             .get(IP_API_URL)
+            .timeout(REQUEST_TIMEOUT)
             .send()
             .await
             .error("Failed during request for current location")?;

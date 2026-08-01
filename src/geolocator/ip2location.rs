@@ -206,7 +206,7 @@ impl Ip2Location {
         client: &reqwest::Client,
         api_key: Option<&String>,
     ) -> Result<IPAddressInfo> {
-        let mut request_builder = client.get(IP_API_URL);
+        let mut request_builder = client.get(IP_API_URL).timeout(REQUEST_TIMEOUT);
 
         if let Some(api_key) = api_key {
             request_builder = request_builder.query(&[("key", api_key)]);
