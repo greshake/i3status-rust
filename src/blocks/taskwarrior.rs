@@ -178,14 +178,24 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     }
 }
 
-async fn get_number_of_tasks(filter: &Filter) -> Result<u32> {
-    let args_iter = filter.config_override.iter().map(String::as_str).chain([
+/// The `count` invocation must not have side effects on the task database:
+/// `rc.gc=off` keeps task IDs stable, and `rc.recurrence.limit=0` prevents
+/// the creation of new recurrence instances, which is racy when several
+/// `task` processes run concurrently (e.g. two taskwarrior blocks) and
+/// produced duplicate recurring tasks. These come after the user's
+/// `config_override`, so they always win.
+fn count_args(filter: &Filter) -> impl Iterator<Item = &str> {
+    filter.config_override.iter().map(String::as_str).chain([
         "rc.gc=off",
+        "rc.recurrence.limit=0",
         &filter.filter,
         "count",
-    ]);
+    ])
+}
+
+async fn get_number_of_tasks(filter: &Filter) -> Result<u32> {
     let output = Command::new("task")
-        .args(args_iter)
+        .args(count_args(filter))
         .output()
         .await
         .error("failed to run taskwarrior for getting the number of tasks")?
@@ -204,4 +214,37 @@ pub struct Filter {
     pub filter: String,
     #[serde(default)]
     pub config_override: Vec<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn count_is_side_effect_free() {
+        let filter = Filter {
+            name: "pending".into(),
+            filter: "-COMPLETED -DELETED".into(),
+            config_override: vec!["rc.context=work".into()],
+        };
+        let args: Vec<&str> = count_args(&filter).collect();
+        assert_eq!(
+            args,
+            [
+                "rc.context=work",
+                "rc.gc=off",
+                "rc.recurrence.limit=0",
+                "-COMPLETED -DELETED",
+                "count",
+            ]
+        );
+        // the safety overrides must come after config_override so they win
+        let gc = args.iter().position(|a| *a == "rc.gc=off").unwrap();
+        let rec = args
+            .iter()
+            .position(|a| *a == "rc.recurrence.limit=0")
+            .unwrap();
+        let user = args.iter().position(|a| *a == "rc.context=work").unwrap();
+        assert!(user < gc && user < rec);
+    }
 }
