@@ -1,6 +1,8 @@
 use serde::{Deserialize, Deserializer};
 use smart_default::SmartDefault;
 use std::collections::HashMap;
+use std::os::unix::process::parent_id;
+use std::path::Path;
 use std::sync::Arc;
 
 use crate::blocks::BlockConfig;
@@ -9,15 +11,14 @@ use crate::errors::*;
 use crate::formatting::config::Config as FormatConfig;
 use crate::geolocator::Geolocator;
 use crate::icons::{Icon, Icons};
+use crate::themes::color::Color;
 use crate::themes::{Theme, ThemeOverrides, ThemeUserConfig};
+use crate::util::read_file;
 
-use dirs;               //used in implementing parsing logic for the sway override function
-
-
-// === Optional sway integration ===
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Default)]
+#[serde(default, deny_unknown_fields)]
 pub struct SwayIntegration {
-    pub use_sway_bar_colors: Option<bool>,
+    pub use_sway_bar_colors: bool,
 }
 
 #[derive(Deserialize, Debug)]
@@ -47,7 +48,7 @@ pub struct Config {
     pub blocks: Vec<BlockConfigEntry>,
 
     #[serde(default)]
-    pub sway_integration: Option<SwayIntegration>, 
+    pub sway_integration: SwayIntegration,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -138,44 +139,62 @@ where
     Ok(Arc::new(theme))
 }
 
-use crate::themes::color::Color;
+pub struct SwayBarColors {
+    pub background: Color,
+    pub statusline: Color,
+    pub separator: Color,
+}
 
-pub fn try_parse_sway_bar_colors() -> Option<(Color, Color)> {
-    let config_path = dirs::home_dir()?.join(".config/sway/config");
-    let contents = std::fs::read_to_string(config_path).ok()?;
+pub async fn try_parse_sway_bar_colors() -> Result<SwayBarColors> {
+    let mut swayipc_connection = swayipc_async::Connection::new()
+        .await
+        .error("Failed to open swayipc connection")?;
 
-    let mut in_bar_block = false;
-    let mut in_colors_block = false;
-    let mut background = None;
-    let mut statusline = None;
+    let mut current_pid = parent_id().to_string();
+    while current_pid != "1" {
+        let cmdline = read_file(Path::new("/proc").join(&current_pid).join("cmdline"))
+            .await
+            .or_error(|| format!("Failed to read /proc/{current_pid}/cmdline"))?;
+        let cmdline_parts: Vec<_> = cmdline.split('\0').collect();
+        if let Some(bar_id) = cmdline_parts
+            .iter()
+            .position(|&s| s == "-b" || s == "--bar_id")
+            .and_then(|pos| cmdline_parts.get(pos + 1))
+        {
+            let bar_config = swayipc_connection
+                .get_bar_config(&bar_id)
+                .await
+                .error("Failed to get swaybar config")?;
+            return Ok(SwayBarColors {
+                background: bar_config
+                    .colors
+                    .background
+                    .parse()
+                    .error("Failed to parse background color")?,
+                statusline: bar_config
+                    .colors
+                    .statusline
+                    .parse()
+                    .error("Failed to parse statusline color")?,
+                separator: bar_config
+                    .colors
+                    .separator
+                    .parse()
+                    .error("Failed to parse separator color")?,
+            });
+        }
+        let stat = read_file(Path::new("/proc").join(&current_pid).join("stat"))
+            .await
+            .or_error(|| format!("Failed to read /proc/{current_pid}/stat"))?;
 
-    for line in contents.lines() {
-        let trimmed = line.trim();
-        if trimmed.starts_with("bar") && trimmed.ends_with("{") {
-            in_bar_block = true;
-            continue;
-        }
-        if in_bar_block && trimmed.starts_with("colors") && trimmed.ends_with("{") {
-            in_colors_block = true;
-            continue;
-        }
-        if in_colors_block {
-            if trimmed.starts_with("}") {
-                break;
-            }
-            if trimmed.starts_with("background") {
-                background = trimmed.split_whitespace().nth(1).map(str::to_string);
-            } else if trimmed.starts_with("statusline") {
-                statusline = trimmed.split_whitespace().nth(1).map(str::to_string);
-            }
-        }
+        current_pid = stat
+            .split(' ')
+            .nth(3)
+            .unwrap()
+            .parse()
+            .or_error(|| format!("Failed to parse parent PID from /proc/{current_pid}/stat"))?;
     }
-
-    if let (Some(bg_str), Some(fg_str)) = (background, statusline) {
-        let bg: Color = bg_str.parse().ok()?;
-        let fg: Color = fg_str.parse().ok()?;
-        Some((bg, fg))
-    } else {
-        None
-    }
+    Err(Error::new(
+        "Unable to find swaybar process in parent process tree",
+    ))
 }

@@ -37,13 +37,14 @@ fn main() {
                 .or_error(|| format!("Configuration file '{}' not found", args.config))?;
             let mut config: Config = util::deserialize_toml_file(&config_path)?;
 
-            // === Inject Sway bar color override if enabled ===
-            if let Some((bg, fg)) = try_parse_sway_bar_colors() {
+            // Inject Sway bar color override if enabled
+            if config.sway_integration.use_sway_bar_colors {
+                let sway_bar_colors = try_parse_sway_bar_colors().await?;
                 let theme = Arc::make_mut(&mut config.shared.theme);
-                theme.idle_bg = bg;
-                theme.idle_fg = fg;
+                theme.idle_bg = sway_bar_colors.background;
+                theme.idle_fg = sway_bar_colors.statusline;
+                theme.separator_fg = sway_bar_colors.separator;
             }
-            
 
             let blocks = std::mem::take(&mut config.blocks);
             let mut bar = BarState::new(config);
