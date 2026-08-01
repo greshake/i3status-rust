@@ -92,7 +92,8 @@ pub struct Config {
     /// Unlike the weather block this defaults to 1 second, not `interval`:
     /// picking up a fresh IP right after a network change is the whole point
     /// of this block, so cached results must expire quickly.
-    pub autolocate_interval: Option<Seconds>,
+    #[default(1.into())]
+    pub autolocate_interval: Seconds,
     #[default(true)]
     pub with_network_manager: bool,
     #[default(false)]
@@ -159,14 +160,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         &REQWEST_CLIENT
     };
 
-    let autolocate_interval = config.autolocate_interval.unwrap_or(1.into());
-
     loop {
-        let fetch_info = || api.find_ip_location(client, autolocate_interval.0);
         let fetch_start = tokio::time::Instant::now();
-        let info = match fetch_info
-            .retry(ExponentialBuilder::default())
-            .when(|err| !is_rate_limited(err))
+        let info = match api
+            .find_ip_location(client, config.autolocate_interval.0)
             .await
         {
             Ok(info) => info,

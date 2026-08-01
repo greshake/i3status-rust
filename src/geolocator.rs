@@ -51,6 +51,8 @@
 //! api_key = "XXX"
 //! ```
 
+use backon::{ExponentialBuilder, Retryable as _};
+
 use crate::errors::{Error, ErrorContext as _, Result, StdError};
 use crate::wrappers::Seconds;
 use std::borrow::Cow;
@@ -155,9 +157,11 @@ impl Geolocator {
 
     /// No-op if last API call was made in the last `interval` seconds.
     ///
-    /// If the service reported rate limiting less than `rate_limit_interval`
-    /// seconds ago, no request is made and an error with a [`RateLimited`]
-    /// cause is returned, so that all callers collectively respect the limit.
+    /// Transient errors are retried with exponential backoff, so callers
+    /// don't need their own retry logic. If the service reported rate
+    /// limiting less than `rate_limit_interval` seconds ago, no request is
+    /// made and an error with a [`RateLimited`] cause is returned, so that
+    /// all callers collectively respect the limit.
     pub async fn find_ip_location(
         &self,
         client: &reqwest::Client,
@@ -184,7 +188,12 @@ impl Geolocator {
             }
         }
 
-        let location = match self.backend.get_info(client).await {
+        let fetch = || self.backend.get_info(client);
+        let location = match fetch
+            .retry(ExponentialBuilder::default())
+            .when(|err| !is_rate_limited(err))
+            .await
+        {
             Ok(location) => location,
             Err(err) => {
                 if is_rate_limited(&err) {
@@ -207,18 +216,14 @@ impl Geolocator {
 }
 
 #[derive(Deserialize, Debug, SmartDefault)]
+#[serde(default)]
 pub struct GeolocatorConfig {
     #[serde(flatten)]
     backend: GeolocatorBackend,
     /// How long to wait before contacting the service again after it reported
     /// rate limiting.
-    #[serde(default = "default_rate_limit_interval")]
-    #[default(default_rate_limit_interval())]
+    #[default(600.into())]
     rate_limit_interval: Seconds,
-}
-
-fn default_rate_limit_interval() -> Seconds {
-    600.into()
 }
 
 #[derive(Deserialize, Debug, SmartDefault, Clone)]
@@ -269,6 +274,11 @@ mod tests {
         let geolocator: Geolocator = toml::from_str("geolocator = \"ipapi\"").unwrap();
         assert!(matches!(geolocator.backend, GeolocatorBackend::Ipapi(_)));
         assert_eq!(geolocator.rate_limit_interval, Duration::from_secs(600));
+
+        // the `geolocator` key is required when the [geolocator] section is
+        // present (serde's struct-level default does not extend to the
+        // flattened backend enum)
+        assert!(toml::from_str::<Geolocator>("").is_err());
 
         let geolocator: Geolocator =
             toml::from_str("geolocator = \"ipapi\"\nrate_limit_interval = 120").unwrap();
