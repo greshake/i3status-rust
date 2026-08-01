@@ -10,6 +10,7 @@ pub mod util;
 pub mod blocks;
 pub mod click;
 pub mod config;
+pub mod doctor;
 pub mod errors;
 pub mod escape;
 pub mod formatting;
@@ -97,6 +98,16 @@ pub struct CliArgs {
     /// Ignore any attempts by i3 to pause the bar when hidden/fullscreen
     #[clap(long = "never-pause")]
     pub never_pause: bool,
+    /// Diagnose configuration problems (which icon files are used and why,
+    /// where every icon comes from, references that would fail) and exit
+    #[clap(long = "doctor")]
+    pub doctor: bool,
+    /// The font your bar is configured with: the i3/sway `font` directive,
+    /// fallback list and all, e.g. "pango:DejaVu Sans Mono, Font Awesome 5
+    /// Free 10". Used by --doctor to tell configured font fallbacks apart
+    /// from fontconfig silently substituting a font that is not configured
+    #[clap(long = "font", requires = "doctor")]
+    pub font: Option<String>,
     /// Do not send the init sequence
     #[clap(hide = true, long = "no-init")]
     pub no_init: bool,

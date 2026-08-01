@@ -21,6 +21,18 @@ fn main() {
     let args = i3status_rs::CliArgs::parse();
     let blocking_threads = args.blocking_threads;
 
+    if args.doctor {
+        std::process::exit(
+            match i3status_rs::doctor::run(&args.config, args.font.as_deref()) {
+                Ok(()) => 0,
+                Err(err) => {
+                    eprintln!("{err}");
+                    1
+                }
+            },
+        );
+    }
+
     if !args.no_init {
         protocol::init(args.never_pause);
     }
