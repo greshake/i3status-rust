@@ -7,71 +7,55 @@ use tokio::process::Command;
 
 use crate::errors::*;
 
-/// Tries to find a file in standard locations:
-/// - Fist try to find a file by full path (only if path is absolute)
-/// - Then try XDG_CONFIG_HOME (e.g. `~/.config`)
-/// - Then try XDG_DATA_HOME (e.g. `~/.local/share/`)
-/// - Then try `/usr/share/`
+/// The list of paths `find_file` checks, in the order it checks them.
 ///
-/// Automatically append an extension if not presented.
+/// - An absolute path is tried as given.
+/// - A relative path is tried inside XDG_CONFIG_HOME (e.g. `~/.config`), then
+///   XDG_DATA_HOME (e.g. `~/.local/share/`), then `/usr/share/`, each with the
+///   `i3status-rust` directory (and `subdir`, if given) appended.
+/// - A path without an extension is also tried with `extension` appended.
+pub fn file_candidates(file: &str, subdir: Option<&str>, extension: Option<&str>) -> Vec<PathBuf> {
+    let file = Path::new(file);
+
+    let mut bases: Vec<PathBuf> = Vec::new();
+    if file.is_absolute() {
+        bases.push(file.into());
+    } else {
+        for dir in [config_dir(), data_dir(), Some("/usr/share".into())]
+            .into_iter()
+            .flatten()
+        {
+            let mut base: PathBuf = dir;
+            base.push("i3status-rust");
+            if let Some(subdir) = subdir {
+                base.push(subdir);
+            }
+            base.push(file);
+            bases.push(base);
+        }
+    }
+
+    let mut candidates = Vec::new();
+    for base in bases {
+        let with_extension = match (base.extension(), extension) {
+            (None, Some(extension)) => Some(base.with_extension(extension)),
+            _ => None,
+        };
+        candidates.push(base);
+        candidates.extend(with_extension);
+    }
+    candidates
+}
+
+/// Tries to find a file in standard locations (see [`file_candidates`]).
 pub fn find_file(
     file: &str,
     subdir: Option<&str>,
     extension: Option<&str>,
 ) -> Result<Option<PathBuf>> {
-    let file = Path::new(file);
-
-    if file.is_absolute() && file.try_exists().error("Unable to stat file")? {
-        return Ok(Some(file.to_path_buf()));
-    }
-
-    // Try XDG_CONFIG_HOME (e.g. `~/.config`)
-    if let Some(mut xdg_config) = config_dir() {
-        xdg_config.push("i3status-rust");
-        if let Some(subdir) = subdir {
-            xdg_config.push(subdir);
-        }
-        xdg_config.push(file);
-        if let Some(file) = exists_with_opt_extension(&xdg_config, extension)? {
-            return Ok(Some(file));
-        }
-    }
-
-    // Try XDG_DATA_HOME (e.g. `~/.local/share/`)
-    if let Some(mut xdg_data) = data_dir() {
-        xdg_data.push("i3status-rust");
-        if let Some(subdir) = subdir {
-            xdg_data.push(subdir);
-        }
-        xdg_data.push(file);
-        if let Some(file) = exists_with_opt_extension(&xdg_data, extension)? {
-            return Ok(Some(file));
-        }
-    }
-
-    // Try `/usr/share/`
-    let mut usr_share_path = PathBuf::from("/usr/share/i3status-rust");
-    if let Some(subdir) = subdir {
-        usr_share_path.push(subdir);
-    }
-    usr_share_path.push(file);
-    if let Some(file) = exists_with_opt_extension(&usr_share_path, extension)? {
-        return Ok(Some(file));
-    }
-
-    Ok(None)
-}
-
-fn exists_with_opt_extension(file: &Path, extension: Option<&str>) -> Result<Option<PathBuf>> {
-    if file.try_exists().error("Unable to stat file")? {
-        return Ok(Some(file.into()));
-    }
-    // If file has no extension, test with given extension
-    if let (None, Some(extension)) = (file.extension(), extension) {
-        let file = file.with_extension(extension);
-        // Check again with extension added
-        if file.try_exists().error("Unable to stat file")? {
-            return Ok(Some(file));
+    for candidate in file_candidates(file, subdir, extension) {
+        if candidate.try_exists().error("Unable to stat file")? {
+            return Ok(Some(candidate));
         }
     }
     Ok(None)
@@ -355,5 +339,45 @@ mod tests {
         assert!(country_flag_from_iso_code("ES") == "🇪🇸");
         assert!(country_flag_from_iso_code("US") == "🇺🇸");
         assert!(country_flag_from_iso_code("USA") == "USA");
+    }
+
+    #[test]
+    fn test_file_candidates_absolute() {
+        // extension is probed only when the path has none
+        assert_eq!(
+            file_candidates("/foo/awesome5", Some("icons"), Some("toml")),
+            [
+                PathBuf::from("/foo/awesome5"),
+                PathBuf::from("/foo/awesome5.toml")
+            ]
+        );
+        assert_eq!(
+            file_candidates("/foo/awesome5.toml", Some("icons"), Some("toml")),
+            [PathBuf::from("/foo/awesome5.toml")]
+        );
+    }
+
+    #[test]
+    fn test_file_candidates_relative() {
+        let candidates = file_candidates("awesome5", Some("icons"), Some("toml"));
+        // every candidate ends with the subdir + file, checked in pairs of
+        // (no extension, with extension), with /usr/share always last
+        assert!(candidates.len() >= 2);
+        assert!(candidates.len().is_multiple_of(2));
+        for pair in candidates.chunks(2) {
+            assert!(
+                pair[0].ends_with("i3status-rust/icons/awesome5")
+                    || pair[0].ends_with("icons/awesome5")
+            );
+            assert_eq!(pair[1], pair[0].with_extension("toml"));
+        }
+        assert_eq!(
+            candidates[candidates.len() - 2],
+            PathBuf::from("/usr/share/i3status-rust/icons/awesome5")
+        );
+
+        // a name that already has an extension is not probed twice
+        let candidates = file_candidates("awesome5.toml", Some("icons"), Some("toml"));
+        assert!(candidates.iter().all(|c| c.extension().is_some()));
     }
 }
