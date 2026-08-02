@@ -306,8 +306,14 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
     // icons_overrides are analyzed separately.
     let labels = instance_labels(&block_names);
     let mut used_now: BTreeMap<String, HashSet<String>> = BTreeMap::new();
+    // Whether each block instance can render icons at all: false only when
+    // it has explicit formats and none of them references an icon — then
+    // icon availability is irrelevant for that block. (The live test is not
+    // used for this: optional placeholders can hide icons in one state.)
+    let mut icon_relevant: HashMap<String, bool> = HashMap::new();
     // ^icon_* references in format strings count as explicit usage
     for (index, info) in collect_blocks(&raw).iter().enumerate() {
+        icon_relevant.insert(labels[index].clone(), info.uses_icons().unwrap_or(true));
         for format in &info.formats {
             for icon in &format.icon_refs {
                 used_now
@@ -329,10 +335,12 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
         }
     };
 
+    let mut live_ran = false;
     match (parsed, skip_live) {
         (None, _) => println!("Blocks: skipped (configuration does not validate)\n"),
         (Some(_), true) => println!("Blocks: skipped (--doctor-skip-live)\n"),
         (Some(config), false) => {
+            live_ran = true;
             println!(
                 "Blocks (each run for one cycle; performs real requests/commands, {}s timeout)",
                 LIVE_TIMEOUT.as_secs()
@@ -376,18 +384,20 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
             .into_iter()
             .map(|(index, overrides)| (labels[index].clone(), overrides))
             .collect();
-    print_icon_table(
-        &base_map,
-        &global_overrides,
-        &block_overrides,
-        &builtin,
-        &block_names,
-        &used_now,
-        &mut font_check,
+    print_icon_table(IconTableInput {
+        base_map: &base_map,
+        global_overrides: &global_overrides,
+        block_overrides: &block_overrides,
+        builtin: &builtin,
+        block_names: &block_names,
+        used_now: &used_now,
+        icon_relevant: &icon_relevant,
+        live_ran,
+        font_check: &mut font_check,
         font_authoritative,
-        &style,
-        &mut problems,
-    );
+        style: &style,
+        problems: &mut problems,
+    });
 
     print_problems(&problems, &style);
     problems.len()
@@ -877,7 +887,6 @@ async fn test_block(
 }
 
 fn render_widget(widget: &Widget, shared: &SharedConfig, index: usize) -> LiveVerdict {
-    let icons = icon_values(widget);
     match widget.get_data(shared, index) {
         Ok(segments) => LiveVerdict::Rendered {
             text: segments
@@ -885,7 +894,10 @@ fn render_widget(widget: &Widget, shared: &SharedConfig, index: usize) -> LiveVe
                 .map(|s| s.full_text.as_str())
                 .collect::<Vec<_>>()
                 .join(""),
-            icons,
+            // Only the icons the configured format actually renders: a block
+            // may provide icon values (e.g. $icon) that a custom format never
+            // references, and those cannot cause errors.
+            icons: icon_values(widget, true),
         },
         Err(error) => {
             let mut provided: Vec<String> = widget.values().keys().map(|k| k.to_string()).collect();
@@ -893,18 +905,21 @@ fn render_widget(widget: &Widget, shared: &SharedConfig, index: usize) -> LiveVe
             LiveVerdict::RenderError {
                 error: error.to_string(),
                 provided,
-                icons,
+                // rendering failed, possibly on an icon: count all of them
+                icons: icon_values(widget, false),
             }
         }
     }
 }
 
-fn icon_values(widget: &Widget) -> Vec<String> {
+fn icon_values(widget: &Widget, only_rendered: bool) -> Vec<String> {
     let mut icons: Vec<String> = widget
         .values()
-        .values()
-        .filter_map(|value| match &value.inner {
-            ValueInner::Icon(name, _) => Some(name.to_string()),
+        .iter()
+        .filter_map(|(key, value)| match &value.inner {
+            ValueInner::Icon(name, _) if !only_rendered || widget.format_contains_key(key) => {
+                Some(name.to_string())
+            }
             _ => None,
         })
         .collect();
@@ -1072,7 +1087,14 @@ fn suggest_fix(block: &str, error: &str) -> Option<String> {
 // Icon table
 // ---------------------------------------------------------------------------
 
-#[allow(clippy::too_many_arguments)]
+fn provenance_desc(provenance: &Provenance) -> String {
+    match provenance {
+        Provenance::Base => "in the icon set".into(),
+        Provenance::Global => "in [icons.overrides]".into(),
+        Provenance::Local(block) => format!("in the `{block}` block's icons_overrides"),
+    }
+}
+
 /// Where a block's icon actually comes from, in precedence order.
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone)]
 enum Provenance {
@@ -1081,19 +1103,39 @@ enum Provenance {
     Local(String),
 }
 
-#[allow(clippy::too_many_arguments)]
-fn print_icon_table(
-    base_map: &HashMap<String, Icon>,
-    global_overrides: &HashMap<String, Icon>,
-    block_overrides: &[(String, HashMap<String, Icon>)],
-    builtin: &HashMap<String, Icon>,
-    block_names: &[String],
-    used_now: &BTreeMap<String, HashSet<String>>,
-    font_check: &mut Option<FontCheck>,
+struct IconTableInput<'a> {
+    base_map: &'a HashMap<String, Icon>,
+    global_overrides: &'a HashMap<String, Icon>,
+    block_overrides: &'a [(String, HashMap<String, Icon>)],
+    builtin: &'a HashMap<String, Icon>,
+    block_names: &'a [String],
+    used_now: &'a BTreeMap<String, HashSet<String>>,
+    /// Per block label: whether its formats can render icons at all.
+    icon_relevant: &'a HashMap<String, bool>,
+    /// Whether the live block test ran (skipping it makes some checks
+    /// inconclusive).
+    live_ran: bool,
+    font_check: &'a mut Option<FontCheck>,
     font_authoritative: bool,
-    style: &Style,
-    problems: &mut Vec<Problem>,
-) {
+    style: &'a Style,
+    problems: &'a mut Vec<Problem>,
+}
+
+fn print_icon_table(input: IconTableInput) {
+    let IconTableInput {
+        base_map,
+        global_overrides,
+        block_overrides,
+        builtin,
+        block_names,
+        used_now,
+        icon_relevant,
+        live_ran,
+        font_check,
+        font_authoritative,
+        style,
+        problems,
+    } = input;
     // Per-block-type local overrides (several blocks of the same type are
     // merged, later wins — matching how "used by" is attributed by type).
     let mut local: HashMap<&str, HashMap<&str, &Icon>> = HashMap::new();
@@ -1130,19 +1172,39 @@ fn print_icon_table(
         }
     }
 
+    // Blocks of the custom family can request arbitrary icon names at
+    // runtime, so an override nothing references statically may still be
+    // used dynamically.
+    let dynamic_blocks = block_names
+        .iter()
+        .any(|n| n == "custom" || n == "custom_dbus");
     for name in global_overrides.keys() {
         if !base_map.contains_key(name)
             && !builtin.contains_key(name)
             && !used_now.contains_key(name)
             && !may_use.contains_key(name.as_str())
         {
-            problems.push(Problem {
-                diagnosis: format!(
-                    "[icons.overrides] defines {name:?}, which no icon set defines and no \
-                     configured block uses (typo?)."
-                ),
-                fix: None,
-            });
+            let diagnosis = format!(
+                "[icons.overrides] defines {name:?}, which no icon set defines and no \
+                 configured block uses (typo?)."
+            );
+            if live_ran && !dynamic_blocks {
+                problems.push(Problem {
+                    diagnosis,
+                    fix: None,
+                });
+            } else {
+                // Inconclusive: dynamic (custom) blocks may request it, and
+                // without the live test that cannot be observed.
+                println!(
+                    "note: {diagnosis} Not counted as a problem: dynamic icon usage cannot be ruled out{}.",
+                    if live_ran {
+                        ""
+                    } else {
+                        " without the live test"
+                    }
+                );
+            }
         }
     }
 
@@ -1184,8 +1246,28 @@ fn print_icon_table(
         // glyphs some block really renders produce rows.
         let mut groups: BTreeMap<Provenance, Vec<String>> = BTreeMap::new();
         for (block, is_may) in users {
+            // A block whose formats render no icons cannot error on a
+            // missing one; skip latent (may) findings for it.
+            let relevant = icon_relevant.get(block).copied().unwrap_or(true);
             match resolve(icon_name, block) {
-                Some((_, provenance)) => {
+                Some((icon, provenance)) => {
+                    // An empty progression is stored but Icons::get returns
+                    // None for it: at runtime it behaves like an undefined
+                    // icon, not like a defined one.
+                    if matches!(icon, Icon::Progression(steps) if steps.is_empty()) {
+                        if !*is_may || relevant {
+                            problems.push(Problem {
+                                diagnosis: format!(
+                                    "Icon {icon_name:?} is defined as an empty progression ({}), \
+                                     which the bar treats as undefined — the `{block}` block \
+                                     will error when it requests it.",
+                                    provenance_desc(&provenance)
+                                ),
+                                fix: Some("Give the progression at least one glyph.".into()),
+                            });
+                        }
+                        continue;
+                    }
                     let label = if *is_may {
                         format!("{block} (may)")
                     } else {
@@ -1193,6 +1275,7 @@ fn print_icon_table(
                     };
                     groups.entry(provenance).or_default().push(label);
                 }
+                None if *is_may && !relevant => (),
                 None => {
                     // Finding: this block would error when requesting it —
                     // unless it never actually can (only "may" usage counts
@@ -1813,10 +1896,28 @@ fn strip_font_modifiers(family: &str) -> String {
 
 struct FormatUse {
     icon_refs: Vec<String>,
+    mentions_icon_placeholder: bool,
 }
 
 struct BlockInfo {
     formats: Vec<FormatUse>,
+}
+
+impl BlockInfo {
+    /// Whether this block's configured formats can render icons at all:
+    /// Some(false) only when explicit formats exist and none of them
+    /// references an icon; None when the block uses its default format
+    /// (which must be assumed to render icons).
+    fn uses_icons(&self) -> Option<bool> {
+        if self.formats.is_empty() {
+            return None;
+        }
+        Some(
+            self.formats
+                .iter()
+                .any(|f| !f.icon_refs.is_empty() || f.mentions_icon_placeholder),
+        )
+    }
 }
 
 fn collect_blocks(raw: &toml::Value) -> Vec<BlockInfo> {
@@ -1848,9 +1949,14 @@ fn collect_formats(value: &toml::Value, out: &mut Vec<FormatUse>) {
                 if let Ok(template) = format_parse::parse_full(s) {
                     let mut icon_refs = Vec::new();
                     collect_icon_refs(&template, &mut icon_refs);
-                    if !icon_refs.is_empty() {
-                        out.push(FormatUse { icon_refs });
-                    }
+                    let mut placeholders = Vec::new();
+                    collect_placeholders(&template, &mut placeholders);
+                    out.push(FormatUse {
+                        icon_refs,
+                        mentions_icon_placeholder: placeholders
+                            .iter()
+                            .any(|p| p == "icon" || p.contains("icon")),
+                    });
                 }
             }
             toml::Value::Table(_) => collect_formats(value, out),
@@ -1860,6 +1966,20 @@ fn collect_formats(value: &toml::Value, out: &mut Vec<FormatUse>) {
                 }
             }
             _ => (),
+        }
+    }
+}
+
+fn collect_placeholders(template: &format_parse::FormatTemplate, out: &mut Vec<String>) {
+    for token_list in &template.0 {
+        for token in &token_list.0 {
+            match token {
+                format_parse::Token::Placeholder(placeholder) => {
+                    out.push(placeholder.name.to_string());
+                }
+                format_parse::Token::Recursive(rec) => collect_placeholders(rec, out),
+                _ => (),
+            }
         }
     }
 }
@@ -1964,6 +2084,38 @@ mod tests {
         assert!(refs.contains(&"bat_charging"));
         assert!(refs.contains(&"nested_ref"));
         assert!(!refs.iter().any(|r| r.contains("not_a_template")));
+    }
+
+    #[test]
+    fn static_icon_relevance() {
+        let raw: toml::Value = toml::from_str(
+            r#"
+            [[block]]
+            block = "time"
+            format = " $timestamp "
+
+            [[block]]
+            block = "time"
+            format = " $icon $timestamp "
+
+            [[block]]
+            block = "battery"
+
+            [[block]]
+            block = "net"
+            format = " ^icon_net_wireless $ssid "
+            "#,
+        )
+        .unwrap();
+        let blocks = collect_blocks(&raw);
+        // explicit format without icons: icons are irrelevant
+        assert_eq!(blocks[0].uses_icons(), Some(false));
+        // explicit format with $icon placeholder
+        assert_eq!(blocks[1].uses_icons(), Some(true));
+        // no explicit format: the default must be assumed to render icons
+        assert_eq!(blocks[2].uses_icons(), None);
+        // ^icon_* reference
+        assert_eq!(blocks[3].uses_icons(), Some(true));
     }
 
     #[test]
