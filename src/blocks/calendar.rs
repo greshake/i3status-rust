@@ -647,7 +647,7 @@ mod tests {
     #[test]
     fn plan_declares_every_state_with_the_calendar_icon() {
         let plan = prepare(&Config::default()).unwrap();
-        let ids: Vec<_> = plan.outputs.iter().map(|o| o.id).collect();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
         assert_eq!(
             ids,
             ["no_events", "next_event", "ongoing_event", "redirect"]

@@ -239,7 +239,7 @@ mod tests {
     #[test]
     fn plan_declares_device_icon_set_on_every_rendering_state() {
         let plan = prepare(&Config::default()).unwrap();
-        let ids: Vec<_> = plan.outputs.iter().map(|o| o.id).collect();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
         assert_eq!(ids, ["main", "inactive", "missing"]);
 
         for id in ["main", "inactive"] {

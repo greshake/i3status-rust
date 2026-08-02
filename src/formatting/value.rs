@@ -43,30 +43,7 @@ pub enum ValueInner {
     Flag,
 }
 
-/// The kind of a [`ValueInner`], as declarable by a block plan
-/// (see [`crate::block_plan::OutputPlan::always_provides`]).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ValueKind {
-    Text,
-    Icon,
-    Number,
-    Datetime,
-    Duration,
-    Flag,
-}
-
 impl ValueInner {
-    pub fn kind(&self) -> ValueKind {
-        match self {
-            ValueInner::Text(..) => ValueKind::Text,
-            ValueInner::Icon(..) => ValueKind::Icon,
-            ValueInner::Number { .. } => ValueKind::Number,
-            ValueInner::Datetime(..) => ValueKind::Datetime,
-            ValueInner::Duration(..) => ValueKind::Duration,
-            ValueInner::Flag => ValueKind::Flag,
-        }
-    }
-
     pub fn type_name(&self) -> &'static str {
         match self {
             ValueInner::Text(..) => "Text",

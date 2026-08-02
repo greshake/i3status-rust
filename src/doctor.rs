@@ -876,14 +876,6 @@ async fn run_worker_process(exe: &Path, config_arg: &str, index: usize) -> Block
         .arg("--doctor-worker")
         .arg(index.to_string())
         .arg(config_arg)
-        // In the real bar all custom_dbus blocks share one connection and
-        // one well-known name; workers are separate concurrent processes,
-        // so give each a unique name to avoid NameTaken races (also against
-        // a bar that is currently running). This private variable is read
-        // ONLY by the custom_dbus block — the environment every block and
-        // if_command observes (including the documented I3RS_DBUS_NAME) is
-        // untouched.
-        .env("I3RS_INTERNAL_DBUS_NAME_OVERRIDE", format!("doctor{index}"))
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::null())
@@ -929,6 +921,10 @@ async fn run_worker_process(exe: &Path, config_arg: &str, index: usize) -> Block
 /// Entry point for `--doctor-worker <index>`: run one block's live test in
 /// this process and print the result as JSON on stdout.
 pub fn run_worker(config_arg: &str, index: usize) {
+    // Workers are separate concurrent processes; give custom_dbus a unique
+    // well-known name via an in-process channel — the environment every
+    // block command and if_command sees stays exactly the user's own.
+    crate::blocks::custom_dbus::set_doctor_dbus_suffix(format!("doctor{index}"));
     let report = worker_report(config_arg, index);
     match serde_json::to_string(&report) {
         Ok(json) => println!("{json}"),
@@ -1367,7 +1363,7 @@ struct PlanAnalysis {
 fn analyze_plan(plan: &crate::block_plan::BlockPlan) -> PlanAnalysis {
     use crate::block_plan::IconChoices;
     let mut analysis = PlanAnalysis::default();
-    for output in &plan.outputs {
+    for output in plan.outputs() {
         for (_, choices) in output.icon_placeholders() {
             match choices {
                 IconChoices::Fixed(names) => analysis.required.extend(
@@ -1380,8 +1376,8 @@ fn analyze_plan(plan: &crate::block_plan::BlockPlan) -> PlanAnalysis {
             }
         }
         for template in [
-            output.format.full_template(),
-            output.format.short_template(),
+            output.format().full_template(),
+            output.format().short_template(),
         ] {
             let mut icons = Vec::new();
             collect_icon_tokens(template, &mut icons);

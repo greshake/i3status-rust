@@ -273,7 +273,7 @@ mod tests {
     fn plan_declares_states_reachable_for_the_driver() {
         // Default driver is nordvpn, which never reports Connecting.
         let plan = prepare(&Config::default()).unwrap();
-        let declared: Vec<_> = plan.outputs.iter().map(|o| o.id).collect();
+        let declared: Vec<_> = plan.outputs().map(|o| o.id()).collect();
         assert_eq!(declared, ["connected", "disconnected", "error"]);
 
         let mullvad = Config {
@@ -281,7 +281,7 @@ mod tests {
             ..Config::default()
         };
         let plan = prepare(&mullvad).unwrap();
-        let declared: Vec<_> = plan.outputs.iter().map(|o| o.id).collect();
+        let declared: Vec<_> = plan.outputs().map(|o| o.id()).collect();
         assert_eq!(
             declared,
             ["connected", "disconnected", "connecting", "error"]

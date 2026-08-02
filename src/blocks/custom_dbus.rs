@@ -165,21 +165,31 @@ pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Res
     Ok(())
 }
 
-/// The well-known name to request. The internal override is a doctor-only
-/// mechanism (its workers run each block in a separate process and need
-/// unique names); it takes precedence over the documented public
-/// `I3RS_DBUS_NAME` and is not part of the public interface.
-fn dbus_name(internal_override: Option<&str>, public: Option<&str>) -> String {
-    match internal_override.or(public) {
+/// Doctor-only override, set in-process by the doctor worker before the
+/// block runs. It never touches the environment, so if_command and custom
+/// commands observe exactly what the user's shell exported.
+static DOCTOR_NAME_OVERRIDE: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+
+pub(crate) fn set_doctor_dbus_suffix(suffix: String) {
+    let _ = DOCTOR_NAME_OVERRIDE.set(suffix);
+}
+
+/// The well-known name to request. The doctor override takes precedence
+/// over the documented public `I3RS_DBUS_NAME`; it is not part of the
+/// public interface.
+fn dbus_name(doctor_override: Option<&str>, public: Option<&str>) -> String {
+    match doctor_override.or(public) {
         Some(v) => format!("{DBUS_NAME}.{v}"),
         None => DBUS_NAME.to_string(),
     }
 }
 
 async fn dbus_conn() -> Result<zbus::Connection> {
-    let internal = env::var("I3RS_INTERNAL_DBUS_NAME_OVERRIDE").ok();
     let public = env::var("I3RS_DBUS_NAME").ok();
-    let dbus_interface_name = dbus_name(internal.as_deref(), public.as_deref());
+    let dbus_interface_name = dbus_name(
+        DOCTOR_NAME_OVERRIDE.get().map(String::as_str),
+        public.as_deref(),
+    );
 
     let conn = new_dbus_connection().await?;
     conn.request_name(dbus_interface_name)

@@ -113,7 +113,7 @@ mod tests {
     #[test]
     fn plan_declares_main_output_without_icon_placeholders() {
         let plan = prepare(&Config::default()).unwrap();
-        let declared: Vec<_> = plan.outputs.iter().map(|o| o.id).collect();
+        let declared: Vec<_> = plan.outputs().map(|o| o.id()).collect();
         assert_eq!(declared, ["main"]);
         let output = plan.output("main").unwrap();
         assert_eq!(output.output().icon_placeholders().count(), 0);

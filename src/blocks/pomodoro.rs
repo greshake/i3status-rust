@@ -372,7 +372,7 @@ mod tests {
     #[test]
     fn plan_scopes_status_icons_to_their_states() {
         let plan = prepare(&Config::default()).unwrap();
-        let ids: Vec<_> = plan.outputs.iter().map(|o| o.id).collect();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
         assert_eq!(
             ids,
             ["idle", "prompt", "notify", "running", "paused", "break"]

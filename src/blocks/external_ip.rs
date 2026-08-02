@@ -236,7 +236,7 @@ mod tests {
     #[test]
     fn plan_declares_single_output_without_icons() {
         let plan = prepare(&Config::default()).unwrap();
-        assert_eq!(plan.outputs.len(), 1);
+        assert_eq!(plan.outputs().count(), 1);
         let main = plan.output("main").unwrap();
         assert!(main.format().contains_key("ip"));
         assert!(main.format().contains_key("country_flag"));

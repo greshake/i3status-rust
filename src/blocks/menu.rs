@@ -143,6 +143,6 @@ mod tests {
             items: Vec::new(),
         };
         let plan = prepare(&config).unwrap();
-        assert!(plan.outputs.is_empty());
+        assert!((plan.outputs().count() == 0));
     }
 }

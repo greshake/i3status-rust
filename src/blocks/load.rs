@@ -111,7 +111,7 @@ mod tests {
     #[test]
     fn plan_declares_main_output_with_cogs_icon() {
         let plan = prepare(&Config::default()).unwrap();
-        let declared: Vec<_> = plan.outputs.iter().map(|o| o.id).collect();
+        let declared: Vec<_> = plan.outputs().map(|o| o.id()).collect();
         assert_eq!(declared, ["main"]);
         let output = plan.output("main").unwrap();
         assert_eq!(output.single_icon("icon").unwrap(), "cogs");

@@ -558,7 +558,7 @@ mod tests {
     #[test]
     fn plan_declares_count_states_with_update_icon() {
         let plan = prepare(&Config::default()).unwrap();
-        let ids: Vec<_> = plan.outputs.iter().map(|o| o.id).collect();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
         assert_eq!(ids, ["main", "singular", "up_to_date"]);
         for id in ["main", "singular", "up_to_date"] {
             let output = plan.output(id).unwrap();

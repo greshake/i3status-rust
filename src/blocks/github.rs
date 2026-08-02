@@ -215,7 +215,7 @@ mod tests {
     #[test]
     fn plan_declares_main_with_github_icon() {
         let plan = prepare(&Config::default()).unwrap();
-        assert_eq!(plan.outputs.len(), 1);
+        assert_eq!(plan.outputs().count(), 1);
         let main = plan.output("main").unwrap();
         assert_eq!(main.single_icon("icon").unwrap(), "github");
         assert!(main.format().contains_key("total"));

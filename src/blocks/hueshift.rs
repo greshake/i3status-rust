@@ -410,7 +410,7 @@ mod tests {
     #[test]
     fn plan_declares_a_single_output_with_its_icon() {
         let plan = prepare(&Config::default()).unwrap();
-        let ids: Vec<_> = plan.outputs.iter().map(|o| o.id).collect();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
         assert_eq!(ids, ["main"]);
         let main = plan.output("main").unwrap();
         assert_eq!(main.single_icon("icon").unwrap(), "hueshift");

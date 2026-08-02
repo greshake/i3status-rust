@@ -480,7 +480,7 @@ mod tests {
     #[test]
     fn plan_declares_every_state_with_its_icons() {
         let plan = prepare(&config()).unwrap();
-        let ids: Vec<_> = plan.outputs.iter().map(|o| o.id).collect();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
         assert_eq!(ids, ["connected", "disconnected", "unavailable"]);
 
         // The device values (icon, battery_icon) are set regardless of the

@@ -85,8 +85,8 @@ pub struct IconToken {
 /// values the block guarantees to provide on every render.
 #[derive(Debug, Clone)]
 pub struct OutputPlan {
-    pub id: &'static str,
-    pub format: Format,
+    id: &'static str,
+    format: Format,
     icons: Vec<(&'static str, IconChoices)>,
 }
 
@@ -97,6 +97,14 @@ impl OutputPlan {
             format,
             icons: Vec::new(),
         }
+    }
+
+    pub fn id(&self) -> &'static str {
+        self.id
+    }
+
+    pub fn format(&self) -> &Format {
+        &self.format
     }
 
     /// Declare the icon choices for an icon-valued placeholder.
@@ -118,13 +126,20 @@ impl OutputPlan {
     }
 }
 
-/// The full prepared contract of one block instance.
+/// The full prepared contract of one block instance. The validated fields
+/// are immutable from outside this module (read-only iteration only), so
+/// construction-time uniqueness is a permanent invariant.
 #[derive(Debug, Clone, Default)]
 pub struct BlockPlan {
-    pub outputs: Vec<OutputPlan>,
+    outputs: Vec<OutputPlan>,
 }
 
 impl BlockPlan {
+    /// Read-only view of the declared output variants.
+    pub fn outputs(&self) -> impl Iterator<Item = &OutputPlan> {
+        self.outputs.iter()
+    }
+
     /// Build a plan, rejecting ambiguous metadata unconditionally (also in
     /// release builds): duplicate output ids and duplicate icon-placeholder
     /// declarations within an output are contract bugs.
@@ -185,7 +200,7 @@ impl OutputHandle {
     }
 
     pub fn format(&self) -> &Format {
-        &self.output().format
+        self.output().format()
     }
 
     /// The one icon name this output declares for `placeholder`. Lets runtime

@@ -520,7 +520,7 @@ mod tests {
     #[test]
     fn plan_declares_connection_states_and_icons() {
         let plan = prepare(&Config::default()).unwrap();
-        let ids: Vec<_> = plan.outputs.iter().map(|o| o.id).collect();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
         assert_eq!(ids, ["connected", "disconnected", "missing"]);
 
         let connected = plan.output("connected").unwrap();

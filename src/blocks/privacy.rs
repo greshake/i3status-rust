@@ -323,7 +323,7 @@ mod tests {
         // A V4L-only configuration can only ever report webcam capture.
         let config = config_with_drivers("[[driver]]\nname = \"v4l\"");
         let plan = prepare(&config).unwrap();
-        let ids: Vec<_> = plan.outputs.iter().map(|o| o.id).collect();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
         assert_eq!(ids, ["main", "alt"]);
         for id in ids {
             let output = plan.output(id).unwrap();

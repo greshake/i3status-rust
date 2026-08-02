@@ -227,7 +227,7 @@ mod tests {
     #[test]
     fn plan_declares_both_states_without_icons() {
         let plan = prepare(&Config::default()).unwrap();
-        let ids: Vec<_> = plan.outputs.iter().map(|o| o.id).collect();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
         assert_eq!(ids, ["active", "inactive"]);
         for id in ["active", "inactive"] {
             let output = plan.output(id).unwrap();
