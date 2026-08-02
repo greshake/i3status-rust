@@ -466,7 +466,7 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                 .max()
                 .unwrap_or(0);
             println!(
-                "{:>num_w$}  {:<name_w$}  {:<out_w$}  Icons used during this run",
+                "{:>num_w$}  {:<name_w$}  {:<out_w$}  Icons/text glyphs used during this run",
                 "#", "Name", "Output"
             );
             for report in &reports {
@@ -814,6 +814,11 @@ struct BlockReport {
     index: usize,
     name: String,
     verdict: LiveVerdict,
+    /// Country flags the block generated during the run (recorded at the
+    /// source, `util::country_flag_from_iso_code`): text glyphs, not icons,
+    /// but font-dependent all the same.
+    #[serde(default)]
+    flags: Vec<String>,
 }
 
 enum FirstOutput {
@@ -839,6 +844,7 @@ fn run_live(config_arg: &str, count: usize, problems: &mut Vec<Problem>) -> Vec<
                 index: 0,
                 name: "<worker>".into(),
                 verdict: LiveVerdict::BlockError(format!("cannot find own executable: {err}")),
+                flags: Vec::new(),
             }];
         }
     };
@@ -852,6 +858,7 @@ fn run_live(config_arg: &str, count: usize, problems: &mut Vec<Problem>) -> Vec<
                 index: 0,
                 name: "<runtime>".into(),
                 verdict: LiveVerdict::BlockError(format!("failed to start async runtime: {err}")),
+                flags: Vec::new(),
             }];
         }
     };
@@ -1000,6 +1007,7 @@ async fn run_worker_process(exe: &Path, config_arg: &str, index: usize) -> Block
         index,
         name: format!("block #{}", index + 1),
         verdict: LiveVerdict::BlockError(msg),
+        flags: Vec::new(),
     };
 
     let mut command = tokio::process::Command::new(exe);
@@ -1056,7 +1064,10 @@ pub fn run_worker(config_arg: &str, index: usize) {
     // well-known name via an in-process channel — the environment every
     // block command and if_command sees stays exactly the user's own.
     crate::blocks::custom_dbus::set_doctor_dbus_suffix(format!("doctor{index}"));
-    let report = worker_report(config_arg, index);
+    util::enable_flag_recorder();
+    let mut report = worker_report(config_arg, index);
+    report.flags = util::recorded_flags();
+    let report = report;
     match serde_json::to_string(&report) {
         Ok(json) => println!("{json}"),
         Err(err) => eprintln!("doctor worker: cannot serialize report: {err}"),
@@ -1068,6 +1079,7 @@ fn worker_report(config_arg: &str, index: usize) -> BlockReport {
         index,
         name: format!("block #{}", index + 1),
         verdict: LiveVerdict::BlockError(msg),
+        flags: Vec::new(),
     };
     let Ok(Some(config_path)) = util::find_file(config_arg, None, Some("toml")) else {
         return fail("worker cannot find the configuration file".into());
@@ -1126,6 +1138,7 @@ async fn test_block(
                         "if_command did not finish within {}s ({cmd})",
                         LIVE_TIMEOUT.as_secs()
                     )),
+                    flags: Vec::new(),
                 };
             }
             Ok(Err(err)) => {
@@ -1135,6 +1148,7 @@ async fn test_block(
                     verdict: LiveVerdict::IfCommandFailed(format!(
                         "if_command could not run: {err}"
                     )),
+                    flags: Vec::new(),
                 };
             }
             Ok(Ok(output)) if !output.status.success() => {
@@ -1144,6 +1158,7 @@ async fn test_block(
                     verdict: LiveVerdict::Skipped(format!(
                         "if_command exited non-zero ({cmd}) — the bar would not show this block"
                     )),
+                    flags: Vec::new(),
                 };
             }
             Ok(Ok(_)) => (),
@@ -1161,6 +1176,7 @@ async fn test_block(
             index,
             name,
             verdict: LiveVerdict::BlockError(format!("invalid theme_overrides: {err}")),
+            flags: Vec::new(),
         };
     }
     if let Some(icons_overrides) = entry.common.icons_overrides {
@@ -1209,6 +1225,7 @@ async fn test_block(
             index,
             name,
             verdict: LiveVerdict::Panicked(join_error_message(err)),
+            flags: Vec::new(),
         };
     }
 
@@ -1224,6 +1241,7 @@ async fn test_block(
         index,
         name,
         verdict,
+        flags: Vec::new(),
     }
 }
 
@@ -1349,10 +1367,14 @@ fn print_block_report(
         LiveVerdict::Rendered { icons, .. } | LiveVerdict::RenderError { icons, .. } => icons,
         _ => &[],
     };
-    let icons_cell = if icons.is_empty() {
+    // Icons by name, plus text glyphs the block generated at the source
+    // (country flags): both are font-dependent output.
+    let mut cells: Vec<String> = icons.to_vec();
+    cells.extend(report.flags.iter().map(|flag| format!("{flag} (text)")));
+    let icons_cell = if cells.is_empty() {
         "-".to_string()
     } else {
-        icons.join(", ")
+        cells.join(", ")
     };
     // pad by display width: the cell may contain icon glyphs
     let pad = out_w.saturating_sub(UnicodeWidthStr::width(cell.as_str()));
