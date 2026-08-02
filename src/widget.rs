@@ -75,6 +75,13 @@ impl Widget {
         self.contract = Some(contract);
     }
 
+    /// Switch this widget to another declared output: installs that output's
+    /// effective format and contract together.
+    pub(crate) fn set_output(&mut self, output: &OutputHandle) {
+        self.set_format(output.format().clone());
+        self.contract = Some(output.clone());
+    }
+
     #[cfg(test)]
     pub(crate) fn contract(&self) -> Option<&OutputHandle> {
         self.contract.as_ref()

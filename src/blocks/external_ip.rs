@@ -77,8 +77,17 @@ pub struct Config {
     pub use_ipv4: bool,
 }
 
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    Ok(BlockPlan::new(vec![OutputPlan::new(
+        "main",
+        config.format.with_default(" $ip $country_flag ")?,
+    )]))
+}
+
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let format = config.format.with_default(" $ip $country_flag ")?;
+    let plan = prepare(config)?;
+    let output_main = plan.output("main")?;
+    let format = output_main.format();
 
     type UpdatesStream = Pin<Box<dyn Stream<Item = ()>>>;
     let mut stream: UpdatesStream = if config.with_network_manager {
@@ -206,7 +215,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             )));
         }
 
-        let mut widget = Widget::new().with_format(format.clone());
+        let mut widget = output_main.new_widget();
         widget.set_values(values);
         api.set_widget(widget)?;
 
@@ -215,5 +224,32 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             _ = api.wait_for_update_request() => (),
             _ = stream.next_debounced() => ()
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_single_output_without_icons() {
+        let plan = prepare(&Config::default()).unwrap();
+        assert_eq!(plan.outputs.len(), 1);
+        let main = plan.output("main").unwrap();
+        assert!(main.format().contains_key("ip"));
+        assert!(main.format().contains_key("country_flag"));
+        assert_eq!(main.output().icon_placeholders().count(), 0);
+    }
+
+    #[test]
+    fn custom_format_is_used() {
+        let config = Config {
+            format: " $ip $country_code ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        let main = plan.output("main").unwrap();
+        assert!(main.format().contains_key("country_code"));
+        assert!(!main.format().contains_key("country_flag"));
     }
 }

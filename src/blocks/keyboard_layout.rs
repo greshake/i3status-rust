@@ -121,8 +121,16 @@ pub enum KeyboardLayoutDriver {
     Sway,
 }
 
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    Ok(BlockPlan::new(vec![OutputPlan::new(
+        "main",
+        config.format.with_default(" $layout ")?,
+    )]))
+}
+
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let format = config.format.with_default(" $layout ")?;
+    let plan = prepare(config)?;
+    let output_main = plan.output("main")?;
 
     let mut backend: Box<dyn Backend> = match config.driver {
         KeyboardLayoutDriver::LocaleBus => Box::new(LocaleBus::new().await?),
@@ -146,7 +154,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             layout.clone_from(mapped);
         }
 
-        let mut widget = Widget::new().with_format(format.clone());
+        let mut widget = output_main.new_widget();
         widget.set_values(map! {
             "layout" => Value::text(layout),
             "variant" => Value::text(variant),
@@ -183,5 +191,35 @@ impl Info {
                 variant: None,
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_single_output_without_icons() {
+        let plan = prepare(&Config::default()).unwrap();
+        let ids: Vec<_> = plan.outputs.iter().map(|o| o.id).collect();
+        assert_eq!(ids, ["main"]);
+        let main = plan.output("main").unwrap();
+        assert!(main.format().contains_key("layout"));
+        assert_eq!(main.output().icon_placeholders().count(), 0);
+    }
+
+    #[test]
+    fn plan_uses_configured_format() {
+        let config = Config {
+            format: " $layout ($variant) ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        assert!(
+            plan.output("main")
+                .unwrap()
+                .format()
+                .contains_key("variant")
+        );
     }
 }

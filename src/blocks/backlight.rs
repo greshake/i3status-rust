@@ -104,6 +104,19 @@ pub struct Config {
     pub ddcci_max_tries_write_read: Option<u8>,
 }
 
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    Ok(BlockPlan::new(vec![
+        OutputPlan::new("main", config.format.with_default(" $icon $brightness ")?)
+            .icon("icon", IconChoices::one("backlight")),
+        OutputPlan::new(
+            "missing",
+            config
+                .missing_format
+                .with_default(" no backlight devices ")?,
+        ),
+    ]))
+}
+
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
@@ -112,10 +125,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         (MouseButton::WheelDown, None, "brightness_down"),
     ])?;
 
-    let format = config.format.with_default(" $icon $brightness ")?;
-    let missing_format = config
-        .missing_format
-        .with_default(" no backlight devices ")?;
+    let plan = prepare(config)?;
+    let output_main = plan.output("main")?;
+    let output_missing = plan.output("missing")?;
 
     let default_cycle = &[config.minimum, config.maximum];
     let mut cycle = config
@@ -168,9 +180,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     loop {
         match block_error {
             Some(CalibrightError::NoDevices) => {
-                let widget = Widget::new()
-                    .with_format(missing_format.clone())
-                    .with_state(State::Critical);
+                let widget = output_missing.new_widget().with_state(State::Critical);
                 api.set_widget(widget)?;
             }
             Some(e) => {
@@ -180,7 +190,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 })?;
             }
             None => {
-                let mut widget = Widget::new().with_format(format.clone());
+                let mut widget = output_main.new_widget();
                 let mut icon_value = brightness;
                 if config.invert_icons {
                     icon_value = 1.0 - icon_value;
@@ -237,5 +247,31 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_main_and_missing() {
+        let plan = prepare(&Config::default()).unwrap();
+        let main = plan.output("main").unwrap();
+        assert_eq!(main.single_icon("icon").unwrap(), "backlight");
+        assert!(main.format().contains_key("brightness"));
+        let missing = plan.output("missing").unwrap();
+        assert_eq!(missing.output().icon_placeholders().count(), 0);
+    }
+
+    #[test]
+    fn custom_missing_format_is_used() {
+        let config = Config {
+            missing_format: " $brightness ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        let missing = plan.output("missing").unwrap();
+        assert!(missing.format().contains_key("brightness"));
     }
 }

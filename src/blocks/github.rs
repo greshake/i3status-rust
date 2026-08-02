@@ -74,8 +74,19 @@ pub struct Config {
     pub critical: Option<Vec<String>>,
 }
 
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    Ok(BlockPlan::new(vec![
+        OutputPlan::new(
+            "main",
+            config.format.with_default(" $icon $total.eng(w:1) ")?,
+        )
+        .icon("icon", IconChoices::one("github")),
+    ]))
+}
+
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let format = config.format.with_default(" $icon $total.eng(w:1) ")?;
+    let plan = prepare(config)?;
+    let output_main = plan.output("main")?;
 
     let mut interval = config.interval.timer();
     let token = config
@@ -88,7 +99,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let stats = get_stats(&token).await?;
 
         if stats.get("total").is_some_and(|x| *x > 0) || !config.hide_if_total_is_zero {
-            let mut widget = Widget::new().with_format(format.clone());
+            let mut widget = output_main.new_widget();
 
             'outer: for (list_opt, ret) in [
                 (&config.critical, State::Critical),
@@ -186,5 +197,31 @@ async fn get_on_page(token: &str, page: usize) -> Result<Vec<Notification>> {
     match response {
         Response::Notifications(n) => Ok(n),
         Response::ErrorMessage { message } => Err(Error::new(format!("API error: {message}"))),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_main_with_github_icon() {
+        let plan = prepare(&Config::default()).unwrap();
+        assert_eq!(plan.outputs.len(), 1);
+        let main = plan.output("main").unwrap();
+        assert_eq!(main.single_icon("icon").unwrap(), "github");
+        assert!(main.format().contains_key("total"));
+    }
+
+    #[test]
+    fn custom_format_is_used() {
+        let config = Config {
+            format: " $icon $mention.eng(w:1) ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        let main = plan.output("main").unwrap();
+        assert!(main.format().contains_key("mention"));
+        assert!(!main.format().contains_key("total"));
     }
 }

@@ -91,6 +91,18 @@ pub struct Config {
     pub warning: u32,
 }
 
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    Ok(BlockPlan::new(vec![
+        OutputPlan::new(
+            "main",
+            config
+                .format
+                .with_default(" $icon $utilization $memory $temperature ")?,
+        )
+        .icon("icon", IconChoices::one("gpu")),
+    ]))
+}
+
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
@@ -100,9 +112,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         (MouseButton::WheelDown, Some(FAN_BTN), "fan_speed_down"),
     ])?;
 
-    let format = config
-        .format
-        .with_default(" $icon $utilization $memory $temperature ")?;
+    let plan = prepare(config)?;
+    let output_main = plan.output("main")?;
 
     // Run `nvidia-smi` command
     let mut child = Command::new("nvidia-smi")
@@ -126,7 +137,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut fan_controlled = false;
 
     loop {
-        let mut widget = Widget::new().with_format(format.clone());
+        let mut widget = output_main.new_widget();
 
         widget.state = match info.temperature {
             t if t <= config.idle => State::Idle,
@@ -261,5 +272,32 @@ async fn set_fan_speed(id: u64, speed: Option<u32>) -> Result<()> {
         Ok(())
     } else {
         Err(Error::new(ERR_MSG))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_single_output_with_gpu_icon() {
+        let plan = prepare(&Config::default()).unwrap();
+        let ids: Vec<_> = plan.outputs.iter().map(|o| o.id).collect();
+        assert_eq!(ids, ["main"]);
+        let main = plan.output("main").unwrap();
+        assert_eq!(main.single_icon("icon").unwrap(), "gpu");
+        assert!(main.format().contains_key("utilization"));
+    }
+
+    #[test]
+    fn plan_uses_configured_format() {
+        let config = Config {
+            format: " $icon $fan_speed ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        let main = plan.output("main").unwrap();
+        assert!(main.format().contains_key("fan_speed"));
+        assert!(!main.format().contains_key("utilization"));
     }
 }

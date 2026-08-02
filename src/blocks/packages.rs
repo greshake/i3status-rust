@@ -396,16 +396,41 @@ impl PackageManager {
     }
 }
 
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    Ok(BlockPlan::new(vec![
+        OutputPlan::new(
+            "main",
+            config.format.with_default(" $icon $total.eng(w:1) ")?,
+        )
+        .icon("icon", IconChoices::one("update")),
+        OutputPlan::new(
+            "singular",
+            config
+                .format_singular
+                .with_default(" $icon $total.eng(w:1) ")?,
+        )
+        .icon("icon", IconChoices::one("update")),
+        OutputPlan::new(
+            "up_to_date",
+            config
+                .format_up_to_date
+                .with_default(" $icon $total.eng(w:1) ")?,
+        )
+        .icon("icon", IconChoices::one("update")),
+    ]))
+}
+
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+    let plan = prepare(config)?;
+    let output_main = plan.output("main")?;
+    let output_singular = plan.output("singular")?;
+    let output_up_to_date = plan.output("up_to_date")?;
+
     let mut config: Config = config.clone();
 
-    let format = config.format.with_default(" $icon $total.eng(w:1) ")?;
-    let format_singular = config
-        .format_singular
-        .with_default(" $icon $total.eng(w:1) ")?;
-    let format_up_to_date = config
-        .format_up_to_date
-        .with_default(" $icon $total.eng(w:1) ")?;
+    let format = output_main.format();
+    let format_singular = output_singular.format();
+    let format_up_to_date = output_up_to_date.format();
 
     // Check if the user specified a package manager in any format string, then
     // add that package manager to the config list.
@@ -485,16 +510,15 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 .is_some_and(|regex| has_matching_update(&updates, regex));
         }
 
-        let mut widget = Widget::new();
-
         package_manager_map.insert("icon".into(), Value::icon("update"));
         package_manager_map.insert("total".into(), Value::number(total_count));
 
-        widget.set_format(match total_count {
-            0 => format_up_to_date.clone(),
-            1 => format_singular.clone(),
-            _ => format.clone(),
-        });
+        let output = match total_count {
+            0 => &output_up_to_date,
+            1 => &output_singular,
+            _ => &output_main,
+        };
+        let mut widget = output.new_widget();
         widget.set_values(package_manager_map);
 
         widget.state = match total_count {
@@ -527,4 +551,44 @@ pub trait Backend {
 
 pub fn has_matching_update(updates: &[String], regex: &Regex) -> bool {
     updates.iter().any(|line| regex.is_match(line))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_count_states_with_update_icon() {
+        let plan = prepare(&Config::default()).unwrap();
+        let ids: Vec<_> = plan.outputs.iter().map(|o| o.id).collect();
+        assert_eq!(ids, ["main", "singular", "up_to_date"]);
+        for id in ["main", "singular", "up_to_date"] {
+            let output = plan.output(id).unwrap();
+            assert_eq!(output.single_icon("icon").unwrap(), "update", "{id}");
+        }
+    }
+
+    #[test]
+    fn each_count_state_resolves_its_own_format() {
+        let config = Config {
+            format_singular: " one update ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        // The configured format applies only to the singular state...
+        assert!(
+            !plan
+                .output("singular")
+                .unwrap()
+                .format()
+                .contains_key("total")
+        );
+        // ...the other states keep the shared default.
+        for id in ["main", "up_to_date"] {
+            assert!(
+                plan.output(id).unwrap().format().contains_key("total"),
+                "{id}"
+            );
+        }
+    }
 }

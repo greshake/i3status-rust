@@ -74,6 +74,18 @@ pub enum Timezone {
     Timezones(Vec<Tz>),
 }
 
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    Ok(BlockPlan::new(vec![
+        OutputPlan::new(
+            "main",
+            config
+                .format
+                .with_default(" $icon $timestamp.datetime() ")?,
+        )
+        .icon("icon", IconChoices::one("time")),
+    ]))
+}
+
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
@@ -81,9 +93,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         (MouseButton::Right, None, "prev_timezone"),
     ])?;
 
-    let mut formats = config
-        .formats
-        .with_default(" $icon $timestamp.datetime() ")?;
+    let plan = prepare(config)?;
+    let output_main = plan.output("main")?;
 
     let timezones = match config.timezone.clone() {
         Some(tzs) => match tzs {
@@ -108,7 +119,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     timer.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
 
     loop {
-        let mut widget = Widget::new().with_format(formats.get_format());
+        let mut widget = output_main.new_widget();
         let now = Utc::now();
 
         widget.set_values(map! {
@@ -142,5 +153,32 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 _ => (),
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_single_output_with_time_icon() {
+        let plan = prepare(&Config::default()).unwrap();
+        let ids: Vec<_> = plan.outputs.iter().map(|o| o.id).collect();
+        assert_eq!(ids, ["main"]);
+        let main = plan.output("main").unwrap();
+        assert_eq!(main.single_icon("icon").unwrap(), "time");
+        assert!(main.format().contains_key("timestamp"));
+    }
+
+    #[test]
+    fn plan_uses_configured_format() {
+        let config = Config {
+            format: " $timestamp.datetime(f:%R) ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        let main = plan.output("main").unwrap();
+        assert!(main.format().contains_key("timestamp"));
+        assert!(!main.format().contains_key("icon"));
     }
 }

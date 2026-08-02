@@ -157,6 +157,34 @@ trait PrivacyMonitor {
     async fn wait_for_change(&mut self) -> Result<()>;
 }
 
+/// The icon each icon-valued placeholder carries. Any subset can be set in
+/// either output, depending on which capture types are active.
+const TYPE_ICONS: [(&str, &str); 5] = [
+    ("icon_audio", "microphone"),
+    ("icon_audio_sink", "volume"),
+    ("icon_video", "xrandr"),
+    ("icon_webcam", "webcam"),
+    ("icon_unknown", "unknown"),
+];
+
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    let format = config.format.with_default(
+        "{ $icon_audio |}{ $icon_audio_sink |}{ $icon_video |}{ $icon_webcam |}{ $icon_unknown |}",
+    )?;
+    let format_alt = config.format_alt.with_default("{ $icon_audio $info_audio |}{ $icon_audio_sink $info_audio_sink |}{ $icon_video $info_video |}{ $icon_webcam $info_webcam |}{ $icon_unknown $info_unknown |}")?;
+
+    let with_icons = |mut output: OutputPlan| {
+        for (placeholder, icon) in TYPE_ICONS {
+            output = output.icon(placeholder, IconChoices::one(icon));
+        }
+        output
+    };
+    Ok(BlockPlan::new(vec![
+        with_icons(OutputPlan::new("main", format)),
+        with_icons(OutputPlan::new("alt", format_alt)),
+    ]))
+}
+
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
@@ -164,14 +192,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         (MouseButton::Right, None, "prev_format"),
     ])?;
 
-    let mut formats = config
-        .formats
-        .with_default_formats(&[
-            "{ $icon_audio |}{ $icon_audio_sink |}{ $icon_video |}{ $icon_webcam |}{ $icon_unknown |}"
-                .parse()?,
-            "{ $icon_audio $info_audio |}{ $icon_audio_sink $info_audio_sink |}{ $icon_video $info_video |}{ $icon_webcam $info_webcam |}{ $icon_unknown $info_unknown |}"
-                .parse()?
-        ]);
+    let plan = prepare(config)?;
+    let output_main = plan.output("main")?;
+    let output_alt = plan.output("alt")?;
+    let mut alt_shown = false;
 
     let mut drivers: Vec<Box<dyn PrivacyMonitor + Send + Sync>> = Vec::new();
 
@@ -188,7 +212,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     }
 
     loop {
-        let mut widget = Widget::new().with_format(formats.get_format());
+        let output = if alt_shown { &output_alt } else { &output_main };
+        let mut widget = output.new_widget();
 
         let mut info = PrivacyInfo::default();
         //Merge driver info
@@ -245,14 +270,87 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             _ = api.wait_for_update_request() => (),
             _ = select_all(drivers.iter_mut().map(|driver| driver.wait_for_change())) =>(),
             Some(action) = actions.recv() => match action.as_ref() {
-                "next_format" | "toggle_format" => {
-                    formats.next_format();
-                }
-                "prev_format" => {
-                    formats.prev_format();
+                "toggle_format" => {
+                    alt_shown = !alt_shown;
                 }
                 _ => (),
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn config() -> Config {
+        Config {
+            format: Default::default(),
+            format_alt: Default::default(),
+            driver: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn plan_declares_every_type_icon_on_both_outputs() {
+        let plan = prepare(&config()).unwrap();
+        let ids: Vec<_> = plan.outputs.iter().map(|o| o.id).collect();
+        assert_eq!(ids, ["main", "alt"]);
+        // Any capture type can be active whichever format is shown, so both
+        // outputs must declare the full mapping.
+        for id in ids {
+            let output = plan.output(id).unwrap();
+            for (placeholder, icon) in TYPE_ICONS {
+                assert_eq!(
+                    output.single_icon(placeholder).unwrap(),
+                    icon,
+                    "{id} must declare {icon} for ${placeholder}"
+                );
+            }
+            assert_eq!(output.output().icon_placeholders().count(), TYPE_ICONS.len());
+        }
+    }
+
+    #[test]
+    fn every_capture_type_has_a_declared_icon() {
+        // Drift test: the exhaustive match stops compiling when a `Type`
+        // variant is added, forcing TYPE_ICONS (and the value mapping in
+        // `run()`) to be extended in lockstep.
+        let types = [
+            Type::Audio,
+            Type::AudioSink,
+            Type::Video,
+            Type::Webcam,
+            Type::Unknown,
+        ];
+        assert_eq!(types.len(), TYPE_ICONS.len());
+        for type_ in types {
+            let (placeholder, icon) = match type_ {
+                Type::Audio => ("icon_audio", "microphone"),
+                Type::AudioSink => ("icon_audio_sink", "volume"),
+                Type::Video => ("icon_video", "xrandr"),
+                Type::Webcam => ("icon_webcam", "webcam"),
+                Type::Unknown => ("icon_unknown", "unknown"),
+            };
+            assert!(TYPE_ICONS.contains(&(placeholder, icon)));
+        }
+    }
+
+    #[test]
+    fn alt_output_uses_the_alternate_format() {
+        let plan = prepare(&config()).unwrap();
+        assert!(
+            !plan
+                .output("main")
+                .unwrap()
+                .format()
+                .contains_key("info_audio")
+        );
+        assert!(
+            plan.output("alt")
+                .unwrap()
+                .format()
+                .contains_key("info_audio")
+        );
     }
 }

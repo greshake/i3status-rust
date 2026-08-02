@@ -71,6 +71,33 @@ pub struct Config {
     pub critical_cpu: f64,
 }
 
+/// Every icon name [`boost_icon`] can return. The boost status is externally
+/// selected but finite, so the block plan declares the full set.
+const BOOST_ICON_NAMES: [&str; 2] = ["cpu_boost_on", "cpu_boost_off"];
+
+fn boost_icon(on: bool) -> &'static str {
+    match on {
+        true => "cpu_boost_on",
+        false => "cpu_boost_off",
+    }
+}
+
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    let mut outputs = vec![
+        OutputPlan::new("main", config.format.with_default(" $icon $utilization ")?)
+            .icon("icon", IconChoices::one("cpu"))
+            .icon("boost", IconChoices::fixed(BOOST_ICON_NAMES)),
+    ];
+    if let Some(format_alt) = &config.format_alt {
+        outputs.push(
+            OutputPlan::new("alt", format_alt.with_default("")?)
+                .icon("icon", IconChoices::one("cpu"))
+                .icon("boost", IconChoices::fixed(BOOST_ICON_NAMES)),
+        );
+    }
+    Ok(BlockPlan::new(outputs))
+}
+
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
@@ -78,7 +105,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         (MouseButton::Right, None, "prev_format"),
     ])?;
 
-    let mut formats = config.formats.with_default(" $icon $utilization ")?;
+    let plan = prepare(config)?;
+    let output_main = plan.output("main")?;
+    let output_alt = match &config.format_alt {
+        Some(_) => Some(plan.output("alt")?),
+        None => None,
+    };
+    let mut alt_shown = false;
 
     // Store previous /proc/stat state
     let mut cputime = read_proc_stat().await?;
@@ -113,10 +146,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         }
 
         // Read boost state on intel CPUs
-        let boost = boost_status().await.map(|status| match status {
-            true => "cpu_boost_on",
-            false => "cpu_boost_off",
-        });
+        let boost = boost_status().await.map(boost_icon);
 
         let mut values = map!(
             "icon" => Value::icon_progression("cpu", utilization_avg),
@@ -136,7 +166,11 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             );
         }
 
-        let mut widget = Widget::new().with_format(formats.get_format());
+        let output = match (&output_alt, alt_shown) {
+            (Some(alt), true) => alt,
+            _ => &output_main,
+        };
+        let mut widget = output.new_widget();
         widget.set_values(values);
         widget.state = match utilization_avg * 100. {
             x if x > config.critical_cpu => State::Critical,
@@ -151,12 +185,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 _ = timer.tick() => break,
                 _ = api.wait_for_update_request() => break,
                 Some(action) = actions.recv() => match action.as_ref() {
-                    "next_format" | "toggle_format" => {
-                        formats.next_format();
-                        break;
-                    }
-                    "prev_format" => {
-                        formats.prev_format();
+                    "toggle_format" if output_alt.is_some() => {
+                        alt_shown = !alt_shown;
                         break;
                     }
                     _ => (),
@@ -265,5 +295,48 @@ async fn boost_status() -> Option<bool> {
         Some(no_turbo.starts_with('0'))
     } else {
         None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_icon_and_boost_choices() {
+        let plan = prepare(&Config::default()).unwrap();
+        let main = plan.output("main").unwrap();
+        assert_eq!(main.single_icon("icon").unwrap(), "cpu");
+        let boost = main.output().choices_for("boost").unwrap();
+        assert!(boost.permits("cpu_boost_on"));
+        assert!(boost.permits("cpu_boost_off"));
+        assert!(!boost.permits("cpu"));
+        assert!(plan.output("alt").is_err());
+    }
+
+    #[test]
+    fn alt_output_mirrors_icon_declarations() {
+        let config = Config {
+            format_alt: Some(" $icon $frequency ".parse().unwrap()),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        let alt = plan.output("alt").unwrap();
+        assert!(alt.format().contains_key("frequency"));
+        assert_eq!(alt.single_icon("icon").unwrap(), "cpu");
+        assert!(
+            alt.output()
+                .choices_for("boost")
+                .unwrap()
+                .permits("cpu_boost_off")
+        );
+    }
+
+    #[test]
+    fn every_boost_icon_is_declared() {
+        for on in [true, false] {
+            assert!(BOOST_ICON_NAMES.contains(&boost_icon(on)));
+        }
+        assert_eq!(BOOST_ICON_NAMES.len(), 2);
     }
 }

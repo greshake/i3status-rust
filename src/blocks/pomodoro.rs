@@ -62,10 +62,7 @@ use num_traits::{Num, NumAssignOps, SaturatingSub};
 use tokio::sync::mpsc;
 
 use super::prelude::*;
-use crate::{
-    formatting::Format,
-    subprocess::{spawn_shell, spawn_shell_sync},
-};
+use crate::subprocess::{spawn_shell, spawn_shell_sync};
 use std::time::Instant;
 
 make_log_macro!(debug, "pomodoro");
@@ -117,14 +114,11 @@ impl PomodoroState {
 }
 
 struct Block<'a> {
-    widget: Widget,
     actions: mpsc::UnboundedReceiver<BlockAction>,
     api: &'a CommonApi,
     config: &'a Config,
     state: PomodoroState,
-    format: Format,
-    pomodoro_format: Format,
-    break_format: Format,
+    plan: Arc<BlockPlan>,
 }
 
 impl Block<'_> {
@@ -137,19 +131,19 @@ impl Block<'_> {
         if let Some(icon) = self.state.get_status_icon() {
             values.insert("status_icon".into(), Value::icon(icon));
         }
-        self.widget.set_format(match self.state {
-            PomodoroState::Idle | PomodoroState::Prompt | PomodoroState::Notify => {
-                self.format.clone()
-            }
-            PomodoroState::Break => self.break_format.clone(),
-            PomodoroState::PomodoroRunning | PomodoroState::PomodoroPaused => {
-                self.pomodoro_format.clone()
-            }
-        });
-        self.widget.state = self.state.get_block_state();
+        let output = self.plan.output(match self.state {
+            PomodoroState::Idle => "idle",
+            PomodoroState::Prompt => "prompt",
+            PomodoroState::Notify => "notify",
+            PomodoroState::Break => "break",
+            PomodoroState::PomodoroRunning => "running",
+            PomodoroState::PomodoroPaused => "paused",
+        })?;
+        let mut widget = output.new_widget();
+        widget.state = self.state.get_block_state();
         debug!("{:?}", values);
-        self.widget.set_values(values);
-        self.api.set_widget(self.widget.clone())
+        widget.set_values(values);
+        self.api.set_widget(widget)
     }
 
     async fn wait_for_click(&mut self, button: &str) -> Result<()> {
@@ -305,15 +299,7 @@ impl Block<'_> {
     }
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    api.set_default_actions(&[
-        (MouseButton::Left, None, "_left"),
-        (MouseButton::Middle, None, "_middle"),
-        (MouseButton::Right, None, "_right"),
-        (MouseButton::WheelUp, None, "_up"),
-        (MouseButton::WheelDown, None, "_down"),
-    ])?;
-
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     let format = config.format.clone().with_default(" $icon{ $message|} ")?;
 
     let pomodoro_format = config.pomodoro_format.clone().with_default(
@@ -325,17 +311,42 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         .clone()
         .with_default(" $icon $status_icon Break: $time_remaining.duration(hms:true) ")?;
 
-    let widget = Widget::new();
+    let base = || IconChoices::one("pomodoro");
+    Ok(BlockPlan::new(vec![
+        OutputPlan::new("idle", format.clone())
+            .icon("icon", base())
+            .icon("status_icon", IconChoices::one("pomodoro_stopped")),
+        OutputPlan::new("prompt", format.clone()).icon("icon", base()),
+        OutputPlan::new("notify", format).icon("icon", base()),
+        OutputPlan::new("running", pomodoro_format.clone())
+            .icon("icon", base())
+            .icon("status_icon", IconChoices::one("pomodoro_started")),
+        OutputPlan::new("paused", pomodoro_format)
+            .icon("icon", base())
+            .icon("status_icon", IconChoices::one("pomodoro_paused")),
+        OutputPlan::new("break", break_format)
+            .icon("icon", base())
+            .icon("status_icon", IconChoices::one("pomodoro_break")),
+    ]))
+}
+
+pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+    api.set_default_actions(&[
+        (MouseButton::Left, None, "_left"),
+        (MouseButton::Middle, None, "_middle"),
+        (MouseButton::Right, None, "_right"),
+        (MouseButton::WheelUp, None, "_up"),
+        (MouseButton::WheelDown, None, "_down"),
+    ])?;
+
+    let plan = prepare(config)?;
 
     let mut block = Block {
-        widget,
         actions: api.get_actions()?,
         api,
         config,
         state: PomodoroState::Idle,
-        format,
-        pomodoro_format,
-        break_format,
+        plan,
     };
 
     loop {
@@ -347,6 +358,81 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         if let Some((task_len, break_len, pomodoros)) = block.read_params().await? {
             block.run_pomodoro(task_len, break_len, pomodoros).await?;
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_scopes_status_icons_to_their_states() {
+        let plan = prepare(&Config::default()).unwrap();
+        let ids: Vec<_> = plan.outputs.iter().map(|o| o.id).collect();
+        assert_eq!(
+            ids,
+            ["idle", "prompt", "notify", "running", "paused", "break"]
+        );
+        for (id, status_icon) in [
+            ("idle", Some("pomodoro_stopped")),
+            ("prompt", None),
+            ("notify", None),
+            ("running", Some("pomodoro_started")),
+            ("paused", Some("pomodoro_paused")),
+            ("break", Some("pomodoro_break")),
+        ] {
+            let output = plan.output(id).unwrap();
+            assert_eq!(output.single_icon("icon").unwrap(), "pomodoro");
+            match status_icon {
+                Some(name) => assert_eq!(output.single_icon("status_icon").unwrap(), name),
+                None => assert!(
+                    output.output().choices_for("status_icon").is_none(),
+                    "{id} sets no status icon"
+                ),
+            }
+        }
+    }
+
+    #[test]
+    fn runtime_status_icon_chooser_matches_the_plan() {
+        // Ties `PomodoroState::get_status_icon` to the per-output
+        // declarations so neither can drift from the other.
+        let plan = prepare(&Config::default()).unwrap();
+        use PomodoroState::*;
+        for (state, id) in [
+            (Idle, "idle"),
+            (Prompt, "prompt"),
+            (Notify, "notify"),
+            (Break, "break"),
+            (PomodoroRunning, "running"),
+            (PomodoroPaused, "paused"),
+        ] {
+            let output = plan.output(id).unwrap();
+            match state.get_status_icon() {
+                Some(icon) => {
+                    let choices = output.output().choices_for("status_icon").unwrap();
+                    assert!(choices.permits(icon), "{id} must permit {icon}");
+                }
+                None => assert!(output.output().choices_for("status_icon").is_none()),
+            }
+        }
+    }
+
+    #[test]
+    fn states_share_the_expected_formats() {
+        let config = Config {
+            pomodoro_format: " $time_remaining ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        for id in ["running", "paused"] {
+            let format = plan.output(id).unwrap().format().clone();
+            assert!(format.contains_key("time_remaining"));
+            assert!(!format.contains_key("icon"));
+        }
+        for id in ["idle", "prompt", "notify"] {
+            assert!(plan.output(id).unwrap().format().contains_key("icon"));
         }
     }
 }

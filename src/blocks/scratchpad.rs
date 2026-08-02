@@ -36,10 +36,21 @@ fn count_scratchpad_windows(node: &Node) -> usize {
         .map_or(0, |node| node.floating_nodes.len())
 }
 
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    Ok(BlockPlan::new(vec![
+        OutputPlan::new(
+            "main",
+            config
+                .format
+                .with_default(" $icon $count.eng(range:1..) |")?,
+        )
+        .icon("icon", IconChoices::one("scratchpad")),
+    ]))
+}
+
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let format = config
-        .format
-        .with_default(" $icon $count.eng(range:1..) |")?;
+    let plan = prepare(config)?;
+    let output_main = plan.output("main")?;
 
     let connection_for_events = Connection::new()
         .await
@@ -55,7 +66,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         .error("could not subscribe to window events")?;
 
     loop {
-        let mut widget = Widget::new().with_format(format.clone());
+        let mut widget = output_main.new_widget();
 
         let root_node = connection_for_tree
             .get_tree()
@@ -82,5 +93,30 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 _ => continue,
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_main_output_with_scratchpad_icon() {
+        let plan = prepare(&Config::default()).unwrap();
+        let declared: Vec<_> = plan.outputs.iter().map(|o| o.id).collect();
+        assert_eq!(declared, ["main"]);
+        let output = plan.output("main").unwrap();
+        assert_eq!(output.single_icon("icon").unwrap(), "scratchpad");
+    }
+
+    #[test]
+    fn custom_format_is_respected() {
+        let config = Config {
+            format: " $count ".parse().unwrap(),
+        };
+        let plan = prepare(&config).unwrap();
+        let output = plan.output("main").unwrap();
+        assert!(output.format().contains_key("count"));
+        assert!(!output.format().contains_key("icon"));
     }
 }

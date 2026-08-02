@@ -53,6 +53,20 @@ pub struct Config {
     pub interval: Seconds,
 }
 
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    let mut outputs = vec![
+        OutputPlan::new("main", config.format.with_default(" $icon $utilization ")?)
+            .icon("icon", IconChoices::one("gpu")),
+    ];
+    if let Some(format_alt) = &config.format_alt {
+        outputs.push(
+            OutputPlan::new("alt", format_alt.with_default("")?)
+                .icon("icon", IconChoices::one("gpu")),
+        );
+    }
+    Ok(BlockPlan::new(outputs))
+}
+
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
@@ -60,7 +74,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         (MouseButton::Right, None, "prev_format"),
     ])?;
 
-    let mut formats = config.formats.with_default(" $icon $utilization ")?;
+    let plan = prepare(config)?;
+    let output_main = plan.output("main")?;
+    let output_alt = match &config.format_alt {
+        Some(_) => Some(plan.output("alt")?),
+        None => None,
+    };
+    let mut alt_shown = false;
 
     let device = match &config.device {
         Some(name) => Device::new(name).await?,
@@ -71,7 +91,11 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     };
 
     loop {
-        let mut widget = Widget::new().with_format(formats.get_format());
+        let output = match (&output_alt, alt_shown) {
+            (Some(alt), true) => alt,
+            _ => &output_main,
+        };
+        let mut widget = output.new_widget();
 
         let info = device.read_info().await?;
 
@@ -97,12 +121,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 _ = sleep(config.interval.0) => break,
                 _ = api.wait_for_update_request() => break,
                 Some(action) = actions.recv() => match action.as_ref() {
-                    "next_format" | "toggle_format" => {
-                        formats.next_format();
-                        break;
-                    }
-                    "prev_format" => {
-                        formats.prev_format();
+                    "toggle_format" if output_alt.is_some() => {
+                        alt_shown = !alt_shown;
                         break;
                     }
                     _ => (),
@@ -192,5 +212,26 @@ mod tests {
     async fn test_non_existing_gpu_device() {
         let device = Device::new("/nope").await;
         assert!(device.is_err());
+    }
+
+    #[test]
+    fn plan_declares_main_with_gpu_icon() {
+        let plan = prepare(&Config::default()).unwrap();
+        let main = plan.output("main").unwrap();
+        assert_eq!(main.single_icon("icon").unwrap(), "gpu");
+        assert!(main.format().contains_key("utilization"));
+        assert!(plan.output("alt").is_err());
+    }
+
+    #[test]
+    fn alt_output_exists_only_when_configured() {
+        let config = Config {
+            format_alt: Some(" $icon $vram_used_percents ".parse().unwrap()),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        let alt = plan.output("alt").unwrap();
+        assert!(alt.format().contains_key("vram_used_percents"));
+        assert_eq!(alt.single_icon("icon").unwrap(), "gpu");
     }
 }

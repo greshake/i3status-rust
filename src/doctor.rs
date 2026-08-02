@@ -493,10 +493,39 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                 StaticAnalysis::Legacy(StaticRelevance::compute(&block_names[index], table))
             }
         };
+        // Errors render through the shared error-widget plan with the
+        // block's effective error formats; whatever those formats reach
+        // (typically the conditional `refresh` restart icon) is a latent
+        // requirement of every block.
+        let error_rel = parsed
+            .as_ref()
+            .and_then(|config| config.blocks.get(index).map(|entry| (config, entry)))
+            .map(|(config, entry)| {
+                let plan = crate::block_plan::error_plan(
+                    entry
+                        .common
+                        .error_format
+                        .with_default_config(&config.error_format),
+                    entry
+                        .common
+                        .error_fullscreen_format
+                        .with_default_config(&config.error_fullscreen_format),
+                );
+                analyze_plan(&plan)
+            });
+        if let Some(error_rel) = &error_rel {
+            for icon in &error_rel.required {
+                let users = may_use.entry(icon.clone()).or_default();
+                if !users.contains(&label) {
+                    users.push(label.clone());
+                }
+            }
+        }
         icon_relevant.insert(
             label.clone(),
             IconRelevance {
                 static_rel,
+                error_rel,
                 live: None,
             },
         );
@@ -598,6 +627,7 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                         // request — including its formats' direct ^icon refs
                         if let Some(relevance) = icon_relevant.get_mut(&label) {
                             relevance.static_rel = StaticAnalysis::none();
+                            relevance.error_rel = None;
                             relevance.live = None;
                         }
                         for users in may_use.values_mut() {
@@ -1746,12 +1776,19 @@ impl LiveRelevance {
 /// it: the current render proves what CAN happen, not what cannot.
 struct IconRelevance {
     static_rel: StaticAnalysis,
+    /// Analysis of the block's effective error/fullscreen-error formats
+    /// (the shared error-widget plan every block renders errors through).
+    error_rel: Option<PlanAnalysis>,
     live: Option<LiveRelevance>,
 }
 
 impl IconRelevance {
     fn is_relevant(&self, icon: &str, block_type: &str) -> bool {
         self.static_rel.is_relevant(icon, block_type)
+            || self
+                .error_rel
+                .as_ref()
+                .is_some_and(|e| e.required.contains(icon))
             || self.live.as_ref().is_some_and(|l| l.is_relevant(icon))
     }
 }
@@ -2873,6 +2910,51 @@ mod tests {
             0,
         );
         assert!(!analysis.required.contains("net_up"));
+    }
+
+    /// The error-widget analysis of block `index` in `config`.
+    fn error_analysis(config: &str, index: usize) -> PlanAnalysis {
+        let config: Config = toml::from_str(config).unwrap();
+        let entry = &config.blocks[index];
+        analyze_plan(&crate::block_plan::error_plan(
+            entry
+                .common
+                .error_format
+                .with_default_config(&config.error_format),
+            entry
+                .common
+                .error_fullscreen_format
+                .with_default_config(&config.error_fullscreen_format),
+        ))
+    }
+
+    #[test]
+    fn default_error_formats_reach_the_refresh_icon() {
+        let analysis = error_analysis("[[block]]\nblock = \"cpu\"", 0);
+        assert!(analysis.required.contains("refresh"));
+    }
+
+    #[test]
+    fn error_formats_without_restart_icon_do_not_require_refresh() {
+        let analysis = error_analysis(
+            r#"
+            [[block]]
+            block = "cpu"
+            error_format = " $short_error_message "
+            error_fullscreen_format = " $full_error_message "
+            "#,
+            0,
+        );
+        assert!(!analysis.required.contains("refresh"));
+    }
+
+    #[test]
+    fn global_error_format_applies_to_blocks_without_overrides() {
+        let analysis = error_analysis(
+            "error_format = \" $short_error_message \"\nerror_fullscreen_format = \" e \"\n[[block]]\nblock = \"cpu\"",
+            0,
+        );
+        assert!(!analysis.required.contains("refresh"));
     }
 
     #[test]

@@ -46,8 +46,16 @@ pub struct Config {
     pub critical: f64,
 }
 
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    Ok(BlockPlan::new(vec![
+        OutputPlan::new("main", config.format.with_default(" $icon $1m.eng(w:4) ")?)
+            .icon("icon", IconChoices::one("cogs")),
+    ]))
+}
+
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let format = config.format.with_default(" $icon $1m.eng(w:4) ")?;
+    let plan = prepare(config)?;
+    let output_main = plan.output("main")?;
 
     // borrowed from https://docs.rs/cpuinfo/0.1.1/src/cpuinfo/count/logical.rs.html#4-6
     let logical_cores = util::read_file("/proc/cpuinfo")
@@ -75,7 +83,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             .and_then(|x| x.parse().ok())
             .error("bad /proc/loadavg file")?;
 
-        let mut widget = Widget::new().with_format(format.clone());
+        let mut widget = output_main.new_widget();
         widget.state = match m1 / logical_cores as f64 {
             x if x > config.critical => State::Critical,
             x if x > config.warning => State::Warning,
@@ -94,5 +102,31 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             _ = sleep(config.interval.0) => (),
             _ = api.wait_for_update_request() => (),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_main_output_with_cogs_icon() {
+        let plan = prepare(&Config::default()).unwrap();
+        let declared: Vec<_> = plan.outputs.iter().map(|o| o.id).collect();
+        assert_eq!(declared, ["main"]);
+        let output = plan.output("main").unwrap();
+        assert_eq!(output.single_icon("icon").unwrap(), "cogs");
+    }
+
+    #[test]
+    fn custom_format_is_respected() {
+        let config = Config {
+            format: " $5m ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        let output = plan.output("main").unwrap();
+        assert!(output.format().contains_key("5m"));
+        assert!(!output.format().contains_key("icon"));
     }
 }

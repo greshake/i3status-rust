@@ -45,7 +45,6 @@ use crate::blocks::{BlockAction, BlockError, CommonApi, RESTART_BLOCK_BTN};
 use crate::click::{ClickHandler, MouseButton};
 use crate::config::{BlockConfigEntry, Config, SharedConfig};
 use crate::errors::*;
-use crate::formatting::Format;
 use crate::formatting::value::Value;
 use crate::protocol::i3bar_block::I3BarBlock;
 use crate::protocol::i3bar_event::{self, I3BarEvent};
@@ -180,8 +179,7 @@ pub struct Block {
     signal: Option<i32>,
     shared_config: SharedConfig,
 
-    error_format: Format,
-    error_fullscreen_format: Format,
+    error_outputs: block_plan::ErrorOutputs,
 
     state: BlockState,
 }
@@ -221,13 +219,12 @@ impl Block {
             error,
         };
 
-        let mut widget = Widget::new()
-            .with_state(State::Critical)
-            .with_format(if fullscreen {
-                self.error_fullscreen_format.clone()
-            } else {
-                self.error_format.clone()
-            });
+        let output = if fullscreen {
+            &self.error_outputs.fullscreen
+        } else {
+            &self.error_outputs.error
+        };
+        let mut widget = output.new_widget().with_state(State::Critical);
         widget.set_values(map! {
             "full_error_message" => Value::text(error.to_string()),
             [if let Some(v) = &error.error.message] "short_error_message" => Value::text(v.to_string()),
@@ -303,14 +300,16 @@ impl BarState {
             max_retries: block_config.common.max_retries,
         };
 
-        let error_format = block_config
-            .common
-            .error_format
-            .with_default_config(&self.config.error_format);
-        let error_fullscreen_format = block_config
-            .common
-            .error_fullscreen_format
-            .with_default_config(&self.config.error_fullscreen_format);
+        let error_outputs = block_plan::error_outputs(
+            block_config
+                .common
+                .error_format
+                .with_default_config(&self.config.error_format),
+            block_config
+                .common
+                .error_fullscreen_format
+                .with_default_config(&self.config.error_fullscreen_format),
+        );
 
         let block = Block {
             id: self.blocks.len(),
@@ -324,8 +323,7 @@ impl BarState {
             signal: block_config.common.signal,
             shared_config,
 
-            error_format,
-            error_fullscreen_format,
+            error_outputs,
 
             state: BlockState::None,
         };
@@ -456,10 +454,10 @@ impl BarState {
                         } else {
                             if self.fullscreen_block == Some(event.id) {
                                 self.fullscreen_block = None;
-                                widget.set_format(block.error_format.clone());
+                                widget.set_output(&block.error_outputs.error);
                             } else {
                                 self.fullscreen_block = Some(event.id);
-                                widget.set_format(block.error_fullscreen_format.clone());
+                                widget.set_output(&block.error_outputs.fullscreen);
                             }
                             block.notify_intervals(&self.widget_updates_sender);
                             self.render_block(event.id)?;

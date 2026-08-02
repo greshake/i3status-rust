@@ -186,6 +186,30 @@ pub enum PlayerName {
     Multiple(Vec<String>),
 }
 
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    let with_icons = |output: OutputPlan| {
+        output
+            .icon("icon", IconChoices::one("music"))
+            .icon("play", IconChoices::fixed(["music_play", "music_pause"]))
+            .icon("next", IconChoices::one("music_next"))
+            .icon("prev", IconChoices::one("music_prev"))
+            .icon("volume_icon", IconChoices::one("volume"))
+    };
+    let mut outputs = vec![with_icons(OutputPlan::new(
+        "main",
+        config
+            .format
+            .with_default(" $icon {$combo.str(max_w:25,rot_interval:0.5) $play |}")?,
+    ))];
+    if let Some(format_alt) = &config.format_alt {
+        outputs.push(with_icons(OutputPlan::new(
+            "alt",
+            format_alt.with_default("")?,
+        )));
+    }
+    Ok(BlockPlan::new(outputs))
+}
+
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
@@ -200,9 +224,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     let dbus_conn = new_dbus_connection().await?;
 
-    let mut formats = config
-        .formats
-        .with_default(" $icon {$combo.str(max_w:25,rot_interval:0.5) $play |}")?;
+    let plan = prepare(config)?;
+    let output_main = plan.output("main")?;
+    let output_alt = match &config.format_alt {
+        Some(_) => Some(plan.output("alt")?),
+        None => None,
+    };
+    let mut alt_shown = false;
 
     let volume_step = config.volume_step.clamp(0.0, 50.0) / 100.0;
 
@@ -305,6 +333,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         debug!("available players: {}", DisplaySlice(&players));
 
         let avail = players.len();
+        let output = match (&output_alt, alt_shown) {
+            (Some(alt), true) => alt,
+            _ => &output_main,
+        };
         let player = cur_player.map(|c| players.get_mut(c).unwrap());
         match player {
             Some(player) => {
@@ -360,13 +392,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     );
                     values.insert("volume".into(), Value::percents(volume * 100.0));
                 }
-                let mut widget = Widget::new().with_format(formats.get_format());
+                let mut widget = output.new_widget();
                 widget.set_values(values);
                 widget.state = state;
                 api.set_widget(widget)?;
             }
             None => {
-                let mut widget = Widget::new().with_format(formats.get_format());
+                let mut widget = output.new_widget();
                 widget.set_values(map!("icon" => Value::icon("music")));
                 api.set_widget(widget)?;
             }
@@ -485,12 +517,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                             "volume_down" => {
                                 player.set_volume(-volume_step).await?;
                             }
-                            "next_format" | "toggle_format" => {
-                                formats.next_format();
-                                break;
-                            }
-                            "prev_format" => {
-                                formats.prev_format();
+                            "toggle_format" if output_alt.is_some() => {
+                                alt_shown = !alt_shown;
                                 break;
                             }
                             _ => (),
@@ -697,5 +725,46 @@ mod tests {
             &[],
             &exclude
         ));
+    }
+
+    #[test]
+    fn plan_declares_every_icon_placeholder() {
+        let plan = prepare(&Config::default()).unwrap();
+        let ids: Vec<_> = plan.outputs.iter().map(|o| o.id).collect();
+        assert_eq!(ids, ["main"]);
+
+        let main = plan.output("main").unwrap();
+        assert_eq!(main.single_icon("icon").unwrap(), "music");
+        assert_eq!(main.single_icon("next").unwrap(), "music_next");
+        assert_eq!(main.single_icon("prev").unwrap(), "music_prev");
+        assert_eq!(main.single_icon("volume_icon").unwrap(), "volume");
+
+        // $play carries either button icon depending on playback status.
+        let play = main.output().choices_for("play").unwrap();
+        assert!(play.permits("music_play"));
+        assert!(play.permits("music_pause"));
+        assert!(!play.permits("music"));
+    }
+
+    #[test]
+    fn alt_output_exists_only_when_configured() {
+        let plan = prepare(&Config::default()).unwrap();
+        assert!(plan.output("alt").is_err());
+
+        let config = Config {
+            format_alt: Some(" $icon $player ".parse().unwrap()),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        let alt = plan.output("alt").unwrap();
+        assert!(alt.format().contains_key("player"));
+        // The alt output can carry the same icon values as the main one.
+        assert_eq!(alt.single_icon("icon").unwrap(), "music");
+        assert!(
+            alt.output()
+                .choices_for("play")
+                .unwrap()
+                .permits("music_pause")
+        );
     }
 }

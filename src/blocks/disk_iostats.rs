@@ -60,11 +60,23 @@ pub struct Config {
     pub missing_format: FormatConfig,
 }
 
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    Ok(BlockPlan::new(vec![
+        OutputPlan::new(
+            "main",
+            config
+                .format
+                .with_default(" $icon $speed_read.eng(prefix:K) $speed_write.eng(prefix:K) ")?,
+        )
+        .icon("icon", IconChoices::one("disk_drive")),
+        OutputPlan::new("missing", config.missing_format.with_default(" × ")?),
+    ]))
+}
+
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let format = config
-        .format
-        .with_default(" $icon $speed_read.eng(prefix:K) $speed_write.eng(prefix:K) ")?;
-    let missing_format = config.missing_format.with_default(" × ")?;
+    let plan = prepare(config)?;
+    let output_main = plan.output("main")?;
+    let output_missing = plan.output("missing")?;
 
     let mut timer = config.interval.timer();
     let mut old_stats = None;
@@ -77,12 +89,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         }
         match device {
             None => {
-                api.set_widget(Widget::new().with_format(missing_format.clone()))?;
+                api.set_widget(output_missing.new_widget())?;
             }
             Some(mut device) => {
-                let mut widget = Widget::new();
-
-                widget.set_format(format.clone());
+                let mut widget = output_main.new_widget();
 
                 if let Ok(link) = read_link(Path::new("/dev/").join(&device)).await
                     && let Some(name) = link.file_name()
@@ -216,5 +226,32 @@ async fn read_sector_size(device: &str) -> Result<u64> {
         Err(Error::new(
             "Failed to find device for partition HW sector size",
         ))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_main_and_missing() {
+        let plan = prepare(&Config::default()).unwrap();
+        let main = plan.output("main").unwrap();
+        assert_eq!(main.single_icon("icon").unwrap(), "disk_drive");
+        assert!(main.format().contains_key("speed_read"));
+        assert!(main.format().contains_key("speed_write"));
+        let missing = plan.output("missing").unwrap();
+        assert_eq!(missing.output().icon_placeholders().count(), 0);
+    }
+
+    #[test]
+    fn custom_missing_format_is_used() {
+        let config = Config {
+            missing_format: " $device gone ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        let missing = plan.output("missing").unwrap();
+        assert!(missing.format().contains_key("device"));
     }
 }

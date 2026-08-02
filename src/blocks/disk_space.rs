@@ -107,6 +107,20 @@ pub struct Config {
     pub alert: f64,
 }
 
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    let mut outputs = vec![
+        OutputPlan::new("main", config.format.with_default(" $icon $available ")?)
+            .icon("icon", IconChoices::one("disk_drive")),
+    ];
+    if let Some(format_alt) = &config.format_alt {
+        outputs.push(
+            OutputPlan::new("alt", format_alt.with_default("")?)
+                .icon("icon", IconChoices::one("disk_drive")),
+        );
+    }
+    Ok(BlockPlan::new(outputs))
+}
+
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
@@ -114,7 +128,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         (MouseButton::Right, None, "prev_format"),
     ])?;
 
-    let mut formats = config.formats.with_default(" $icon $available ")?;
+    let plan = prepare(config)?;
+    let output_main = plan.output("main")?;
+    let output_alt = match &config.format_alt {
+        Some(_) => Some(plan.output("alt")?),
+        None => None,
+    };
+    let mut alt_shown = false;
 
     let unit = match config.alert_unit.as_deref() {
         // Decimal
@@ -139,7 +159,11 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut timer = config.interval.timer();
 
     loop {
-        let mut widget = Widget::new().with_format(formats.get_format());
+        let output = match (&output_alt, alt_shown) {
+            (Some(alt), true) => alt,
+            _ => &output_main,
+        };
+        let mut widget = output.new_widget();
 
         let (total, used, available, free) = match config.backend {
             Backend::Vfs => get_vfs(&*path)?,
@@ -198,12 +222,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 _ = timer.tick() => break,
                 _ = api.wait_for_update_request() => break,
                 Some(action) = actions.recv() => match action.as_ref() {
-                    "next_format" | "toggle_format" => {
-                        formats.next_format();
-                        break;
-                    }
-                    "prev_format" => {
-                        formats.prev_format();
+                    "toggle_format" if output_alt.is_some() => {
+                        alt_shown = !alt_shown;
                         break;
                     }
                     _ => (),
@@ -296,5 +316,31 @@ async fn get_btrfs(path: &str) -> Result<(u64, u64, u64, u64)> {
             *final_free.get().ok_or(Error::new(OUTPUT_CHANGED))?,
             *final_free.get().ok_or(Error::new(OUTPUT_CHANGED))?,
         ))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_main_with_disk_drive_icon() {
+        let plan = prepare(&Config::default()).unwrap();
+        let main = plan.output("main").unwrap();
+        assert_eq!(main.single_icon("icon").unwrap(), "disk_drive");
+        assert!(main.format().contains_key("available"));
+        assert!(plan.output("alt").is_err());
+    }
+
+    #[test]
+    fn alt_output_exists_only_when_configured() {
+        let config = Config {
+            format_alt: Some(" $icon $available / $total ".parse().unwrap()),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        let alt = plan.output("alt").unwrap();
+        assert!(alt.format().contains_key("total"));
+        assert_eq!(alt.single_icon("icon").unwrap(), "disk_drive");
     }
 }

@@ -64,8 +64,16 @@ pub struct Config {
     pub threshold_good: u32,
 }
 
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    Ok(BlockPlan::new(vec![
+        OutputPlan::new("main", config.format.with_default(" $icon $count ")?)
+            .icon("icon", IconChoices::one("mail")),
+    ]))
+}
+
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let format = config.format.with_default(" $icon $count ")?;
+    let plan = prepare(config)?;
+    let output_main = plan.output("main")?;
 
     let db = config.maildir.expand()?;
     let mut timer = config.interval.timer();
@@ -74,7 +82,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         // TODO: spawn_blocking?
         let count = run_query(&db, &config.query).error("Failed to get count")?;
 
-        let mut widget = Widget::new().with_format(format.clone());
+        let mut widget = output_main.new_widget();
 
         widget.set_values(map! {
             "icon" => Value::icon("mail"),
@@ -111,4 +119,30 @@ fn run_query(db_path: &str, query_string: &str) -> std::result::Result<u32, notm
     )?;
     let query = db.create_query(query_string)?;
     query.count_messages()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_main_output_with_mail_icon() {
+        let plan = prepare(&Config::default()).unwrap();
+        let declared: Vec<_> = plan.outputs.iter().map(|o| o.id).collect();
+        assert_eq!(declared, ["main"]);
+        let output = plan.output("main").unwrap();
+        assert_eq!(output.single_icon("icon").unwrap(), "mail");
+    }
+
+    #[test]
+    fn custom_format_is_respected() {
+        let config = Config {
+            format: " $count ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        let output = plan.output("main").unwrap();
+        assert!(output.format().contains_key("count"));
+        assert!(!output.format().contains_key("icon"));
+    }
 }

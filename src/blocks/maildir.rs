@@ -61,8 +61,16 @@ fn expand_inbox(inbox: &str) -> Result<impl Iterator<Item = PathBuf>> {
     Ok(paths.filter_map(|p| p.ok()))
 }
 
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    Ok(BlockPlan::new(vec![
+        OutputPlan::new("main", config.format.with_default(" $icon $status ")?)
+            .icon("icon", IconChoices::one("mail")),
+    ]))
+}
+
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let format = config.format.with_default(" $icon $status ")?;
+    let plan = prepare(config)?;
+    let output_main = plan.output("main")?;
 
     let mut inboxes = Vec::with_capacity(config.inboxes.len());
     for inbox in &config.inboxes {
@@ -80,7 +88,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             };
         }
 
-        let mut widget = Widget::new().with_format(format.clone());
+        let mut widget = output_main.new_widget();
         widget.state = if newmails >= config.threshold_critical {
             State::Critical
         } else if newmails >= config.threshold_warning {
@@ -107,4 +115,30 @@ pub enum MailType {
     New,
     Cur,
     All,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_main_output_with_mail_icon() {
+        let plan = prepare(&Config::default()).unwrap();
+        let declared: Vec<_> = plan.outputs.iter().map(|o| o.id).collect();
+        assert_eq!(declared, ["main"]);
+        let output = plan.output("main").unwrap();
+        assert_eq!(output.single_icon("icon").unwrap(), "mail");
+    }
+
+    #[test]
+    fn custom_format_is_respected() {
+        let config = Config {
+            format: " $status ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        let output = plan.output("main").unwrap();
+        assert!(output.format().contains_key("status"));
+        assert!(!output.format().contains_key("icon"));
+    }
 }

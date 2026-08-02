@@ -206,6 +206,38 @@ impl OutputHandle {
     }
 }
 
+/// The error outputs every block shares: the effective (global or per-block)
+/// error formats with the standard error placeholders, including the
+/// conditional `refresh` icon shown for restartable errors. The real bar
+/// renders errors through these handles and doctor analyzes the same plan.
+#[derive(Debug)]
+pub struct ErrorOutputs {
+    pub error: OutputHandle,
+    pub fullscreen: OutputHandle,
+}
+
+pub fn error_outputs(error_format: Format, error_fullscreen_format: Format) -> ErrorOutputs {
+    let plan = error_plan(error_format, error_fullscreen_format);
+    ErrorOutputs {
+        error: OutputHandle {
+            plan: plan.clone(),
+            index: 0,
+        },
+        fullscreen: OutputHandle { plan, index: 1 },
+    }
+}
+
+/// The plan behind [`error_outputs`]: output 0 is "error", output 1 is
+/// "error_fullscreen".
+pub fn error_plan(error_format: Format, error_fullscreen_format: Format) -> Arc<BlockPlan> {
+    BlockPlan::new(vec![
+        OutputPlan::new("error", error_format)
+            .icon("restart_block_icon", IconChoices::one("refresh")),
+        OutputPlan::new("error_fullscreen", error_fullscreen_format)
+            .icon("restart_block_icon", IconChoices::one("refresh")),
+    ])
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -279,6 +311,26 @@ mod tests {
         let handle = plan.output("connected").unwrap();
         let values = map!("country" => crate::formatting::value::Value::text("ES".into()));
         assert!(handle.icon_violations(&values).is_empty());
+    }
+
+    #[test]
+    fn error_outputs_declare_the_refresh_icon() {
+        let outputs = error_outputs(
+            format(" {$restart_block_icon |}{$short_error_message|X} "),
+            format(" $full_error_message "),
+        );
+        assert_eq!(outputs.error.id(), "error");
+        assert_eq!(outputs.fullscreen.id(), "error_fullscreen");
+        assert_eq!(
+            outputs.error.single_icon("restart_block_icon").unwrap(),
+            "refresh"
+        );
+        let values = map!(
+            "restart_block_icon" => crate::formatting::value::Value::icon("refresh"),
+            "full_error_message" => crate::formatting::value::Value::text("boom".into()),
+        );
+        assert!(outputs.error.icon_violations(&values).is_empty());
+        assert!(outputs.fullscreen.icon_violations(&values).is_empty());
     }
 
     #[test]

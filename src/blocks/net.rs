@@ -79,6 +79,31 @@ pub struct Config {
     pub missing_format: FormatConfig,
 }
 
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    let device_icons = || IconChoices::fixed(NetDevice::ALL_ICONS);
+    let mut outputs = vec![
+        OutputPlan::new(
+            "main",
+            config.format.with_default(
+                " $icon ^icon_net_down $speed_down.eng(prefix:K) ^icon_net_up $speed_up.eng(prefix:K) ",
+            )?,
+        )
+        .icon("icon", device_icons()),
+        OutputPlan::new(
+            "inactive",
+            config.inactive_format.with_default(" $icon Down ")?,
+        )
+        .icon("icon", device_icons()),
+        OutputPlan::new("missing", config.missing_format.with_default(" × ")?),
+    ];
+    if let Some(format_alt) = &config.format_alt {
+        outputs.push(
+            OutputPlan::new("alt", format_alt.with_default("")?).icon("icon", device_icons()),
+        );
+    }
+    Ok(BlockPlan::new(outputs))
+}
+
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
@@ -86,11 +111,15 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         (MouseButton::Right, None, "prev_format"),
     ])?;
 
-    let mut formats = config.formats.with_default(
-        " $icon ^icon_net_down $speed_down.eng(prefix:K) ^icon_net_up $speed_up.eng(prefix:K) ",
-    )?;
-    let missing_format = config.missing_format.with_default(" × ")?;
-    let inactive_format = config.inactive_format.with_default(" $icon Down ")?;
+    let plan = prepare(config)?;
+    let output_main = plan.output("main")?;
+    let output_inactive = plan.output("inactive")?;
+    let output_missing = plan.output("missing")?;
+    let output_alt = match &config.format_alt {
+        Some(_) => Some(plan.output("alt")?),
+        None => None,
+    };
+    let mut alt_shown = false;
 
     let mut timer = config.interval.timer();
 
@@ -110,16 +139,18 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     loop {
         match NetDevice::new(device_re.as_ref()).await? {
             None => {
-                api.set_widget(Widget::new().with_format(missing_format.clone()))?;
+                api.set_widget(output_missing.new_widget())?;
             }
             Some(device) => {
-                let mut widget = Widget::new();
-
-                if device.is_up() {
-                    widget.set_format(formats.get_format());
+                let output = if device.is_up() {
+                    match (&output_alt, alt_shown) {
+                        (Some(alt), true) => alt,
+                        _ => &output_main,
+                    }
                 } else {
-                    widget.set_format(inactive_format.clone());
-                }
+                    &output_inactive
+                };
+                let mut widget = output.new_widget();
 
                 let mut speed_down: f64 = 0.0;
                 let mut speed_up: f64 = 0.0;
@@ -180,12 +211,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 _ = timer.tick() => break,
                 _ = api.wait_for_update_request() => break,
                 Some(action) = actions.recv() => match action.as_ref() {
-                    "next_format" | "toggle_format" => {
-                        formats.next_format();
-                        break;
-                    }
-                    "prev_format" => {
-                        formats.prev_format();
+                    "toggle_format" if output_alt.is_some() => {
+                        alt_shown = !alt_shown;
                         break;
                     }
                     _ => ()
@@ -202,7 +229,66 @@ fn push_to_hist<T>(hist: &mut [T], elem: T) {
 
 #[cfg(test)]
 mod tests {
-    use super::push_to_hist;
+    use super::*;
+
+    #[test]
+    fn plan_declares_device_icon_set_on_every_rendering_state() {
+        let plan = prepare(&Config::default()).unwrap();
+        let ids: Vec<_> = plan.outputs.iter().map(|o| o.id).collect();
+        assert_eq!(ids, ["main", "inactive", "missing"]);
+
+        for id in ["main", "inactive"] {
+            let output = plan.output(id).unwrap();
+            let choices = output.output().choices_for("icon").unwrap();
+            for icon in NetDevice::ALL_ICONS {
+                assert!(choices.permits(icon), "{id} must permit {icon}");
+            }
+            assert!(!choices.permits("net_up"));
+        }
+
+        // `missing` renders a bare format and sets no values at all.
+        let missing = plan.output("missing").unwrap();
+        assert_eq!(missing.output().icon_placeholders().count(), 0);
+    }
+
+    #[test]
+    fn alt_output_exists_only_when_configured() {
+        let plan = prepare(&Config::default()).unwrap();
+        assert!(plan.output("alt").is_err());
+
+        let config = Config {
+            format_alt: Some(" $icon $device ".parse().unwrap()),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        let alt = plan.output("alt").unwrap();
+        assert!(alt.format().contains_key("device"));
+        let choices = alt.output().choices_for("icon").unwrap();
+        assert!(choices.permits("net_wireless"));
+    }
+
+    #[test]
+    fn every_chooser_icon_is_declared() {
+        // Exercise every branch of the runtime icon chooser and check the
+        // result against the declared set, so the two cannot drift apart.
+        let mut seen = Vec::new();
+        for is_wireless in [false, true] {
+            for tun_wg_ppp in [false, true] {
+                for name in ["lo", "eth0", "tun0", "wlan0"] {
+                    let icon = NetDevice::icon_for(is_wireless, tun_wg_ppp, name);
+                    assert!(
+                        NetDevice::ALL_ICONS.contains(&icon),
+                        "chooser returned undeclared icon {icon}"
+                    );
+                    if !seen.contains(&icon) {
+                        seen.push(icon);
+                    }
+                }
+            }
+        }
+        // ...and every declared name is actually reachable.
+        assert_eq!(seen.len(), NetDevice::ALL_ICONS.len());
+    }
 
     #[test]
     fn test_push_to_hist() {

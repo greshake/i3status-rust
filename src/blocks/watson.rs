@@ -50,11 +50,19 @@ pub struct Config {
     pub show_time: bool,
 }
 
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    Ok(BlockPlan::new(vec![OutputPlan::new(
+        "main",
+        config.format.with_default(" $text |")?,
+    )]))
+}
+
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[(MouseButton::Left, None, "toggle_show_time")])?;
 
-    let format = config.format.with_default(" $text |")?;
+    let plan = prepare(config)?;
+    let output_main = plan.output("main")?;
 
     let mut show_time = config.show_time;
 
@@ -93,7 +101,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             .error("Failed to read state file")?;
         let state = serde_json::from_str(&state).unwrap_or(WatsonState::Idle {});
 
-        let mut widget = Widget::new().with_format(format.clone());
+        let mut widget = output_main.new_widget();
 
         match state {
             state @ WatsonState::Active { .. } => {
@@ -229,4 +237,29 @@ where
 {
     use chrono::TimeZone as _;
     i64::deserialize(deserializer).map(|seconds| Local.timestamp_opt(seconds, 0).single().unwrap())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_single_output_without_icons() {
+        let plan = prepare(&Config::default()).unwrap();
+        let ids: Vec<_> = plan.outputs.iter().map(|o| o.id).collect();
+        assert_eq!(ids, ["main"]);
+        let main = plan.output("main").unwrap();
+        assert!(main.format().contains_key("text"));
+        assert_eq!(main.output().icon_placeholders().count(), 0);
+    }
+
+    #[test]
+    fn plan_uses_configured_format() {
+        let config = Config {
+            format: " watson: $text ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        assert!(plan.output("main").unwrap().format().contains_key("text"));
+    }
 }
