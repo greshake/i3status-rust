@@ -73,10 +73,10 @@
 //!
 //! # Icons Used
 //!
-//! - `net_vpn` (`$icon`)
-//! - `net_wired` (`$icon`)
-//! - `net_wireless` (`$icon`, for connecting state)
-//! - `net_down` (`$icon`)
+//! - `net_vpn` (`$icon`, in `format_connected`)
+//! - `net_wired` (`$icon`, in `format_disconnected`)
+//! - `net_wireless` (`$icon`, in `format_connecting`)
+//! - `net_down` (`$icon`, in `format_disconnected`, on errors)
 //! - country code flags (if supported by font)
 //!
 //! Flags: They are not icons but unicode glyphs. You will need a font that

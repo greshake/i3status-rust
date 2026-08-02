@@ -141,7 +141,7 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                     .into(),
             ),
         });
-        print_problems(&problems, &style);
+        print_problems(&problems, false, &style);
         return problems.len();
     };
     println!("Config:   {}", config_path.display());
@@ -169,7 +169,7 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
         },
     };
     let Some(raw) = raw else {
-        print_problems(&problems, &style);
+        print_problems(&problems, false, &style);
         return problems.len();
     };
 
@@ -301,6 +301,28 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
             );
         }
     }
+    // icons_format (global or per-block) may explicitly select a font via
+    // pango markup (font_family='...'); those families are deliberate
+    // choices, not system fallbacks.
+    if let Some(check) = font_check.as_mut() {
+        let mut declared = icons_format_families(&raw);
+        for block in raw_block_names(&raw)
+            .iter()
+            .enumerate()
+            .filter_map(|(i, _)| {
+                raw.get("block")
+                    .and_then(|b| b.as_array())
+                    .and_then(|b| b.get(i))
+            })
+        {
+            if let Some(f) = block.get("icons_format").and_then(|v| v.as_str()) {
+                declared.extend(pango_font_families(f));
+            }
+        }
+        for family in declared {
+            check.add_configured_family(&family);
+        }
+    }
     if let Some(check) = &font_check {
         if !check.has_fc_list {
             println!(
@@ -404,6 +426,9 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
     };
 
     let mut live_ran = false;
+    // (label, icon) pairs already diagnosed by a live render error, so the
+    // icon table does not report the same root cause twice
+    let mut live_reported: HashSet<(String, String)> = HashSet::new();
     match (parsed, skip_live) {
         (None, _) => println!("Blocks: skipped (configuration does not validate)\n"),
         (Some(_), true) => println!("Blocks: skipped (--doctor-skip-live)\n"),
@@ -456,12 +481,35 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                             });
                         }
                     }
-                    LiveVerdict::RenderError { .. } => {
+                    LiveVerdict::Skipped(_) => {
+                        // the bar would not spawn this block at all
+                        // (if_command failed): nothing it could request
+                        if let Some(relevance) = icon_relevant.get_mut(&label) {
+                            relevance.static_rel = StaticRelevance {
+                                sets: HashMap::new(),
+                            };
+                            relevance.live = None;
+                        }
+                    }
+                    LiveVerdict::RenderError { error, .. } => {
+                        if let Some(icon) = error
+                            .split("Icon '")
+                            .nth(1)
+                            .and_then(|rest| rest.split('\'').next())
+                        {
+                            live_reported.insert((label.clone(), icon.to_string()));
+                        }
                         // rendering failed, possibly on an icon: everything
                         // stays relevant
                         if let Some(relevance) = icon_relevant.get_mut(&label) {
                             let mut sets = HashMap::new();
-                            sets.insert("format".to_string(), (HashSet::new(), true));
+                            sets.insert(
+                                "format".to_string(),
+                                FormatSet {
+                                    wildcard: true,
+                                    ..Default::default()
+                                },
+                            );
                             relevance.static_rel = StaticRelevance { sets };
                         }
                     }
@@ -496,6 +544,7 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
         used_now: &used_now,
         icon_relevant: &icon_relevant,
         renames: &renames,
+        live_reported: &live_reported,
         live_ran,
         font_check: &mut font_check,
         font_authoritative,
@@ -503,8 +552,39 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
         problems: &mut problems,
     });
 
-    print_problems(&problems, &style);
+    print_problems(&problems, live_ran, &style);
     problems.len()
+}
+
+/// Font families explicitly selected by the global icons_format.
+fn icons_format_families(raw: &toml::Value) -> Vec<String> {
+    raw.get("icons_format")
+        .and_then(|v| v.as_str())
+        .map(pango_font_families)
+        .unwrap_or_default()
+}
+
+/// Extract font families from pango markup attributes:
+/// `font_family='X'`, `face="X"`, `font='X 12'`.
+fn pango_font_families(markup: &str) -> Vec<String> {
+    let mut families = Vec::new();
+    for attr in ["font_family=", "face=", "font_desc=", "font="] {
+        let mut search = markup;
+        while let Some(pos) = search.find(attr) {
+            search = &search[pos + attr.len()..];
+            let Some(quote) = search.chars().next().filter(|c| *c == '\'' || *c == '"') else {
+                continue;
+            };
+            let value = &search[1..];
+            if let Some(end) = value.find(quote) {
+                let family = strip_font_modifiers(&value[..end]);
+                if !family.is_empty() {
+                    families.push(family);
+                }
+            }
+        }
+    }
+    families
 }
 
 fn icons_config<'a>(
@@ -1226,9 +1306,18 @@ enum Provenance {
 /// block instance: configured formats are parsed; not-configured (or partially
 /// configured) ones use their per-key defaults from the generated table,
 /// following `inherits` chains. Unknown defaults degrade to a wildcard.
+/// Reachable content of one format: placeholder names, direct ^icon_* names,
+/// and whether the format is unknown (wildcard).
+#[derive(Default)]
+struct FormatSet {
+    placeholders: HashSet<String>,
+    icons: HashSet<String>,
+    wildcard: bool,
+}
+
 struct StaticRelevance {
-    /// format key -> (reachable placeholders, wildcard)
-    sets: HashMap<String, (HashSet<String>, bool)>,
+    /// format key -> reachable content
+    sets: HashMap<String, FormatSet>,
 }
 
 impl StaticRelevance {
@@ -1245,7 +1334,13 @@ impl StaticRelevance {
         if keys.is_empty() {
             // no metadata at all: stay conservative
             let mut sets = HashMap::new();
-            sets.insert("format".to_string(), (HashSet::new(), true));
+            sets.insert(
+                "format".to_string(),
+                FormatSet {
+                    wildcard: true,
+                    ..Default::default()
+                },
+            );
             return Self { sets };
         }
         let mut sets = HashMap::new();
@@ -1262,30 +1357,28 @@ impl StaticRelevance {
         key: &str,
         table: Option<&toml::Value>,
         depth: usize,
-    ) -> (HashSet<String>, bool) {
+    ) -> FormatSet {
         if depth > 4 {
-            return (HashSet::new(), true);
+            return FormatSet {
+                wildcard: true,
+                ..Default::default()
+            };
         }
         let configured = table.and_then(|t| t.as_table()).and_then(|t| t.get(key));
         match configured {
-            Some(toml::Value::String(s)) => (template_placeholders(s), false),
+            Some(toml::Value::String(s)) => template_set(s),
             Some(toml::Value::Table(parts)) => {
-                let mut set = HashSet::new();
-                let mut wildcard = false;
+                let mut set = FormatSet::default();
                 if let Some(toml::Value::String(s)) = parts.get("short") {
-                    set.extend(template_placeholders(s));
+                    set.merge(template_set(s));
                 }
                 match parts.get("full") {
-                    Some(toml::Value::String(s)) => set.extend(template_placeholders(s)),
+                    Some(toml::Value::String(s)) => set.merge(template_set(s)),
                     // partial table: the full part comes from this key's
                     // OWN default, not the block-wide default
-                    _ => {
-                        let (d, w) = Self::default_of(block_type, key, table, depth);
-                        set.extend(d);
-                        wildcard |= w;
-                    }
+                    _ => set.merge(Self::default_of(block_type, key, table, depth)),
                 }
-                (set, wildcard)
+                set
             }
             _ => Self::default_of(block_type, key, table, depth),
         }
@@ -1296,45 +1389,62 @@ impl StaticRelevance {
         key: &str,
         table: Option<&toml::Value>,
         depth: usize,
-    ) -> (HashSet<String>, bool) {
+    ) -> FormatSet {
         match format_defaults_for(block_type)
             .iter()
             .find(|(k, ..)| *k == key)
         {
-            Some((_, "literal", value)) => (template_placeholders(value), false),
+            Some((_, "literal", value)) => template_set(value),
             Some((_, "inherits", target)) => Self::effective(block_type, target, table, depth + 1),
             // an Option format that is not configured has no format at all
-            Some((_, kind, _)) if kind.starts_with("optional") => (HashSet::new(), false),
-            _ => (HashSet::new(), true),
+            Some((_, kind, _)) if kind.starts_with("optional") => FormatSet::default(),
+            _ => FormatSet {
+                wildcard: true,
+                ..Default::default()
+            },
         }
     }
 
     fn is_relevant(&self, icon: &str, block_type: &str) -> bool {
         // The generated key table is complete (enforced at build time), so
         // an icon is reachable exactly when one of its placeholders is
-        // referenced by a format it is scoped to. Icons with no known key
-        // (e.g. dynamic custom-block names) have no static pathway; the
-        // live test and used_now cover them.
+        // referenced by a format it is scoped to, or a format names it as a
+        // direct ^icon token (e.g. default formats of speedtest and net).
+        // Icons with no known key (e.g. dynamic custom-block names) have no
+        // static pathway; the live test and used_now cover them.
         let icon_keys = icon_keys_for(block_type, icon);
         let scopes = icon_format_scopes(block_type, icon);
         self.sets
             .iter()
             .filter(|(key, _)| scopes.is_empty() || scopes.contains(&key.as_str()))
-            .any(|(_, (placeholders, wildcard))| {
-                (*wildcard && !icon_keys.is_empty())
-                    || icon_keys.iter().any(|k| placeholders.contains(*k))
+            .any(|(_, set)| {
+                (set.wildcard && !icon_keys.is_empty())
+                    || set.icons.contains(icon)
+                    || icon_keys.iter().any(|k| set.placeholders.contains(*k))
             })
     }
 }
 
-/// The reachable placeholders of one template string.
-fn template_placeholders(s: &str) -> HashSet<String> {
+impl FormatSet {
+    fn merge(&mut self, other: FormatSet) {
+        self.placeholders.extend(other.placeholders);
+        self.icons.extend(other.icons);
+        self.wildcard |= other.wildcard;
+    }
+}
+
+/// The reachable placeholders and direct icons of one template string.
+fn template_set(s: &str) -> FormatSet {
     let mut placeholders = Vec::new();
     let mut icons = Vec::new();
     if let Ok(template) = format_parse::parse_full(s) {
         collect_reachable(&template, &mut placeholders, &mut icons);
     }
-    placeholders.into_iter().collect()
+    FormatSet {
+        placeholders: placeholders.into_iter().collect(),
+        icons: icons.into_iter().collect(),
+        wildcard: false,
+    }
 }
 
 /// Live render evidence (only ever *adds* relevance: a snapshot of one state
@@ -1357,8 +1467,9 @@ impl LiveRelevance {
             // Provided under a placeholder the render never used.
             Some(key) => self.rendered_keys.contains(key),
             // Unknown pathway (a state-dependent sibling like bat_charging):
-            // relevant iff the block rendered icons at all.
-            None => !self.rendered.is_empty(),
+            // the static analysis models these precisely (scopes, per-format
+            // defaults), so live evidence stays strictly positive.
+            None => false,
         }
     }
 }
@@ -1389,6 +1500,8 @@ struct IconTableInput<'a> {
     icon_relevant: &'a HashMap<String, IconRelevance>,
     /// Per block label: config-driven icon renames [(custom, canonical)].
     renames: &'a HashMap<String, Vec<(String, String)>>,
+    /// (label, icon) pairs already diagnosed by a live render error.
+    live_reported: &'a HashSet<(String, String)>,
     /// Whether the live block test ran (skipping it makes some checks
     /// inconclusive).
     live_ran: bool,
@@ -1408,6 +1521,7 @@ fn print_icon_table(input: IconTableInput) {
         used_now,
         icon_relevant,
         renames,
+        live_reported,
         live_ran,
         font_check,
         font_authoritative,
@@ -1576,6 +1690,8 @@ fn print_icon_table(input: IconTableInput) {
                     groups.entry(provenance).or_default().push(label);
                 }
                 None if *is_may && !relevant => (),
+                // already diagnosed by the live render error for this block
+                None if live_reported.contains(&(block.clone(), icon_name.clone())) => (),
                 None => {
                     // Finding: this block would error when requesting it —
                     // unless it never actually can (only "may" usage counts
@@ -1814,9 +1930,16 @@ fn glyph_provider(check: &mut FontCheck, glyph: &str) -> GlyphProvider {
     result
 }
 
-fn print_problems(problems: &[Problem], style: &Style) {
+fn print_problems(problems: &[Problem], live_ran: bool, style: &Style) {
     if problems.is_empty() {
-        println!("Problems: none found");
+        if live_ran {
+            println!("Problems: none found");
+        } else {
+            println!(
+                "Problems: none statically provable (the live block test did not run; \
+                 state-dependent and runtime behavior was not checked)"
+            );
+        }
         return;
     }
     println!("{}Problems ({}){}", style.red, problems.len(), style.reset);
@@ -1916,6 +2039,23 @@ impl FontCheck {
         })
     }
 
+    /// Register an additional deliberately-selected family (e.g. from
+    /// icons_format pango markup) so its glyphs count as configured.
+    fn add_configured_family(&mut self, family: &str) {
+        if self
+            .families
+            .iter()
+            .any(|(name, _)| family_eq(name, family))
+        {
+            return;
+        }
+        let resolved = fc_match(family, None);
+        self.families.push((family.to_string(), resolved));
+        // family preferences changed: previously classified glyphs may now
+        // be configured rather than fallback
+        self.cache.clear();
+    }
+
     fn check(&mut self, c: char) -> &GlyphFont {
         self.cache.entry(c).or_insert_with(|| {
             let charset = format!("{:x}", c as u32);
@@ -1940,7 +2080,22 @@ impl FontCheck {
                             })
                     }) {
                         Some((name, _)) => GlyphFont::Configured(name.clone()),
-                        None => GlyphFont::Fallback(family),
+                        None => {
+                            // The bar-pattern match ignores families that are
+                            // selected out-of-band (icons_format pango
+                            // markup): probe each configured family directly —
+                            // if it provides the glyph itself, rendering will
+                            // use it deliberately.
+                            let direct = self.families.iter().find(|(name, _)| {
+                                fc_match(name, Some(&charset)).is_some_and(|resolved| {
+                                    resolved.split(',').any(|m| family_eq(m, name))
+                                })
+                            });
+                            match direct {
+                                Some((name, _)) => GlyphFont::Configured(name.clone()),
+                                None => GlyphFont::Fallback(family),
+                            }
+                        }
                     }
                 }
                 None => GlyphFont::Missing,
@@ -2474,6 +2629,63 @@ mod tests {
     }
 
     #[test]
+    fn default_format_icon_tokens_are_required() {
+        // speedtest's default format renders ^icon_ping etc. directly
+        let config = r#"
+            [[block]]
+            block = "speedtest"
+            "#;
+        let speedtest = relevance(config, 0, "speedtest");
+        assert!(speedtest.is_relevant("ping", "speedtest"));
+        assert!(speedtest.is_relevant("net_down", "speedtest"));
+        // an explicit format without the tokens drops them
+        let config = r#"
+            [[block]]
+            block = "speedtest"
+            format = " $ping "
+            "#;
+        assert!(!relevance(config, 0, "speedtest").is_relevant("net_down", "speedtest"));
+    }
+
+    #[test]
+    fn state_scopes_pomodoro_and_vpn() {
+        let config = r#"
+            [[block]]
+            block = "pomodoro"
+            format = "$icon"
+            pomodoro_format = "$status_icon"
+            break_format = " brk "
+
+            [[block]]
+            block = "vpn"
+            format_connected = " $icon "
+            format_disconnected = " off "
+            format_connecting = " ... "
+            "#;
+        let pomodoro = relevance(config, 0, "pomodoro");
+        assert!(pomodoro.is_relevant("pomodoro_started", "pomodoro"));
+        assert!(!pomodoro.is_relevant("pomodoro_break", "pomodoro"));
+        assert!(!pomodoro.is_relevant("pomodoro_stopped", "pomodoro"));
+        let vpn = relevance(config, 1, "vpn");
+        assert!(vpn.is_relevant("net_vpn", "vpn"));
+        assert!(!vpn.is_relevant("net_wired", "vpn"));
+        assert!(!vpn.is_relevant("net_wireless", "vpn"));
+    }
+
+    #[test]
+    fn pango_families_from_icons_format() {
+        assert_eq!(
+            pango_font_families("<span font_family='Noto Color Emoji'>{icon}</span>"),
+            ["Noto Color Emoji"]
+        );
+        assert_eq!(
+            pango_font_families("<span face=\"Font Awesome 6 Free\" size='large'>{icon}</span>"),
+            ["Font Awesome 6 Free"]
+        );
+        assert!(pango_font_families("{icon}").is_empty());
+    }
+
+    #[test]
     fn state_scoped_formats() {
         // battery's bat_charging is scoped to charging_format and
         // bat_not_available to missing_format: making those literal-only
@@ -2586,8 +2798,9 @@ mod tests {
         assert!(live.is_relevant("memory_swap"));
         // provided under a placeholder the render never used
         assert!(!live.is_relevant("memory_mem"));
-        // unknown pathway while the block renders icons: stays relevant
-        assert!(live.is_relevant("bat_charging"));
+        // unknown pathway: live evidence is strictly positive; the static
+        // analysis (scopes, per-format defaults) covers state siblings
+        assert!(!live.is_relevant("bat_charging"));
 
         let none_rendered = LiveRelevance {
             rendered: HashSet::new(),

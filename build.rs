@@ -5,7 +5,12 @@ use std::process::Command;
 /// Returns the per-block icon lists for the completeness check.
 fn generate_block_icons() -> Vec<(String, Vec<String>)> {
     let out_dir = std::env::var("OUT_DIR").unwrap();
-    println!("cargo:rerun-if-changed=src/blocks");
+    // The rerun directives replace Cargo's default rerun-on-any-change, so
+    // cover everything this script reads (src) AND the git state embedded in
+    // VERSION — otherwise a commit could ship a stale hash.
+    println!("cargo:rerun-if-changed=src");
+    println!("cargo:rerun-if-changed=.git/HEAD");
+    println!("cargo:rerun-if-changed=.git/refs");
 
     let mut entries: Vec<(String, Vec<String>)> = Vec::new();
     // A missing or unreadable source tree must fail the build: silently
@@ -163,7 +168,7 @@ fn generate_block_icon_keys(doc_icons: &[(String, Vec<String>)]) {
                 let Some(token) = scope_tail.split('`').next() else {
                     break;
                 };
-                if (token == "format" || token.ends_with("_format"))
+                if (token == "format" || token.starts_with("format_") || token.ends_with("_format"))
                     && token.chars().all(|c| c.is_ascii_lowercase() || c == '_')
                 {
                     scopes.push((name.to_string(), token.to_string()));
