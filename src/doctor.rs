@@ -47,6 +47,21 @@ use crate::widget::Widget;
 use crate::{Request, RequestCmd};
 
 include!(concat!(env!("OUT_DIR"), "/block_icons.rs"));
+include!(concat!(env!("OUT_DIR"), "/block_icon_keys.rs"));
+
+/// The placeholder keys a block type provides the given icon name under,
+/// according to the statically scanned `"key" => Value::icon("name")` pairs.
+fn icon_keys_for(block_type: &str, icon: &str) -> Vec<&'static str> {
+    match BLOCK_ICON_KEYS.binary_search_by_key(&block_type, |(block, _)| block) {
+        Ok(i) => BLOCK_ICON_KEYS[i]
+            .1
+            .iter()
+            .filter(|(_, name)| *name == icon)
+            .map(|(key, _)| *key)
+            .collect(),
+        Err(_) => Vec::new(),
+    }
+}
 
 /// How long a block gets to produce its first output.
 const LIVE_TIMEOUT: Duration = Duration::from_secs(10);
@@ -313,7 +328,10 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
     for (index, info) in collect_blocks(&raw).iter().enumerate() {
         icon_relevant.insert(
             labels[index].clone(),
-            IconRelevance::Static(info.uses_icons().unwrap_or(true)),
+            IconRelevance {
+                static_rel: info.static_relevance(),
+                live: None,
+            },
         );
         for format in &info.formats {
             for icon in &format.icon_refs {
@@ -381,19 +399,20 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                             .iter()
                             .map(|(key, name)| (name.clone(), key.clone()))
                             .collect();
-                        icon_relevant.insert(
-                            label.clone(),
-                            IconRelevance::Live {
+                        if let Some(relevance) = icon_relevant.get_mut(&label) {
+                            relevance.live = Some(LiveRelevance {
                                 rendered,
                                 provided_keys,
                                 rendered_keys,
-                            },
-                        );
+                            });
+                        }
                     }
                     LiveVerdict::RenderError { .. } => {
                         // rendering failed, possibly on an icon: everything
                         // stays relevant
-                        icon_relevant.insert(label.clone(), IconRelevance::Static(true));
+                        if let Some(relevance) = icon_relevant.get_mut(&label) {
+                            relevance.static_rel = StaticRelevance::AllRelevant;
+                        }
                     }
                     _ => (),
                 }
@@ -1151,44 +1170,79 @@ enum Provenance {
     Local(String),
 }
 
-/// What is known about a block instance's ability to render a given icon.
-enum IconRelevance {
-    /// From the config's format strings only.
-    Static(bool),
-    /// From an actual successful render.
-    Live {
-        /// Icon names the render consumed.
-        rendered: HashSet<String>,
-        /// Icon name -> the placeholder key it was provided under.
-        provided_keys: HashMap<String, String>,
-        /// Placeholder keys whose icons were consumed.
-        rendered_keys: HashSet<String>,
+/// What the block's configured format strings say statically.
+enum StaticRelevance {
+    /// The default format (or a partial one inheriting it) is in play: any
+    /// icon may be rendered.
+    AllRelevant,
+    /// Explicit primary formats: only these placeholders can render.
+    Keys {
+        placeholders: HashSet<String>,
+        /// Whether any icon-ish placeholder or ^icon reference exists, for
+        /// icons whose placeholder key is not statically known.
+        any_icon: bool,
     },
 }
 
-impl IconRelevance {
-    fn is_relevant(&self, icon: &str) -> bool {
+impl StaticRelevance {
+    fn is_relevant(&self, icon: &str, block_type: &str) -> bool {
         match self {
-            Self::Static(relevant) => *relevant,
-            Self::Live {
-                rendered,
-                provided_keys,
-                rendered_keys,
+            Self::AllRelevant => true,
+            Self::Keys {
+                placeholders,
+                any_icon,
             } => {
-                if rendered.contains(icon) {
-                    return true;
-                }
-                match provided_keys.get(icon) {
-                    // Provided under a placeholder the render never used:
-                    // this format cannot request it.
-                    Some(key) => rendered_keys.contains(key),
-                    // Unknown pathway (a state-dependent sibling like
-                    // bat_charging): relevant iff the block renders icons at
-                    // all.
-                    None => !rendered.is_empty(),
+                let keys = icon_keys_for(block_type, icon);
+                if keys.is_empty() {
+                    // Unknown pathway (e.g. a computed icon name): assume
+                    // reachable if the formats reference icons at all.
+                    *any_icon
+                } else {
+                    keys.iter().any(|key| placeholders.contains(*key))
                 }
             }
         }
+    }
+}
+
+/// Live render evidence (only ever *adds* relevance: a snapshot of one state
+/// cannot rule out alternate states or formats).
+struct LiveRelevance {
+    /// Icon names the render consumed.
+    rendered: HashSet<String>,
+    /// Icon name -> the placeholder key it was provided under.
+    provided_keys: HashMap<String, String>,
+    /// Placeholder keys whose icons were consumed.
+    rendered_keys: HashSet<String>,
+}
+
+impl LiveRelevance {
+    fn is_relevant(&self, icon: &str) -> bool {
+        if self.rendered.contains(icon) {
+            return true;
+        }
+        match self.provided_keys.get(icon) {
+            // Provided under a placeholder the render never used.
+            Some(key) => self.rendered_keys.contains(key),
+            // Unknown pathway (a state-dependent sibling like bat_charging):
+            // relevant iff the block rendered icons at all.
+            None => !self.rendered.is_empty(),
+        }
+    }
+}
+
+/// What is known about a block instance's ability to render a given icon.
+/// Live evidence is combined with the static analysis, never substituted for
+/// it: the current render proves what CAN happen, not what cannot.
+struct IconRelevance {
+    static_rel: StaticRelevance,
+    live: Option<LiveRelevance>,
+}
+
+impl IconRelevance {
+    fn is_relevant(&self, icon: &str, block_type: &str) -> bool {
+        self.static_rel.is_relevant(icon, block_type)
+            || self.live.as_ref().is_some_and(|l| l.is_relevant(icon))
     }
 }
 
@@ -1249,6 +1303,11 @@ fn print_icon_table(input: IconTableInput) {
     // may-use: documented icons of each configured block type, attributed to
     // each instance's label
     let labels = instance_labels(block_names);
+    let label_types: HashMap<String, String> = labels
+        .iter()
+        .cloned()
+        .zip(block_names.iter().cloned())
+        .collect();
     let mut may_use: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
     for (index, name) in block_names.iter().enumerate() {
         if let Ok(i) = BLOCK_ICONS.binary_search_by_key(&name.as_str(), |(block, _)| block) {
@@ -1337,9 +1396,10 @@ fn print_icon_table(input: IconTableInput) {
         for (block, is_may) in users {
             // A block whose formats cannot render this icon cannot error on
             // it; skip latent (may) findings for it.
+            let block_type = label_types.get(block).map(String::as_str).unwrap_or(block);
             let relevant = icon_relevant
                 .get(block)
-                .map(|r| r.is_relevant(icon_name))
+                .map(|r| r.is_relevant(icon_name, block_type))
                 .unwrap_or(true);
             match resolve(icon_name, block) {
                 Some((icon, provenance)) => {
@@ -1987,11 +2047,16 @@ fn strip_font_modifiers(family: &str) -> String {
 // ---------------------------------------------------------------------------
 
 struct FormatUse {
+    /// ^icon_* references in reachable branches.
     icon_refs: Vec<String>,
-    mentions_icon_placeholder: bool,
+    /// Placeholder names in reachable branches.
+    placeholders: Vec<String>,
     /// error_format / error_fullscreen_format: rendered only for errors, so
     /// not evidence about the block's primary format.
     is_error_format: bool,
+    /// A partial table form ({ short = "..." } without `full`) inherits the
+    /// block's default full format, so the default's icon needs still apply.
+    inherits_default: bool,
 }
 
 struct BlockInfo {
@@ -1999,21 +2064,28 @@ struct BlockInfo {
 }
 
 impl BlockInfo {
-    /// Whether this block's configured formats can render icons at all:
-    /// Some(false) only when explicit primary formats exist and none of them
-    /// references an icon; None when the block uses its default format
-    /// (which must be assumed to render icons). Error formats are ignored:
-    /// they replace nothing about normal rendering.
-    fn uses_icons(&self) -> Option<bool> {
+    /// What the block's configured formats say about icon rendering. Error
+    /// formats are ignored: they replace nothing about normal rendering. A
+    /// missing or partially-specified primary format falls back to the
+    /// block's default, which must be assumed to render any icon.
+    fn static_relevance(&self) -> StaticRelevance {
         let primary: Vec<&FormatUse> = self.formats.iter().filter(|f| !f.is_error_format).collect();
-        if primary.is_empty() {
-            return None;
+        if primary.is_empty() || primary.iter().any(|f| f.inherits_default) {
+            return StaticRelevance::AllRelevant;
         }
-        Some(
-            primary
-                .iter()
-                .any(|f| !f.icon_refs.is_empty() || f.mentions_icon_placeholder),
-        )
+        let mut placeholders: HashSet<String> = HashSet::new();
+        let mut any_icon = false;
+        for format in &primary {
+            any_icon |= !format.icon_refs.is_empty();
+            for p in &format.placeholders {
+                any_icon |= p == "icon" || p.contains("icon");
+                placeholders.insert(p.clone());
+            }
+        }
+        StaticRelevance::Keys {
+            placeholders,
+            any_icon,
+        }
     }
 }
 
@@ -2040,7 +2112,9 @@ fn format_key_kind(key: &str) -> Option<bool /* is_error_format */> {
     if key == "error_format" || key == "error_fullscreen_format" {
         return Some(true);
     }
-    (key == "format" || key.ends_with("_format")).then_some(false)
+    // "format", suffixed variants like "format_alt" / "format_singular", and
+    // prefixed variants like "inactive_format" / "full_format"
+    (key == "format" || key.starts_with("format_") || key.ends_with("_format")).then_some(false)
 }
 
 /// Recursively find format templates under `format` / `*_format` keys and
@@ -2056,11 +2130,20 @@ fn collect_formats(value: &toml::Value, out: &mut Vec<FormatUse>) {
                 push_format_use(s, is_error_format, out);
             }
             (Some(is_error_format), toml::Value::Table(parts)) => {
-                // { full = "...", short = "..." } form
+                // { full = "...", short = "..." } form. A table without a
+                // `full` member inherits the block's default full format.
                 for part in ["full", "short"] {
                     if let Some(toml::Value::String(s)) = parts.get(part) {
                         push_format_use(s, is_error_format, out);
                     }
+                }
+                if !is_error_format && !matches!(parts.get("full"), Some(toml::Value::String(_))) {
+                    out.push(FormatUse {
+                        icon_refs: Vec::new(),
+                        placeholders: Vec::new(),
+                        is_error_format: false,
+                        inherits_default: true,
+                    });
                 }
             }
             (_, toml::Value::Table(_)) => collect_formats(value, out),
@@ -2077,43 +2160,59 @@ fn collect_formats(value: &toml::Value, out: &mut Vec<FormatUse>) {
 fn push_format_use(s: &str, is_error_format: bool, out: &mut Vec<FormatUse>) {
     if let Ok(template) = format_parse::parse_full(s) {
         let mut icon_refs = Vec::new();
-        collect_icon_refs(&template, &mut icon_refs);
         let mut placeholders = Vec::new();
-        collect_placeholders(&template, &mut placeholders);
+        collect_reachable(&template, &mut placeholders, &mut icon_refs);
         out.push(FormatUse {
             icon_refs,
-            mentions_icon_placeholder: placeholders
-                .iter()
-                .any(|p| p == "icon" || p.contains("icon")),
+            placeholders,
             is_error_format,
+            inherits_default: false,
         });
     }
 }
 
-fn collect_placeholders(template: &format_parse::FormatTemplate, out: &mut Vec<String>) {
+/// Walk only the *reachable* branches of a template: alternatives after a
+/// branch that cannot fail (only literal text) are dead — "{ OK | $icon }"
+/// never evaluates $icon.
+fn collect_reachable(
+    template: &format_parse::FormatTemplate,
+    placeholders: &mut Vec<String>,
+    icon_refs: &mut Vec<String>,
+) {
     for token_list in &template.0 {
+        let mut branch_can_fail = false;
         for token in &token_list.0 {
             match token {
                 format_parse::Token::Placeholder(placeholder) => {
-                    out.push(placeholder.name.to_string());
+                    placeholders.push(placeholder.name.to_string());
+                    branch_can_fail = true;
                 }
-                format_parse::Token::Recursive(rec) => collect_placeholders(rec, out),
-                _ => (),
+                format_parse::Token::Icon(name) => {
+                    icon_refs.push((*name).to_string());
+                    branch_can_fail = true;
+                }
+                format_parse::Token::Recursive(rec) => {
+                    collect_reachable(rec, placeholders, icon_refs);
+                    branch_can_fail |= group_can_fail(rec);
+                }
+                format_parse::Token::Text(_) => (),
             }
+        }
+        if !branch_can_fail {
+            break;
         }
     }
 }
 
-fn collect_icon_refs(template: &format_parse::FormatTemplate, out: &mut Vec<String>) {
-    for token_list in &template.0 {
-        for token in &token_list.0 {
-            match token {
-                format_parse::Token::Icon(name) => out.push((*name).to_string()),
-                format_parse::Token::Recursive(rec) => collect_icon_refs(rec, out),
-                _ => (),
-            }
-        }
-    }
+/// A group fails only if every one of its branches can fail.
+fn group_can_fail(template: &format_parse::FormatTemplate) -> bool {
+    template.0.iter().all(|token_list| {
+        token_list.0.iter().any(|token| match token {
+            format_parse::Token::Placeholder(_) | format_parse::Token::Icon(_) => true,
+            format_parse::Token::Recursive(rec) => group_can_fail(rec),
+            format_parse::Token::Text(_) => false,
+        })
+    })
 }
 
 #[cfg(test)]
@@ -2209,6 +2308,8 @@ mod tests {
     #[test]
     fn format_key_classification() {
         assert_eq!(format_key_kind("format"), Some(false));
+        assert_eq!(format_key_kind("format_alt"), Some(false));
+        assert_eq!(format_key_kind("format_singular"), Some(false));
         assert_eq!(format_key_kind("full_format"), Some(false));
         assert_eq!(format_key_kind("inactive_format"), Some(false));
         assert_eq!(format_key_kind("error_format"), Some(true));
@@ -2235,15 +2336,62 @@ mod tests {
         )
         .unwrap();
         let blocks = collect_blocks(&raw);
-        // table-form format counts as an explicit icon-free primary format
-        assert_eq!(blocks[0].uses_icons(), Some(false));
+        // table-form format with `full` counts as an explicit icon-free
+        // primary format
+        assert!(matches!(
+            blocks[0].static_relevance(),
+            StaticRelevance::Keys {
+                any_icon: false,
+                ..
+            }
+        ));
         // error_format alone is not evidence of a primary format
-        assert_eq!(blocks[1].uses_icons(), None);
+        assert!(matches!(
+            blocks[1].static_relevance(),
+            StaticRelevance::AllRelevant
+        ));
+    }
+
+    #[test]
+    fn partial_table_format_inherits_default() {
+        let raw: toml::Value = toml::from_str(
+            r#"
+            [[block]]
+            block = "time"
+            [block.format]
+            short = " SHORT "
+            "#,
+        )
+        .unwrap();
+        let blocks = collect_blocks(&raw);
+        // no `full` member: the default full format (which renders icons) is
+        // still in play
+        assert!(matches!(
+            blocks[0].static_relevance(),
+            StaticRelevance::AllRelevant
+        ));
+    }
+
+    #[test]
+    fn branch_reachability() {
+        // the literal first branch always succeeds: $icon is dead
+        let template = format_parse::parse_full("{ OK | $icon }").unwrap();
+        let mut placeholders = Vec::new();
+        let mut icons = Vec::new();
+        collect_reachable(&template, &mut placeholders, &mut icons);
+        assert!(placeholders.is_empty());
+
+        // a placeholder branch can fail: the fallback stays reachable
+        let template = format_parse::parse_full("{ $a | $icon }").unwrap();
+        let mut placeholders = Vec::new();
+        let mut icons = Vec::new();
+        collect_reachable(&template, &mut placeholders, &mut icons);
+        assert_eq!(placeholders, ["a", "icon"]);
     }
 
     #[test]
     fn per_icon_live_relevance() {
-        let live = IconRelevance::Live {
+        let live = LiveRelevance {
             rendered: ["memory_swap".to_string()].into_iter().collect(),
             provided_keys: [
                 ("memory_swap".to_string(), "icon_swap".to_string()),
@@ -2259,7 +2407,7 @@ mod tests {
         // unknown pathway while the block renders icons: stays relevant
         assert!(live.is_relevant("bat_charging"));
 
-        let none_rendered = IconRelevance::Live {
+        let none_rendered = LiveRelevance {
             rendered: HashSet::new(),
             provided_keys: [("time".to_string(), "icon".to_string())]
                 .into_iter()
@@ -2294,13 +2442,42 @@ mod tests {
         .unwrap();
         let blocks = collect_blocks(&raw);
         // explicit format without icons: icons are irrelevant
-        assert_eq!(blocks[0].uses_icons(), Some(false));
+        assert!(matches!(
+            blocks[0].static_relevance(),
+            StaticRelevance::Keys {
+                any_icon: false,
+                ..
+            }
+        ));
         // explicit format with $icon placeholder
-        assert_eq!(blocks[1].uses_icons(), Some(true));
+        assert!(matches!(
+            blocks[1].static_relevance(),
+            StaticRelevance::Keys { any_icon: true, .. }
+        ));
         // no explicit format: the default must be assumed to render icons
-        assert_eq!(blocks[2].uses_icons(), None);
+        assert!(matches!(
+            blocks[2].static_relevance(),
+            StaticRelevance::AllRelevant
+        ));
         // ^icon_* reference
-        assert_eq!(blocks[3].uses_icons(), Some(true));
+        assert!(matches!(
+            blocks[3].static_relevance(),
+            StaticRelevance::Keys { any_icon: true, .. }
+        ));
+
+        // per-icon: memory's $icon_swap-only format needs memory_swap but
+        // not memory_mem (whose key, per the generated table, is "icon")
+        let raw: toml::Value = toml::from_str(
+            r#"
+            [[block]]
+            block = "memory"
+            format = " $icon_swap $mem_used_percents "
+            "#,
+        )
+        .unwrap();
+        let relevance = collect_blocks(&raw)[0].static_relevance();
+        assert!(relevance.is_relevant("memory_swap", "memory"));
+        assert!(!relevance.is_relevant("memory_mem", "memory"));
     }
 
     #[test]

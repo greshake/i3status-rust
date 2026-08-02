@@ -70,6 +70,68 @@ fn generate_block_icons() {
     std::fs::write(std::path::Path::new(&out_dir).join("block_icons.rs"), code).unwrap();
 }
 
+/// Extract (placeholder key, icon name) pairs from `"key" => Value::icon*("name")`
+/// map entries, so doctor can statically tell which icon travels under which
+/// placeholder. Computed icon names are skipped.
+fn generate_block_icon_keys() {
+    let out_dir = std::env::var("OUT_DIR").unwrap();
+    let mut entries: Vec<(String, Vec<(String, String)>)> = Vec::new();
+    let dir = std::fs::read_dir("src/blocks").expect("cannot read src/blocks");
+    for entry in dir {
+        let entry = entry.expect("cannot read src/blocks directory entry");
+        let path = entry.path();
+        if path.extension().is_none_or(|e| e != "rs") {
+            continue;
+        }
+        let block = path.file_stem().unwrap().to_string_lossy().into_owned();
+        let source = std::fs::read_to_string(&path)
+            .unwrap_or_else(|err| panic!("cannot read {}: {err}", path.display()));
+        let mut pairs = Vec::new();
+        for line in source.lines() {
+            let Some(arrow) = line.find("=> Value::icon") else {
+                continue;
+            };
+            let (before, after) = line.split_at(arrow);
+            // key: the last quoted string before the arrow
+            let Some(key) = before.rsplit('"').nth(1) else {
+                continue;
+            };
+            // name: a quoted literal right after the opening parenthesis
+            let Some(paren) = after.find('(') else {
+                continue;
+            };
+            let after = &after[paren + 1..];
+            let Some(name) = after.strip_prefix('"').and_then(|a| a.split('"').next()) else {
+                continue;
+            };
+            if !key.is_empty() && !name.is_empty() {
+                pairs.push((key.to_string(), name.to_string()));
+            }
+        }
+        pairs.sort();
+        pairs.dedup();
+        if !pairs.is_empty() {
+            entries.push((block, pairs));
+        }
+    }
+    entries.sort();
+
+    let mut code = String::from("pub static BLOCK_ICON_KEYS: &[(&str, &[(&str, &str)])] = &[\n");
+    for (block, pairs) in entries {
+        code.push_str(&format!("    ({block:?}, &["));
+        for (key, name) in pairs {
+            code.push_str(&format!("({key:?}, {name:?}), "));
+        }
+        code.push_str("]),\n");
+    }
+    code.push_str("];\n");
+    std::fs::write(
+        std::path::Path::new(&out_dir).join("block_icon_keys.rs"),
+        code,
+    )
+    .unwrap();
+}
+
 /// Collect string literals passed directly to the icon-requesting APIs.
 fn scan_icon_literals(source: &str, icons: &mut Vec<String>) {
     for api in [
@@ -95,6 +157,7 @@ fn scan_icon_literals(source: &str, icons: &mut Vec<String>) {
 
 fn main() {
     generate_block_icons();
+    generate_block_icon_keys();
     let hash = Command::new("git")
         .args(["rev-parse", "--short", "HEAD"])
         .env("GIT_CONFIG_GLOBAL", "/dev/null")
