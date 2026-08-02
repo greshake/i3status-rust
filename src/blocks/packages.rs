@@ -296,7 +296,7 @@
 //!
 //! # Icons Used
 //!
-//! - `update`
+//! - `update` (`$icon`)
 
 pub mod apk;
 use apk::Apk;

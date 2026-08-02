@@ -135,11 +135,10 @@
 //! # Icons Used
 //! - `music`
 //! - `music_next`
-//! - `music_pause`
-//! - `music_play`
+//! - `music_pause` (`$play`)
+//! - `music_play` (`$play`)
 //! - `music_prev`
-//! - `volume_muted`
-//! - `volume` (as a progression)
+//! - `volume` (`$volume_icon`, as a progression)
 //!
 //! [MediaPlayer2 Interface]: https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html
 

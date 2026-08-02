@@ -56,7 +56,7 @@
 //! ```
 //!
 //! # Icons Used
-//! - `github`
+//! - `github` (`$icon`)
 
 use super::prelude::*;
 

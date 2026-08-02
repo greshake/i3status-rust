@@ -1176,30 +1176,22 @@ enum StaticRelevance {
     /// icon may be rendered.
     AllRelevant,
     /// Explicit primary formats: only these placeholders can render.
-    Keys {
-        placeholders: HashSet<String>,
-        /// Whether any icon-ish placeholder or ^icon reference exists, for
-        /// icons whose placeholder key is not statically known.
-        any_icon: bool,
-    },
+    Keys { placeholders: HashSet<String> },
 }
 
 impl StaticRelevance {
     fn is_relevant(&self, icon: &str, block_type: &str) -> bool {
         match self {
             Self::AllRelevant => true,
-            Self::Keys {
-                placeholders,
-                any_icon,
-            } => {
-                let keys = icon_keys_for(block_type, icon);
-                if keys.is_empty() {
-                    // Unknown pathway (e.g. a computed icon name): assume
-                    // reachable if the formats reference icons at all.
-                    *any_icon
-                } else {
-                    keys.iter().any(|key| placeholders.contains(*key))
-                }
+            Self::Keys { placeholders } => {
+                // The generated key table is complete (enforced at build
+                // time), so an icon is reachable exactly when one of its
+                // placeholders is referenced. Icons with no known key (e.g.
+                // dynamic custom-block names) have no static pathway; the
+                // live test and used_now cover them.
+                icon_keys_for(block_type, icon)
+                    .iter()
+                    .any(|key| placeholders.contains(*key))
             }
         }
     }
@@ -2074,20 +2066,12 @@ impl BlockInfo {
             return StaticRelevance::AllRelevant;
         }
         let mut placeholders: HashSet<String> = HashSet::new();
-        // Only icon-ish PLACEHOLDERS make unmapped icons potentially
-        // reachable: a ^icon_x reference names one specific icon and says
-        // nothing about the others.
-        let mut any_icon = false;
         for format in &primary {
             for p in &format.placeholders {
-                any_icon |= p == "icon" || p.contains("icon");
                 placeholders.insert(p.clone());
             }
         }
-        StaticRelevance::Keys {
-            placeholders,
-            any_icon,
-        }
+        StaticRelevance::Keys { placeholders }
     }
 }
 
@@ -2345,10 +2329,7 @@ mod tests {
         // primary format
         assert!(matches!(
             blocks[0].static_relevance(),
-            StaticRelevance::Keys {
-                any_icon: false,
-                ..
-            }
+            StaticRelevance::Keys { .. }
         ));
         // error_format alone is not evidence of a primary format
         assert!(matches!(
@@ -2489,32 +2470,17 @@ mod tests {
         .unwrap();
         let blocks = collect_blocks(&raw);
         // explicit format without icons: icons are irrelevant
-        assert!(matches!(
-            blocks[0].static_relevance(),
-            StaticRelevance::Keys {
-                any_icon: false,
-                ..
-            }
-        ));
-        // explicit format with $icon placeholder
-        assert!(matches!(
-            blocks[1].static_relevance(),
-            StaticRelevance::Keys { any_icon: true, .. }
-        ));
+        assert!(!blocks[0].static_relevance().is_relevant("time", "time"));
+        // explicit format with $icon placeholder: time travels under $icon
+        assert!(blocks[1].static_relevance().is_relevant("time", "time"));
         // no explicit format: the default must be assumed to render icons
         assert!(matches!(
             blocks[2].static_relevance(),
             StaticRelevance::AllRelevant
         ));
         // a ^icon_* reference names one specific icon: it does not make
-        // other (unmapped) icons relevant
-        assert!(matches!(
-            blocks[3].static_relevance(),
-            StaticRelevance::Keys {
-                any_icon: false,
-                ..
-            }
-        ));
+        // other icons relevant (they are checked via used_now instead)
+        assert!(!blocks[3].static_relevance().is_relevant("net_up", "net"));
 
         // per-icon: memory's $icon_swap-only format needs memory_swap but
         // not memory_mem (whose key, per the generated table, is "icon")

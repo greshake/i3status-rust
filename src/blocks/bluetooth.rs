@@ -51,12 +51,12 @@
 //! ```
 //!
 //! # Icons Used
-//! - `headphones` for bluetooth devices identifying as "audio-card", "audio-headset" or "audio-headphones"
-//! - `joystick` for bluetooth devices identifying as "input-gaming"
-//! - `keyboard` for bluetooth devices identifying as "input-keyboard"
-//! - `mouse` for bluetooth devices identifying as "input-mouse"
+//! - `headphones` (`$icon`) for bluetooth devices identifying as "audio-card", "audio-headset" or "audio-headphones"
+//! - `joystick` (`$icon`) for bluetooth devices identifying as "input-gaming"
+//! - `keyboard` (`$icon`) for bluetooth devices identifying as "input-keyboard"
+//! - `mouse` (`$icon`) for bluetooth devices identifying as "input-mouse"
 //! - `bluetooth` for all other devices
-//! - `bat` (as a progression) for devices reporting a battery level
+//! - `bat` (`$battery_icon`, as a progression) for devices reporting a battery level
 
 use zbus::fdo::{DBusProxy, ObjectManagerProxy, PropertiesProxy};
 

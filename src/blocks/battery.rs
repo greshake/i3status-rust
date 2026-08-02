@@ -61,8 +61,8 @@
 //! ```
 //!
 //! # Icons Used
-//! - `bat` (as a progression)
-//! - `bat_charging` (as a progression)
+//! - `bat` (`$icon`, as a progression)
+//! - `bat_charging` (`$icon`, as a progression)
 //! - `bat_not_available`
 
 use regex::Regex;

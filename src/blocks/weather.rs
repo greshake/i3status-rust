@@ -135,18 +135,18 @@
 //!
 //! # Used Icons
 //!
-//! - `weather_sun` (when weather is reported as "Clear" during the day)
-//! - `weather_moon` (when weather is reported as "Clear" at night)
-//! - `weather_clouds` (when weather is reported as "Clouds" during the day)
-//! - `weather_clouds_night` (when weather is reported as "Clouds" at night)
-//! - `weather_fog` (when weather is reported as "Fog" or "Mist" during the day)
-//! - `weather_fog_night` (when weather is reported as "Fog" or "Mist" at night)
-//! - `weather_rain` (when weather is reported as "Rain" or "Drizzle" during the day)
-//! - `weather_rain_night` (when weather is reported as "Rain" or "Drizzle" at night)
-//! - `weather_snow` (when weather is reported as "Snow")
-//! - `weather_thunder` (when weather is reported as "Thunderstorm" during the day)
-//! - `weather_thunder_night` (when weather is reported as "Thunderstorm" at night)
-//! - `weather_default` (in all other cases)
+//! - `weather_sun` (`$icon` `$icon_ffin`, when weather is reported as "Clear" during the day)
+//! - `weather_moon` (`$icon` `$icon_ffin`, when weather is reported as "Clear" at night)
+//! - `weather_clouds` (`$icon` `$icon_ffin`, when weather is reported as "Clouds" during the day)
+//! - `weather_clouds_night` (`$icon` `$icon_ffin`, when weather is reported as "Clouds" at night)
+//! - `weather_fog` (`$icon` `$icon_ffin`, when weather is reported as "Fog" or "Mist" during the day)
+//! - `weather_fog_night` (`$icon` `$icon_ffin`, when weather is reported as "Fog" or "Mist" at night)
+//! - `weather_rain` (`$icon` `$icon_ffin`, when weather is reported as "Rain" or "Drizzle" during the day)
+//! - `weather_rain_night` (`$icon` `$icon_ffin`, when weather is reported as "Rain" or "Drizzle" at night)
+//! - `weather_snow` (`$icon` `$icon_ffin`, when weather is reported as "Snow")
+//! - `weather_thunder` (`$icon` `$icon_ffin`, when weather is reported as "Thunderstorm" during the day)
+//! - `weather_thunder_night` (`$icon` `$icon_ffin`, when weather is reported as "Thunderstorm" at night)
+//! - `weather_default` (`$icon` `$icon_ffin`, in all other cases)
 
 use chrono::{DateTime, Utc};
 use sunrise::{SolarDay, SolarEvent};

@@ -36,9 +36,9 @@
 //! ```
 //!
 //! # Icons Used
-//! - `ping`
-//! - `net_down`
-//! - `net_up`
+//! - `ping` (`^icon_ping`)
+//! - `net_down` (`^icon_net_down`)
+//! - `net_up` (`^icon_net_up`)
 
 use super::prelude::*;
 use tokio::process::Command;

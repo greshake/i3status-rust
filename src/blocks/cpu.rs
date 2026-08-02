@@ -42,8 +42,8 @@
 //!
 //! # Icons Used
 //! - `cpu` (as a progression)
-//! - `cpu_boost_on`
-//! - `cpu_boost_off`
+//! - `cpu_boost_on` (`$boost`)
+//! - `cpu_boost_off` (`$boost`)
 
 use std::str::FromStr as _;
 

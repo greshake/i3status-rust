@@ -53,12 +53,12 @@
 //! ```
 //!
 //! # Icons Used
-//! - `net_loopback`
-//! - `net_vpn`
-//! - `net_wired`
-//! - `net_wireless` (as a progression)
-//! - `net_up`
-//! - `net_down`
+//! - `net_loopback` (`$icon`)
+//! - `net_vpn` (`$icon`)
+//! - `net_wired` (`$icon`)
+//! - `net_wireless` (`$icon`, as a progression)
+//! - `net_up` (`^icon_net_up`)
+//! - `net_down` (`^icon_net_down`)
 
 use super::prelude::*;
 use crate::netlink::NetDevice;

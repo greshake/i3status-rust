@@ -2,7 +2,8 @@ use std::process::Command;
 
 /// Extract each block's `# Icons Used` doc section into a static table used
 /// by `--doctor` to know which icon names a block may request at runtime.
-fn generate_block_icons() {
+/// Returns the per-block icon lists for the completeness check.
+fn generate_block_icons() -> Vec<(String, Vec<String>)> {
     let out_dir = std::env::var("OUT_DIR").unwrap();
     println!("cargo:rerun-if-changed=src/blocks");
 
@@ -59,7 +60,7 @@ fn generate_block_icons() {
     entries.sort();
 
     let mut code = String::from("pub static BLOCK_ICONS: &[(&str, &[&str])] = &[\n");
-    for (block, icons) in entries {
+    for (block, icons) in &entries {
         code.push_str(&format!("    ({block:?}, &["));
         for icon in icons {
             code.push_str(&format!("{icon:?}, "));
@@ -68,11 +69,13 @@ fn generate_block_icons() {
     }
     code.push_str("];\n");
     std::fs::write(std::path::Path::new(&out_dir).join("block_icons.rs"), code).unwrap();
+    entries
 }
 
 /// The canonical icon names, scanned from the default map in src/icons.rs
 /// (the first quoted string on each `"name" => ...` entry line).
 fn canonical_icon_names() -> std::collections::HashSet<String> {
+    println!("cargo:rerun-if-changed=src/icons.rs");
     let source = std::fs::read_to_string("src/icons.rs").expect("cannot read src/icons.rs");
     let mut names = std::collections::HashSet::new();
     for line in source.lines() {
@@ -99,10 +102,10 @@ fn canonical_icon_names() -> std::collections::HashSet<String> {
 /// travels under which placeholder. Helper indirection like
 /// `"next" => new_btn("music_next", ...)` is recognized by validating the
 /// literal against the canonical icon names. Computed icon names are skipped.
-fn generate_block_icon_keys() {
+fn generate_block_icon_keys(doc_icons: &[(String, Vec<String>)]) {
     let out_dir = std::env::var("OUT_DIR").unwrap();
     let canonical = canonical_icon_names();
-    let mut entries: Vec<(String, Vec<(String, String)>)> = Vec::new();
+    let mut entries: Vec<(String, Vec<(String, String)>, Vec<String>)> = Vec::new();
     let dir = std::fs::read_dir("src/blocks").expect("cannot read src/blocks");
     for entry in dir {
         let entry = entry.expect("cannot read src/blocks directory entry");
@@ -114,6 +117,38 @@ fn generate_block_icon_keys() {
         let source = std::fs::read_to_string(&path)
             .unwrap_or_else(|err| panic!("cannot read {}: {err}", path.display()));
         let mut pairs = Vec::new();
+        let mut token_annotated: Vec<String> = Vec::new();
+        // Explicit associations in the "# Icons Used" doc entries: an entry
+        // like `- \`music_play\` (`$play`)` records that the icon travels
+        // under the $play placeholder. This covers icon names computed at
+        // runtime, which no source scan can attribute.
+        for line in source.lines() {
+            let Some(doc) = line.trim().strip_prefix("//!") else {
+                continue;
+            };
+            let Some(rest) = doc.trim().strip_prefix("- `") else {
+                continue;
+            };
+            let Some(name) = rest.split('`').next() else {
+                continue;
+            };
+            let mut tail = rest;
+            while let Some(pos) = tail.find("`$") {
+                tail = &tail[pos + 2..];
+                if let Some(key) = tail.split('`').next()
+                    && !key.is_empty()
+                    && !name.is_empty()
+                {
+                    pairs.push((key.to_string(), name.to_string()));
+                }
+            }
+            // `^icon_x` annotations mark icons rendered by direct format
+            // tokens: they have no placeholder, and the ^icon_* references
+            // are analyzed from the format strings themselves.
+            if rest.contains("`^icon_") {
+                token_annotated.push(name.to_string());
+            }
+        }
         for line in source.lines() {
             if line.trim_start().starts_with("//") {
                 continue;
@@ -142,14 +177,36 @@ fn generate_block_icon_keys() {
         }
         pairs.sort();
         pairs.dedup();
-        if !pairs.is_empty() {
-            entries.push((block, pairs));
-        }
+        entries.push((block, pairs, token_annotated));
     }
     entries.sort();
 
+    // Every documented icon must have at least one placeholder association
+    // (from the source scan or a doc annotation); without it the per-icon
+    // static analysis in --doctor silently produces wrong results.
+    let mut gaps = Vec::new();
+    for (block, icons) in doc_icons {
+        let (pairs, tokens) = entries
+            .iter()
+            .find(|(b, ..)| b == block)
+            .map(|(_, p, t)| (p.as_slice(), t.as_slice()))
+            .unwrap_or((&[], &[]));
+        for icon in icons {
+            if !pairs.iter().any(|(_, name)| name == icon) && !tokens.contains(icon) {
+                gaps.push(format!("{block}: {icon}"));
+            }
+        }
+    }
+    if !gaps.is_empty() {
+        panic!(
+            "icons without a placeholder association (annotate their '# Icons Used' doc \
+             entry with the placeholder, backtick-dollar-key style):\n{}",
+            gaps.join("\n")
+        );
+    }
+
     let mut code = String::from("pub static BLOCK_ICON_KEYS: &[(&str, &[(&str, &str)])] = &[\n");
-    for (block, pairs) in entries {
+    for (block, pairs, _) in entries {
         code.push_str(&format!("    ({block:?}, &["));
         for (key, name) in pairs {
             code.push_str(&format!("({key:?}, {name:?}), "));
@@ -188,8 +245,8 @@ fn scan_icon_literals(source: &str, icons: &mut Vec<String>) {
 }
 
 fn main() {
-    generate_block_icons();
-    generate_block_icon_keys();
+    let block_icons = generate_block_icons();
+    generate_block_icon_keys(&block_icons);
     let hash = Command::new("git")
         .args(["rev-parse", "--short", "HEAD"])
         .env("GIT_CONFIG_GLOBAL", "/dev/null")

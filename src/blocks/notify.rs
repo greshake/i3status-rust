@@ -55,8 +55,8 @@
 //! ```
 //!
 //! # Icons Used
-//! - `bell`
-//! - `bell-slash`
+//! - `bell` (`$icon`)
+//! - `bell-slash` (`$icon`)
 //!
 //! [^dunst_version_note]: when using `notification_count` with the `dunst` driver use dunst > 1.9.0
 //! [^history_count_note]: `history_count` is the same as `notification_count` in SwayNC

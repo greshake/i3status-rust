@@ -42,9 +42,9 @@
 //! ```
 //!
 //! # Icons Used
-//! - `bat` (as a progression)
-//! - `bat_charging` (as a progression)
-//! - `net_cellular` (as a progression)
+//! - `bat` (`$bat_icon`, as a progression)
+//! - `bat_charging` (`$bat_icon`, as a progression)
+//! - `net_cellular` (`$network_icon`, as a progression)
 //! - `notification`
 //! - `phone`
 //! - `phone_disconnected`

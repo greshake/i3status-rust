@@ -49,8 +49,8 @@
 //! ```
 //!
 //! # Icons Used
-//! - `toggle_off`
-//! - `toggle_on`
+//! - `toggle_off` (`$icon`)
+//! - `toggle_on` (`$icon`)
 
 use super::prelude::*;
 use std::env;

@@ -53,10 +53,10 @@
 //!
 //! # Icons Used
 //! - `pomodoro`
-//! - `pomodoro_started`
-//! - `pomodoro_stopped`
-//! - `pomodoro_paused`
-//! - `pomodoro_break`
+//! - `pomodoro_started` (`$status_icon`)
+//! - `pomodoro_stopped` (`$status_icon`)
+//! - `pomodoro_paused` (`$status_icon`)
+//! - `pomodoro_break` (`$status_icon`)
 
 use num_traits::{Num, NumAssignOps, SaturatingSub};
 use tokio::sync::mpsc;

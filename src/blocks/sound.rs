@@ -87,11 +87,11 @@
 //!
 //! #  Icons Used
 //!
-//! - `microphone_muted` (as a progression)
-//! - `microphone` (as a progression)
-//! - `volume_muted` (as a progression)
-//! - `volume` (as a progression)
-//! - `headphones`
+//! - `microphone_muted` (`$icon`, as a progression)
+//! - `microphone` (`$icon`, as a progression)
+//! - `volume_muted` (`$icon`, as a progression)
+//! - `volume` (`$icon`, as a progression)
+//! - `headphones` (`$icon`)
 
 make_log_macro!(debug, "sound");
 
