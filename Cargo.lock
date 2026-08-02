@@ -1122,6 +1122,7 @@ dependencies = [
  "tokio-util",
  "toml",
  "unicode-segmentation",
+ "unicode-width",
  "wayrs-client",
  "wayrs-protocols",
  "x11rb-async",

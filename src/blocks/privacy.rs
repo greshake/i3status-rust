@@ -157,15 +157,31 @@ trait PrivacyMonitor {
     async fn wait_for_change(&mut self) -> Result<()>;
 }
 
-/// The icon each icon-valued placeholder carries. Any subset can be set in
-/// either output, depending on which capture types are active.
-const TYPE_ICONS: [(&str, &str); 5] = [
-    ("icon_audio", "microphone"),
-    ("icon_audio_sink", "volume"),
-    ("icon_video", "xrandr"),
-    ("icon_webcam", "webcam"),
-    ("icon_unknown", "unknown"),
+/// The icon each icon-valued placeholder carries, per capture type.
+const TYPE_ICONS: [(Type, &str, &str); 5] = [
+    (Type::Audio, "icon_audio", "microphone"),
+    (Type::AudioSink, "icon_audio_sink", "volume"),
+    (Type::Video, "icon_video", "xrandr"),
+    (Type::Webcam, "icon_webcam", "webcam"),
+    (Type::Unknown, "icon_unknown", "unknown"),
 ];
+
+impl PrivacyDriver {
+    /// The capture types this driver's monitor can report.
+    fn capture_types(&self) -> &'static [Type] {
+        match self {
+            #[cfg(feature = "pipewire")]
+            PrivacyDriver::Pipewire(_) => &[
+                Type::Audio,
+                Type::AudioSink,
+                Type::Video,
+                Type::Webcam,
+                Type::Unknown,
+            ],
+            PrivacyDriver::V4l(_) => &[Type::Webcam],
+        }
+    }
+}
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     let format = config.format.with_default(
@@ -173,9 +189,17 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     )?;
     let format_alt = config.format_alt.with_default("{ $icon_audio $info_audio |}{ $icon_audio_sink $info_audio_sink |}{ $icon_video $info_video |}{ $icon_webcam $info_webcam |}{ $icon_unknown $info_unknown |}")?;
 
+    // Only capture types some configured driver can actually report are
+    // declared: a V4L-only setup can never set the audio or video icons.
     let with_icons = |mut output: OutputPlan| {
-        for (placeholder, icon) in TYPE_ICONS {
-            output = output.icon(placeholder, IconChoices::one(icon));
+        for (ty, placeholder, icon) in &TYPE_ICONS {
+            if config
+                .driver
+                .iter()
+                .any(|driver| driver.capture_types().contains(ty))
+            {
+                output = output.icon(placeholder, IconChoices::one(*icon));
+            }
         }
         output
     };
@@ -291,23 +315,42 @@ mod tests {
         }
     }
 
+    fn config_with_drivers(toml_drivers: &str) -> Config {
+        toml::from_str(toml_drivers).unwrap()
+    }
+
     #[test]
-    fn plan_declares_every_type_icon_on_both_outputs() {
-        let plan = prepare(&config()).unwrap();
+    fn plan_declares_driver_reachable_icons_on_both_outputs() {
+        // A V4L-only configuration can only ever report webcam capture.
+        let config = config_with_drivers("[[driver]]\nname = \"v4l\"");
+        let plan = prepare(&config).unwrap();
         let ids: Vec<_> = plan.outputs.iter().map(|o| o.id).collect();
         assert_eq!(ids, ["main", "alt"]);
-        // Any capture type can be active whichever format is shown, so both
-        // outputs must declare the full mapping.
         for id in ids {
             let output = plan.output(id).unwrap();
-            for (placeholder, icon) in TYPE_ICONS {
+            assert_eq!(output.single_icon("icon_webcam").unwrap(), "webcam");
+            assert_eq!(
+                output.output().icon_placeholders().count(),
+                1,
+                "{id} must declare only V4L-reachable icons"
+            );
+        }
+    }
+
+    #[cfg(feature = "pipewire")]
+    #[test]
+    fn pipewire_declares_every_type_icon() {
+        let config = config_with_drivers("[[driver]]\nname = \"pipewire\"");
+        let plan = prepare(&config).unwrap();
+        for id in ["main", "alt"] {
+            let output = plan.output(id).unwrap();
+            for (_, placeholder, icon) in &TYPE_ICONS {
                 assert_eq!(
                     output.single_icon(placeholder).unwrap(),
-                    icon,
+                    *icon,
                     "{id} must declare {icon} for ${placeholder}"
                 );
             }
-            assert_eq!(output.output().icon_placeholders().count(), TYPE_ICONS.len());
         }
     }
 
@@ -332,7 +375,11 @@ mod tests {
                 Type::Webcam => ("icon_webcam", "webcam"),
                 Type::Unknown => ("icon_unknown", "unknown"),
             };
-            assert!(TYPE_ICONS.contains(&(placeholder, icon)));
+            assert!(
+                TYPE_ICONS
+                    .iter()
+                    .any(|(t, p, i)| *t == type_ && *p == placeholder && *i == icon)
+            );
         }
     }
 

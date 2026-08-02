@@ -50,10 +50,13 @@ impl IconChoices {
     }
 
     pub fn permits(&self, name: &str) -> bool {
-        match self {
-            Self::Fixed(names) => names.iter().any(|n| n == name),
-            Self::OpenResolvable => true,
-        }
+        // An empty icon name renders as empty output (a runtime no-op), so
+        // it is always permitted.
+        name.is_empty()
+            || match self {
+                Self::Fixed(names) => names.iter().any(|n| n == name),
+                Self::OpenResolvable => true,
+            }
     }
 
     pub fn is_open(&self) -> bool {
@@ -216,8 +219,12 @@ pub struct ErrorOutputs {
     pub fullscreen: OutputHandle,
 }
 
-pub fn error_outputs(error_format: Format, error_fullscreen_format: Format) -> ErrorOutputs {
-    let plan = error_plan(error_format, error_fullscreen_format);
+pub fn error_outputs(
+    error_format: Format,
+    error_fullscreen_format: Format,
+    restartable_possible: bool,
+) -> ErrorOutputs {
+    let plan = error_plan(error_format, error_fullscreen_format, restartable_possible);
     ErrorOutputs {
         error: OutputHandle {
             plan: plan.clone(),
@@ -228,13 +235,26 @@ pub fn error_outputs(error_format: Format, error_fullscreen_format: Format) -> E
 }
 
 /// The plan behind [`error_outputs`]: output 0 is "error", output 1 is
-/// "error_fullscreen".
-pub fn error_plan(error_format: Format, error_fullscreen_format: Format) -> Arc<BlockPlan> {
+/// "error_fullscreen". The conditional `refresh` restart icon is only
+/// declared when the block can actually become restartable: without a
+/// `max_retries` limit the bar retries forever and never renders the
+/// restart button.
+pub fn error_plan(
+    error_format: Format,
+    error_fullscreen_format: Format,
+    restartable_possible: bool,
+) -> Arc<BlockPlan> {
+    let output = |id, format| {
+        let output = OutputPlan::new(id, format);
+        if restartable_possible {
+            output.icon("restart_block_icon", IconChoices::one("refresh"))
+        } else {
+            output
+        }
+    };
     BlockPlan::new(vec![
-        OutputPlan::new("error", error_format)
-            .icon("restart_block_icon", IconChoices::one("refresh")),
-        OutputPlan::new("error_fullscreen", error_fullscreen_format)
-            .icon("restart_block_icon", IconChoices::one("refresh")),
+        output("error", error_format),
+        output("error_fullscreen", error_fullscreen_format),
     ])
 }
 
@@ -318,6 +338,7 @@ mod tests {
         let outputs = error_outputs(
             format(" {$restart_block_icon |}{$short_error_message|X} "),
             format(" $full_error_message "),
+            true,
         );
         assert_eq!(outputs.error.id(), "error");
         assert_eq!(outputs.fullscreen.id(), "error_fullscreen");

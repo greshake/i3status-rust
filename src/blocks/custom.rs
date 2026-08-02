@@ -118,18 +118,20 @@ pub struct Config {
 }
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
-    // The icon name comes from the command's JSON output, so any name is
-    // permitted; it resolves through the normal icon set and override rules.
-    Ok(BlockPlan::new(vec![
-        OutputPlan::new(
-            "main",
-            config.format.with_defaults(
-                "{ $icon|} $text.pango-str() ",
-                "{ $icon|} $short_text.pango-str() |",
-            )?,
-        )
-        .icon("icon", IconChoices::OpenResolvable),
-    ]))
+    let mut output = OutputPlan::new(
+        "main",
+        config.format.with_defaults(
+            "{ $icon|} $text.pango-str() ",
+            "{ $icon|} $short_text.pango-str() |",
+        )?,
+    );
+    // Only JSON output can carry an icon name; a plain-text command never
+    // sets one. When it can, any name is permitted and resolves through the
+    // normal icon set and override rules.
+    if config.json {
+        output = output.icon("icon", IconChoices::OpenResolvable);
+    }
+    Ok(BlockPlan::new(vec![output]))
 }
 
 async fn update_bar(
@@ -313,8 +315,17 @@ mod tests {
     use super::*;
 
     #[test]
-    fn icon_choices_are_open() {
+    fn icon_choices_are_open_only_with_json() {
+        // A plain-text command can never set an icon.
         let plan = prepare(&Config::default()).unwrap();
+        let output = plan.output("main").unwrap();
+        assert!(output.output().choices_for("icon").is_none());
+
+        let config = Config {
+            json: true,
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
         let output = plan.output("main").unwrap();
         let choices = output.output().choices_for("icon").unwrap();
         assert!(choices.is_open());

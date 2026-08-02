@@ -309,6 +309,9 @@ impl BarState {
                 .common
                 .error_fullscreen_format
                 .with_default_config(&self.config.error_fullscreen_format),
+            // Without a retry limit the block retries forever and the
+            // restart button is never rendered.
+            block_config.common.max_retries.is_some(),
         );
 
         let block = Block {

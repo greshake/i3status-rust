@@ -26,9 +26,10 @@
 //! drift from block behavior. An icon is required only when it is reachable
 //! from the instance's effective formats — declared icons whose placeholder
 //! or output variant the configured formats never reference are reported as
-//! unused, not as problems. Blocks not yet migrated to a contract fall back
-//! to generated-table heuristics and are explicitly reported as
-//! reduced-fidelity.
+//! unused, not as problems. Every block has a contract (enforced at compile
+//! time); a block instance whose configuration fails to deserialize is
+//! analyzed conservatively (nothing claimed unused) and the configuration
+//! error is reported.
 //! - Problems: numbered findings with concrete fixes.
 //!
 //! Doctor never aborts: missing tools or broken config sections are
@@ -39,7 +40,9 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use std::io::IsTerminal as _;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+
 use std::time::Duration;
+use unicode_width::UnicodeWidthStr;
 
 use futures::StreamExt as _;
 use tokio::sync::mpsc;
@@ -47,7 +50,6 @@ use tokio::sync::mpsc;
 use crate::blocks::CommonApi;
 use crate::config::{BlockConfigEntry, Config, SharedConfig};
 use crate::errors::*;
-use crate::formatting::parse as format_parse;
 use crate::formatting::template as format_template;
 use crate::formatting::value::ValueInner;
 use crate::geolocator::Geolocator;
@@ -359,7 +361,15 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
     // from its formats (custom/custom_dbus with $icon).
     let mut dynamic_blocks = false;
 
-    for (index, info) in collect_blocks(&raw).iter().enumerate() {
+    // Labels whose block configuration failed to deserialize: the static
+    // problem below already covers them, so the live report must not
+    // diagnose the same root cause again.
+    let mut prepared_errors: HashSet<String> = HashSet::new();
+    // Any block whose contract could not be resolved: static conclusions
+    // are then incomplete and "unused" can no longer be proven.
+    let mut has_unknown = false;
+
+    for index in 0..block_names.len() {
         let label = labels[index].clone();
 
         // The prepared contract of this block instance.
@@ -377,6 +387,7 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                         ),
                         fix: None,
                     });
+                    prepared_errors.insert(label.clone());
                     None
                 }
             });
@@ -404,6 +415,7 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                 // unused, and dynamic usage cannot be ruled out for the
                 // custom family.
                 dynamic_blocks |= matches!(block_names[index].as_str(), "custom" | "custom_dbus");
+                has_unknown = true;
                 StaticAnalysis::Unknown
             }
         };
@@ -424,6 +436,11 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                         .common
                         .error_fullscreen_format
                         .with_default_config(&config.error_fullscreen_format),
+                    // The restart button (and its refresh icon) can only
+                    // appear when retries are limited; configuration-error
+                    // blocks are never restartable.
+                    entry.common.max_retries.is_some()
+                        && !matches!(entry.config, crate::blocks::BlockConfig::Err(..)),
                 );
                 analyze_plan(&plan)
             });
@@ -443,18 +460,9 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                 live: None,
             },
         );
-        // ^icon_* references in configured format strings count as explicit
-        // usage (for contract blocks the effective formats above already
-        // cover these, plus any in default formats).
-        for format in &info.formats {
-            for icon in &format.icon_refs {
-                used_now
-                    .entry(icon.clone())
-                    .or_default()
-                    .insert(label.clone());
-            }
-        }
     }
+
+    let analysis_closed = parsed.is_some() && !has_unknown;
 
     let mut live_ran = false;
     // (label, icon) pairs already diagnosed by a live render error, so the
@@ -566,6 +574,7 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                     &style,
                     &mut problems,
                     &mut used_now,
+                    &prepared_errors,
                 );
             }
             println!();
@@ -586,9 +595,9 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
         used_now: &used_now,
         may_use: &may_use,
         dynamic_blocks,
+        analysis_closed,
         icon_relevant: &icon_relevant,
         live_reported: &live_reported,
-        live_ran,
         font_check: &mut font_check,
         font_authoritative,
         style: &style,
@@ -813,18 +822,55 @@ fn run_live(config_arg: &str, count: usize, problems: &mut Vec<Problem>) -> Vec<
     let subreaper_ok = unsafe { libc::prctl(libc::PR_SET_CHILD_SUBREAPER, 1) } == 0;
     if !subreaper_ok {
         problems.push(Problem {
-            diagnosis: "Cannot register as a child subreaper; processes spawned by blocks that                         detach from their process group may outlive doctor."
+            diagnosis: "Cannot register as a child subreaper; processes spawned by blocks \
+                        that detach from their process group may outlive doctor."
                 .into(),
             fix: None,
         });
     }
 
     let reports = runtime.block_on(async {
+        let done = Arc::new(std::sync::atomic::AtomicUsize::new(0));
         let workers = (0..count).map(|index| {
             let exe = exe.clone();
-            async move { run_worker_process(&exe, config_arg, index).await }
+            let done = done.clone();
+            async move {
+                let report = run_worker_process(&exe, config_arg, index).await;
+                done.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                report
+            }
         });
-        futures::future::join_all(workers).await
+        let work = futures::future::join_all(workers);
+        // Blocks with slow commands or network requests can take their full
+        // deadline; show progress while the user waits (tty only, so piped
+        // output stays clean).
+        if std::io::stdout().is_terminal() {
+            use std::io::Write as _;
+            const FRAMES: [char; 10] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+            let mut ticker = tokio::time::interval(Duration::from_millis(120));
+            let mut frame = 0usize;
+            tokio::pin!(work);
+            loop {
+                tokio::select! {
+                    reports = &mut work => {
+                        print!("\r\x1b[K");
+                        let _ = std::io::stdout().flush();
+                        break reports;
+                    }
+                    _ = ticker.tick() => {
+                        print!(
+                            "\r{} testing blocks… {}/{count} done",
+                            FRAMES[frame % FRAMES.len()],
+                            done.load(std::sync::atomic::Ordering::Relaxed),
+                        );
+                        let _ = std::io::stdout().flush();
+                        frame += 1;
+                    }
+                }
+            }
+        } else {
+            work.await
+        }
     });
 
     if subreaper_ok && let Err(leftover) = sweep_orphaned_children() {
@@ -919,6 +965,11 @@ async fn run_worker_process(exe: &Path, config_arg: &str, index: usize) -> Block
         .arg("--doctor-worker")
         .arg(index.to_string())
         .arg(config_arg)
+        // In the real bar all custom_dbus blocks share one connection and
+        // one well-known name; workers are separate concurrent processes,
+        // so give each a unique name to avoid NameTaken races (also against
+        // a bar that is currently running).
+        .env("I3RS_DBUS_NAME", format!("doctor{index}"))
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::null())
@@ -1217,6 +1268,7 @@ fn print_block_report(
     style: &Style,
     problems: &mut Vec<Problem>,
     used_now: &mut BTreeMap<String, HashSet<String>>,
+    prepared_errors: &HashSet<String>,
 ) {
     let tag = format!("[{}] {}", report.index + 1, report.name);
     match &report.verdict {
@@ -1275,10 +1327,14 @@ fn print_block_report(
         }
         LiveVerdict::BlockError(error) => {
             println!("{tag:<tag_w$} {}ERROR{}: {error}", style.red, style.reset);
-            problems.push(Problem {
-                diagnosis: format!("{}: {error}", report.name),
-                fix: suggest_fix(&report.name, error),
-            });
+            // A block that failed to prepare already has a static problem
+            // with the same root cause; do not diagnose it twice.
+            if !prepared_errors.contains(label) {
+                problems.push(Problem {
+                    diagnosis: format!("{}: {error}", report.name),
+                    fix: suggest_fix(&report.name, error),
+                });
+            }
         }
         LiveVerdict::Panicked(msg) => {
             println!("{tag:<tag_w$} {}PANICKED{}: {msg}", style.red, style.reset);
@@ -1400,15 +1456,20 @@ fn analyze_plan(plan: &crate::block_plan::BlockPlan) -> PlanAnalysis {
             let mut placeholders = Vec::new();
             let mut icons = Vec::new();
             collect_reachable_compiled(template, &mut placeholders, &mut icons);
-            for name in icons {
+            // Empty icon names render as empty output (a runtime no-op),
+            // so they are never requirements.
+            for name in icons.into_iter().filter(|name| !name.is_empty()) {
                 analysis.required.insert(name.clone());
                 analysis.direct.insert(name);
             }
             for key in placeholders {
                 match output.choices_for(&key) {
-                    Some(IconChoices::Fixed(names)) => analysis
-                        .required
-                        .extend(names.iter().map(|n| n.to_string())),
+                    Some(IconChoices::Fixed(names)) => analysis.required.extend(
+                        names
+                            .iter()
+                            .filter(|n| !n.is_empty())
+                            .map(|n| n.to_string()),
+                    ),
                     Some(IconChoices::OpenResolvable) => analysis.open = true,
                     None => (),
                 }
@@ -1551,13 +1612,13 @@ struct IconTableInput<'a> {
     /// Whether any configured block can request arbitrary icon names at
     /// runtime (reachable open capability, e.g. custom/custom_dbus).
     dynamic_blocks: bool,
+    /// Whether every block's contract was resolved (no configuration
+    /// failures): only then can "unused" be proven statically.
+    analysis_closed: bool,
     /// Per block label: what is known about its ability to render each icon.
     icon_relevant: &'a HashMap<String, IconRelevance>,
     /// (label, icon) pairs already diagnosed by a live render error.
     live_reported: &'a HashSet<(String, String)>,
-    /// Whether the live block test ran (skipping it makes some checks
-    /// inconclusive).
-    live_ran: bool,
     font_check: &'a mut Option<FontCheck>,
     font_authoritative: bool,
     style: &'a Style,
@@ -1573,16 +1634,16 @@ fn print_icon_table(input: IconTableInput) {
         used_now,
         may_use,
         dynamic_blocks,
+        analysis_closed,
         icon_relevant,
         live_reported,
-        live_ran,
         font_check,
         font_authoritative,
         style,
         problems,
     } = input;
-    // Per-block-type local overrides (several blocks of the same type are
-    // merged, later wins — matching how "used by" is attributed by type).
+    // Per-instance local overrides, keyed by instance label ("time#2"), so
+    // two blocks of the same type are analyzed separately.
     let mut local: HashMap<&str, HashMap<&str, &Icon>> = HashMap::new();
     for (block, overrides) in block_overrides {
         let entry = local.entry(block.as_str()).or_default();
@@ -1612,21 +1673,23 @@ fn print_icon_table(input: IconTableInput) {
                 "[icons.overrides] defines {name:?}, which no icon set defines and no \
                  configured block uses (typo?)."
             );
-            if live_ran && !dynamic_blocks {
+            if analysis_closed && !dynamic_blocks {
+                // Every contract resolved and none is an open dynamic
+                // source: the override is provably unreachable, with or
+                // without the live test.
                 problems.push(Problem {
                     diagnosis,
                     fix: None,
                 });
-            } else {
-                // Inconclusive: dynamic (custom) blocks may request it, and
-                // without the live test that cannot be observed.
+            } else if dynamic_blocks {
                 println!(
-                    "note: {diagnosis} Not counted as a problem: dynamic icon usage cannot be ruled out{}.",
-                    if live_ran {
-                        ""
-                    } else {
-                        " without the live test"
-                    }
+                    "note: {diagnosis} Not counted as a problem: a custom block could still \
+                     request it at runtime."
+                );
+            } else {
+                println!(
+                    "note: {diagnosis} Not counted as a problem: some block configurations \
+                     could not be analyzed."
                 );
             }
         }
@@ -1771,32 +1834,47 @@ fn print_icon_table(input: IconTableInput) {
         }
     }
 
-    // Defined but unused by every configured block
-    let mut unused: Vec<&str> = Vec::new();
-    for name in base_map.keys().chain(global_overrides.keys()) {
-        if !usage.contains_key(name) && !unused.contains(&name.as_str()) {
-            unused.push(name);
+    // Names the USER defined (global or per-block overrides) that no
+    // configured block can render. Names shipped by the icon set that the
+    // configuration simply does not reference are not worth listing.
+    let mut user_unused: Vec<&str> = Vec::new();
+    for name in global_overrides
+        .keys()
+        .chain(block_overrides.iter().flat_map(|(_, o)| o.keys()))
+    {
+        if (!usage.contains_key(name) || unused_extra.contains(name))
+            && !user_unused.contains(&name.as_str())
+        {
+            user_unused.push(name);
         }
     }
-    for name in &unused_extra {
-        if !unused.contains(&name.as_str()) {
-            unused.push(name);
-        }
-    }
-    unused.sort_unstable();
+    user_unused.sort_unstable();
 
     println!("Icons referenced by your blocks");
-    let name_w = column_width("name", used_rows.iter().map(|r| r.name.as_str()));
-    let codes_w = column_width("code", used_rows.iter().map(|r| r.codes.as_str()));
-    let provider_w = column_width("provider", used_rows.iter().map(|r| r.provider.as_str()));
+    let name_w = column_width("Name", used_rows.iter().map(|r| r.name.as_str()));
+    let codes_w = column_width("Code", used_rows.iter().map(|r| r.codes.as_str()));
+    let provider_w = column_width(
+        "Effectively provided by",
+        used_rows.iter().map(|r| r.provider.as_str()),
+    );
+    // The glyph cell renders as "X" including the quotes; size it by
+    // display width so multi-character text icons ("LO") stay aligned.
+    let glyph_w = used_rows
+        .iter()
+        .map(|r| UnicodeWidthStr::width(r.glyph.as_str()) + 2)
+        .chain(["Glyph".len()])
+        .max()
+        .unwrap_or(5);
     println!(
-        "{:<name_w$}  {:<5} {:<codes_w$}  {:<provider_w$}  used by",
-        "name", "glyph", "code", "provider"
+        "{:<name_w$}  {:<glyph_w$}  {:<codes_w$}  {:<provider_w$}  Used by",
+        "Name", "Glyph", "Code", "Effectively provided by"
     );
     for row in &used_rows {
+        let cell = format!("\"{}\"", row.glyph);
+        let pad = glyph_w.saturating_sub(UnicodeWidthStr::width(cell.as_str()));
         let line = format!(
-            "{:<name_w$}  \"{}\"   {:<codes_w$}  {:<provider_w$}  {}",
-            row.name, row.glyph, row.codes, row.provider, row.used_by
+            "{:<name_w$}  {cell}{:pad$}  {:<codes_w$}  {:<provider_w$}  {}",
+            row.name, "", row.codes, row.provider, row.used_by
         );
         if row.red {
             println!("{}{line}{}", style.red, style.reset);
@@ -1804,17 +1882,19 @@ fn print_icon_table(input: IconTableInput) {
             println!("{line}");
         }
     }
+    if fallback_rows > 0 || missing_rows > 0 || !user_unused.is_empty() {
+        println!();
+    }
     if fallback_rows > 0 {
         println!("* Glyph provider selected by the system because no font in your list has it.");
     }
     if missing_rows > 0 {
         println!("† No installed font has this glyph; it renders as an empty box.");
     }
-    if !unused.is_empty() {
+    if !user_unused.is_empty() {
         println!(
-            "Defined but not used by any configured block ({}): {}",
-            unused.len(),
-            unused.join(", ")
+            "Overrides you defined that no configured block can render: {}",
+            user_unused.join(", ")
         );
     }
     println!();
@@ -2389,128 +2469,6 @@ fn strip_font_modifiers(family: &str) -> String {
 // Raw-config format string analysis
 // ---------------------------------------------------------------------------
 
-struct FormatUse {
-    /// ^icon_* references in reachable branches.
-    icon_refs: Vec<String>,
-}
-
-struct BlockInfo {
-    formats: Vec<FormatUse>,
-}
-
-fn collect_blocks(raw: &toml::Value) -> Vec<BlockInfo> {
-    let Some(blocks) = raw.get("block").and_then(|v| v.as_array()) else {
-        return Vec::new();
-    };
-    blocks
-        .iter()
-        .map(|block| {
-            let mut formats = Vec::new();
-            collect_formats(block, &mut formats);
-            BlockInfo { formats }
-        })
-        .collect()
-}
-
-/// Whether a key holds a format template. `icons_format` is not a template,
-/// and error formats are classified separately: they only render on errors.
-fn format_key_kind(key: &str) -> Option<bool /* is_error_format */> {
-    if key == "icons_format" {
-        return None;
-    }
-    if key == "error_format" || key == "error_fullscreen_format" {
-        return Some(true);
-    }
-    // "format", suffixed variants like "format_alt" / "format_singular", and
-    // prefixed variants like "inactive_format" / "full_format"
-    (key == "format" || key.starts_with("format_") || key.ends_with("_format")).then_some(false)
-}
-
-/// Recursively find format templates under `format` / `*_format` keys and
-/// extract what they reference. A format value can be a plain string or the
-/// table form `{ full = "...", short = "..." }`.
-fn collect_formats(value: &toml::Value, out: &mut Vec<FormatUse>) {
-    let Some(table) = value.as_table() else {
-        return;
-    };
-    for (key, value) in table {
-        match (format_key_kind(key), value) {
-            (Some(_), toml::Value::String(s)) => push_format_use(s, out),
-            (Some(_), toml::Value::Table(parts)) => {
-                // { full = "...", short = "..." } form
-                for part in ["full", "short"] {
-                    if let Some(toml::Value::String(s)) = parts.get(part) {
-                        push_format_use(s, out);
-                    }
-                }
-            }
-            (_, toml::Value::Table(_)) => collect_formats(value, out),
-            (_, toml::Value::Array(array)) => {
-                for item in array {
-                    collect_formats(item, out);
-                }
-            }
-            _ => (),
-        }
-    }
-}
-
-fn push_format_use(s: &str, out: &mut Vec<FormatUse>) {
-    if let Ok(template) = format_parse::parse_full(s) {
-        let mut icon_refs = Vec::new();
-        let mut placeholders = Vec::new();
-        collect_reachable(&template, &mut placeholders, &mut icon_refs);
-        out.push(FormatUse { icon_refs });
-    }
-}
-
-/// Walk only the *reachable* branches of a template: alternatives after a
-/// branch that cannot fail (only literal text) are dead — "{ OK | $icon }"
-/// never evaluates $icon.
-fn collect_reachable(
-    template: &format_parse::FormatTemplate,
-    placeholders: &mut Vec<String>,
-    icon_refs: &mut Vec<String>,
-) {
-    for token_list in &template.0 {
-        let mut branch_can_fail = false;
-        for token in &token_list.0 {
-            match token {
-                format_parse::Token::Placeholder(placeholder) => {
-                    placeholders.push(placeholder.name.to_string());
-                    branch_can_fail = true;
-                }
-                format_parse::Token::Icon(name) => {
-                    // A missing icon is a render error, not a branch-selection
-                    // failure: it does not make the branch fall through.
-                    icon_refs.push((*name).to_string());
-                }
-                format_parse::Token::Recursive(rec) => {
-                    collect_reachable(rec, placeholders, icon_refs);
-                    branch_can_fail |= group_can_fail(rec);
-                }
-                format_parse::Token::Text(_) => (),
-            }
-        }
-        if !branch_can_fail {
-            break;
-        }
-    }
-}
-
-/// A group fails only if every one of its branches can fail.
-fn group_can_fail(template: &format_parse::FormatTemplate) -> bool {
-    template.0.iter().all(|token_list| {
-        token_list.0.iter().any(|token| match token {
-            format_parse::Token::Placeholder(_) => true,
-            format_parse::Token::Recursive(rec) => group_can_fail(rec),
-            // A missing icon errors the whole render instead of selecting
-            // the next branch.
-            format_parse::Token::Icon(_) | format_parse::Token::Text(_) => false,
-        })
-    })
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2543,14 +2501,18 @@ mod tests {
 
     #[test]
     fn contract_default_formats_require_state_icons() {
+        // The default nordvpn driver has no connecting state, so
+        // net_wireless is not a requirement.
         let analysis = contract("[[block]]\nblock = \"vpn\"", 0);
-        for icon in ["net_vpn", "net_wired", "net_wireless", "net_down"] {
+        for icon in ["net_vpn", "net_wired", "net_down"] {
             assert!(analysis.required.contains(icon), "{icon}");
         }
-        // Only the disconnected/error formats lost their $icon: the other
-        // states still require theirs.
+        assert!(!analysis.required.contains("net_wireless"));
+
+        // Mullvad can report connecting; only the disconnected/error
+        // formats lost their $icon, the other states still require theirs.
         let analysis = contract(
-            "[[block]]\nblock = \"vpn\"\nformat_disconnected = \" off \"",
+            "[[block]]\nblock = \"vpn\"\ndriver = \"mullvad\"\nformat_disconnected = \" off \"",
             0,
         );
         assert!(analysis.required.contains("net_vpn"));
@@ -2593,17 +2555,25 @@ mod tests {
 
     #[test]
     fn contract_open_capability_is_reachability_gated() {
+        // Only JSON output can carry an icon at all.
         let analysis = contract("[[block]]\nblock = \"custom\"\ncommand = \"true\"", 0);
+        assert!(!analysis.open);
+
+        let analysis = contract(
+            "[[block]]\nblock = \"custom\"\ncommand = \"true\"\njson = true",
+            0,
+        );
         assert!(analysis.open);
         assert!(analysis.required.is_empty());
 
         // Neither the full nor the short format references $icon: the open
-        // source is unreachable.
+        // source is unreachable even with JSON.
         let analysis = contract(
             r#"
             [[block]]
             block = "custom"
             command = "true"
+            json = true
             format = { full = " $text ", short = " $text " }
             "#,
             0,
@@ -2640,12 +2610,38 @@ mod tests {
                 .common
                 .error_fullscreen_format
                 .with_default_config(&config.error_fullscreen_format),
+            entry.common.max_retries.is_some(),
         ))
     }
 
     #[test]
-    fn default_error_formats_reach_the_refresh_icon() {
+    fn empty_icon_names_are_runtime_noops() {
+        // The runtime renders an empty icon name as empty output, so it is
+        // never a requirement.
+        let analysis = contract(
+            r#"
+            [[block]]
+            block = "toggle"
+            format = " $icon "
+            command_on = ""
+            command_off = ""
+            command_state = ""
+            icon_on = ""
+            icon_off = ""
+            "#,
+            0,
+        );
+        assert!(analysis.required.is_empty());
+    }
+
+    #[test]
+    fn refresh_requires_a_retry_limit() {
+        // Without max_retries the block retries forever and the restart
+        // button (and its refresh icon) can never appear.
         let analysis = error_analysis("[[block]]\nblock = \"cpu\"", 0);
+        assert!(!analysis.required.contains("refresh"));
+
+        let analysis = error_analysis("[[block]]\nblock = \"cpu\"\nmax_retries = 5", 0);
         assert!(analysis.required.contains("refresh"));
     }
 
@@ -2704,45 +2700,6 @@ mod tests {
     }
 
     #[test]
-    fn format_icon_ref_extraction() {
-        let raw: toml::Value = toml::from_str(
-            r#"
-            [[block]]
-            block = "battery"
-            format = " ^icon_bat $percentage "
-            full_format = " {^icon_bat_charging |}rest "
-            icons_format = "not_a_template"
-            [block.nested]
-            some_format = "^icon_nested_ref"
-            "#,
-        )
-        .unwrap();
-        let blocks = collect_blocks(&raw);
-        let refs: Vec<&str> = blocks[0]
-            .formats
-            .iter()
-            .flat_map(|f| f.icon_refs.iter().map(String::as_str))
-            .collect();
-        assert!(refs.contains(&"bat"));
-        assert!(refs.contains(&"bat_charging"));
-        assert!(refs.contains(&"nested_ref"));
-        assert!(!refs.iter().any(|r| r.contains("not_a_template")));
-    }
-
-    #[test]
-    fn format_key_classification() {
-        assert_eq!(format_key_kind("format"), Some(false));
-        assert_eq!(format_key_kind("format_alt"), Some(false));
-        assert_eq!(format_key_kind("format_singular"), Some(false));
-        assert_eq!(format_key_kind("full_format"), Some(false));
-        assert_eq!(format_key_kind("inactive_format"), Some(false));
-        assert_eq!(format_key_kind("error_format"), Some(true));
-        assert_eq!(format_key_kind("error_fullscreen_format"), Some(true));
-        assert_eq!(format_key_kind("icons_format"), None);
-        assert_eq!(format_key_kind("command"), None);
-    }
-
-    #[test]
     fn pango_families_from_icons_format() {
         assert_eq!(
             pango_font_families("<span font_family='Noto Color Emoji'>{icon}</span>"),
@@ -2753,38 +2710,6 @@ mod tests {
             ["Font Awesome 6 Free"]
         );
         assert!(pango_font_families("{icon}").is_empty());
-    }
-
-    #[test]
-    fn branch_reachability() {
-        // the literal first branch always succeeds: $icon is dead
-        let template = format_parse::parse_full("{ OK | $icon }").unwrap();
-        let mut placeholders = Vec::new();
-        let mut icons = Vec::new();
-        collect_reachable(&template, &mut placeholders, &mut icons);
-        assert!(placeholders.is_empty());
-
-        // a placeholder branch can fail: the fallback stays reachable
-        let template = format_parse::parse_full("{ $a | $icon }").unwrap();
-        let mut placeholders = Vec::new();
-        let mut icons = Vec::new();
-        collect_reachable(&template, &mut placeholders, &mut icons);
-        assert_eq!(placeholders, ["a", "icon"]);
-
-        // a missing ^icon is a render error, not a branch fall-through:
-        // the second branch is dead
-        let template = format_parse::parse_full("{ ^icon_time | ^icon_memory_mem }").unwrap();
-        let mut placeholders = Vec::new();
-        let mut icons = Vec::new();
-        collect_reachable(&template, &mut placeholders, &mut icons);
-        assert_eq!(icons, ["time"]);
-
-        // but after a fallible placeholder branch, an icon branch is reachable
-        let template = format_parse::parse_full("{ $a | ^icon_time }").unwrap();
-        let mut placeholders = Vec::new();
-        let mut icons = Vec::new();
-        collect_reachable(&template, &mut placeholders, &mut icons);
-        assert_eq!(icons, ["time"]);
     }
 
     #[test]

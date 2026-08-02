@@ -131,8 +131,17 @@ enum Status {
     Error(Option<String>),
 }
 
+impl DriverType {
+    /// Whether the driver's `get_status` can ever report `Connecting`.
+    /// Only mullvad has an intermediate connecting state; the other CLIs
+    /// report connected, disconnected, or an error.
+    fn can_report_connecting(&self) -> bool {
+        matches!(self, DriverType::Mullvad)
+    }
+}
+
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
-    Ok(BlockPlan::new(vec![
+    let mut outputs = vec![
         OutputPlan::new(
             "connected",
             config.format_connected.with_default(" VPN: $icon ")?,
@@ -143,17 +152,24 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
             config.format_disconnected.with_default(" VPN: $icon ")?,
         )
         .icon("icon", IconChoices::one("net_wired")),
-        OutputPlan::new(
-            "connecting",
-            config.format_connecting.with_default(" VPN: $icon ")?,
-        )
-        .icon("icon", IconChoices::one("net_wireless")),
+    ];
+    if config.driver.can_report_connecting() {
+        outputs.push(
+            OutputPlan::new(
+                "connecting",
+                config.format_connecting.with_default(" VPN: $icon ")?,
+            )
+            .icon("icon", IconChoices::one("net_wireless")),
+        );
+    }
+    outputs.push(
         OutputPlan::new(
             "error",
             config.format_disconnected.with_default(" VPN: $icon ")?,
         )
         .icon("icon", IconChoices::one("net_down")),
-    ]))
+    );
+    Ok(BlockPlan::new(outputs))
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
@@ -163,7 +179,11 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let plan = prepare(config)?;
     let output_connected = plan.output("connected")?;
     let output_disconnected = plan.output("disconnected")?;
-    let output_connecting = plan.output("connecting")?;
+    let output_connecting = if config.driver.can_report_connecting() {
+        Some(plan.output("connecting")?)
+    } else {
+        None
+    };
     let output_error = plan.output("error")?;
 
     let driver: Box<dyn Driver> = match config.driver {
@@ -179,7 +199,12 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let output = match &status {
             Status::Connected { .. } => &output_connected,
             Status::Disconnected { .. } => &output_disconnected,
-            Status::Connecting { .. } => &output_connecting,
+            // A driver reporting a state outside its declared capability is
+            // an internal bug; degrade to the disconnected output.
+            Status::Connecting { .. } => output_connecting.as_ref().unwrap_or_else(|| {
+                debug_assert!(false, "driver reported Connecting without the capability");
+                &output_disconnected
+            }),
             Status::Error(_) => &output_error,
         };
         let mut widget = output.new_widget();
@@ -246,8 +271,17 @@ mod tests {
     use super::*;
 
     #[test]
-    fn plan_declares_every_state_with_its_icon() {
+    fn plan_declares_states_reachable_for_the_driver() {
+        // Default driver is nordvpn, which never reports Connecting.
         let plan = prepare(&Config::default()).unwrap();
+        let declared: Vec<_> = plan.outputs.iter().map(|o| o.id).collect();
+        assert_eq!(declared, ["connected", "disconnected", "error"]);
+
+        let mullvad = Config {
+            driver: DriverType::Mullvad,
+            ..Config::default()
+        };
+        let plan = prepare(&mullvad).unwrap();
         let declared: Vec<_> = plan.outputs.iter().map(|o| o.id).collect();
         assert_eq!(
             declared,
@@ -271,7 +305,6 @@ mod tests {
         for (id, icon) in [
             ("connected", "net_vpn"),
             ("disconnected", "net_wired"),
-            ("connecting", "net_wireless"),
             ("error", "net_down"),
         ] {
             let output = plan.output(id).unwrap();
