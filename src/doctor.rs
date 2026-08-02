@@ -74,7 +74,9 @@ impl Style {
     }
 }
 
-pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> Result<()> {
+/// Returns the number of problems found, for use as the exit status: 0 means
+/// a clean bill of health.
+pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
     let style = Style::detect();
     let mut problems: Vec<Problem> = Vec::new();
 
@@ -92,7 +94,7 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> Result<
             ),
         });
         print_problems(&problems, &style);
-        return Ok(());
+        return problems.len();
     };
     println!("Config:   {}", config_path.display());
 
@@ -120,7 +122,7 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> Result<
     };
     let Some(raw) = raw else {
         print_problems(&problems, &style);
-        return Ok(());
+        return problems.len();
     };
 
     // === Icon set ===
@@ -200,19 +202,17 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> Result<
     };
     let font_pattern = font_arg.or(detected.as_ref().map(|d| d.font.as_str()));
     let mut font_check = FontCheck::new(font_pattern);
+    // Environment limitations are notes, not problems: they say what doctor
+    // could not check, not that the user's configuration is wrong, and must
+    // not affect the exit code.
     match (&font_check, font_arg, &detected) {
         (None, ..) => {
             println!("Bar font: (unchecked)");
-            problems.push(Problem {
-                diagnosis: "`fc-match` is not available, so doctor cannot tell which font will \
-                            draw each icon glyph — the most common cause of wrong icons."
-                    .into(),
-                fix: Some(
-                    "Install the fontconfig utilities (package `fontconfig` on most distros) \
-                     and re-run."
-                        .into(),
-                ),
-            });
+            println!(
+                "   note: `fc-match` is not available, so doctor cannot tell which font will\n   \
+                 draw each icon glyph — the most common cause of wrong icons. Install the\n   \
+                 fontconfig utilities (package `fontconfig` on most distros) and re-run."
+            );
         }
         (Some(_), Some(font), _) => println!("Bar font: {font} (from --font)"),
         (Some(_), None, Some(d)) => {
@@ -220,24 +220,28 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> Result<
                 "Bar font: {} (auto-detected via {}, {})",
                 d.font, d.tool, d.bar_id
             );
+            if let Some(note) = &d.note {
+                println!("   note: {note}");
+            }
         }
         (Some(check), None, None) => {
             println!("Bar font: fontconfig default ({:?})", check.base_family);
-            problems.push(Problem {
-                diagnosis: "No --font given and no running i3/sway answered over IPC; glyph \
-                            providers below are computed against the fontconfig default font and \
-                            may not match your actual bar."
-                    .into(),
-                fix: Some(
-                    "Re-run with the `font` directive from the bar { } section of your i3/sway \
-                     config: i3status-rs --doctor --font \"pango:...\""
-                        .into(),
-                ),
-            });
+            println!(
+                "   note: no --font given and no running i3/sway answered over IPC; glyph\n   \
+                 providers below may not match your actual bar. Re-run with the `font`\n   \
+                 directive from the bar {{ }} section of your i3/sway config:\n   \
+                 i3status-rs --doctor --font \"pango:...\""
+            );
         }
     }
     if let Some(check) = &font_check {
         for (family, resolved) in &check.families {
+            // Generic fontconfig aliases (monospace, sans-serif, ...) always
+            // resolve to some concrete family; that is normal, not a missing
+            // font.
+            if is_generic_family(family) {
+                continue;
+            }
             let installed = resolved
                 .as_ref()
                 .is_some_and(|r| r.split(',').any(|m| m == family));
@@ -316,9 +320,11 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> Result<
     }
 
     // === Icons table ===
+    let block_overrides = raw_block_overrides(&raw, &mut problems);
     print_icon_table(
         &base_map,
         &global_overrides,
+        &block_overrides,
         &builtin,
         &block_names,
         &used_now,
@@ -328,7 +334,7 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> Result<
     );
 
     print_problems(&problems, &style);
-    Ok(())
+    problems.len()
 }
 
 fn icons_config<'a>(
@@ -354,6 +360,34 @@ fn icons_config<'a>(
         ),
         _ => ("none", None),
     }
+}
+
+/// Per-block `icons_overrides` tables from the raw config, with block names.
+fn raw_block_overrides(
+    raw: &toml::Value,
+    problems: &mut Vec<Problem>,
+) -> Vec<(String, HashMap<String, Icon>)> {
+    let Some(blocks) = raw.get("block").and_then(|v| v.as_array()) else {
+        return Vec::new();
+    };
+    let mut out = Vec::new();
+    for block in blocks {
+        let name = block
+            .get("block")
+            .and_then(|v| v.as_str())
+            .unwrap_or("<unknown>");
+        let Some(value) = block.get("icons_overrides") else {
+            continue;
+        };
+        match value.clone().try_into() {
+            Ok(overrides) => out.push((name.to_string(), overrides)),
+            Err(err) => problems.push(Problem {
+                diagnosis: format!("{name}: icons_overrides is not a valid icon table: {err}"),
+                fix: None,
+            }),
+        }
+    }
+    out
 }
 
 fn raw_block_names(raw: &toml::Value) -> Vec<String> {
@@ -456,12 +490,50 @@ async fn test_block(
     let name = entry.config.name().to_string();
 
     if let Some(cmd) = &entry.common.if_command {
-        match tokio::process::Command::new("sh")
+        // The command counts against the block's timeout. It runs in its own
+        // process group so that on timeout the whole tree can be killed — a
+        // hanging if_command must neither hang doctor nor leak processes.
+        let mut command = tokio::process::Command::new("sh");
+        command
             .args(["-c", cmd])
-            .output()
-            .await
-        {
-            Ok(output) if !output.status.success() => {
+            .stdin(std::process::Stdio::null())
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .process_group(0);
+        let mut child = match command.spawn() {
+            Ok(child) => child,
+            Err(err) => {
+                return BlockReport {
+                    index,
+                    name,
+                    verdict: LiveVerdict::Skipped(format!("if_command could not run: {err}")),
+                };
+            }
+        };
+        match tokio::time::timeout(LIVE_TIMEOUT, child.wait()).await {
+            Err(_) => {
+                if let Some(pid) = child.id() {
+                    // SAFETY: plain syscall; negative pid targets the group
+                    unsafe { libc::kill(-(pid as i32), libc::SIGKILL) };
+                }
+                let _ = child.wait().await;
+                return BlockReport {
+                    index,
+                    name,
+                    verdict: LiveVerdict::Skipped(format!(
+                        "if_command did not finish within {}s ({cmd})",
+                        LIVE_TIMEOUT.as_secs()
+                    )),
+                };
+            }
+            Ok(Err(err)) => {
+                return BlockReport {
+                    index,
+                    name,
+                    verdict: LiveVerdict::Skipped(format!("if_command could not run: {err}")),
+                };
+            }
+            Ok(Ok(status)) if !status.success() => {
                 return BlockReport {
                     index,
                     name,
@@ -470,14 +542,7 @@ async fn test_block(
                     )),
                 };
             }
-            Err(err) => {
-                return BlockReport {
-                    index,
-                    name,
-                    verdict: LiveVerdict::Skipped(format!("if_command could not run: {err}")),
-                };
-            }
-            _ => (),
+            Ok(Ok(_)) => (),
         }
     }
 
@@ -742,6 +807,7 @@ fn suggest_fix(block: &str, error: &str) -> Option<String> {
 fn print_icon_table(
     base_map: &HashMap<String, Icon>,
     global_overrides: &HashMap<String, Icon>,
+    block_overrides: &[(String, HashMap<String, Icon>)],
     builtin: &HashMap<String, Icon>,
     block_names: &[String],
     used_now: &BTreeMap<String, HashSet<String>>,
@@ -807,38 +873,34 @@ fn print_icon_table(
         let used_by = used_by.join(", ");
         let tag = if *is_override { " [override]" } else { "" };
 
-        let rows: Vec<(String, &str)> = match icon {
-            Icon::Single(s) => vec![((*name).to_string(), s.as_str())],
-            Icon::Progression(steps) => steps
-                .iter()
-                .enumerate()
-                .map(|(k, s)| (format!("{name} {}/{}", k + 1, steps.len()), s.as_str()))
-                .collect(),
-        };
-        for (row_name, glyph) in rows {
-            let codes = codepoints(glyph);
-            let (provider, mark) = match font_check.as_mut() {
-                None => ("?".to_string(), ""),
-                Some(check) => match glyph_provider(check, glyph) {
-                    GlyphProvider::Known(family) => (first_family(&family), ""),
-                    GlyphProvider::Fallback(family) => {
-                        fallback_rows += 1;
-                        (first_family(&family), " *")
-                    }
-                    GlyphProvider::Missing => {
-                        missing_rows += 1;
-                        ("(none)".to_string(), " †")
-                    }
-                },
-            };
-            used_rows.push(IconRow {
-                name: row_name,
-                glyph: glyph.to_string(),
-                codes,
-                provider: format!("{provider}{mark}{tag}"),
-                used_by: used_by.clone(),
-                red: !mark.is_empty(),
-            });
+        push_icon_rows(
+            &mut used_rows,
+            name,
+            icon,
+            tag,
+            &used_by,
+            font_check,
+            &mut fallback_rows,
+            &mut missing_rows,
+        );
+    }
+
+    // Per-block icons_overrides: these apply only to their block, so they get
+    // their own rows tagged with the block name.
+    for (block, overrides) in block_overrides {
+        let mut names: Vec<&String> = overrides.keys().collect();
+        names.sort_unstable();
+        for name in names {
+            push_icon_rows(
+                &mut used_rows,
+                name,
+                &overrides[name],
+                &format!(" [{block} override]"),
+                block,
+                font_check,
+                &mut fallback_rows,
+                &mut missing_rows,
+            );
         }
     }
 
@@ -915,6 +977,54 @@ fn print_icon_table(
                 fix: Some(format!("Add `{icon}` to [icons.overrides].")),
             });
         }
+    }
+}
+
+/// Expand an icon into one table row per glyph (progressions as "name k/n")
+/// and classify each glyph's font provider.
+#[allow(clippy::too_many_arguments)]
+fn push_icon_rows(
+    used_rows: &mut Vec<IconRow>,
+    name: &str,
+    icon: &Icon,
+    tag: &str,
+    used_by: &str,
+    font_check: &mut Option<FontCheck>,
+    fallback_rows: &mut usize,
+    missing_rows: &mut usize,
+) {
+    let rows: Vec<(String, &str)> = match icon {
+        Icon::Single(s) => vec![(name.to_string(), s.as_str())],
+        Icon::Progression(steps) => steps
+            .iter()
+            .enumerate()
+            .map(|(k, s)| (format!("{name} {}/{}", k + 1, steps.len()), s.as_str()))
+            .collect(),
+    };
+    for (row_name, glyph) in rows {
+        let codes = codepoints(glyph);
+        let (provider, mark) = match font_check.as_mut() {
+            None => ("?".to_string(), ""),
+            Some(check) => match glyph_provider(check, glyph) {
+                GlyphProvider::Known(family) => (first_family(&family), ""),
+                GlyphProvider::Fallback(family) => {
+                    *fallback_rows += 1;
+                    (first_family(&family), " *")
+                }
+                GlyphProvider::Missing => {
+                    *missing_rows += 1;
+                    ("(none)".to_string(), " †")
+                }
+            },
+        };
+        used_rows.push(IconRow {
+            name: row_name,
+            glyph: glyph.to_string(),
+            codes,
+            provider: format!("{provider}{mark}{tag}"),
+            used_by: used_by.to_string(),
+            red: !mark.is_empty(),
+        });
     }
 }
 
@@ -1089,14 +1199,18 @@ impl FontCheck {
                 Some(family) if family == self.base_family => GlyphFont::Base,
                 Some(family) => {
                     // fc-match prints a comma-separated family list; if any
-                    // member is one of the configured families, this is the
-                    // configured fallback doing its job, not a surprise.
+                    // member is one of the configured families — by name, or
+                    // by what the configured family canonically resolves to
+                    // (generic aliases like "monospace" resolve to a concrete
+                    // family) — this is the configured fallback doing its
+                    // job, not a surprise.
                     let members: Vec<&str> = family.split(',').collect();
-                    match self
-                        .families
-                        .iter()
-                        .find(|(name, _)| members.contains(&name.as_str()))
-                    {
+                    match self.families.iter().find(|(name, resolved)| {
+                        members.contains(&name.as_str())
+                            || resolved
+                                .as_ref()
+                                .is_some_and(|r| r.split(',').any(|m| members.contains(&m)))
+                    }) {
                         Some((name, _)) => GlyphFont::Configured(name.clone()),
                         None => GlyphFont::Fallback(family),
                     }
@@ -1105,6 +1219,24 @@ impl FontCheck {
             }
         })
     }
+}
+
+/// Fontconfig's generic aliases: asking for these by design resolves to some
+/// installed concrete family.
+fn is_generic_family(family: &str) -> bool {
+    matches!(
+        family.to_lowercase().as_str(),
+        "monospace"
+            | "mono"
+            | "sans-serif"
+            | "sans"
+            | "serif"
+            | "cursive"
+            | "fantasy"
+            | "system-ui"
+            | "emoji"
+            | "math"
+    )
 }
 
 fn fc_match(pattern: &str, charset: Option<&str>) -> Option<String> {
@@ -1136,10 +1268,15 @@ struct DetectedFont {
     tool: &'static str,
     bar_id: String,
     font: String,
+    /// Ambiguity warning when several bars with different fonts exist.
+    note: Option<String>,
 }
 
 /// Ask the running i3/sway over IPC which font the bar is configured with,
 /// so `--font` is only needed when there is no live bar to ask.
+///
+/// With several bars, prefer the one whose status_command runs i3status-rs;
+/// if the remaining candidates disagree on the font, report the ambiguity.
 fn detect_bar_font() -> Option<DetectedFont> {
     for tool in ["swaymsg", "i3-msg"] {
         let Ok(out) = std::process::Command::new(tool)
@@ -1154,6 +1291,8 @@ fn detect_bar_font() -> Option<DetectedFont> {
         let Ok(bar_ids) = serde_json::from_slice::<Vec<String>>(&out.stdout) else {
             continue;
         };
+        // (bar_id, font, status_command)
+        let mut bars: Vec<(String, String, String)> = Vec::new();
         for bar_id in bar_ids {
             let Ok(out) = std::process::Command::new(tool)
                 .args(["-t", "get_bar_config", &bar_id])
@@ -1165,13 +1304,43 @@ fn detect_bar_font() -> Option<DetectedFont> {
                 continue;
             };
             if let Some(font) = config.get("font").and_then(|f| f.as_str()) {
-                return Some(DetectedFont {
-                    tool,
-                    bar_id,
-                    font: font.to_string(),
-                });
+                let status_command = config
+                    .get("status_command")
+                    .and_then(|c| c.as_str())
+                    .unwrap_or_default()
+                    .to_string();
+                bars.push((bar_id, font.to_string(), status_command));
             }
         }
+        if bars.is_empty() {
+            continue;
+        }
+        let chosen = bars
+            .iter()
+            .position(|(_, _, cmd)| cmd.contains("i3status-rs"))
+            .or_else(|| bars.iter().position(|(_, _, cmd)| cmd.contains("i3status")))
+            .unwrap_or(0);
+        let font = bars[chosen].1.clone();
+        let note = if bars.iter().any(|(_, f, _)| *f != font) {
+            let list = bars
+                .iter()
+                .map(|(id, f, _)| format!("{id}: {f:?}"))
+                .collect::<Vec<_>>()
+                .join(", ");
+            Some(format!(
+                "several bars with different fonts ({list}); picked {:?} — pass --font if that \
+                 is the wrong one",
+                bars[chosen].0
+            ))
+        } else {
+            None
+        };
+        return Some(DetectedFont {
+            tool,
+            bar_id: bars.swap_remove(chosen).0,
+            font,
+            note,
+        });
     }
     None
 }
@@ -1340,6 +1509,35 @@ mod tests {
         assert_eq!(codepoints("BAT"), "-");
         assert_eq!(codepoints("\u{f244}"), "U+F244");
         assert_eq!(codepoints("🍅"), "U+1F345");
+    }
+
+    #[test]
+    fn generic_families_are_not_missing_fonts() {
+        assert!(is_generic_family("monospace"));
+        assert!(is_generic_family("Sans-Serif"));
+        assert!(!is_generic_family("DejaVu Sans Mono"));
+        assert!(!is_generic_family("Font Awesome 6 Free"));
+    }
+
+    #[test]
+    fn per_block_overrides_are_extracted() {
+        let raw: toml::Value = toml::from_str(
+            r#"
+            [[block]]
+            block = "time"
+            icons_overrides = { time = "CUSTOM" }
+
+            [[block]]
+            block = "cpu"
+            "#,
+        )
+        .unwrap();
+        let mut problems = Vec::new();
+        let overrides = raw_block_overrides(&raw, &mut problems);
+        assert!(problems.is_empty());
+        assert_eq!(overrides.len(), 1);
+        assert_eq!(overrides[0].0, "time");
+        assert!(matches!(&overrides[0].1["time"], Icon::Single(s) if s == "CUSTOM"));
     }
 
     #[test]

@@ -22,19 +22,9 @@ fn main() {
     let blocking_threads = args.blocking_threads;
 
     if args.doctor {
-        std::process::exit(
-            match i3status_rs::doctor::run(
-                &args.config,
-                args.font.as_deref(),
-                args.doctor_skip_live,
-            ) {
-                Ok(()) => 0,
-                Err(err) => {
-                    eprintln!("{err}");
-                    1
-                }
-            },
-        );
+        let problems =
+            i3status_rs::doctor::run(&args.config, args.font.as_deref(), args.doctor_skip_live);
+        std::process::exit(if problems > 0 { 1 } else { 0 });
     }
 
     if !args.no_init {

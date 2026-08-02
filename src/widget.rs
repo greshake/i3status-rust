@@ -52,7 +52,7 @@ impl Widget {
         self.source = Source::Format(format);
     }
 
-    pub fn values(&self) -> &Values {
+    pub(crate) fn values(&self) -> &Values {
         &self.values
     }
 
