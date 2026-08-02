@@ -55,7 +55,7 @@
 //! - `joystick` (`$icon`) for bluetooth devices identifying as "input-gaming"
 //! - `keyboard` (`$icon`) for bluetooth devices identifying as "input-keyboard"
 //! - `mouse` (`$icon`) for bluetooth devices identifying as "input-mouse"
-//! - `bluetooth` for all other devices
+//! - `bluetooth` (`$icon`, in `disconnected_format`) when the device is unavailable
 //! - `bat` (`$battery_icon`, as a progression) for devices reporting a battery level
 
 use zbus::fdo::{DBusProxy, ObjectManagerProxy, PropertiesProxy};

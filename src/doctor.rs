@@ -483,13 +483,18 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                     }
                     LiveVerdict::Skipped(_) => {
                         // the bar would not spawn this block at all
-                        // (if_command failed): nothing it could request
+                        // (if_command exited non-zero): nothing it could
+                        // request — including its formats' direct ^icon refs
                         if let Some(relevance) = icon_relevant.get_mut(&label) {
                             relevance.static_rel = StaticRelevance {
                                 sets: HashMap::new(),
                             };
                             relevance.live = None;
                         }
+                        for users in used_now.values_mut() {
+                            users.remove(&label);
+                        }
+                        used_now.retain(|_, users| !users.is_empty());
                     }
                     LiveVerdict::RenderError { error, .. } => {
                         if let Some(icon) = error
@@ -703,9 +708,12 @@ enum LiveVerdict {
     Finished,
     NoOutput,
     Skipped(String),
-    /// The if_command could not run or did not finish — unlike a legitimate
-    /// non-zero exit (`Skipped`), this is a problem.
+    /// The if_command could not run: the real bar fails at startup in this
+    /// case, so this is a problem.
     IfCommandFailed(String),
+    /// The if_command exceeded doctor's deadline. The real bar waits without
+    /// a timeout, so this is inconclusive, not a config problem.
+    IfCommandTimeout(String),
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -801,6 +809,10 @@ fn sweep_orphaned_children() -> Result<(), String> {
     let self_pid = std::process::id();
     let deadline = std::time::Instant::now() + Duration::from_secs(5);
     loop {
+        // Reap any zombies first so they neither linger nor hide behind the
+        // early return below.
+        // SAFETY: plain syscall
+        while unsafe { libc::waitpid(-1, std::ptr::null_mut(), libc::WNOHANG) } > 0 {}
         let mut found = 0usize;
         let dir = match std::fs::read_dir("/proc") {
             Ok(dir) => dir,
@@ -886,10 +898,17 @@ async fn run_worker_process(exe: &Path, config_arg: &str, index: usize) -> Block
     }
 
     match result {
-        Err(_) => fail(format!(
-            "doctor worker did not finish within {}s and was killed",
-            (LIVE_TIMEOUT + WORKER_GRACE).as_secs()
-        )),
+        Err(_) => {
+            // reap the killed worker so it does not linger as a zombie
+            if let Some(pid) = pid {
+                // SAFETY: plain syscall; the group was just SIGKILLed
+                unsafe { libc::waitpid(pid as i32, std::ptr::null_mut(), 0) };
+            }
+            fail(format!(
+                "doctor worker did not finish within {}s and was killed",
+                (LIVE_TIMEOUT + WORKER_GRACE).as_secs()
+            ))
+        }
         Ok(Err(err)) => fail(format!("doctor worker failed: {err}")),
         Ok(Ok(output)) => match serde_json::from_slice::<BlockReport>(&output.stdout) {
             Ok(report) => report,
@@ -969,7 +988,7 @@ async fn test_block(
                 return BlockReport {
                     index,
                     name,
-                    verdict: LiveVerdict::IfCommandFailed(format!(
+                    verdict: LiveVerdict::IfCommandTimeout(format!(
                         "if_command did not finish within {}s ({cmd})",
                         LIVE_TIMEOUT.as_secs()
                     )),
@@ -1248,13 +1267,19 @@ fn print_block_report(
                 style.red, style.reset
             );
             problems.push(Problem {
-                diagnosis: format!("{}: {reason}", report.name),
-                fix: Some(
-                    "if_command must finish quickly and exit 0 or non-zero; make it fast and \
-                     non-blocking, or remove it."
-                        .into(),
+                diagnosis: format!(
+                    "{}: {reason} — the bar fails to start when if_command cannot run.",
+                    report.name
                 ),
+                fix: Some("Fix or remove the if_command.".into()),
             });
+        }
+        LiveVerdict::IfCommandTimeout(reason) => {
+            // The real bar waits for if_command without a timeout, so a slow
+            // command is valid configuration; doctor just cannot evaluate it.
+            println!(
+                "{tag:<tag_w$} (inconclusive: {reason}; the bar itself would wait for it)",
+            );
         }
     }
 }
@@ -1635,12 +1660,15 @@ fn print_icon_table(input: IconTableInput) {
         for icon in overrides.keys() {
             let users = usage.entry(icon.clone()).or_default();
             if !users.iter().any(|(b, _)| b == block) {
-                users.push((block.clone(), false));
+                // an override shows intent, but only the block's formats
+                // decide whether the icon can actually be requested
+                users.push((block.clone(), true));
             }
         }
     }
 
     let mut used_rows: Vec<IconRow> = Vec::new();
+    let mut unused_extra: Vec<String> = Vec::new();
     let mut fallback_rows = 0usize;
     let mut missing_rows = 0usize;
 
@@ -1664,12 +1692,19 @@ fn print_icon_table(input: IconTableInput) {
                 .map(|r| r.is_relevant(canonical_name, block_type))
                 .unwrap_or(true);
             match resolve(icon_name, block) {
+                // A block whose formats cannot render this icon will not put
+                // its glyph on the bar either: keep it out of the table (and
+                // out of the font findings), not just out of the missing
+                // checks.
+                Some(_) if *is_may && !relevant => (),
                 Some((icon, provenance)) => {
                     // An empty progression is stored but Icons::get returns
                     // None for it: at runtime it behaves like an undefined
                     // icon, not like a defined one.
                     if matches!(icon, Icon::Progression(steps) if steps.is_empty()) {
-                        if !*is_may || relevant {
+                        if (!*is_may || relevant)
+                            && !live_reported.contains(&(block.clone(), icon_name.clone()))
+                        {
                             problems.push(Problem {
                                 diagnosis: format!(
                                     "Icon {icon_name:?} is defined as an empty progression ({}), \
@@ -1710,6 +1745,16 @@ fn print_icon_table(input: IconTableInput) {
                 }
             }
         }
+        if groups.is_empty() {
+            // every user was skipped as irrelevant: the icon is effectively
+            // unused by the configuration
+            if (base_map.contains_key(icon_name) || global_overrides.contains_key(icon_name))
+                && !unused_extra.contains(icon_name)
+            {
+                unused_extra.push(icon_name.clone());
+            }
+            continue;
+        }
         for (provenance, mut blocks) in groups {
             blocks.sort_unstable();
             let (icon, tag) = match &provenance {
@@ -1741,6 +1786,11 @@ fn print_icon_table(input: IconTableInput) {
     let mut unused: Vec<&str> = Vec::new();
     for name in base_map.keys().chain(global_overrides.keys()) {
         if !usage.contains_key(name) && !unused.contains(&name.as_str()) {
+            unused.push(name);
+        }
+    }
+    for name in &unused_extra {
+        if !unused.contains(&name.as_str()) {
             unused.push(name);
         }
     }

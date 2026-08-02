@@ -46,8 +46,8 @@
 //! - `bat_charging` (`$bat_icon`, as a progression)
 //! - `net_cellular` (`$network_icon`, as a progression)
 //! - `notification`
-//! - `phone`
-//! - `phone_disconnected`
+//! - `phone` (`$icon`, in `format`)
+//! - `phone_disconnected` (`$icon`, in `disconnected_format` `missing_format`)
 
 use super::prelude::*;
 

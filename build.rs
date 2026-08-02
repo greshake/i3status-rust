@@ -7,10 +7,10 @@ fn generate_block_icons() -> Vec<(String, Vec<String>)> {
     let out_dir = std::env::var("OUT_DIR").unwrap();
     // The rerun directives replace Cargo's default rerun-on-any-change, so
     // cover everything this script reads (src) AND the git state embedded in
-    // VERSION — otherwise a commit could ship a stale hash.
+    // VERSION — otherwise a commit could ship a stale hash. `.git` may be a
+    // file (linked worktree), so resolve the real git dirs.
     println!("cargo:rerun-if-changed=src");
-    println!("cargo:rerun-if-changed=.git/HEAD");
-    println!("cargo:rerun-if-changed=.git/refs");
+    emit_git_rerun_directives();
 
     let mut entries: Vec<(String, Vec<String>)> = Vec::new();
     // A missing or unreadable source tree must fail the build: silently
@@ -226,6 +226,46 @@ fn generate_block_icon_keys(doc_icons: &[(String, Vec<String>)]) {
             }
         }
     }
+    // Annotation validation: hand-written metadata must not drift. A scope
+    // naming a nonexistent format field, or a placeholder key that never
+    // appears in the block source, is a typo that would silently suppress
+    // or misdirect diagnostics.
+    let mut bad_annotations = Vec::new();
+    for (block, pairs, _, scopes) in &entries {
+        let source = std::fs::read_to_string(format!("src/blocks/{block}.rs")).unwrap_or_default();
+        let format_fields: Vec<String> = source
+            .lines()
+            .filter_map(|line| {
+                let line = line.trim();
+                let rest = line.strip_prefix("pub ")?;
+                let (name, ty) = rest.split_once(':')?;
+                let ty = ty.trim().trim_end_matches(',');
+                (ty == "FormatConfig" || ty == "Option<FormatConfig>")
+                    .then(|| name.trim().to_string())
+            })
+            .collect();
+        for (icon, key) in scopes {
+            if !format_fields.iter().any(|f| f == key) {
+                bad_annotations.push(format!(
+                    "{block}: scope `{key}` on `{icon}` names no FormatConfig field"
+                ));
+            }
+        }
+        for (key, icon) in pairs {
+            if !source.contains(&format!("\"{key}\"")) && !source.contains(&format!("`${key}`")) {
+                bad_annotations.push(format!(
+                    "{block}: placeholder `${key}` on `{icon}` never appears in the source"
+                ));
+            }
+        }
+    }
+    if !bad_annotations.is_empty() {
+        panic!(
+            "invalid doctor metadata annotations:\n{}",
+            bad_annotations.join("\n")
+        );
+    }
+
     if !gaps.is_empty() {
         panic!(
             "icons without a placeholder association (annotate their '# Icons Used' doc \
@@ -502,6 +542,35 @@ fn generate_block_icon_configs(canonical: &std::collections::HashSet<String>) {
         code,
     )
     .unwrap();
+}
+
+/// Watch the git state VERSION embeds, resolving worktree layouts where
+/// `.git` is a file and HEAD/refs live in separate git dirs.
+fn emit_git_rerun_directives() {
+    let dir_of = |args: &[&str]| -> Option<String> {
+        let out = Command::new("git")
+            .args(args)
+            .env("GIT_CONFIG_GLOBAL", "/dev/null")
+            .output()
+            .ok()?;
+        if !out.status.success() {
+            return None;
+        }
+        let path = String::from_utf8(out.stdout).ok()?.trim().to_string();
+        (!path.is_empty()).then_some(path)
+    };
+    let Some(git_dir) = dir_of(&["rev-parse", "--git-dir"]) else {
+        return;
+    };
+    let common_dir = dir_of(&["rev-parse", "--git-common-dir"]).unwrap_or_else(|| git_dir.clone());
+    println!("cargo:rerun-if-changed={git_dir}/HEAD");
+    println!("cargo:rerun-if-changed={common_dir}/packed-refs");
+    // the branch ref file HEAD points at, when it exists
+    if let Ok(head) = std::fs::read_to_string(format!("{git_dir}/HEAD"))
+        && let Some(reference) = head.trim().strip_prefix("ref: ")
+    {
+        println!("cargo:rerun-if-changed={common_dir}/{reference}");
+    }
 }
 
 fn main() {
