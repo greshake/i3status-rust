@@ -23,7 +23,11 @@ fn main() {
 
     if args.doctor {
         std::process::exit(
-            match i3status_rs::doctor::run(&args.config, args.font.as_deref()) {
+            match i3status_rs::doctor::run(
+                &args.config,
+                args.font.as_deref(),
+                args.doctor_skip_live,
+            ) {
                 Ok(()) => 0,
                 Err(err) => {
                     eprintln!("{err}");

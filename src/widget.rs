@@ -52,6 +52,10 @@ impl Widget {
         self.source = Source::Format(format);
     }
 
+    pub fn values(&self) -> &Values {
+        &self.values
+    }
+
     pub fn set_values(&mut self, new_values: Values) {
         self.values = new_values;
     }

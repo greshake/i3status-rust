@@ -98,16 +98,23 @@ pub struct CliArgs {
     /// Ignore any attempts by i3 to pause the bar when hidden/fullscreen
     #[clap(long = "never-pause")]
     pub never_pause: bool,
-    /// Diagnose configuration problems (which icon files are used and why,
-    /// where every icon comes from, references that would fail) and exit
+    /// Diagnose configuration problems and exit: runs every configured
+    /// block for one cycle, resolves every icon glyph to the font that will
+    /// draw it, and reports problems with concrete fixes
     #[clap(long = "doctor")]
     pub doctor: bool,
     /// The font your bar is configured with: the i3/sway `font` directive,
     /// fallback list and all, e.g. "pango:DejaVu Sans Mono, Font Awesome 5
     /// Free 10". Used by --doctor to tell configured font fallbacks apart
-    /// from fontconfig silently substituting a font that is not configured
+    /// from fontconfig silently substituting a font that is not configured.
+    /// When omitted, --doctor auto-detects it from a running i3/sway
     #[clap(long = "font", requires = "doctor")]
     pub font: Option<String>,
+    /// Make --doctor skip the live block test (which runs every configured
+    /// block for one cycle, performing real network requests, commands and
+    /// D-Bus calls)
+    #[clap(long = "doctor-skip-live", requires = "doctor")]
+    pub doctor_skip_live: bool,
     /// Do not send the init sequence
     #[clap(hide = true, long = "no-init")]
     pub no_init: bool,
