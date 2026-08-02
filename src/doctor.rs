@@ -263,11 +263,11 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
             );
         }
     }
-    // === Per-instance icons_format markup ===
-    // An icons_format may select fonts via pango markup. Doctor does not
-    // emulate pango: icons rendered under a markup icons_format are marked
-    // inconclusive instead of guessed at. A block-local icons_format
-    // replaces the global one.
+    // === Per-instance pango markup ===
+    // The bar's final output is pango markup, and markup can come from an
+    // icons_format, from literal text in any of the block's formats, or
+    // from the resolved icon value itself. Doctor does not emulate pango:
+    // it conservatively marks the affected icons' providers inconclusive.
     let block_names = raw_block_names(&raw);
     let labels = instance_labels(&block_names);
     let global_markup = raw
@@ -276,14 +276,21 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
         .is_some_and(|f| f.contains('<'));
     let mut markup_labels: HashSet<String> = HashSet::new();
     for (index, label) in labels.iter().enumerate() {
-        let local = raw
+        let table = raw
             .get("block")
             .and_then(|b| b.as_array())
             .and_then(|b| b.get(index))
-            .and_then(|block| block.get("icons_format"))
+            .and_then(|b| b.as_table());
+        let local_icons_format = table
+            .and_then(|t| t.get("icons_format"))
             .and_then(|v| v.as_str())
             .map(|f| f.contains('<'));
-        if local.unwrap_or(global_markup) {
+        let format_markup = table.is_some_and(|t| {
+            t.iter().any(|(key, value)| {
+                (key == "format" || key.ends_with("_format")) && format_value_contains(value, '<')
+            })
+        });
+        if local_icons_format.unwrap_or(global_markup) || format_markup {
             markup_labels.insert(label.clone());
         }
     }
@@ -466,9 +473,16 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                     .unwrap_or_else(|| report.name.clone());
                 match &report.verdict {
                     LiveVerdict::Rendered {
+                        text,
                         contract_violations,
                         ..
                     } => {
+                        // The block's actual output contains pango markup
+                        // (from a format, a pango-str value, or an icon):
+                        // which font draws its icons is not verifiable.
+                        if text.contains('<') {
+                            markup_labels.insert(label.clone());
+                        }
                         for violation in contract_violations {
                             problems.push(Problem {
                                 diagnosis: format!(
@@ -548,6 +562,17 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
 
     print_problems(&problems, live_ran, &style);
     problems.len()
+}
+
+/// Whether a format value (string or {full, short} table) contains `needle`.
+fn format_value_contains(value: &toml::Value, needle: char) -> bool {
+    match value {
+        toml::Value::String(s) => s.contains(needle),
+        toml::Value::Table(t) => t
+            .values()
+            .any(|v| v.as_str().is_some_and(|s| s.contains(needle))),
+        _ => false,
+    }
 }
 
 fn icons_config<'a>(
@@ -1615,8 +1640,9 @@ fn print_icon_table(input: IconTableInput) {
         let mut listed: Vec<&str> = markup_labels.iter().map(String::as_str).collect();
         listed.sort_unstable();
         println!(
-            "note: icons_format uses pango markup for: {}. The font drawing those icons\n\
-             depends on that markup and is not verified by doctor.",
+            "note: pango markup (from a format, icons_format, or an icon value) affects: {}.\n\
+             The font drawing those blocks' icons depends on that markup and is not verified\n\
+             by doctor.",
             listed.join(", ")
         );
     }
@@ -1681,10 +1707,13 @@ fn push_icon_rows(
     };
     for (row_name, glyph) in rows {
         let codes = codepoints(glyph);
+        // An icon value containing markup is not a plain glyph: fontconfig
+        // cannot be asked which font draws it.
+        let markup = markup || glyph.contains('<');
         let (provider, mark) = if markup {
-            // The effective icons_format uses pango markup; doctor does not
-            // emulate pango, so which font draws this glyph is unknown.
-            ("(depends on icons_format markup)".to_string(), "")
+            // Pango markup applies to this icon; doctor does not emulate
+            // pango, so which font draws the glyph is unknown.
+            ("(depends on pango markup)".to_string(), "")
         } else {
             match font_check.as_mut() {
                 None => ("?".to_string(), ""),
