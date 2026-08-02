@@ -115,6 +115,10 @@ pub struct CliArgs {
     /// D-Bus calls)
     #[clap(long = "doctor-skip-live", requires = "doctor")]
     pub doctor_skip_live: bool,
+    /// Internal: run one block's live test in this process (spawned by
+    /// --doctor for process isolation)
+    #[clap(hide = true, long = "doctor-worker")]
+    pub doctor_worker: Option<usize>,
     /// Do not send the init sequence
     #[clap(hide = true, long = "no-init")]
     pub no_init: bool,

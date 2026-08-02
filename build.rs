@@ -7,23 +7,19 @@ fn generate_block_icons() {
     println!("cargo:rerun-if-changed=src/blocks");
 
     let mut entries: Vec<(String, Vec<String>)> = Vec::new();
-    let Ok(dir) = std::fs::read_dir("src/blocks") else {
-        std::fs::write(
-            std::path::Path::new(&out_dir).join("block_icons.rs"),
-            "pub static BLOCK_ICONS: &[(&str, &[&str])] = &[];\n",
-        )
-        .unwrap();
-        return;
-    };
-    for entry in dir.flatten() {
+    // A missing or unreadable source tree must fail the build: silently
+    // generating an empty/partial table would ship a doctor that reports
+    // wrong "used by" data.
+    let dir = std::fs::read_dir("src/blocks").expect("cannot read src/blocks");
+    for entry in dir {
+        let entry = entry.expect("cannot read src/blocks directory entry");
         let path = entry.path();
         if path.extension().is_none_or(|e| e != "rs") {
             continue;
         }
         let block = path.file_stem().unwrap().to_string_lossy().into_owned();
-        let Ok(source) = std::fs::read_to_string(&path) else {
-            continue;
-        };
+        let source = std::fs::read_to_string(&path)
+            .unwrap_or_else(|err| panic!("cannot read {}: {err}", path.display()));
         let mut icons = Vec::new();
         let mut in_section = false;
         for line in source.lines() {

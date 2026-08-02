@@ -201,11 +201,30 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
         None
     };
     let font_pattern = font_arg.or(detected.as_ref().map(|d| d.font.as_str()));
-    let mut font_check = FontCheck::new(font_pattern);
+    // X core fonts (XLFD, "-misc-fixed-...") bypass fontconfig entirely, so
+    // the glyph analysis would be meaningless.
+    let is_xlfd = font_pattern.is_some_and(|f| f.starts_with('-'));
+    let mut font_check = if is_xlfd {
+        None
+    } else {
+        FontCheck::new(font_pattern)
+    };
+    // Findings that depend on the bar font are only authoritative when the
+    // font is known unambiguously: given via --font, or auto-detected without
+    // ambiguity. Otherwise they are reported as notes, not problems.
+    let font_authoritative =
+        font_arg.is_some() || (detected.as_ref().is_some_and(|d| d.note.is_none()));
     // Environment limitations are notes, not problems: they say what doctor
     // could not check, not that the user's configuration is wrong, and must
     // not affect the exit code.
     match (&font_check, font_arg, &detected) {
+        (None, ..) if is_xlfd => {
+            println!("Bar font: {} (X core font)", font_pattern.unwrap_or(""));
+            println!(
+                "   note: XLFD fonts bypass fontconfig, so doctor cannot analyze which font\n   \
+                 draws each glyph; the font check is skipped."
+            );
+        }
         (None, ..) => {
             println!("Bar font: (unchecked)");
             println!(
@@ -228,13 +247,19 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
             println!("Bar font: fontconfig default ({:?})", check.base_family);
             println!(
                 "   note: no --font given and no running i3/sway answered over IPC; glyph\n   \
-                 providers below may not match your actual bar. Re-run with the `font`\n   \
-                 directive from the bar {{ }} section of your i3/sway config:\n   \
-                 i3status-rs --doctor --font \"pango:...\""
+                 providers below may not match your actual bar and are reported as notes,\n   \
+                 not problems. Re-run with the `font` directive from the bar {{ }} section\n   \
+                 of your i3/sway config: i3status-rs --doctor --font \"pango:...\""
             );
         }
     }
     if let Some(check) = &font_check {
+        if !check.has_fc_list {
+            println!(
+                "   note: `fc-list` is not available, so glyphs that no installed font\n   \
+                 provides cannot be detected."
+            );
+        }
         for (family, resolved) in &check.families {
             // Generic fontconfig aliases (monospace, sans-serif, ...) always
             // resolve to some concrete family; that is normal, not a missing
@@ -246,18 +271,23 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                 .as_ref()
                 .is_some_and(|r| r.split(',').any(|m| m == family));
             if !installed {
-                problems.push(Problem {
-                    diagnosis: format!(
-                        "Font {family:?} is in the bar's font list but not installed{}.",
-                        resolved
-                            .as_ref()
-                            .map(|r| format!(" (fontconfig silently uses {r:?} in its place)"))
-                            .unwrap_or_default()
-                    ),
-                    fix: Some(format!(
-                        "Install {family:?}, or remove it from the bar's font directive."
-                    )),
-                });
+                let diagnosis = format!(
+                    "Font {family:?} is in the bar's font list but not installed{}.",
+                    resolved
+                        .as_ref()
+                        .map(|r| format!(" (fontconfig silently uses {r:?} in its place)"))
+                        .unwrap_or_default()
+                );
+                if font_authoritative {
+                    problems.push(Problem {
+                        diagnosis,
+                        fix: Some(format!(
+                            "Install {family:?}, or remove it from the bar's font directive."
+                        )),
+                    });
+                } else {
+                    println!("   note: {diagnosis} (guessed font; not counted as a problem)");
+                }
             }
         }
     }
@@ -292,13 +322,12 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
     match (parsed, skip_live) {
         (None, _) => println!("Blocks: skipped (configuration does not validate)\n"),
         (Some(_), true) => println!("Blocks: skipped (--doctor-skip-live)\n"),
-        (Some(mut config), false) => {
+        (Some(config), false) => {
             println!(
                 "Blocks (each run for one cycle; performs real requests/commands, {}s timeout)",
                 LIVE_TIMEOUT.as_secs()
             );
-            let blocks = std::mem::take(&mut config.blocks);
-            let reports = run_live(blocks, &config);
+            let reports = run_live(config_arg, config.blocks.len());
             let tag_w = reports
                 .iter()
                 .map(|r| format!("[{}] {}", r.index + 1, r.name).len())
@@ -329,6 +358,7 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
         &block_names,
         &used_now,
         &mut font_check,
+        font_authoritative,
         &style,
         &mut problems,
     );
@@ -411,6 +441,7 @@ fn raw_block_names(raw: &toml::Value) -> Vec<String> {
 // Live block test
 // ---------------------------------------------------------------------------
 
+#[derive(serde::Serialize, serde::Deserialize)]
 enum LiveVerdict {
     Rendered {
         text: String,
@@ -427,8 +458,12 @@ enum LiveVerdict {
     Finished,
     NoOutput,
     Skipped(String),
+    /// The if_command could not run or did not finish — unlike a legitimate
+    /// non-zero exit (`Skipped`), this is a problem.
+    IfCommandFailed(String),
 }
 
+#[derive(serde::Serialize, serde::Deserialize)]
 struct BlockReport {
     index: usize,
     name: String,
@@ -441,7 +476,26 @@ enum FirstOutput {
     Hidden,
 }
 
-fn run_live(blocks: Vec<BlockConfigEntry>, config: &Config) -> Vec<BlockReport> {
+/// Extra time the parent grants a worker beyond the block's own deadline
+/// before SIGKILLing its process group.
+const WORKER_GRACE: Duration = Duration::from_secs(3);
+
+/// Run every block in its own worker process (`--doctor-worker <index>`, this
+/// same binary). Future cancellation cannot reap OS processes a block has
+/// spawned (e.g. the custom block's command), so each worker gets its own
+/// process group, which the parent SIGKILLs after collecting the result —
+/// nothing can hang doctor or outlive it.
+fn run_live(config_arg: &str, count: usize) -> Vec<BlockReport> {
+    let exe = match std::env::current_exe() {
+        Ok(exe) => exe,
+        Err(err) => {
+            return vec![BlockReport {
+                index: 0,
+                name: "<worker>".into(),
+                verdict: LiveVerdict::BlockError(format!("cannot find own executable: {err}")),
+            }];
+        }
+    };
     let runtime = match tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
@@ -456,29 +510,101 @@ fn run_live(blocks: Vec<BlockConfigEntry>, config: &Config) -> Vec<BlockReport> 
         }
     };
 
-    let local = tokio::task::LocalSet::new();
-    local.block_on(&runtime, async {
-        let mut handles = Vec::new();
-        for (index, entry) in blocks.into_iter().enumerate() {
-            let shared = config.shared.clone();
-            let geolocator = config.geolocator.clone();
-            handles.push(tokio::task::spawn_local(test_block(
-                index, entry, shared, geolocator,
-            )));
-        }
-        let mut reports = Vec::new();
-        for (index, handle) in handles.into_iter().enumerate() {
-            reports.push(match handle.await {
-                Ok(report) => report,
-                Err(err) => BlockReport {
-                    index,
-                    name: "<unknown>".into(),
-                    verdict: LiveVerdict::Panicked(join_error_message(err)),
-                },
-            });
-        }
-        reports
+    runtime.block_on(async {
+        let workers = (0..count).map(|index| {
+            let exe = exe.clone();
+            async move { run_worker_process(&exe, config_arg, index).await }
+        });
+        futures::future::join_all(workers).await
     })
+}
+
+async fn run_worker_process(exe: &Path, config_arg: &str, index: usize) -> BlockReport {
+    let fail = |msg: String| BlockReport {
+        index,
+        name: format!("block #{}", index + 1),
+        verdict: LiveVerdict::BlockError(msg),
+    };
+
+    let mut command = tokio::process::Command::new(exe);
+    command
+        .arg("--doctor-worker")
+        .arg(index.to_string())
+        .arg(config_arg)
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::null())
+        .process_group(0);
+    let child = match command.spawn() {
+        Ok(child) => child,
+        Err(err) => return fail(format!("cannot start doctor worker: {err}")),
+    };
+    let pid = child.id();
+
+    let result = tokio::time::timeout(LIVE_TIMEOUT + WORKER_GRACE, child.wait_with_output()).await;
+
+    // Sweep the worker's whole process group unconditionally: this reaps any
+    // subprocess a block spawned and left behind (the worker itself is
+    // already gone in the normal case).
+    if let Some(pid) = pid {
+        // SAFETY: plain syscall; negative pid targets the process group
+        unsafe { libc::kill(-(pid as i32), libc::SIGKILL) };
+    }
+
+    match result {
+        Err(_) => fail(format!(
+            "doctor worker did not finish within {}s and was killed",
+            (LIVE_TIMEOUT + WORKER_GRACE).as_secs()
+        )),
+        Ok(Err(err)) => fail(format!("doctor worker failed: {err}")),
+        Ok(Ok(output)) => match serde_json::from_slice::<BlockReport>(&output.stdout) {
+            Ok(report) => report,
+            Err(err) => fail(format!(
+                "doctor worker produced no readable result ({err}); it may have crashed"
+            )),
+        },
+    }
+}
+
+/// Entry point for `--doctor-worker <index>`: run one block's live test in
+/// this process and print the result as JSON on stdout.
+pub fn run_worker(config_arg: &str, index: usize) {
+    let report = worker_report(config_arg, index);
+    match serde_json::to_string(&report) {
+        Ok(json) => println!("{json}"),
+        Err(err) => eprintln!("doctor worker: cannot serialize report: {err}"),
+    }
+}
+
+fn worker_report(config_arg: &str, index: usize) -> BlockReport {
+    let fail = |msg: String| BlockReport {
+        index,
+        name: format!("block #{}", index + 1),
+        verdict: LiveVerdict::BlockError(msg),
+    };
+    let Ok(Some(config_path)) = util::find_file(config_arg, None, Some("toml")) else {
+        return fail("worker cannot find the configuration file".into());
+    };
+    let mut config: Config = match util::deserialize_toml_file(&config_path) {
+        Ok(config) => config,
+        Err(err) => return fail(format!("worker cannot parse the configuration: {err}")),
+    };
+    if index >= config.blocks.len() {
+        return fail("worker got an out-of-range block index".into());
+    }
+    let entry = config.blocks.swap_remove(index);
+    let shared = config.shared.clone();
+    let geolocator = config.geolocator.clone();
+
+    let runtime = match tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+    {
+        Ok(runtime) => runtime,
+        Err(err) => return fail(format!("worker failed to start async runtime: {err}")),
+    };
+    let local = tokio::task::LocalSet::new();
+    local.block_on(&runtime, test_block(index, entry, shared, geolocator))
 }
 
 async fn test_block(
@@ -488,39 +614,28 @@ async fn test_block(
     geolocator: Arc<Geolocator>,
 ) -> BlockReport {
     let name = entry.config.name().to_string();
+    // One deadline shared by everything the block test does: if_command and
+    // the block's first output together get LIVE_TIMEOUT, not each.
+    let deadline = tokio::time::Instant::now() + LIVE_TIMEOUT;
 
     if let Some(cmd) = &entry.common.if_command {
-        // The command counts against the block's timeout. It runs in its own
-        // process group so that on timeout the whole tree can be killed — a
-        // hanging if_command must neither hang doctor nor leak processes.
-        let mut command = tokio::process::Command::new("sh");
-        command
-            .args(["-c", cmd])
-            .stdin(std::process::Stdio::null())
-            .stdout(std::process::Stdio::null())
-            .stderr(std::process::Stdio::null())
-            .process_group(0);
-        let mut child = match command.spawn() {
-            Ok(child) => child,
-            Err(err) => {
-                return BlockReport {
-                    index,
-                    name,
-                    verdict: LiveVerdict::Skipped(format!("if_command could not run: {err}")),
-                };
-            }
-        };
-        match tokio::time::timeout(LIVE_TIMEOUT, child.wait()).await {
+        // Subprocess cleanup is guaranteed by the worker's process group,
+        // which the parent sweeps.
+        let output = tokio::time::timeout_at(
+            deadline,
+            tokio::process::Command::new("sh")
+                .args(["-c", cmd])
+                .stdin(std::process::Stdio::null())
+                .kill_on_drop(true)
+                .output(),
+        )
+        .await;
+        match output {
             Err(_) => {
-                if let Some(pid) = child.id() {
-                    // SAFETY: plain syscall; negative pid targets the group
-                    unsafe { libc::kill(-(pid as i32), libc::SIGKILL) };
-                }
-                let _ = child.wait().await;
                 return BlockReport {
                     index,
                     name,
-                    verdict: LiveVerdict::Skipped(format!(
+                    verdict: LiveVerdict::IfCommandFailed(format!(
                         "if_command did not finish within {}s ({cmd})",
                         LIVE_TIMEOUT.as_secs()
                     )),
@@ -530,10 +645,12 @@ async fn test_block(
                 return BlockReport {
                     index,
                     name,
-                    verdict: LiveVerdict::Skipped(format!("if_command could not run: {err}")),
+                    verdict: LiveVerdict::IfCommandFailed(format!(
+                        "if_command could not run: {err}"
+                    )),
                 };
             }
-            Ok(Ok(status)) if !status.success() => {
+            Ok(Ok(output)) if !output.status.success() => {
                 return BlockReport {
                     index,
                     name,
@@ -580,7 +697,7 @@ async fn test_block(
         futures.next().await;
     });
 
-    let first = tokio::time::timeout(LIVE_TIMEOUT, async {
+    let first = tokio::time::timeout_at(deadline, async {
         loop {
             match receiver.recv().await {
                 None => break None,
@@ -773,6 +890,20 @@ fn print_block_report(
             LIVE_TIMEOUT.as_secs()
         ),
         LiveVerdict::Skipped(reason) => println!("{tag:<tag_w$} (skipped: {reason})"),
+        LiveVerdict::IfCommandFailed(reason) => {
+            println!(
+                "{tag:<tag_w$} {}IF_COMMAND FAILED{}: {reason}",
+                style.red, style.reset
+            );
+            problems.push(Problem {
+                diagnosis: format!("{}: {reason}", report.name),
+                fix: Some(
+                    "if_command must finish quickly and exit 0 or non-zero; make it fast and \
+                     non-blocking, or remove it."
+                        .into(),
+                ),
+            });
+        }
     }
 }
 
@@ -804,6 +935,15 @@ fn suggest_fix(block: &str, error: &str) -> Option<String> {
 // ---------------------------------------------------------------------------
 
 #[allow(clippy::too_many_arguments)]
+/// Where a block's icon actually comes from, in precedence order.
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone)]
+enum Provenance {
+    Base,
+    Global,
+    Local(String),
+}
+
+#[allow(clippy::too_many_arguments)]
 fn print_icon_table(
     base_map: &HashMap<String, Icon>,
     global_overrides: &HashMap<String, Icon>,
@@ -812,9 +952,31 @@ fn print_icon_table(
     block_names: &[String],
     used_now: &BTreeMap<String, HashSet<String>>,
     font_check: &mut Option<FontCheck>,
+    font_authoritative: bool,
     style: &Style,
     problems: &mut Vec<Problem>,
 ) {
+    // Per-block-type local overrides (several blocks of the same type are
+    // merged, later wins — matching how "used by" is attributed by type).
+    let mut local: HashMap<&str, HashMap<&str, &Icon>> = HashMap::new();
+    for (block, overrides) in block_overrides {
+        let entry = local.entry(block.as_str()).or_default();
+        for (name, icon) in overrides {
+            entry.insert(name.as_str(), icon);
+        }
+    }
+
+    // What a given block instance actually resolves an icon name to.
+    let resolve = |icon: &str, block: &str| -> Option<(&Icon, Provenance)> {
+        if let Some(found) = local.get(block).and_then(|o| o.get(icon)) {
+            return Some((found, Provenance::Local(block.to_string())));
+        }
+        if let Some(found) = global_overrides.get(icon) {
+            return Some((found, Provenance::Global));
+        }
+        base_map.get(icon).map(|found| (found, Provenance::Base))
+    };
+
     // may-use: documented icons of each configured block type
     let mut may_use: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
     for name in block_names {
@@ -825,11 +987,7 @@ fn print_icon_table(
         }
     }
 
-    let mut effective: BTreeMap<&str, (&Icon, bool)> = BTreeMap::new();
-    for (name, icon) in base_map {
-        effective.insert(name, (icon, false));
-    }
-    for (name, icon) in global_overrides {
+    for name in global_overrides.keys() {
         if !base_map.contains_key(name)
             && !builtin.contains_key(name)
             && !used_now.contains_key(name)
@@ -843,66 +1001,108 @@ fn print_icon_table(
                 fix: None,
             });
         }
-        effective.insert(name, (icon, true));
+    }
+
+    // usage: icon name -> [(block, is_may)]. A block's own icons_overrides
+    // entry counts as usage: overriding it is explicit intent.
+    let mut usage: BTreeMap<String, Vec<(String, bool)>> = BTreeMap::new();
+    for (icon, blocks) in used_now {
+        for block in blocks {
+            usage
+                .entry(icon.clone())
+                .or_default()
+                .push((block.clone(), false));
+        }
+    }
+    for (icon, blocks) in &may_use {
+        for block in blocks {
+            let users = usage.entry((*icon).to_string()).or_default();
+            if !users.iter().any(|(b, _)| b == *block) {
+                users.push(((*block).to_string(), true));
+            }
+        }
+    }
+    for (block, overrides) in block_overrides {
+        for icon in overrides.keys() {
+            let users = usage.entry(icon.clone()).or_default();
+            if !users.iter().any(|(b, _)| b == block) {
+                users.push((block.clone(), false));
+            }
+        }
     }
 
     let mut used_rows: Vec<IconRow> = Vec::new();
-    let mut unused: Vec<&str> = Vec::new();
     let mut fallback_rows = 0usize;
     let mut missing_rows = 0usize;
 
-    for (name, (icon, is_override)) in &effective {
-        let users_now = used_now.get(*name);
-        let users_may = may_use.get(*name);
-        if users_now.is_none() && users_may.is_none() {
-            unused.push(name);
-            continue;
-        }
-        let mut used_by: Vec<String> = users_now
-            .map(|s| s.iter().cloned().collect::<Vec<_>>())
-            .unwrap_or_default();
-        used_by.sort_unstable();
-        if let Some(may) = users_may {
-            for block in may {
-                let as_may = format!("{block} (may)");
-                if !used_by.contains(&(*block).to_string()) && !used_by.contains(&as_may) {
-                    used_by.push(as_may);
+    for (icon_name, users) in &usage {
+        // Group the using blocks by what the icon actually resolves to for
+        // them: an override REPLACES the base glyph for its block, so only
+        // glyphs some block really renders produce rows.
+        let mut groups: BTreeMap<Provenance, Vec<String>> = BTreeMap::new();
+        for (block, is_may) in users {
+            match resolve(icon_name, block) {
+                Some((_, provenance)) => {
+                    let label = if *is_may {
+                        format!("{block} (may)")
+                    } else {
+                        block.clone()
+                    };
+                    groups.entry(provenance).or_default().push(label);
+                }
+                None => {
+                    // Finding: this block would error when requesting it —
+                    // unless it never actually can (only "may" usage counts
+                    // as latent, both are real problems).
+                    problems.push(Problem {
+                        diagnosis: format!(
+                            "Icon {icon_name:?} is not defined for the `{block}` block (not in \
+                             the icon set, [icons.overrides], or the block's icons_overrides) — \
+                             the block will error when it requests it."
+                        ),
+                        fix: Some(format!(
+                            "Add `{icon_name}` to [icons.overrides] or to that block's \
+                             icons_overrides."
+                        )),
+                    });
                 }
             }
         }
-        let used_by = used_by.join(", ");
-        let tag = if *is_override { " [override]" } else { "" };
-
-        push_icon_rows(
-            &mut used_rows,
-            name,
-            icon,
-            tag,
-            &used_by,
-            font_check,
-            &mut fallback_rows,
-            &mut missing_rows,
-        );
-    }
-
-    // Per-block icons_overrides: these apply only to their block, so they get
-    // their own rows tagged with the block name.
-    for (block, overrides) in block_overrides {
-        let mut names: Vec<&String> = overrides.keys().collect();
-        names.sort_unstable();
-        for name in names {
+        for (provenance, mut blocks) in groups {
+            blocks.sort_unstable();
+            let (icon, tag) = match &provenance {
+                Provenance::Base => (base_map.get(icon_name), String::new()),
+                Provenance::Global => (global_overrides.get(icon_name), " [override]".into()),
+                Provenance::Local(block) => (
+                    local
+                        .get(block.as_str())
+                        .and_then(|o| o.get(icon_name.as_str()))
+                        .copied(),
+                    format!(" [{block} override]"),
+                ),
+            };
+            let Some(icon) = icon else { continue };
             push_icon_rows(
                 &mut used_rows,
-                name,
-                &overrides[name],
-                &format!(" [{block} override]"),
-                block,
+                icon_name,
+                icon,
+                &tag,
+                &blocks.join(", "),
                 font_check,
                 &mut fallback_rows,
                 &mut missing_rows,
             );
         }
     }
+
+    // Defined but unused by every configured block
+    let mut unused: Vec<&str> = Vec::new();
+    for name in base_map.keys().chain(global_overrides.keys()) {
+        if !usage.contains_key(name) && !unused.contains(&name.as_str()) {
+            unused.push(name);
+        }
+    }
+    unused.sort_unstable();
 
     println!("Icons referenced by your blocks");
     let name_w = column_width("name", used_rows.iter().map(|r| r.name.as_str()));
@@ -939,18 +1139,25 @@ fn print_icon_table(
     println!();
 
     if fallback_rows > 0 {
-        problems.push(Problem {
-            diagnosis: format!(
-                "{fallback_rows} icon glyph(s) will be drawn by fonts outside the bar's font \
-                 list (red rows above). Their appearance depends on which fonts happen to be \
-                 installed and can change with any font install or system update."
-            ),
-            fix: Some(
-                "Add a font that provides these glyphs to the bar's font directive (matching \
-                 the icon set in use), and make sure it is installed."
-                    .into(),
-            ),
-        });
+        let diagnosis = format!(
+            "{fallback_rows} icon glyph(s) will be drawn by fonts outside the bar's font \
+             list (red rows above). Their appearance depends on which fonts happen to be \
+             installed and can change with any font install or system update."
+        );
+        if font_authoritative {
+            problems.push(Problem {
+                diagnosis,
+                fix: Some(
+                    "Add a font that provides these glyphs to the bar's font directive \
+                     (matching the icon set in use), and make sure it is installed."
+                        .into(),
+                ),
+            });
+        } else {
+            println!("note: {diagnosis}");
+            println!("note: the bar font was guessed, so this is not counted as a problem.");
+            println!();
+        }
     }
     if missing_rows > 0 {
         problems.push(Problem {
@@ -963,20 +1170,6 @@ fn print_icon_table(
                     .into(),
             ),
         });
-    }
-
-    // Names a configured block may request but the current icon map lacks
-    for (icon, blocks) in &may_use {
-        if !effective.contains_key(icon) {
-            problems.push(Problem {
-                diagnosis: format!(
-                    "Icon {icon:?} may be requested by {} but is not defined by the current icon \
-                     set — the block will error when that state occurs.",
-                    blocks.join(", ")
-                ),
-                fix: Some(format!("Add `{icon}` to [icons.overrides].")),
-            });
-        }
     }
 }
 
@@ -1166,6 +1359,9 @@ struct FontCheck {
     /// Each configured family with what fc-match resolves it to; a family
     /// that resolves to something else entirely is not installed.
     families: Vec<(String, Option<String>)>,
+    /// Whether `fc-list` works; without it "no font provides this glyph"
+    /// cannot be detected and is never claimed.
+    has_fc_list: bool,
     cache: HashMap<char, GlyphFont>,
 }
 
@@ -1181,10 +1377,15 @@ impl FontCheck {
                 (family, resolved)
             })
             .collect();
+        let has_fc_list = std::process::Command::new("fc-list")
+            .arg("--version")
+            .output()
+            .is_ok_and(|out| out.status.success());
         Some(Self {
             pattern,
             base_family,
             families,
+            has_fc_list,
             cache: HashMap::new(),
         })
     }
@@ -1192,7 +1393,7 @@ impl FontCheck {
     fn check(&mut self, c: char) -> &GlyphFont {
         self.cache.entry(c).or_insert_with(|| {
             let charset = format!("{:x}", c as u32);
-            if !fc_list_provides(&charset) {
+            if self.has_fc_list && !fc_list_provides(&charset) {
                 return GlyphFont::Missing;
             }
             match fc_match(&self.pattern, Some(&charset)) {
@@ -1346,25 +1547,91 @@ fn detect_bar_font() -> Option<DetectedFont> {
 }
 
 /// Accept the i3/sway font directive as-is: strip the "pango:" prefix and
-/// per-family trailing sizes, split the fallback list on commas.
+/// per-family trailing size and style options, split the fallback list on
+/// commas.
 ///
-/// `"pango:DejaVu Sans Mono, Font Awesome 6 Free 12"` →
+/// `"pango:DejaVu Sans Mono Bold 12, Font Awesome 6 Free"` →
 /// `["DejaVu Sans Mono", "Font Awesome 6 Free"]`
 fn parse_font_directive(raw: &str) -> Vec<String> {
     let raw = raw.strip_prefix("pango:").unwrap_or(raw);
     raw.split(',')
-        .map(strip_font_size)
+        .map(strip_font_modifiers)
         .filter(|f| !f.is_empty())
         .collect()
 }
 
-/// "DejaVu Sans Mono 13.5" → "DejaVu Sans Mono"
-fn strip_font_size(family: &str) -> String {
+/// Pango font descriptions are `FAMILY [STYLE-OPTIONS] [SIZE]`; drop the
+/// trailing style words and size so only the family remains:
+/// "DejaVu Sans Mono Bold 13.5" → "DejaVu Sans Mono"
+fn strip_font_modifiers(family: &str) -> String {
+    // Pango style, weight, stretch, variant and gravity keywords
+    const STYLE_WORDS: &[&str] = &[
+        "italic",
+        "oblique",
+        "roman",
+        "thin",
+        "ultralight",
+        "ultra-light",
+        "extralight",
+        "extra-light",
+        "light",
+        "semilight",
+        "semi-light",
+        "demilight",
+        "demi-light",
+        "book",
+        "regular",
+        "normal",
+        "medium",
+        "semibold",
+        "semi-bold",
+        "demibold",
+        "demi-bold",
+        "bold",
+        "ultrabold",
+        "ultra-bold",
+        "extrabold",
+        "extra-bold",
+        "heavy",
+        "black",
+        "ultraheavy",
+        "ultra-heavy",
+        "extrablack",
+        "extra-black",
+        "ultrablack",
+        "ultra-black",
+        "small-caps",
+        "ultracondensed",
+        "ultra-condensed",
+        "extracondensed",
+        "extra-condensed",
+        "semicondensed",
+        "semi-condensed",
+        "condensed",
+        "semiexpanded",
+        "semi-expanded",
+        "extraexpanded",
+        "extra-expanded",
+        "ultraexpanded",
+        "ultra-expanded",
+        "expanded",
+        "not-rotated",
+        "south",
+        "upside-down",
+        "north",
+        "rotated-left",
+        "east",
+        "rotated-right",
+        "west",
+    ];
     let mut parts: Vec<&str> = family.split_whitespace().collect();
-    while let Some(last) = parts.last()
-        && last.parse::<f64>().is_ok()
-    {
-        parts.pop();
+    while let Some(last) = parts.last() {
+        let last = last.trim_end_matches("px");
+        if last.parse::<f64>().is_ok() || STYLE_WORDS.contains(&last.to_lowercase().as_str()) {
+            parts.pop();
+        } else {
+            break;
+        }
     }
     parts.join(" ")
 }
@@ -1457,6 +1724,19 @@ mod tests {
         assert_eq!(
             parse_font_directive("DejaVu Sans Mono 13.5"),
             ["DejaVu Sans Mono"]
+        );
+        // Pango style options are not part of the family name
+        assert_eq!(
+            parse_font_directive("pango:DejaVu Sans Mono Bold 10"),
+            ["DejaVu Sans Mono"]
+        );
+        assert_eq!(
+            parse_font_directive("Liberation Mono Bold Italic 11"),
+            ["Liberation Mono"]
+        );
+        assert_eq!(
+            parse_font_directive("Terminus (TTF) 16px"),
+            ["Terminus (TTF)"]
         );
         assert_eq!(
             parse_font_directive("monospace,Font Awesome 5 Free"),
