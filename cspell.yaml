@@ -133,10 +133,14 @@ words:
   - posix
   - powf
   - powi
+  - ppid
+  - prctl
   - pybugz
   - rdate
   - rdates
   - recip
+  - reparent
+  - reparented
   - repr
   - reqwest
   - resolv

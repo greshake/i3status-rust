@@ -269,7 +269,7 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
             }
             let installed = resolved
                 .as_ref()
-                .is_some_and(|r| r.split(',').any(|m| m == family));
+                .is_some_and(|r| r.split(',').any(|m| family_eq(m, family)));
             if !installed {
                 let diagnosis = format!(
                     "Font {family:?} is in the bar's font list but not installed{}.",
@@ -295,15 +295,19 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
 
     // === Blocks (live test) ===
     let block_names = raw_block_names(&raw);
+    // Everything is attributed per block INSTANCE: two blocks of the same
+    // type get distinct labels ("time#1", "time#2") so per-instance
+    // icons_overrides are analyzed separately.
+    let labels = instance_labels(&block_names);
     let mut used_now: BTreeMap<String, HashSet<String>> = BTreeMap::new();
     // ^icon_* references in format strings count as explicit usage
-    for info in collect_blocks(&raw) {
+    for (index, info) in collect_blocks(&raw).iter().enumerate() {
         for format in &info.formats {
             for icon in &format.icon_refs {
                 used_now
                     .entry(icon.clone())
                     .or_default()
-                    .insert(info.name.clone());
+                    .insert(labels[index].clone());
             }
         }
     }
@@ -342,14 +346,30 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                 .max()
                 .unwrap_or(0);
             for report in &reports {
-                print_block_report(report, tag_w, out_w, &style, &mut problems, &mut used_now);
+                let label = labels
+                    .get(report.index)
+                    .cloned()
+                    .unwrap_or_else(|| report.name.clone());
+                print_block_report(
+                    report,
+                    &label,
+                    tag_w,
+                    out_w,
+                    &style,
+                    &mut problems,
+                    &mut used_now,
+                );
             }
             println!();
         }
     }
 
     // === Icons table ===
-    let block_overrides = raw_block_overrides(&raw, &mut problems);
+    let block_overrides: Vec<(String, HashMap<String, Icon>)> =
+        raw_block_overrides(&raw, &mut problems)
+            .into_iter()
+            .map(|(index, overrides)| (labels[index].clone(), overrides))
+            .collect();
     print_icon_table(
         &base_map,
         &global_overrides,
@@ -392,16 +412,17 @@ fn icons_config<'a>(
     }
 }
 
-/// Per-block `icons_overrides` tables from the raw config, with block names.
+/// Per-block-instance `icons_overrides` tables from the raw config, keyed by
+/// the block's position in the config.
 fn raw_block_overrides(
     raw: &toml::Value,
     problems: &mut Vec<Problem>,
-) -> Vec<(String, HashMap<String, Icon>)> {
+) -> Vec<(usize, HashMap<String, Icon>)> {
     let Some(blocks) = raw.get("block").and_then(|v| v.as_array()) else {
         return Vec::new();
     };
     let mut out = Vec::new();
-    for block in blocks {
+    for (index, block) in blocks.iter().enumerate() {
         let name = block
             .get("block")
             .and_then(|v| v.as_str())
@@ -410,7 +431,7 @@ fn raw_block_overrides(
             continue;
         };
         match value.clone().try_into() {
-            Ok(overrides) => out.push((name.to_string(), overrides)),
+            Ok(overrides) => out.push((index, overrides)),
             Err(err) => problems.push(Problem {
                 diagnosis: format!("{name}: icons_overrides is not a valid icon table: {err}"),
                 fix: None,
@@ -418,6 +439,26 @@ fn raw_block_overrides(
         }
     }
     out
+}
+
+/// A unique label per block instance: the type name alone when the type
+/// appears once, "name#N" (1-based config position) otherwise.
+fn instance_labels(block_names: &[String]) -> Vec<String> {
+    let mut counts: HashMap<&str, usize> = HashMap::new();
+    for name in block_names {
+        *counts.entry(name.as_str()).or_default() += 1;
+    }
+    block_names
+        .iter()
+        .enumerate()
+        .map(|(index, name)| {
+            if counts.get(name.as_str()).copied().unwrap_or(0) > 1 {
+                format!("{name}#{}", index + 1)
+            } else {
+                name.clone()
+            }
+        })
+        .collect()
 }
 
 fn raw_block_names(raw: &toml::Value) -> Vec<String> {
@@ -510,13 +551,72 @@ fn run_live(config_arg: &str, count: usize) -> Vec<BlockReport> {
         }
     };
 
-    runtime.block_on(async {
+    // A block's subprocess can leave its worker's process group (setsid), so
+    // the group SIGKILL alone cannot guarantee cleanup. Registering as a
+    // child subreaper makes every orphaned descendant reparent to us instead
+    // of init; after the workers are done we sweep and kill whatever is left.
+    // SAFETY: plain prctl syscall
+    unsafe { libc::prctl(libc::PR_SET_CHILD_SUBREAPER, 1) };
+
+    let reports = runtime.block_on(async {
         let workers = (0..count).map(|index| {
             let exe = exe.clone();
             async move { run_worker_process(&exe, config_arg, index).await }
         });
         futures::future::join_all(workers).await
-    })
+    });
+
+    sweep_orphaned_children();
+    reports
+}
+
+/// Kill every remaining child of this process. All legitimate children (the
+/// workers) have already been reaped by this point, so anything left is an
+/// escaped descendant of some block's subprocess tree, reparented to us by
+/// the subreaper registration.
+fn sweep_orphaned_children() {
+    let self_pid = std::process::id();
+    for _ in 0..20 {
+        let mut found = false;
+        let Ok(dir) = std::fs::read_dir("/proc") else {
+            return;
+        };
+        for entry in dir.flatten() {
+            let Some(pid) = entry
+                .file_name()
+                .to_str()
+                .and_then(|s| s.parse::<u32>().ok())
+            else {
+                continue;
+            };
+            let Ok(stat) = std::fs::read_to_string(format!("/proc/{pid}/stat")) else {
+                continue;
+            };
+            // ppid is the second field after the parenthesized comm
+            let Some((_, rest)) = stat.rsplit_once(')') else {
+                continue;
+            };
+            let mut fields = rest.split_whitespace();
+            let state = fields.next();
+            let Some(ppid) = fields.next().and_then(|p| p.parse::<u32>().ok()) else {
+                continue;
+            };
+            if ppid == self_pid && state != Some("Z") {
+                // SAFETY: plain syscall
+                unsafe { libc::kill(pid as i32, libc::SIGKILL) };
+                found = true;
+            }
+        }
+        if !found {
+            break;
+        }
+        // Give the kills a moment: children of the killed processes reparent
+        // to us and are caught by the next iteration.
+        std::thread::sleep(Duration::from_millis(20));
+        // Reap the zombies so they vanish from the next scan.
+        // SAFETY: plain syscall
+        while unsafe { libc::waitpid(-1, std::ptr::null_mut(), libc::WNOHANG) } > 0 {}
+    }
 }
 
 async fn run_worker_process(exe: &Path, config_arg: &str, index: usize) -> BlockReport {
@@ -796,8 +896,10 @@ fn join_error_message(err: tokio::task::JoinError) -> String {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn print_block_report(
     report: &BlockReport,
+    label: &str,
     tag_w: usize,
     out_w: usize,
     style: &Style,
@@ -820,7 +922,7 @@ fn print_block_report(
                 used_now
                     .entry(icon.clone())
                     .or_default()
-                    .insert(report.name.clone());
+                    .insert(label.to_string());
             }
         }
         LiveVerdict::RenderError {
@@ -837,7 +939,7 @@ fn print_block_report(
                 used_now
                     .entry(icon.clone())
                     .or_default()
-                    .insert(report.name.clone());
+                    .insert(label.to_string());
             }
             let fix = if error.contains("Placeholder") {
                 Some(
@@ -977,12 +1079,17 @@ fn print_icon_table(
         base_map.get(icon).map(|found| (found, Provenance::Base))
     };
 
-    // may-use: documented icons of each configured block type
+    // may-use: documented icons of each configured block type, attributed to
+    // each instance's label
+    let labels = instance_labels(block_names);
     let mut may_use: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
-    for name in block_names {
+    for (index, name) in block_names.iter().enumerate() {
         if let Ok(i) = BLOCK_ICONS.binary_search_by_key(&name.as_str(), |(block, _)| block) {
             for icon in BLOCK_ICONS[i].1 {
-                may_use.entry(icon).or_default().push(name);
+                may_use
+                    .entry(icon)
+                    .or_default()
+                    .push(labels[index].as_str());
             }
         }
     }
@@ -1397,7 +1504,7 @@ impl FontCheck {
                 return GlyphFont::Missing;
             }
             match fc_match(&self.pattern, Some(&charset)) {
-                Some(family) if family == self.base_family => GlyphFont::Base,
+                Some(family) if family_eq(&family, &self.base_family) => GlyphFont::Base,
                 Some(family) => {
                     // fc-match prints a comma-separated family list; if any
                     // member is one of the configured families — by name, or
@@ -1407,10 +1514,11 @@ impl FontCheck {
                     // job, not a surprise.
                     let members: Vec<&str> = family.split(',').collect();
                     match self.families.iter().find(|(name, resolved)| {
-                        members.contains(&name.as_str())
-                            || resolved
-                                .as_ref()
-                                .is_some_and(|r| r.split(',').any(|m| members.contains(&m)))
+                        members.iter().any(|m| family_eq(m, name))
+                            || resolved.as_ref().is_some_and(|r| {
+                                r.split(',')
+                                    .any(|rm| members.iter().any(|m| family_eq(m, rm)))
+                            })
                     }) {
                         Some((name, _)) => GlyphFont::Configured(name.clone()),
                         None => GlyphFont::Fallback(family),
@@ -1420,6 +1528,11 @@ impl FontCheck {
             }
         })
     }
+}
+
+/// Fontconfig treats family names case-insensitively; compare like it does.
+fn family_eq(a: &str, b: &str) -> bool {
+    a.eq_ignore_ascii_case(b)
 }
 
 /// Fontconfig's generic aliases: asking for these by design resolves to some
@@ -1645,7 +1758,6 @@ struct FormatUse {
 }
 
 struct BlockInfo {
-    name: String,
     formats: Vec<FormatUse>,
 }
 
@@ -1656,14 +1768,9 @@ fn collect_blocks(raw: &toml::Value) -> Vec<BlockInfo> {
     blocks
         .iter()
         .map(|block| {
-            let name = block
-                .get("block")
-                .and_then(|v| v.as_str())
-                .unwrap_or("<unknown>")
-                .to_string();
             let mut formats = Vec::new();
             collect_formats(block, &mut formats);
-            BlockInfo { name, formats }
+            BlockInfo { formats }
         })
         .collect()
 }
@@ -1816,8 +1923,16 @@ mod tests {
         let overrides = raw_block_overrides(&raw, &mut problems);
         assert!(problems.is_empty());
         assert_eq!(overrides.len(), 1);
-        assert_eq!(overrides[0].0, "time");
+        assert_eq!(overrides[0].0, 0);
         assert!(matches!(&overrides[0].1["time"], Icon::Single(s) if s == "CUSTOM"));
+    }
+
+    #[test]
+    fn instance_labels_disambiguate_duplicates() {
+        let names = ["time".to_string(), "cpu".to_string(), "time".to_string()];
+        assert_eq!(instance_labels(&names), ["time#1", "cpu", "time#3"]);
+        let unique = ["time".to_string(), "cpu".to_string()];
+        assert_eq!(instance_labels(&unique), ["time", "cpu"]);
     }
 
     #[test]

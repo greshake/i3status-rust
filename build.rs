@@ -36,8 +36,15 @@ fn generate_block_icons() {
                     None if doc.is_empty() => (),
                     None => break,
                 }
-            } else if doc == "# Icons Used" {
-                in_section = true;
+            } else if let Some(heading) = doc.strip_prefix('#') {
+                // Accept the heading variants that exist in the tree:
+                // "# Icons Used", "#  Icons Used", "# Used Icons"
+                let normalized = heading.split_whitespace().collect::<Vec<_>>().join(" ");
+                if normalized.eq_ignore_ascii_case("icons used")
+                    || normalized.eq_ignore_ascii_case("used icons")
+                {
+                    in_section = true;
+                }
             }
         }
         if !icons.is_empty() {
