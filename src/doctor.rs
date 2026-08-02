@@ -56,56 +56,6 @@ use crate::util;
 use crate::widget::Widget;
 use crate::{Request, RequestCmd};
 
-include!(concat!(env!("OUT_DIR"), "/block_icons.rs"));
-include!(concat!(env!("OUT_DIR"), "/block_icon_keys.rs"));
-include!(concat!(env!("OUT_DIR"), "/block_format_defaults.rs"));
-include!(concat!(env!("OUT_DIR"), "/block_icon_format_scopes.rs"));
-include!(concat!(env!("OUT_DIR"), "/block_icon_configs.rs"));
-
-/// The format keys an icon is scoped to (state-specific formats). Empty =
-/// the icon can be rendered by any of the block's formats.
-fn icon_format_scopes(block_type: &str, icon: &str) -> Vec<&'static str> {
-    match BLOCK_ICON_FORMAT_SCOPES.binary_search_by_key(&block_type, |(block, _)| block) {
-        Ok(i) => BLOCK_ICON_FORMAT_SCOPES[i]
-            .1
-            .iter()
-            .filter(|(name, _)| *name == icon)
-            .map(|(_, key)| *key)
-            .collect(),
-        Err(_) => Vec::new(),
-    }
-}
-
-/// (format key, default kind, default value) rows for a block type.
-fn format_defaults_for(block_type: &str) -> &'static [(&'static str, &'static str, &'static str)] {
-    match BLOCK_FORMAT_DEFAULTS.binary_search_by_key(&block_type, |(block, _)| block) {
-        Ok(i) => BLOCK_FORMAT_DEFAULTS[i].1,
-        Err(_) => &[],
-    }
-}
-
-/// Config keys that rename a canonical icon for a block type.
-fn icon_config_renames(block_type: &str) -> &'static [(&'static str, &'static str)] {
-    match BLOCK_ICON_CONFIGS.binary_search_by_key(&block_type, |(block, _)| block) {
-        Ok(i) => BLOCK_ICON_CONFIGS[i].1,
-        Err(_) => &[],
-    }
-}
-
-/// The placeholder keys a block type provides the given icon name under,
-/// according to the statically scanned `"key" => Value::icon("name")` pairs.
-fn icon_keys_for(block_type: &str, icon: &str) -> Vec<&'static str> {
-    match BLOCK_ICON_KEYS.binary_search_by_key(&block_type, |(block, _)| block) {
-        Ok(i) => BLOCK_ICON_KEYS[i]
-            .1
-            .iter()
-            .filter(|(_, name)| *name == icon)
-            .map(|(key, _)| *key)
-            .collect(),
-        Err(_) => Vec::new(),
-    }
-}
-
 /// How long a block gets to produce its first output.
 const LIVE_TIMEOUT: Duration = Duration::from_secs(10);
 
@@ -389,10 +339,6 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
     // What is known about each block instance's ability to render each icon;
     // starts from static format analysis, refined by the live render.
     let mut icon_relevant: HashMap<String, IconRelevance> = HashMap::new();
-    // Config keys that rename a canonical icon (e.g. toggle's icon_on):
-    // label -> [(custom name, canonical name)]
-    let mut renames: HashMap<String, Vec<(String, String)>> = HashMap::new();
-    let raw_blocks = raw.get("block").and_then(|v| v.as_array());
 
     let parsed: Option<Config> = match util::deserialize_toml_file::<Config, _>(&config_path) {
         Ok(config) => Some(config),
@@ -406,30 +352,29 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
     };
 
     // may-use: the icons each block instance may request in some state,
-    // attributed by label. Exact for contract blocks (only icons reachable
-    // from the instance's effective formats); the documented per-type icon
-    // list with renames applied for legacy blocks.
+    // attributed by label: only the icons reachable from the instance's
+    // effective formats, per its prepared contract.
     let mut may_use: BTreeMap<String, Vec<String>> = BTreeMap::new();
     // Any configured block declares an open dynamic icon source reachable
     // from its formats (custom/custom_dbus with $icon).
     let mut dynamic_blocks = false;
-    // Block types still analyzed with the legacy generated tables.
-    let mut legacy_types: Vec<String> = Vec::new();
 
     for (index, info) in collect_blocks(&raw).iter().enumerate() {
-        let table = raw_blocks.and_then(|blocks| blocks.get(index));
         let label = labels[index].clone();
 
-        // The prepared contract, for migrated blocks with a valid config.
+        // The prepared contract of this block instance.
         let plan = parsed
             .as_ref()
             .and_then(|config| config.blocks.get(index))
-            .and_then(|entry| entry.config.plan())
-            .and_then(|result| match result {
+            .and_then(|entry| match entry.config.plan() {
                 Ok(plan) => Some(plan),
                 Err(err) => {
+                    // The block's own configuration did not deserialize (the
+                    // bar would show a configuration error in its place).
                     problems.push(Problem {
-                        diagnosis: format!("Block `{label}` failed to prepare: {err}"),
+                        diagnosis: format!(
+                            "Block `{label}` cannot be prepared from its configuration: {err}"
+                        ),
                         fix: None,
                     });
                     None
@@ -454,43 +399,12 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                 StaticAnalysis::Contract(analysis)
             }
             None => {
-                // Only report a missing contract when the typed config was
-                // available: with an invalid config everything degrades to
-                // legacy analysis and the validation problem explains why.
-                if parsed.is_some()
-                    && !matches!(block_names[index].as_str(), "custom" | "custom_dbus")
-                    && !legacy_types.contains(&block_names[index])
-                {
-                    legacy_types.push(block_names[index].clone());
-                }
-                // The typed config was unavailable (config does not
-                // validate): stay conservative about dynamic blocks.
-                dynamic_blocks |= parsed.is_none()
-                    && matches!(block_names[index].as_str(), "custom" | "custom_dbus");
-                for (config_key, canonical) in icon_config_renames(&block_names[index]) {
-                    if let Some(custom) = table
-                        .and_then(|t| t.get(*config_key))
-                        .and_then(|v| v.as_str())
-                    {
-                        renames
-                            .entry(label.clone())
-                            .or_default()
-                            .push((custom.to_string(), (*canonical).to_string()));
-                    }
-                }
-                if let Ok(i) = BLOCK_ICONS
-                    .binary_search_by_key(&block_names[index].as_str(), |(block, _)| block)
-                {
-                    for icon in BLOCK_ICONS[i].1 {
-                        let effective = renames
-                            .get(&label)
-                            .and_then(|r| r.iter().find(|(_, canonical)| canonical == icon))
-                            .map(|(custom, _)| custom.clone())
-                            .unwrap_or_else(|| (*icon).to_string());
-                        may_use.entry(effective).or_default().push(label.clone());
-                    }
-                }
-                StaticAnalysis::Legacy(StaticRelevance::compute(&block_names[index], table))
+                // No plan (the whole config or this block's table is
+                // invalid): stay conservative — nothing can be proven
+                // unused, and dynamic usage cannot be ruled out for the
+                // custom family.
+                dynamic_blocks |= matches!(block_names[index].as_str(), "custom" | "custom_dbus");
+                StaticAnalysis::Unknown
             }
         };
         // Errors render through the shared error-widget plan with the
@@ -540,16 +454,6 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                     .insert(label.clone());
             }
         }
-    }
-
-    if !legacy_types.is_empty() {
-        legacy_types.sort_unstable();
-        println!(
-            "note: block type(s) without a prepared contract yet ({}): static icon\n   \
-             analysis for them uses the documented icon lists (reduced fidelity).",
-            legacy_types.join(", ")
-        );
-        println!();
     }
 
     let mut live_ran = false;
@@ -647,24 +551,10 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                         {
                             live_reported.insert((label.clone(), icon.to_string()));
                         }
-                        // rendering failed, possibly on an icon: for legacy
-                        // blocks everything stays relevant. A prepared
-                        // contract already names exactly what can render —
-                        // including whatever the render failed on — so it
-                        // stays authoritative.
-                        if let Some(relevance) = icon_relevant.get_mut(&label)
-                            && matches!(relevance.static_rel, StaticAnalysis::Legacy(_))
-                        {
-                            let mut sets = HashMap::new();
-                            sets.insert(
-                                "format".to_string(),
-                                FormatSet {
-                                    wildcard: true,
-                                    ..Default::default()
-                                },
-                            );
-                            relevance.static_rel = StaticAnalysis::Legacy(StaticRelevance { sets });
-                        }
+                        // Rendering failed, possibly on an icon. The
+                        // prepared contract already names exactly what can
+                        // render — including whatever the render failed on —
+                        // so the static analysis stays authoritative.
                     }
                     _ => (),
                 }
@@ -693,12 +583,10 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
         global_overrides: &global_overrides,
         block_overrides: &block_overrides,
         builtin: &builtin,
-        block_names: &block_names,
         used_now: &used_now,
         may_use: &may_use,
         dynamic_blocks,
         icon_relevant: &icon_relevant,
-        renames: &renames,
         live_reported: &live_reported,
         live_ran,
         font_check: &mut font_check,
@@ -1480,19 +1368,6 @@ enum Provenance {
     Local(String),
 }
 
-/// The effective reachable-placeholder set of every primary format of a
-/// block instance: configured formats are parsed; not-configured (or partially
-/// configured) ones use their per-key defaults from the generated table,
-/// following `inherits` chains. Unknown defaults degrade to a wildcard.
-/// Reachable content of one format: placeholder names, direct ^icon_* names,
-/// and whether the format is unknown (wildcard).
-#[derive(Default)]
-struct FormatSet {
-    placeholders: HashSet<String>,
-    icons: HashSet<String>,
-    wildcard: bool,
-}
-
 /// Authoritative static analysis derived from a block's prepared contract
 /// (see [`crate::block_plan`]). Runtime and doctor consume the same effective
 /// formats and declared icon choices, so this cannot drift from what the
@@ -1588,11 +1463,13 @@ fn compiled_group_can_fail(template: &format_template::FormatTemplate) -> bool {
     })
 }
 
-/// The static side of a block instance's icon analysis: exact for blocks
-/// with prepared contracts, generated-table heuristics for the rest.
+/// The static side of a block instance's icon analysis.
 enum StaticAnalysis {
+    /// From the block's prepared contract: exact.
     Contract(PlanAnalysis),
-    Legacy(StaticRelevance),
+    /// No plan available (the configuration did not deserialize): nothing
+    /// can be proven unused, so everything stays relevant.
+    Unknown,
 }
 
 impl StaticAnalysis {
@@ -1602,145 +1479,13 @@ impl StaticAnalysis {
         Self::Contract(PlanAnalysis::default())
     }
 
-    fn is_relevant(&self, icon: &str, block_type: &str) -> bool {
+    fn is_relevant(&self, icon: &str) -> bool {
         match self {
             // Open (dynamic) sources deliberately do not make arbitrary
             // names relevant: only live evidence can confirm those.
             Self::Contract(analysis) => analysis.required.contains(icon),
-            Self::Legacy(relevance) => relevance.is_relevant(icon, block_type),
+            Self::Unknown => true,
         }
-    }
-}
-
-struct StaticRelevance {
-    /// format key -> reachable content
-    sets: HashMap<String, FormatSet>,
-}
-
-impl StaticRelevance {
-    fn compute(block_type: &str, table: Option<&toml::Value>) -> Self {
-        let defaults = format_defaults_for(block_type);
-        let mut keys: HashSet<String> = defaults.iter().map(|(k, ..)| (*k).to_string()).collect();
-        if let Some(table) = table.and_then(|t| t.as_table()) {
-            for key in table.keys() {
-                if matches!(format_key_kind(key), Some(false)) {
-                    keys.insert(key.clone());
-                }
-            }
-        }
-        if keys.is_empty() {
-            // no metadata at all: stay conservative
-            let mut sets = HashMap::new();
-            sets.insert(
-                "format".to_string(),
-                FormatSet {
-                    wildcard: true,
-                    ..Default::default()
-                },
-            );
-            return Self { sets };
-        }
-        let mut sets = HashMap::new();
-        for key in &keys {
-            sets.insert(key.clone(), Self::effective(block_type, key, table, 0));
-        }
-        Self { sets }
-    }
-
-    /// The reachable placeholders of format `key`, considering the
-    /// configured value and the per-key default (with inheritance).
-    fn effective(
-        block_type: &str,
-        key: &str,
-        table: Option<&toml::Value>,
-        depth: usize,
-    ) -> FormatSet {
-        if depth > 4 {
-            return FormatSet {
-                wildcard: true,
-                ..Default::default()
-            };
-        }
-        let configured = table.and_then(|t| t.as_table()).and_then(|t| t.get(key));
-        match configured {
-            Some(toml::Value::String(s)) => template_set(s),
-            Some(toml::Value::Table(parts)) => {
-                let mut set = FormatSet::default();
-                if let Some(toml::Value::String(s)) = parts.get("short") {
-                    set.merge(template_set(s));
-                }
-                match parts.get("full") {
-                    Some(toml::Value::String(s)) => set.merge(template_set(s)),
-                    // partial table: the full part comes from this key's
-                    // OWN default, not the block-wide default
-                    _ => set.merge(Self::default_of(block_type, key, table, depth)),
-                }
-                set
-            }
-            _ => Self::default_of(block_type, key, table, depth),
-        }
-    }
-
-    fn default_of(
-        block_type: &str,
-        key: &str,
-        table: Option<&toml::Value>,
-        depth: usize,
-    ) -> FormatSet {
-        match format_defaults_for(block_type)
-            .iter()
-            .find(|(k, ..)| *k == key)
-        {
-            Some((_, "literal", value)) => template_set(value),
-            Some((_, "inherits", target)) => Self::effective(block_type, target, table, depth + 1),
-            // an Option format that is not configured has no format at all
-            Some((_, kind, _)) if kind.starts_with("optional") => FormatSet::default(),
-            _ => FormatSet {
-                wildcard: true,
-                ..Default::default()
-            },
-        }
-    }
-
-    fn is_relevant(&self, icon: &str, block_type: &str) -> bool {
-        // The generated key table is complete (enforced at build time), so
-        // an icon is reachable exactly when one of its placeholders is
-        // referenced by a format it is scoped to, or a format names it as a
-        // direct ^icon token (e.g. default formats of speedtest and net).
-        // Icons with no known key (e.g. dynamic custom-block names) have no
-        // static pathway; the live test and used_now cover them.
-        let icon_keys = icon_keys_for(block_type, icon);
-        let scopes = icon_format_scopes(block_type, icon);
-        self.sets
-            .iter()
-            .filter(|(key, _)| scopes.is_empty() || scopes.contains(&key.as_str()))
-            .any(|(_, set)| {
-                (set.wildcard && !icon_keys.is_empty())
-                    || set.icons.contains(icon)
-                    || icon_keys.iter().any(|k| set.placeholders.contains(*k))
-            })
-    }
-}
-
-impl FormatSet {
-    fn merge(&mut self, other: FormatSet) {
-        self.placeholders.extend(other.placeholders);
-        self.icons.extend(other.icons);
-        self.wildcard |= other.wildcard;
-    }
-}
-
-/// The reachable placeholders and direct icons of one template string.
-fn template_set(s: &str) -> FormatSet {
-    let mut placeholders = Vec::new();
-    let mut icons = Vec::new();
-    if let Ok(template) = format_parse::parse_full(s) {
-        collect_reachable(&template, &mut placeholders, &mut icons);
-    }
-    FormatSet {
-        placeholders: placeholders.into_iter().collect(),
-        icons: icons.into_iter().collect(),
-        wildcard: false,
     }
 }
 
@@ -1783,8 +1528,8 @@ struct IconRelevance {
 }
 
 impl IconRelevance {
-    fn is_relevant(&self, icon: &str, block_type: &str) -> bool {
-        self.static_rel.is_relevant(icon, block_type)
+    fn is_relevant(&self, icon: &str) -> bool {
+        self.static_rel.is_relevant(icon)
             || self
                 .error_rel
                 .as_ref()
@@ -1798,7 +1543,6 @@ struct IconTableInput<'a> {
     global_overrides: &'a HashMap<String, Icon>,
     block_overrides: &'a [(String, HashMap<String, Icon>)],
     builtin: &'a HashMap<String, Icon>,
-    block_names: &'a [String],
     used_now: &'a BTreeMap<String, HashSet<String>>,
     /// Icon name -> labels of block instances that may request it in some
     /// state (computed in [`run`]: exact per-instance reachability for
@@ -1809,8 +1553,6 @@ struct IconTableInput<'a> {
     dynamic_blocks: bool,
     /// Per block label: what is known about its ability to render each icon.
     icon_relevant: &'a HashMap<String, IconRelevance>,
-    /// Per block label: config-driven icon renames [(custom, canonical)].
-    renames: &'a HashMap<String, Vec<(String, String)>>,
     /// (label, icon) pairs already diagnosed by a live render error.
     live_reported: &'a HashSet<(String, String)>,
     /// Whether the live block test ran (skipping it makes some checks
@@ -1828,12 +1570,10 @@ fn print_icon_table(input: IconTableInput) {
         global_overrides,
         block_overrides,
         builtin,
-        block_names,
         used_now,
         may_use,
         dynamic_blocks,
         icon_relevant,
-        renames,
         live_reported,
         live_ran,
         font_check,
@@ -1861,13 +1601,6 @@ fn print_icon_table(input: IconTableInput) {
         }
         base_map.get(icon).map(|found| (found, Provenance::Base))
     };
-
-    let labels = instance_labels(block_names);
-    let label_types: HashMap<String, String> = labels
-        .iter()
-        .cloned()
-        .zip(block_names.iter().cloned())
-        .collect();
 
     for name in global_overrides.keys() {
         if !base_map.contains_key(name)
@@ -1941,17 +1674,12 @@ fn print_icon_table(input: IconTableInput) {
         let mut groups: BTreeMap<Provenance, Vec<String>> = BTreeMap::new();
         for (block, is_may) in users {
             // A block whose formats cannot render this icon cannot error on
-            // it; skip latent (may) findings for it. Renamed icons (toggle's
-            // icon_on="custom") are canonicalized for the key/scope lookups.
-            let block_type = label_types.get(block).map(String::as_str).unwrap_or(block);
-            let canonical_name = renames
-                .get(block)
-                .and_then(|r| r.iter().find(|(custom, _)| custom == icon_name))
-                .map(|(_, canonical)| canonical.as_str())
-                .unwrap_or(icon_name);
+            // it; skip latent (may) findings for it. Configuration-derived
+            // names (toggle's icon_on="custom") appear in the contract under
+            // their effective names, so no canonicalization is needed.
             let relevant = icon_relevant
                 .get(block)
-                .map(|r| r.is_relevant(canonical_name, block_type))
+                .map(|r| r.is_relevant(icon_name))
                 .unwrap_or(true);
             match resolve(icon_name, block) {
                 // A block whose formats cannot render this icon will not put
@@ -2787,23 +2515,10 @@ fn group_can_fail(template: &format_parse::FormatTemplate) -> bool {
 mod tests {
     use super::*;
 
-    fn relevance(config: &str, index: usize, block_type: &str) -> StaticRelevance {
-        let raw: toml::Value = toml::from_str(config).unwrap();
-        let table = raw
-            .get("block")
-            .and_then(|b| b.as_array())
-            .and_then(|b| b.get(index));
-        StaticRelevance::compute(block_type, table)
-    }
-
     /// The contract-based analysis of block `index` in `config`.
     fn contract(config: &str, index: usize) -> PlanAnalysis {
         let config: Config = toml::from_str(config).unwrap();
-        let plan = config.blocks[index]
-            .config
-            .plan()
-            .expect("block has no prepared contract")
-            .expect("prepare failed");
+        let plan = config.blocks[index].config.plan().expect("prepare failed");
         analyze_plan(&plan)
     }
 
@@ -2958,12 +2673,6 @@ mod tests {
     }
 
     #[test]
-    fn contract_unmigrated_blocks_fall_back_to_legacy() {
-        let config: Config = toml::from_str("[[block]]\nblock = \"cpu\"").unwrap();
-        assert!(config.blocks[0].config.plan().is_none());
-    }
-
-    #[test]
     fn font_directive_parsing() {
         assert_eq!(
             parse_font_directive("pango:DejaVu Sans Mono, Font Awesome 6 Free 12"),
@@ -2992,35 +2701,6 @@ mod tests {
         );
         assert_eq!(parse_font_directive(""), Vec::<String>::new());
         assert_eq!(parse_font_directive("pango:"), Vec::<String>::new());
-    }
-
-    #[test]
-    fn block_icons_table_is_generated() {
-        assert!(!BLOCK_ICONS.is_empty());
-        let battery = BLOCK_ICONS
-            .iter()
-            .find(|(block, _)| *block == "battery")
-            .expect("battery block missing from generated table");
-        assert!(battery.1.contains(&"bat_charging"));
-        // the table must be sorted for binary_search_by_key
-        assert!(BLOCK_ICONS.windows(2).all(|w| w[0].0 <= w[1].0));
-
-        // completeness regressions: icons the docs historically missed, now
-        // covered by the doc lists plus the source literal scan
-        let icons_of = |block: &str| {
-            BLOCK_ICONS
-                .iter()
-                .find(|(b, _)| *b == block)
-                .unwrap_or_else(|| panic!("{block} missing from BLOCK_ICONS"))
-                .1
-        };
-        assert!(icons_of("music").contains(&"music_pause"));
-        assert!(icons_of("weather").contains(&"weather_default"));
-        assert!(icons_of("bluetooth").contains(&"bat"));
-        // heading variants: "#  Icons Used" and "# Used Icons"
-        assert!(icons_of("sound").contains(&"volume"));
-        assert!(icons_of("uptime").contains(&"uptime"));
-        assert!(icons_of("xrandr").contains(&"xrandr"));
     }
 
     #[test]
@@ -3063,95 +2743,6 @@ mod tests {
     }
 
     #[test]
-    fn table_form_formats_and_error_formats() {
-        let config = r#"
-            [[block]]
-            block = "time"
-            error_format = "$full_error_message"
-            [block.format]
-            full = " $timestamp "
-            short = " t "
-
-            [[block]]
-            block = "time"
-            error_format = "$full_error_message"
-            "#;
-        // table-form format with `full` is an explicit icon-free primary
-        // format: time (under $icon) is unreachable
-        assert!(!relevance(config, 0, "time").is_relevant("time", "time"));
-        // error_format alone is not evidence of a primary format: the
-        // default time format (which renders $icon) still applies
-        assert!(relevance(config, 1, "time").is_relevant("time", "time"));
-    }
-
-    #[test]
-    fn partial_table_format_inherits_default() {
-        // no `full` member: the full part comes from the KEY's own default —
-        // time's default format renders $icon, memory's format_alt default
-        // is empty
-        let config = r#"
-            [[block]]
-            block = "time"
-            [block.format]
-            short = " SHORT "
-
-            [[block]]
-            block = "memory"
-            format = " MEM "
-            [block.format_alt]
-            short = " S "
-            "#;
-        assert!(relevance(config, 0, "time").is_relevant("time", "time"));
-        let memory = relevance(config, 1, "memory");
-        assert!(!memory.is_relevant("memory_mem", "memory"));
-        assert!(!memory.is_relevant("memory_swap", "memory"));
-    }
-
-    #[test]
-    fn default_format_icon_tokens_are_required() {
-        // speedtest's default format renders ^icon_ping etc. directly
-        let config = r#"
-            [[block]]
-            block = "speedtest"
-            "#;
-        let speedtest = relevance(config, 0, "speedtest");
-        assert!(speedtest.is_relevant("ping", "speedtest"));
-        assert!(speedtest.is_relevant("net_down", "speedtest"));
-        // an explicit format without the tokens drops them
-        let config = r#"
-            [[block]]
-            block = "speedtest"
-            format = " $ping "
-            "#;
-        assert!(!relevance(config, 0, "speedtest").is_relevant("net_down", "speedtest"));
-    }
-
-    #[test]
-    fn state_scopes_pomodoro_and_vpn() {
-        let config = r#"
-            [[block]]
-            block = "pomodoro"
-            format = "$icon"
-            pomodoro_format = "$status_icon"
-            break_format = " brk "
-
-            [[block]]
-            block = "vpn"
-            format_connected = " $icon "
-            format_disconnected = " off "
-            format_connecting = " ... "
-            "#;
-        let pomodoro = relevance(config, 0, "pomodoro");
-        assert!(pomodoro.is_relevant("pomodoro_started", "pomodoro"));
-        assert!(!pomodoro.is_relevant("pomodoro_break", "pomodoro"));
-        assert!(!pomodoro.is_relevant("pomodoro_stopped", "pomodoro"));
-        let vpn = relevance(config, 1, "vpn");
-        assert!(vpn.is_relevant("net_vpn", "vpn"));
-        assert!(!vpn.is_relevant("net_wired", "vpn"));
-        assert!(!vpn.is_relevant("net_wireless", "vpn"));
-    }
-
-    #[test]
     fn pango_families_from_icons_format() {
         assert_eq!(
             pango_font_families("<span font_family='Noto Color Emoji'>{icon}</span>"),
@@ -3162,39 +2753,6 @@ mod tests {
             ["Font Awesome 6 Free"]
         );
         assert!(pango_font_families("{icon}").is_empty());
-    }
-
-    #[test]
-    fn state_scoped_formats() {
-        // battery's bat_charging is scoped to charging_format and
-        // bat_not_available to missing_format: making those literal-only
-        // removes the requirement while `format` keeps bat required
-        let config = r#"
-            [[block]]
-            block = "battery"
-            format = " $icon $percentage "
-            charging_format = " chg "
-            missing_format = " none "
-            "#;
-        let battery = relevance(config, 0, "battery");
-        assert!(battery.is_relevant("bat", "battery"));
-        assert!(!battery.is_relevant("bat_charging", "battery"));
-        assert!(!battery.is_relevant("bat_not_available", "battery"));
-
-        // charging_format inherits the configured `format` when unset
-        let config = r#"
-            [[block]]
-            block = "battery"
-            format = " $icon $percentage "
-            "#;
-        assert!(relevance(config, 0, "battery").is_relevant("bat_charging", "battery"));
-
-        let config = r#"
-            [[block]]
-            block = "battery"
-            format = " $percentage "
-            "#;
-        assert!(!relevance(config, 0, "battery").is_relevant("bat_charging", "battery"));
     }
 
     #[test]
@@ -3230,30 +2788,6 @@ mod tests {
     }
 
     #[test]
-    fn helper_created_icon_keys_are_mapped() {
-        // music's `"next" => new_btn("music_next", ...)` goes through a
-        // helper; the generated table must still map it
-        assert!(icon_keys_for("music", "music_next").contains(&"next"));
-        assert!(icon_keys_for("music", "music_prev").contains(&"prev"));
-        // direct form still works
-        assert!(icon_keys_for("memory", "memory_swap").contains(&"icon_swap"));
-    }
-
-    #[test]
-    fn icon_refs_do_not_make_unmapped_icons_relevant() {
-        let config = r#"
-            [[block]]
-            block = "speedtest"
-            format = " ^icon_ping $ping "
-            "#;
-        // ^icon_ping names one specific icon; net_up/net_down (token icons
-        // with no placeholder) must not become relevant because of it
-        let speedtest = relevance(config, 0, "speedtest");
-        assert!(!speedtest.is_relevant("net_up", "speedtest"));
-        assert!(!speedtest.is_relevant("net_down", "speedtest"));
-    }
-
-    #[test]
     fn per_icon_live_relevance() {
         let live = LiveRelevance {
             rendered: ["memory_swap".to_string()].into_iter().collect(),
@@ -3282,43 +2816,6 @@ mod tests {
         // { OK | $icon }: the icon branch never evaluated
         assert!(!none_rendered.is_relevant("time"));
         assert!(!none_rendered.is_relevant("anything_else"));
-    }
-
-    #[test]
-    fn static_icon_relevance() {
-        let config = r#"
-            [[block]]
-            block = "time"
-            format = " $timestamp "
-
-            [[block]]
-            block = "time"
-            format = " $icon $timestamp "
-
-            [[block]]
-            block = "battery"
-
-            [[block]]
-            block = "net"
-            format = " ^icon_net_wireless $ssid "
-
-            [[block]]
-            block = "memory"
-            format = " $icon_swap $mem_used_percents "
-            "#;
-        // explicit format without icons: icons are irrelevant
-        assert!(!relevance(config, 0, "time").is_relevant("time", "time"));
-        // explicit format with $icon placeholder: time travels under $icon
-        assert!(relevance(config, 1, "time").is_relevant("time", "time"));
-        // no explicit format: the defaults render icons
-        assert!(relevance(config, 2, "battery").is_relevant("bat", "battery"));
-        // a ^icon_* reference names one specific icon: it does not make
-        // other icons relevant (they are checked via used_now instead)
-        assert!(!relevance(config, 3, "net").is_relevant("net_up", "net"));
-        // per-icon: $icon_swap requires memory_swap but not memory_mem
-        let memory = relevance(config, 4, "memory");
-        assert!(memory.is_relevant("memory_swap", "memory"));
-        assert!(!memory.is_relevant("memory_mem", "memory"));
     }
 
     #[test]

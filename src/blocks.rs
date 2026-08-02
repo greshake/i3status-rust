@@ -84,6 +84,21 @@ macro_rules! define_blocks {
                 }
             }
 
+            /// The prepared output contract of this block instance (see
+            /// [`crate::block_plan`]). Every block module must define
+            /// `prepare(config) -> Result<Arc<BlockPlan>>`; a block without
+            /// one fails to compile here.
+            pub fn plan(&self) -> Result<Arc<crate::block_plan::BlockPlan>> {
+                match self {
+                    $(
+                        $(#[cfg(feature = $feat)])?
+                        #[allow(deprecated)]
+                        Self::$block(config) => $block::prepare(config),
+                    )*
+                    Self::Err(_name, err) => Err(err.clone()),
+                }
+            }
+
             pub fn spawn(self, api: CommonApi, futures: &mut FuturesUnordered<BoxedFuture<()>>) {
                 match self {
                     $(
@@ -217,25 +232,6 @@ define_blocks!(
     weather,
     xrandr,
 );
-
-impl BlockConfig {
-    /// The prepared output contract of this block instance (see
-    /// [`crate::block_plan`]). `None` means the block has not been migrated
-    /// to a prepared contract yet; `--doctor` falls back to reduced-fidelity
-    /// legacy analysis for it.
-    pub fn plan(&self) -> Option<Result<Arc<crate::block_plan::BlockPlan>>> {
-        Some(match self {
-            Self::battery(config) => battery::prepare(config),
-            Self::custom(config) => custom::prepare(config),
-            Self::custom_dbus(config) => custom_dbus::prepare(config),
-            Self::kdeconnect(config) => kdeconnect::prepare(config),
-            Self::toggle(config) => toggle::prepare(config),
-            Self::vpn(config) => vpn::prepare(config),
-            Self::weather(config) => weather::prepare(config),
-            _ => return None,
-        })
-    }
-}
 
 /// An error which originates from a block
 #[derive(Debug, thiserror::Error)]
