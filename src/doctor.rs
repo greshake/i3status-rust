@@ -338,9 +338,6 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
     // type get distinct labels ("time#1", "time#2") so per-instance
     // icons_overrides are analyzed separately.
     let mut used_now: BTreeMap<String, HashSet<String>> = BTreeMap::new();
-    // What is known about each block instance's ability to render each icon;
-    // starts from static format analysis, refined by the live render.
-    let mut icon_relevant: HashMap<String, IconRelevance> = HashMap::new();
 
     let parsed: Option<Config> = match util::deserialize_toml_file::<Config, _>(&config_path) {
         Ok(config) => Some(config),
@@ -386,28 +383,20 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                 }
             });
 
-        let static_rel = match &plan {
-            Some(plan) => {
-                let analysis = analyze_plan(plan);
-                // Reachable direct ^icon_* tokens in effective formats
-                // (including defaults) are certain usage.
-                for icon in &analysis.direct {
-                    used_now
-                        .entry(icon.clone())
-                        .or_default()
-                        .insert(label.clone());
-                }
-                for icon in &analysis.required {
-                    may_use.entry(icon.clone()).or_default().push(label.clone());
-                }
-                StaticAnalysis::Contract(analysis)
+        if let Some(plan) = &plan {
+            let analysis = analyze_plan(plan);
+            // Direct ^icon_* tokens in effective formats (including
+            // defaults) count the same as declared icons: in use.
+            for icon in &analysis.direct {
+                used_now
+                    .entry(icon.clone())
+                    .or_default()
+                    .insert(label.clone());
             }
-            None => {
-                // No plan (the whole config or this block's table is
-                // invalid): stay conservative, nothing is claimed unused.
-                StaticAnalysis::Unknown
+            for icon in &analysis.required {
+                may_use.entry(icon.clone()).or_default().push(label.clone());
             }
-        };
+        }
         // Errors render through the shared error-widget plan with the
         // block's effective error formats; whatever those formats reach
         // (typically the conditional `refresh` restart icon) is a latent
@@ -442,14 +431,6 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                 }
             }
         }
-        icon_relevant.insert(
-            label.clone(),
-            IconRelevance {
-                static_rel,
-                error_rel,
-                live: None,
-            },
-        );
     }
 
     let mut live_ran = false;
@@ -466,19 +447,18 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                 LIVE_TIMEOUT.as_secs()
             );
             let reports = run_live(config_arg, config.blocks.len(), &mut problems);
-            let tag_w = reports
-                .iter()
-                .map(|r| format!("[{}] {}", r.index + 1, r.name).len())
-                .max()
-                .unwrap_or(0);
+            let num_w = format!("{}", reports.len()).len().max("#".len());
+            let name_w = column_width("Name", reports.iter().map(|r| r.name.as_str()));
             let out_w = reports
                 .iter()
-                .filter_map(|r| match &r.verdict {
-                    LiveVerdict::Rendered { text, .. } => Some(text.chars().count() + 2),
-                    _ => None,
-                })
+                .map(|r| UnicodeWidthStr::width(output_cell(&r.verdict).0.as_str()))
+                .chain(["Output".len()])
                 .max()
                 .unwrap_or(0);
+            println!(
+                "{:>num_w$}  {:<name_w$}  {:<out_w$}  Icons used during this run",
+                "#", "Name", "Output"
+            );
             for report in &reports {
                 let label = labels
                     .get(report.index)
@@ -486,8 +466,6 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                     .unwrap_or_else(|| report.name.clone());
                 match &report.verdict {
                     LiveVerdict::Rendered {
-                        icons,
-                        provided_icons,
                         contract_violations,
                         ..
                     } => {
@@ -503,33 +481,11 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                                 ),
                             });
                         }
-                        let rendered: HashSet<String> = icons.iter().cloned().collect();
-                        let rendered_keys: HashSet<String> = provided_icons
-                            .iter()
-                            .filter(|(_, name)| rendered.contains(name))
-                            .map(|(key, _)| key.clone())
-                            .collect();
-                        let provided_keys: HashMap<String, String> = provided_icons
-                            .iter()
-                            .map(|(key, name)| (name.clone(), key.clone()))
-                            .collect();
-                        if let Some(relevance) = icon_relevant.get_mut(&label) {
-                            relevance.live = Some(LiveRelevance {
-                                rendered,
-                                provided_keys,
-                                rendered_keys,
-                            });
-                        }
                     }
                     LiveVerdict::Skipped(_) => {
                         // the bar would not spawn this block at all
                         // (if_command exited non-zero): nothing it could
                         // request — including its formats' direct ^icon refs
-                        if let Some(relevance) = icon_relevant.get_mut(&label) {
-                            relevance.static_rel = StaticAnalysis::none();
-                            relevance.error_rel = None;
-                            relevance.live = None;
-                        }
                         for users in may_use.values_mut() {
                             users.retain(|user| user != &label);
                         }
@@ -556,13 +512,14 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                 }
                 print_block_report(
                     report,
-                    &label,
-                    tag_w,
+                    num_w,
+                    name_w,
                     out_w,
                     &style,
                     &mut problems,
                     &mut used_now,
                     &prepared_errors,
+                    &label,
                 );
             }
             println!();
@@ -581,7 +538,6 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
         block_overrides: &block_overrides,
         used_now: &used_now,
         may_use: &may_use,
-        icon_relevant: &icon_relevant,
         live_reported: &live_reported,
         markup_labels: &markup_labels,
         font_check: &mut font_check,
@@ -1218,51 +1174,85 @@ fn join_error_message(err: tokio::task::JoinError) -> String {
 }
 
 #[allow(clippy::too_many_arguments)]
+/// The Output cell for one live verdict: (text, is_red).
+fn output_cell(verdict: &LiveVerdict) -> (String, bool) {
+    match verdict {
+        LiveVerdict::Rendered { text, .. } => (format!("\"{text}\""), false),
+        LiveVerdict::RenderError { error, .. } => (format!("RENDER ERROR: {error}"), true),
+        LiveVerdict::BlockError(error) => (format!("ERROR: {error}"), true),
+        LiveVerdict::Panicked(msg) => (format!("PANICKED: {msg}"), true),
+        LiveVerdict::Hidden => (
+            "(block hides itself — no data to show right now)".into(),
+            false,
+        ),
+        LiveVerdict::Finished => ("(finished without producing output)".into(), false),
+        LiveVerdict::NoOutput => (
+            format!(
+                "(no output within {}s — event-driven blocks may be waiting for an event; \
+                 probably fine)",
+                LIVE_TIMEOUT.as_secs()
+            ),
+            false,
+        ),
+        LiveVerdict::Skipped(reason) => (format!("(skipped: {reason})"), false),
+        LiveVerdict::IfCommandFailed(reason) => (format!("IF_COMMAND FAILED: {reason}"), true),
+        LiveVerdict::IfCommandTimeout(reason) => (
+            format!("(inconclusive: {reason}; the bar itself would wait for it)"),
+            false,
+        ),
+    }
+}
+
+/// Print one row of the live-test table and record its consequences
+/// (problems, live icon usage).
+#[allow(clippy::too_many_arguments)]
 fn print_block_report(
     report: &BlockReport,
-    label: &str,
-    tag_w: usize,
+    num_w: usize,
+    name_w: usize,
     out_w: usize,
     style: &Style,
     problems: &mut Vec<Problem>,
     used_now: &mut BTreeMap<String, HashSet<String>>,
     prepared_errors: &HashSet<String>,
+    label: &str,
 ) {
-    let tag = format!("[{}] {}", report.index + 1, report.name);
+    let (cell, red) = output_cell(&report.verdict);
+    let icons: &[String] = match &report.verdict {
+        LiveVerdict::Rendered { icons, .. } | LiveVerdict::RenderError { icons, .. } => icons,
+        _ => &[],
+    };
+    let icons_cell = if icons.is_empty() {
+        "-".to_string()
+    } else {
+        icons.join(", ")
+    };
+    // pad by display width: the cell may contain icon glyphs
+    let pad = out_w.saturating_sub(UnicodeWidthStr::width(cell.as_str()));
+    let line = format!(
+        "{:>num_w$}  {:<name_w$}  {cell}{:pad$}  {icons_cell}",
+        report.index + 1,
+        report.name,
+        ""
+    );
+    if red {
+        println!("{}{line}{}", style.red, style.reset);
+    } else {
+        println!("{line}");
+    }
+
+    for icon in icons {
+        used_now
+            .entry(icon.clone())
+            .or_default()
+            .insert(label.to_string());
+    }
+
     match &report.verdict {
-        LiveVerdict::Rendered { text, icons, .. } => {
-            let icon_note = if icons.is_empty() {
-                String::new()
-            } else {
-                format!("   (icons: {})", icons.join(", "))
-            };
-            let cell = format!("\"{text}\"");
-            // pad by chars: the cell may contain multi-byte glyphs
-            let pad = out_w.saturating_sub(cell.chars().count());
-            println!("{tag:<tag_w$} {cell}{:pad$}{icon_note}", "");
-            for icon in icons {
-                used_now
-                    .entry(icon.clone())
-                    .or_default()
-                    .insert(label.to_string());
-            }
-        }
         LiveVerdict::RenderError {
-            error,
-            provided,
-            icons,
+            error, provided, ..
         } => {
-            println!(
-                "{tag:<tag_w$} {}RENDER ERROR{}: {error}",
-                style.red, style.reset
-            );
             println!("    values the block provided: {}", provided.join(", "));
-            for icon in icons {
-                used_now
-                    .entry(icon.clone())
-                    .or_default()
-                    .insert(label.to_string());
-            }
             let fix = if error.contains("Placeholder") {
                 Some(
                     "The format references a placeholder the block did not provide (it may be \
@@ -1284,7 +1274,6 @@ fn print_block_report(
             });
         }
         LiveVerdict::BlockError(error) => {
-            println!("{tag:<tag_w$} {}ERROR{}: {error}", style.red, style.reset);
             // A block that failed to prepare already has a static problem
             // with the same root cause; do not diagnose it twice.
             if !prepared_errors.contains(label) {
@@ -1295,7 +1284,6 @@ fn print_block_report(
             }
         }
         LiveVerdict::Panicked(msg) => {
-            println!("{tag:<tag_w$} {}PANICKED{}: {msg}", style.red, style.reset);
             problems.push(Problem {
                 diagnosis: format!(
                     "{}: panicked ({msg}). In the bar this would show a permanent error.",
@@ -1308,21 +1296,7 @@ fn print_block_report(
                 ),
             });
         }
-        LiveVerdict::Hidden => {
-            println!("{tag:<tag_w$} (block hides itself — no data to show right now)");
-        }
-        LiveVerdict::Finished => println!("{tag:<tag_w$} (finished without producing output)"),
-        LiveVerdict::NoOutput => println!(
-            "{tag:<tag_w$} (no output within {}s — event-driven blocks may be waiting for an event; \
-             probably fine)",
-            LIVE_TIMEOUT.as_secs()
-        ),
-        LiveVerdict::Skipped(reason) => println!("{tag:<tag_w$} (skipped: {reason})"),
         LiveVerdict::IfCommandFailed(reason) => {
-            println!(
-                "{tag:<tag_w$} {}IF_COMMAND FAILED{}: {reason}",
-                style.red, style.reset
-            );
             problems.push(Problem {
                 diagnosis: format!(
                     "{}: {reason} — the bar fails to start when if_command cannot run.",
@@ -1331,11 +1305,7 @@ fn print_block_report(
                 fix: Some("Fix or remove the if_command.".into()),
             });
         }
-        LiveVerdict::IfCommandTimeout(reason) => {
-            // The real bar waits for if_command without a timeout, so a slow
-            // command is valid configuration; doctor just cannot evaluate it.
-            println!("{tag:<tag_w$} (inconclusive: {reason}; the bar itself would wait for it)",);
-        }
+        _ => (),
     }
 }
 
@@ -1438,81 +1408,6 @@ fn collect_icon_tokens(template: &format_template::FormatTemplate, icon_refs: &m
     }
 }
 
-/// The static side of a block instance's icon analysis.
-enum StaticAnalysis {
-    /// From the block's prepared contract: exact.
-    Contract(PlanAnalysis),
-    /// No plan available (the configuration did not deserialize): nothing
-    /// can be proven unused, so everything stays relevant.
-    Unknown,
-}
-
-impl StaticAnalysis {
-    /// Nothing is statically reachable (e.g. the bar would not spawn the
-    /// block at all).
-    fn none() -> Self {
-        Self::Contract(PlanAnalysis::default())
-    }
-
-    fn is_relevant(&self, icon: &str) -> bool {
-        match self {
-            // Open (dynamic) sources deliberately do not make arbitrary
-            // names relevant: only live evidence can confirm those.
-            Self::Contract(analysis) => analysis.required.contains(icon),
-            Self::Unknown => true,
-        }
-    }
-}
-
-/// Live render evidence (only ever *adds* relevance: a snapshot of one state
-/// cannot rule out alternate states or formats).
-struct LiveRelevance {
-    /// Icon names the render consumed.
-    rendered: HashSet<String>,
-    /// Icon name -> the placeholder key it was provided under.
-    provided_keys: HashMap<String, String>,
-    /// Placeholder keys whose icons were consumed.
-    rendered_keys: HashSet<String>,
-}
-
-impl LiveRelevance {
-    fn is_relevant(&self, icon: &str) -> bool {
-        if self.rendered.contains(icon) {
-            return true;
-        }
-        match self.provided_keys.get(icon) {
-            // Provided under a placeholder the render never used.
-            Some(key) => self.rendered_keys.contains(key),
-            // Unknown pathway (a state-dependent sibling like bat_charging):
-            // the static analysis models these precisely (scopes, per-format
-            // defaults), so live evidence stays strictly positive.
-            None => false,
-        }
-    }
-}
-
-/// What is known about a block instance's ability to render a given icon.
-/// Live evidence is combined with the static analysis, never substituted for
-/// it: the current render proves what CAN happen, not what cannot.
-struct IconRelevance {
-    static_rel: StaticAnalysis,
-    /// Analysis of the block's effective error/fullscreen-error formats
-    /// (the shared error-widget plan every block renders errors through).
-    error_rel: Option<PlanAnalysis>,
-    live: Option<LiveRelevance>,
-}
-
-impl IconRelevance {
-    fn is_relevant(&self, icon: &str) -> bool {
-        self.static_rel.is_relevant(icon)
-            || self
-                .error_rel
-                .as_ref()
-                .is_some_and(|e| e.required.contains(icon))
-            || self.live.as_ref().is_some_and(|l| l.is_relevant(icon))
-    }
-}
-
 struct IconTableInput<'a> {
     base_map: &'a HashMap<String, Icon>,
     global_overrides: &'a HashMap<String, Icon>,
@@ -1522,8 +1417,6 @@ struct IconTableInput<'a> {
     /// state (computed in [`run`]: exact per-instance reachability for
     /// contract blocks, documented icon lists for legacy blocks).
     may_use: &'a BTreeMap<String, Vec<String>>,
-    /// Per block label: what is known about its ability to render each icon.
-    icon_relevant: &'a HashMap<String, IconRelevance>,
     /// (label, icon) pairs already diagnosed by a live render error.
     live_reported: &'a HashSet<(String, String)>,
     /// Block labels whose effective icons_format contains pango markup:
@@ -1542,7 +1435,6 @@ fn print_icon_table(input: IconTableInput) {
         block_overrides,
         used_now,
         may_use,
-        icon_relevant,
         live_reported,
         markup_labels,
         font_check,
@@ -1571,32 +1463,21 @@ fn print_icon_table(input: IconTableInput) {
         base_map.get(icon).map(|found| (found, Provenance::Base))
     };
 
-    // usage: icon name -> [(block, is_may)]. A block's own icons_overrides
-    // entry counts as usage: overriding it is explicit intent.
-    let mut usage: BTreeMap<String, Vec<(String, bool)>> = BTreeMap::new();
+    // usage: icon name -> block labels. Declared = in use, period: every
+    // icon a block's contract declares counts, whether or not this
+    // particular run (or configuration) rendered it. Live-observed names
+    // are merged in for the dynamic blocks.
+    let mut usage: BTreeMap<String, Vec<String>> = BTreeMap::new();
     for (icon, blocks) in used_now {
         for block in blocks {
-            usage
-                .entry(icon.clone())
-                .or_default()
-                .push((block.clone(), false));
+            usage.entry(icon.clone()).or_default().push(block.clone());
         }
     }
     for (icon, blocks) in may_use {
         for block in blocks {
             let users = usage.entry((*icon).to_string()).or_default();
-            if !users.iter().any(|(b, _)| b == block) {
-                users.push(((*block).to_string(), true));
-            }
-        }
-    }
-    for (block, overrides) in block_overrides {
-        for icon in overrides.keys() {
-            let users = usage.entry(icon.clone()).or_default();
-            if !users.iter().any(|(b, _)| b == block) {
-                // an override shows intent, but only the block's formats
-                // decide whether the icon can actually be requested
-                users.push((block.clone(), true));
+            if !users.contains(block) {
+                users.push((*block).to_string());
             }
         }
     }
@@ -1613,25 +1494,9 @@ fn print_icon_table(input: IconTableInput) {
         // them (an override REPLACES the base glyph for its block) and by
         // whether their icons_format markup makes the font inconclusive.
         let mut groups: BTreeMap<(Provenance, bool), Vec<String>> = BTreeMap::new();
-        for (block, is_may) in users {
-            // A block whose formats cannot render this icon cannot error on
-            // it; skip latent (may) findings for it. Configuration-derived
-            // names (toggle's icon_on="custom") appear in the contract under
-            // their effective names, so no canonicalization is needed.
-            let relevant = icon_relevant
-                .get(block)
-                .map(|r| r.is_relevant(icon_name))
-                .unwrap_or(true);
+        for block in users {
             match resolve(icon_name, block) {
-                // A block whose formats cannot render this icon will not put
-                // its glyph on the bar either: keep it out of the table (and
-                // out of the font findings), not just out of the missing
-                // checks.
-                _ if *is_may && !relevant => (),
                 Some((icon, provenance)) => {
-                    // An empty progression is stored but Icons::get returns
-                    // None for it: at runtime it behaves like an undefined
-                    // icon, not like a defined one.
                     if matches!(icon, Icon::Progression(steps) if steps.is_empty()) {
                         // An empty progression behaves like an undefined
                         // icon at runtime: availability info, not a problem.
@@ -1644,13 +1509,11 @@ fn print_icon_table(input: IconTableInput) {
                         }
                         continue;
                     }
-                    let label = if *is_may {
-                        format!("{block} (may)")
-                    } else {
-                        block.clone()
-                    };
                     let markup = markup_labels.contains(block);
-                    groups.entry((provenance, markup)).or_default().push(label);
+                    groups
+                        .entry((provenance, markup))
+                        .or_default()
+                        .push(block.clone());
                 }
                 // already diagnosed by the live render error for this block
                 None if live_reported.contains(&(block.clone(), icon_name.clone())) => (),
@@ -2506,37 +2369,6 @@ mod tests {
         );
         assert_eq!(parse_font_directive(""), Vec::<String>::new());
         assert_eq!(parse_font_directive("pango:"), Vec::<String>::new());
-    }
-
-    #[test]
-    fn per_icon_live_relevance() {
-        let live = LiveRelevance {
-            rendered: ["memory_swap".to_string()].into_iter().collect(),
-            provided_keys: [
-                ("memory_swap".to_string(), "icon_swap".to_string()),
-                ("memory_mem".to_string(), "icon_mem".to_string()),
-            ]
-            .into_iter()
-            .collect(),
-            rendered_keys: ["icon_swap".to_string()].into_iter().collect(),
-        };
-        assert!(live.is_relevant("memory_swap"));
-        // provided under a placeholder the render never used
-        assert!(!live.is_relevant("memory_mem"));
-        // unknown pathway: live evidence is strictly positive; the static
-        // analysis (scopes, per-format defaults) covers state siblings
-        assert!(!live.is_relevant("bat_charging"));
-
-        let none_rendered = LiveRelevance {
-            rendered: HashSet::new(),
-            provided_keys: [("time".to_string(), "icon".to_string())]
-                .into_iter()
-                .collect(),
-            rendered_keys: HashSet::new(),
-        };
-        // { OK | $icon }: the icon branch never evaluated
-        assert!(!none_rendered.is_relevant("time"));
-        assert!(!none_rendered.is_relevant("anything_else"));
     }
 
     #[test]
