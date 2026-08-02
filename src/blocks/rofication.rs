@@ -46,12 +46,13 @@ pub struct Config {
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     Ok(BlockPlan::new(vec![
         OutputPlan::new("main", config.format.with_default(" $icon $num.eng(w:1) ")?)
-            .icon("icon", IconChoices::one("bell")),
+            .icon("icon", IconChoices::one("bell"))
+            .always_provides("icon", ValueKind::Icon)
+            .always_provides("num", ValueKind::Number),
     ]))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let plan = prepare(config)?;
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let output_main = plan.output("main")?;
 
     let path = config.socket_path.expand()?;
@@ -63,7 +64,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let mut widget = output_main.new_widget();
 
         widget.set_values(map!(
-            "icon" => Value::icon("bell"),
+            "icon" => output_main.icon_value("icon")?,
             "num" => Value::number(num)
         ));
 
@@ -122,6 +123,20 @@ mod tests {
         assert_eq!(declared, ["main"]);
         let output = plan.output("main").unwrap();
         assert_eq!(output.single_icon("icon").unwrap(), "bell");
+    }
+
+    #[test]
+    fn plan_guarantees_all_values() {
+        let plan = prepare(&Config::default()).unwrap();
+        let output = plan.output("main").unwrap();
+        assert_eq!(
+            output.output().guaranteed_kind("icon"),
+            Some(ValueKind::Icon)
+        );
+        assert_eq!(
+            output.output().guaranteed_kind("num"),
+            Some(ValueKind::Number)
+        );
     }
 
     #[test]

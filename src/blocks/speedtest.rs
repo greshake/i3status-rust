@@ -54,16 +54,20 @@ pub struct Config {
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     // The icons (`ping`, `net_down`, `net_up`) are rendered by `^icon_*`
     // format tokens, not icon-valued placeholders, so no icons are declared.
-    Ok(BlockPlan::new(vec![OutputPlan::new(
-        "main",
-        config
-            .format
-            .with_default(" ^icon_ping $ping ^icon_net_down $speed_down ^icon_net_up $speed_up ")?,
-    )]))
+    Ok(BlockPlan::new(vec![
+        OutputPlan::new(
+            "main",
+            config.format.with_default(
+                " ^icon_ping $ping ^icon_net_down $speed_down ^icon_net_up $speed_up ",
+            )?,
+        )
+        .always_provides("ping", ValueKind::Number)
+        .always_provides("speed_down", ValueKind::Number)
+        .always_provides("speed_up", ValueKind::Number),
+    ]))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let plan = prepare(config)?;
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let output_main = plan.output("main")?;
 
     let mut command = Command::new("speedtest-cli");
@@ -116,6 +120,19 @@ mod tests {
         assert_eq!(declared, ["main"]);
         let output = plan.output("main").unwrap();
         assert_eq!(output.output().icon_placeholders().count(), 0);
+    }
+
+    #[test]
+    fn plan_guarantees_all_values() {
+        let plan = prepare(&Config::default()).unwrap();
+        let output = plan.output("main").unwrap();
+        for placeholder in ["ping", "speed_down", "speed_up"] {
+            assert_eq!(
+                output.output().guaranteed_kind(placeholder),
+                Some(ValueKind::Number),
+                "{placeholder}"
+            );
+        }
     }
 
     #[test]

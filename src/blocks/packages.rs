@@ -402,26 +402,31 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
             "main",
             config.format.with_default(" $icon $total.eng(w:1) ")?,
         )
-        .icon("icon", IconChoices::one("update")),
+        .icon("icon", IconChoices::one("update"))
+        .always_provides("icon", ValueKind::Icon)
+        .always_provides("total", ValueKind::Number),
         OutputPlan::new(
             "singular",
             config
                 .format_singular
                 .with_default(" $icon $total.eng(w:1) ")?,
         )
-        .icon("icon", IconChoices::one("update")),
+        .icon("icon", IconChoices::one("update"))
+        .always_provides("icon", ValueKind::Icon)
+        .always_provides("total", ValueKind::Number),
         OutputPlan::new(
             "up_to_date",
             config
                 .format_up_to_date
                 .with_default(" $icon $total.eng(w:1) ")?,
         )
-        .icon("icon", IconChoices::one("update")),
+        .icon("icon", IconChoices::one("update"))
+        .always_provides("icon", ValueKind::Icon)
+        .always_provides("total", ValueKind::Number),
     ]))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let plan = prepare(config)?;
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let output_main = plan.output("main")?;
     let output_singular = plan.output("singular")?;
     let output_up_to_date = plan.output("up_to_date")?;
@@ -510,14 +515,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 .is_some_and(|regex| has_matching_update(&updates, regex));
         }
 
-        package_manager_map.insert("icon".into(), Value::icon("update"));
-        package_manager_map.insert("total".into(), Value::number(total_count));
-
         let output = match total_count {
             0 => &output_up_to_date,
             1 => &output_singular,
             _ => &output_main,
         };
+        package_manager_map.insert("icon".into(), output.icon_value("icon")?);
+        package_manager_map.insert("total".into(), Value::number(total_count));
         let mut widget = output.new_widget();
         widget.set_values(package_manager_map);
 
@@ -565,6 +569,27 @@ mod tests {
         for id in ["main", "singular", "up_to_date"] {
             let output = plan.output(id).unwrap();
             assert_eq!(output.single_icon("icon").unwrap(), "update", "{id}");
+        }
+    }
+
+    #[test]
+    fn icon_and_total_are_guaranteed_on_every_state() {
+        let plan = prepare(&Config::default()).unwrap();
+        for id in ["main", "singular", "up_to_date"] {
+            let output = plan.output(id).unwrap();
+            assert_eq!(
+                output.output().guaranteed_kind("icon"),
+                Some(ValueKind::Icon),
+                "{id}"
+            );
+            assert_eq!(
+                output.output().guaranteed_kind("total"),
+                Some(ValueKind::Number),
+                "{id}"
+            );
+            // Per-manager counts depend on the configured managers; they must
+            // stay undeclared.
+            assert_eq!(output.output().guaranteed_kind("pacman"), None, "{id}");
         }
     }
 

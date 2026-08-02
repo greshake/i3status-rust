@@ -84,11 +84,14 @@ pub struct Config {
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     let format = config.format.with_default(" $icon $temperature ")?;
     Ok(BlockPlan::new(vec![
-        OutputPlan::new("main", format).icon("icon", IconChoices::one("hueshift")),
+        OutputPlan::new("main", format)
+            .icon("icon", IconChoices::one("hueshift"))
+            .always_provides("icon", ValueKind::Icon)
+            .always_provides("temperature", ValueKind::Number),
     ]))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, None, "set_click_temp"),
@@ -97,7 +100,6 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         (MouseButton::WheelDown, None, "temperature_down"),
     ])?;
 
-    let plan = prepare(config)?;
     let output_main = plan.output("main")?;
 
     // limit too big steps at 500K to avoid too brutal changes
@@ -140,7 +142,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     loop {
         let mut widget = output_main.new_widget();
         widget.set_values(map! {
-            "icon" => Value::icon("hueshift"),
+            "icon" => output_main.icon_value("icon")?,
             "temperature" => Value::number(current_temp)
         });
         api.set_widget(widget)?;
@@ -415,6 +417,16 @@ mod tests {
         let main = plan.output("main").unwrap();
         assert_eq!(main.single_icon("icon").unwrap(), "hueshift");
         assert!(main.format().contains_key("temperature"));
+    }
+
+    #[test]
+    fn both_values_are_guaranteed_on_every_render() {
+        let plan = prepare(&Config::default()).unwrap();
+        let main = plan.output("main").unwrap();
+        let main = main.output();
+        assert_eq!(main.guaranteed_kind("icon"), Some(ValueKind::Icon));
+        assert_eq!(main.guaranteed_kind("temperature"), Some(ValueKind::Number));
+        assert_eq!(main.guaranteed_kind("brightness"), None);
     }
 
     #[test]

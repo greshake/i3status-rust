@@ -69,16 +69,17 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
         OutputPlan::new(
             "active",
             config.active_format.with_default(" $service active ")?,
-        ),
+        )
+        .always_provides("service", ValueKind::Text),
         OutputPlan::new(
             "inactive",
             config.inactive_format.with_default(" $service inactive ")?,
-        ),
+        )
+        .always_provides("service", ValueKind::Text),
     ]))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let plan = prepare(config)?;
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let output_active = plan.output("active")?;
     let output_inactive = plan.output("inactive")?;
 
@@ -234,6 +235,20 @@ mod tests {
             let output = plan.output(id).unwrap();
             assert!(output.format().contains_key("service"));
             assert_eq!(output.output().icon_placeholders().count(), 0);
+        }
+    }
+
+    #[test]
+    fn both_states_guarantee_the_service_name() {
+        let plan = prepare(&Config::default()).unwrap();
+        for id in ["active", "inactive"] {
+            let output = plan.output(id).unwrap();
+            assert_eq!(
+                output.output().guaranteed_kind("service"),
+                Some(ValueKind::Text),
+                "{id}"
+            );
+            assert_eq!(output.output().guaranteed_kind("bogus"), None);
         }
     }
 

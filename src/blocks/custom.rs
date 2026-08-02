@@ -125,6 +125,7 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
             "{ $icon|} $short_text.pango-str() |",
         )?,
     );
+    output = output.always_provides("text", ValueKind::Text);
     // Only JSON output can carry an icon name; a plain-text command never
     // sets one. When it can, any name is permitted and resolves through the
     // normal icon set and override rules.
@@ -151,7 +152,7 @@ async fn update_bar(
                 text_empty = input.text.is_empty();
                 widget.set_values(map! {
                     "text" => Value::text(input.text),
-                    [if !input.icon.is_empty()] "icon" => Value::icon(input.icon),
+                    [if !input.icon.is_empty()] "icon" => output.named_icon_value("icon", input.icon)?,
                     [if let Some(t) = input.short_text] "short_text" => Value::text(t)
                 });
                 widget.state = input.state;
@@ -170,10 +171,9 @@ async fn update_bar(
     }
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     api.set_default_actions(&[(MouseButton::Left, None, "cycle")])?;
 
-    let plan = prepare(config)?;
     let output_main = plan.output("main")?;
 
     let mut timer = config.interval.timer();

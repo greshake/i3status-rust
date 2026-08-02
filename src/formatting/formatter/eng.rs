@@ -111,6 +111,10 @@ impl EngFormatter {
 }
 
 impl Formatter for EngFormatter {
+    fn infallible_for(&self, kind: ValueKind) -> bool {
+        matches!(kind, ValueKind::Number) && self.range == (f64::NEG_INFINITY..=f64::INFINITY)
+    }
+
     fn format(&self, val: &Value, _config: &SharedConfig) -> Result<String, FormatError> {
         match val {
             &Value::Number { mut val, mut unit } => {

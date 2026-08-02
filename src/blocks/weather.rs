@@ -290,11 +290,11 @@ struct WeatherResult {
 }
 
 impl WeatherResult {
-    fn into_values(self, unit_system: &UnitSystem) -> Values {
+    fn into_values(self, unit_system: &UnitSystem, output: &OutputHandle) -> Result<Values> {
         let mut values = map! {
             "location" => Value::text(self.location),
             //current_weather
-            "icon" => Value::icon(self.current_weather.icon.to_icon_str()),
+            "icon" => output.named_icon_value("icon", self.current_weather.icon.to_icon_str())?,
             "temp" => unit_system.temperature_value(self.current_weather.temp),
             "apparent" => unit_system.temperature_value(self.current_weather.apparent),
             "humidity" => Value::percents(self.current_weather.humidity),
@@ -330,13 +330,13 @@ impl WeatherResult {
             });
 
             map! { @extend values
-                "icon_ffin" => Value::icon(forecast.fin.icon.to_icon_str()),
+                "icon_ffin" => output.named_icon_value("icon_ffin", forecast.fin.icon.to_icon_str())?,
                 "weather_ffin" => Value::text(forecast.fin.weather.clone()),
                 "weather_verbose_ffin" => Value::text(forecast.fin.weather_verbose.clone()),
             }
         }
 
-        values
+        Ok(values)
     }
 }
 
@@ -459,14 +459,13 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     Ok(BlockPlan::new(outputs))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, None, "next_format"),
         (MouseButton::Right, None, "prev_format"),
     ])?;
 
-    let plan = prepare(config)?;
     let output_main = plan.output("main")?;
     let output_alt = match &config.format_alt {
         Some(_) => Some(plan.output("alt")?),
@@ -509,7 +508,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         let fetch = || provider.get_weather(location.as_ref(), need_forecast);
         let data = fetch.retry(ExponentialBuilder::default()).await?;
-        let data_values = data.into_values(&units);
+        // Both outputs declare the same icon choices, so minting against
+        // "main" is valid for whichever output renders the values.
+        let data_values = data.into_values(&units, &output_main)?;
 
         loop {
             let output = match (&output_alt, alt_shown) {

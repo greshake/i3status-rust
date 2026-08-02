@@ -191,20 +191,29 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
             config.headphones_indicator,
         ))
     };
-    let mut outputs = vec![
-        OutputPlan::new(
-            "main",
-            config.format.with_default(" $icon {$volume.eng(w:2)|} ")?,
-        )
-        .icon("icon", icons()),
-    ];
+    // `volume` is removed when muted (unless `show_volume_when_muted`) and
+    // `active_port` can be absent or mapped away, so neither is guaranteed.
+    let with_guarantees = |output: OutputPlan| {
+        output
+            .icon("icon", icons())
+            .always_provides("icon", ValueKind::Icon)
+            .always_provides("output_name", ValueKind::Text)
+            .always_provides("output_description", ValueKind::Text)
+    };
+    let mut outputs = vec![with_guarantees(OutputPlan::new(
+        "main",
+        config.format.with_default(" $icon {$volume.eng(w:2)|} ")?,
+    ))];
     if let Some(format_alt) = &config.format_alt {
-        outputs.push(OutputPlan::new("alt", format_alt.with_default("")?).icon("icon", icons()));
+        outputs.push(with_guarantees(OutputPlan::new(
+            "alt",
+            format_alt.with_default("")?,
+        )));
     }
     Ok(BlockPlan::new(outputs))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, None, "next_format"),
@@ -213,7 +222,6 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         (MouseButton::WheelDown, None, "volume_down"),
     ])?;
 
-    let plan = prepare(config)?;
     let output_main = plan.output("main")?;
     let output_alt = match &config.format_alt {
         Some(_) => Some(plan.output("alt")?),
@@ -322,17 +330,21 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let headphones = config.headphones_indicator
             && device_kind == DeviceKind::Sink
             && is_headphones(&*device);
-        let mut values = map! {
-            "icon" => Value::icon_progression(icon_name(device_kind, headphones, muted), volume as f64 / 100.0),
-            "volume" => Value::percents(volume),
-            "output_name" => Value::text(output_name),
-            "output_description" => Value::text(output_description),
-            [if let Some(ap) = active_port] "active_port" => Value::text(ap),
-        };
 
         let output = match (&output_alt, alt_shown) {
             (Some(alt), true) => alt,
             _ => &output_main,
+        };
+        let mut values = map! {
+            "icon" => output.icon_progression(
+                "icon",
+                icon_name(device_kind, headphones, muted),
+                volume as f64 / 100.0,
+            )?,
+            "volume" => Value::percents(volume),
+            "output_name" => Value::text(output_name),
+            "output_description" => Value::text(output_description),
+            [if let Some(ap) = active_port] "active_port" => Value::text(ap),
         };
         let mut widget = output.new_widget();
 
@@ -498,6 +510,36 @@ mod tests {
         let alt = plan.output("alt").unwrap();
         assert!(alt.format().contains_key("output_name"));
         assert!(alt.output().choices_for("icon").unwrap().permits("volume"));
+    }
+
+    #[test]
+    fn guarantees_exclude_mute_dependent_values() {
+        let config = Config {
+            format_alt: Some(" $icon $output_name ".parse().unwrap()),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        for id in ["main", "alt"] {
+            let output = plan.output(id).unwrap();
+            assert_eq!(
+                output.output().guaranteed_kind("icon"),
+                Some(ValueKind::Icon),
+                "{id}"
+            );
+            assert_eq!(
+                output.output().guaranteed_kind("output_name"),
+                Some(ValueKind::Text),
+                "{id}"
+            );
+            assert_eq!(
+                output.output().guaranteed_kind("output_description"),
+                Some(ValueKind::Text),
+                "{id}"
+            );
+            // `volume` vanishes while muted and `active_port` is optional.
+            assert_eq!(output.output().guaranteed_kind("volume"), None, "{id}");
+            assert_eq!(output.output().guaranteed_kind("active_port"), None, "{id}");
+        }
     }
 
     #[test]

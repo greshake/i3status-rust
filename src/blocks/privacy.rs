@@ -209,14 +209,13 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     ]))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, None, "next_format"),
         (MouseButton::Right, None, "prev_format"),
     ])?;
 
-    let plan = prepare(config)?;
     let output_main = plan.output("main")?;
     let output_alt = plan.output("alt")?;
     let mut alt_shown = false;
@@ -257,31 +256,31 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         if let Some(info_by_type) = info.get(&Type::Audio) {
             map! { @extend values
-                "icon_audio" => Value::icon("microphone"),
+                "icon_audio" => output.named_icon_value("icon_audio", "microphone")?,
                 "info_audio" => Value::text(info_by_type.to_string())
             }
         }
         if let Some(info_by_type) = info.get(&Type::AudioSink) {
             map! { @extend values
-                "icon_audio_sink" => Value::icon("volume"),
+                "icon_audio_sink" => output.named_icon_value("icon_audio_sink", "volume")?,
                 "info_audio_sink" => Value::text(info_by_type.to_string())
             }
         }
         if let Some(info_by_type) = info.get(&Type::Video) {
             map! { @extend values
-                "icon_video" => Value::icon("xrandr"),
+                "icon_video" => output.named_icon_value("icon_video", "xrandr")?,
                 "info_video" => Value::text(info_by_type.to_string())
             }
         }
         if let Some(info_by_type) = info.get(&Type::Webcam) {
             map! { @extend values
-                "icon_webcam" => Value::icon("webcam"),
+                "icon_webcam" => output.named_icon_value("icon_webcam", "webcam")?,
                 "info_webcam" => Value::text(info_by_type.to_string())
             }
         }
         if let Some(info_by_type) = info.get(&Type::Unknown) {
             map! { @extend values
-                "icon_unknown" => Value::icon("unknown"),
+                "icon_unknown" => output.named_icon_value("icon_unknown", "unknown")?,
                 "info_unknown" => Value::text(info_by_type.to_string())
             }
         }
@@ -351,6 +350,22 @@ mod tests {
                     "{id} must declare {icon} for ${placeholder}"
                 );
             }
+        }
+    }
+
+    #[test]
+    fn no_value_is_guaranteed() {
+        // Every privacy value is set only while the matching capture is
+        // active, so nothing may be declared as always provided.
+        let config = config_with_drivers("[[driver]]\nname = \"v4l\"");
+        let plan = prepare(&config).unwrap();
+        for id in ["main", "alt"] {
+            let output = plan.output(id).unwrap();
+            let output = output.output();
+            for (_, placeholder, _) in &TYPE_ICONS {
+                assert_eq!(output.guaranteed_kind(placeholder), None, "{id}");
+            }
+            assert_eq!(output.guaranteed_kind("info_webcam"), None);
         }
     }
 

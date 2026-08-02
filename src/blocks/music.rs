@@ -194,6 +194,9 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
             .icon("next", IconChoices::one("music_next"))
             .icon("prev", IconChoices::one("music_prev"))
             .icon("volume_icon", IconChoices::one("volume"))
+            // `icon` is the only value set both with and without a player;
+            // everything else (buttons, player info, volume) is conditional.
+            .always_provides("icon", ValueKind::Icon)
     };
     let mut outputs = vec![with_icons(OutputPlan::new(
         "main",
@@ -210,7 +213,7 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     Ok(BlockPlan::new(outputs))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, Some(PLAY_PAUSE_BTN), "play_pause"),
@@ -224,7 +227,6 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     let dbus_conn = new_dbus_connection().await?;
 
-    let plan = prepare(config)?;
     let output_main = plan.output("main")?;
     let output_alt = match &config.format_alt {
         Some(_) => Some(plan.output("alt")?),
@@ -244,16 +246,6 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         .unwrap_or(config.seek_step_secs)
         .0
         .as_micros() as i64);
-
-    let new_btn = |icon: &str, instance: &'static str| -> Result<Value> {
-        Ok(Value::icon(icon.to_string()).with_instance(instance))
-    };
-
-    let values = map! {
-        "icon" => Value::icon("music"),
-        "next" => new_btn("music_next", NEXT_BTN)?,
-        "prev" => new_btn("music_prev", PREV_BTN)?,
-    };
 
     let preferred_players = match config.player.clone() {
         PlayerName::Single(name) => vec![name],
@@ -340,7 +332,11 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let player = cur_player.map(|c| players.get_mut(c).unwrap());
         match player {
             Some(player) => {
-                let mut values = values.clone();
+                let mut values = map! {
+                    "icon" => output.icon_value("icon")?,
+                    "next" => output.icon_value("next")?.with_instance(NEXT_BTN),
+                    "prev" => output.icon_value("prev")?.with_instance(PREV_BTN),
+                };
                 values.insert("avail".into(), Value::number(avail));
                 values.insert("cur".into(), Value::number(cur_player.unwrap() + 1));
                 values.insert(
@@ -355,7 +351,12 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     Some(PlaybackStatus::Playing) => (State::Info, "music_pause"),
                     _ => (State::Idle, "music_play"),
                 };
-                values.insert("play".into(), new_btn(play_icon, PLAY_PAUSE_BTN)?);
+                values.insert(
+                    "play".into(),
+                    output
+                        .named_icon_value("play", play_icon)?
+                        .with_instance(PLAY_PAUSE_BTN),
+                );
                 if let Some(url) = &player.metadata.url {
                     values.insert("url".into(), Value::text(url.clone()));
                 }
@@ -388,7 +389,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 if let Some(volume) = player.volume {
                     values.insert(
                         "volume_icon".into(),
-                        Value::icon_progression("volume", volume),
+                        output.icon_progression("volume_icon", "volume", volume)?,
                     );
                     values.insert("volume".into(), Value::percents(volume * 100.0));
                 }
@@ -399,7 +400,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             }
             None => {
                 let mut widget = output.new_widget();
-                widget.set_values(map!("icon" => Value::icon("music")));
+                widget.set_values(map!("icon" => output.icon_value("icon")?));
                 api.set_widget(widget)?;
             }
         }
@@ -744,6 +745,40 @@ mod tests {
         assert!(play.permits("music_play"));
         assert!(play.permits("music_pause"));
         assert!(!play.permits("music"));
+    }
+
+    #[test]
+    fn only_the_icon_is_guaranteed() {
+        let config = Config {
+            format_alt: Some(" $icon $player ".parse().unwrap()),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        for id in ["main", "alt"] {
+            let output = plan.output(id).unwrap();
+            // `icon` is set whether or not a player exists...
+            assert_eq!(
+                output.output().guaranteed_kind("icon"),
+                Some(ValueKind::Icon),
+                "{id}"
+            );
+            // ...but everything else disappears when no player is available.
+            for conditional in [
+                "play",
+                "next",
+                "prev",
+                "avail",
+                "cur",
+                "player",
+                "volume_icon",
+            ] {
+                assert_eq!(
+                    output.output().guaranteed_kind(conditional),
+                    None,
+                    "{id}: '{conditional}' must stay undeclared"
+                );
+            }
+        }
     }
 
     #[test]

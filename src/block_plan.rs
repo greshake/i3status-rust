@@ -21,7 +21,7 @@ use std::sync::Arc;
 
 use crate::errors::*;
 use crate::formatting::Format;
-use crate::formatting::value::ValueInner;
+use crate::formatting::value::{Value, ValueInner, ValueKind};
 use crate::widget::Widget;
 
 /// The icon names one placeholder of one output variant can carry.
@@ -72,13 +72,26 @@ impl IconChoices {
     }
 }
 
-/// One output variant of a block: a named state, its effective format, and
-/// the icons each icon-valued placeholder may carry in that state.
+/// Proof that an icon value was created through a plan handle after being
+/// checked against the declared choices. Only this module can mint one, so
+/// blocks cannot construct icon values that bypass their contract.
+#[derive(Debug)]
+pub struct IconToken {
+    _private: (),
+}
+
+/// One output variant of a block: a named state, its effective format, the
+/// icons each icon-valued placeholder may carry in that state, and the
+/// values the block guarantees to provide on every render.
 #[derive(Debug, Clone)]
 pub struct OutputPlan {
     pub id: &'static str,
     pub format: Format,
     icons: Vec<(&'static str, IconChoices)>,
+    /// Placeholders set on EVERY render of this output, with their value
+    /// kind. Lets static analysis prove a format branch cannot fail, which
+    /// makes later fallback branches dead.
+    always: Vec<(&'static str, ValueKind)>,
 }
 
 impl OutputPlan {
@@ -87,7 +100,29 @@ impl OutputPlan {
             id,
             format,
             icons: Vec::new(),
+            always: Vec::new(),
         }
+    }
+
+    /// Declare a placeholder the block sets on every render of this output.
+    /// Do NOT declare conditionally-set values (e.g. `[if ...]` map
+    /// entries): a wrong guarantee makes doctor treat fallback branches as
+    /// dead and under-report requirements.
+    pub fn always_provides(mut self, placeholder: &'static str, kind: ValueKind) -> Self {
+        debug_assert!(
+            self.always.iter().all(|(p, _)| *p != placeholder),
+            "duplicate always_provides declaration '{placeholder}'"
+        );
+        self.always.push((placeholder, kind));
+        self
+    }
+
+    /// The kind of a placeholder guaranteed to be present on every render.
+    pub fn guaranteed_kind(&self, placeholder: &str) -> Option<ValueKind> {
+        self.always
+            .iter()
+            .find(|(p, _)| *p == placeholder)
+            .map(|(_, kind)| *kind)
     }
 
     /// Declare the icon choices for an icon-valued placeholder.
@@ -176,6 +211,74 @@ impl OutputHandle {
                     self.id()
                 )
             })
+    }
+
+    /// The single declared icon of `placeholder`, as a value.
+    pub fn icon_value(&self, placeholder: &str) -> Result<Value> {
+        let name = self.single_icon(placeholder)?;
+        Ok(Value::icon(name, IconToken { _private: () }))
+    }
+
+    /// A declared icon of `placeholder` by name. For open (dynamic)
+    /// placeholders any name is accepted; for fixed sets the name must be
+    /// declared — anything else is an i3status-rs contract bug.
+    pub fn named_icon_value<S>(&self, placeholder: &str, name: S) -> Result<Value>
+    where
+        S: Into<Cow<'static, str>>,
+    {
+        let name = name.into();
+        self.check_declared(placeholder, &name)?;
+        Ok(Value::icon(name, IconToken { _private: () }))
+    }
+
+    /// A declared progression icon of `placeholder`, with `value` in 0..=1.
+    pub fn icon_progression<S>(&self, placeholder: &str, name: S, value: f64) -> Result<Value>
+    where
+        S: Into<Cow<'static, str>>,
+    {
+        let name = name.into();
+        self.check_declared(placeholder, &name)?;
+        Ok(Value::icon_progression(
+            name,
+            value,
+            IconToken { _private: () },
+        ))
+    }
+
+    /// Like [`Self::icon_progression`], with `value` first clamped to
+    /// `low..=high` and rescaled to 0..=1.
+    pub fn icon_progression_bound<S>(
+        &self,
+        placeholder: &str,
+        name: S,
+        value: f64,
+        low: f64,
+        high: f64,
+    ) -> Result<Value>
+    where
+        S: Into<Cow<'static, str>>,
+    {
+        self.icon_progression(
+            placeholder,
+            name,
+            (value.clamp(low, high) - low) / (high - low),
+        )
+    }
+
+    fn check_declared(&self, placeholder: &str, name: &str) -> Result<()> {
+        let permitted = self
+            .output()
+            .choices_for(placeholder)
+            .is_some_and(|choices| choices.permits(name));
+        if permitted {
+            Ok(())
+        } else {
+            Err(Error::new(format!(
+                "block contract bug: icon '{name}' is not declared for '${placeholder}' \
+                 of output '{}'",
+                self.id()
+            )))
+        }
     }
 
     /// A widget rendering this output: effective format installed, icon
@@ -302,7 +405,7 @@ mod tests {
     fn declared_icon_passes_validation() {
         let plan = plan();
         let handle = plan.output("connected").unwrap();
-        let values = map!("icon" => crate::formatting::value::Value::icon("net_vpn"));
+        let values = map!("icon" => crate::formatting::value::Value::test_icon("net_vpn"));
         assert!(handle.icon_violations(&values).is_empty());
     }
 
@@ -310,7 +413,7 @@ mod tests {
     fn undeclared_icon_is_a_violation() {
         let plan = plan();
         let handle = plan.output("connected").unwrap();
-        let values = map!("icon" => crate::formatting::value::Value::icon("net_wired"));
+        let values = map!("icon" => crate::formatting::value::Value::test_icon("net_wired"));
         let violations = handle.icon_violations(&values);
         assert_eq!(violations.len(), 1);
         assert!(violations[0].contains("net_wired"));
@@ -321,7 +424,7 @@ mod tests {
     fn undeclared_placeholder_is_a_violation() {
         let plan = plan();
         let handle = plan.output("connected").unwrap();
-        let values = map!("other" => crate::formatting::value::Value::icon("net_vpn"));
+        let values = map!("other" => crate::formatting::value::Value::test_icon("net_vpn"));
         assert_eq!(handle.icon_violations(&values).len(), 1);
     }
 
@@ -347,7 +450,7 @@ mod tests {
             "refresh"
         );
         let values = map!(
-            "restart_block_icon" => crate::formatting::value::Value::icon("refresh"),
+            "restart_block_icon" => crate::formatting::value::Value::test_icon("refresh"),
             "full_error_message" => crate::formatting::value::Value::text("boom".into()),
         );
         assert!(outputs.error.icon_violations(&values).is_empty());

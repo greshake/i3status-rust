@@ -62,13 +62,6 @@ impl Widget {
 
     pub fn set_values(&mut self, new_values: Values) {
         self.values = new_values;
-        for violation in self.contract_violations() {
-            // A violation is an i3status-rust bug, not a user configuration
-            // problem: the block set an icon its own plan does not declare.
-            // Loud in debug builds; render proceeds normally in release.
-            debug_assert!(false, "{violation}");
-            log::error!("{violation}");
-        }
     }
 
     pub(crate) fn set_contract(&mut self, contract: OutputHandle) {
@@ -85,6 +78,26 @@ impl Widget {
     #[cfg(test)]
     pub(crate) fn contract(&self) -> Option<&OutputHandle> {
         self.contract.as_ref()
+    }
+
+    /// Enforce the prepared contract at the point a block publishes this
+    /// widget: format widgets must come from an output handle, and every
+    /// icon value must be declared. A failure here is an i3status-rs bug
+    /// (the bar shows it as a block error), never a configuration problem.
+    pub(crate) fn check_contract(&self) -> Result<()> {
+        if self.contract.is_none() {
+            if matches!(self.source, Source::Format(_)) {
+                return Err(Error::new(
+                    "block contract bug: a format widget was published without \
+                     a prepared output handle",
+                ));
+            }
+            return Ok(());
+        }
+        if let Some(violation) = self.contract_violations().into_iter().next() {
+            return Err(Error::new(violation));
+        }
+        Ok(())
     }
 
     /// Icon values not declared by this widget's output contract.

@@ -71,6 +71,7 @@ pub struct Config {
 }
 
 struct Block {
+    output: OutputHandle,
     widget: Widget,
     api: CommonApi,
     icon: Option<String>,
@@ -78,12 +79,13 @@ struct Block {
     short_text: Option<String>,
 }
 
-fn block_values(block: &Block) -> HashMap<Cow<'static, str>, Value> {
-    map! {
-        [if let Some(icon) = &block.icon] "icon" => Value::icon(icon.to_string()),
+fn block_values(block: &Block) -> Result<HashMap<Cow<'static, str>, Value>> {
+    Ok(map! {
+        [if let Some(icon) = &block.icon] "icon" =>
+            block.output.named_icon_value("icon", icon.to_string())?,
         [if let Some(text) = &block.text] "text" => Value::text(text.to_string()),
         [if let Some(short_text) = &block.short_text] "short_text" => Value::text(short_text.to_string()),
-    }
+    })
 }
 
 #[zbus::interface(name = "rs.i3status.custom")]
@@ -94,7 +96,7 @@ impl Block {
         } else {
             Some(icon.to_string())
         };
-        self.widget.set_values(block_values(self));
+        self.widget.set_values(block_values(self)?);
         self.api.set_widget(self.widget.clone())?;
         Ok(())
     }
@@ -102,7 +104,7 @@ impl Block {
     async fn set_text(&mut self, full: String, short: String) -> fdo::Result<()> {
         self.text = Some(full);
         self.short_text = Some(short);
-        self.widget.set_values(block_values(self));
+        self.widget.set_values(block_values(self)?);
         self.api.set_widget(self.widget.clone())?;
         Ok(())
     }
@@ -136,9 +138,9 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     ]))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let plan = prepare(config)?;
-    let widget = plan.output("main")?.new_widget();
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
+    let output = plan.output("main")?;
+    let widget = output.new_widget();
 
     let dbus_conn = DBUS_CONNECTION
         .get_or_init(dbus_conn)
@@ -150,6 +152,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         .at(
             config.path.clone(),
             Block {
+                output,
                 widget,
                 api: api.clone(),
                 icon: None,

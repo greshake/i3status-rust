@@ -1514,7 +1514,7 @@ fn analyze_plan(plan: &crate::block_plan::BlockPlan) -> PlanAnalysis {
         ] {
             let mut placeholders = Vec::new();
             let mut icons = Vec::new();
-            collect_reachable_compiled(template, &mut placeholders, &mut icons);
+            collect_reachable_compiled(template, output, &mut placeholders, &mut icons);
             // Empty icon names render as empty output (a runtime no-op),
             // so they are never requirements.
             for name in icons.into_iter().filter(|name| !name.is_empty()) {
@@ -1538,11 +1538,15 @@ fn analyze_plan(plan: &crate::block_plan::BlockPlan) -> PlanAnalysis {
     analysis
 }
 
-/// [`collect_reachable`], but over the compiled template of an effective
-/// [`crate::formatting::Format`] from a prepared contract (defaults and
-/// inheritance already resolved).
+/// Walk only the *reachable* branches of a compiled template from a prepared
+/// contract: alternatives after a branch that cannot fail are dead. A branch
+/// cannot fail when it contains only literal text, direct icons, and
+/// placeholders the output GUARANTEES to provide (with a formatter that
+/// cannot reject the guaranteed kind) — "{ \$timestamp.datetime() | X }"
+/// never evaluates X when timestamp is always provided.
 fn collect_reachable_compiled(
     template: &format_template::FormatTemplate,
+    output: &crate::block_plan::OutputPlan,
     placeholders: &mut Vec<String>,
     icon_refs: &mut Vec<String>,
 ) {
@@ -1550,9 +1554,9 @@ fn collect_reachable_compiled(
         let mut branch_can_fail = false;
         for token in &token_list.0 {
             match token {
-                format_template::Token::Placeholder { name, .. } => {
+                format_template::Token::Placeholder { name, formatter } => {
                     placeholders.push(name.clone());
-                    branch_can_fail = true;
+                    branch_can_fail |= placeholder_can_fail(output, name, formatter.as_deref());
                 }
                 format_template::Token::Icon { name } => {
                     // A missing icon is a render error, not a branch-selection
@@ -1560,8 +1564,8 @@ fn collect_reachable_compiled(
                     icon_refs.push(name.clone());
                 }
                 format_template::Token::Recursive(rec) => {
-                    collect_reachable_compiled(rec, placeholders, icon_refs);
-                    branch_can_fail |= compiled_group_can_fail(rec);
+                    collect_reachable_compiled(rec, output, placeholders, icon_refs);
+                    branch_can_fail |= compiled_group_can_fail(rec, output);
                 }
                 format_template::Token::Text(_) => (),
             }
@@ -1572,12 +1576,33 @@ fn collect_reachable_compiled(
     }
 }
 
+/// Whether rendering this placeholder can produce a branch-selection failure
+/// (missing value, incompatible formatter, number out of range).
+fn placeholder_can_fail(
+    output: &crate::block_plan::OutputPlan,
+    name: &str,
+    formatter: Option<&dyn crate::formatting::formatter::Formatter>,
+) -> bool {
+    match output.guaranteed_kind(name) {
+        // Not guaranteed to be present: the branch can fall through.
+        None => true,
+        // Guaranteed: only the formatter can still reject it. No explicit
+        // formatter means the kind's own default, which always accepts it.
+        Some(kind) => formatter.is_some_and(|f| !f.infallible_for(kind)),
+    }
+}
+
 /// A group fails only if every one of its branches can fail.
-fn compiled_group_can_fail(template: &format_template::FormatTemplate) -> bool {
+fn compiled_group_can_fail(
+    template: &format_template::FormatTemplate,
+    output: &crate::block_plan::OutputPlan,
+) -> bool {
     template.token_lists().iter().all(|token_list| {
         token_list.0.iter().any(|token| match token {
-            format_template::Token::Placeholder { .. } => true,
-            format_template::Token::Recursive(rec) => compiled_group_can_fail(rec),
+            format_template::Token::Placeholder { name, formatter } => {
+                placeholder_can_fail(output, name, formatter.as_deref())
+            }
+            format_template::Token::Recursive(rec) => compiled_group_can_fail(rec, output),
             format_template::Token::Icon { .. } | format_template::Token::Text(_) => false,
         })
     })

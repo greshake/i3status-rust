@@ -117,28 +117,39 @@ pub enum BatteryDriver {
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     let format = config.format.with_default(" $icon $percentage ")?;
     Ok(BlockPlan::new(vec![
-        OutputPlan::new("discharging", format.clone()).icon("icon", IconChoices::one("bat")),
+        OutputPlan::new("discharging", format.clone())
+            .icon("icon", IconChoices::one("bat"))
+            .always_provides("icon", ValueKind::Icon)
+            .always_provides("percentage", ValueKind::Number),
         OutputPlan::new(
             "charging",
             config.charging_format.with_default_format(&format),
         )
-        .icon("icon", IconChoices::one("bat_charging")),
+        .icon("icon", IconChoices::one("bat_charging"))
+        .always_provides("icon", ValueKind::Icon)
+        .always_provides("percentage", ValueKind::Number),
         OutputPlan::new("full", config.full_format.with_default(" $icon ")?)
-            .icon("icon", IconChoices::one("bat")),
+            .icon("icon", IconChoices::one("bat"))
+            .always_provides("icon", ValueKind::Icon)
+            .always_provides("percentage", ValueKind::Number),
         OutputPlan::new("empty", config.empty_format.with_default(" $icon ")?)
-            .icon("icon", IconChoices::one("bat")),
+            .icon("icon", IconChoices::one("bat"))
+            .always_provides("icon", ValueKind::Icon)
+            .always_provides("percentage", ValueKind::Number),
         OutputPlan::new(
             "not_charging",
             config.not_charging_format.with_default(" $icon ")?,
         )
-        .icon("icon", IconChoices::one("bat")),
+        .icon("icon", IconChoices::one("bat"))
+        .always_provides("icon", ValueKind::Icon)
+        .always_provides("percentage", ValueKind::Number),
         OutputPlan::new("missing", config.missing_format.with_default(" $icon ")?)
-            .icon("icon", IconChoices::one("bat_not_available")),
+            .icon("icon", IconChoices::one("bat_not_available"))
+            .always_provides("icon", ValueKind::Icon),
     ]))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let plan = prepare(config)?;
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let output_discharging = plan.output("discharging")?;
     let output_charging = plan.output("charging")?;
     let output_full = plan.output("full")?;
@@ -234,7 +245,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
                 values.insert(
                     "icon".into(),
-                    Value::icon_progression(icon_name, icon_value),
+                    output.icon_progression("icon", icon_name, icon_value)?,
                 );
 
                 widget.set_values(values);
@@ -243,7 +254,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             }
             None => {
                 let mut widget = output_missing.new_widget().with_state(State::Critical);
-                widget.set_values(map!("icon" => Value::icon("bat_not_available")));
+                widget.set_values(map!("icon" => output_missing.icon_value("icon")?));
                 api.set_widget(widget)?;
             }
         }

@@ -88,18 +88,21 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
         .clone()
         .unwrap_or_else(|| "toggle_off".into());
     Ok(BlockPlan::new(vec![
-        OutputPlan::new("on", format.clone()).icon("icon", IconChoices::one(icon_on)),
-        OutputPlan::new("off", format).icon("icon", IconChoices::one(icon_off)),
+        OutputPlan::new("on", format.clone())
+            .icon("icon", IconChoices::one(icon_on))
+            .always_provides("icon", ValueKind::Icon),
+        OutputPlan::new("off", format)
+            .icon("icon", IconChoices::one(icon_off))
+            .always_provides("icon", ValueKind::Icon),
     ]))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[(MouseButton::Left, None, "toggle")])?;
 
     let interval = config.interval.map(Duration::from_secs);
 
-    let plan = prepare(config)?;
     let output_on = plan.output("on")?;
     let output_off = plan.output("off")?;
 
@@ -121,7 +124,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let output = if is_on { &output_on } else { &output_off };
         let mut widget = output.new_widget();
         widget.set_values(map!(
-            "icon" => Value::icon(output.single_icon("icon")?)
+            "icon" => output.icon_value("icon")?
         ));
         if state != State::Critical {
             state = if is_on {

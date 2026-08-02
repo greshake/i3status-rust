@@ -103,8 +103,7 @@ pub(crate) fn prepare(_config: &Config) -> Result<Arc<BlockPlan>> {
     Ok(BlockPlan::new(Vec::new()))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let _plan = prepare(config)?;
+pub async fn run(config: &Config, api: &CommonApi, _plan: &Arc<BlockPlan>) -> Result<()> {
     api.set_default_actions(&[
         (MouseButton::Left, None, "_left"),
         (MouseButton::Right, None, "_right"),

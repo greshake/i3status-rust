@@ -44,12 +44,13 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
                 .format
                 .with_default(" $icon $count.eng(range:1..) |")?,
         )
-        .icon("icon", IconChoices::one("scratchpad")),
+        .icon("icon", IconChoices::one("scratchpad"))
+        .always_provides("icon", ValueKind::Icon)
+        .always_provides("count", ValueKind::Number),
     ]))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let plan = prepare(config)?;
+pub async fn run(_config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let output_main = plan.output("main")?;
 
     let connection_for_events = Connection::new()
@@ -75,7 +76,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let count = count_scratchpad_windows(&root_node);
 
         widget.set_values(map! {
-            "icon" => Value::icon("scratchpad"),
+            "icon" => output_main.icon_value("icon")?,
             "count" => Value::number(count),
         });
 
@@ -107,6 +108,20 @@ mod tests {
         assert_eq!(declared, ["main"]);
         let output = plan.output("main").unwrap();
         assert_eq!(output.single_icon("icon").unwrap(), "scratchpad");
+    }
+
+    #[test]
+    fn plan_guarantees_all_values() {
+        let plan = prepare(&Config::default()).unwrap();
+        let output = plan.output("main").unwrap();
+        assert_eq!(
+            output.output().guaranteed_kind("icon"),
+            Some(ValueKind::Icon)
+        );
+        assert_eq!(
+            output.output().guaranteed_kind("count"),
+            Some(ValueKind::Number)
+        );
     }
 
     #[test]

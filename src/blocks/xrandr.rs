@@ -71,7 +71,7 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     ]))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, None, "cycle_outputs"),
@@ -79,7 +79,6 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         (MouseButton::WheelDown, None, "brightness_down"),
     ])?;
 
-    let plan = prepare(config)?;
     let output_main = plan.output("main")?;
 
     let mut cur_index = 0;
@@ -100,12 +99,20 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     icon_value = 1.0 - icon_value;
                 }
                 widget.set_values(map! {
-                    "icon" => Value::icon("xrandr"),
+                    "icon" => output_main.icon_value("icon")?,
                     "display" => Value::text(mon.name.clone()),
                     "brightness" => Value::percents(mon.brightness_percent()),
-                    "brightness_icon" => Value::icon_progression("backlight", icon_value),
+                    // xrandr gamma "brightness" can exceed 1.0; clamp into the
+                    // progression's 0..=1 range.
+                    "brightness_icon" => output_main.icon_progression_bound(
+                        "brightness_icon",
+                        "backlight",
+                        icon_value,
+                        0.0,
+                        1.0,
+                    )?,
                     "resolution" => Value::text(mon.resolution()),
-                    "res_icon" => Value::icon("resolution"),
+                    "res_icon" => output_main.icon_value("res_icon")?,
                     "refresh_rate" => Value::hertz(mon.refresh_hz),
                 });
             }
@@ -373,6 +380,30 @@ mod tests {
         assert_eq!(main.single_icon("icon").unwrap(), "xrandr");
         assert_eq!(main.single_icon("brightness_icon").unwrap(), "backlight");
         assert_eq!(main.single_icon("res_icon").unwrap(), "resolution");
+    }
+
+    #[test]
+    fn no_value_is_guaranteed() {
+        // Every value is set inside `if let Some(mon)`; when the selected
+        // monitor disappears the widget renders with no values at all, so
+        // nothing may be declared as always provided.
+        let plan = prepare(&Config::default()).unwrap();
+        let main = plan.output("main").unwrap();
+        for placeholder in [
+            "icon",
+            "display",
+            "brightness",
+            "brightness_icon",
+            "resolution",
+            "res_icon",
+            "refresh_rate",
+        ] {
+            assert_eq!(
+                main.output().guaranteed_kind(placeholder),
+                None,
+                "'{placeholder}' must stay undeclared"
+            );
+        }
     }
 
     #[test]

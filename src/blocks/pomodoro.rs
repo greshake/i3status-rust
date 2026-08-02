@@ -123,14 +123,6 @@ struct Block<'a> {
 
 impl Block<'_> {
     async fn set_text(&mut self, additional_values: Values) -> Result<()> {
-        let mut values = map! {
-            "icon" => Value::icon("pomodoro"),
-        };
-        values.extend(additional_values);
-
-        if let Some(icon) = self.state.get_status_icon() {
-            values.insert("status_icon".into(), Value::icon(icon));
-        }
         let output = self.plan.output(match self.state {
             PomodoroState::Idle => "idle",
             PomodoroState::Prompt => "prompt",
@@ -139,6 +131,16 @@ impl Block<'_> {
             PomodoroState::PomodoroRunning => "running",
             PomodoroState::PomodoroPaused => "paused",
         })?;
+        let mut values = map! {
+            "icon" => output.icon_value("icon")?,
+        };
+        values.extend(additional_values);
+
+        // Each state that shows a status icon declares exactly one for its
+        // output, so the name comes from the plan itself.
+        if self.state.get_status_icon().is_some() {
+            values.insert("status_icon".into(), output.icon_value("status_icon")?);
+        }
         let mut widget = output.new_widget();
         widget.state = self.state.get_block_state();
         debug!("{:?}", values);
@@ -315,22 +317,40 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     Ok(BlockPlan::new(vec![
         OutputPlan::new("idle", format.clone())
             .icon("icon", base())
-            .icon("status_icon", IconChoices::one("pomodoro_stopped")),
-        OutputPlan::new("prompt", format.clone()).icon("icon", base()),
-        OutputPlan::new("notify", format).icon("icon", base()),
+            .icon("status_icon", IconChoices::one("pomodoro_stopped"))
+            .always_provides("icon", ValueKind::Icon)
+            .always_provides("status_icon", ValueKind::Icon),
+        // Prompt and notify renders always carry the interactive message.
+        OutputPlan::new("prompt", format.clone())
+            .icon("icon", base())
+            .always_provides("icon", ValueKind::Icon)
+            .always_provides("message", ValueKind::Text),
+        OutputPlan::new("notify", format)
+            .icon("icon", base())
+            .always_provides("icon", ValueKind::Icon)
+            .always_provides("message", ValueKind::Text),
         OutputPlan::new("running", pomodoro_format.clone())
             .icon("icon", base())
-            .icon("status_icon", IconChoices::one("pomodoro_started")),
+            .icon("status_icon", IconChoices::one("pomodoro_started"))
+            .always_provides("icon", ValueKind::Icon)
+            .always_provides("status_icon", ValueKind::Icon)
+            .always_provides("time_remaining", ValueKind::Duration),
         OutputPlan::new("paused", pomodoro_format)
             .icon("icon", base())
-            .icon("status_icon", IconChoices::one("pomodoro_paused")),
+            .icon("status_icon", IconChoices::one("pomodoro_paused"))
+            .always_provides("icon", ValueKind::Icon)
+            .always_provides("status_icon", ValueKind::Icon)
+            .always_provides("time_remaining", ValueKind::Duration),
         OutputPlan::new("break", break_format)
             .icon("icon", base())
-            .icon("status_icon", IconChoices::one("pomodoro_break")),
+            .icon("status_icon", IconChoices::one("pomodoro_break"))
+            .always_provides("icon", ValueKind::Icon)
+            .always_provides("status_icon", ValueKind::Icon)
+            .always_provides("time_remaining", ValueKind::Duration),
     ]))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     api.set_default_actions(&[
         (MouseButton::Left, None, "_left"),
         (MouseButton::Middle, None, "_middle"),
@@ -339,14 +359,12 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         (MouseButton::WheelDown, None, "_down"),
     ])?;
 
-    let plan = prepare(config)?;
-
     let mut block = Block {
         actions: api.get_actions()?,
         api,
         config,
         state: PomodoroState::Idle,
-        plan,
+        plan: plan.clone(),
     };
 
     loop {
@@ -417,6 +435,43 @@ mod tests {
                 None => assert!(output.output().choices_for("status_icon").is_none()),
             }
         }
+    }
+
+    #[test]
+    fn guarantees_cover_only_unconditional_values() {
+        let plan = prepare(&Config::default()).unwrap();
+        for id in ["idle", "prompt", "notify", "running", "paused", "break"] {
+            let output = plan.output(id).unwrap();
+            let output = output.output();
+            assert_eq!(
+                output.guaranteed_kind("icon"),
+                Some(ValueKind::Icon),
+                "{id}"
+            );
+        }
+        // Prompt/notify renders always pass a message; timer states always
+        // pass the remaining time. `completed_pomodoros` is only set after
+        // the first pomodoro, so it stays undeclared.
+        for id in ["prompt", "notify"] {
+            let output = plan.output(id).unwrap();
+            let output = output.output();
+            assert_eq!(output.guaranteed_kind("message"), Some(ValueKind::Text));
+            assert_eq!(output.guaranteed_kind("status_icon"), None);
+        }
+        for id in ["running", "paused", "break"] {
+            let output = plan.output(id).unwrap();
+            let output = output.output();
+            assert_eq!(output.guaranteed_kind("status_icon"), Some(ValueKind::Icon));
+            assert_eq!(
+                output.guaranteed_kind("time_remaining"),
+                Some(ValueKind::Duration)
+            );
+            assert_eq!(output.guaranteed_kind("completed_pomodoros"), None);
+        }
+        let idle = plan.output("idle").unwrap();
+        let idle = idle.output();
+        assert_eq!(idle.guaranteed_kind("status_icon"), Some(ValueKind::Icon));
+        assert_eq!(idle.guaranteed_kind("message"), None);
     }
 
     #[test]

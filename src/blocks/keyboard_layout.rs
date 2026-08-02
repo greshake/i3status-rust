@@ -122,14 +122,14 @@ pub enum KeyboardLayoutDriver {
 }
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
-    Ok(BlockPlan::new(vec![OutputPlan::new(
-        "main",
-        config.format.with_default(" $layout ")?,
-    )]))
+    Ok(BlockPlan::new(vec![
+        OutputPlan::new("main", config.format.with_default(" $layout ")?)
+            .always_provides("layout", ValueKind::Text)
+            .always_provides("variant", ValueKind::Text),
+    ]))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let plan = prepare(config)?;
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let output_main = plan.output("main")?;
 
     let mut backend: Box<dyn Backend> = match config.driver {
@@ -206,6 +206,21 @@ mod tests {
         let main = plan.output("main").unwrap();
         assert!(main.format().contains_key("layout"));
         assert_eq!(main.output().icon_placeholders().count(), 0);
+    }
+
+    #[test]
+    fn plan_guarantees_layout_and_variant() {
+        let plan = prepare(&Config::default()).unwrap();
+        let main = plan.output("main").unwrap();
+        assert_eq!(
+            main.output().guaranteed_kind("layout"),
+            Some(ValueKind::Text)
+        );
+        assert_eq!(
+            main.output().guaranteed_kind("variant"),
+            Some(ValueKind::Text)
+        );
+        assert_eq!(main.output().guaranteed_kind("bogus"), None);
     }
 
     #[test]

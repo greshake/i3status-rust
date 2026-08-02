@@ -98,9 +98,42 @@ pub struct Config {
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     let icons = |output: OutputPlan| {
-        output
+        let mut output = output
             .icon("icon", IconChoices::one("memory_mem"))
             .icon("icon_swap", IconChoices::one("memory_swap"))
+            .always_provides("icon", ValueKind::Icon)
+            .always_provides("icon_swap", ValueKind::Icon);
+        // Every numeric value below is inserted on every render.
+        for placeholder in [
+            "mem_total",
+            "mem_free",
+            "mem_free_percents",
+            "mem_total_used",
+            "mem_total_used_percents",
+            "mem_used",
+            "mem_used_percents",
+            "mem_avail",
+            "mem_avail_percents",
+            "swap_total",
+            "swap_free",
+            "swap_free_percents",
+            "swap_used",
+            "swap_used_percents",
+            "buffers",
+            "buffers_percent",
+            "cached",
+            "cached_percent",
+            "zram_compressed",
+            "zram_decompressed",
+            "zram_comp_ratio",
+            "zswap_compressed",
+            "zswap_decompressed",
+            "zswap_decompressed_percents",
+            "zswap_comp_ratio",
+        ] {
+            output = output.always_provides(placeholder, ValueKind::Number);
+        }
+        output
     };
     let mut outputs = vec![icons(OutputPlan::new(
         "main",
@@ -114,14 +147,13 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     Ok(BlockPlan::new(outputs))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, None, "next_format"),
         (MouseButton::Right, None, "prev_format"),
     ])?;
 
-    let plan = prepare(config)?;
     let output_main = plan.output("main")?;
     let output_alt = match &config.format_alt {
         Some(_) => Some(plan.output("alt")?),
@@ -207,8 +239,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         };
         let mut widget = output.new_widget();
         widget.set_values(map! {
-            "icon" => Value::icon("memory_mem"),
-            "icon_swap" => Value::icon("memory_swap"),
+            "icon" => output.icon_value("icon")?,
+            "icon_swap" => output.icon_value("icon_swap")?,
             "mem_total" => Value::bytes(mem_total),
             "mem_free" => Value::bytes(mem_free),
             "mem_free_percents" => Value::percents(mem_free / mem_total * 100.),
@@ -433,5 +465,42 @@ mod tests {
         assert!(alt.format().contains_key("swap_used"));
         assert_eq!(alt.single_icon("icon").unwrap(), "memory_mem");
         assert_eq!(alt.single_icon("icon_swap").unwrap(), "memory_swap");
+    }
+
+    #[test]
+    fn all_unconditional_values_are_guaranteed() {
+        let config = Config {
+            format_alt: Some(" $icon_swap $swap_used ".parse().unwrap()),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        for id in ["main", "alt"] {
+            let output = plan.output(id).unwrap();
+            assert_eq!(
+                output.output().guaranteed_kind("icon"),
+                Some(ValueKind::Icon),
+                "{id}"
+            );
+            assert_eq!(
+                output.output().guaranteed_kind("icon_swap"),
+                Some(ValueKind::Icon),
+                "{id}"
+            );
+            for placeholder in [
+                "mem_total",
+                "mem_used_percents",
+                "swap_used",
+                "cached_percent",
+                "zram_comp_ratio",
+                "zswap_decompressed_percents",
+            ] {
+                assert_eq!(
+                    output.output().guaranteed_kind(placeholder),
+                    Some(ValueKind::Number),
+                    "{id} must guarantee {placeholder}"
+                );
+            }
+            assert_eq!(output.output().guaranteed_kind("bogus"), None);
+        }
     }
 }

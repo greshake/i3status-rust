@@ -74,18 +74,38 @@ pub struct Config {
     pub critical: Option<Vec<String>>,
 }
 
+/// Stat placeholders [`get_stats`] inserts on every fetch (defaulting to
+/// zero), and which the plan therefore guarantees on every render.
+const STAT_KEYS: [&str; 13] = [
+    "total",
+    "assign",
+    "author",
+    "comment",
+    "ci_activity",
+    "invitation",
+    "manual",
+    "mention",
+    "review_requested",
+    "security_alert",
+    "state_change",
+    "subscribed",
+    "team_mention",
+];
+
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
-    Ok(BlockPlan::new(vec![
-        OutputPlan::new(
-            "main",
-            config.format.with_default(" $icon $total.eng(w:1) ")?,
-        )
-        .icon("icon", IconChoices::one("github")),
-    ]))
+    let mut main = OutputPlan::new(
+        "main",
+        config.format.with_default(" $icon $total.eng(w:1) ")?,
+    )
+    .icon("icon", IconChoices::one("github"))
+    .always_provides("icon", ValueKind::Icon);
+    for key in STAT_KEYS {
+        main = main.always_provides(key, ValueKind::Number);
+    }
+    Ok(BlockPlan::new(vec![main]))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let plan = prepare(config)?;
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let output_main = plan.output("main")?;
 
     let mut interval = config.interval.timer();
@@ -121,7 +141,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 .into_iter()
                 .map(|(k, v)| (k.into(), Value::number(v)))
                 .collect();
-            values.insert("icon".into(), Value::icon("github"));
+            values.insert("icon".into(), output_main.icon_value("icon")?);
             widget.set_values(values);
 
             api.set_widget(widget)?;
@@ -156,19 +176,11 @@ async fn get_stats(token: &str) -> Result<HashMap<String, usize>> {
         }
     }
     stats.insert("total".into(), total);
-    stats.entry("total".into()).or_insert(0);
-    stats.entry("assign".into()).or_insert(0);
-    stats.entry("author".into()).or_insert(0);
-    stats.entry("comment".into()).or_insert(0);
-    stats.entry("ci_activity".into()).or_insert(0);
-    stats.entry("invitation".into()).or_insert(0);
-    stats.entry("manual".into()).or_insert(0);
-    stats.entry("mention".into()).or_insert(0);
-    stats.entry("review_requested".into()).or_insert(0);
-    stats.entry("security_alert".into()).or_insert(0);
-    stats.entry("state_change".into()).or_insert(0);
-    stats.entry("subscribed".into()).or_insert(0);
-    stats.entry("team_mention".into()).or_insert(0);
+    // Default every declared stat to zero so the plan's value guarantees
+    // hold on every render.
+    for key in STAT_KEYS {
+        stats.entry(key.into()).or_insert(0);
+    }
     Ok(stats)
 }
 
@@ -223,5 +235,16 @@ mod tests {
         let main = plan.output("main").unwrap();
         assert!(main.format().contains_key("mention"));
         assert!(!main.format().contains_key("total"));
+    }
+
+    #[test]
+    fn icon_and_every_stat_key_are_guaranteed() {
+        let plan = prepare(&Config::default()).unwrap();
+        let main = plan.output("main").unwrap();
+        let main = main.output();
+        assert_eq!(main.guaranteed_kind("icon"), Some(ValueKind::Icon));
+        for key in STAT_KEYS {
+            assert_eq!(main.guaranteed_kind(key), Some(ValueKind::Number), "{key}");
+        }
     }
 }

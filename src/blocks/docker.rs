@@ -48,12 +48,17 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
             "main",
             config.format.with_default(" $icon $running.eng(w:1) ")?,
         )
-        .icon("icon", IconChoices::one("docker")),
+        .icon("icon", IconChoices::one("docker"))
+        .always_provides("icon", ValueKind::Icon)
+        .always_provides("total", ValueKind::Number)
+        .always_provides("running", ValueKind::Number)
+        .always_provides("paused", ValueKind::Number)
+        .always_provides("stopped", ValueKind::Number)
+        .always_provides("images", ValueKind::Number),
     ]))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let plan = prepare(config)?;
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let output_main = plan.output("main")?;
     let socket_path = config.socket_path.expand()?;
 
@@ -74,7 +79,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         let mut widget = output_main.new_widget();
         widget.set_values(map! {
-            "icon" => Value::icon("docker"),
+            "icon" => output_main.icon_value("icon")?,
             "total" =>   Value::number(status.total),
             "running" => Value::number(status.running),
             "paused" =>  Value::number(status.paused),
@@ -115,6 +120,23 @@ mod tests {
         assert_eq!(declared, ["main"]);
         let output = plan.output("main").unwrap();
         assert_eq!(output.single_icon("icon").unwrap(), "docker");
+    }
+
+    #[test]
+    fn plan_guarantees_all_values() {
+        let plan = prepare(&Config::default()).unwrap();
+        let output = plan.output("main").unwrap();
+        assert_eq!(
+            output.output().guaranteed_kind("icon"),
+            Some(ValueKind::Icon)
+        );
+        for placeholder in ["total", "running", "paused", "stopped", "images"] {
+            assert_eq!(
+                output.output().guaranteed_kind(placeholder),
+                Some(ValueKind::Number),
+                "{placeholder}"
+            );
+        }
     }
 
     #[test]

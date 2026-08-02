@@ -54,27 +54,37 @@ pub struct Config {
 }
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
-    let mut outputs = vec![
-        OutputPlan::new("main", config.format.with_default(" $icon $utilization ")?)
-            .icon("icon", IconChoices::one("gpu")),
-    ];
+    // Both outputs render the same value set, built unconditionally on
+    // every update.
+    let declare = |output: OutputPlan| {
+        output
+            .icon("icon", IconChoices::one("gpu"))
+            .always_provides("icon", ValueKind::Icon)
+            .always_provides("utilization", ValueKind::Number)
+            .always_provides("vram_total", ValueKind::Number)
+            .always_provides("vram_used", ValueKind::Number)
+            .always_provides("vram_used_percents", ValueKind::Number)
+    };
+    let mut outputs = vec![declare(OutputPlan::new(
+        "main",
+        config.format.with_default(" $icon $utilization ")?,
+    ))];
     if let Some(format_alt) = &config.format_alt {
-        outputs.push(
-            OutputPlan::new("alt", format_alt.with_default("")?)
-                .icon("icon", IconChoices::one("gpu")),
-        );
+        outputs.push(declare(OutputPlan::new(
+            "alt",
+            format_alt.with_default("")?,
+        )));
     }
     Ok(BlockPlan::new(outputs))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, None, "next_format"),
         (MouseButton::Right, None, "prev_format"),
     ])?;
 
-    let plan = prepare(config)?;
     let output_main = plan.output("main")?;
     let output_alt = match &config.format_alt {
         Some(_) => Some(plan.output("alt")?),
@@ -100,7 +110,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let info = device.read_info().await?;
 
         widget.set_values(map! {
-            "icon" => Value::icon("gpu"),
+            "icon" => output.icon_value("icon")?,
             "utilization" => Value::percents(info.utilization_percents),
             "vram_total" => Value::bytes(info.vram_total_bytes),
             "vram_used" => Value::bytes(info.vram_used_bytes),
@@ -233,5 +243,35 @@ mod tests {
         let alt = plan.output("alt").unwrap();
         assert!(alt.format().contains_key("vram_used_percents"));
         assert_eq!(alt.single_icon("icon").unwrap(), "gpu");
+    }
+
+    #[test]
+    fn every_value_is_guaranteed_on_all_outputs() {
+        let config = Config {
+            format_alt: Some(" $icon ".parse().unwrap()),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        for id in ["main", "alt"] {
+            let output = plan.output(id).unwrap();
+            let output = output.output();
+            assert_eq!(
+                output.guaranteed_kind("icon"),
+                Some(ValueKind::Icon),
+                "{id}"
+            );
+            for key in [
+                "utilization",
+                "vram_total",
+                "vram_used",
+                "vram_used_percents",
+            ] {
+                assert_eq!(
+                    output.guaranteed_kind(key),
+                    Some(ValueKind::Number),
+                    "{id}.{key}"
+                );
+            }
+        }
     }
 }

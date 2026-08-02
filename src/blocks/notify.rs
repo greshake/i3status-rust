@@ -86,16 +86,22 @@ pub enum DriverType {
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     let format = config.format.with_default(" $icon ")?;
     Ok(BlockPlan::new(vec![
-        OutputPlan::new("enabled", format.clone()).icon("icon", IconChoices::one(ICON_ON)),
-        OutputPlan::new("paused", format).icon("icon", IconChoices::one(ICON_OFF)),
+        OutputPlan::new("enabled", format.clone())
+            .icon("icon", IconChoices::one(ICON_ON))
+            .always_provides("icon", ValueKind::Icon),
+        // The paused output is only ever rendered when `is_paused` is true,
+        // so the `paused` flag is set on every render of this output.
+        OutputPlan::new("paused", format)
+            .icon("icon", IconChoices::one(ICON_OFF))
+            .always_provides("icon", ValueKind::Icon)
+            .always_provides("paused", ValueKind::Flag),
     ]))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[(MouseButton::Left, None, "toggle_paused")])?;
 
-    let plan = prepare(config)?;
     let output_enabled = plan.output("enabled")?;
     let output_paused = plan.output("paused")?;
 
@@ -118,7 +124,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         };
         let mut widget = output.new_widget();
         widget.set_values(map!(
-            "icon" => Value::icon(output.single_icon("icon")?),
+            "icon" => output.icon_value("icon")?,
             [if notification_count != 0] "notification_count" => Value::number(notification_count),
             [if history_count != 0] "history_count" => Value::number(history_count),
             [if is_paused] "paused" => Value::flag(),
@@ -375,6 +381,23 @@ mod tests {
             plan.output("paused").unwrap().single_icon("icon").unwrap(),
             ICON_OFF
         );
+    }
+
+    #[test]
+    fn guarantees_cover_only_unconditional_values() {
+        let plan = prepare(&Config::default()).unwrap();
+        let enabled = plan.output("enabled").unwrap();
+        let enabled = enabled.output();
+        assert_eq!(enabled.guaranteed_kind("icon"), Some(ValueKind::Icon));
+        assert_eq!(enabled.guaranteed_kind("paused"), None);
+        assert_eq!(enabled.guaranteed_kind("notification_count"), None);
+        assert_eq!(enabled.guaranteed_kind("history_count"), None);
+
+        let paused = plan.output("paused").unwrap();
+        let paused = paused.output();
+        assert_eq!(paused.guaranteed_kind("icon"), Some(ValueKind::Icon));
+        assert_eq!(paused.guaranteed_kind("paused"), Some(ValueKind::Flag));
+        assert_eq!(paused.guaranteed_kind("notification_count"), None);
     }
 
     #[test]

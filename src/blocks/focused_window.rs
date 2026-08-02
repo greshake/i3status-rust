@@ -60,14 +60,16 @@ pub enum Driver {
 }
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    // No value guarantees: `title`, `marks` and `visible_marks` are only set
+    // when the focused window has a non-empty title, so every value is
+    // conditional.
     Ok(BlockPlan::new(vec![OutputPlan::new(
         "main",
         config.format.with_default(" $title.str(max_w:21) |")?,
     )]))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let plan = prepare(config)?;
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let output_main = plan.output("main")?;
 
     let mut backend: Box<dyn Backend> = match config.driver {
@@ -129,6 +131,17 @@ mod tests {
         let main = plan.output("main").unwrap();
         assert!(main.format().contains_key("title"));
         assert_eq!(main.output().icon_placeholders().count(), 0);
+    }
+
+    #[test]
+    fn no_value_is_guaranteed() {
+        // All values are set only when the window title is non-empty, so
+        // none may be declared as always provided.
+        let plan = prepare(&Config::default()).unwrap();
+        let main = plan.output("main").unwrap();
+        for key in ["title", "marks", "visible_marks"] {
+            assert_eq!(main.output().guaranteed_kind(key), None, "{key}");
+        }
     }
 
     #[test]

@@ -82,18 +82,19 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
                 .format
                 .with_default(" $icon $timestamp.datetime() ")?,
         )
-        .icon("icon", IconChoices::one("time")),
+        .icon("icon", IconChoices::one("time"))
+        .always_provides("icon", ValueKind::Icon)
+        .always_provides("timestamp", ValueKind::Datetime),
     ]))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, None, "next_timezone"),
         (MouseButton::Right, None, "prev_timezone"),
     ])?;
 
-    let plan = prepare(config)?;
     let output_main = plan.output("main")?;
 
     let timezones = match config.timezone.clone() {
@@ -123,7 +124,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let now = Utc::now();
 
         widget.set_values(map! {
-            "icon" => Value::icon("time"),
+            "icon" => output_main.icon_value("icon")?,
             "timestamp" => Value::datetime(now, timezone.copied())
         });
 
@@ -180,5 +181,19 @@ mod tests {
         let main = plan.output("main").unwrap();
         assert!(main.format().contains_key("timestamp"));
         assert!(!main.format().contains_key("icon"));
+    }
+
+    #[test]
+    fn timestamp_is_guaranteed_as_datetime() {
+        // Set on every render of `main`, so a format like
+        // "{ $timestamp.datetime() | fallback }" can never reach the
+        // fallback branch and doctor may prove it dead.
+        let plan = prepare(&Config::default()).unwrap();
+        let main = plan.output("main").unwrap();
+        assert_eq!(
+            main.output().guaranteed_kind("timestamp"),
+            Some(ValueKind::Datetime)
+        );
+        assert_eq!(main.output().guaranteed_kind("icon"), Some(ValueKind::Icon));
     }
 }

@@ -146,12 +146,14 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
             "connected",
             config.format_connected.with_default(" VPN: $icon ")?,
         )
-        .icon("icon", IconChoices::one("net_vpn")),
+        .icon("icon", IconChoices::one("net_vpn"))
+        .always_provides("icon", ValueKind::Icon),
         OutputPlan::new(
             "disconnected",
             config.format_disconnected.with_default(" VPN: $icon ")?,
         )
-        .icon("icon", IconChoices::one("net_wired")),
+        .icon("icon", IconChoices::one("net_wired"))
+        .always_provides("icon", ValueKind::Icon),
     ];
     if config.driver.can_report_connecting() {
         outputs.push(
@@ -159,7 +161,8 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
                 "connecting",
                 config.format_connecting.with_default(" VPN: $icon ")?,
             )
-            .icon("icon", IconChoices::one("net_wireless")),
+            .icon("icon", IconChoices::one("net_wireless"))
+            .always_provides("icon", ValueKind::Icon),
         );
     }
     outputs.push(
@@ -167,16 +170,16 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
             "error",
             config.format_disconnected.with_default(" VPN: $icon ")?,
         )
-        .icon("icon", IconChoices::one("net_down")),
+        .icon("icon", IconChoices::one("net_down"))
+        .always_provides("icon", ValueKind::Icon),
     );
     Ok(BlockPlan::new(outputs))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[(MouseButton::Left, None, "toggle")])?;
 
-    let plan = prepare(config)?;
     let output_connected = plan.output("connected")?;
     let output_disconnected = plan.output("disconnected")?;
     let output_connecting = if config.driver.can_report_connecting() {
@@ -208,7 +211,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             Status::Error(_) => &output_error,
         };
         let mut widget = output.new_widget();
-        let icon = output.single_icon("icon")?;
+        let icon = output.icon_value("icon")?;
 
         widget.state = match &status {
             Status::Connected {
@@ -217,7 +220,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 profile,
             } => {
                 widget.set_values(map!(
-                        "icon" => Value::icon(icon.clone()),
+                        "icon" => icon.clone(),
                         [if let Some(country) = country] "country" => Value::text(country.into()),
                         [if let Some(flag) = country_flag] "flag" => Value::text(flag.into()),
                         [if let Some(profile) = profile] "profile" => Value::text(profile.into()),
@@ -226,21 +229,21 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             }
             Status::Disconnected { profile } => {
                 widget.set_values(map! {
-                    "icon" => Value::icon(icon.clone()),
+                    "icon" => icon.clone(),
                     [if let Some(profile) = profile] "profile" => Value::text(profile.into()),
                 });
                 config.state_disconnected
             }
             Status::Connecting { profile } => {
                 widget.set_values(map!(
-                        "icon" => Value::icon(icon.clone()),
+                        "icon" => icon.clone(),
                         [if let Some(profile) = profile] "profile" => Value::text(profile.into()),
                 ));
                 State::Info
             }
             Status::Error(error) => {
                 widget.set_values(map!(
-                        "icon" => Value::icon(icon.clone()),
+                        "icon" => icon.clone(),
                         [if let Some(error) = error] "error" => Value::text(error.into())
                 ));
                 State::Critical

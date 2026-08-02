@@ -99,11 +99,19 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
                 .format
                 .with_default(" $icon $utilization $memory $temperature ")?,
         )
-        .icon("icon", IconChoices::one("gpu")),
+        .icon("icon", IconChoices::one("gpu"))
+        .always_provides("icon", ValueKind::Icon)
+        .always_provides("name", ValueKind::Text)
+        .always_provides("utilization", ValueKind::Number)
+        .always_provides("memory", ValueKind::Number)
+        .always_provides("temperature", ValueKind::Number)
+        .always_provides("fan_speed", ValueKind::Number)
+        .always_provides("clocks", ValueKind::Number)
+        .always_provides("power", ValueKind::Number),
     ]))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, Some(MEM_BTN), "toggle_mem_total"),
@@ -112,7 +120,6 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         (MouseButton::WheelDown, Some(FAN_BTN), "fan_speed_down"),
     ])?;
 
-    let plan = prepare(config)?;
     let output_main = plan.output("main")?;
 
     // Run `nvidia-smi` command
@@ -148,7 +155,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         };
 
         widget.set_values(map! {
-            "icon" => Value::icon("gpu"),
+            "icon" => output_main.icon_value("icon")?,
             "name" => Value::text(info.name.clone()),
             "utilization" => Value::percents(info.utilization),
             "memory" => Value::bytes(if show_mem_total {info.mem_total} else {info.mem_used}).with_instance(MEM_BTN),
@@ -299,5 +306,28 @@ mod tests {
         let main = plan.output("main").unwrap();
         assert!(main.format().contains_key("fan_speed"));
         assert!(!main.format().contains_key("utilization"));
+    }
+
+    #[test]
+    fn all_gpu_values_are_guaranteed() {
+        let plan = prepare(&Config::default()).unwrap();
+        let main = plan.output("main").unwrap();
+        assert_eq!(main.output().guaranteed_kind("icon"), Some(ValueKind::Icon));
+        assert_eq!(main.output().guaranteed_kind("name"), Some(ValueKind::Text));
+        for placeholder in [
+            "utilization",
+            "memory",
+            "temperature",
+            "fan_speed",
+            "clocks",
+            "power",
+        ] {
+            assert_eq!(
+                main.output().guaranteed_kind(placeholder),
+                Some(ValueKind::Number),
+                "{placeholder}"
+            );
+        }
+        assert_eq!(main.output().guaranteed_kind("bogus"), None);
     }
 }

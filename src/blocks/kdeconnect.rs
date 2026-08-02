@@ -84,6 +84,7 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
                 .with_default(" $icon $name {$bat_icon $bat_charge |}{$notif_icon |}")?,
         )
         .icon("icon", IconChoices::one("phone"))
+        .always_provides("icon", ValueKind::Icon)
         .icon("bat_icon", IconChoices::fixed(["bat", "bat_charging"]))
         .icon("network_icon", IconChoices::one("net_cellular"))
         .icon("notif_icon", IconChoices::one("notification")),
@@ -92,16 +93,17 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
             config.disconnected_format.with_default(" $icon ")?,
         )
         .icon("icon", IconChoices::one("phone_disconnected"))
+        .always_provides("icon", ValueKind::Icon)
         .icon("bat_icon", IconChoices::fixed(["bat", "bat_charging"]))
         .icon("network_icon", IconChoices::one("net_cellular"))
         .icon("notif_icon", IconChoices::one("notification")),
         OutputPlan::new("missing", config.missing_format.with_default(" $icon x ")?)
-            .icon("icon", IconChoices::one("phone_disconnected")),
+            .icon("icon", IconChoices::one("phone_disconnected"))
+        .always_provides("icon", ValueKind::Icon),
     ]))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let plan = prepare(config)?;
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let output_connected = plan.output("connected")?;
     let output_disconnected = plan.output("disconnected")?;
     let output_missing = plan.output("missing")?;
@@ -126,21 +128,21 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 let mut widget = output.new_widget();
 
                 let mut values = map! {
-                    [if info.connected] "icon" => Value::icon("phone"),
-                    [if !info.connected] "icon" => Value::icon("phone_disconnected"),
+                    "icon" => output.icon_value("icon")?,
                     [if let Some(name) = info.name] "name" => Value::text(name),
                     [if info.notifications > 0] "notif_count" => Value::number(info.notifications),
-                    [if info.notifications > 0] "notif_icon" => Value::icon("notification"),
+                    [if info.notifications > 0] "notif_icon" => output.named_icon_value("notif_icon", "notification")?,
                     [if let Some(bat) = info.bat_level] "bat_charge" => Value::percents(bat),
                 };
 
                 if let Some(bat_level) = info.bat_level {
                     values.insert(
                         "bat_icon".into(),
-                        Value::icon_progression(
+                        output.icon_progression(
+                            "bat_icon",
                             if info.charging { "bat_charging" } else { "bat" },
                             bat_level as f64 / 100.0,
-                        ),
+                        )?,
                     );
                     if battery_state {
                         widget.state = if info.charging {
@@ -173,10 +175,11 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                         (info.cellular_network_strength.clamp(0, 4) * 25) as f64;
                     values.insert(
                         "network_icon".into(),
-                        Value::icon_progression(
+                        output.icon_progression(
+                            "network_icon",
                             "net_cellular",
                             (info.cellular_network_strength + 1).clamp(0, 5) as f64 / 5.0,
-                        ),
+                        )?,
                     );
                     values.insert(
                         "network_strength".into(),
@@ -196,7 +199,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             }
             None => {
                 let mut widget = output_missing.new_widget();
-                widget.set_values(map! { "icon" => Value::icon("phone_disconnected") });
+                widget.set_values(map! { "icon" => output_missing.icon_value("icon")? });
                 api.set_widget(widget)?;
             }
         }

@@ -57,11 +57,10 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     )]))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[(MouseButton::Left, None, "toggle_show_time")])?;
 
-    let plan = prepare(config)?;
     let output_main = plan.output("main")?;
 
     let mut show_time = config.show_time;
@@ -261,5 +260,15 @@ mod tests {
         };
         let plan = prepare(&config).unwrap();
         assert!(plan.output("main").unwrap().format().contains_key("text"));
+    }
+
+    #[test]
+    fn text_is_deliberately_not_guaranteed() {
+        // When there is no active tracking and no previous state, the block
+        // renders an empty value set, so `text` is conditional and must not
+        // be declared via always_provides.
+        let plan = prepare(&Config::default()).unwrap();
+        let main = plan.output("main").unwrap();
+        assert_eq!(main.output().guaranteed_kind("text"), None);
     }
 }

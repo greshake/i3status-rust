@@ -83,29 +83,38 @@ fn boost_icon(on: bool) -> &'static str {
 }
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
-    let mut outputs = vec![
-        OutputPlan::new("main", config.format.with_default(" $icon $utilization ")?)
+    // `icon`, `barchart` and `utilization` are computed on every update.
+    // `frequency`/`max_frequency` (CPU support), `boost` (sysfs support) and
+    // the per-core `utilizationN`/`frequencyN` values are conditional or
+    // dynamically named, so they stay undeclared.
+    let declare = |output: OutputPlan| {
+        output
             .icon("icon", IconChoices::one("cpu"))
-            .icon("boost", IconChoices::fixed(BOOST_ICON_NAMES)),
-    ];
+            .icon("boost", IconChoices::fixed(BOOST_ICON_NAMES))
+            .always_provides("icon", ValueKind::Icon)
+            .always_provides("barchart", ValueKind::Text)
+            .always_provides("utilization", ValueKind::Number)
+    };
+    let mut outputs = vec![declare(OutputPlan::new(
+        "main",
+        config.format.with_default(" $icon $utilization ")?,
+    ))];
     if let Some(format_alt) = &config.format_alt {
-        outputs.push(
-            OutputPlan::new("alt", format_alt.with_default("")?)
-                .icon("icon", IconChoices::one("cpu"))
-                .icon("boost", IconChoices::fixed(BOOST_ICON_NAMES)),
-        );
+        outputs.push(declare(OutputPlan::new(
+            "alt",
+            format_alt.with_default("")?,
+        )));
     }
     Ok(BlockPlan::new(outputs))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, None, "next_format"),
         (MouseButton::Right, None, "prev_format"),
     ])?;
 
-    let plan = prepare(config)?;
     let output_main = plan.output("main")?;
     let output_alt = match &config.format_alt {
         Some(_) => Some(plan.output("alt")?),
@@ -148,14 +157,21 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         // Read boost state on intel CPUs
         let boost = boost_status().await.map(boost_icon);
 
+        let output = match (&output_alt, alt_shown) {
+            (Some(alt), true) => alt,
+            _ => &output_main,
+        };
+
         let mut values = map!(
-            "icon" => Value::icon_progression("cpu", utilization_avg),
+            "icon" => output.icon_progression("icon", "cpu", utilization_avg)?,
             "barchart" => Value::text(barchart),
             "utilization" => Value::percents(utilization_avg * 100.),
             [if !freqs.is_empty()] "frequency" => Value::hertz(freqs.iter().sum::<f64>() / (freqs.len() as f64)),
             [if !freqs.is_empty()] "max_frequency" => Value::hertz(freqs.iter().copied().max_by(f64::total_cmp).unwrap()),
         );
-        boost.map(|b| values.insert("boost".into(), Value::icon(b)));
+        if let Some(boost) = boost {
+            values.insert("boost".into(), output.named_icon_value("boost", boost)?);
+        }
         for (i, freq) in freqs.iter().enumerate() {
             values.insert(format!("frequency{}", i + 1).into(), Value::hertz(*freq));
         }
@@ -166,10 +182,6 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             );
         }
 
-        let output = match (&output_alt, alt_shown) {
-            (Some(alt), true) => alt,
-            _ => &output_main,
-        };
         let mut widget = output.new_widget();
         widget.set_values(values);
         widget.state = match utilization_avg * 100. {
@@ -338,5 +350,37 @@ mod tests {
             assert!(BOOST_ICON_NAMES.contains(&boost_icon(on)));
         }
         assert_eq!(BOOST_ICON_NAMES.len(), 2);
+    }
+
+    #[test]
+    fn unconditional_values_are_guaranteed_on_all_outputs() {
+        let config = Config {
+            format_alt: Some(" $icon ".parse().unwrap()),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        for id in ["main", "alt"] {
+            let output = plan.output(id).unwrap();
+            let output = output.output();
+            assert_eq!(
+                output.guaranteed_kind("icon"),
+                Some(ValueKind::Icon),
+                "{id}"
+            );
+            assert_eq!(
+                output.guaranteed_kind("barchart"),
+                Some(ValueKind::Text),
+                "{id}"
+            );
+            assert_eq!(
+                output.guaranteed_kind("utilization"),
+                Some(ValueKind::Number),
+                "{id}"
+            );
+            // Conditional values must not be guaranteed.
+            for key in ["frequency", "max_frequency", "boost"] {
+                assert_eq!(output.guaranteed_kind(key), None, "{id}.{key}");
+            }
+        }
     }
 }

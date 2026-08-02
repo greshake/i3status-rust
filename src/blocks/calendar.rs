@@ -278,17 +278,25 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
         .with_default(" $icon Check your web browser ")?;
     Ok(BlockPlan::new(vec![
         OutputPlan::new("no_events", no_events_format)
-            .icon("icon", IconChoices::one("calendar")),
+            .icon("icon", IconChoices::one("calendar"))
+            .always_provides("icon", ValueKind::Icon),
         OutputPlan::new("next_event", next_event_format)
-            .icon("icon", IconChoices::one("calendar")),
+            .icon("icon", IconChoices::one("calendar"))
+            .always_provides("icon", ValueKind::Icon)
+            .always_provides("start", ValueKind::Datetime)
+            .always_provides("end", ValueKind::Datetime),
         OutputPlan::new("ongoing_event", ongoing_event_format)
-            .icon("icon", IconChoices::one("calendar")),
-        OutputPlan::new("redirect", redirect_format).icon("icon", IconChoices::one("calendar")),
+            .icon("icon", IconChoices::one("calendar"))
+            .always_provides("icon", ValueKind::Icon)
+            .always_provides("start", ValueKind::Datetime)
+            .always_provides("end", ValueKind::Datetime),
+        OutputPlan::new("redirect", redirect_format)
+            .icon("icon", IconChoices::one("calendar"))
+            .always_provides("icon", ValueKind::Icon),
     ]))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let plan = prepare(config)?;
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let output_no_events = plan.output("no_events")?;
     let output_next_event = plan.output("next_event")?;
     let output_ongoing_event = plan.output("ongoing_event")?;
@@ -330,7 +338,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     loop {
         let mut output = &output_no_events;
         let mut values = map! {
-            "icon" => Value::icon("calendar"),
+            "icon" => output.icon_value("icon")?,
         };
 
         if matches!(widget_status, WidgetStatus::FetchSources) {
@@ -393,14 +401,14 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 &output_next_event
             };
             values = map! {
-                  "icon" => Value::icon("calendar"),
-                   [if let Some(summary) = event.summary] "summary" => Value::text(summary),
-                   [if let Some(description) = event.description] "description" => Value::text(description),
-                   [if let Some(location) = event.location] "location" => Value::text(location),
-                   [if let Some(url) = event.url] "url" => Value::text(url),
-                   "start" => Value::datetime(start_date, None),
-                   "end" => Value::datetime(end_date, None),
-                };
+              "icon" => output.icon_value("icon")?,
+               [if let Some(summary) = event.summary] "summary" => Value::text(summary),
+               [if let Some(description) = event.description] "description" => Value::text(description),
+               [if let Some(location) = event.location] "location" => Value::text(location),
+               [if let Some(url) = event.url] "url" => Value::text(url),
+               "start" => Value::datetime(start_date, None),
+               "end" => Value::datetime(end_date, None),
+            };
         }
 
         let mut widget = output.new_widget();
@@ -648,10 +656,38 @@ mod tests {
     fn plan_declares_every_state_with_the_calendar_icon() {
         let plan = prepare(&Config::default()).unwrap();
         let ids: Vec<_> = plan.outputs.iter().map(|o| o.id).collect();
-        assert_eq!(ids, ["no_events", "next_event", "ongoing_event", "redirect"]);
+        assert_eq!(
+            ids,
+            ["no_events", "next_event", "ongoing_event", "redirect"]
+        );
         for id in ids {
             let output = plan.output(id).unwrap();
             assert_eq!(output.single_icon("icon").unwrap(), "calendar");
+        }
+    }
+
+    #[test]
+    fn guarantees_cover_only_unconditional_values() {
+        let plan = prepare(&Config::default()).unwrap();
+        // Event states always render start/end (the widget only reaches
+        // those outputs when both dates exist); the textual event fields
+        // are optional and stay undeclared.
+        for id in ["next_event", "ongoing_event"] {
+            let output = plan.output(id).unwrap();
+            let output = output.output();
+            assert_eq!(output.guaranteed_kind("icon"), Some(ValueKind::Icon));
+            assert_eq!(output.guaranteed_kind("start"), Some(ValueKind::Datetime));
+            assert_eq!(output.guaranteed_kind("end"), Some(ValueKind::Datetime));
+            assert_eq!(output.guaranteed_kind("summary"), None);
+            assert_eq!(output.guaranteed_kind("description"), None);
+            assert_eq!(output.guaranteed_kind("location"), None);
+            assert_eq!(output.guaranteed_kind("url"), None);
+        }
+        for id in ["no_events", "redirect"] {
+            let output = plan.output(id).unwrap();
+            let output = output.output();
+            assert_eq!(output.guaranteed_kind("icon"), Some(ValueKind::Icon));
+            assert_eq!(output.guaranteed_kind("start"), None);
         }
     }
 

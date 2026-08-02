@@ -23,7 +23,30 @@ pub enum ValueInner {
     Flag,
 }
 
+/// The kind of a [`ValueInner`], as declarable by a block plan
+/// (see [`crate::block_plan::OutputPlan::always_provides`]).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ValueKind {
+    Text,
+    Icon,
+    Number,
+    Datetime,
+    Duration,
+    Flag,
+}
+
 impl ValueInner {
+    pub fn kind(&self) -> ValueKind {
+        match self {
+            ValueInner::Text(..) => ValueKind::Text,
+            ValueInner::Icon(..) => ValueKind::Icon,
+            ValueInner::Number { .. } => ValueKind::Number,
+            ValueInner::Datetime(..) => ValueKind::Datetime,
+            ValueInner::Duration(..) => ValueKind::Duration,
+            ValueInner::Flag => ValueKind::Flag,
+        }
+    }
+
     pub fn type_name(&self) -> &'static str {
         match self {
             ValueInner::Text(..) => "Text",
@@ -74,24 +97,33 @@ impl Value {
         Self::new(ValueInner::Duration(duration))
     }
 
-    pub fn icon<S>(name: S) -> Self
+    /// An icon value. The token proves the name was checked against the
+    /// block's prepared contract: it can only be minted by
+    /// [`crate::block_plan::OutputHandle`], so blocks cannot construct icon
+    /// values that bypass their plan.
+    pub fn icon<S>(name: S, token: crate::block_plan::IconToken) -> Self
+    where
+        S: Into<Cow<'static, str>>,
+    {
+        let _ = token;
+        Self::new(ValueInner::Icon(name.into(), None))
+    }
+
+    pub fn icon_progression<S>(name: S, value: f64, token: crate::block_plan::IconToken) -> Self
+    where
+        S: Into<Cow<'static, str>>,
+    {
+        let _ = token;
+        Self::new(ValueInner::Icon(name.into(), Some(value)))
+    }
+
+    /// Test-only escape hatch for constructing icon values without a plan.
+    #[cfg(test)]
+    pub(crate) fn test_icon<S>(name: S) -> Self
     where
         S: Into<Cow<'static, str>>,
     {
         Self::new(ValueInner::Icon(name.into(), None))
-    }
-
-    pub fn icon_progression<S>(name: S, value: f64) -> Self
-    where
-        S: Into<Cow<'static, str>>,
-    {
-        Self::new(ValueInner::Icon(name.into(), Some(value)))
-    }
-    pub fn icon_progression_bound<S>(name: S, value: f64, low: f64, high: f64) -> Self
-    where
-        S: Into<Cow<'static, str>>,
-    {
-        Self::icon_progression(name, (value.clamp(low, high) - low) / (high - low))
     }
 
     pub fn text(text: String) -> Self {

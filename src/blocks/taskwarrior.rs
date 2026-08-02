@@ -104,29 +104,37 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
             "main",
             config.format.with_default(" $icon $count.eng(w:1) ")?,
         )
-        .icon("icon", IconChoices::one("tasks")),
+        .icon("icon", IconChoices::one("tasks"))
+        .always_provides("icon", ValueKind::Icon)
+        .always_provides("count", ValueKind::Number)
+        .always_provides("filter_name", ValueKind::Text),
         OutputPlan::new(
             "singular",
             config
                 .format_singular
                 .with_default(" $icon $count.eng(w:1) ")?,
         )
-        .icon("icon", IconChoices::one("tasks")),
+        .icon("icon", IconChoices::one("tasks"))
+        .always_provides("icon", ValueKind::Icon)
+        .always_provides("count", ValueKind::Number)
+        .always_provides("filter_name", ValueKind::Text),
         OutputPlan::new(
             "everything_done",
             config
                 .format_everything_done
                 .with_default(" $icon $count.eng(w:1) ")?,
         )
-        .icon("icon", IconChoices::one("tasks")),
+        .icon("icon", IconChoices::one("tasks"))
+        .always_provides("icon", ValueKind::Icon)
+        .always_provides("count", ValueKind::Number)
+        .always_provides("filter_name", ValueKind::Text),
     ]))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[(MouseButton::Right, None, "next_filter")])?;
 
-    let plan = prepare(config)?;
     let output_main = plan.output("main")?;
     let output_singular = plan.output("singular")?;
     let output_everything_done = plan.output("everything_done")?;
@@ -154,7 +162,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let mut widget = output.new_widget();
 
         widget.set_values(map! {
-            "icon" => Value::icon("tasks"),
+            "icon" => output.icon_value("icon")?,
             "count" => Value::number(number_of_tasks),
             "filter_name" => Value::text(filter.name.clone()),
         });
@@ -238,6 +246,29 @@ mod tests {
         for id in ["main", "singular", "everything_done"] {
             let output = plan.output(id).unwrap();
             assert_eq!(output.single_icon("icon").unwrap(), "tasks", "{id}");
+        }
+    }
+
+    #[test]
+    fn every_state_guarantees_icon_count_and_filter_name() {
+        let plan = prepare(&Config::default()).unwrap();
+        for id in ["main", "singular", "everything_done"] {
+            let output = plan.output(id).unwrap();
+            assert_eq!(
+                output.output().guaranteed_kind("icon"),
+                Some(ValueKind::Icon),
+                "{id}"
+            );
+            assert_eq!(
+                output.output().guaranteed_kind("count"),
+                Some(ValueKind::Number),
+                "{id}"
+            );
+            assert_eq!(
+                output.output().guaranteed_kind("filter_name"),
+                Some(ValueKind::Text),
+                "{id}"
+            );
         }
     }
 

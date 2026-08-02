@@ -59,11 +59,14 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
                 .format
                 .with_default(" $icon {$time.duration(hms:true) |}")?,
         )
-        .icon("icon", IconChoices::one("tea")),
+        .icon("icon", IconChoices::one("tea"))
+        // `time`, `hours`, `minutes`, and `seconds` are only set while the
+        // timer is active, so they must not be guaranteed.
+        .always_provides("icon", ValueKind::Icon),
     ]))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, None, "increment"),
@@ -75,7 +78,6 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let interval: Seconds = 1.into();
     let mut timer = interval.timer();
 
-    let plan = prepare(config)?;
     let output_main = plan.output("main")?;
     let format = output_main.format().clone();
 
@@ -99,7 +101,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         timer_was_active = is_timer_active;
 
         let mut values = map!(
-            "icon" => Value::icon("tea"),
+            "icon" => output_main.icon_value("icon")?,
         );
 
         if is_timer_active {
@@ -153,6 +155,24 @@ mod tests {
         assert_eq!(declared, ["main"]);
         let output = plan.output("main").unwrap();
         assert_eq!(output.single_icon("icon").unwrap(), "tea");
+    }
+
+    #[test]
+    fn plan_guarantees_only_the_icon() {
+        let plan = prepare(&Config::default()).unwrap();
+        let output = plan.output("main").unwrap();
+        assert_eq!(
+            output.output().guaranteed_kind("icon"),
+            Some(ValueKind::Icon)
+        );
+        // Timer values are conditional (unset while inactive): no guarantee.
+        for placeholder in ["time", "hours", "minutes", "seconds"] {
+            assert_eq!(
+                output.output().guaranteed_kind(placeholder),
+                None,
+                "{placeholder}"
+            );
+        }
     }
 
     #[test]

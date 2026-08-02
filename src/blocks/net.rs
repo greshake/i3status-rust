@@ -80,38 +80,49 @@ pub struct Config {
 }
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
-    let device_icons = || IconChoices::fixed(NetDevice::ALL_ICONS);
+    // Every state that renders a device sets these on every render; the
+    // wifi-only values (ssid, signal_strength, ...) and the addresses are
+    // conditional and stay undeclared.
+    let device_output = |output: OutputPlan| {
+        output
+            .icon("icon", IconChoices::fixed(NetDevice::ALL_ICONS))
+            .always_provides("icon", ValueKind::Icon)
+            .always_provides("speed_down", ValueKind::Number)
+            .always_provides("speed_up", ValueKind::Number)
+            .always_provides("graph_down", ValueKind::Text)
+            .always_provides("graph_up", ValueKind::Text)
+            .always_provides("device", ValueKind::Text)
+    };
     let mut outputs = vec![
-        OutputPlan::new(
+        device_output(OutputPlan::new(
             "main",
             config.format.with_default(
                 " $icon ^icon_net_down $speed_down.eng(prefix:K) ^icon_net_up $speed_up.eng(prefix:K) ",
             )?,
-        )
-        .icon("icon", device_icons()),
-        OutputPlan::new(
+        )),
+        device_output(OutputPlan::new(
             "inactive",
             config.inactive_format.with_default(" $icon Down ")?,
-        )
-        .icon("icon", device_icons()),
+        )),
+        // `missing` sets no values at all: nothing to declare.
         OutputPlan::new("missing", config.missing_format.with_default(" × ")?),
     ];
     if let Some(format_alt) = &config.format_alt {
-        outputs.push(
-            OutputPlan::new("alt", format_alt.with_default("")?).icon("icon", device_icons()),
-        );
+        outputs.push(device_output(OutputPlan::new(
+            "alt",
+            format_alt.with_default("")?,
+        )));
     }
     Ok(BlockPlan::new(outputs))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, None, "next_format"),
         (MouseButton::Right, None, "prev_format"),
     ])?;
 
-    let plan = prepare(config)?;
     let output_main = plan.output("main")?;
     let output_inactive = plan.output("inactive")?;
     let output_missing = plan.output("missing")?;
@@ -175,9 +186,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 push_to_hist(&mut tx_hist, speed_up);
 
                 let icon = if let Some(signal) = device.signal() {
-                    Value::icon_progression(device.icon, signal / 100.0)
+                    output.icon_progression("icon", device.icon, signal / 100.0)?
                 } else {
-                    Value::icon(device.icon)
+                    output.named_icon_value("icon", device.icon)?
                 };
 
                 widget.set_values(map! {
@@ -249,6 +260,52 @@ mod tests {
         // `missing` renders a bare format and sets no values at all.
         let missing = plan.output("missing").unwrap();
         assert_eq!(missing.output().icon_placeholders().count(), 0);
+    }
+
+    #[test]
+    fn device_states_guarantee_unconditional_values_only() {
+        let config = Config {
+            format_alt: Some(" $icon $device ".parse().unwrap()),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        for id in ["main", "inactive", "alt"] {
+            let output = plan.output(id).unwrap();
+            for (placeholder, kind) in [
+                ("icon", ValueKind::Icon),
+                ("speed_down", ValueKind::Number),
+                ("speed_up", ValueKind::Number),
+                ("graph_down", ValueKind::Text),
+                ("graph_up", ValueKind::Text),
+                ("device", ValueKind::Text),
+            ] {
+                assert_eq!(
+                    output.output().guaranteed_kind(placeholder),
+                    Some(kind),
+                    "{id} must guarantee {placeholder}"
+                );
+            }
+            // WiFi-only and address values are conditional: never guaranteed.
+            for placeholder in [
+                "ssid",
+                "signal_strength",
+                "frequency",
+                "bitrate",
+                "ip",
+                "ipv6",
+                "nameserver",
+            ] {
+                assert_eq!(
+                    output.output().guaranteed_kind(placeholder),
+                    None,
+                    "{id} must not guarantee conditional {placeholder}"
+                );
+            }
+        }
+        // `missing` sets nothing, so it guarantees nothing.
+        let missing = plan.output("missing").unwrap();
+        assert_eq!(missing.output().guaranteed_kind("icon"), None);
+        assert_eq!(missing.output().guaranteed_kind("device"), None);
     }
 
     #[test]

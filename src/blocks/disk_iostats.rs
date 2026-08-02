@@ -68,13 +68,17 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
                 .format
                 .with_default(" $icon $speed_read.eng(prefix:K) $speed_write.eng(prefix:K) ")?,
         )
-        .icon("icon", IconChoices::one("disk_drive")),
+        .icon("icon", IconChoices::one("disk_drive"))
+        .always_provides("icon", ValueKind::Icon)
+        .always_provides("device", ValueKind::Text)
+        .always_provides("speed_read", ValueKind::Number)
+        .always_provides("speed_write", ValueKind::Number),
+        // The "missing" output sets no values at all.
         OutputPlan::new("missing", config.missing_format.with_default(" × ")?),
     ]))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let plan = prepare(config)?;
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let output_main = plan.output("main")?;
     let output_missing = plan.output("missing")?;
 
@@ -118,7 +122,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 old_stats = Some(new_stats);
 
                 widget.set_values(map! {
-                    "icon" => Value::icon("disk_drive"),
+                    "icon" => output_main.icon_value("icon")?,
                     "speed_read" => Value::bytes(speed_read),
                     "speed_write" => Value::bytes(speed_write),
                     "device" => Value::text(device),
@@ -253,5 +257,19 @@ mod tests {
         let plan = prepare(&config).unwrap();
         let missing = plan.output("missing").unwrap();
         assert!(missing.format().contains_key("device"));
+    }
+
+    #[test]
+    fn main_guarantees_every_value_and_missing_none() {
+        let plan = prepare(&Config::default()).unwrap();
+        let main = plan.output("main").unwrap();
+        let main = main.output();
+        assert_eq!(main.guaranteed_kind("icon"), Some(ValueKind::Icon));
+        assert_eq!(main.guaranteed_kind("device"), Some(ValueKind::Text));
+        assert_eq!(main.guaranteed_kind("speed_read"), Some(ValueKind::Number));
+        assert_eq!(main.guaranteed_kind("speed_write"), Some(ValueKind::Number));
+        // "missing" renders without any values, so it must guarantee none.
+        let missing = plan.output("missing").unwrap();
+        assert_eq!(missing.output().guaranteed_kind("device"), None);
     }
 }

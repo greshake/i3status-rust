@@ -64,12 +64,13 @@ fn expand_inbox(inbox: &str) -> Result<impl Iterator<Item = PathBuf>> {
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     Ok(BlockPlan::new(vec![
         OutputPlan::new("main", config.format.with_default(" $icon $status ")?)
-            .icon("icon", IconChoices::one("mail")),
+            .icon("icon", IconChoices::one("mail"))
+            .always_provides("icon", ValueKind::Icon)
+            .always_provides("status", ValueKind::Number),
     ]))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let plan = prepare(config)?;
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let output_main = plan.output("main")?;
 
     let mut inboxes = Vec::with_capacity(config.inboxes.len());
@@ -97,7 +98,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             State::Idle
         };
         widget.set_values(map!(
-            "icon" => Value::icon("mail"),
+            "icon" => output_main.icon_value("icon")?,
             "status" => Value::number(newmails)
         ));
         api.set_widget(widget)?;
@@ -128,6 +129,20 @@ mod tests {
         assert_eq!(declared, ["main"]);
         let output = plan.output("main").unwrap();
         assert_eq!(output.single_icon("icon").unwrap(), "mail");
+    }
+
+    #[test]
+    fn plan_guarantees_all_values() {
+        let plan = prepare(&Config::default()).unwrap();
+        let output = plan.output("main").unwrap();
+        assert_eq!(
+            output.output().guaranteed_kind("icon"),
+            Some(ValueKind::Icon)
+        );
+        assert_eq!(
+            output.output().guaranteed_kind("status"),
+            Some(ValueKind::Number)
+        );
     }
 
     #[test]

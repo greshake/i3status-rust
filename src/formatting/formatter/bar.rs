@@ -55,6 +55,10 @@ const VERTICAL_BAR_CHARS: [char; 9] = [
 ];
 
 impl Formatter for BarFormatter {
+    fn infallible_for(&self, kind: ValueKind) -> bool {
+        matches!(kind, ValueKind::Number)
+    }
+
     fn format(&self, val: &Value, _config: &SharedConfig) -> Result<String, FormatError> {
         match val {
             &Value::Number { mut val, .. } => {

@@ -67,12 +67,13 @@ pub struct Config {
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     Ok(BlockPlan::new(vec![
         OutputPlan::new("main", config.format.with_default(" $icon $count ")?)
-            .icon("icon", IconChoices::one("mail")),
+            .icon("icon", IconChoices::one("mail"))
+            .always_provides("icon", ValueKind::Icon)
+            .always_provides("count", ValueKind::Number),
     ]))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let plan = prepare(config)?;
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let output_main = plan.output("main")?;
 
     let db = config.maildir.expand()?;
@@ -85,7 +86,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let mut widget = output_main.new_widget();
 
         widget.set_values(map! {
-            "icon" => Value::icon("mail"),
+            "icon" => output_main.icon_value("icon")?,
             "count" => Value::number(count)
         });
 
@@ -132,6 +133,20 @@ mod tests {
         assert_eq!(declared, ["main"]);
         let output = plan.output("main").unwrap();
         assert_eq!(output.single_icon("icon").unwrap(), "mail");
+    }
+
+    #[test]
+    fn plan_guarantees_all_values() {
+        let plan = prepare(&Config::default()).unwrap();
+        let output = plan.output("main").unwrap();
+        assert_eq!(
+            output.output().guaranteed_kind("icon"),
+            Some(ValueKind::Icon)
+        );
+        assert_eq!(
+            output.output().guaranteed_kind("count"),
+            Some(ValueKind::Number)
+        );
     }
 
     #[test]

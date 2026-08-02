@@ -188,6 +188,10 @@ fn borrow_item<'a>(item: &'a Item) -> Item<'a> {
 }
 
 impl Formatter for DatetimeFormatter {
+    fn infallible_for(&self, kind: ValueKind) -> bool {
+        matches!(kind, ValueKind::Datetime)
+    }
+
     fn format(&self, val: &Value, _config: &SharedConfig) -> Result<String, FormatError> {
         #[allow(clippy::unnecessary_wraps)]
         fn for_generic_datetime<T>(

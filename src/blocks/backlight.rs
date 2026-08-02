@@ -107,7 +107,10 @@ pub struct Config {
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     Ok(BlockPlan::new(vec![
         OutputPlan::new("main", config.format.with_default(" $icon $brightness ")?)
-            .icon("icon", IconChoices::one("backlight")),
+            .icon("icon", IconChoices::one("backlight"))
+            .always_provides("icon", ValueKind::Icon)
+            .always_provides("brightness", ValueKind::Number),
+        // The "missing" output sets no values at all.
         OutputPlan::new(
             "missing",
             config
@@ -117,7 +120,7 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     ]))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, None, "cycle"),
@@ -125,7 +128,6 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         (MouseButton::WheelDown, None, "brightness_down"),
     ])?;
 
-    let plan = prepare(config)?;
     let output_main = plan.output("main")?;
     let output_missing = plan.output("missing")?;
 
@@ -196,7 +198,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     icon_value = 1.0 - icon_value;
                 }
                 widget.set_values(map! {
-                    "icon" => Value::icon_progression("backlight", icon_value),
+                    "icon" => output_main.icon_progression("icon", "backlight", icon_value)?,
                     "brightness" => Value::percents((brightness * 100.0).round())
                 });
                 api.set_widget(widget)?;
@@ -262,6 +264,20 @@ mod tests {
         assert!(main.format().contains_key("brightness"));
         let missing = plan.output("missing").unwrap();
         assert_eq!(missing.output().icon_placeholders().count(), 0);
+    }
+
+    #[test]
+    fn main_guarantees_icon_and_brightness() {
+        let plan = prepare(&Config::default()).unwrap();
+        let main = plan.output("main").unwrap();
+        assert_eq!(main.output().guaranteed_kind("icon"), Some(ValueKind::Icon));
+        assert_eq!(
+            main.output().guaranteed_kind("brightness"),
+            Some(ValueKind::Number)
+        );
+        // "missing" renders without any values, so it must guarantee none.
+        let missing = plan.output("missing").unwrap();
+        assert_eq!(missing.output().guaranteed_kind("brightness"), None);
     }
 
     #[test]

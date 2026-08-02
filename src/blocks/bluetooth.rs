@@ -101,20 +101,26 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     Ok(BlockPlan::new(vec![
         OutputPlan::new("connected", format)
             .icon("icon", IconChoices::fixed(DEVICE_ICONS))
-            .icon("battery_icon", IconChoices::one("bat")),
+            .icon("battery_icon", IconChoices::one("bat"))
+            .always_provides("icon", ValueKind::Icon)
+            .always_provides("name", ValueKind::Text)
+            .always_provides("available", ValueKind::Flag),
         OutputPlan::new("disconnected", disconnected_format.clone())
             .icon("icon", IconChoices::fixed(DEVICE_ICONS))
-            .icon("battery_icon", IconChoices::one("bat")),
+            .icon("battery_icon", IconChoices::one("bat"))
+            .always_provides("icon", ValueKind::Icon)
+            .always_provides("name", ValueKind::Text)
+            .always_provides("available", ValueKind::Flag),
         OutputPlan::new("unavailable", disconnected_format)
-            .icon("icon", IconChoices::one("bluetooth")),
+            .icon("icon", IconChoices::one("bluetooth"))
+            .always_provides("icon", ValueKind::Icon),
     ]))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[(MouseButton::Right, None, "toggle")])?;
 
-    let plan = prepare(config)?;
     let output_connected = plan.output("connected")?;
     let output_disconnected = plan.output("disconnected")?;
     let output_unavailable = plan.output("unavailable")?;
@@ -145,12 +151,12 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 let mut widget = output.new_widget();
 
                 let values = map! {
-                    "icon" => Value::icon(device.icon),
+                    "icon" => output.named_icon_value("icon", device.icon)?,
                     "name" => Value::text(device.name),
                     "available" => Value::flag(),
                     [if let Some(p) = device.battery_percentage] "percentage" => Value::percents(p),
                     [if let Some(p) = device.battery_percentage]
-                        "battery_icon" => Value::icon_progression("bat", p as f64 / 100.0),
+                        "battery_icon" => output.icon_progression("battery_icon", "bat", p as f64 / 100.0)?,
                 };
 
                 if device.connected {
@@ -169,7 +175,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             None => {
                 debug!("Showing device as unavailable");
                 let mut widget = output_unavailable.new_widget();
-                widget.set_values(map!("icon" => Value::icon("bluetooth")));
+                widget.set_values(map!("icon" => output_unavailable.icon_value("icon")?));
                 api.set_widget(widget)?;
             }
         }
@@ -501,6 +507,27 @@ mod tests {
             unavailable.output().choices_for("battery_icon").is_none(),
             "battery values are never set when the device is unavailable"
         );
+    }
+
+    #[test]
+    fn guarantees_cover_only_unconditional_values() {
+        let plan = prepare(&config()).unwrap();
+        // icon, name and available are set on every render of the device
+        // states; battery values only appear when the device reports them.
+        for id in ["connected", "disconnected"] {
+            let output = plan.output(id).unwrap();
+            let output = output.output();
+            assert_eq!(output.guaranteed_kind("icon"), Some(ValueKind::Icon));
+            assert_eq!(output.guaranteed_kind("name"), Some(ValueKind::Text));
+            assert_eq!(output.guaranteed_kind("available"), Some(ValueKind::Flag));
+            assert_eq!(output.guaranteed_kind("percentage"), None);
+            assert_eq!(output.guaranteed_kind("battery_icon"), None);
+        }
+        let unavailable = plan.output("unavailable").unwrap();
+        let unavailable = unavailable.output();
+        assert_eq!(unavailable.guaranteed_kind("icon"), Some(ValueKind::Icon));
+        assert_eq!(unavailable.guaranteed_kind("name"), None);
+        assert_eq!(unavailable.guaranteed_kind("available"), None);
     }
 
     #[test]

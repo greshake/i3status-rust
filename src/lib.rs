@@ -225,10 +225,15 @@ impl Block {
             &self.error_outputs.error
         };
         let mut widget = output.new_widget().with_state(State::Critical);
+        let restart_icon = if restartable {
+            output.icon_value("restart_block_icon").ok()
+        } else {
+            None
+        };
         widget.set_values(map! {
             "full_error_message" => Value::text(error.to_string()),
             [if let Some(v) = &error.error.message] "short_error_message" => Value::text(v.to_string()),
-            [if restartable] "restart_block_icon" => Value::icon("refresh").with_instance(RESTART_BLOCK_BTN),
+            [if let Some(icon) = restart_icon] "restart_block_icon" => icon.with_instance(RESTART_BLOCK_BTN),
         });
         self.state = BlockState::Error { widget };
     }

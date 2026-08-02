@@ -49,12 +49,15 @@ pub struct Config {
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     Ok(BlockPlan::new(vec![
         OutputPlan::new("main", config.format.with_default(" $icon $1m.eng(w:4) ")?)
-            .icon("icon", IconChoices::one("cogs")),
+            .icon("icon", IconChoices::one("cogs"))
+            .always_provides("icon", ValueKind::Icon)
+            .always_provides("1m", ValueKind::Number)
+            .always_provides("5m", ValueKind::Number)
+            .always_provides("15m", ValueKind::Number),
     ]))
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let plan = prepare(config)?;
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let output_main = plan.output("main")?;
 
     // borrowed from https://docs.rs/cpuinfo/0.1.1/src/cpuinfo/count/logical.rs.html#4-6
@@ -91,7 +94,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             _ => State::Idle,
         };
         widget.set_values(map! {
-            "icon" => Value::icon("cogs"),
+            "icon" => output_main.icon_value("icon")?,
             "1m" => Value::number(m1),
             "5m" => Value::number(m5),
             "15m" => Value::number(m15),
@@ -116,6 +119,23 @@ mod tests {
         assert_eq!(declared, ["main"]);
         let output = plan.output("main").unwrap();
         assert_eq!(output.single_icon("icon").unwrap(), "cogs");
+    }
+
+    #[test]
+    fn plan_guarantees_all_values() {
+        let plan = prepare(&Config::default()).unwrap();
+        let output = plan.output("main").unwrap();
+        assert_eq!(
+            output.output().guaranteed_kind("icon"),
+            Some(ValueKind::Icon)
+        );
+        for placeholder in ["1m", "5m", "15m"] {
+            assert_eq!(
+                output.output().guaranteed_kind(placeholder),
+                Some(ValueKind::Number),
+                "{placeholder}"
+            );
+        }
     }
 
     #[test]
