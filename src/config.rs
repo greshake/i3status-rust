@@ -47,6 +47,11 @@ pub struct SharedConfig {
     pub icons: Arc<Icons>,
     #[serde(default = "default_icons_format")]
     pub icons_format: Arc<String>,
+    /// When set, every icon name that is actually rendered is recorded here.
+    /// Used by `--doctor` for exact render-time accounting: only icons on
+    /// the format branch that succeeded pass through `get_icon`.
+    #[serde(skip)]
+    pub(crate) icon_recorder: Option<Arc<std::sync::Mutex<Vec<String>>>>,
 }
 
 impl Default for SharedConfig {
@@ -55,6 +60,7 @@ impl Default for SharedConfig {
             theme: Default::default(),
             icons: Default::default(),
             icons_format: default_icons_format(),
+            icon_recorder: None,
         }
     }
 }
@@ -77,6 +83,12 @@ fn default_icons_format() -> Arc<String> {
 
 impl SharedConfig {
     pub fn get_icon(&self, icon: &str, value: Option<f64>) -> Result<String> {
+        if let Some(recorder) = &self.icon_recorder
+            && !icon.is_empty()
+            && let Ok(mut recorder) = recorder.lock()
+        {
+            recorder.push(icon.to_string());
+        }
         if icon.is_empty() {
             Ok(String::new())
         } else {

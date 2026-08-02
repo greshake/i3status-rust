@@ -306,14 +306,15 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
     // icons_overrides are analyzed separately.
     let labels = instance_labels(&block_names);
     let mut used_now: BTreeMap<String, HashSet<String>> = BTreeMap::new();
-    // Whether each block instance can render icons at all: false only when
-    // it has explicit formats and none of them references an icon — then
-    // icon availability is irrelevant for that block. (The live test is not
-    // used for this: optional placeholders can hide icons in one state.)
-    let mut icon_relevant: HashMap<String, bool> = HashMap::new();
+    // What is known about each block instance's ability to render each icon;
+    // starts from static format analysis, refined by the live render.
+    let mut icon_relevant: HashMap<String, IconRelevance> = HashMap::new();
     // ^icon_* references in format strings count as explicit usage
     for (index, info) in collect_blocks(&raw).iter().enumerate() {
-        icon_relevant.insert(labels[index].clone(), info.uses_icons().unwrap_or(true));
+        icon_relevant.insert(
+            labels[index].clone(),
+            IconRelevance::Static(info.uses_icons().unwrap_or(true)),
+        );
         for format in &info.formats {
             for icon in &format.icon_refs {
                 used_now
@@ -364,6 +365,38 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                     .get(report.index)
                     .cloned()
                     .unwrap_or_else(|| report.name.clone());
+                match &report.verdict {
+                    LiveVerdict::Rendered {
+                        icons,
+                        provided_icons,
+                        ..
+                    } => {
+                        let rendered: HashSet<String> = icons.iter().cloned().collect();
+                        let rendered_keys: HashSet<String> = provided_icons
+                            .iter()
+                            .filter(|(_, name)| rendered.contains(name))
+                            .map(|(key, _)| key.clone())
+                            .collect();
+                        let provided_keys: HashMap<String, String> = provided_icons
+                            .iter()
+                            .map(|(key, name)| (name.clone(), key.clone()))
+                            .collect();
+                        icon_relevant.insert(
+                            label.clone(),
+                            IconRelevance::Live {
+                                rendered,
+                                provided_keys,
+                                rendered_keys,
+                            },
+                        );
+                    }
+                    LiveVerdict::RenderError { .. } => {
+                        // rendering failed, possibly on an icon: everything
+                        // stays relevant
+                        icon_relevant.insert(label.clone(), IconRelevance::Static(true));
+                    }
+                    _ => (),
+                }
                 print_block_report(
                     report,
                     &label,
@@ -502,7 +535,11 @@ fn raw_block_names(raw: &toml::Value) -> Vec<String> {
 enum LiveVerdict {
     Rendered {
         text: String,
+        /// Icon names actually rendered (recorded during rendering, so only
+        /// the format branch that succeeded counts).
         icons: Vec<String>,
+        /// All icon values the block provided: placeholder key -> icon name.
+        provided_icons: Vec<(String, String)>,
     },
     RenderError {
         error: String,
@@ -887,18 +924,27 @@ async fn test_block(
 }
 
 fn render_widget(widget: &Widget, shared: &SharedConfig, index: usize) -> LiveVerdict {
-    match widget.get_data(shared, index) {
-        Ok(segments) => LiveVerdict::Rendered {
-            text: segments
-                .iter()
-                .map(|s| s.full_text.as_str())
-                .collect::<Vec<_>>()
-                .join(""),
-            // Only the icons the configured format actually renders: a block
-            // may provide icon values (e.g. $icon) that a custom format never
-            // references, and those cannot cause errors.
-            icons: icon_values(widget, true),
-        },
+    // Record which icons rendering actually consumes: syntactic inspection
+    // of the format is not enough, because a fallback branch containing
+    // $icon may never be evaluated.
+    let recorder = Arc::new(std::sync::Mutex::new(Vec::new()));
+    let mut shared = shared.clone();
+    shared.icon_recorder = Some(recorder.clone());
+    match widget.get_data(&shared, index) {
+        Ok(segments) => {
+            let mut icons: Vec<String> = recorder.lock().map(|r| r.clone()).unwrap_or_default();
+            icons.sort_unstable();
+            icons.dedup();
+            LiveVerdict::Rendered {
+                text: segments
+                    .iter()
+                    .map(|s| s.full_text.as_str())
+                    .collect::<Vec<_>>()
+                    .join(""),
+                icons,
+                provided_icons: provided_icon_values(widget),
+            }
+        }
         Err(error) => {
             let mut provided: Vec<String> = widget.values().keys().map(|k| k.to_string()).collect();
             provided.sort_unstable();
@@ -906,20 +952,22 @@ fn render_widget(widget: &Widget, shared: &SharedConfig, index: usize) -> LiveVe
                 error: error.to_string(),
                 provided,
                 // rendering failed, possibly on an icon: count all of them
-                icons: icon_values(widget, false),
+                icons: provided_icon_values(widget)
+                    .into_iter()
+                    .map(|(_, name)| name)
+                    .collect(),
             }
         }
     }
 }
 
-fn icon_values(widget: &Widget, only_rendered: bool) -> Vec<String> {
-    let mut icons: Vec<String> = widget
+/// All icon values a widget carries, as (placeholder key, icon name).
+fn provided_icon_values(widget: &Widget) -> Vec<(String, String)> {
+    let mut icons: Vec<(String, String)> = widget
         .values()
         .iter()
         .filter_map(|(key, value)| match &value.inner {
-            ValueInner::Icon(name, _) if !only_rendered || widget.format_contains_key(key) => {
-                Some(name.to_string())
-            }
+            ValueInner::Icon(name, _) => Some((key.to_string(), name.to_string())),
             _ => None,
         })
         .collect();
@@ -959,7 +1007,7 @@ fn print_block_report(
 ) {
     let tag = format!("[{}] {}", report.index + 1, report.name);
     match &report.verdict {
-        LiveVerdict::Rendered { text, icons } => {
+        LiveVerdict::Rendered { text, icons, .. } => {
             let icon_note = if icons.is_empty() {
                 String::new()
             } else {
@@ -1103,6 +1151,47 @@ enum Provenance {
     Local(String),
 }
 
+/// What is known about a block instance's ability to render a given icon.
+enum IconRelevance {
+    /// From the config's format strings only.
+    Static(bool),
+    /// From an actual successful render.
+    Live {
+        /// Icon names the render consumed.
+        rendered: HashSet<String>,
+        /// Icon name -> the placeholder key it was provided under.
+        provided_keys: HashMap<String, String>,
+        /// Placeholder keys whose icons were consumed.
+        rendered_keys: HashSet<String>,
+    },
+}
+
+impl IconRelevance {
+    fn is_relevant(&self, icon: &str) -> bool {
+        match self {
+            Self::Static(relevant) => *relevant,
+            Self::Live {
+                rendered,
+                provided_keys,
+                rendered_keys,
+            } => {
+                if rendered.contains(icon) {
+                    return true;
+                }
+                match provided_keys.get(icon) {
+                    // Provided under a placeholder the render never used:
+                    // this format cannot request it.
+                    Some(key) => rendered_keys.contains(key),
+                    // Unknown pathway (a state-dependent sibling like
+                    // bat_charging): relevant iff the block renders icons at
+                    // all.
+                    None => !rendered.is_empty(),
+                }
+            }
+        }
+    }
+}
+
 struct IconTableInput<'a> {
     base_map: &'a HashMap<String, Icon>,
     global_overrides: &'a HashMap<String, Icon>,
@@ -1110,8 +1199,8 @@ struct IconTableInput<'a> {
     builtin: &'a HashMap<String, Icon>,
     block_names: &'a [String],
     used_now: &'a BTreeMap<String, HashSet<String>>,
-    /// Per block label: whether its formats can render icons at all.
-    icon_relevant: &'a HashMap<String, bool>,
+    /// Per block label: what is known about its ability to render each icon.
+    icon_relevant: &'a HashMap<String, IconRelevance>,
     /// Whether the live block test ran (skipping it makes some checks
     /// inconclusive).
     live_ran: bool,
@@ -1246,9 +1335,12 @@ fn print_icon_table(input: IconTableInput) {
         // glyphs some block really renders produce rows.
         let mut groups: BTreeMap<Provenance, Vec<String>> = BTreeMap::new();
         for (block, is_may) in users {
-            // A block whose formats render no icons cannot error on a
-            // missing one; skip latent (may) findings for it.
-            let relevant = icon_relevant.get(block).copied().unwrap_or(true);
+            // A block whose formats cannot render this icon cannot error on
+            // it; skip latent (may) findings for it.
+            let relevant = icon_relevant
+                .get(block)
+                .map(|r| r.is_relevant(icon_name))
+                .unwrap_or(true);
             match resolve(icon_name, block) {
                 Some((icon, provenance)) => {
                     // An empty progression is stored but Icons::get returns
@@ -1897,6 +1989,9 @@ fn strip_font_modifiers(family: &str) -> String {
 struct FormatUse {
     icon_refs: Vec<String>,
     mentions_icon_placeholder: bool,
+    /// error_format / error_fullscreen_format: rendered only for errors, so
+    /// not evidence about the block's primary format.
+    is_error_format: bool,
 }
 
 struct BlockInfo {
@@ -1905,15 +2000,17 @@ struct BlockInfo {
 
 impl BlockInfo {
     /// Whether this block's configured formats can render icons at all:
-    /// Some(false) only when explicit formats exist and none of them
+    /// Some(false) only when explicit primary formats exist and none of them
     /// references an icon; None when the block uses its default format
-    /// (which must be assumed to render icons).
+    /// (which must be assumed to render icons). Error formats are ignored:
+    /// they replace nothing about normal rendering.
     fn uses_icons(&self) -> Option<bool> {
-        if self.formats.is_empty() {
+        let primary: Vec<&FormatUse> = self.formats.iter().filter(|f| !f.is_error_format).collect();
+        if primary.is_empty() {
             return None;
         }
         Some(
-            self.formats
+            primary
                 .iter()
                 .any(|f| !f.icon_refs.is_empty() || f.mentions_icon_placeholder),
         )
@@ -1934,39 +2031,62 @@ fn collect_blocks(raw: &toml::Value) -> Vec<BlockInfo> {
         .collect()
 }
 
-/// Recursively find string values under a `format` or `*_format` key
-/// (excluding `icons_format`, which is not a format template) and extract the
-/// `^icon_*` references from each.
+/// Whether a key holds a format template. `icons_format` is not a template,
+/// and error formats are classified separately: they only render on errors.
+fn format_key_kind(key: &str) -> Option<bool /* is_error_format */> {
+    if key == "icons_format" {
+        return None;
+    }
+    if key == "error_format" || key == "error_fullscreen_format" {
+        return Some(true);
+    }
+    (key == "format" || key.ends_with("_format")).then_some(false)
+}
+
+/// Recursively find format templates under `format` / `*_format` keys and
+/// extract what they reference. A format value can be a plain string or the
+/// table form `{ full = "...", short = "..." }`.
 fn collect_formats(value: &toml::Value, out: &mut Vec<FormatUse>) {
     let Some(table) = value.as_table() else {
         return;
     };
     for (key, value) in table {
-        match value {
-            toml::Value::String(s)
-                if (key == "format" || key.ends_with("_format")) && key != "icons_format" =>
-            {
-                if let Ok(template) = format_parse::parse_full(s) {
-                    let mut icon_refs = Vec::new();
-                    collect_icon_refs(&template, &mut icon_refs);
-                    let mut placeholders = Vec::new();
-                    collect_placeholders(&template, &mut placeholders);
-                    out.push(FormatUse {
-                        icon_refs,
-                        mentions_icon_placeholder: placeholders
-                            .iter()
-                            .any(|p| p == "icon" || p.contains("icon")),
-                    });
+        match (format_key_kind(key), value) {
+            (Some(is_error_format), toml::Value::String(s)) => {
+                push_format_use(s, is_error_format, out);
+            }
+            (Some(is_error_format), toml::Value::Table(parts)) => {
+                // { full = "...", short = "..." } form
+                for part in ["full", "short"] {
+                    if let Some(toml::Value::String(s)) = parts.get(part) {
+                        push_format_use(s, is_error_format, out);
+                    }
                 }
             }
-            toml::Value::Table(_) => collect_formats(value, out),
-            toml::Value::Array(array) => {
+            (_, toml::Value::Table(_)) => collect_formats(value, out),
+            (_, toml::Value::Array(array)) => {
                 for item in array {
                     collect_formats(item, out);
                 }
             }
             _ => (),
         }
+    }
+}
+
+fn push_format_use(s: &str, is_error_format: bool, out: &mut Vec<FormatUse>) {
+    if let Ok(template) = format_parse::parse_full(s) {
+        let mut icon_refs = Vec::new();
+        collect_icon_refs(&template, &mut icon_refs);
+        let mut placeholders = Vec::new();
+        collect_placeholders(&template, &mut placeholders);
+        out.push(FormatUse {
+            icon_refs,
+            mentions_icon_placeholder: placeholders
+                .iter()
+                .any(|p| p == "icon" || p.contains("icon")),
+            is_error_format,
+        });
     }
 }
 
@@ -2084,6 +2204,71 @@ mod tests {
         assert!(refs.contains(&"bat_charging"));
         assert!(refs.contains(&"nested_ref"));
         assert!(!refs.iter().any(|r| r.contains("not_a_template")));
+    }
+
+    #[test]
+    fn format_key_classification() {
+        assert_eq!(format_key_kind("format"), Some(false));
+        assert_eq!(format_key_kind("full_format"), Some(false));
+        assert_eq!(format_key_kind("inactive_format"), Some(false));
+        assert_eq!(format_key_kind("error_format"), Some(true));
+        assert_eq!(format_key_kind("error_fullscreen_format"), Some(true));
+        assert_eq!(format_key_kind("icons_format"), None);
+        assert_eq!(format_key_kind("command"), None);
+    }
+
+    #[test]
+    fn table_form_formats_and_error_formats() {
+        let raw: toml::Value = toml::from_str(
+            r#"
+            [[block]]
+            block = "time"
+            error_format = "$full_error_message"
+            [block.format]
+            full = " $timestamp "
+            short = " t "
+
+            [[block]]
+            block = "time"
+            error_format = "$full_error_message"
+            "#,
+        )
+        .unwrap();
+        let blocks = collect_blocks(&raw);
+        // table-form format counts as an explicit icon-free primary format
+        assert_eq!(blocks[0].uses_icons(), Some(false));
+        // error_format alone is not evidence of a primary format
+        assert_eq!(blocks[1].uses_icons(), None);
+    }
+
+    #[test]
+    fn per_icon_live_relevance() {
+        let live = IconRelevance::Live {
+            rendered: ["memory_swap".to_string()].into_iter().collect(),
+            provided_keys: [
+                ("memory_swap".to_string(), "icon_swap".to_string()),
+                ("memory_mem".to_string(), "icon_mem".to_string()),
+            ]
+            .into_iter()
+            .collect(),
+            rendered_keys: ["icon_swap".to_string()].into_iter().collect(),
+        };
+        assert!(live.is_relevant("memory_swap"));
+        // provided under a placeholder the render never used
+        assert!(!live.is_relevant("memory_mem"));
+        // unknown pathway while the block renders icons: stays relevant
+        assert!(live.is_relevant("bat_charging"));
+
+        let none_rendered = IconRelevance::Live {
+            rendered: HashSet::new(),
+            provided_keys: [("time".to_string(), "icon".to_string())]
+                .into_iter()
+                .collect(),
+            rendered_keys: HashSet::new(),
+        };
+        // { OK | $icon }: the icon branch never evaluated
+        assert!(!none_rendered.is_relevant("time"));
+        assert!(!none_rendered.is_relevant("anything_else"));
     }
 
     #[test]

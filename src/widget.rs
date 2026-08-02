@@ -56,14 +56,6 @@ impl Widget {
         &self.values
     }
 
-    /// Whether the widget's format references the given placeholder.
-    pub(crate) fn format_contains_key(&self, key: &str) -> bool {
-        match &self.source {
-            Source::Format(format) => format.contains_key(key),
-            _ => false,
-        }
-    }
-
     pub fn set_values(&mut self, new_values: Values) {
         self.values = new_values;
     }
