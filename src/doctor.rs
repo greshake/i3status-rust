@@ -814,11 +814,10 @@ struct BlockReport {
     index: usize,
     name: String,
     verdict: LiveVerdict,
-    /// Country flags the block generated during the run (recorded at the
-    /// source, `util::country_flag_from_iso_code`): text glyphs, not icons,
-    /// but font-dependent all the same.
+    /// (country code, flag) pairs the block generated during the run
+    /// (recorded at the source, `util::country_flag_from_iso_code`).
     #[serde(default)]
-    flags: Vec<String>,
+    flags: Vec<(String, String)>,
 }
 
 enum FirstOutput {
@@ -1370,7 +1369,12 @@ fn print_block_report(
     // Icons by name, plus text glyphs the block generated at the source
     // (country flags): both are font-dependent output.
     let mut cells: Vec<String> = icons.to_vec();
-    cells.extend(report.flags.iter().map(|flag| format!("{flag} (text)")));
+    cells.extend(
+        report
+            .flags
+            .iter()
+            .map(|(code, flag)| format!("{flag} ({code} country flag)")),
+    );
     let icons_cell = if cells.is_empty() {
         "-".to_string()
     } else {
