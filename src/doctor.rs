@@ -263,26 +263,37 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
             );
         }
     }
-    // icons_format (global or per-block) may explicitly select a font via
-    // pango markup (font_family='...'); those families are deliberate
-    // choices, not system fallbacks.
-    if let Some(check) = font_check.as_mut() {
-        let mut declared = icons_format_families(&raw);
-        for block in raw_block_names(&raw)
-            .iter()
-            .enumerate()
-            .filter_map(|(i, _)| {
-                raw.get("block")
-                    .and_then(|b| b.as_array())
-                    .and_then(|b| b.get(i))
-            })
-        {
-            if let Some(f) = block.get("icons_format").and_then(|v| v.as_str()) {
-                declared.extend(pango_font_families(f));
-            }
+    // === Per-instance icon font scopes ===
+    // An icons_format may deliberately select a font for {icon} via pango
+    // markup. The selection applies only to the block instances using that
+    // icons_format: a block-local one REPLACES the global one, and blocks
+    // without either render icons with the bar fonts alone.
+    let block_names = raw_block_names(&raw);
+    let labels = instance_labels(&block_names);
+    let global_icon_families: Vec<String> = raw
+        .get("icons_format")
+        .and_then(|v| v.as_str())
+        .map(icon_font_families)
+        .unwrap_or_default();
+    let mut font_scopes: HashMap<String, Vec<String>> = HashMap::new();
+    for (index, label) in labels.iter().enumerate() {
+        let local = raw
+            .get("block")
+            .and_then(|b| b.as_array())
+            .and_then(|b| b.get(index))
+            .and_then(|block| block.get("icons_format"))
+            .and_then(|v| v.as_str())
+            .map(icon_font_families);
+        let scope = local.unwrap_or_else(|| global_icon_families.clone());
+        if !scope.is_empty() {
+            font_scopes.insert(label.clone(), scope);
         }
-        for family in declared {
-            check.add_configured_family(&family);
+    }
+    if let Some(check) = font_check.as_mut() {
+        for scope in font_scopes.values() {
+            for family in scope {
+                check.declare_family(family);
+            }
         }
     }
     if let Some(check) = &font_check {
@@ -292,35 +303,51 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                  provides cannot be detected."
             );
         }
-        for (family, resolved) in &check.families {
+        let family_sources = check
+            .families
+            .iter()
+            .map(|entry| (entry, false))
+            .chain(check.declared.iter().map(|entry| (entry, true)))
+            .map(|((family, resolved), from_icons_format)| {
+                (family.clone(), resolved.clone(), from_icons_format)
+            })
+            .collect::<Vec<_>>();
+        for (family, resolved, from_icons_format) in family_sources {
             // Generic fontconfig aliases (monospace, sans-serif, ...) always
             // resolve to some concrete family; that is normal, not a missing
             // font.
-            if is_generic_family(family) {
+            if is_generic_family(&family) {
                 continue;
             }
             let installed = if check.has_fc_list {
-                family_installed(family)
+                family_installed(&family)
             } else {
                 // fc-list is unavailable; fall back to comparing the resolved
                 // family names
                 resolved
                     .as_ref()
-                    .is_some_and(|r| r.split(',').any(|m| family_eq(m, family)))
+                    .is_some_and(|r| r.split(',').any(|m| family_eq(m, &family)))
             };
             if !installed {
+                let (source, fix_target) = if from_icons_format {
+                    ("selected by an icons_format", "that icons_format")
+                } else {
+                    ("in the bar's font list", "the bar's font directive")
+                };
                 let diagnosis = format!(
-                    "Font {family:?} is in the bar's font list but not installed{}.",
+                    "Font {family:?} is {source} but not installed{}.",
                     resolved
                         .as_ref()
                         .map(|r| format!(" (fontconfig silently uses {r:?} in its place)"))
                         .unwrap_or_default()
                 );
-                if font_authoritative {
+                // An icons_format selection is explicit configuration, wrong
+                // whether or not the bar font was guessed.
+                if font_authoritative || from_icons_format {
                     problems.push(Problem {
                         diagnosis,
                         fix: Some(format!(
-                            "Install {family:?}, or remove it from the bar's font directive."
+                            "Install {family:?}, or remove it from {fix_target}."
                         )),
                     });
                 } else {
@@ -332,11 +359,9 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
     println!();
 
     // === Blocks (live test) ===
-    let block_names = raw_block_names(&raw);
     // Everything is attributed per block INSTANCE: two blocks of the same
     // type get distinct labels ("time#1", "time#2") so per-instance
     // icons_overrides are analyzed separately.
-    let labels = instance_labels(&block_names);
     let mut used_now: BTreeMap<String, HashSet<String>> = BTreeMap::new();
     // What is known about each block instance's ability to render each icon;
     // starts from static format analysis, refined by the live render.
@@ -598,6 +623,7 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
         analysis_closed,
         icon_relevant: &icon_relevant,
         live_reported: &live_reported,
+        font_scopes: &font_scopes,
         font_check: &mut font_check,
         font_authoritative,
         style: &style,
@@ -608,20 +634,53 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
     problems.len()
 }
 
-/// Font families explicitly selected by the global icons_format.
-fn icons_format_families(raw: &toml::Value) -> Vec<String> {
-    raw.get("icons_format")
-        .and_then(|v| v.as_str())
-        .map(pango_font_families)
-        .unwrap_or_default()
+/// The font families that actually apply to `{icon}` in an icons_format
+/// markup string: for each `{icon}` occurrence, the innermost enclosing
+/// `<span>` that selects a family (via `font_family`, `face`, `font` or
+/// `font_desc`). A family on a span that does not contain `{icon}` styles
+/// other text, not the icon, and is not credited.
+fn icon_font_families(markup: &str) -> Vec<String> {
+    let mut families = Vec::new();
+    // One entry per open tag: the family it selects, if any.
+    let mut stack: Vec<Option<String>> = Vec::new();
+    let mut rest = markup;
+    loop {
+        let tag = rest.find('<');
+        let icon = rest.find("{icon}");
+        match (tag, icon) {
+            (_, Some(i)) if tag.is_none_or(|t| i < t) => {
+                if let Some(family) = stack.iter().rev().find_map(|f| f.clone())
+                    && !families.contains(&family)
+                {
+                    families.push(family);
+                }
+                rest = &rest[i + "{icon}".len()..];
+            }
+            (Some(t), _) => {
+                let Some(end) = rest[t..].find('>') else {
+                    break;
+                };
+                let body = rest[t + 1..t + end].trim();
+                rest = &rest[t + end + 1..];
+                if let Some(closed) = body.strip_prefix('/') {
+                    // Tolerate mismatched close tags: pop only when
+                    // something is open.
+                    let _ = closed;
+                    stack.pop();
+                } else if !body.ends_with('/') {
+                    stack.push(span_family(body));
+                }
+            }
+            _ => break,
+        }
+    }
+    families
 }
 
-/// Extract font families from pango markup attributes:
-/// `font_family='X'`, `face="X"`, `font='X 12'`.
-fn pango_font_families(markup: &str) -> Vec<String> {
-    let mut families = Vec::new();
+/// The family a single tag body selects (`span font_family='X' ...`).
+fn span_family(tag_body: &str) -> Option<String> {
     for attr in ["font_family=", "face=", "font_desc=", "font="] {
-        let mut search = markup;
+        let mut search = tag_body;
         while let Some(pos) = search.find(attr) {
             search = &search[pos + attr.len()..];
             let Some(quote) = search.chars().next().filter(|c| *c == '\'' || *c == '"') else {
@@ -631,12 +690,12 @@ fn pango_font_families(markup: &str) -> Vec<String> {
             if let Some(end) = value.find(quote) {
                 let family = strip_font_modifiers(&value[..end]);
                 if !family.is_empty() {
-                    families.push(family);
+                    return Some(family);
                 }
             }
         }
     }
-    families
+    None
 }
 
 fn icons_config<'a>(
@@ -1619,6 +1678,9 @@ struct IconTableInput<'a> {
     icon_relevant: &'a HashMap<String, IconRelevance>,
     /// (label, icon) pairs already diagnosed by a live render error.
     live_reported: &'a HashSet<(String, String)>,
+    /// Per block label: families its effective icons_format selects around
+    /// {icon} (absent = bar fonts only).
+    font_scopes: &'a HashMap<String, Vec<String>>,
     font_check: &'a mut Option<FontCheck>,
     font_authoritative: bool,
     style: &'a Style,
@@ -1637,6 +1699,7 @@ fn print_icon_table(input: IconTableInput) {
         analysis_closed,
         icon_relevant,
         live_reported,
+        font_scopes,
         font_check,
         font_authoritative,
         style,
@@ -1732,9 +1795,10 @@ fn print_icon_table(input: IconTableInput) {
 
     for (icon_name, users) in &usage {
         // Group the using blocks by what the icon actually resolves to for
-        // them: an override REPLACES the base glyph for its block, so only
-        // glyphs some block really renders produce rows.
-        let mut groups: BTreeMap<Provenance, Vec<String>> = BTreeMap::new();
+        // them (an override REPLACES the base glyph for its block) and by
+        // their icon font scope (a block whose icons_format selects a font
+        // can have a different glyph provider than one without).
+        let mut groups: BTreeMap<(Provenance, Vec<String>), Vec<String>> = BTreeMap::new();
         for (block, is_may) in users {
             // A block whose formats cannot render this icon cannot error on
             // it; skip latent (may) findings for it. Configuration-derived
@@ -1775,7 +1839,8 @@ fn print_icon_table(input: IconTableInput) {
                     } else {
                         block.clone()
                     };
-                    groups.entry(provenance).or_default().push(label);
+                    let scope = font_scopes.get(block).cloned().unwrap_or_default();
+                    groups.entry((provenance, scope)).or_default().push(label);
                 }
                 // already diagnosed by the live render error for this block
                 None if live_reported.contains(&(block.clone(), icon_name.clone())) => (),
@@ -1807,7 +1872,7 @@ fn print_icon_table(input: IconTableInput) {
             }
             continue;
         }
-        for (provenance, mut blocks) in groups {
+        for ((provenance, scope), mut blocks) in groups {
             blocks.sort_unstable();
             let (icon, tag) = match &provenance {
                 Provenance::Base => (base_map.get(icon_name), String::new()),
@@ -1827,6 +1892,7 @@ fn print_icon_table(input: IconTableInput) {
                 icon,
                 &tag,
                 &blocks.join(", "),
+                &scope,
                 font_check,
                 &mut fallback_rows,
                 &mut missing_rows,
@@ -1943,6 +2009,7 @@ fn push_icon_rows(
     icon: &Icon,
     tag: &str,
     used_by: &str,
+    scope: &[String],
     font_check: &mut Option<FontCheck>,
     fallback_rows: &mut usize,
     missing_rows: &mut usize,
@@ -1959,7 +2026,7 @@ fn push_icon_rows(
         let codes = codepoints(glyph);
         let (provider, mark) = match font_check.as_mut() {
             None => ("?".to_string(), ""),
-            Some(check) => match glyph_provider(check, glyph) {
+            Some(check) => match glyph_provider(check, glyph, scope) {
                 GlyphProvider::Known(family) => (first_family(&family), ""),
                 GlyphProvider::Fallback(family) => {
                     *fallback_rows += 1;
@@ -2025,13 +2092,13 @@ fn first_family(family: &str) -> String {
     family.split(',').next().unwrap_or(family).to_string()
 }
 
-fn glyph_provider(check: &mut FontCheck, glyph: &str) -> GlyphProvider {
+fn glyph_provider(check: &mut FontCheck, glyph: &str, scope: &[String]) -> GlyphProvider {
     let mut result = GlyphProvider::Known(check.base_family.clone());
     for c in glyph.chars() {
         if c.is_ascii() {
             continue;
         }
-        match check.check(c) {
+        match check.check(c, scope) {
             GlyphFont::Base => (),
             GlyphFont::Configured(family) => {
                 if matches!(result, GlyphProvider::Known(_)) {
@@ -2104,6 +2171,7 @@ fn resolve_file(file: &str, subdir: Option<&str>) -> (Option<PathBuf>, String) {
 // ---------------------------------------------------------------------------
 
 /// How a single character gets rendered, according to fontconfig.
+#[derive(Clone)]
 enum GlyphFont {
     /// Rendered by the primary (first) configured family.
     Base,
@@ -2121,17 +2189,23 @@ enum GlyphFont {
 /// when no configured font has a codepoint, fontconfig substitutes another
 /// installed font without telling anyone.
 struct FontCheck {
-    /// All configured families joined for fc-match queries.
+    /// The bar's families joined for fc-match queries.
     pattern: String,
     /// Resolved family of the whole pattern (what renders plain text).
     base_family: String,
-    /// Each configured family with what fc-match resolves it to; a family
-    /// that resolves to something else entirely is not installed.
+    /// Each bar family with what fc-match resolves it to; a family that
+    /// resolves to something else entirely is not installed.
     families: Vec<(String, Option<String>)>,
+    /// Families deliberately selected around {icon} by some icons_format
+    /// (global or per-block), with their resolutions. Used for install
+    /// diagnostics; glyph classification takes the applicable subset per
+    /// block instance as a scope.
+    declared: Vec<(String, Option<String>)>,
     /// Whether `fc-list` works; without it "no font provides this glyph"
     /// cannot be detected and is never claimed.
     has_fc_list: bool,
-    cache: HashMap<char, GlyphFont>,
+    /// (glyph, per-instance scope) -> classification.
+    cache: HashMap<(char, Vec<String>), GlyphFont>,
 }
 
 impl FontCheck {
@@ -2154,73 +2228,97 @@ impl FontCheck {
             pattern,
             base_family,
             families,
+            declared: Vec::new(),
             has_fc_list,
             cache: HashMap::new(),
         })
     }
 
-    /// Register an additional deliberately-selected family (e.g. from
-    /// icons_format pango markup) so its glyphs count as configured.
-    fn add_configured_family(&mut self, family: &str) {
+    /// Register a family some icons_format deliberately selects, for the
+    /// installed-check. Which blocks it applies to is decided per instance
+    /// by the scope passed to [`Self::check`].
+    fn declare_family(&mut self, family: &str) {
         if self
             .families
             .iter()
+            .chain(self.declared.iter())
             .any(|(name, _)| family_eq(name, family))
         {
             return;
         }
         let resolved = fc_match(family, None);
-        self.families.push((family.to_string(), resolved));
-        // family preferences changed: previously classified glyphs may now
-        // be configured rather than fallback
-        self.cache.clear();
+        self.declared.push((family.to_string(), resolved));
     }
 
-    fn check(&mut self, c: char) -> &GlyphFont {
-        self.cache.entry(c).or_insert_with(|| {
-            let charset = format!("{:x}", c as u32);
-            if self.has_fc_list && !fc_list_provides(&charset) {
-                return GlyphFont::Missing;
-            }
-            match fc_match(&self.pattern, Some(&charset)) {
-                Some(family) if family_eq(&family, &self.base_family) => GlyphFont::Base,
-                Some(family) => {
-                    // fc-match prints a comma-separated family list; if any
-                    // member is one of the configured families — by name, or
-                    // by what the configured family canonically resolves to
-                    // (generic aliases like "monospace" resolve to a concrete
-                    // family) — this is the configured fallback doing its
-                    // job, not a surprise.
-                    let members: Vec<&str> = family.split(',').collect();
-                    match self.families.iter().find(|(name, resolved)| {
-                        members.iter().any(|m| family_eq(m, name))
-                            || resolved.as_ref().is_some_and(|r| {
-                                r.split(',')
-                                    .any(|rm| members.iter().any(|m| family_eq(m, rm)))
+    /// Classify one glyph for a block instance whose effective icons_format
+    /// selects `scope` families around {icon} (empty scope = bar fonts
+    /// only).
+    fn check(&mut self, c: char, scope: &[String]) -> GlyphFont {
+        if let Some(hit) = self.cache.get(&(c, scope.to_vec())) {
+            return hit.clone();
+        }
+        let result = self.classify(c, scope);
+        self.cache.insert((c, scope.to_vec()), result.clone());
+        result
+    }
+
+    fn classify(&self, c: char, scope: &[String]) -> GlyphFont {
+        let charset = format!("{:x}", c as u32);
+        if self.has_fc_list && !fc_list_provides(&charset) {
+            return GlyphFont::Missing;
+        }
+        // The families this instance can deliberately render with: the
+        // bar's list plus the ones its effective icons_format selects.
+        let scoped: Vec<(String, Option<String>)> = self
+            .families
+            .iter()
+            .cloned()
+            .chain(scope.iter().map(|family| {
+                (
+                    family.clone(),
+                    self.declared
+                        .iter()
+                        .find(|(name, _)| family_eq(name, family))
+                        .and_then(|(_, resolved)| resolved.clone()),
+                )
+            }))
+            .collect();
+        match fc_match(&self.pattern, Some(&charset)) {
+            Some(family) if family_eq(&family, &self.base_family) => GlyphFont::Base,
+            Some(family) => {
+                // fc-match prints a comma-separated family list; if any
+                // member is one of the applicable families — by name, or by
+                // what the family canonically resolves to (generic aliases
+                // like "monospace" resolve to a concrete family) — this is
+                // the configured fallback doing its job, not a surprise.
+                let members: Vec<&str> = family.split(',').collect();
+                match scoped.iter().find(|(name, resolved)| {
+                    members.iter().any(|m| family_eq(m, name))
+                        || resolved.as_ref().is_some_and(|r| {
+                            r.split(',')
+                                .any(|rm| members.iter().any(|m| family_eq(m, rm)))
+                        })
+                }) {
+                    Some((name, _)) => GlyphFont::Configured(name.clone()),
+                    None => {
+                        // The bar-pattern match ignores families selected
+                        // out-of-band (this instance's icons_format): probe
+                        // those directly — if one provides the glyph
+                        // itself, rendering will use it deliberately.
+                        let direct = scope.iter().find(|name| {
+                            fc_match(name, Some(&charset)).is_some_and(|resolved| {
+                                resolved.split(',').any(|m| family_eq(m, name))
                             })
-                    }) {
-                        Some((name, _)) => GlyphFont::Configured(name.clone()),
-                        None => {
-                            // The bar-pattern match ignores families that are
-                            // selected out-of-band (icons_format pango
-                            // markup): probe each configured family directly —
-                            // if it provides the glyph itself, rendering will
-                            // use it deliberately.
-                            let direct = self.families.iter().find(|(name, _)| {
-                                fc_match(name, Some(&charset)).is_some_and(|resolved| {
-                                    resolved.split(',').any(|m| family_eq(m, name))
-                                })
-                            });
-                            match direct {
-                                Some((name, _)) => GlyphFont::Configured(name.clone()),
-                                None => GlyphFont::Fallback(family),
-                            }
+                        });
+                        match direct {
+                            Some(name) => GlyphFont::Configured(name.clone()),
+                            None => GlyphFont::Fallback(family),
                         }
                     }
                 }
-                None => GlyphFont::Missing,
             }
-        })
+            None => GlyphFont::Missing,
+        }
     }
 }
 
@@ -2700,16 +2798,41 @@ mod tests {
     }
 
     #[test]
-    fn pango_families_from_icons_format() {
+    fn icon_families_require_an_enclosing_span() {
         assert_eq!(
-            pango_font_families("<span font_family='Noto Color Emoji'>{icon}</span>"),
+            icon_font_families("<span font_family='Noto Color Emoji'>{icon}</span>"),
             ["Noto Color Emoji"]
         );
         assert_eq!(
-            pango_font_families("<span face=\"Font Awesome 6 Free\" size='large'>{icon}</span>"),
+            icon_font_families("<span face=\"Font Awesome 6 Free\" size='large'>{icon}</span>"),
             ["Font Awesome 6 Free"]
         );
-        assert!(pango_font_families("{icon}").is_empty());
+        assert!(icon_font_families("{icon}").is_empty());
+        // A family on a span that does NOT contain {icon} styles other
+        // text, not the icon.
+        assert!(
+            icon_font_families("<span font_family='Font Awesome 5 Free'>prefix</span>{icon}")
+                .is_empty()
+        );
+        // The innermost enclosing family wins.
+        assert_eq!(
+            icon_font_families(
+                "<span font_family='Outer'>x<span font_family='Inner'>{icon}</span></span>"
+            ),
+            ["Inner"]
+        );
+        // A nested span without a family inherits the enclosing one.
+        assert_eq!(
+            icon_font_families("<span font_family='Outer'><span size='large'>{icon}</span></span>"),
+            ["Outer"]
+        );
+        // Each {icon} occurrence is credited with its own family.
+        assert_eq!(
+            icon_font_families("<span font='A 12'>{icon}</span><span face='B'>{icon}</span>"),
+            ["A", "B"]
+        );
+        // Text after the closing tag is back outside the span.
+        assert!(icon_font_families("<span font_family='X'>pre</span> {icon}").is_empty());
     }
 
     #[test]
