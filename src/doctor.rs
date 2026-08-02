@@ -441,6 +441,9 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
     }
 
     let mut live_ran = false;
+    // (label, rendered text) of blocks that produced output, for the
+    // non-icon glyph check below.
+    let mut rendered_texts: Vec<(String, String)> = Vec::new();
     // (label, icon) pairs already diagnosed by a live render error, so the
     // icon table does not report the same root cause twice
     let mut live_reported: HashSet<(String, String)> = HashSet::new();
@@ -483,6 +486,7 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                         if text.contains('<') {
                             markup_labels.insert(label.clone());
                         }
+                        rendered_texts.push((label.clone(), text.clone()));
                         for violation in contract_violations {
                             problems.push(Problem {
                                 diagnosis: format!(
@@ -546,6 +550,51 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
             .into_iter()
             .map(|(index, overrides)| (labels[index].clone(), overrides))
             .collect();
+    // === Non-icon glyphs in live output ===
+    // Blocks emit text glyphs too (country flags, unit symbols, ...) whose
+    // rendering depends on installed fonts just like icons. Doctor asks
+    // fontconfig the same decidable questions about them: substituted
+    // glyphs are worth a note (the common, working case), and glyphs no
+    // installed font provides are a problem (they render as empty boxes).
+    let mut icon_chars: HashSet<char> = HashSet::new();
+    for icon in base_map
+        .values()
+        .chain(global_overrides.values())
+        .chain(block_overrides.iter().flat_map(|(_, o)| o.values()))
+    {
+        let glyphs: Vec<&String> = match icon {
+            Icon::Single(s) => vec![s],
+            Icon::Progression(steps) => steps.iter().collect(),
+        };
+        for glyph in glyphs {
+            icon_chars.extend(glyph.chars().filter(|c| !c.is_ascii()));
+        }
+    }
+    // (label, provider) -> the glyphs that provider draws for that block
+    let mut text_fallbacks: BTreeMap<(String, String), String> = BTreeMap::new();
+    let mut text_missing: BTreeMap<String, String> = BTreeMap::new();
+    if let Some(check) = font_check.as_mut() {
+        for (label, text) in &rendered_texts {
+            if markup_labels.contains(label) {
+                continue;
+            }
+            let mut seen: HashSet<char> = HashSet::new();
+            for c in text.chars() {
+                if c.is_ascii() || icon_chars.contains(&c) || !seen.insert(c) {
+                    continue;
+                }
+                match check.check(c) {
+                    GlyphFont::Base | GlyphFont::Configured(_) => (),
+                    GlyphFont::Fallback(family) => text_fallbacks
+                        .entry((label.clone(), first_family(&family)))
+                        .or_default()
+                        .push(c),
+                    GlyphFont::Missing => text_missing.entry(label.clone()).or_default().push(c),
+                }
+            }
+        }
+    }
+
     print_icon_table(IconTableInput {
         base_map: &base_map,
         global_overrides: &global_overrides,
@@ -559,6 +608,35 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
         style: &style,
         problems: &mut problems,
     });
+
+    if !text_fallbacks.is_empty() {
+        println!("Text glyphs in live output drawn by fonts outside the bar's font list:");
+        for ((label, family), glyphs) in &text_fallbacks {
+            // Space-separated: adjacent regional indicators would otherwise
+            // ligate into a (possibly different) flag in the terminal.
+            let shown: Vec<String> = glyphs.chars().map(|c| c.to_string()).collect();
+            println!(
+                "   {} ({}) — {family} ({label})",
+                shown.join(" "),
+                codepoints(glyphs)
+            );
+        }
+        println!(
+            "   Like * rows above, these depend on which fonts happen to be installed; \
+             not counted as problems."
+        );
+        println!();
+    }
+    for (label, glyphs) in &text_missing {
+        problems.push(Problem {
+            diagnosis: format!(
+                "`{label}` output contains glyph(s) no installed font provides \
+                 ({}): they render as empty boxes.",
+                codepoints(glyphs)
+            ),
+            fix: Some("Install a font that contains these codepoints.".into()),
+        });
+    }
 
     print_problems(&problems, live_ran, &style);
     problems.len()
