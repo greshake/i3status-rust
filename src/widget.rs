@@ -1,3 +1,4 @@
+use crate::block_plan::OutputHandle;
 use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::formatting::{Format, Fragment, Values};
@@ -10,6 +11,9 @@ pub struct Widget {
     pub state: State,
     source: Source,
     values: Values,
+    /// The declared output variant this widget renders, when the block has
+    /// been migrated to a prepared [`crate::block_plan::BlockPlan`].
+    contract: Option<OutputHandle>,
 }
 
 impl Widget {
@@ -58,6 +62,29 @@ impl Widget {
 
     pub fn set_values(&mut self, new_values: Values) {
         self.values = new_values;
+        for violation in self.contract_violations() {
+            // A violation is an i3status-rust bug, not a user configuration
+            // problem: the block set an icon its own plan does not declare.
+            // Loud in debug builds; render proceeds normally in release.
+            debug_assert!(false, "{violation}");
+            log::error!("{violation}");
+        }
+    }
+
+    pub(crate) fn set_contract(&mut self, contract: OutputHandle) {
+        self.contract = Some(contract);
+    }
+
+    pub(crate) fn contract(&self) -> Option<&OutputHandle> {
+        self.contract.as_ref()
+    }
+
+    /// Icon values not declared by this widget's output contract.
+    pub(crate) fn contract_violations(&self) -> Vec<String> {
+        match &self.contract {
+            Some(handle) => handle.icon_violations(&self.values),
+            None => Vec::new(),
+        }
     }
 
     pub fn intervals(&self) -> Vec<u64> {

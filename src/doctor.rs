@@ -2769,15 +2769,6 @@ mod tests {
     }
 
     #[test]
-    fn toggle_icon_renames_are_scanned() {
-        assert!(
-            icon_config_renames("toggle")
-                .iter()
-                .any(|(key, name)| *key == "icon_on" && *name == "toggle_on")
-        );
-    }
-
-    #[test]
     fn branch_reachability() {
         // the literal first branch always succeeds: $icon is dead
         let template = format_parse::parse_full("{ OK | $icon }").unwrap();

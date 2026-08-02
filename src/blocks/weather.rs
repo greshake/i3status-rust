@@ -217,6 +217,24 @@ enum WeatherIcon {
 }
 
 impl WeatherIcon {
+    /// Every icon name [`Self::to_icon_str`] can return. The weather
+    /// condition is externally selected but finite, so the block plan
+    /// declares the full set.
+    const ALL_NAMES: [&'static str; 12] = [
+        "weather_sun",
+        "weather_moon",
+        "weather_clouds",
+        "weather_clouds_night",
+        "weather_fog",
+        "weather_fog_night",
+        "weather_rain",
+        "weather_rain_night",
+        "weather_snow",
+        "weather_thunder",
+        "weather_thunder_night",
+        "weather_default",
+    ];
+
     fn to_icon_str(self) -> &'static str {
         match self {
             Self::Clear { is_night: false } => "weather_sun",
@@ -424,6 +442,23 @@ impl Forecast {
     }
 }
 
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    let weather_icons = || IconChoices::fixed(WeatherIcon::ALL_NAMES);
+    let mut outputs = vec![
+        OutputPlan::new("main", config.format.with_default(" $icon $weather $temp ")?)
+            .icon("icon", weather_icons())
+            .icon("icon_ffin", weather_icons()),
+    ];
+    if let Some(format_alt) = &config.format_alt {
+        outputs.push(
+            OutputPlan::new("alt", format_alt.with_default("")?)
+                .icon("icon", weather_icons())
+                .icon("icon_ffin", weather_icons()),
+        );
+    }
+    Ok(BlockPlan::new(outputs))
+}
+
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
@@ -431,7 +466,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         (MouseButton::Right, None, "prev_format"),
     ])?;
 
-    let mut formats = config.formats.with_default(" $icon $weather $temp ")?;
+    let plan = prepare(config)?;
+    let output_main = plan.output("main")?;
+    let output_alt = match &config.format_alt {
+        Some(_) => Some(plan.output("alt")?),
+        None => None,
+    };
+    let mut alt_shown = false;
 
     let (provider, service_units): (Box<dyn WeatherProvider + Send + Sync>, UnitSystem) =
         match &config.service {
@@ -450,8 +491,11 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         };
     let units = config.units.unwrap_or(service_units);
 
-    let autolocate_interval = config.autolocate_interval.unwrap_or(config.interval).0;
-    let need_forecast = need_forecast(&formats);
+    let autolocate_interval = config.autolocate_interval.unwrap_or(config.interval);
+    let need_forecast = need_forecast(
+        output_main.format(),
+        output_alt.as_ref().map(|o| o.format()),
+    );
 
     let mut timer = config.interval.timer();
 
@@ -468,7 +512,11 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let data_values = data.into_values(&units);
 
         loop {
-            let mut widget = Widget::new().with_format(formats.get_format());
+            let output = match (&output_alt, alt_shown) {
+                (Some(alt), true) => alt,
+                _ => &output_main,
+            };
+            let mut widget = output.new_widget();
             widget.set_values(data_values.clone());
             api.set_widget(widget)?;
 
@@ -476,11 +524,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 _ = timer.tick() => break,
                 _ = api.wait_for_update_request() => break,
                 Some(action) = actions.recv() => match action.as_ref() {
-                        "next_format" | "toggle_format" => {
-                            formats.next_format();
-                        }
-                        "prev_format" => {
-                            formats.prev_format();
+                        "toggle_format" => {
+                            if output_alt.is_some() {
+                                alt_shown = !alt_shown;
+                            }
                         }
                         _ => (),
                     }
@@ -685,5 +732,49 @@ mod tests {
             assert!(forecast.avg.wind_direction.unwrap() < high);
             degrees += 15.0;
         }
+    }
+
+
+    fn config(toml_str: &str) -> Config {
+        toml::from_str(toml_str).unwrap()
+    }
+
+    #[test]
+    fn every_condition_icon_is_declared() {
+        let all_variants = [
+            WeatherIcon::Clear { is_night: false },
+            WeatherIcon::Clear { is_night: true },
+            WeatherIcon::Clouds { is_night: false },
+            WeatherIcon::Clouds { is_night: true },
+            WeatherIcon::Fog { is_night: false },
+            WeatherIcon::Fog { is_night: true },
+            WeatherIcon::Rain { is_night: false },
+            WeatherIcon::Rain { is_night: true },
+            WeatherIcon::Snow,
+            WeatherIcon::Thunder { is_night: false },
+            WeatherIcon::Thunder { is_night: true },
+            WeatherIcon::Default,
+        ];
+        assert_eq!(all_variants.len(), WeatherIcon::ALL_NAMES.len());
+        for variant in all_variants {
+            assert!(WeatherIcon::ALL_NAMES.contains(&variant.to_icon_str()));
+        }
+    }
+
+    #[test]
+    fn alt_output_exists_only_when_configured() {
+        let plan = prepare(&config("service = { name = \"metno\" }")).unwrap();
+        assert!(plan.output("main").is_ok());
+        assert!(plan.output("alt").is_err());
+
+        let plan = prepare(&config(
+            "service = { name = \"metno\" }\nformat_alt = \" $humidity \"",
+        ))
+        .unwrap();
+        let alt = plan.output("alt").unwrap();
+        assert!(alt.format().contains_key("humidity"));
+        let choices = alt.output().choices_for("icon").unwrap();
+        assert!(choices.permits("weather_snow"));
+        assert!(!choices.permits("bat"));
     }
 }

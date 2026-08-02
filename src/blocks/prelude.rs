@@ -1,5 +1,7 @@
 pub use super::{BlockAction, CommonApi};
 
+pub use crate::block_plan::{BlockPlan, IconChoices, OutputHandle, OutputPlan};
+
 pub(crate) use crate::REQWEST_CLIENT;
 pub(crate) use crate::REQWEST_CLIENT_IPV4;
 pub use crate::click::MouseButton;
@@ -20,6 +22,7 @@ pub use std::borrow::Cow;
 pub use std::collections::HashMap;
 pub use std::fmt::Write;
 pub use std::pin::Pin;
+pub use std::sync::Arc;
 pub use std::sync::LazyLock;
 pub use std::time::Duration;
 

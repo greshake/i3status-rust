@@ -121,11 +121,24 @@ impl Block {
     }
 }
 
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    // The icon name arrives over D-Bus at runtime, so any name is permitted;
+    // it resolves through the normal icon set and override rules.
+    Ok(BlockPlan::new(vec![
+        OutputPlan::new(
+            "main",
+            config.format.with_defaults(
+                "{ $icon|}{ $text.pango-str()|} ",
+                "{ $icon|} $short_text.pango-str() | ",
+            )?,
+        )
+        .icon("icon", IconChoices::OpenResolvable),
+    ]))
+}
+
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let widget = Widget::new().with_format(config.format.with_defaults(
-        "{ $icon|}{ $text.pango-str()|} ",
-        "{ $icon|} $short_text.pango-str() | ",
-    )?);
+    let plan = prepare(config)?;
+    let widget = plan.output("main")?.new_widget();
 
     let dbus_conn = DBUS_CONNECTION
         .get_or_init(dbus_conn)

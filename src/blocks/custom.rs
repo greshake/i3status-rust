@@ -95,7 +95,6 @@
 //! # TODO:
 //! - Use `shellexpand`
 
-use crate::formatting::Format;
 
 use super::prelude::*;
 use inotify::{Inotify, WatchMask};
@@ -118,14 +117,29 @@ pub struct Config {
     pub watch_files: Vec<ShellString>,
 }
 
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    // The icon name comes from the command's JSON output, so any name is
+    // permitted; it resolves through the normal icon set and override rules.
+    Ok(BlockPlan::new(vec![
+        OutputPlan::new(
+            "main",
+            config.format.with_defaults(
+                "{ $icon|} $text.pango-str() ",
+                "{ $icon|} $short_text.pango-str() |",
+            )?,
+        )
+        .icon("icon", IconChoices::OpenResolvable),
+    ]))
+}
+
 async fn update_bar(
     stdout: &str,
     hide_when_empty: bool,
     json: bool,
     api: &CommonApi,
-    format: Format,
+    output: &OutputHandle,
 ) -> Result<()> {
-    let mut widget = Widget::new().with_format(format);
+    let mut widget = output.new_widget();
 
     let text_empty;
 
@@ -157,10 +171,8 @@ async fn update_bar(
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     api.set_default_actions(&[(MouseButton::Left, None, "cycle")])?;
 
-    let format = config.format.with_defaults(
-        "{ $icon|} $text.pango-str() ",
-        "{ $icon|} $short_text.pango-str() |",
-    )?;
+    let plan = prepare(config)?;
+    let output_main = plan.output("main")?;
 
     let mut timer = config.interval.timer();
 
@@ -232,7 +244,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 config.hide_when_empty,
                 config.json,
                 api,
-                format.clone(),
+                &output_main,
             )
             .await?;
         }
@@ -265,7 +277,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 config.hide_when_empty,
                 config.json,
                 api,
-                format.clone(),
+                &output_main,
             )
             .await?;
 
@@ -294,4 +306,18 @@ struct Input {
     state: State,
     text: String,
     short_text: Option<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn icon_choices_are_open() {
+        let plan = prepare(&Config::default()).unwrap();
+        let output = plan.output("main").unwrap();
+        let choices = output.output().choices_for("icon").unwrap();
+        assert!(choices.is_open());
+        assert!(choices.permits("any_name_the_command_emits"));
+    }
 }

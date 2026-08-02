@@ -131,24 +131,40 @@ enum Status {
     Error(Option<String>),
 }
 
-impl Status {
-    fn icon(&self) -> Cow<'static, str> {
-        match self {
-            Status::Connected { .. } => "net_vpn".into(),
-            Status::Disconnected { .. } => "net_wired".into(),
-            Status::Connecting { .. } => "net_wireless".into(),
-            Status::Error(_) => "net_down".into(),
-        }
-    }
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    Ok(BlockPlan::new(vec![
+        OutputPlan::new(
+            "connected",
+            config.format_connected.with_default(" VPN: $icon ")?,
+        )
+        .icon("icon", IconChoices::one("net_vpn")),
+        OutputPlan::new(
+            "disconnected",
+            config.format_disconnected.with_default(" VPN: $icon ")?,
+        )
+        .icon("icon", IconChoices::one("net_wired")),
+        OutputPlan::new(
+            "connecting",
+            config.format_connecting.with_default(" VPN: $icon ")?,
+        )
+        .icon("icon", IconChoices::one("net_wireless")),
+        OutputPlan::new(
+            "error",
+            config.format_disconnected.with_default(" VPN: $icon ")?,
+        )
+        .icon("icon", IconChoices::one("net_down")),
+    ]))
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[(MouseButton::Left, None, "toggle")])?;
 
-    let format_connected = config.format_connected.with_default(" VPN: $icon ")?;
-    let format_disconnected = config.format_disconnected.with_default(" VPN: $icon ")?;
-    let format_connecting = config.format_connecting.with_default(" VPN: $icon ")?;
+    let plan = prepare(config)?;
+    let output_connected = plan.output("connected")?;
+    let output_disconnected = plan.output("disconnected")?;
+    let output_connecting = plan.output("connecting")?;
+    let output_error = plan.output("error")?;
 
     let driver: Box<dyn Driver> = match config.driver {
         DriverType::Mullvad => Box::new(MullvadDriver::new().await),
@@ -160,7 +176,14 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     loop {
         let status = driver.get_status().await?;
 
-        let mut widget = Widget::new();
+        let output = match &status {
+            Status::Connected { .. } => &output_connected,
+            Status::Disconnected { .. } => &output_disconnected,
+            Status::Connecting { .. } => &output_connecting,
+            Status::Error(_) => &output_error,
+        };
+        let mut widget = output.new_widget();
+        let icon = output.single_icon("icon")?;
 
         widget.state = match &status {
             Status::Connected {
@@ -169,36 +192,32 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 profile,
             } => {
                 widget.set_values(map!(
-                        "icon" => Value::icon(status.icon()),
+                        "icon" => Value::icon(icon.clone()),
                         [if let Some(country) = country] "country" => Value::text(country.into()),
                         [if let Some(flag) = country_flag] "flag" => Value::text(flag.into()),
                         [if let Some(profile) = profile] "profile" => Value::text(profile.into()),
                 ));
-                widget.set_format(format_connected.clone());
                 config.state_connected
             }
             Status::Disconnected { profile } => {
                 widget.set_values(map! {
-                    "icon" => Value::icon(status.icon()),
+                    "icon" => Value::icon(icon.clone()),
                     [if let Some(profile) = profile] "profile" => Value::text(profile.into()),
                 });
-                widget.set_format(format_disconnected.clone());
                 config.state_disconnected
             }
             Status::Connecting { profile } => {
                 widget.set_values(map!(
-                        "icon" => Value::icon(status.icon()),
+                        "icon" => Value::icon(icon.clone()),
                         [if let Some(profile) = profile] "profile" => Value::text(profile.into()),
                 ));
-                widget.set_format(format_connecting.clone());
                 State::Info
             }
             Status::Error(error) => {
                 widget.set_values(map!(
-                        "icon" => Value::icon(status.icon()),
+                        "icon" => Value::icon(icon.clone()),
                         [if let Some(error) = error] "error" => Value::text(error.into())
                 ));
-                widget.set_format(format_disconnected.clone());
                 State::Critical
             }
         };
@@ -220,4 +239,54 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 trait Driver {
     async fn get_status(&self) -> Result<Status>;
     async fn toggle_connection(&self, status: &Status) -> Result<()>;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_every_state_with_its_icon() {
+        let plan = prepare(&Config::default()).unwrap();
+        let declared: Vec<_> = plan.outputs.iter().map(|o| o.id).collect();
+        assert_eq!(
+            declared,
+            ["connected", "disconnected", "connecting", "error"]
+        );
+        for (id, icon) in [
+            ("connected", "net_vpn"),
+            ("disconnected", "net_wired"),
+            ("connecting", "net_wireless"),
+            ("error", "net_down"),
+        ] {
+            let output = plan.output(id).unwrap();
+            let choices = output.output().choices_for("icon").unwrap();
+            assert!(choices.permits(icon), "{id} must permit {icon}");
+        }
+    }
+
+    #[test]
+    fn each_output_declares_exactly_one_icon() {
+        let plan = prepare(&Config::default()).unwrap();
+        for (id, icon) in [
+            ("connected", "net_vpn"),
+            ("disconnected", "net_wired"),
+            ("connecting", "net_wireless"),
+            ("error", "net_down"),
+        ] {
+            let output = plan.output(id).unwrap();
+            assert_eq!(output.single_icon("icon").unwrap(), icon);
+        }
+    }
+
+    #[test]
+    fn error_state_uses_disconnected_format() {
+        let config = Config {
+            format_disconnected: " off ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        let error = plan.output("error").unwrap();
+        assert!(!error.format().contains_key("icon"));
+    }
 }

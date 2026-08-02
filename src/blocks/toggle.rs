@@ -80,17 +80,31 @@ async fn sleep_opt(dur: Option<Duration>) {
     }
 }
 
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    let format = config.format.with_default(" $icon ")?;
+    let icon_on = config.icon_on.clone().unwrap_or_else(|| "toggle_on".into());
+    let icon_off = config
+        .icon_off
+        .clone()
+        .unwrap_or_else(|| "toggle_off".into());
+    Ok(BlockPlan::new(vec![
+        OutputPlan::new("on", format.clone()).icon("icon", IconChoices::one(icon_on)),
+        OutputPlan::new("off", format).icon("icon", IconChoices::one(icon_off)),
+    ]))
+}
+
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[(MouseButton::Left, None, "toggle")])?;
 
     let interval = config.interval.map(Duration::from_secs);
-    let mut widget = Widget::new().with_format(config.format.with_default(" $icon ")?);
 
-    let icon_on = config.icon_on.as_deref().unwrap_or("toggle_on");
-    let icon_off = config.icon_off.as_deref().unwrap_or("toggle_off");
+    let plan = prepare(config)?;
+    let output_on = plan.output("on")?;
+    let output_off = plan.output("off")?;
 
     let shell = env::var("SHELL").unwrap_or_else(|_| "sh".to_string());
+    let mut state = State::Idle;
 
     loop {
         // Check state
@@ -104,19 +118,20 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             .trim()
             .is_empty();
 
+        let output = if is_on { &output_on } else { &output_off };
+        let mut widget = output.new_widget();
         widget.set_values(map!(
-            "icon" => Value::icon(
-                if is_on { icon_on.to_string() } else { icon_off.to_string() }
-            )
+            "icon" => Value::icon(output.single_icon("icon")?)
         ));
-        if widget.state != State::Critical {
-            widget.state = if is_on {
+        if state != State::Critical {
+            state = if is_on {
                 config.state_on.unwrap_or(State::Idle)
             } else {
                 config.state_off.unwrap_or(State::Idle)
             };
         }
-        api.set_widget(widget.clone())?;
+        widget.state = state;
+        api.set_widget(widget)?;
 
         loop {
             select! {
@@ -136,15 +151,60 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                             .error("Failed to run command")?;
                         if output.status.success() {
                             // Temporary; it will immediately be updated by the outer loop
-                            widget.state = State::Idle;
+                            state = State::Idle;
                             break;
                         } else {
-                            widget.state = State::Critical;
+                            state = State::Critical;
                         }
                     }
                     _ => (),
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn config(icon_on: Option<&str>, icon_off: Option<&str>) -> Config {
+        Config {
+            format: Default::default(),
+            command_on: String::new(),
+            command_off: String::new(),
+            command_state: String::new(),
+            icon_on: icon_on.map(Into::into),
+            icon_off: icon_off.map(Into::into),
+            interval: None,
+            state_on: None,
+            state_off: None,
+        }
+    }
+
+    #[test]
+    fn plan_uses_default_icon_names() {
+        let plan = prepare(&config(None, None)).unwrap();
+        assert_eq!(
+            plan.output("on").unwrap().single_icon("icon").unwrap(),
+            "toggle_on"
+        );
+        assert_eq!(
+            plan.output("off").unwrap().single_icon("icon").unwrap(),
+            "toggle_off"
+        );
+    }
+
+    #[test]
+    fn plan_uses_configuration_derived_icon_names() {
+        let plan = prepare(&config(Some("my_enabled_icon"), Some("my_disabled_icon"))).unwrap();
+        assert_eq!(
+            plan.output("on").unwrap().single_icon("icon").unwrap(),
+            "my_enabled_icon"
+        );
+        assert_eq!(
+            plan.output("off").unwrap().single_icon("icon").unwrap(),
+            "my_disabled_icon"
+        );
     }
 }

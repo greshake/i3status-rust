@@ -7,6 +7,7 @@
 
 #[macro_use]
 pub mod util;
+pub mod block_plan;
 pub mod blocks;
 pub mod click;
 pub mod config;
