@@ -570,26 +570,53 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
             icon_chars.extend(glyph.chars().filter(|c| !c.is_ascii()));
         }
     }
-    // (label, provider) -> the glyphs that provider draws for that block
-    let mut text_fallbacks: BTreeMap<(String, String), String> = BTreeMap::new();
-    let mut text_missing: BTreeMap<String, String> = BTreeMap::new();
+    // (label, provider) -> glyph sequences that provider draws for that
+    // block, exactly as they appeared in the output (so terminals that can
+    // ligate them — country flags — display the real thing).
+    let mut text_fallbacks: BTreeMap<(String, String), Vec<String>> = BTreeMap::new();
+    let mut text_missing: BTreeMap<String, Vec<String>> = BTreeMap::new();
     if let Some(check) = font_check.as_mut() {
         for (label, text) in &rendered_texts {
             if markup_labels.contains(label) {
                 continue;
             }
-            let mut seen: HashSet<char> = HashSet::new();
+            // maximal runs of non-ASCII, non-icon glyphs
+            let mut runs: Vec<String> = Vec::new();
+            let mut current = String::new();
             for c in text.chars() {
-                if c.is_ascii() || icon_chars.contains(&c) || !seen.insert(c) {
-                    continue;
+                if c.is_ascii() || icon_chars.contains(&c) {
+                    if !current.is_empty() {
+                        runs.push(std::mem::take(&mut current));
+                    }
+                } else {
+                    current.push(c);
                 }
-                match check.check(c) {
-                    GlyphFont::Base | GlyphFont::Configured(_) => (),
-                    GlyphFont::Fallback(family) => text_fallbacks
-                        .entry((label.clone(), first_family(&family)))
-                        .or_default()
-                        .push(c),
-                    GlyphFont::Missing => text_missing.entry(label.clone()).or_default().push(c),
+            }
+            if !current.is_empty() {
+                runs.push(current);
+            }
+            for run in runs {
+                let mut missing = false;
+                let mut fallback: Option<String> = None;
+                for c in run.chars() {
+                    match check.check(c) {
+                        GlyphFont::Base | GlyphFont::Configured(_) => (),
+                        GlyphFont::Fallback(family) => {
+                            fallback.get_or_insert_with(|| first_family(&family));
+                        }
+                        GlyphFont::Missing => missing = true,
+                    }
+                }
+                if missing {
+                    let entry = text_missing.entry(label.clone()).or_default();
+                    if !entry.contains(&run) {
+                        entry.push(run);
+                    }
+                } else if let Some(family) = fallback {
+                    let entry = text_fallbacks.entry((label.clone(), family)).or_default();
+                    if !entry.contains(&run) {
+                        entry.push(run);
+                    }
                 }
             }
         }
@@ -611,15 +638,12 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
 
     if !text_fallbacks.is_empty() {
         println!("Text glyphs in live output drawn by fonts outside the bar's font list:");
-        for ((label, family), glyphs) in &text_fallbacks {
-            // Space-separated: adjacent regional indicators would otherwise
-            // ligate into a (possibly different) flag in the terminal.
-            let shown: Vec<String> = glyphs.chars().map(|c| c.to_string()).collect();
-            println!(
-                "   {} ({}) — {family} ({label})",
-                shown.join(" "),
-                codepoints(glyphs)
-            );
+        for ((label, family), runs) in &text_fallbacks {
+            let shown: Vec<String> = runs
+                .iter()
+                .map(|run| format!("{run} ({})", codepoints(run)))
+                .collect();
+            println!("   {} — {family} ({label})", shown.join(", "));
         }
         println!(
             "   Like * rows above, these depend on which fonts happen to be installed; \
@@ -627,12 +651,16 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
         );
         println!();
     }
-    for (label, glyphs) in &text_missing {
+    for (label, runs) in &text_missing {
+        let listed: Vec<String> = runs
+            .iter()
+            .map(|run| format!("{run} ({})", codepoints(run)))
+            .collect();
         problems.push(Problem {
             diagnosis: format!(
                 "`{label}` output contains glyph(s) no installed font provides \
                  ({}): they render as empty boxes.",
-                codepoints(glyphs)
+                listed.join(", ")
             ),
             fix: Some("Install a font that contains these codepoints.".into()),
         });
