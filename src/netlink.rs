@@ -105,15 +105,17 @@ impl NetDevice {
         }))
     }
 
-    /// Note: tun/wireguard/ppp interfaces are not special-cased to be always
-    /// up (as they were since #350): they usually report `Operstate::Unknown`,
-    /// which is covered by the has-an-address clause below, and the
-    /// special-casing made `inactive_format` unreachable for VPN interfaces
-    /// that are actually down (#1917).
+    /// An interface is active only when its operational state allows traffic
+    /// and it has an address. In particular, `Operstate::Up` only describes
+    /// the link state, so an Ethernet interface can remain `Up` after a
+    /// network manager disconnects it and removes its addresses (#1917).
+    ///
+    /// Tun/wireguard/ppp interfaces are not special-cased to be always up (as
+    /// they were since #350): they usually report `Operstate::Unknown`, which
+    /// is covered by the has-an-address clause below.
     pub fn is_up(&self) -> bool {
-        self.iface.operstate == Operstate::Up
-            || (self.iface.operstate == Operstate::Unknown
-                && (self.ip.is_some() || self.ipv6.is_some()))
+        (self.iface.operstate == Operstate::Up || self.iface.operstate == Operstate::Unknown)
+            && (self.ip.is_some() || self.ipv6.is_some())
     }
 
     pub fn ssid(&self) -> Option<String> {
@@ -509,7 +511,7 @@ mod tests {
             iface: Interface {
                 index: 1,
                 operstate,
-                name: "vpn0".into(),
+                name: "net0".into(),
                 stats: None,
             },
             wifi_info: None,
@@ -524,7 +526,9 @@ mod tests {
     fn is_up_by_operstate_and_address() {
         let ip = Some(Ipv4Addr::new(10, 0, 0, 2));
 
-        assert!(device(Operstate::Up, None, None).is_up());
+        // A physical link can remain up after NetworkManager disconnects it,
+        // but without an address it is inactive.
+        assert!(!device(Operstate::Up, None, None).is_up());
         assert!(device(Operstate::Up, ip, None).is_up());
 
         // tun/wireguard/ppp interfaces usually report Unknown; they count as
