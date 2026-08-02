@@ -165,19 +165,43 @@ pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Res
     Ok(())
 }
 
+/// The well-known name to request. The internal override is a doctor-only
+/// mechanism (its workers run each block in a separate process and need
+/// unique names); it takes precedence over the documented public
+/// `I3RS_DBUS_NAME` and is not part of the public interface.
+fn dbus_name(internal_override: Option<&str>, public: Option<&str>) -> String {
+    match internal_override.or(public) {
+        Some(v) => format!("{DBUS_NAME}.{v}"),
+        None => DBUS_NAME.to_string(),
+    }
+}
+
 async fn dbus_conn() -> Result<zbus::Connection> {
-    // The internal override is a doctor-only mechanism: its workers run
-    // each block in a separate process and need unique names. It is not
-    // part of the public interface.
-    let suffix = env::var("I3RS_INTERNAL_DBUS_NAME_OVERRIDE").or_else(|_| env::var("I3RS_DBUS_NAME"));
-    let dbus_interface_name = match suffix {
-        Ok(v) => format!("{DBUS_NAME}.{v}"),
-        Err(_) => DBUS_NAME.to_string(),
-    };
+    let internal = env::var("I3RS_INTERNAL_DBUS_NAME_OVERRIDE").ok();
+    let public = env::var("I3RS_DBUS_NAME").ok();
+    let dbus_interface_name = dbus_name(internal.as_deref(), public.as_deref());
 
     let conn = new_dbus_connection().await?;
     conn.request_name(dbus_interface_name)
         .await
         .error("Failed to request DBus name")?;
     Ok(conn)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn doctor_override_wins_without_touching_the_public_name() {
+        assert_eq!(dbus_name(None, None), "rs.i3status");
+        assert_eq!(dbus_name(None, Some("top")), "rs.i3status.top");
+        // Doctor workers set only the internal override; the public
+        // variable keeps whatever value the user's environment has.
+        assert_eq!(dbus_name(Some("doctor3"), None), "rs.i3status.doctor3");
+        assert_eq!(
+            dbus_name(Some("doctor3"), Some("top")),
+            "rs.i3status.doctor3"
+        );
+    }
 }
