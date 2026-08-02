@@ -218,6 +218,25 @@ define_blocks!(
     xrandr,
 );
 
+impl BlockConfig {
+    /// The prepared output contract of this block instance (see
+    /// [`crate::block_plan`]). `None` means the block has not been migrated
+    /// to a prepared contract yet; `--doctor` falls back to reduced-fidelity
+    /// legacy analysis for it.
+    pub fn plan(&self) -> Option<Result<Arc<crate::block_plan::BlockPlan>>> {
+        Some(match self {
+            Self::battery(config) => battery::prepare(config),
+            Self::custom(config) => custom::prepare(config),
+            Self::custom_dbus(config) => custom_dbus::prepare(config),
+            Self::kdeconnect(config) => kdeconnect::prepare(config),
+            Self::toggle(config) => toggle::prepare(config),
+            Self::vpn(config) => vpn::prepare(config),
+            Self::weather(config) => weather::prepare(config),
+            _ => return None,
+        })
+    }
+}
+
 /// An error which originates from a block
 #[derive(Debug, thiserror::Error)]
 #[error("In block {}: {}", .block_name, .error)]

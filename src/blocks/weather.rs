@@ -524,10 +524,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 _ = timer.tick() => break,
                 _ = api.wait_for_update_request() => break,
                 Some(action) = actions.recv() => match action.as_ref() {
-                        "toggle_format" => {
-                            if output_alt.is_some() {
-                                alt_shown = !alt_shown;
-                            }
+                        "toggle_format" if output_alt.is_some() => {
+                            alt_shown = !alt_shown;
                         }
                         _ => (),
                     }

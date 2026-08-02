@@ -210,7 +210,6 @@ impl OutputHandle {
 mod tests {
     use super::*;
     use crate::formatting::config::Config as FormatConfig;
-    use crate::map;
 
     fn format(s: &str) -> Format {
         FormatConfig::default().with_default(s).unwrap()

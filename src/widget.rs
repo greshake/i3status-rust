@@ -75,6 +75,7 @@ impl Widget {
         self.contract = Some(contract);
     }
 
+    #[cfg(test)]
     pub(crate) fn contract(&self) -> Option<&OutputHandle> {
         self.contract.as_ref()
     }
