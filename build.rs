@@ -47,6 +47,11 @@ fn generate_block_icons() {
                 }
             }
         }
+        // The doc lists are hand-maintained and can lag behind the code, so
+        // union them with the icon names passed literally to the icon APIs.
+        scan_icon_literals(&source, &mut icons);
+        icons.sort();
+        icons.dedup();
         if !icons.is_empty() {
             entries.push((block, icons));
         }
@@ -63,6 +68,29 @@ fn generate_block_icons() {
     }
     code.push_str("];\n");
     std::fs::write(std::path::Path::new(&out_dir).join("block_icons.rs"), code).unwrap();
+}
+
+/// Collect string literals passed directly to the icon-requesting APIs.
+fn scan_icon_literals(source: &str, icons: &mut Vec<String>) {
+    for api in [
+        "Value::icon(\"",
+        "Value::icon_progression(\"",
+        "Value::icon_progression_bound(\"",
+    ] {
+        let mut rest = source;
+        while let Some(pos) = rest.find(api) {
+            rest = &rest[pos + api.len()..];
+            let Some(end) = rest.find('"') else { break };
+            let name = &rest[..end];
+            if !name.is_empty()
+                && name
+                    .chars()
+                    .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_' || c == '-')
+            {
+                icons.push(name.to_string());
+            }
+        }
+    }
 }
 
 fn main() {

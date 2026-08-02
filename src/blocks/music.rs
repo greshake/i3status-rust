@@ -135,6 +135,7 @@
 //! # Icons Used
 //! - `music`
 //! - `music_next`
+//! - `music_pause`
 //! - `music_play`
 //! - `music_prev`
 //! - `volume_muted`

@@ -146,6 +146,7 @@
 //! - `weather_snow` (when weather is reported as "Snow")
 //! - `weather_thunder` (when weather is reported as "Thunderstorm" during the day)
 //! - `weather_thunder_night` (when weather is reported as "Thunderstorm" at night)
+//! - `weather_default` (in all other cases)
 
 use chrono::{DateTime, Utc};
 use sunrise::{SolarDay, SolarEvent};

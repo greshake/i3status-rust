@@ -56,6 +56,7 @@
 //! - `keyboard` for bluetooth devices identifying as "input-keyboard"
 //! - `mouse` for bluetooth devices identifying as "input-mouse"
 //! - `bluetooth` for all other devices
+//! - `bat` (as a progression) for devices reporting a battery level
 
 use zbus::fdo::{DBusProxy, ObjectManagerProxy, PropertiesProxy};
 

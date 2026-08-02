@@ -267,9 +267,15 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
             if is_generic_family(family) {
                 continue;
             }
-            let installed = resolved
-                .as_ref()
-                .is_some_and(|r| r.split(',').any(|m| family_eq(m, family)));
+            let installed = if check.has_fc_list {
+                family_installed(family)
+            } else {
+                // fc-list is unavailable; fall back to comparing the resolved
+                // family names
+                resolved
+                    .as_ref()
+                    .is_some_and(|r| r.split(',').any(|m| family_eq(m, family)))
+            };
             if !installed {
                 let diagnosis = format!(
                     "Font {family:?} is in the bar's font list but not installed{}.",
@@ -331,7 +337,7 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                 "Blocks (each run for one cycle; performs real requests/commands, {}s timeout)",
                 LIVE_TIMEOUT.as_secs()
             );
-            let reports = run_live(config_arg, config.blocks.len());
+            let reports = run_live(config_arg, config.blocks.len(), &mut problems);
             let tag_w = reports
                 .iter()
                 .map(|r| format!("[{}] {}", r.index + 1, r.name).len())
@@ -526,7 +532,7 @@ const WORKER_GRACE: Duration = Duration::from_secs(3);
 /// spawned (e.g. the custom block's command), so each worker gets its own
 /// process group, which the parent SIGKILLs after collecting the result —
 /// nothing can hang doctor or outlive it.
-fn run_live(config_arg: &str, count: usize) -> Vec<BlockReport> {
+fn run_live(config_arg: &str, count: usize, problems: &mut Vec<Problem>) -> Vec<BlockReport> {
     let exe = match std::env::current_exe() {
         Ok(exe) => exe,
         Err(err) => {
@@ -556,7 +562,14 @@ fn run_live(config_arg: &str, count: usize) -> Vec<BlockReport> {
     // child subreaper makes every orphaned descendant reparent to us instead
     // of init; after the workers are done we sweep and kill whatever is left.
     // SAFETY: plain prctl syscall
-    unsafe { libc::prctl(libc::PR_SET_CHILD_SUBREAPER, 1) };
+    let subreaper_ok = unsafe { libc::prctl(libc::PR_SET_CHILD_SUBREAPER, 1) } == 0;
+    if !subreaper_ok {
+        problems.push(Problem {
+            diagnosis: "Cannot register as a child subreaper; processes spawned by blocks that                         detach from their process group may outlive doctor."
+                .into(),
+            fix: None,
+        });
+    }
 
     let reports = runtime.block_on(async {
         let workers = (0..count).map(|index| {
@@ -566,7 +579,14 @@ fn run_live(config_arg: &str, count: usize) -> Vec<BlockReport> {
         futures::future::join_all(workers).await
     });
 
-    sweep_orphaned_children();
+    if subreaper_ok && let Err(leftover) = sweep_orphaned_children() {
+        problems.push(Problem {
+            diagnosis: format!(
+                "Could not clean up all processes spawned by the block test: {leftover}"
+            ),
+            fix: Some("Check for leftover processes and kill them manually.".into()),
+        });
+    }
     reports
 }
 
@@ -574,12 +594,19 @@ fn run_live(config_arg: &str, count: usize) -> Vec<BlockReport> {
 /// workers) have already been reaped by this point, so anything left is an
 /// escaped descendant of some block's subprocess tree, reparented to us by
 /// the subreaper registration.
-fn sweep_orphaned_children() {
+///
+/// Each pass can uncover one more level of a nested chain (killing a parent
+/// orphans its children, which then reparent to us), so this sweeps until a
+/// pass finds nothing, bounded by a deadline rather than a pass count.
+/// Returns Err with a description if processes remain at the deadline.
+fn sweep_orphaned_children() -> Result<(), String> {
     let self_pid = std::process::id();
-    for _ in 0..20 {
-        let mut found = false;
-        let Ok(dir) = std::fs::read_dir("/proc") else {
-            return;
+    let deadline = std::time::Instant::now() + Duration::from_secs(5);
+    loop {
+        let mut found = 0usize;
+        let dir = match std::fs::read_dir("/proc") {
+            Ok(dir) => dir,
+            Err(err) => return Err(format!("cannot scan /proc: {err}")),
         };
         for entry in dir.flatten() {
             let Some(pid) = entry
@@ -589,6 +616,8 @@ fn sweep_orphaned_children() {
             else {
                 continue;
             };
+            // The process may exit between the scan and the read; that is
+            // fine, it is gone either way.
             let Ok(stat) = std::fs::read_to_string(format!("/proc/{pid}/stat")) else {
                 continue;
             };
@@ -602,17 +631,24 @@ fn sweep_orphaned_children() {
                 continue;
             };
             if ppid == self_pid && state != Some("Z") {
-                // SAFETY: plain syscall
+                // SAFETY: plain syscall. "No such process" (already gone) is
+                // fine; any other failure leaves the process for the next
+                // pass or the deadline report.
                 unsafe { libc::kill(pid as i32, libc::SIGKILL) };
-                found = true;
+                found += 1;
             }
         }
-        if !found {
-            break;
+        if found == 0 {
+            return Ok(());
+        }
+        if std::time::Instant::now() > deadline {
+            return Err(format!(
+                "{found} process(es) still alive after 5s of sweeping"
+            ));
         }
         // Give the kills a moment: children of the killed processes reparent
         // to us and are caught by the next iteration.
-        std::thread::sleep(Duration::from_millis(20));
+        std::thread::sleep(Duration::from_millis(10));
         // Reap the zombies so they vanish from the next scan.
         // SAFETY: plain syscall
         while unsafe { libc::waitpid(-1, std::ptr::null_mut(), libc::WNOHANG) } > 0 {}
@@ -1530,9 +1566,31 @@ impl FontCheck {
     }
 }
 
-/// Fontconfig treats family names case-insensitively; compare like it does.
+/// Fontconfig compares family names ignoring case and blanks
+/// (FcStrCmpIgnoreBlanksAndCase); do the same.
 fn family_eq(a: &str, b: &str) -> bool {
-    a.eq_ignore_ascii_case(b)
+    let mut a = a.chars().filter(|c| !c.is_whitespace());
+    let mut b = b.chars().filter(|c| !c.is_whitespace());
+    loop {
+        match (a.next(), b.next()) {
+            (None, None) => return true,
+            (Some(x), Some(y)) if x.eq_ignore_ascii_case(&y) => (),
+            _ => return false,
+        }
+    }
+}
+
+/// Whether a family is installed, asked of fontconfig itself: `fc-list` with
+/// a family pattern lists only fonts whose family matches under fontconfig's
+/// own normalization (so "DejaVuSansMono" finds "DejaVu Sans Mono").
+fn family_installed(family: &str) -> bool {
+    std::process::Command::new("fc-list")
+        .arg(family)
+        .arg("family")
+        .output()
+        .is_ok_and(|out| {
+            out.status.success() && !String::from_utf8_lossy(&out.stdout).trim().is_empty()
+        })
 }
 
 /// Fontconfig's generic aliases: asking for these by design resolves to some
@@ -1863,6 +1921,23 @@ mod tests {
         assert!(battery.1.contains(&"bat_charging"));
         // the table must be sorted for binary_search_by_key
         assert!(BLOCK_ICONS.windows(2).all(|w| w[0].0 <= w[1].0));
+
+        // completeness regressions: icons the docs historically missed, now
+        // covered by the doc lists plus the source literal scan
+        let icons_of = |block: &str| {
+            BLOCK_ICONS
+                .iter()
+                .find(|(b, _)| *b == block)
+                .unwrap_or_else(|| panic!("{block} missing from BLOCK_ICONS"))
+                .1
+        };
+        assert!(icons_of("music").contains(&"music_pause"));
+        assert!(icons_of("weather").contains(&"weather_default"));
+        assert!(icons_of("bluetooth").contains(&"bat"));
+        // heading variants: "#  Icons Used" and "# Used Icons"
+        assert!(icons_of("sound").contains(&"volume"));
+        assert!(icons_of("uptime").contains(&"uptime"));
+        assert!(icons_of("xrandr").contains(&"xrandr"));
     }
 
     #[test]
