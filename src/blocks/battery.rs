@@ -61,9 +61,9 @@
 //! ```
 //!
 //! # Icons Used
-//! - `bat` (`$icon`, as a progression)
-//! - `bat_charging` (`$icon`, as a progression)
-//! - `bat_not_available`
+//! - `bat` (`$icon`, in `format` `full_format` `empty_format` `not_charging_format`, as a progression)
+//! - `bat_charging` (`$icon`, in `charging_format`, as a progression)
+//! - `bat_not_available` (`$icon`, in `missing_format`)
 
 use regex::Regex;
 use std::convert::Infallible;
