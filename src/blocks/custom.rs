@@ -125,14 +125,13 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
             "{ $icon|} $short_text.pango-str() |",
         )?,
     );
-    output = output.always_provides("text", ValueKind::Text);
     // Only JSON output can carry an icon name; a plain-text command never
     // sets one. When it can, any name is permitted and resolves through the
     // normal icon set and override rules.
     if config.json {
         output = output.icon("icon", IconChoices::OpenResolvable);
     }
-    Ok(BlockPlan::new(vec![output]))
+    BlockPlan::new(vec![output])
 }
 
 async fn update_bar(

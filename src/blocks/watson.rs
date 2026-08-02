@@ -51,10 +51,10 @@ pub struct Config {
 }
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
-    Ok(BlockPlan::new(vec![OutputPlan::new(
+    BlockPlan::new(vec![OutputPlan::new(
         "main",
         config.format.with_default(" $text |")?,
-    )]))
+    )])
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -262,13 +262,4 @@ mod tests {
         assert!(plan.output("main").unwrap().format().contains_key("text"));
     }
 
-    #[test]
-    fn text_is_deliberately_not_guaranteed() {
-        // When there is no active tracking and no previous state, the block
-        // renders an empty value set, so `text` is conditional and must not
-        // be declared via always_provides.
-        let plan = prepare(&Config::default()).unwrap();
-        let main = plan.output("main").unwrap();
-        assert_eq!(main.output().guaranteed_kind("text"), None);
-    }
 }

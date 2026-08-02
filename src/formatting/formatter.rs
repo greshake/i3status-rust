@@ -6,7 +6,6 @@ use std::{borrow::Cow, fmt::Debug};
 use super::FormatError;
 use super::parse::Arg;
 use super::value::ValueInner as Value;
-use super::value::ValueKind;
 use crate::config::SharedConfig;
 use crate::errors::*;
 
@@ -50,15 +49,6 @@ pub trait Formatter: Debug + Send + Sync {
 
     fn interval(&self) -> Option<Duration> {
         None
-    }
-
-    /// Whether formatting a value of this kind can never produce a
-    /// branch-selection failure (`IncompatibleFormatter` /
-    /// `NumberOutOfRange`). Used by `--doctor`'s reachability analysis; the
-    /// conservative `false` is always sound.
-    fn infallible_for(&self, kind: ValueKind) -> bool {
-        let _ = kind;
-        false
     }
 }
 

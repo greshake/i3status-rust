@@ -76,7 +76,7 @@ pub struct Config {
 }
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
-    Ok(BlockPlan::new(vec![
+    BlockPlan::new(vec![
         OutputPlan::new(
             "connected",
             config
@@ -84,7 +84,6 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
                 .with_default(" $icon $name {$bat_icon $bat_charge |}{$notif_icon |}")?,
         )
         .icon("icon", IconChoices::one("phone"))
-        .always_provides("icon", ValueKind::Icon)
         .icon("bat_icon", IconChoices::fixed(["bat", "bat_charging"]))
         .icon("network_icon", IconChoices::one("net_cellular"))
         .icon("notif_icon", IconChoices::one("notification")),
@@ -93,14 +92,12 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
             config.disconnected_format.with_default(" $icon ")?,
         )
         .icon("icon", IconChoices::one("phone_disconnected"))
-        .always_provides("icon", ValueKind::Icon)
         .icon("bat_icon", IconChoices::fixed(["bat", "bat_charging"]))
         .icon("network_icon", IconChoices::one("net_cellular"))
         .icon("notif_icon", IconChoices::one("notification")),
         OutputPlan::new("missing", config.missing_format.with_default(" $icon x ")?)
-            .icon("icon", IconChoices::one("phone_disconnected"))
-        .always_provides("icon", ValueKind::Icon),
-    ]))
+            .icon("icon", IconChoices::one("phone_disconnected")),
+    ])
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {

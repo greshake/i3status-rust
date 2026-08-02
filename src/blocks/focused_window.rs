@@ -63,10 +63,10 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     // No value guarantees: `title`, `marks` and `visible_marks` are only set
     // when the focused window has a non-empty title, so every value is
     // conditional.
-    Ok(BlockPlan::new(vec![OutputPlan::new(
+    BlockPlan::new(vec![OutputPlan::new(
         "main",
         config.format.with_default(" $title.str(max_w:21) |")?,
-    )]))
+    )])
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -133,16 +133,6 @@ mod tests {
         assert_eq!(main.output().icon_placeholders().count(), 0);
     }
 
-    #[test]
-    fn no_value_is_guaranteed() {
-        // All values are set only when the window title is non-empty, so
-        // none may be declared as always provided.
-        let plan = prepare(&Config::default()).unwrap();
-        let main = plan.output("main").unwrap();
-        for key in ["title", "marks", "visible_marks"] {
-            assert_eq!(main.output().guaranteed_kind(key), None, "{key}");
-        }
-    }
 
     #[test]
     fn custom_format_is_used() {

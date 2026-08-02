@@ -83,12 +83,10 @@ pub struct Config {
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     let format = config.format.with_default(" $icon $temperature ")?;
-    Ok(BlockPlan::new(vec![
+    BlockPlan::new(vec![
         OutputPlan::new("main", format)
-            .icon("icon", IconChoices::one("hueshift"))
-            .always_provides("icon", ValueKind::Icon)
-            .always_provides("temperature", ValueKind::Number),
-    ]))
+            .icon("icon", IconChoices::one("hueshift")),
+    ])
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -419,15 +417,6 @@ mod tests {
         assert!(main.format().contains_key("temperature"));
     }
 
-    #[test]
-    fn both_values_are_guaranteed_on_every_render() {
-        let plan = prepare(&Config::default()).unwrap();
-        let main = plan.output("main").unwrap();
-        let main = main.output();
-        assert_eq!(main.guaranteed_kind("icon"), Some(ValueKind::Icon));
-        assert_eq!(main.guaranteed_kind("temperature"), Some(ValueKind::Number));
-        assert_eq!(main.guaranteed_kind("brightness"), None);
-    }
 
     #[test]
     fn configured_format_is_installed() {

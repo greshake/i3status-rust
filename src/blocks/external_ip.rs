@@ -82,13 +82,9 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     // Everything else (version, region, country_*, in_eu, ...) is optional
     // in the geolocator response and inserted conditionally, so it stays
     // undeclared.
-    Ok(BlockPlan::new(vec![
-        OutputPlan::new("main", config.format.with_default(" $ip $country_flag ")?)
-            .always_provides("ip", ValueKind::Text)
-            .always_provides("city", ValueKind::Text)
-            .always_provides("latitude", ValueKind::Number)
-            .always_provides("longitude", ValueKind::Number),
-    ]))
+    BlockPlan::new(vec![
+        OutputPlan::new("main", config.format.with_default(" $ip $country_flag ")?),
+    ])
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -259,19 +255,4 @@ mod tests {
         assert!(!main.format().contains_key("country_flag"));
     }
 
-    #[test]
-    fn only_required_geolocator_fields_are_guaranteed() {
-        let plan = prepare(&Config::default()).unwrap();
-        let main = plan.output("main").unwrap();
-        let main = main.output();
-        assert_eq!(main.guaranteed_kind("ip"), Some(ValueKind::Text));
-        assert_eq!(main.guaranteed_kind("city"), Some(ValueKind::Text));
-        assert_eq!(main.guaranteed_kind("latitude"), Some(ValueKind::Number));
-        assert_eq!(main.guaranteed_kind("longitude"), Some(ValueKind::Number));
-        // Optional geolocator fields are inserted conditionally and must not
-        // be guaranteed.
-        for key in ["version", "country_code", "country_flag", "in_eu", "org"] {
-            assert_eq!(main.guaranteed_kind(key), None, "{key}");
-        }
-    }
 }

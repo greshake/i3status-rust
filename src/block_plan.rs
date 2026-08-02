@@ -21,7 +21,7 @@ use std::sync::Arc;
 
 use crate::errors::*;
 use crate::formatting::Format;
-use crate::formatting::value::{Value, ValueInner, ValueKind};
+use crate::formatting::value::{Value, ValueInner};
 use crate::widget::Widget;
 
 /// The icon names one placeholder of one output variant can carry.
@@ -88,10 +88,6 @@ pub struct OutputPlan {
     pub id: &'static str,
     pub format: Format,
     icons: Vec<(&'static str, IconChoices)>,
-    /// Placeholders set on EVERY render of this output, with their value
-    /// kind. Lets static analysis prove a format branch cannot fail, which
-    /// makes later fallback branches dead.
-    always: Vec<(&'static str, ValueKind)>,
 }
 
 impl OutputPlan {
@@ -100,37 +96,12 @@ impl OutputPlan {
             id,
             format,
             icons: Vec::new(),
-            always: Vec::new(),
         }
     }
 
-    /// Declare a placeholder the block sets on every render of this output.
-    /// Do NOT declare conditionally-set values (e.g. `[if ...]` map
-    /// entries): a wrong guarantee makes doctor treat fallback branches as
-    /// dead and under-report requirements.
-    pub fn always_provides(mut self, placeholder: &'static str, kind: ValueKind) -> Self {
-        debug_assert!(
-            self.always.iter().all(|(p, _)| *p != placeholder),
-            "duplicate always_provides declaration '{placeholder}'"
-        );
-        self.always.push((placeholder, kind));
-        self
-    }
-
-    /// The kind of a placeholder guaranteed to be present on every render.
-    pub fn guaranteed_kind(&self, placeholder: &str) -> Option<ValueKind> {
-        self.always
-            .iter()
-            .find(|(p, _)| *p == placeholder)
-            .map(|(_, kind)| *kind)
-    }
-
     /// Declare the icon choices for an icon-valued placeholder.
+    /// Duplicate declarations are rejected when the plan is built.
     pub fn icon(mut self, placeholder: &'static str, choices: IconChoices) -> Self {
-        debug_assert!(
-            self.icons.iter().all(|(p, _)| *p != placeholder),
-            "duplicate icon placeholder declaration '{placeholder}'"
-        );
         self.icons.push((placeholder, choices));
         self
     }
@@ -154,8 +125,27 @@ pub struct BlockPlan {
 }
 
 impl BlockPlan {
-    pub fn new(outputs: Vec<OutputPlan>) -> Arc<Self> {
-        Arc::new(Self { outputs })
+    /// Build a plan, rejecting ambiguous metadata unconditionally (also in
+    /// release builds): duplicate output ids and duplicate icon-placeholder
+    /// declarations within an output are contract bugs.
+    pub fn new(outputs: Vec<OutputPlan>) -> Result<Arc<Self>> {
+        for (i, output) in outputs.iter().enumerate() {
+            if outputs[..i].iter().any(|o| o.id == output.id) {
+                return Err(Error::new(format!(
+                    "block contract bug: duplicate output id '{}'",
+                    output.id
+                )));
+            }
+            for (j, (placeholder, _)) in output.icons.iter().enumerate() {
+                if output.icons[..j].iter().any(|(p, _)| p == placeholder) {
+                    return Err(Error::new(format!(
+                        "block contract bug: output '{}' declares '${placeholder}' twice",
+                        output.id
+                    )));
+                }
+            }
+        }
+        Ok(Arc::new(Self { outputs }))
     }
 
     /// Handle for the output variant named `id`.
@@ -327,7 +317,8 @@ pub fn error_outputs(
     error_fullscreen_format: Format,
     restartable_possible: bool,
 ) -> ErrorOutputs {
-    let plan = error_plan(error_format, error_fullscreen_format, restartable_possible);
+    let plan = error_plan(error_format, error_fullscreen_format, restartable_possible)
+        .expect("the error plan has statically unique ids");
     ErrorOutputs {
         error: OutputHandle {
             plan: plan.clone(),
@@ -346,7 +337,7 @@ pub fn error_plan(
     error_format: Format,
     error_fullscreen_format: Format,
     restartable_possible: bool,
-) -> Arc<BlockPlan> {
+) -> Result<Arc<BlockPlan>> {
     let output = |id, format| {
         let output = OutputPlan::new(id, format);
         if restartable_possible {
@@ -377,6 +368,7 @@ mod tests {
             OutputPlan::new("disconnected", format(" VPN: $icon "))
                 .icon("icon", IconChoices::fixed(["net_wired", "net_down"])),
         ])
+        .unwrap()
     }
 
     #[test]
@@ -455,6 +447,38 @@ mod tests {
         );
         assert!(outputs.error.icon_violations(&values).is_empty());
         assert!(outputs.fullscreen.icon_violations(&values).is_empty());
+    }
+
+    #[test]
+    fn duplicate_output_ids_are_rejected_unconditionally() {
+        let result = BlockPlan::new(vec![
+            OutputPlan::new("main", format(" a ")),
+            OutputPlan::new("main", format(" b ")),
+        ]);
+        assert!(result.unwrap_err().to_string().contains("duplicate"));
+    }
+
+    #[test]
+    fn duplicate_icon_declarations_are_rejected_unconditionally() {
+        let result = BlockPlan::new(vec![
+            OutputPlan::new("main", format(" $icon "))
+                .icon("icon", IconChoices::one("a"))
+                .icon("icon", IconChoices::one("b")),
+        ]);
+        assert!(result.unwrap_err().to_string().contains("twice"));
+    }
+
+    #[test]
+    fn raw_format_replacement_invalidates_the_contract() {
+        let plan = plan();
+        let handle = plan.output("connected").unwrap();
+        let mut widget = handle.new_widget();
+        assert!(widget.check_contract().is_ok());
+        // A raw set_format bypasses the plan: the contract is void and
+        // publishing the widget must fail.
+        widget.set_format(format(" ^icon_arbitrary "));
+        assert!(widget.contract().is_none());
+        assert!(widget.check_contract().is_err());
     }
 
     #[test]

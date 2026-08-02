@@ -41,13 +41,10 @@ pub struct Config {
 }
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
-    Ok(BlockPlan::new(vec![
+    BlockPlan::new(vec![
         OutputPlan::new("main", config.format.with_default(" $icon $uptime ")?)
-            .icon("icon", IconChoices::one("uptime"))
-            .always_provides("icon", ValueKind::Icon)
-            .always_provides("text", ValueKind::Text)
-            .always_provides("uptime", ValueKind::Duration),
-    ]))
+            .icon("icon", IconChoices::one("uptime")),
+    ])
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -112,23 +109,6 @@ mod tests {
         assert_eq!(output.single_icon("icon").unwrap(), "uptime");
     }
 
-    #[test]
-    fn plan_guarantees_all_values() {
-        let plan = prepare(&Config::default()).unwrap();
-        let output = plan.output("main").unwrap();
-        assert_eq!(
-            output.output().guaranteed_kind("icon"),
-            Some(ValueKind::Icon)
-        );
-        assert_eq!(
-            output.output().guaranteed_kind("text"),
-            Some(ValueKind::Text)
-        );
-        assert_eq!(
-            output.output().guaranteed_kind("uptime"),
-            Some(ValueKind::Duration)
-        );
-    }
 
     #[test]
     fn custom_format_is_respected() {

@@ -98,23 +98,16 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     let disconnected_format = config
         .disconnected_format
         .with_default(" $icon{ $name|} ")?;
-    Ok(BlockPlan::new(vec![
+    BlockPlan::new(vec![
         OutputPlan::new("connected", format)
             .icon("icon", IconChoices::fixed(DEVICE_ICONS))
-            .icon("battery_icon", IconChoices::one("bat"))
-            .always_provides("icon", ValueKind::Icon)
-            .always_provides("name", ValueKind::Text)
-            .always_provides("available", ValueKind::Flag),
+            .icon("battery_icon", IconChoices::one("bat")),
         OutputPlan::new("disconnected", disconnected_format.clone())
             .icon("icon", IconChoices::fixed(DEVICE_ICONS))
-            .icon("battery_icon", IconChoices::one("bat"))
-            .always_provides("icon", ValueKind::Icon)
-            .always_provides("name", ValueKind::Text)
-            .always_provides("available", ValueKind::Flag),
+            .icon("battery_icon", IconChoices::one("bat")),
         OutputPlan::new("unavailable", disconnected_format)
-            .icon("icon", IconChoices::one("bluetooth"))
-            .always_provides("icon", ValueKind::Icon),
-    ]))
+            .icon("icon", IconChoices::one("bluetooth")),
+    ])
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -509,26 +502,6 @@ mod tests {
         );
     }
 
-    #[test]
-    fn guarantees_cover_only_unconditional_values() {
-        let plan = prepare(&config()).unwrap();
-        // icon, name and available are set on every render of the device
-        // states; battery values only appear when the device reports them.
-        for id in ["connected", "disconnected"] {
-            let output = plan.output(id).unwrap();
-            let output = output.output();
-            assert_eq!(output.guaranteed_kind("icon"), Some(ValueKind::Icon));
-            assert_eq!(output.guaranteed_kind("name"), Some(ValueKind::Text));
-            assert_eq!(output.guaranteed_kind("available"), Some(ValueKind::Flag));
-            assert_eq!(output.guaranteed_kind("percentage"), None);
-            assert_eq!(output.guaranteed_kind("battery_icon"), None);
-        }
-        let unavailable = plan.output("unavailable").unwrap();
-        let unavailable = unavailable.output();
-        assert_eq!(unavailable.guaranteed_kind("icon"), Some(ValueKind::Icon));
-        assert_eq!(unavailable.guaranteed_kind("name"), None);
-        assert_eq!(unavailable.guaranteed_kind("available"), None);
-    }
 
     #[test]
     fn every_device_icon_is_declared() {

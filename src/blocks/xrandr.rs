@@ -58,7 +58,7 @@ pub struct Config {
 }
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
-    Ok(BlockPlan::new(vec![
+    BlockPlan::new(vec![
         OutputPlan::new(
             "main",
             config
@@ -68,7 +68,7 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
         .icon("icon", IconChoices::one("xrandr"))
         .icon("brightness_icon", IconChoices::one("backlight"))
         .icon("res_icon", IconChoices::one("resolution")),
-    ]))
+    ])
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -382,29 +382,6 @@ mod tests {
         assert_eq!(main.single_icon("res_icon").unwrap(), "resolution");
     }
 
-    #[test]
-    fn no_value_is_guaranteed() {
-        // Every value is set inside `if let Some(mon)`; when the selected
-        // monitor disappears the widget renders with no values at all, so
-        // nothing may be declared as always provided.
-        let plan = prepare(&Config::default()).unwrap();
-        let main = plan.output("main").unwrap();
-        for placeholder in [
-            "icon",
-            "display",
-            "brightness",
-            "brightness_icon",
-            "resolution",
-            "res_icon",
-            "refresh_rate",
-        ] {
-            assert_eq!(
-                main.output().guaranteed_kind(placeholder),
-                None,
-                "'{placeholder}' must stay undeclared"
-            );
-        }
-    }
 
     #[test]
     fn plan_uses_configured_format() {

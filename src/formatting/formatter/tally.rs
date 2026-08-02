@@ -59,10 +59,6 @@ const VERTICAL_CHINESE_COUNTING_RODS_CHARS: [char; 10] =
 const CHINESE_TALLY_CHARS: [char; 5] = ['𝍲', '𝍳', '𝍴', '𝍵', '𝍶'];
 
 impl Formatter for TallyFormatter {
-    fn infallible_for(&self, kind: ValueKind) -> bool {
-        matches!(kind, ValueKind::Number)
-    }
-
     fn format(&self, val: &Value, _config: &SharedConfig) -> Result<String, FormatError> {
         match val {
             Value::Number {

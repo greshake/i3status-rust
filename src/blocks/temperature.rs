@@ -112,10 +112,6 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     let declare = |output: OutputPlan| {
         output
             .icon("icon", IconChoices::one("thermometer"))
-            .always_provides("icon", ValueKind::Icon)
-            .always_provides("average", ValueKind::Number)
-            .always_provides("min", ValueKind::Number)
-            .always_provides("max", ValueKind::Number)
     };
     let mut outputs = vec![declare(OutputPlan::new(
         "main",
@@ -129,7 +125,7 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
             format_alt.with_default("")?,
         )));
     }
-    Ok(BlockPlan::new(outputs))
+    BlockPlan::new(outputs)
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -278,27 +274,4 @@ mod tests {
         assert_eq!(alt.single_icon("icon").unwrap(), "thermometer");
     }
 
-    #[test]
-    fn both_outputs_guarantee_icon_and_temperatures() {
-        let config = Config {
-            format_alt: Some(" $icon $min min ".parse().unwrap()),
-            ..Config::default()
-        };
-        let plan = prepare(&config).unwrap();
-        for id in ["main", "alt"] {
-            let output = plan.output(id).unwrap();
-            assert_eq!(
-                output.output().guaranteed_kind("icon"),
-                Some(ValueKind::Icon),
-                "{id}"
-            );
-            for placeholder in ["average", "min", "max"] {
-                assert_eq!(
-                    output.output().guaranteed_kind(placeholder),
-                    Some(ValueKind::Number),
-                    "{id} must guarantee {placeholder}"
-                );
-            }
-        }
-    }
 }

@@ -77,10 +77,6 @@ impl StrFormatter {
 }
 
 impl Formatter for StrFormatter {
-    fn infallible_for(&self, kind: ValueKind) -> bool {
-        matches!(kind, ValueKind::Text | ValueKind::Icon)
-    }
-
     fn format(&self, val: &Value, config: &SharedConfig) -> Result<String, FormatError> {
         match val {
             Value::Text(text) => {

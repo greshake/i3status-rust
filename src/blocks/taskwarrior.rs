@@ -99,36 +99,27 @@ impl Default for Config {
 }
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
-    Ok(BlockPlan::new(vec![
+    BlockPlan::new(vec![
         OutputPlan::new(
             "main",
             config.format.with_default(" $icon $count.eng(w:1) ")?,
         )
-        .icon("icon", IconChoices::one("tasks"))
-        .always_provides("icon", ValueKind::Icon)
-        .always_provides("count", ValueKind::Number)
-        .always_provides("filter_name", ValueKind::Text),
+        .icon("icon", IconChoices::one("tasks")),
         OutputPlan::new(
             "singular",
             config
                 .format_singular
                 .with_default(" $icon $count.eng(w:1) ")?,
         )
-        .icon("icon", IconChoices::one("tasks"))
-        .always_provides("icon", ValueKind::Icon)
-        .always_provides("count", ValueKind::Number)
-        .always_provides("filter_name", ValueKind::Text),
+        .icon("icon", IconChoices::one("tasks")),
         OutputPlan::new(
             "everything_done",
             config
                 .format_everything_done
                 .with_default(" $icon $count.eng(w:1) ")?,
         )
-        .icon("icon", IconChoices::one("tasks"))
-        .always_provides("icon", ValueKind::Icon)
-        .always_provides("count", ValueKind::Number)
-        .always_provides("filter_name", ValueKind::Text),
-    ]))
+        .icon("icon", IconChoices::one("tasks")),
+    ])
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -249,28 +240,6 @@ mod tests {
         }
     }
 
-    #[test]
-    fn every_state_guarantees_icon_count_and_filter_name() {
-        let plan = prepare(&Config::default()).unwrap();
-        for id in ["main", "singular", "everything_done"] {
-            let output = plan.output(id).unwrap();
-            assert_eq!(
-                output.output().guaranteed_kind("icon"),
-                Some(ValueKind::Icon),
-                "{id}"
-            );
-            assert_eq!(
-                output.output().guaranteed_kind("count"),
-                Some(ValueKind::Number),
-                "{id}"
-            );
-            assert_eq!(
-                output.output().guaranteed_kind("filter_name"),
-                Some(ValueKind::Text),
-                "{id}"
-            );
-        }
-    }
 
     #[test]
     fn each_count_state_resolves_its_own_format() {

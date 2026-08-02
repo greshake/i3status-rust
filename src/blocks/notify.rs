@@ -85,17 +85,14 @@ pub enum DriverType {
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     let format = config.format.with_default(" $icon ")?;
-    Ok(BlockPlan::new(vec![
+    BlockPlan::new(vec![
         OutputPlan::new("enabled", format.clone())
-            .icon("icon", IconChoices::one(ICON_ON))
-            .always_provides("icon", ValueKind::Icon),
+            .icon("icon", IconChoices::one(ICON_ON)),
         // The paused output is only ever rendered when `is_paused` is true,
         // so the `paused` flag is set on every render of this output.
         OutputPlan::new("paused", format)
-            .icon("icon", IconChoices::one(ICON_OFF))
-            .always_provides("icon", ValueKind::Icon)
-            .always_provides("paused", ValueKind::Flag),
-    ]))
+            .icon("icon", IconChoices::one(ICON_OFF)),
+    ])
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -383,22 +380,6 @@ mod tests {
         );
     }
 
-    #[test]
-    fn guarantees_cover_only_unconditional_values() {
-        let plan = prepare(&Config::default()).unwrap();
-        let enabled = plan.output("enabled").unwrap();
-        let enabled = enabled.output();
-        assert_eq!(enabled.guaranteed_kind("icon"), Some(ValueKind::Icon));
-        assert_eq!(enabled.guaranteed_kind("paused"), None);
-        assert_eq!(enabled.guaranteed_kind("notification_count"), None);
-        assert_eq!(enabled.guaranteed_kind("history_count"), None);
-
-        let paused = plan.output("paused").unwrap();
-        let paused = paused.output();
-        assert_eq!(paused.guaranteed_kind("icon"), Some(ValueKind::Icon));
-        assert_eq!(paused.guaranteed_kind("paused"), Some(ValueKind::Flag));
-        assert_eq!(paused.guaranteed_kind("notification_count"), None);
-    }
 
     #[test]
     fn both_states_share_the_same_format() {

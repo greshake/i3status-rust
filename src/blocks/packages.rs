@@ -397,33 +397,27 @@ impl PackageManager {
 }
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
-    Ok(BlockPlan::new(vec![
+    BlockPlan::new(vec![
         OutputPlan::new(
             "main",
             config.format.with_default(" $icon $total.eng(w:1) ")?,
         )
-        .icon("icon", IconChoices::one("update"))
-        .always_provides("icon", ValueKind::Icon)
-        .always_provides("total", ValueKind::Number),
+        .icon("icon", IconChoices::one("update")),
         OutputPlan::new(
             "singular",
             config
                 .format_singular
                 .with_default(" $icon $total.eng(w:1) ")?,
         )
-        .icon("icon", IconChoices::one("update"))
-        .always_provides("icon", ValueKind::Icon)
-        .always_provides("total", ValueKind::Number),
+        .icon("icon", IconChoices::one("update")),
         OutputPlan::new(
             "up_to_date",
             config
                 .format_up_to_date
                 .with_default(" $icon $total.eng(w:1) ")?,
         )
-        .icon("icon", IconChoices::one("update"))
-        .always_provides("icon", ValueKind::Icon)
-        .always_provides("total", ValueKind::Number),
-    ]))
+        .icon("icon", IconChoices::one("update")),
+    ])
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -572,26 +566,6 @@ mod tests {
         }
     }
 
-    #[test]
-    fn icon_and_total_are_guaranteed_on_every_state() {
-        let plan = prepare(&Config::default()).unwrap();
-        for id in ["main", "singular", "up_to_date"] {
-            let output = plan.output(id).unwrap();
-            assert_eq!(
-                output.output().guaranteed_kind("icon"),
-                Some(ValueKind::Icon),
-                "{id}"
-            );
-            assert_eq!(
-                output.output().guaranteed_kind("total"),
-                Some(ValueKind::Number),
-                "{id}"
-            );
-            // Per-manager counts depend on the configured managers; they must
-            // stay undeclared.
-            assert_eq!(output.output().guaranteed_kind("pacman"), None, "{id}");
-        }
-    }
 
     #[test]
     fn each_count_state_resolves_its_own_format() {

@@ -87,14 +87,12 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
         .icon_off
         .clone()
         .unwrap_or_else(|| "toggle_off".into());
-    Ok(BlockPlan::new(vec![
+    BlockPlan::new(vec![
         OutputPlan::new("on", format.clone())
-            .icon("icon", IconChoices::one(icon_on))
-            .always_provides("icon", ValueKind::Icon),
+            .icon("icon", IconChoices::one(icon_on)),
         OutputPlan::new("off", format)
-            .icon("icon", IconChoices::one(icon_off))
-            .always_provides("icon", ValueKind::Icon),
-    ]))
+            .icon("icon", IconChoices::one(icon_off)),
+    ])
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {

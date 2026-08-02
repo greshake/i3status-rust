@@ -62,12 +62,10 @@ fn expand_inbox(inbox: &str) -> Result<impl Iterator<Item = PathBuf>> {
 }
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
-    Ok(BlockPlan::new(vec![
+    BlockPlan::new(vec![
         OutputPlan::new("main", config.format.with_default(" $icon $status ")?)
-            .icon("icon", IconChoices::one("mail"))
-            .always_provides("icon", ValueKind::Icon)
-            .always_provides("status", ValueKind::Number),
-    ]))
+            .icon("icon", IconChoices::one("mail")),
+    ])
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -131,19 +129,6 @@ mod tests {
         assert_eq!(output.single_icon("icon").unwrap(), "mail");
     }
 
-    #[test]
-    fn plan_guarantees_all_values() {
-        let plan = prepare(&Config::default()).unwrap();
-        let output = plan.output("main").unwrap();
-        assert_eq!(
-            output.output().guaranteed_kind("icon"),
-            Some(ValueKind::Icon)
-        );
-        assert_eq!(
-            output.output().guaranteed_kind("status"),
-            Some(ValueKind::Number)
-        );
-    }
 
     #[test]
     fn custom_format_is_respected() {

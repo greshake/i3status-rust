@@ -203,10 +203,10 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
         }
         output
     };
-    Ok(BlockPlan::new(vec![
+    BlockPlan::new(vec![
         with_icons(OutputPlan::new("main", format)),
         with_icons(OutputPlan::new("alt", format_alt)),
-    ]))
+    ])
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -353,21 +353,6 @@ mod tests {
         }
     }
 
-    #[test]
-    fn no_value_is_guaranteed() {
-        // Every privacy value is set only while the matching capture is
-        // active, so nothing may be declared as always provided.
-        let config = config_with_drivers("[[driver]]\nname = \"v4l\"");
-        let plan = prepare(&config).unwrap();
-        for id in ["main", "alt"] {
-            let output = plan.output(id).unwrap();
-            let output = output.output();
-            for (_, placeholder, _) in &TYPE_ICONS {
-                assert_eq!(output.guaranteed_kind(placeholder), None, "{id}");
-            }
-            assert_eq!(output.guaranteed_kind("info_webcam"), None);
-        }
-    }
 
     #[test]
     fn every_capture_type_has_a_declared_icon() {

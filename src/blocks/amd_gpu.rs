@@ -59,11 +59,6 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     let declare = |output: OutputPlan| {
         output
             .icon("icon", IconChoices::one("gpu"))
-            .always_provides("icon", ValueKind::Icon)
-            .always_provides("utilization", ValueKind::Number)
-            .always_provides("vram_total", ValueKind::Number)
-            .always_provides("vram_used", ValueKind::Number)
-            .always_provides("vram_used_percents", ValueKind::Number)
     };
     let mut outputs = vec![declare(OutputPlan::new(
         "main",
@@ -75,7 +70,7 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
             format_alt.with_default("")?,
         )));
     }
-    Ok(BlockPlan::new(outputs))
+    BlockPlan::new(outputs)
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -245,33 +240,4 @@ mod tests {
         assert_eq!(alt.single_icon("icon").unwrap(), "gpu");
     }
 
-    #[test]
-    fn every_value_is_guaranteed_on_all_outputs() {
-        let config = Config {
-            format_alt: Some(" $icon ".parse().unwrap()),
-            ..Config::default()
-        };
-        let plan = prepare(&config).unwrap();
-        for id in ["main", "alt"] {
-            let output = plan.output(id).unwrap();
-            let output = output.output();
-            assert_eq!(
-                output.guaranteed_kind("icon"),
-                Some(ValueKind::Icon),
-                "{id}"
-            );
-            for key in [
-                "utilization",
-                "vram_total",
-                "vram_used",
-                "vram_used_percents",
-            ] {
-                assert_eq!(
-                    output.guaranteed_kind(key),
-                    Some(ValueKind::Number),
-                    "{id}.{key}"
-                );
-            }
-        }
-    }
 }

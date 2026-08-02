@@ -126,7 +126,7 @@ impl Block {
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     // The icon name arrives over D-Bus at runtime, so any name is permitted;
     // it resolves through the normal icon set and override rules.
-    Ok(BlockPlan::new(vec![
+    BlockPlan::new(vec![
         OutputPlan::new(
             "main",
             config.format.with_defaults(
@@ -135,7 +135,7 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
             )?,
         )
         .icon("icon", IconChoices::OpenResolvable),
-    ]))
+    ])
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -166,7 +166,11 @@ pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Res
 }
 
 async fn dbus_conn() -> Result<zbus::Connection> {
-    let dbus_interface_name = match env::var("I3RS_DBUS_NAME") {
+    // The internal override is a doctor-only mechanism: its workers run
+    // each block in a separate process and need unique names. It is not
+    // part of the public interface.
+    let suffix = env::var("I3RS_INTERNAL_DBUS_NAME_OVERRIDE").or_else(|_| env::var("I3RS_DBUS_NAME"));
+    let dbus_interface_name = match suffix {
         Ok(v) => format!("{DBUS_NAME}.{v}"),
         Err(_) => DBUS_NAME.to_string(),
     };

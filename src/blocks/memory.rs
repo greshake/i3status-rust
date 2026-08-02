@@ -98,41 +98,10 @@ pub struct Config {
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     let icons = |output: OutputPlan| {
-        let mut output = output
+        let output = output
             .icon("icon", IconChoices::one("memory_mem"))
-            .icon("icon_swap", IconChoices::one("memory_swap"))
-            .always_provides("icon", ValueKind::Icon)
-            .always_provides("icon_swap", ValueKind::Icon);
+            .icon("icon_swap", IconChoices::one("memory_swap"));
         // Every numeric value below is inserted on every render.
-        for placeholder in [
-            "mem_total",
-            "mem_free",
-            "mem_free_percents",
-            "mem_total_used",
-            "mem_total_used_percents",
-            "mem_used",
-            "mem_used_percents",
-            "mem_avail",
-            "mem_avail_percents",
-            "swap_total",
-            "swap_free",
-            "swap_free_percents",
-            "swap_used",
-            "swap_used_percents",
-            "buffers",
-            "buffers_percent",
-            "cached",
-            "cached_percent",
-            "zram_compressed",
-            "zram_decompressed",
-            "zram_comp_ratio",
-            "zswap_compressed",
-            "zswap_decompressed",
-            "zswap_decompressed_percents",
-            "zswap_comp_ratio",
-        ] {
-            output = output.always_provides(placeholder, ValueKind::Number);
-        }
         output
     };
     let mut outputs = vec![icons(OutputPlan::new(
@@ -144,7 +113,7 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     if let Some(format_alt) = &config.format_alt {
         outputs.push(icons(OutputPlan::new("alt", format_alt.with_default("")?)));
     }
-    Ok(BlockPlan::new(outputs))
+    BlockPlan::new(outputs)
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -467,40 +436,4 @@ mod tests {
         assert_eq!(alt.single_icon("icon_swap").unwrap(), "memory_swap");
     }
 
-    #[test]
-    fn all_unconditional_values_are_guaranteed() {
-        let config = Config {
-            format_alt: Some(" $icon_swap $swap_used ".parse().unwrap()),
-            ..Config::default()
-        };
-        let plan = prepare(&config).unwrap();
-        for id in ["main", "alt"] {
-            let output = plan.output(id).unwrap();
-            assert_eq!(
-                output.output().guaranteed_kind("icon"),
-                Some(ValueKind::Icon),
-                "{id}"
-            );
-            assert_eq!(
-                output.output().guaranteed_kind("icon_swap"),
-                Some(ValueKind::Icon),
-                "{id}"
-            );
-            for placeholder in [
-                "mem_total",
-                "mem_used_percents",
-                "swap_used",
-                "cached_percent",
-                "zram_comp_ratio",
-                "zswap_decompressed_percents",
-            ] {
-                assert_eq!(
-                    output.output().guaranteed_kind(placeholder),
-                    Some(ValueKind::Number),
-                    "{id} must guarantee {placeholder}"
-                );
-            }
-            assert_eq!(output.output().guaranteed_kind("bogus"), None);
-        }
-    }
 }

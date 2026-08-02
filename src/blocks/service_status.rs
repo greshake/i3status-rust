@@ -65,18 +65,16 @@ pub enum DriverType {
 }
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
-    Ok(BlockPlan::new(vec![
+    BlockPlan::new(vec![
         OutputPlan::new(
             "active",
             config.active_format.with_default(" $service active ")?,
-        )
-        .always_provides("service", ValueKind::Text),
+        ),
         OutputPlan::new(
             "inactive",
             config.inactive_format.with_default(" $service inactive ")?,
-        )
-        .always_provides("service", ValueKind::Text),
-    ]))
+        ),
+    ])
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -238,19 +236,6 @@ mod tests {
         }
     }
 
-    #[test]
-    fn both_states_guarantee_the_service_name() {
-        let plan = prepare(&Config::default()).unwrap();
-        for id in ["active", "inactive"] {
-            let output = plan.output(id).unwrap();
-            assert_eq!(
-                output.output().guaranteed_kind("service"),
-                Some(ValueKind::Text),
-                "{id}"
-            );
-            assert_eq!(output.output().guaranteed_kind("bogus"), None);
-        }
-    }
 
     #[test]
     fn plan_uses_configured_formats() {

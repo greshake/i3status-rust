@@ -61,21 +61,17 @@ pub struct Config {
 }
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
-    Ok(BlockPlan::new(vec![
+    BlockPlan::new(vec![
         OutputPlan::new(
             "main",
             config
                 .format
                 .with_default(" $icon $speed_read.eng(prefix:K) $speed_write.eng(prefix:K) ")?,
         )
-        .icon("icon", IconChoices::one("disk_drive"))
-        .always_provides("icon", ValueKind::Icon)
-        .always_provides("device", ValueKind::Text)
-        .always_provides("speed_read", ValueKind::Number)
-        .always_provides("speed_write", ValueKind::Number),
+        .icon("icon", IconChoices::one("disk_drive")),
         // The "missing" output sets no values at all.
         OutputPlan::new("missing", config.missing_format.with_default(" × ")?),
-    ]))
+    ])
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -259,17 +255,4 @@ mod tests {
         assert!(missing.format().contains_key("device"));
     }
 
-    #[test]
-    fn main_guarantees_every_value_and_missing_none() {
-        let plan = prepare(&Config::default()).unwrap();
-        let main = plan.output("main").unwrap();
-        let main = main.output();
-        assert_eq!(main.guaranteed_kind("icon"), Some(ValueKind::Icon));
-        assert_eq!(main.guaranteed_kind("device"), Some(ValueKind::Text));
-        assert_eq!(main.guaranteed_kind("speed_read"), Some(ValueKind::Number));
-        assert_eq!(main.guaranteed_kind("speed_write"), Some(ValueKind::Number));
-        // "missing" renders without any values, so it must guarantee none.
-        let missing = plan.output("missing").unwrap();
-        assert_eq!(missing.output().guaranteed_kind("device"), None);
-    }
 }

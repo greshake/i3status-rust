@@ -93,16 +93,12 @@ const STAT_KEYS: [&str; 13] = [
 ];
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
-    let mut main = OutputPlan::new(
+    let main = OutputPlan::new(
         "main",
         config.format.with_default(" $icon $total.eng(w:1) ")?,
     )
-    .icon("icon", IconChoices::one("github"))
-    .always_provides("icon", ValueKind::Icon);
-    for key in STAT_KEYS {
-        main = main.always_provides(key, ValueKind::Number);
-    }
-    Ok(BlockPlan::new(vec![main]))
+    .icon("icon", IconChoices::one("github"));
+    BlockPlan::new(vec![main])
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -237,14 +233,4 @@ mod tests {
         assert!(!main.format().contains_key("total"));
     }
 
-    #[test]
-    fn icon_and_every_stat_key_are_guaranteed() {
-        let plan = prepare(&Config::default()).unwrap();
-        let main = plan.output("main").unwrap();
-        let main = main.output();
-        assert_eq!(main.guaranteed_kind("icon"), Some(ValueKind::Icon));
-        for key in STAT_KEYS {
-            assert_eq!(main.guaranteed_kind(key), Some(ValueKind::Number), "{key}");
-        }
-    }
 }

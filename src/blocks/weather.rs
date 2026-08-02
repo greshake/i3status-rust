@@ -456,7 +456,7 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
                 .icon("icon_ffin", weather_icons()),
         );
     }
-    Ok(BlockPlan::new(outputs))
+    BlockPlan::new(outputs)
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {

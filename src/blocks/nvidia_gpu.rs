@@ -92,23 +92,15 @@ pub struct Config {
 }
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
-    Ok(BlockPlan::new(vec![
+    BlockPlan::new(vec![
         OutputPlan::new(
             "main",
             config
                 .format
                 .with_default(" $icon $utilization $memory $temperature ")?,
         )
-        .icon("icon", IconChoices::one("gpu"))
-        .always_provides("icon", ValueKind::Icon)
-        .always_provides("name", ValueKind::Text)
-        .always_provides("utilization", ValueKind::Number)
-        .always_provides("memory", ValueKind::Number)
-        .always_provides("temperature", ValueKind::Number)
-        .always_provides("fan_speed", ValueKind::Number)
-        .always_provides("clocks", ValueKind::Number)
-        .always_provides("power", ValueKind::Number),
-    ]))
+        .icon("icon", IconChoices::one("gpu")),
+    ])
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -308,26 +300,4 @@ mod tests {
         assert!(!main.format().contains_key("utilization"));
     }
 
-    #[test]
-    fn all_gpu_values_are_guaranteed() {
-        let plan = prepare(&Config::default()).unwrap();
-        let main = plan.output("main").unwrap();
-        assert_eq!(main.output().guaranteed_kind("icon"), Some(ValueKind::Icon));
-        assert_eq!(main.output().guaranteed_kind("name"), Some(ValueKind::Text));
-        for placeholder in [
-            "utilization",
-            "memory",
-            "temperature",
-            "fan_speed",
-            "clocks",
-            "power",
-        ] {
-            assert_eq!(
-                main.output().guaranteed_kind(placeholder),
-                Some(ValueKind::Number),
-                "{placeholder}"
-            );
-        }
-        assert_eq!(main.output().guaranteed_kind("bogus"), None);
-    }
 }

@@ -86,12 +86,6 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     let device_output = |output: OutputPlan| {
         output
             .icon("icon", IconChoices::fixed(NetDevice::ALL_ICONS))
-            .always_provides("icon", ValueKind::Icon)
-            .always_provides("speed_down", ValueKind::Number)
-            .always_provides("speed_up", ValueKind::Number)
-            .always_provides("graph_down", ValueKind::Text)
-            .always_provides("graph_up", ValueKind::Text)
-            .always_provides("device", ValueKind::Text)
     };
     let mut outputs = vec![
         device_output(OutputPlan::new(
@@ -113,7 +107,7 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
             format_alt.with_default("")?,
         )));
     }
-    Ok(BlockPlan::new(outputs))
+    BlockPlan::new(outputs)
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -262,51 +256,6 @@ mod tests {
         assert_eq!(missing.output().icon_placeholders().count(), 0);
     }
 
-    #[test]
-    fn device_states_guarantee_unconditional_values_only() {
-        let config = Config {
-            format_alt: Some(" $icon $device ".parse().unwrap()),
-            ..Config::default()
-        };
-        let plan = prepare(&config).unwrap();
-        for id in ["main", "inactive", "alt"] {
-            let output = plan.output(id).unwrap();
-            for (placeholder, kind) in [
-                ("icon", ValueKind::Icon),
-                ("speed_down", ValueKind::Number),
-                ("speed_up", ValueKind::Number),
-                ("graph_down", ValueKind::Text),
-                ("graph_up", ValueKind::Text),
-                ("device", ValueKind::Text),
-            ] {
-                assert_eq!(
-                    output.output().guaranteed_kind(placeholder),
-                    Some(kind),
-                    "{id} must guarantee {placeholder}"
-                );
-            }
-            // WiFi-only and address values are conditional: never guaranteed.
-            for placeholder in [
-                "ssid",
-                "signal_strength",
-                "frequency",
-                "bitrate",
-                "ip",
-                "ipv6",
-                "nameserver",
-            ] {
-                assert_eq!(
-                    output.output().guaranteed_kind(placeholder),
-                    None,
-                    "{id} must not guarantee conditional {placeholder}"
-                );
-            }
-        }
-        // `missing` sets nothing, so it guarantees nothing.
-        let missing = plan.output("missing").unwrap();
-        assert_eq!(missing.output().guaranteed_kind("icon"), None);
-        assert_eq!(missing.output().guaranteed_kind("device"), None);
-    }
 
     #[test]
     fn alt_output_exists_only_when_configured() {

@@ -146,14 +146,12 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
             "connected",
             config.format_connected.with_default(" VPN: $icon ")?,
         )
-        .icon("icon", IconChoices::one("net_vpn"))
-        .always_provides("icon", ValueKind::Icon),
+        .icon("icon", IconChoices::one("net_vpn")),
         OutputPlan::new(
             "disconnected",
             config.format_disconnected.with_default(" VPN: $icon ")?,
         )
-        .icon("icon", IconChoices::one("net_wired"))
-        .always_provides("icon", ValueKind::Icon),
+        .icon("icon", IconChoices::one("net_wired")),
     ];
     if config.driver.can_report_connecting() {
         outputs.push(
@@ -161,8 +159,7 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
                 "connecting",
                 config.format_connecting.with_default(" VPN: $icon ")?,
             )
-            .icon("icon", IconChoices::one("net_wireless"))
-            .always_provides("icon", ValueKind::Icon),
+            .icon("icon", IconChoices::one("net_wireless")),
         );
     }
     outputs.push(
@@ -170,10 +167,9 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
             "error",
             config.format_disconnected.with_default(" VPN: $icon ")?,
         )
-        .icon("icon", IconChoices::one("net_down"))
-        .always_provides("icon", ValueKind::Icon),
+        .icon("icon", IconChoices::one("net_down")),
     );
-    Ok(BlockPlan::new(outputs))
+    BlockPlan::new(outputs)
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {

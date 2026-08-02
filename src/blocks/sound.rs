@@ -196,9 +196,6 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     let with_guarantees = |output: OutputPlan| {
         output
             .icon("icon", icons())
-            .always_provides("icon", ValueKind::Icon)
-            .always_provides("output_name", ValueKind::Text)
-            .always_provides("output_description", ValueKind::Text)
     };
     let mut outputs = vec![with_guarantees(OutputPlan::new(
         "main",
@@ -210,7 +207,7 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
             format_alt.with_default("")?,
         )));
     }
-    Ok(BlockPlan::new(outputs))
+    BlockPlan::new(outputs)
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -512,35 +509,6 @@ mod tests {
         assert!(alt.output().choices_for("icon").unwrap().permits("volume"));
     }
 
-    #[test]
-    fn guarantees_exclude_mute_dependent_values() {
-        let config = Config {
-            format_alt: Some(" $icon $output_name ".parse().unwrap()),
-            ..Config::default()
-        };
-        let plan = prepare(&config).unwrap();
-        for id in ["main", "alt"] {
-            let output = plan.output(id).unwrap();
-            assert_eq!(
-                output.output().guaranteed_kind("icon"),
-                Some(ValueKind::Icon),
-                "{id}"
-            );
-            assert_eq!(
-                output.output().guaranteed_kind("output_name"),
-                Some(ValueKind::Text),
-                "{id}"
-            );
-            assert_eq!(
-                output.output().guaranteed_kind("output_description"),
-                Some(ValueKind::Text),
-                "{id}"
-            );
-            // `volume` vanishes while muted and `active_port` is optional.
-            assert_eq!(output.output().guaranteed_kind("volume"), None, "{id}");
-            assert_eq!(output.output().guaranteed_kind("active_port"), None, "{id}");
-        }
-    }
 
     #[test]
     fn chooser_only_produces_declared_names() {

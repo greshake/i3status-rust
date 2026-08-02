@@ -178,10 +178,6 @@ impl DurationFormatter {
 }
 
 impl Formatter for DurationFormatter {
-    fn infallible_for(&self, kind: ValueKind) -> bool {
-        matches!(kind, ValueKind::Duration)
-    }
-
     fn format(&self, val: &Value, _config: &SharedConfig) -> Result<String, FormatError> {
         match val {
             Value::Duration(duration) => {

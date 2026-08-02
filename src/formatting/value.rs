@@ -13,10 +13,30 @@ pub struct Value {
     pub metadata: Metadata,
 }
 
+/// A checked icon name. Constructible only inside this module (via the
+/// token-gated [`Value`] constructors), which is what makes
+/// [`ValueInner::Icon`] impossible to build outside the plan-handle path —
+/// including via `Value::new` or by mutating `value.inner`.
+#[derive(Debug, Clone)]
+pub struct IconName(Cow<'static, str>);
+
+impl std::ops::Deref for IconName {
+    type Target = str;
+    fn deref(&self) -> &str {
+        &self.0
+    }
+}
+
+impl std::fmt::Display for IconName {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum ValueInner {
     Text(String),
-    Icon(Cow<'static, str>, Option<f64>),
+    Icon(IconName, Option<f64>),
     Number { val: f64, unit: Unit },
     Datetime(DateTime<Utc>, Option<Tz>),
     Duration(Duration),
@@ -106,7 +126,7 @@ impl Value {
         S: Into<Cow<'static, str>>,
     {
         let _ = token;
-        Self::new(ValueInner::Icon(name.into(), None))
+        Self::new(ValueInner::Icon(IconName(name.into()), None))
     }
 
     pub fn icon_progression<S>(name: S, value: f64, token: crate::block_plan::IconToken) -> Self
@@ -114,7 +134,7 @@ impl Value {
         S: Into<Cow<'static, str>>,
     {
         let _ = token;
-        Self::new(ValueInner::Icon(name.into(), Some(value)))
+        Self::new(ValueInner::Icon(IconName(name.into()), Some(value)))
     }
 
     /// Test-only escape hatch for constructing icon values without a plan.
@@ -123,7 +143,7 @@ impl Value {
     where
         S: Into<Cow<'static, str>>,
     {
-        Self::new(ValueInner::Icon(name.into(), None))
+        Self::new(ValueInner::Icon(IconName(name.into()), None))
     }
 
     pub fn text(text: String) -> Self {

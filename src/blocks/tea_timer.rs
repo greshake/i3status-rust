@@ -52,7 +52,7 @@ pub struct Config {
 }
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
-    Ok(BlockPlan::new(vec![
+    BlockPlan::new(vec![
         OutputPlan::new(
             "main",
             config
@@ -61,9 +61,8 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
         )
         .icon("icon", IconChoices::one("tea"))
         // `time`, `hours`, `minutes`, and `seconds` are only set while the
-        // timer is active, so they must not be guaranteed.
-        .always_provides("icon", ValueKind::Icon),
-    ]))
+        // timer is active, so they must not be guaranteed.,
+    ])
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -157,23 +156,6 @@ mod tests {
         assert_eq!(output.single_icon("icon").unwrap(), "tea");
     }
 
-    #[test]
-    fn plan_guarantees_only_the_icon() {
-        let plan = prepare(&Config::default()).unwrap();
-        let output = plan.output("main").unwrap();
-        assert_eq!(
-            output.output().guaranteed_kind("icon"),
-            Some(ValueKind::Icon)
-        );
-        // Timer values are conditional (unset while inactive): no guarantee.
-        for placeholder in ["time", "hours", "minutes", "seconds"] {
-            assert_eq!(
-                output.output().guaranteed_kind(placeholder),
-                None,
-                "{placeholder}"
-            );
-        }
-    }
 
     #[test]
     fn custom_format_is_respected() {

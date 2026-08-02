@@ -16,10 +16,6 @@ impl PangoStrFormatter {
 }
 
 impl Formatter for PangoStrFormatter {
-    fn infallible_for(&self, kind: ValueKind) -> bool {
-        matches!(kind, ValueKind::Text | ValueKind::Icon)
-    }
-
     fn format(&self, val: &Value, config: &SharedConfig) -> Result<String, FormatError> {
         match val {
             Value::Text(x) => Ok(x.clone()), // No escaping

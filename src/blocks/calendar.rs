@@ -276,24 +276,16 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     let redirect_format = config
         .redirect_format
         .with_default(" $icon Check your web browser ")?;
-    Ok(BlockPlan::new(vec![
+    BlockPlan::new(vec![
         OutputPlan::new("no_events", no_events_format)
-            .icon("icon", IconChoices::one("calendar"))
-            .always_provides("icon", ValueKind::Icon),
+            .icon("icon", IconChoices::one("calendar")),
         OutputPlan::new("next_event", next_event_format)
-            .icon("icon", IconChoices::one("calendar"))
-            .always_provides("icon", ValueKind::Icon)
-            .always_provides("start", ValueKind::Datetime)
-            .always_provides("end", ValueKind::Datetime),
+            .icon("icon", IconChoices::one("calendar")),
         OutputPlan::new("ongoing_event", ongoing_event_format)
-            .icon("icon", IconChoices::one("calendar"))
-            .always_provides("icon", ValueKind::Icon)
-            .always_provides("start", ValueKind::Datetime)
-            .always_provides("end", ValueKind::Datetime),
+            .icon("icon", IconChoices::one("calendar")),
         OutputPlan::new("redirect", redirect_format)
-            .icon("icon", IconChoices::one("calendar"))
-            .always_provides("icon", ValueKind::Icon),
-    ]))
+            .icon("icon", IconChoices::one("calendar")),
+    ])
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -666,30 +658,6 @@ mod tests {
         }
     }
 
-    #[test]
-    fn guarantees_cover_only_unconditional_values() {
-        let plan = prepare(&Config::default()).unwrap();
-        // Event states always render start/end (the widget only reaches
-        // those outputs when both dates exist); the textual event fields
-        // are optional and stay undeclared.
-        for id in ["next_event", "ongoing_event"] {
-            let output = plan.output(id).unwrap();
-            let output = output.output();
-            assert_eq!(output.guaranteed_kind("icon"), Some(ValueKind::Icon));
-            assert_eq!(output.guaranteed_kind("start"), Some(ValueKind::Datetime));
-            assert_eq!(output.guaranteed_kind("end"), Some(ValueKind::Datetime));
-            assert_eq!(output.guaranteed_kind("summary"), None);
-            assert_eq!(output.guaranteed_kind("description"), None);
-            assert_eq!(output.guaranteed_kind("location"), None);
-            assert_eq!(output.guaranteed_kind("url"), None);
-        }
-        for id in ["no_events", "redirect"] {
-            let output = plan.output(id).unwrap();
-            let output = output.output();
-            assert_eq!(output.guaranteed_kind("icon"), Some(ValueKind::Icon));
-            assert_eq!(output.guaranteed_kind("start"), None);
-        }
-    }
 
     #[test]
     fn each_state_resolves_its_own_format() {

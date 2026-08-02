@@ -43,19 +43,13 @@ pub struct Config {
 }
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
-    Ok(BlockPlan::new(vec![
+    BlockPlan::new(vec![
         OutputPlan::new(
             "main",
             config.format.with_default(" $icon $running.eng(w:1) ")?,
         )
-        .icon("icon", IconChoices::one("docker"))
-        .always_provides("icon", ValueKind::Icon)
-        .always_provides("total", ValueKind::Number)
-        .always_provides("running", ValueKind::Number)
-        .always_provides("paused", ValueKind::Number)
-        .always_provides("stopped", ValueKind::Number)
-        .always_provides("images", ValueKind::Number),
-    ]))
+        .icon("icon", IconChoices::one("docker")),
+    ])
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -122,22 +116,6 @@ mod tests {
         assert_eq!(output.single_icon("icon").unwrap(), "docker");
     }
 
-    #[test]
-    fn plan_guarantees_all_values() {
-        let plan = prepare(&Config::default()).unwrap();
-        let output = plan.output("main").unwrap();
-        assert_eq!(
-            output.output().guaranteed_kind("icon"),
-            Some(ValueKind::Icon)
-        );
-        for placeholder in ["total", "running", "paused", "stopped", "images"] {
-            assert_eq!(
-                output.output().guaranteed_kind(placeholder),
-                Some(ValueKind::Number),
-                "{placeholder}"
-            );
-        }
-    }
 
     #[test]
     fn custom_format_is_respected() {

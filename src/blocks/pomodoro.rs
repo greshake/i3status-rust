@@ -314,40 +314,25 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
         .with_default(" $icon $status_icon Break: $time_remaining.duration(hms:true) ")?;
 
     let base = || IconChoices::one("pomodoro");
-    Ok(BlockPlan::new(vec![
+    BlockPlan::new(vec![
         OutputPlan::new("idle", format.clone())
             .icon("icon", base())
-            .icon("status_icon", IconChoices::one("pomodoro_stopped"))
-            .always_provides("icon", ValueKind::Icon)
-            .always_provides("status_icon", ValueKind::Icon),
+            .icon("status_icon", IconChoices::one("pomodoro_stopped")),
         // Prompt and notify renders always carry the interactive message.
         OutputPlan::new("prompt", format.clone())
-            .icon("icon", base())
-            .always_provides("icon", ValueKind::Icon)
-            .always_provides("message", ValueKind::Text),
+            .icon("icon", base()),
         OutputPlan::new("notify", format)
-            .icon("icon", base())
-            .always_provides("icon", ValueKind::Icon)
-            .always_provides("message", ValueKind::Text),
+            .icon("icon", base()),
         OutputPlan::new("running", pomodoro_format.clone())
             .icon("icon", base())
-            .icon("status_icon", IconChoices::one("pomodoro_started"))
-            .always_provides("icon", ValueKind::Icon)
-            .always_provides("status_icon", ValueKind::Icon)
-            .always_provides("time_remaining", ValueKind::Duration),
+            .icon("status_icon", IconChoices::one("pomodoro_started")),
         OutputPlan::new("paused", pomodoro_format)
             .icon("icon", base())
-            .icon("status_icon", IconChoices::one("pomodoro_paused"))
-            .always_provides("icon", ValueKind::Icon)
-            .always_provides("status_icon", ValueKind::Icon)
-            .always_provides("time_remaining", ValueKind::Duration),
+            .icon("status_icon", IconChoices::one("pomodoro_paused")),
         OutputPlan::new("break", break_format)
             .icon("icon", base())
-            .icon("status_icon", IconChoices::one("pomodoro_break"))
-            .always_provides("icon", ValueKind::Icon)
-            .always_provides("status_icon", ValueKind::Icon)
-            .always_provides("time_remaining", ValueKind::Duration),
-    ]))
+            .icon("status_icon", IconChoices::one("pomodoro_break")),
+    ])
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -437,42 +422,6 @@ mod tests {
         }
     }
 
-    #[test]
-    fn guarantees_cover_only_unconditional_values() {
-        let plan = prepare(&Config::default()).unwrap();
-        for id in ["idle", "prompt", "notify", "running", "paused", "break"] {
-            let output = plan.output(id).unwrap();
-            let output = output.output();
-            assert_eq!(
-                output.guaranteed_kind("icon"),
-                Some(ValueKind::Icon),
-                "{id}"
-            );
-        }
-        // Prompt/notify renders always pass a message; timer states always
-        // pass the remaining time. `completed_pomodoros` is only set after
-        // the first pomodoro, so it stays undeclared.
-        for id in ["prompt", "notify"] {
-            let output = plan.output(id).unwrap();
-            let output = output.output();
-            assert_eq!(output.guaranteed_kind("message"), Some(ValueKind::Text));
-            assert_eq!(output.guaranteed_kind("status_icon"), None);
-        }
-        for id in ["running", "paused", "break"] {
-            let output = plan.output(id).unwrap();
-            let output = output.output();
-            assert_eq!(output.guaranteed_kind("status_icon"), Some(ValueKind::Icon));
-            assert_eq!(
-                output.guaranteed_kind("time_remaining"),
-                Some(ValueKind::Duration)
-            );
-            assert_eq!(output.guaranteed_kind("completed_pomodoros"), None);
-        }
-        let idle = plan.output("idle").unwrap();
-        let idle = idle.output();
-        assert_eq!(idle.guaranteed_kind("status_icon"), Some(ValueKind::Icon));
-        assert_eq!(idle.guaranteed_kind("message"), None);
-    }
 
     #[test]
     fn states_share_the_expected_formats() {

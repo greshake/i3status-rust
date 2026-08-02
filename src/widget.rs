@@ -54,6 +54,11 @@ impl Widget {
 
     pub fn set_format(&mut self, format: Format) {
         self.source = Source::Format(format);
+        // A raw format replacement invalidates whatever output contract the
+        // widget carried: the plan no longer describes what will render.
+        // Contracted widgets must switch outputs via `set_output` instead;
+        // publishing this widget now fails the contract check.
+        self.contract = None;
     }
 
     pub(crate) fn values(&self) -> &Values {

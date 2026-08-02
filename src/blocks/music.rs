@@ -196,7 +196,6 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
             .icon("volume_icon", IconChoices::one("volume"))
             // `icon` is the only value set both with and without a player;
             // everything else (buttons, player info, volume) is conditional.
-            .always_provides("icon", ValueKind::Icon)
     };
     let mut outputs = vec![with_icons(OutputPlan::new(
         "main",
@@ -210,7 +209,7 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
             format_alt.with_default("")?,
         )));
     }
-    Ok(BlockPlan::new(outputs))
+    BlockPlan::new(outputs)
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -747,39 +746,6 @@ mod tests {
         assert!(!play.permits("music"));
     }
 
-    #[test]
-    fn only_the_icon_is_guaranteed() {
-        let config = Config {
-            format_alt: Some(" $icon $player ".parse().unwrap()),
-            ..Config::default()
-        };
-        let plan = prepare(&config).unwrap();
-        for id in ["main", "alt"] {
-            let output = plan.output(id).unwrap();
-            // `icon` is set whether or not a player exists...
-            assert_eq!(
-                output.output().guaranteed_kind("icon"),
-                Some(ValueKind::Icon),
-                "{id}"
-            );
-            // ...but everything else disappears when no player is available.
-            for conditional in [
-                "play",
-                "next",
-                "prev",
-                "avail",
-                "cur",
-                "player",
-                "volume_icon",
-            ] {
-                assert_eq!(
-                    output.output().guaranteed_kind(conditional),
-                    None,
-                    "{id}: '{conditional}' must stay undeclared"
-                );
-            }
-        }
-    }
 
     #[test]
     fn alt_output_exists_only_when_configured() {

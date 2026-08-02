@@ -91,9 +91,6 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
         output
             .icon("icon", IconChoices::one("cpu"))
             .icon("boost", IconChoices::fixed(BOOST_ICON_NAMES))
-            .always_provides("icon", ValueKind::Icon)
-            .always_provides("barchart", ValueKind::Text)
-            .always_provides("utilization", ValueKind::Number)
     };
     let mut outputs = vec![declare(OutputPlan::new(
         "main",
@@ -105,7 +102,7 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
             format_alt.with_default("")?,
         )));
     }
-    Ok(BlockPlan::new(outputs))
+    BlockPlan::new(outputs)
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -352,35 +349,4 @@ mod tests {
         assert_eq!(BOOST_ICON_NAMES.len(), 2);
     }
 
-    #[test]
-    fn unconditional_values_are_guaranteed_on_all_outputs() {
-        let config = Config {
-            format_alt: Some(" $icon ".parse().unwrap()),
-            ..Config::default()
-        };
-        let plan = prepare(&config).unwrap();
-        for id in ["main", "alt"] {
-            let output = plan.output(id).unwrap();
-            let output = output.output();
-            assert_eq!(
-                output.guaranteed_kind("icon"),
-                Some(ValueKind::Icon),
-                "{id}"
-            );
-            assert_eq!(
-                output.guaranteed_kind("barchart"),
-                Some(ValueKind::Text),
-                "{id}"
-            );
-            assert_eq!(
-                output.guaranteed_kind("utilization"),
-                Some(ValueKind::Number),
-                "{id}"
-            );
-            // Conditional values must not be guaranteed.
-            for key in ["frequency", "max_frequency", "boost"] {
-                assert_eq!(output.guaranteed_kind(key), None, "{id}.{key}");
-            }
-        }
-    }
 }

@@ -100,7 +100,7 @@ impl Block<'_> {
 pub(crate) fn prepare(_config: &Config) -> Result<Arc<BlockPlan>> {
     // This block renders plain text through `Widget::with_text` — it has no
     // formats and no icons, so its plan declares no outputs.
-    Ok(BlockPlan::new(Vec::new()))
+    BlockPlan::new(Vec::new())
 }
 
 pub async fn run(config: &Config, api: &CommonApi, _plan: &Arc<BlockPlan>) -> Result<()> {

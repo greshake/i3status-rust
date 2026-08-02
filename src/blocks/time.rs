@@ -75,17 +75,15 @@ pub enum Timezone {
 }
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
-    Ok(BlockPlan::new(vec![
+    BlockPlan::new(vec![
         OutputPlan::new(
             "main",
             config
                 .format
                 .with_default(" $icon $timestamp.datetime() ")?,
         )
-        .icon("icon", IconChoices::one("time"))
-        .always_provides("icon", ValueKind::Icon)
-        .always_provides("timestamp", ValueKind::Datetime),
-    ]))
+        .icon("icon", IconChoices::one("time")),
+    ])
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -183,17 +181,4 @@ mod tests {
         assert!(!main.format().contains_key("icon"));
     }
 
-    #[test]
-    fn timestamp_is_guaranteed_as_datetime() {
-        // Set on every render of `main`, so a format like
-        // "{ $timestamp.datetime() | fallback }" can never reach the
-        // fallback branch and doctor may prove it dead.
-        let plan = prepare(&Config::default()).unwrap();
-        let main = plan.output("main").unwrap();
-        assert_eq!(
-            main.output().guaranteed_kind("timestamp"),
-            Some(ValueKind::Datetime)
-        );
-        assert_eq!(main.output().guaranteed_kind("icon"), Some(ValueKind::Icon));
-    }
 }

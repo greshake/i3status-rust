@@ -113,13 +113,6 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     let declare = |output: OutputPlan| {
         output
             .icon("icon", IconChoices::one("disk_drive"))
-            .always_provides("icon", ValueKind::Icon)
-            .always_provides("path", ValueKind::Text)
-            .always_provides("percentage", ValueKind::Number)
-            .always_provides("total", ValueKind::Number)
-            .always_provides("used", ValueKind::Number)
-            .always_provides("available", ValueKind::Number)
-            .always_provides("free", ValueKind::Number)
     };
     let mut outputs = vec![declare(OutputPlan::new(
         "main",
@@ -131,7 +124,7 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
             format_alt.with_default("")?,
         )));
     }
-    Ok(BlockPlan::new(outputs))
+    BlockPlan::new(outputs)
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -356,33 +349,4 @@ mod tests {
         assert_eq!(alt.single_icon("icon").unwrap(), "disk_drive");
     }
 
-    #[test]
-    fn every_value_is_guaranteed_on_all_outputs() {
-        let config = Config {
-            format_alt: Some(" $icon ".parse().unwrap()),
-            ..Config::default()
-        };
-        let plan = prepare(&config).unwrap();
-        for id in ["main", "alt"] {
-            let output = plan.output(id).unwrap();
-            let output = output.output();
-            assert_eq!(
-                output.guaranteed_kind("icon"),
-                Some(ValueKind::Icon),
-                "{id}"
-            );
-            assert_eq!(
-                output.guaranteed_kind("path"),
-                Some(ValueKind::Text),
-                "{id}"
-            );
-            for key in ["percentage", "total", "used", "available", "free"] {
-                assert_eq!(
-                    output.guaranteed_kind(key),
-                    Some(ValueKind::Number),
-                    "{id}.{key}"
-                );
-            }
-        }
-    }
 }

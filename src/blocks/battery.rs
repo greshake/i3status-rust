@@ -116,37 +116,26 @@ pub enum BatteryDriver {
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     let format = config.format.with_default(" $icon $percentage ")?;
-    Ok(BlockPlan::new(vec![
+    BlockPlan::new(vec![
         OutputPlan::new("discharging", format.clone())
-            .icon("icon", IconChoices::one("bat"))
-            .always_provides("icon", ValueKind::Icon)
-            .always_provides("percentage", ValueKind::Number),
+            .icon("icon", IconChoices::one("bat")),
         OutputPlan::new(
             "charging",
             config.charging_format.with_default_format(&format),
         )
-        .icon("icon", IconChoices::one("bat_charging"))
-        .always_provides("icon", ValueKind::Icon)
-        .always_provides("percentage", ValueKind::Number),
+        .icon("icon", IconChoices::one("bat_charging")),
         OutputPlan::new("full", config.full_format.with_default(" $icon ")?)
-            .icon("icon", IconChoices::one("bat"))
-            .always_provides("icon", ValueKind::Icon)
-            .always_provides("percentage", ValueKind::Number),
+            .icon("icon", IconChoices::one("bat")),
         OutputPlan::new("empty", config.empty_format.with_default(" $icon ")?)
-            .icon("icon", IconChoices::one("bat"))
-            .always_provides("icon", ValueKind::Icon)
-            .always_provides("percentage", ValueKind::Number),
+            .icon("icon", IconChoices::one("bat")),
         OutputPlan::new(
             "not_charging",
             config.not_charging_format.with_default(" $icon ")?,
         )
-        .icon("icon", IconChoices::one("bat"))
-        .always_provides("icon", ValueKind::Icon)
-        .always_provides("percentage", ValueKind::Number),
+        .icon("icon", IconChoices::one("bat")),
         OutputPlan::new("missing", config.missing_format.with_default(" $icon ")?)
-            .icon("icon", IconChoices::one("bat_not_available"))
-            .always_provides("icon", ValueKind::Icon),
-    ]))
+            .icon("icon", IconChoices::one("bat_not_available")),
+    ])
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {

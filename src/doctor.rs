@@ -263,19 +263,18 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
             );
         }
     }
-    // === Per-instance icon font scopes ===
-    // An icons_format may deliberately select a font for {icon} via pango
-    // markup. The selection applies only to the block instances using that
-    // icons_format: a block-local one REPLACES the global one, and blocks
-    // without either render icons with the bar fonts alone.
+    // === Per-instance icons_format markup ===
+    // An icons_format may select fonts via pango markup. Doctor does not
+    // emulate pango: icons rendered under a markup icons_format are marked
+    // inconclusive instead of guessed at. A block-local icons_format
+    // replaces the global one.
     let block_names = raw_block_names(&raw);
     let labels = instance_labels(&block_names);
-    let global_icon_families: Vec<String> = raw
+    let global_markup = raw
         .get("icons_format")
         .and_then(|v| v.as_str())
-        .map(icon_font_families)
-        .unwrap_or_default();
-    let mut font_scopes: HashMap<String, Vec<String>> = HashMap::new();
+        .is_some_and(|f| f.contains('<'));
+    let mut markup_labels: HashSet<String> = HashSet::new();
     for (index, label) in labels.iter().enumerate() {
         let local = raw
             .get("block")
@@ -283,17 +282,9 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
             .and_then(|b| b.get(index))
             .and_then(|block| block.get("icons_format"))
             .and_then(|v| v.as_str())
-            .map(icon_font_families);
-        let scope = local.unwrap_or_else(|| global_icon_families.clone());
-        if !scope.is_empty() {
-            font_scopes.insert(label.clone(), scope);
-        }
-    }
-    if let Some(check) = font_check.as_mut() {
-        for scope in font_scopes.values() {
-            for family in scope {
-                check.declare_family(family);
-            }
+            .map(|f| f.contains('<'));
+        if local.unwrap_or(global_markup) {
+            markup_labels.insert(label.clone());
         }
     }
     if let Some(check) = &font_check {
@@ -303,51 +294,35 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                  provides cannot be detected."
             );
         }
-        let family_sources = check
-            .families
-            .iter()
-            .map(|entry| (entry, false))
-            .chain(check.declared.iter().map(|entry| (entry, true)))
-            .map(|((family, resolved), from_icons_format)| {
-                (family.clone(), resolved.clone(), from_icons_format)
-            })
-            .collect::<Vec<_>>();
-        for (family, resolved, from_icons_format) in family_sources {
+        for (family, resolved) in &check.families {
             // Generic fontconfig aliases (monospace, sans-serif, ...) always
             // resolve to some concrete family; that is normal, not a missing
             // font.
-            if is_generic_family(&family) {
+            if is_generic_family(family) {
                 continue;
             }
             let installed = if check.has_fc_list {
-                family_installed(&family)
+                family_installed(family)
             } else {
                 // fc-list is unavailable; fall back to comparing the resolved
                 // family names
                 resolved
                     .as_ref()
-                    .is_some_and(|r| r.split(',').any(|m| family_eq(m, &family)))
+                    .is_some_and(|r| r.split(',').any(|m| family_eq(m, family)))
             };
             if !installed {
-                let (source, fix_target) = if from_icons_format {
-                    ("selected by an icons_format", "that icons_format")
-                } else {
-                    ("in the bar's font list", "the bar's font directive")
-                };
                 let diagnosis = format!(
-                    "Font {family:?} is {source} but not installed{}.",
+                    "Font {family:?} is in the bar's font list but not installed{}.",
                     resolved
                         .as_ref()
                         .map(|r| format!(" (fontconfig silently uses {r:?} in its place)"))
                         .unwrap_or_default()
                 );
-                // An icons_format selection is explicit configuration, wrong
-                // whether or not the bar font was guessed.
-                if font_authoritative || from_icons_format {
+                if font_authoritative {
                     problems.push(Problem {
                         diagnosis,
                         fix: Some(format!(
-                            "Install {family:?}, or remove it from {fix_target}."
+                            "Install {family:?}, or remove it from the bar's font directive."
                         )),
                     });
                 } else {
@@ -382,20 +357,14 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
     // attributed by label: only the icons reachable from the instance's
     // effective formats, per its prepared contract.
     let mut may_use: BTreeMap<String, Vec<String>> = BTreeMap::new();
-    // Any configured block declares an open dynamic icon source reachable
-    // from its formats (custom/custom_dbus with $icon).
-    let mut dynamic_blocks = false;
 
     // Labels whose block configuration failed to deserialize: the static
     // problem below already covers them, so the live report must not
     // diagnose the same root cause again.
     let mut prepared_errors: HashSet<String> = HashSet::new();
-    // Any block whose contract could not be resolved: static conclusions
-    // are then incomplete and "unused" can no longer be proven.
-    let mut has_unknown = false;
 
-    for index in 0..block_names.len() {
-        let label = labels[index].clone();
+    for (index, label) in labels.iter().enumerate() {
+        let label = label.clone();
 
         // The prepared contract of this block instance.
         let plan = parsed
@@ -431,16 +400,11 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                 for icon in &analysis.required {
                     may_use.entry(icon.clone()).or_default().push(label.clone());
                 }
-                dynamic_blocks |= analysis.open;
                 StaticAnalysis::Contract(analysis)
             }
             None => {
                 // No plan (the whole config or this block's table is
-                // invalid): stay conservative — nothing can be proven
-                // unused, and dynamic usage cannot be ruled out for the
-                // custom family.
-                dynamic_blocks |= matches!(block_names[index].as_str(), "custom" | "custom_dbus");
-                has_unknown = true;
+                // invalid): stay conservative, nothing is claimed unused.
                 StaticAnalysis::Unknown
             }
         };
@@ -466,7 +430,8 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                     // blocks are never restartable.
                     entry.common.max_retries.is_some()
                         && !matches!(entry.config, crate::blocks::BlockConfig::Err(..)),
-                );
+                )
+                .expect("the error plan has statically unique ids");
                 analyze_plan(&plan)
             });
         if let Some(error_rel) = &error_rel {
@@ -486,8 +451,6 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
             },
         );
     }
-
-    let analysis_closed = parsed.is_some() && !has_unknown;
 
     let mut live_ran = false;
     // (label, icon) pairs already diagnosed by a live render error, so the
@@ -616,14 +579,11 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
         base_map: &base_map,
         global_overrides: &global_overrides,
         block_overrides: &block_overrides,
-        builtin: &builtin,
         used_now: &used_now,
         may_use: &may_use,
-        dynamic_blocks,
-        analysis_closed,
         icon_relevant: &icon_relevant,
         live_reported: &live_reported,
-        font_scopes: &font_scopes,
+        markup_labels: &markup_labels,
         font_check: &mut font_check,
         font_authoritative,
         style: &style,
@@ -632,70 +592,6 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
 
     print_problems(&problems, live_ran, &style);
     problems.len()
-}
-
-/// The font families that actually apply to `{icon}` in an icons_format
-/// markup string: for each `{icon}` occurrence, the innermost enclosing
-/// `<span>` that selects a family (via `font_family`, `face`, `font` or
-/// `font_desc`). A family on a span that does not contain `{icon}` styles
-/// other text, not the icon, and is not credited.
-fn icon_font_families(markup: &str) -> Vec<String> {
-    let mut families = Vec::new();
-    // One entry per open tag: the family it selects, if any.
-    let mut stack: Vec<Option<String>> = Vec::new();
-    let mut rest = markup;
-    loop {
-        let tag = rest.find('<');
-        let icon = rest.find("{icon}");
-        match (tag, icon) {
-            (_, Some(i)) if tag.is_none_or(|t| i < t) => {
-                if let Some(family) = stack.iter().rev().find_map(|f| f.clone())
-                    && !families.contains(&family)
-                {
-                    families.push(family);
-                }
-                rest = &rest[i + "{icon}".len()..];
-            }
-            (Some(t), _) => {
-                let Some(end) = rest[t..].find('>') else {
-                    break;
-                };
-                let body = rest[t + 1..t + end].trim();
-                rest = &rest[t + end + 1..];
-                if let Some(closed) = body.strip_prefix('/') {
-                    // Tolerate mismatched close tags: pop only when
-                    // something is open.
-                    let _ = closed;
-                    stack.pop();
-                } else if !body.ends_with('/') {
-                    stack.push(span_family(body));
-                }
-            }
-            _ => break,
-        }
-    }
-    families
-}
-
-/// The family a single tag body selects (`span font_family='X' ...`).
-fn span_family(tag_body: &str) -> Option<String> {
-    for attr in ["font_family=", "face=", "font_desc=", "font="] {
-        let mut search = tag_body;
-        while let Some(pos) = search.find(attr) {
-            search = &search[pos + attr.len()..];
-            let Some(quote) = search.chars().next().filter(|c| *c == '\'' || *c == '"') else {
-                continue;
-            };
-            let value = &search[1..];
-            if let Some(end) = value.find(quote) {
-                let family = strip_font_modifiers(&value[..end]);
-                if !family.is_empty() {
-                    return Some(family);
-                }
-            }
-        }
-    }
-    None
 }
 
 fn icons_config<'a>(
@@ -1027,8 +923,11 @@ async fn run_worker_process(exe: &Path, config_arg: &str, index: usize) -> Block
         // In the real bar all custom_dbus blocks share one connection and
         // one well-known name; workers are separate concurrent processes,
         // so give each a unique name to avoid NameTaken races (also against
-        // a bar that is currently running).
-        .env("I3RS_DBUS_NAME", format!("doctor{index}"))
+        // a bar that is currently running). This private variable is read
+        // ONLY by the custom_dbus block — the environment every block and
+        // if_command observes (including the documented I3RS_DBUS_NAME) is
+        // untouched.
+        .env("I3RS_INTERNAL_DBUS_NAME_OVERRIDE", format!("doctor{index}"))
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::null())
@@ -1467,14 +1366,6 @@ fn suggest_fix(block: &str, error: &str) -> Option<String> {
 // Icon table
 // ---------------------------------------------------------------------------
 
-fn provenance_desc(provenance: &Provenance) -> String {
-    match provenance {
-        Provenance::Base => "in the icon set".into(),
-        Provenance::Global => "in [icons.overrides]".into(),
-        Provenance::Local(block) => format!("in the `{block}` block's icons_overrides"),
-    }
-}
-
 /// Where a block's icon actually comes from, in precedence order.
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone)]
 enum Provenance {
@@ -1489,18 +1380,17 @@ enum Provenance {
 /// block actually does.
 #[derive(Default)]
 struct PlanAnalysis {
-    /// Icon names reachable from the effective formats: the declared choices
-    /// of every reachable icon-valued placeholder, plus reachable direct
-    /// `^icon_*` tokens. These are the block's actual requirements — a
-    /// declared icon whose output formats never reference its placeholder is
-    /// NOT here.
+    /// Every icon name the block's contract declares, plus every direct
+    /// `^icon_*` token in its effective formats. Blocks can only request
+    /// declared icons (capability tokens), so all of these count as "in use
+    /// by the block" — no reachability claims are made, and a declared icon
+    /// the configuration never renders is harmless.
     required: HashSet<String>,
-    /// Reachable direct `^icon_*` names (subset of `required`): certain
-    /// usage, not state-dependent.
+    /// Direct `^icon_*` names (subset of `required`).
     direct: HashSet<String>,
-    /// A reachable placeholder declares an open dynamic icon source
-    /// (custom/custom_dbus): any name may be requested at runtime, so
-    /// static coverage is inherently partial for this block.
+    /// The block declares an open dynamic icon source (custom/custom_dbus):
+    /// any name may be requested at runtime, so static coverage is
+    /// inherently partial for this block.
     open: bool,
 }
 
@@ -1508,104 +1398,44 @@ fn analyze_plan(plan: &crate::block_plan::BlockPlan) -> PlanAnalysis {
     use crate::block_plan::IconChoices;
     let mut analysis = PlanAnalysis::default();
     for output in &plan.outputs {
+        for (_, choices) in output.icon_placeholders() {
+            match choices {
+                IconChoices::Fixed(names) => analysis.required.extend(
+                    names
+                        .iter()
+                        .filter(|n| !n.is_empty())
+                        .map(|n| n.to_string()),
+                ),
+                IconChoices::OpenResolvable => analysis.open = true,
+            }
+        }
         for template in [
             output.format.full_template(),
             output.format.short_template(),
         ] {
-            let mut placeholders = Vec::new();
             let mut icons = Vec::new();
-            collect_reachable_compiled(template, output, &mut placeholders, &mut icons);
-            // Empty icon names render as empty output (a runtime no-op),
-            // so they are never requirements.
+            collect_icon_tokens(template, &mut icons);
             for name in icons.into_iter().filter(|name| !name.is_empty()) {
                 analysis.required.insert(name.clone());
                 analysis.direct.insert(name);
-            }
-            for key in placeholders {
-                match output.choices_for(&key) {
-                    Some(IconChoices::Fixed(names)) => analysis.required.extend(
-                        names
-                            .iter()
-                            .filter(|n| !n.is_empty())
-                            .map(|n| n.to_string()),
-                    ),
-                    Some(IconChoices::OpenResolvable) => analysis.open = true,
-                    None => (),
-                }
             }
         }
     }
     analysis
 }
 
-/// Walk only the *reachable* branches of a compiled template from a prepared
-/// contract: alternatives after a branch that cannot fail are dead. A branch
-/// cannot fail when it contains only literal text, direct icons, and
-/// placeholders the output GUARANTEES to provide (with a formatter that
-/// cannot reject the guaranteed kind) — "{ \$timestamp.datetime() | X }"
-/// never evaluates X when timestamp is always provided.
-fn collect_reachable_compiled(
-    template: &format_template::FormatTemplate,
-    output: &crate::block_plan::OutputPlan,
-    placeholders: &mut Vec<String>,
-    icon_refs: &mut Vec<String>,
-) {
+/// Every direct `^icon_*` token in a compiled template, without branch
+/// analysis: doctor makes no reachability claims.
+fn collect_icon_tokens(template: &format_template::FormatTemplate, icon_refs: &mut Vec<String>) {
     for token_list in template.token_lists() {
-        let mut branch_can_fail = false;
         for token in &token_list.0 {
             match token {
-                format_template::Token::Placeholder { name, formatter } => {
-                    placeholders.push(name.clone());
-                    branch_can_fail |= placeholder_can_fail(output, name, formatter.as_deref());
-                }
-                format_template::Token::Icon { name } => {
-                    // A missing icon is a render error, not a branch-selection
-                    // failure: it does not make the branch fall through.
-                    icon_refs.push(name.clone());
-                }
-                format_template::Token::Recursive(rec) => {
-                    collect_reachable_compiled(rec, output, placeholders, icon_refs);
-                    branch_can_fail |= compiled_group_can_fail(rec, output);
-                }
-                format_template::Token::Text(_) => (),
+                format_template::Token::Icon { name } => icon_refs.push(name.clone()),
+                format_template::Token::Recursive(rec) => collect_icon_tokens(rec, icon_refs),
+                format_template::Token::Placeholder { .. } | format_template::Token::Text(_) => (),
             }
         }
-        if !branch_can_fail {
-            break;
-        }
     }
-}
-
-/// Whether rendering this placeholder can produce a branch-selection failure
-/// (missing value, incompatible formatter, number out of range).
-fn placeholder_can_fail(
-    output: &crate::block_plan::OutputPlan,
-    name: &str,
-    formatter: Option<&dyn crate::formatting::formatter::Formatter>,
-) -> bool {
-    match output.guaranteed_kind(name) {
-        // Not guaranteed to be present: the branch can fall through.
-        None => true,
-        // Guaranteed: only the formatter can still reject it. No explicit
-        // formatter means the kind's own default, which always accepts it.
-        Some(kind) => formatter.is_some_and(|f| !f.infallible_for(kind)),
-    }
-}
-
-/// A group fails only if every one of its branches can fail.
-fn compiled_group_can_fail(
-    template: &format_template::FormatTemplate,
-    output: &crate::block_plan::OutputPlan,
-) -> bool {
-    template.token_lists().iter().all(|token_list| {
-        token_list.0.iter().any(|token| match token {
-            format_template::Token::Placeholder { name, formatter } => {
-                placeholder_can_fail(output, name, formatter.as_deref())
-            }
-            format_template::Token::Recursive(rec) => compiled_group_can_fail(rec, output),
-            format_template::Token::Icon { .. } | format_template::Token::Text(_) => false,
-        })
-    })
 }
 
 /// The static side of a block instance's icon analysis.
@@ -1687,25 +1517,18 @@ struct IconTableInput<'a> {
     base_map: &'a HashMap<String, Icon>,
     global_overrides: &'a HashMap<String, Icon>,
     block_overrides: &'a [(String, HashMap<String, Icon>)],
-    builtin: &'a HashMap<String, Icon>,
     used_now: &'a BTreeMap<String, HashSet<String>>,
     /// Icon name -> labels of block instances that may request it in some
     /// state (computed in [`run`]: exact per-instance reachability for
     /// contract blocks, documented icon lists for legacy blocks).
     may_use: &'a BTreeMap<String, Vec<String>>,
-    /// Whether any configured block can request arbitrary icon names at
-    /// runtime (reachable open capability, e.g. custom/custom_dbus).
-    dynamic_blocks: bool,
-    /// Whether every block's contract was resolved (no configuration
-    /// failures): only then can "unused" be proven statically.
-    analysis_closed: bool,
     /// Per block label: what is known about its ability to render each icon.
     icon_relevant: &'a HashMap<String, IconRelevance>,
     /// (label, icon) pairs already diagnosed by a live render error.
     live_reported: &'a HashSet<(String, String)>,
-    /// Per block label: families its effective icons_format selects around
-    /// {icon} (absent = bar fonts only).
-    font_scopes: &'a HashMap<String, Vec<String>>,
+    /// Block labels whose effective icons_format contains pango markup:
+    /// the font drawing their icons is not verified (inconclusive).
+    markup_labels: &'a HashSet<String>,
     font_check: &'a mut Option<FontCheck>,
     font_authoritative: bool,
     style: &'a Style,
@@ -1717,14 +1540,11 @@ fn print_icon_table(input: IconTableInput) {
         base_map,
         global_overrides,
         block_overrides,
-        builtin,
         used_now,
         may_use,
-        dynamic_blocks,
-        analysis_closed,
         icon_relevant,
         live_reported,
-        font_scopes,
+        markup_labels,
         font_check,
         font_authoritative,
         style,
@@ -1750,38 +1570,6 @@ fn print_icon_table(input: IconTableInput) {
         }
         base_map.get(icon).map(|found| (found, Provenance::Base))
     };
-
-    for name in global_overrides.keys() {
-        if !base_map.contains_key(name)
-            && !builtin.contains_key(name)
-            && !used_now.contains_key(name)
-            && !may_use.contains_key(name.as_str())
-        {
-            let diagnosis = format!(
-                "[icons.overrides] defines {name:?}, which no icon set defines and no \
-                 configured block uses (typo?)."
-            );
-            if analysis_closed && !dynamic_blocks {
-                // Every contract resolved and none is an open dynamic
-                // source: the override is provably unreachable, with or
-                // without the live test.
-                problems.push(Problem {
-                    diagnosis,
-                    fix: None,
-                });
-            } else if dynamic_blocks {
-                println!(
-                    "note: {diagnosis} Not counted as a problem: a custom block could still \
-                     request it at runtime."
-                );
-            } else {
-                println!(
-                    "note: {diagnosis} Not counted as a problem: some block configurations \
-                     could not be analyzed."
-                );
-            }
-        }
-    }
 
     // usage: icon name -> [(block, is_may)]. A block's own icons_overrides
     // entry counts as usage: overriding it is explicit intent.
@@ -1814,16 +1602,17 @@ fn print_icon_table(input: IconTableInput) {
     }
 
     let mut used_rows: Vec<IconRow> = Vec::new();
-    let mut unused_extra: Vec<String> = Vec::new();
+    // Declared icon names that do not resolve for a block (not in the icon
+    // set or any applicable override): listed as information.
+    let mut undefined: Vec<(String, String)> = Vec::new();
     let mut fallback_rows = 0usize;
     let mut missing_rows = 0usize;
 
     for (icon_name, users) in &usage {
         // Group the using blocks by what the icon actually resolves to for
         // them (an override REPLACES the base glyph for its block) and by
-        // their icon font scope (a block whose icons_format selects a font
-        // can have a different glyph provider than one without).
-        let mut groups: BTreeMap<(Provenance, Vec<String>), Vec<String>> = BTreeMap::new();
+        // whether their icons_format markup makes the font inconclusive.
+        let mut groups: BTreeMap<(Provenance, bool), Vec<String>> = BTreeMap::new();
         for (block, is_may) in users {
             // A block whose formats cannot render this icon cannot error on
             // it; skip latent (may) findings for it. Configuration-derived
@@ -1844,18 +1633,14 @@ fn print_icon_table(input: IconTableInput) {
                     // None for it: at runtime it behaves like an undefined
                     // icon, not like a defined one.
                     if matches!(icon, Icon::Progression(steps) if steps.is_empty()) {
-                        if (!*is_may || relevant)
-                            && !live_reported.contains(&(block.clone(), icon_name.clone()))
+                        // An empty progression behaves like an undefined
+                        // icon at runtime: availability info, not a problem.
+                        if !live_reported.contains(&(block.clone(), icon_name.clone()))
+                            && !undefined
+                                .iter()
+                                .any(|(name, b)| name == icon_name && b == block)
                         {
-                            problems.push(Problem {
-                                diagnosis: format!(
-                                    "Icon {icon_name:?} is defined as an empty progression ({}), \
-                                     which the bar treats as undefined — the `{block}` block \
-                                     will error when it requests it.",
-                                    provenance_desc(&provenance)
-                                ),
-                                fix: Some("Give the progression at least one glyph.".into()),
-                            });
+                            undefined.push((icon_name.clone(), block.clone()));
                         }
                         continue;
                     }
@@ -1864,40 +1649,29 @@ fn print_icon_table(input: IconTableInput) {
                     } else {
                         block.clone()
                     };
-                    let scope = font_scopes.get(block).cloned().unwrap_or_default();
-                    groups.entry((provenance, scope)).or_default().push(label);
+                    let markup = markup_labels.contains(block);
+                    groups.entry((provenance, markup)).or_default().push(label);
                 }
                 // already diagnosed by the live render error for this block
                 None if live_reported.contains(&(block.clone(), icon_name.clone())) => (),
                 None => {
-                    // Finding: this block would error when requesting it —
-                    // unless it never actually can (only "may" usage counts
-                    // as latent, both are real problems).
-                    problems.push(Problem {
-                        diagnosis: format!(
-                            "Icon {icon_name:?} is not defined for the `{block}` block (not in \
-                             the icon set, [icons.overrides], or the block's icons_overrides) — \
-                             the block will error when it requests it."
-                        ),
-                        fix: Some(format!(
-                            "Add `{icon_name}` to [icons.overrides] or to that block's \
-                             icons_overrides."
-                        )),
-                    });
+                    // Availability information, not a problem: doctor makes
+                    // no claim about whether the block's states and formats
+                    // will actually request it — the live test reports
+                    // failures that really happen.
+                    if !undefined
+                        .iter()
+                        .any(|(name, b)| name == icon_name && b == block)
+                    {
+                        undefined.push((icon_name.clone(), block.clone()));
+                    }
                 }
             }
         }
         if groups.is_empty() {
-            // every user was skipped as irrelevant: the icon is effectively
-            // unused by the configuration
-            if (base_map.contains_key(icon_name) || global_overrides.contains_key(icon_name))
-                && !unused_extra.contains(icon_name)
-            {
-                unused_extra.push(icon_name.clone());
-            }
             continue;
         }
-        for ((provenance, scope), mut blocks) in groups {
+        for ((provenance, markup), mut blocks) in groups {
             blocks.sort_unstable();
             let (icon, tag) = match &provenance {
                 Provenance::Base => (base_map.get(icon_name), String::new()),
@@ -1917,29 +1691,13 @@ fn print_icon_table(input: IconTableInput) {
                 icon,
                 &tag,
                 &blocks.join(", "),
-                &scope,
+                markup,
                 font_check,
                 &mut fallback_rows,
                 &mut missing_rows,
             );
         }
     }
-
-    // Names the USER defined (global or per-block overrides) that no
-    // configured block can render. Names shipped by the icon set that the
-    // configuration simply does not reference are not worth listing.
-    let mut user_unused: Vec<&str> = Vec::new();
-    for name in global_overrides
-        .keys()
-        .chain(block_overrides.iter().flat_map(|(_, o)| o.keys()))
-    {
-        if (!usage.contains_key(name) || unused_extra.contains(name))
-            && !user_unused.contains(&name.as_str())
-        {
-            user_unused.push(name);
-        }
-    }
-    user_unused.sort_unstable();
 
     println!("Icons referenced by your blocks");
     let name_w = column_width("Name", used_rows.iter().map(|r| r.name.as_str()));
@@ -1973,7 +1731,7 @@ fn print_icon_table(input: IconTableInput) {
             println!("{line}");
         }
     }
-    if fallback_rows > 0 || missing_rows > 0 || !user_unused.is_empty() {
+    if fallback_rows > 0 || missing_rows > 0 || !undefined.is_empty() || !markup_labels.is_empty() {
         println!();
     }
     if fallback_rows > 0 {
@@ -1982,10 +1740,25 @@ fn print_icon_table(input: IconTableInput) {
     if missing_rows > 0 {
         println!("† No installed font has this glyph; it renders as an empty box.");
     }
-    if !user_unused.is_empty() {
+    if !undefined.is_empty() {
+        let listed: Vec<String> = undefined
+            .iter()
+            .map(|(name, block)| format!("{name} ({block})"))
+            .collect();
         println!(
-            "Overrides you defined that no configured block can render: {}",
-            user_unused.join(", ")
+            "note: declared icon name(s) with no definition in your icon set or overrides: {}.\n\
+             Whether they are ever requested depends on block state; the live block test\n\
+             reports failures that actually happen.",
+            listed.join(", ")
+        );
+    }
+    if !markup_labels.is_empty() {
+        let mut listed: Vec<&str> = markup_labels.iter().map(String::as_str).collect();
+        listed.sort_unstable();
+        println!(
+            "note: icons_format uses pango markup for: {}. The font drawing those icons\n\
+             depends on that markup and is not verified by doctor.",
+            listed.join(", ")
         );
     }
     println!();
@@ -2034,7 +1807,7 @@ fn push_icon_rows(
     icon: &Icon,
     tag: &str,
     used_by: &str,
-    scope: &[String],
+    markup: bool,
     font_check: &mut Option<FontCheck>,
     fallback_rows: &mut usize,
     missing_rows: &mut usize,
@@ -2049,19 +1822,25 @@ fn push_icon_rows(
     };
     for (row_name, glyph) in rows {
         let codes = codepoints(glyph);
-        let (provider, mark) = match font_check.as_mut() {
-            None => ("?".to_string(), ""),
-            Some(check) => match glyph_provider(check, glyph, scope) {
-                GlyphProvider::Known(family) => (first_family(&family), ""),
-                GlyphProvider::Fallback(family) => {
-                    *fallback_rows += 1;
-                    (first_family(&family), " *")
-                }
-                GlyphProvider::Missing => {
-                    *missing_rows += 1;
-                    ("(none)".to_string(), " †")
-                }
-            },
+        let (provider, mark) = if markup {
+            // The effective icons_format uses pango markup; doctor does not
+            // emulate pango, so which font draws this glyph is unknown.
+            ("(depends on icons_format markup)".to_string(), "")
+        } else {
+            match font_check.as_mut() {
+                None => ("?".to_string(), ""),
+                Some(check) => match glyph_provider(check, glyph) {
+                    GlyphProvider::Known(family) => (first_family(&family), ""),
+                    GlyphProvider::Fallback(family) => {
+                        *fallback_rows += 1;
+                        (first_family(&family), " *")
+                    }
+                    GlyphProvider::Missing => {
+                        *missing_rows += 1;
+                        ("(none)".to_string(), " †")
+                    }
+                },
+            }
         };
         used_rows.push(IconRow {
             name: row_name,
@@ -2117,13 +1896,13 @@ fn first_family(family: &str) -> String {
     family.split(',').next().unwrap_or(family).to_string()
 }
 
-fn glyph_provider(check: &mut FontCheck, glyph: &str, scope: &[String]) -> GlyphProvider {
+fn glyph_provider(check: &mut FontCheck, glyph: &str) -> GlyphProvider {
     let mut result = GlyphProvider::Known(check.base_family.clone());
     for c in glyph.chars() {
         if c.is_ascii() {
             continue;
         }
-        match check.check(c, scope) {
+        match check.check(c) {
             GlyphFont::Base => (),
             GlyphFont::Configured(family) => {
                 if matches!(result, GlyphProvider::Known(_)) {
@@ -2221,16 +2000,10 @@ struct FontCheck {
     /// Each bar family with what fc-match resolves it to; a family that
     /// resolves to something else entirely is not installed.
     families: Vec<(String, Option<String>)>,
-    /// Families deliberately selected around {icon} by some icons_format
-    /// (global or per-block), with their resolutions. Used for install
-    /// diagnostics; glyph classification takes the applicable subset per
-    /// block instance as a scope.
-    declared: Vec<(String, Option<String>)>,
     /// Whether `fc-list` works; without it "no font provides this glyph"
     /// cannot be detected and is never claimed.
     has_fc_list: bool,
-    /// (glyph, per-instance scope) -> classification.
-    cache: HashMap<(char, Vec<String>), GlyphFont>,
+    cache: HashMap<char, GlyphFont>,
 }
 
 impl FontCheck {
@@ -2253,71 +2026,35 @@ impl FontCheck {
             pattern,
             base_family,
             families,
-            declared: Vec::new(),
             has_fc_list,
             cache: HashMap::new(),
         })
     }
 
-    /// Register a family some icons_format deliberately selects, for the
-    /// installed-check. Which blocks it applies to is decided per instance
-    /// by the scope passed to [`Self::check`].
-    fn declare_family(&mut self, family: &str) {
-        if self
-            .families
-            .iter()
-            .chain(self.declared.iter())
-            .any(|(name, _)| family_eq(name, family))
-        {
-            return;
-        }
-        let resolved = fc_match(family, None);
-        self.declared.push((family.to_string(), resolved));
-    }
-
-    /// Classify one glyph for a block instance whose effective icons_format
-    /// selects `scope` families around {icon} (empty scope = bar fonts
-    /// only).
-    fn check(&mut self, c: char, scope: &[String]) -> GlyphFont {
-        if let Some(hit) = self.cache.get(&(c, scope.to_vec())) {
+    fn check(&mut self, c: char) -> GlyphFont {
+        if let Some(hit) = self.cache.get(&c) {
             return hit.clone();
         }
-        let result = self.classify(c, scope);
-        self.cache.insert((c, scope.to_vec()), result.clone());
+        let result = self.classify(c);
+        self.cache.insert(c, result.clone());
         result
     }
 
-    fn classify(&self, c: char, scope: &[String]) -> GlyphFont {
+    fn classify(&self, c: char) -> GlyphFont {
         let charset = format!("{:x}", c as u32);
         if self.has_fc_list && !fc_list_provides(&charset) {
             return GlyphFont::Missing;
         }
-        // The families this instance can deliberately render with: the
-        // bar's list plus the ones its effective icons_format selects.
-        let scoped: Vec<(String, Option<String>)> = self
-            .families
-            .iter()
-            .cloned()
-            .chain(scope.iter().map(|family| {
-                (
-                    family.clone(),
-                    self.declared
-                        .iter()
-                        .find(|(name, _)| family_eq(name, family))
-                        .and_then(|(_, resolved)| resolved.clone()),
-                )
-            }))
-            .collect();
         match fc_match(&self.pattern, Some(&charset)) {
             Some(family) if family_eq(&family, &self.base_family) => GlyphFont::Base,
             Some(family) => {
                 // fc-match prints a comma-separated family list; if any
-                // member is one of the applicable families — by name, or by
-                // what the family canonically resolves to (generic aliases
-                // like "monospace" resolve to a concrete family) — this is
-                // the configured fallback doing its job, not a surprise.
+                // member is one of the bar's families — by name, or by what
+                // the family canonically resolves to (generic aliases like
+                // "monospace" resolve to a concrete family) — this is the
+                // configured fallback doing its job, not a surprise.
                 let members: Vec<&str> = family.split(',').collect();
-                match scoped.iter().find(|(name, resolved)| {
+                match self.families.iter().find(|(name, resolved)| {
                     members.iter().any(|m| family_eq(m, name))
                         || resolved.as_ref().is_some_and(|r| {
                             r.split(',')
@@ -2325,21 +2062,7 @@ impl FontCheck {
                         })
                 }) {
                     Some((name, _)) => GlyphFont::Configured(name.clone()),
-                    None => {
-                        // The bar-pattern match ignores families selected
-                        // out-of-band (this instance's icons_format): probe
-                        // those directly — if one provides the glyph
-                        // itself, rendering will use it deliberately.
-                        let direct = scope.iter().find(|name| {
-                            fc_match(name, Some(&charset)).is_some_and(|resolved| {
-                                resolved.split(',').any(|m| family_eq(m, name))
-                            })
-                        });
-                        match direct {
-                            Some(name) => GlyphFont::Configured(name.clone()),
-                            None => GlyphFont::Fallback(family),
-                        }
-                    }
+                    None => GlyphFont::Fallback(family),
                 }
             }
             None => GlyphFont::Missing,
@@ -2604,10 +2327,10 @@ mod tests {
     }
 
     #[test]
-    fn contract_requires_only_reachable_icons() {
-        // The design-doc example: the block can produce both phone and
-        // phone_disconnected, but this configuration renders $icon only in
-        // the connected state.
+    fn contract_declared_icons_all_count_as_in_use() {
+        // No reachability claims: every declared icon counts as in use by
+        // the block, whichever formats the user configured. Unused
+        // declarations are harmless (never problems).
         let analysis = contract(
             r#"
             [[block]]
@@ -2619,42 +2342,21 @@ mod tests {
             0,
         );
         assert!(analysis.required.contains("phone"));
-        assert!(!analysis.required.contains("phone_disconnected"));
+        assert!(analysis.required.contains("phone_disconnected"));
     }
 
     #[test]
-    fn contract_default_formats_require_state_icons() {
+    fn contract_icons_are_driver_scoped() {
         // The default nordvpn driver has no connecting state, so
-        // net_wireless is not a requirement.
+        // net_wireless is not declared at all.
         let analysis = contract("[[block]]\nblock = \"vpn\"", 0);
         for icon in ["net_vpn", "net_wired", "net_down"] {
             assert!(analysis.required.contains(icon), "{icon}");
         }
         assert!(!analysis.required.contains("net_wireless"));
 
-        // Mullvad can report connecting; only the disconnected/error
-        // formats lost their $icon, the other states still require theirs.
-        let analysis = contract(
-            "[[block]]\nblock = \"vpn\"\ndriver = \"mullvad\"\nformat_disconnected = \" off \"",
-            0,
-        );
-        assert!(analysis.required.contains("net_vpn"));
+        let analysis = contract("[[block]]\nblock = \"vpn\"\ndriver = \"mullvad\"", 0);
         assert!(analysis.required.contains("net_wireless"));
-        assert!(!analysis.required.contains("net_wired"));
-        assert!(!analysis.required.contains("net_down"));
-    }
-
-    #[test]
-    fn contract_inherited_formats_are_effective() {
-        // charging_format inherits the configured `format`, which has no
-        // $icon: bat_charging is not required. The state formats keep their
-        // own defaults (" $icon "), so bat still is.
-        let analysis = contract(
-            "[[block]]\nblock = \"battery\"\nformat = \" $percentage \"",
-            0,
-        );
-        assert!(!analysis.required.contains("bat_charging"));
-        assert!(analysis.required.contains("bat"));
     }
 
     #[test]
@@ -2677,8 +2379,10 @@ mod tests {
     }
 
     #[test]
-    fn contract_open_capability_is_reachability_gated() {
-        // Only JSON output can carry an icon at all.
+    fn contract_open_capability_follows_the_declaration() {
+        // A plain-text custom command cannot set icons at all; with JSON
+        // the source is open regardless of the configured formats (doctor
+        // makes no reachability claims).
         let analysis = contract("[[block]]\nblock = \"custom\"\ncommand = \"true\"", 0);
         assert!(!analysis.open);
 
@@ -2687,54 +2391,36 @@ mod tests {
             0,
         );
         assert!(analysis.open);
-        assert!(analysis.required.is_empty());
-
-        // Neither the full nor the short format references $icon: the open
-        // source is unreachable even with JSON.
-        let analysis = contract(
-            r#"
-            [[block]]
-            block = "custom"
-            command = "true"
-            json = true
-            format = { full = " $text ", short = " $text " }
-            "#,
-            0,
-        );
-        assert!(!analysis.open);
     }
 
     #[test]
-    fn contract_direct_icon_tokens_are_certain_usage() {
+    fn contract_direct_icon_tokens_are_collected() {
         let analysis = contract(
             "[[block]]\nblock = \"vpn\"\nformat_connected = \" ^icon_net_down $country \"",
             0,
         );
         assert!(analysis.direct.contains("net_down"));
         assert!(analysis.required.contains("net_down"));
-        // Dead branch: "{ OK | ^icon_net_up }" never renders the icon.
-        let analysis = contract(
-            "[[block]]\nblock = \"vpn\"\nformat_connected = \"{ OK | ^icon_net_up }\"",
-            0,
-        );
-        assert!(!analysis.required.contains("net_up"));
     }
 
     /// The error-widget analysis of block `index` in `config`.
     fn error_analysis(config: &str, index: usize) -> PlanAnalysis {
         let config: Config = toml::from_str(config).unwrap();
         let entry = &config.blocks[index];
-        analyze_plan(&crate::block_plan::error_plan(
-            entry
-                .common
-                .error_format
-                .with_default_config(&config.error_format),
-            entry
-                .common
-                .error_fullscreen_format
-                .with_default_config(&config.error_fullscreen_format),
-            entry.common.max_retries.is_some(),
-        ))
+        analyze_plan(
+            &crate::block_plan::error_plan(
+                entry
+                    .common
+                    .error_format
+                    .with_default_config(&config.error_format),
+                entry
+                    .common
+                    .error_fullscreen_format
+                    .with_default_config(&config.error_fullscreen_format),
+                entry.common.max_retries.is_some(),
+            )
+            .unwrap(),
+        )
     }
 
     #[test]
@@ -2820,44 +2506,6 @@ mod tests {
         );
         assert_eq!(parse_font_directive(""), Vec::<String>::new());
         assert_eq!(parse_font_directive("pango:"), Vec::<String>::new());
-    }
-
-    #[test]
-    fn icon_families_require_an_enclosing_span() {
-        assert_eq!(
-            icon_font_families("<span font_family='Noto Color Emoji'>{icon}</span>"),
-            ["Noto Color Emoji"]
-        );
-        assert_eq!(
-            icon_font_families("<span face=\"Font Awesome 6 Free\" size='large'>{icon}</span>"),
-            ["Font Awesome 6 Free"]
-        );
-        assert!(icon_font_families("{icon}").is_empty());
-        // A family on a span that does NOT contain {icon} styles other
-        // text, not the icon.
-        assert!(
-            icon_font_families("<span font_family='Font Awesome 5 Free'>prefix</span>{icon}")
-                .is_empty()
-        );
-        // The innermost enclosing family wins.
-        assert_eq!(
-            icon_font_families(
-                "<span font_family='Outer'>x<span font_family='Inner'>{icon}</span></span>"
-            ),
-            ["Inner"]
-        );
-        // A nested span without a family inherits the enclosing one.
-        assert_eq!(
-            icon_font_families("<span font_family='Outer'><span size='large'>{icon}</span></span>"),
-            ["Outer"]
-        );
-        // Each {icon} occurrence is credited with its own family.
-        assert_eq!(
-            icon_font_families("<span font='A 12'>{icon}</span><span face='B'>{icon}</span>"),
-            ["A", "B"]
-        );
-        // Text after the closing tag is back outside the span.
-        assert!(icon_font_families("<span font_family='X'>pre</span> {icon}").is_empty());
     }
 
     #[test]
