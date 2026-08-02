@@ -70,11 +70,38 @@ fn generate_block_icons() {
     std::fs::write(std::path::Path::new(&out_dir).join("block_icons.rs"), code).unwrap();
 }
 
-/// Extract (placeholder key, icon name) pairs from `"key" => Value::icon*("name")`
-/// map entries, so doctor can statically tell which icon travels under which
-/// placeholder. Computed icon names are skipped.
+/// The canonical icon names, scanned from the default map in src/icons.rs
+/// (the first quoted string on each `"name" => ...` entry line).
+fn canonical_icon_names() -> std::collections::HashSet<String> {
+    let source = std::fs::read_to_string("src/icons.rs").expect("cannot read src/icons.rs");
+    let mut names = std::collections::HashSet::new();
+    for line in source.lines() {
+        let line = line.trim();
+        if !line.starts_with('"') || !line.contains("=>") {
+            continue;
+        }
+        if let Some(name) = line[1..].split('"').next()
+            && !name.is_empty()
+        {
+            names.insert(name.to_string());
+        }
+    }
+    assert!(
+        names.len() > 50,
+        "canonical icon name scan of src/icons.rs looks broken ({} names)",
+        names.len()
+    );
+    names
+}
+
+/// Extract (placeholder key, icon name) pairs from map entries like
+/// `"key" => Value::icon("name")`, so doctor can statically tell which icon
+/// travels under which placeholder. Helper indirection like
+/// `"next" => new_btn("music_next", ...)` is recognized by validating the
+/// literal against the canonical icon names. Computed icon names are skipped.
 fn generate_block_icon_keys() {
     let out_dir = std::env::var("OUT_DIR").unwrap();
+    let canonical = canonical_icon_names();
     let mut entries: Vec<(String, Vec<(String, String)>)> = Vec::new();
     let dir = std::fs::read_dir("src/blocks").expect("cannot read src/blocks");
     for entry in dir {
@@ -88,7 +115,10 @@ fn generate_block_icon_keys() {
             .unwrap_or_else(|err| panic!("cannot read {}: {err}", path.display()));
         let mut pairs = Vec::new();
         for line in source.lines() {
-            let Some(arrow) = line.find("=> Value::icon") else {
+            if line.trim_start().starts_with("//") {
+                continue;
+            }
+            let Some(arrow) = line.find("=>") else {
                 continue;
             };
             let (before, after) = line.split_at(arrow);
@@ -96,7 +126,7 @@ fn generate_block_icon_keys() {
             let Some(key) = before.rsplit('"').nth(1) else {
                 continue;
             };
-            // name: a quoted literal right after the opening parenthesis
+            // name: the first quoted literal in a call after the arrow
             let Some(paren) = after.find('(') else {
                 continue;
             };
@@ -104,7 +134,9 @@ fn generate_block_icon_keys() {
             let Some(name) = after.strip_prefix('"').and_then(|a| a.split('"').next()) else {
                 continue;
             };
-            if !key.is_empty() && !name.is_empty() {
+            let direct_icon_call = line.contains("=> Value::icon");
+            if !key.is_empty() && !name.is_empty() && (direct_icon_call || canonical.contains(name))
+            {
                 pairs.push((key.to_string(), name.to_string()));
             }
         }

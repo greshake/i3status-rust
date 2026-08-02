@@ -2074,9 +2074,11 @@ impl BlockInfo {
             return StaticRelevance::AllRelevant;
         }
         let mut placeholders: HashSet<String> = HashSet::new();
+        // Only icon-ish PLACEHOLDERS make unmapped icons potentially
+        // reachable: a ^icon_x reference names one specific icon and says
+        // nothing about the others.
         let mut any_icon = false;
         for format in &primary {
-            any_icon |= !format.icon_refs.is_empty();
             for p in &format.placeholders {
                 any_icon |= p == "icon" || p.contains("icon");
                 placeholders.insert(p.clone());
@@ -2188,8 +2190,9 @@ fn collect_reachable(
                     branch_can_fail = true;
                 }
                 format_parse::Token::Icon(name) => {
+                    // A missing icon is a render error, not a branch-selection
+                    // failure: it does not make the branch fall through.
                     icon_refs.push((*name).to_string());
-                    branch_can_fail = true;
                 }
                 format_parse::Token::Recursive(rec) => {
                     collect_reachable(rec, placeholders, icon_refs);
@@ -2208,9 +2211,11 @@ fn collect_reachable(
 fn group_can_fail(template: &format_parse::FormatTemplate) -> bool {
     template.0.iter().all(|token_list| {
         token_list.0.iter().any(|token| match token {
-            format_parse::Token::Placeholder(_) | format_parse::Token::Icon(_) => true,
+            format_parse::Token::Placeholder(_) => true,
             format_parse::Token::Recursive(rec) => group_can_fail(rec),
-            format_parse::Token::Text(_) => false,
+            // A missing icon errors the whole render instead of selecting
+            // the next branch.
+            format_parse::Token::Icon(_) | format_parse::Token::Text(_) => false,
         })
     })
 }
@@ -2387,6 +2392,48 @@ mod tests {
         let mut icons = Vec::new();
         collect_reachable(&template, &mut placeholders, &mut icons);
         assert_eq!(placeholders, ["a", "icon"]);
+
+        // a missing ^icon is a render error, not a branch fall-through:
+        // the second branch is dead
+        let template = format_parse::parse_full("{ ^icon_time | ^icon_memory_mem }").unwrap();
+        let mut placeholders = Vec::new();
+        let mut icons = Vec::new();
+        collect_reachable(&template, &mut placeholders, &mut icons);
+        assert_eq!(icons, ["time"]);
+
+        // but after a fallible placeholder branch, an icon branch is reachable
+        let template = format_parse::parse_full("{ $a | ^icon_time }").unwrap();
+        let mut placeholders = Vec::new();
+        let mut icons = Vec::new();
+        collect_reachable(&template, &mut placeholders, &mut icons);
+        assert_eq!(icons, ["time"]);
+    }
+
+    #[test]
+    fn helper_created_icon_keys_are_mapped() {
+        // music's `"next" => new_btn("music_next", ...)` goes through a
+        // helper; the generated table must still map it
+        assert!(icon_keys_for("music", "music_next").contains(&"next"));
+        assert!(icon_keys_for("music", "music_prev").contains(&"prev"));
+        // direct form still works
+        assert!(icon_keys_for("memory", "memory_swap").contains(&"icon_swap"));
+    }
+
+    #[test]
+    fn icon_refs_do_not_make_unmapped_icons_relevant() {
+        let raw: toml::Value = toml::from_str(
+            r#"
+            [[block]]
+            block = "speedtest"
+            format = " ^icon_ping $ping "
+            "#,
+        )
+        .unwrap();
+        let relevance = collect_blocks(&raw)[0].static_relevance();
+        // ^icon_ping names one specific icon; net_up/net_down (unmapped
+        // keys) must not become relevant because of it
+        assert!(!relevance.is_relevant("net_up", "speedtest"));
+        assert!(!relevance.is_relevant("net_down", "speedtest"));
     }
 
     #[test]
@@ -2459,10 +2506,14 @@ mod tests {
             blocks[2].static_relevance(),
             StaticRelevance::AllRelevant
         ));
-        // ^icon_* reference
+        // a ^icon_* reference names one specific icon: it does not make
+        // other (unmapped) icons relevant
         assert!(matches!(
             blocks[3].static_relevance(),
-            StaticRelevance::Keys { any_icon: true, .. }
+            StaticRelevance::Keys {
+                any_icon: false,
+                ..
+            }
         ));
 
         // per-icon: memory's $icon_swap-only format needs memory_swap but
