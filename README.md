@@ -122,6 +122,38 @@ i3bar has a "power savings" feature that pauses the bar via SIGSTOP when it is h
 
 In addition to the per-block `signal` config option, i3status-rs can be signalled to force an update of all blocks by sending it the SIGUSR1 signal. It can also be restarted in place (useful for testing changes to the config file) by sending it the SIGUSR2 signal.
 
+## Troubleshooting
+
+If your bar shows the wrong icons, empty boxes, or a block that never appears,
+run the doctor:
+
+```sh
+i3status-rs --doctor
+```
+
+It reports, in order:
+
+- which configuration file and icon set are in use, and which font your bar
+  actually renders with (auto-detected from a running i3/sway; pass
+  `--font "pango:DejaVu Sans Mono, Font Awesome 6 Free 12"` to state it
+  yourself, or when no bar is running);
+- a table of every configured block, run once, with the output it produced
+  and the icons it used — so a block that fails, hangs, or renders nothing
+  is obvious;
+- every icon your blocks can request, with its codepoint and, via
+  fontconfig, the font that will really draw it. This is where silently
+  substituted fonts show up: an icon your bar's fonts do not contain is
+  drawn by whatever font the system picks instead, which is the usual
+  explanation for "my icon changed after I installed a font";
+- a numbered list of problems, each with a concrete fix.
+
+The exit status is the number of problems found, so `--doctor` is usable in
+scripts.
+
+Running the blocks means doing what they really do: network requests, shell
+commands and D-Bus calls. To inspect only the configuration, icon set and
+fonts, add `--doctor-skip-live`.
+
 ## Debugging
 
 Run `i3status-rust` in a terminal to check the JSON it is outputting.  
