@@ -373,6 +373,13 @@ mod tests {
     }
 
     #[test]
+    fn doctor_flag_recorder_keeps_the_country_code() {
+        enable_flag_recorder();
+        let flag = country_flag_from_iso_code("NZ");
+        assert!(recorded_flags().contains(&("NZ".into(), flag)));
+    }
+
+    #[test]
     fn test_file_candidates_absolute() {
         // extension is probed only when the path has none
         assert_eq!(

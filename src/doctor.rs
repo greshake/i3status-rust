@@ -58,6 +58,11 @@ use crate::util;
 use crate::widget::Widget;
 use crate::{Request, RequestCmd};
 
+/// i3bar switches a block to short mode only when the other text field is
+/// a non-empty string, so the bar sends this placeholder, which renders as
+/// nothing. It is protocol plumbing, never user-visible output.
+const SHORT_MODE_SENTINEL: &str = "<span/>";
+
 /// How long a block gets to produce its first output.
 const LIVE_TIMEOUT: Duration = Duration::from_secs(10);
 
@@ -290,7 +295,18 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                 (key == "format" || key.ends_with("_format")) && format_value_contains(value, '<')
             })
         });
-        if local_icons_format.unwrap_or(global_markup) || format_markup {
+        // Error output is rendered by the bar too, with the block's
+        // effective error formats: its own if it sets them, the global
+        // ones otherwise.
+        let error_markup = ["error_format", "error_fullscreen_format"]
+            .into_iter()
+            .any(|key| match table.and_then(|t| t.get(key)) {
+                Some(value) => format_value_contains(value, '<'),
+                None => raw
+                    .get(key)
+                    .is_some_and(|value| format_value_contains(value, '<')),
+            });
+        if local_icons_format.unwrap_or(global_markup) || format_markup || error_markup {
             markup_labels.insert(label.clone());
         }
     }
@@ -441,9 +457,9 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
     }
 
     let mut live_ran = false;
-    // (label, rendered text) of blocks that produced output, for the
-    // non-icon glyph check below.
-    let mut rendered_texts: Vec<(String, String)> = Vec::new();
+    // What each block that produced output actually rendered, with the
+    // strings its own icons expanded to, for the text-glyph check below.
+    let mut rendered_texts: Vec<(String, String, Vec<String>)> = Vec::new();
     // (label, icon) pairs already diagnosed by a live render error, so the
     // icon table does not report the same root cause twice
     let mut live_reported: HashSet<(String, String)> = HashSet::new();
@@ -476,17 +492,22 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                     .unwrap_or_else(|| report.name.clone());
                 match &report.verdict {
                     LiveVerdict::Rendered {
-                        text,
+                        check_text,
+                        icon_glyphs,
                         contract_violations,
                         ..
                     } => {
                         // The block's actual output contains pango markup
                         // (from a format, a pango-str value, or an icon):
                         // which font draws its icons is not verifiable.
-                        if text.contains('<') {
+                        if check_text.contains('<') {
                             markup_labels.insert(label.clone());
                         }
-                        rendered_texts.push((label.clone(), text.clone()));
+                        rendered_texts.push((
+                            label.clone(),
+                            check_text.clone(),
+                            icon_glyphs.clone(),
+                        ));
                         for violation in contract_violations {
                             problems.push(Problem {
                                 diagnosis: format!(
@@ -500,19 +521,10 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                             });
                         }
                     }
-                    LiveVerdict::Skipped(_) => {
-                        // the bar would not spawn this block at all
-                        // (if_command exited non-zero): nothing it could
-                        // request — including its formats' direct ^icon refs
-                        for users in may_use.values_mut() {
-                            users.retain(|user| user != &label);
-                        }
-                        may_use.retain(|_, users| !users.is_empty());
-                        for users in used_now.values_mut() {
-                            users.remove(&label);
-                        }
-                        used_now.retain(|_, users| !users.is_empty());
-                    }
+                    // A block skipped by if_command keeps its declared icon
+                    // obligations: the command's result is a property of
+                    // this moment, not of the configuration, and the bar
+                    // will render the block whenever it succeeds.
                     LiveVerdict::RenderError { error, .. } => {
                         if let Some(icon) = error
                             .split("Icon '")
@@ -550,73 +562,59 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
             .into_iter()
             .map(|(index, overrides)| (labels[index].clone(), overrides))
             .collect();
-    // === Non-icon glyphs in live output ===
+    // === Text glyphs in live output ===
     // Blocks emit text glyphs too (country flags, unit symbols, ...) whose
     // rendering depends on installed fonts just like icons. Doctor asks
     // fontconfig the same decidable questions about them: substituted
     // glyphs are worth a note (the common, working case), and glyphs no
     // installed font provides are a problem (they render as empty boxes).
-    let mut icon_chars: HashSet<char> = HashSet::new();
-    for icon in base_map
-        .values()
-        .chain(global_overrides.values())
-        .chain(block_overrides.iter().flat_map(|(_, o)| o.values()))
-    {
-        let glyphs: Vec<&String> = match icon {
-            Icon::Single(s) => vec![s],
-            Icon::Progression(steps) => steps.iter().collect(),
-        };
-        for glyph in glyphs {
-            icon_chars.extend(glyph.chars().filter(|c| !c.is_ascii()));
-        }
-    }
-    // (label, provider) -> glyph sequences that provider draws for that
-    // block, exactly as they appeared in the output (so terminals that can
-    // ligate them — country flags — display the real thing).
+    // Characters are classified one by one and only then grouped into
+    // consecutive same-verdict runs, so a sequence that renders (a country
+    // flag) stays intact while an unavailable neighbour is reported alone.
+    //
+    // (label, provider) -> sequences that provider draws for that block.
     let mut text_fallbacks: BTreeMap<(String, String), Vec<String>> = BTreeMap::new();
     let mut text_missing: BTreeMap<String, Vec<String>> = BTreeMap::new();
     if let Some(check) = font_check.as_mut() {
-        for (label, text) in &rendered_texts {
+        for (label, text, icon_glyphs) in &rendered_texts {
             if markup_labels.contains(label) {
                 continue;
             }
-            // maximal runs of non-ASCII, non-icon glyphs
-            let mut runs: Vec<String> = Vec::new();
-            let mut current = String::new();
+            // Characters this block's own icons contributed already have
+            // rows in the icon table. Another icon in the set that happens
+            // to use the same character says nothing about this text.
+            let icon_chars: HashSet<char> = icon_glyphs.iter().flat_map(|g| g.chars()).collect();
+            let mut runs: Vec<(Option<String>, String)> = Vec::new();
+            // Only characters that are adjacent in the output belong to the
+            // same sequence; anything skipped in between ends it.
+            let mut adjacent = false;
             for c in text.chars() {
                 if c.is_ascii() || icon_chars.contains(&c) {
-                    if !current.is_empty() {
-                        runs.push(std::mem::take(&mut current));
-                    }
-                } else {
-                    current.push(c);
+                    adjacent = false;
+                    continue;
                 }
-            }
-            if !current.is_empty() {
-                runs.push(current);
-            }
-            for run in runs {
-                let mut missing = false;
-                let mut fallback: Option<String> = None;
-                for c in run.chars() {
-                    match check.check(c) {
-                        GlyphFont::Base | GlyphFont::Configured(_) => (),
-                        GlyphFont::Fallback(family) => {
-                            fallback.get_or_insert_with(|| first_family(&family));
-                        }
-                        GlyphFont::Missing => missing = true,
+                // None = no installed font provides it
+                let verdict = match check.check(c) {
+                    GlyphFont::Base | GlyphFont::Configured(_) => {
+                        adjacent = false;
+                        continue;
                     }
+                    GlyphFont::Fallback(family) => Some(first_family(&family)),
+                    GlyphFont::Missing => None,
+                };
+                match runs.last_mut() {
+                    Some((last, run)) if adjacent && *last == verdict => run.push(c),
+                    _ => runs.push((verdict, c.to_string())),
                 }
-                if missing {
-                    let entry = text_missing.entry(label.clone()).or_default();
-                    if !entry.contains(&run) {
-                        entry.push(run);
-                    }
-                } else if let Some(family) = fallback {
-                    let entry = text_fallbacks.entry((label.clone(), family)).or_default();
-                    if !entry.contains(&run) {
-                        entry.push(run);
-                    }
+                adjacent = true;
+            }
+            for (verdict, run) in runs {
+                let entry = match verdict {
+                    Some(family) => text_fallbacks.entry((label.clone(), family)).or_default(),
+                    None => text_missing.entry(label.clone()).or_default(),
+                };
+                if !entry.contains(&run) {
+                    entry.push(run);
                 }
             }
         }
@@ -779,7 +777,17 @@ fn raw_block_names(raw: &toml::Value) -> Vec<String> {
 #[derive(serde::Serialize, serde::Deserialize)]
 enum LiveVerdict {
     Rendered {
+        /// What the bar shows (full text only; the i3bar short-text
+        /// sentinel is protocol plumbing, not user output).
         text: String,
+        /// Everything the block actually rendered, full and short, for font
+        /// and markup analysis.
+        #[serde(default)]
+        check_text: String,
+        /// The strings the block's icons expanded to, so live-output
+        /// analysis can tell icon characters from text characters.
+        #[serde(default)]
+        icon_glyphs: Vec<String>,
         /// Icon names actually rendered (recorded during rendering, so only
         /// the format branch that succeeded counts).
         icons: Vec<String>,
@@ -1062,7 +1070,12 @@ pub fn run_worker(config_arg: &str, index: usize) {
     // Workers are separate concurrent processes; give custom_dbus a unique
     // well-known name via an in-process channel — the environment every
     // block command and if_command sees stays exactly the user's own.
-    crate::blocks::custom_dbus::set_doctor_dbus_suffix(format!("doctor{index}"));
+    // Unique per worker AND per doctor process: two doctor runs (or a
+    // doctor run beside another) must not fight over the same name.
+    crate::blocks::custom_dbus::set_doctor_dbus_suffix(format!(
+        "doctor{}_{index}",
+        std::process::id()
+    ));
     util::enable_flag_recorder();
     let mut report = worker_report(config_arg, index);
     report.flags = util::recorded_flags();
@@ -1253,15 +1266,33 @@ fn render_widget(widget: &Widget, shared: &SharedConfig, index: usize) -> LiveVe
     shared.icon_recorder = Some(recorder.clone());
     match widget.get_data(&shared, index) {
         Ok(segments) => {
-            let mut icons: Vec<String> = recorder.lock().map(|r| r.clone()).unwrap_or_default();
+            let recorded: Vec<(String, String)> =
+                recorder.lock().map(|r| r.clone()).unwrap_or_default();
+            let mut icons: Vec<String> = recorded.iter().map(|(name, _)| name.clone()).collect();
             icons.sort_unstable();
             icons.dedup();
+            let mut icon_glyphs: Vec<String> =
+                recorded.into_iter().map(|(_, glyph)| glyph).collect();
+            icon_glyphs.sort_unstable();
+            icon_glyphs.dedup();
+            // i3bar needs a non-empty placeholder in the other field to
+            // switch a block between full and short mode; it draws nothing
+            // and is not part of what the block rendered.
+            let real = |s: &str| (s != SHORT_MODE_SENTINEL).then(|| s.to_string());
+            let full: String = segments
+                .iter()
+                .filter_map(|s| real(&s.full_text))
+                .collect::<Vec<_>>()
+                .join("");
+            let short: String = segments
+                .iter()
+                .filter_map(|s| real(&s.short_text))
+                .collect::<Vec<_>>()
+                .join("");
             LiveVerdict::Rendered {
-                text: segments
-                    .iter()
-                    .map(|s| s.full_text.as_str())
-                    .collect::<Vec<_>>()
-                    .join(""),
+                check_text: format!("{full}{short}"),
+                text: full,
+                icon_glyphs,
                 icons,
                 provided_icons: provided_icon_values(widget),
                 contract_violations: widget.contract_violations(),
@@ -1321,7 +1352,10 @@ fn join_error_message(err: tokio::task::JoinError) -> String {
 /// The Output cell for one live verdict: (text, is_red).
 fn output_cell(verdict: &LiveVerdict) -> (String, bool) {
     match verdict {
-        LiveVerdict::Rendered { text, .. } => (format!("\"{text}\""), false),
+        // Block output is arbitrary text from commands and services: show
+        // control characters (newlines, terminal escapes) in escaped form
+        // so a block cannot rewrite doctor's own report.
+        LiveVerdict::Rendered { text, .. } => (format!("\"{}\"", escape_control(text)), false),
         LiveVerdict::RenderError { error, .. } => (format!("RENDER ERROR: {error}"), true),
         LiveVerdict::BlockError(error) => (format!("ERROR: {error}"), true),
         LiveVerdict::Panicked(msg) => (format!("PANICKED: {msg}"), true),
@@ -1345,6 +1379,20 @@ fn output_cell(verdict: &LiveVerdict) -> (String, bool) {
             false,
         ),
     }
+}
+
+/// Render control characters visibly, leaving printable text (including
+/// icon glyphs and flags) untouched.
+fn escape_control(text: &str) -> String {
+    text.chars()
+        .flat_map(|c| {
+            if c.is_control() {
+                c.escape_debug().collect::<Vec<_>>()
+            } else {
+                vec![c]
+            }
+        })
+        .collect()
 }
 
 /// Print one row of the live-test table and record its consequences
@@ -1651,8 +1699,9 @@ fn print_icon_table(input: IconTableInput) {
             match resolve(icon_name, block) {
                 Some((icon, provenance)) => {
                     if matches!(icon, Icon::Progression(steps) if steps.is_empty()) {
-                        // An empty progression behaves like an undefined
-                        // icon at runtime: availability info, not a problem.
+                        // An empty progression cannot satisfy a request:
+                        // Icons::get returns None for it, exactly like an
+                        // undefined name.
                         if !live_reported.contains(&(block.clone(), icon_name.clone()))
                             && !undefined
                                 .iter()
@@ -1761,12 +1810,21 @@ fn print_icon_table(input: IconTableInput) {
             .iter()
             .map(|(name, block)| format!("{name} ({block})"))
             .collect();
-        println!(
-            "note: declared icon name(s) with no definition in your icon set or overrides: {}.\n\
-             Whether they are ever requested depends on block state; the live block test\n\
-             reports failures that actually happen.",
-            listed.join(", ")
-        );
+        // A block can only ever request icons its contract declares, so a
+        // declared name with no definition is a real gap: whenever the
+        // block reaches that state, the bar shows an error instead of the
+        // block.
+        problems.push(Problem {
+            diagnosis: format!(
+                "Icon(s) declared by a block but not defined in your icon set or overrides: {}.",
+                listed.join(", ")
+            ),
+            fix: Some(
+                "Add the name(s) to [icons.overrides] (or the block's icons_overrides), or use \
+                 an icon set that defines them."
+                    .into(),
+            ),
+        });
     }
     if !markup_labels.is_empty() {
         let mut listed: Vec<&str> = markup_labels.iter().map(String::as_str).collect();
