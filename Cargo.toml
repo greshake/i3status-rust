@@ -49,6 +49,7 @@ iana-time-zone = "0.1.60"
 icalendar = { version = "0.17.9", features = ["chrono-tz", "recurrence"] }
 icu_datetime = { version = "2.2", optional = true, default-features = false, features = ["compiled_data"] }
 icu_locale = { version = "2.2", optional = true }
+icu_properties = "2.2"
 indexmap = { version = "2.0", features = ["serde"] }
 inotify = "0.11"
 itertools = "0.13"
@@ -58,13 +59,12 @@ log = "0.4"
 maildir = { version = "0.6", optional = true }
 neli = { version = "0.6", features = ["async"] }
 neli-wifi = { version = "0.6", features = ["async"] }
-icu_properties = "2.2"
-pango = "0.20"
 nix = { version = "0.29", features = ["fs", "process"] }
 nom = "8.0.0"
 notmuch = { version = "0.8", optional = true }
 oauth2 = { version = "5.0.0", default-features = false, features = ["reqwest"] }
 num-traits = "0.2"
+pango = "0.20"
 pipewire = { version = "0.10", default-features = false, optional = true }
 quick-xml = { version = "0.37", features = ["serialize"] }
 regex = "1.5"

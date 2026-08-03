@@ -40,14 +40,13 @@ use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::io::IsTerminal as _;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-
-use icu_properties::CodePointSetData;
-use icu_properties::props::DefaultIgnorableCodePoint;
 use std::time::Duration;
-use unicode_width::UnicodeWidthStr;
 
 use futures::StreamExt as _;
+use icu_properties::CodePointSetData;
+use icu_properties::props::DefaultIgnorableCodePoint;
 use tokio::sync::mpsc;
+use unicode_width::UnicodeWidthStr;
 
 use crate::blocks::CommonApi;
 use crate::config::{BlockConfigEntry, Config, SharedConfig};
@@ -91,8 +90,9 @@ impl Style {
     }
 }
 
-/// Returns the number of problems found, for use as the exit status: 0 means
-/// a clean bill of health.
+/// Returns the number of problems found. The caller turns that into a
+/// conventional exit status: zero when clean, nonzero when doctor found
+/// something.
 pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
     let style = Style::detect();
     let mut problems: Vec<Problem> = Vec::new();
@@ -2543,8 +2543,11 @@ fn detect_bar_font() -> Option<DetectedFont> {
 
 /// The font families an i3/sway font directive names, in order.
 ///
-/// `"pango:DejaVu Sans Mono Bold 12, Font Awesome 6 Free"` →
+/// `"pango:DejaVu Sans Mono, Font Awesome 6 Free Bold 12"` →
 /// `["DejaVu Sans Mono", "Font Awesome 6 Free"]`
+///
+/// (the style and size qualify the whole description, so they follow the
+/// fallback list rather than the first family)
 ///
 /// The description is parsed by pango itself — the same library the bar
 /// hands it to — so doctor cannot disagree with the renderer about where a

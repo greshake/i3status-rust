@@ -147,8 +147,8 @@ It reports, in order:
   explanation for "my icon changed after I installed a font";
 - a numbered list of problems, each with a concrete fix.
 
-The exit status is the number of problems found, so `--doctor` is usable in
-scripts.
+The exit status is zero when nothing is wrong and nonzero when doctor found
+problems, so `--doctor` is usable in scripts.
 
 Running the blocks means doing what they really do: network requests, shell
 commands and D-Bus calls. To inspect only the configuration, icon set and
