@@ -461,3 +461,244 @@ wait "$second"
         "simultaneous index-zero workers must both acquire distinct names:\nfirst: {first}\nsecond: {second}"
     );
 }
+
+#[test]
+fn format_alt_pango_markup_is_inconclusive_without_rendering_that_variant() {
+    let fixture = FixtureDir::new("format-alt-markup");
+    let config = fixture.write(
+        "config.toml",
+        r#"
+error_format = " $short_error_message "
+error_fullscreen_format = " $full_error_message "
+
+[[block]]
+block = "cpu"
+format = " $icon "
+format_alt = " <span font_family='Example'>$icon</span> "
+"#,
+    );
+
+    let output = doctor(&config, true);
+    let stdout = stdout(&output);
+    assert!(output.status.success(), "{stdout}");
+    assert!(
+        stdout
+            .contains("pango markup (from a format, icons_format, or an icon value) affects: cpu"),
+        "every configured format variant must participate in markup scoping:\n{stdout}"
+    );
+}
+
+#[test]
+fn pango_entity_in_format_is_inconclusive() {
+    let fixture = FixtureDir::new("format-entity-markup");
+    let config = fixture.write(
+        "config.toml",
+        r#"
+error_format = " $short_error_message "
+error_fullscreen_format = " $full_error_message "
+
+[[block]]
+block = "load"
+format = " &#x10FFFF; $icon "
+"#,
+    );
+
+    let output = doctor(&config, true);
+    let stdout = stdout(&output);
+    assert!(output.status.success(), "{stdout}");
+    assert!(
+        stdout
+            .contains("pango markup (from a format, icons_format, or an icon value) affects: load"),
+        "Pango character references are markup even without a '<' tag:\n{stdout}"
+    );
+}
+
+#[test]
+fn pango_entity_in_icons_format_is_inconclusive() {
+    let fixture = FixtureDir::new("icons-format-entity-markup");
+    let config = fixture.write(
+        "config.toml",
+        r#"
+icons_format = "&#x10FFFF;{icon}"
+error_format = " $short_error_message "
+error_fullscreen_format = " $full_error_message "
+
+[[block]]
+block = "load"
+format = " $icon "
+"#,
+    );
+
+    let output = doctor(&config, true);
+    let stdout = stdout(&output);
+    assert!(output.status.success(), "{stdout}");
+    assert!(
+        stdout
+            .contains("pango markup (from a format, icons_format, or an icon value) affects: load"),
+        "Pango character references in icons_format make the effective glyph inconclusive:\n{stdout}"
+    );
+}
+
+#[test]
+fn pango_entity_in_icon_value_is_inconclusive() {
+    let fixture = FixtureDir::new("icon-entity-markup");
+    let icons = fixture.write("icons.toml", "cogs = \"&#x10FFFF;\"\n");
+    let config = fixture.write(
+        "config.toml",
+        &format!(
+            r#"
+error_format = " $short_error_message "
+error_fullscreen_format = " $full_error_message "
+
+[[block]]
+block = "load"
+format = " $icon "
+
+[icons]
+icons = "{}"
+"#,
+            toml_path(&icons)
+        ),
+    );
+
+    let output = doctor(&config, true);
+    let stdout = stdout(&output);
+    assert!(output.status.success(), "{stdout}");
+    assert!(
+        stdout.contains("(depends on pango markup)"),
+        "an icon value can contain Pango markup without containing a '<' tag:\n{stdout}"
+    );
+}
+
+#[test]
+fn icons_format_added_glyphs_are_validated_in_static_and_live_modes() {
+    if !fontconfig_can_prove_missing("10ffff") {
+        eprintln!("skipping: fc-list cannot prove U+10FFFF is unavailable");
+        return;
+    }
+
+    let fixture = FixtureDir::new("icons-format-glyph");
+    let icons = fixture.write("icons.toml", "cogs = \"COGS\"\n");
+    let config = fixture.write(
+        "config.toml",
+        &format!(
+            r#"
+icons_format = "{{icon}}􏿿"
+error_format = " $short_error_message "
+error_fullscreen_format = " $full_error_message "
+
+[[block]]
+block = "load"
+format = " $icon "
+
+[icons]
+icons = "{}"
+"#,
+            toml_path(&icons)
+        ),
+    );
+
+    let failures: Vec<String> = [true, false]
+        .into_iter()
+        .filter_map(|skip_live| {
+            let output = doctor(&config, skip_live);
+            let stdout = stdout(&output);
+            (output.status.success() || !stdout.contains("U+10FFFF")).then(|| {
+                format!("skip_live={skip_live} did not diagnose the icons_format glyph:\n{stdout}")
+            })
+        })
+        .collect();
+    assert!(
+        failures.is_empty(),
+        "icons_format output is part of every rendered icon:\n{}",
+        failures.join("\n")
+    );
+}
+
+#[test]
+fn open_icon_contract_is_disclosed_as_partial() {
+    let fixture = FixtureDir::new("open-icon-contract");
+    let config = fixture.write(
+        "config.toml",
+        r#"
+error_format = " $short_error_message "
+error_fullscreen_format = " $full_error_message "
+
+[[block]]
+block = "custom"
+command = '''printf '%s\n' '{"text":"ready"}' '''
+json = true
+interval = "once"
+"#,
+    );
+
+    let output = doctor(&config, false);
+    let stdout = stdout(&output);
+    assert!(output.status.success(), "{stdout}");
+    let lower = stdout.to_lowercase();
+    assert!(
+        lower.contains("dynamic icon") && lower.contains("custom"),
+        "a clean live sample must disclose an explicitly open icon contract:\n{stdout}"
+    );
+}
+
+#[test]
+fn render_error_control_characters_are_escaped() {
+    let fixture = FixtureDir::new("control-render-error");
+    let config = fixture.write(
+        "config.toml",
+        r#"
+error_format = " $short_error_message "
+error_fullscreen_format = " $full_error_message "
+
+[[block]]
+block = "custom"
+command = '''printf '%s\n' '{"text":"x","icon":"\u001b[31mBAD"}' '''
+json = true
+interval = "once"
+"#,
+    );
+
+    let output = doctor(&config, false);
+    let stdout = stdout(&output);
+    assert!(!output.status.success(), "{stdout}");
+    assert!(
+        !stdout.contains('\u{1b}'),
+        "a render error derived from block output must not inject terminal controls:\n{stdout:?}"
+    );
+}
+
+#[test]
+fn icon_table_control_characters_are_escaped() {
+    let fixture = FixtureDir::new("control-icon-table");
+    let icons = fixture.write("icons.toml", r#"cogs = "first\n\u001b[31mRED""#);
+    let config = fixture.write(
+        "config.toml",
+        &format!(
+            r#"
+error_format = " $short_error_message "
+error_fullscreen_format = " $full_error_message "
+
+[[block]]
+block = "load"
+format = " $icon "
+
+[icons]
+icons = "{}"
+"#,
+            toml_path(&icons)
+        ),
+    );
+
+    let output = doctor(&config, true);
+    let stdout = stdout(&output);
+    assert!(output.status.success(), "{stdout:?}");
+    assert!(
+        !stdout.contains('\u{1b}'),
+        "an icon value must not inject terminal controls into its table row:\n{stdout:?}"
+    );
+    assert!(
+        stdout.contains(r"first\n"),
+        "icon-table newlines should be displayed in escaped form:\n{stdout:?}"
+    );
+}

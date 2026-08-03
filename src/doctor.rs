@@ -36,7 +36,7 @@
 //! reported (with install/fix instructions where known) and the rest of the
 //! report still runs.
 
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::io::IsTerminal as _;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -278,8 +278,15 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
     let global_markup = raw
         .get("icons_format")
         .and_then(|v| v.as_str())
-        .is_some_and(|f| f.contains('<'));
+        .is_some_and(contains_markup);
     let mut markup_labels: HashSet<String> = HashSet::new();
+    // The wrapper applied to every icon a block renders: its own
+    // icons_format if it sets one, the global one otherwise.
+    let global_icons_format = raw
+        .get("icons_format")
+        .and_then(|v| v.as_str())
+        .unwrap_or("{icon}");
+    let mut icons_formats: HashMap<String, String> = HashMap::new();
     for (index, label) in labels.iter().enumerate() {
         let table = raw
             .get("block")
@@ -289,10 +296,13 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
         let local_icons_format = table
             .and_then(|t| t.get("icons_format"))
             .and_then(|v| v.as_str())
-            .map(|f| f.contains('<'));
+            .map(contains_markup);
+        // Every format variant the block can switch to, whichever naming
+        // it uses: `format`, `format_alt`, `full_format`, ...
         let format_markup = table.is_some_and(|t| {
             t.iter().any(|(key, value)| {
-                (key == "format" || key.ends_with("_format")) && format_value_contains(value, '<')
+                (key == "format" || key.starts_with("format_") || key.ends_with("_format"))
+                    && format_value_is_markup(value)
             })
         });
         // Error output is rendered by the bar too, with the block's
@@ -301,11 +311,17 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
         let error_markup = ["error_format", "error_fullscreen_format"]
             .into_iter()
             .any(|key| match table.and_then(|t| t.get(key)) {
-                Some(value) => format_value_contains(value, '<'),
-                None => raw
-                    .get(key)
-                    .is_some_and(|value| format_value_contains(value, '<')),
+                Some(value) => format_value_is_markup(value),
+                None => raw.get(key).is_some_and(format_value_is_markup),
             });
+        icons_formats.insert(
+            label.clone(),
+            table
+                .and_then(|t| t.get("icons_format"))
+                .and_then(|v| v.as_str())
+                .unwrap_or(global_icons_format)
+                .to_string(),
+        );
         if local_icons_format.unwrap_or(global_markup) || format_markup || error_markup {
             markup_labels.insert(label.clone());
         }
@@ -383,6 +399,9 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
     // diagnose the same root cause again.
     let mut prepared_errors: HashSet<String> = HashSet::new();
 
+    // Blocks that can request icon names doctor cannot enumerate.
+    let mut open_labels: BTreeSet<String> = BTreeSet::new();
+
     for (index, label) in labels.iter().enumerate() {
         let label = label.clone();
 
@@ -408,6 +427,9 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
 
         if let Some(plan) = &plan {
             let analysis = analyze_plan(plan);
+            if analysis.open {
+                open_labels.insert(label.clone());
+            }
             // Direct ^icon_* tokens in effective formats (including
             // defaults) count the same as declared icons: in use.
             for icon in &analysis.direct {
@@ -500,7 +522,7 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                         // The block's actual output contains pango markup
                         // (from a format, a pango-str value, or an icon):
                         // which font draws its icons is not verifiable.
-                        if check_text.contains('<') {
+                        if contains_markup(check_text) {
                             markup_labels.insert(label.clone());
                         }
                         rendered_texts.push((
@@ -627,6 +649,7 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
         used_now: &used_now,
         may_use: &may_use,
         live_reported: &live_reported,
+        icons_formats: &icons_formats,
         markup_labels: &markup_labels,
         font_check: &mut font_check,
         font_authoritative,
@@ -664,17 +687,35 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
         });
     }
 
+    if !open_labels.is_empty() {
+        println!(
+            "note: dynamic icon source in: {}. These blocks choose icon names at runtime, so\n\
+             doctor cannot enumerate them in advance — the names above are what this run\n\
+             observed, not the complete set.",
+            open_labels
+                .iter()
+                .map(String::as_str)
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
+        println!();
+    }
+
     print_problems(&problems, live_ran, &style);
     problems.len()
 }
 
-/// Whether a format value (string or {full, short} table) contains `needle`.
-fn format_value_contains(value: &toml::Value, needle: char) -> bool {
+/// Whether a string is pango markup: a tag, or a character reference like
+/// `&#x1F600;` (which pango resolves without any tag being present).
+fn contains_markup(s: &str) -> bool {
+    s.contains('<') || s.contains('&')
+}
+
+/// Whether a format value (string or {full, short} table) is markup.
+fn format_value_is_markup(value: &toml::Value) -> bool {
     match value {
-        toml::Value::String(s) => s.contains(needle),
-        toml::Value::Table(t) => t
-            .values()
-            .any(|v| v.as_str().is_some_and(|s| s.contains(needle))),
+        toml::Value::String(s) => contains_markup(s),
+        toml::Value::Table(t) => t.values().any(|v| v.as_str().is_some_and(contains_markup)),
         _ => false,
     }
 }
@@ -1351,11 +1392,15 @@ fn join_error_message(err: tokio::task::JoinError) -> String {
 #[allow(clippy::too_many_arguments)]
 /// The Output cell for one live verdict: (text, is_red).
 fn output_cell(verdict: &LiveVerdict) -> (String, bool) {
+    let (cell, red) = output_cell_raw(verdict);
+    // Everything here is derived from block output, command errors, or
+    // configuration: never let it emit terminal control sequences.
+    (escape_control(&cell), red)
+}
+
+fn output_cell_raw(verdict: &LiveVerdict) -> (String, bool) {
     match verdict {
-        // Block output is arbitrary text from commands and services: show
-        // control characters (newlines, terminal escapes) in escaped form
-        // so a block cannot rewrite doctor's own report.
-        LiveVerdict::Rendered { text, .. } => (format!("\"{}\"", escape_control(text)), false),
+        LiveVerdict::Rendered { text, .. } => (format!("\"{text}\""), false),
         LiveVerdict::RenderError { error, .. } => (format!("RENDER ERROR: {error}"), true),
         LiveVerdict::BlockError(error) => (format!("ERROR: {error}"), true),
         LiveVerdict::Panicked(msg) => (format!("PANICKED: {msg}"), true),
@@ -1415,8 +1460,9 @@ fn print_block_report(
         _ => &[],
     };
     // Icons by name, plus text glyphs the block generated at the source
-    // (country flags): both are font-dependent output.
-    let mut cells: Vec<String> = icons.to_vec();
+    // (country flags): both are font-dependent output. Icon names can come
+    // straight from a command's JSON, so escape them too.
+    let mut cells: Vec<String> = icons.iter().map(|name| escape_control(name)).collect();
     cells.extend(
         report
             .flags
@@ -1453,7 +1499,10 @@ fn print_block_report(
         LiveVerdict::RenderError {
             error, provided, ..
         } => {
-            println!("    values the block provided: {}", provided.join(", "));
+            println!(
+                "    values the block provided: {}",
+                escape_control(&provided.join(", "))
+            );
             let fix = if error.contains("Placeholder") {
                 Some(
                     "The format references a placeholder the block did not provide (it may be \
@@ -1470,7 +1519,7 @@ fn print_block_report(
                 None
             };
             problems.push(Problem {
-                diagnosis: format!("{}: render error: {error}", report.name),
+                diagnosis: format!("{}: render error: {}", report.name, escape_control(error)),
                 fix,
             });
         }
@@ -1479,7 +1528,7 @@ fn print_block_report(
             // with the same root cause; do not diagnose it twice.
             if !prepared_errors.contains(label) {
                 problems.push(Problem {
-                    diagnosis: format!("{}: {error}", report.name),
+                    diagnosis: format!("{}: {}", report.name, escape_control(error)),
                     fix: suggest_fix(&report.name, error),
                 });
             }
@@ -1487,8 +1536,9 @@ fn print_block_report(
         LiveVerdict::Panicked(msg) => {
             problems.push(Problem {
                 diagnosis: format!(
-                    "{}: panicked ({msg}). In the bar this would show a permanent error.",
-                    report.name
+                    "{}: panicked ({}). In the bar this would show a permanent error.",
+                    report.name,
+                    escape_control(msg)
                 ),
                 fix: Some(
                     "This is a bug in i3status-rs; please report it upstream with your block \
@@ -1500,8 +1550,9 @@ fn print_block_report(
         LiveVerdict::IfCommandFailed(reason) => {
             problems.push(Problem {
                 diagnosis: format!(
-                    "{}: {reason} — the bar fails to start when if_command cannot run.",
-                    report.name
+                    "{}: {} — the bar fails to start when if_command cannot run.",
+                    report.name,
+                    escape_control(reason)
                 ),
                 fix: Some("Fix or remove the if_command.".into()),
             });
@@ -1620,6 +1671,9 @@ struct IconTableInput<'a> {
     may_use: &'a BTreeMap<String, Vec<String>>,
     /// (label, icon) pairs already diagnosed by a live render error.
     live_reported: &'a HashSet<(String, String)>,
+    /// Per block label: its effective icons_format (the wrapper applied to
+    /// every icon it renders).
+    icons_formats: &'a HashMap<String, String>,
     /// Block labels whose effective icons_format contains pango markup:
     /// the font drawing their icons is not verified (inconclusive).
     markup_labels: &'a HashSet<String>,
@@ -1637,6 +1691,7 @@ fn print_icon_table(input: IconTableInput) {
         used_now,
         may_use,
         live_reported,
+        icons_formats,
         markup_labels,
         font_check,
         font_authoritative,
@@ -1694,7 +1749,7 @@ fn print_icon_table(input: IconTableInput) {
         // Group the using blocks by what the icon actually resolves to for
         // them (an override REPLACES the base glyph for its block) and by
         // whether their icons_format markup makes the font inconclusive.
-        let mut groups: BTreeMap<(Provenance, bool), Vec<String>> = BTreeMap::new();
+        let mut groups: BTreeMap<(Provenance, bool, String), Vec<String>> = BTreeMap::new();
         for block in users {
             match resolve(icon_name, block) {
                 Some((icon, provenance)) => {
@@ -1712,8 +1767,12 @@ fn print_icon_table(input: IconTableInput) {
                         continue;
                     }
                     let markup = markup_labels.contains(block);
+                    let icons_format = icons_formats
+                        .get(block)
+                        .cloned()
+                        .unwrap_or_else(|| "{icon}".to_string());
                     groups
-                        .entry((provenance, markup))
+                        .entry((provenance, markup, icons_format))
                         .or_default()
                         .push(block.clone());
                 }
@@ -1736,7 +1795,7 @@ fn print_icon_table(input: IconTableInput) {
         if groups.is_empty() {
             continue;
         }
-        for ((provenance, markup), mut blocks) in groups {
+        for ((provenance, markup, icons_format), mut blocks) in groups {
             blocks.sort_unstable();
             let (icon, tag) = match &provenance {
                 Provenance::Base => (base_map.get(icon_name), String::new()),
@@ -1756,6 +1815,7 @@ fn print_icon_table(input: IconTableInput) {
                 icon,
                 &tag,
                 &blocks.join(", "),
+                &icons_format,
                 markup,
                 font_check,
                 &mut fallback_rows,
@@ -1808,7 +1868,7 @@ fn print_icon_table(input: IconTableInput) {
     if !undefined.is_empty() {
         let listed: Vec<String> = undefined
             .iter()
-            .map(|(name, block)| format!("{name} ({block})"))
+            .map(|(name, block)| format!("{} ({block})", escape_control(name)))
             .collect();
         // A block can only ever request icons its contract declares, so a
         // declared name with no definition is a real gap: whenever the
@@ -1882,6 +1942,7 @@ fn push_icon_rows(
     icon: &Icon,
     tag: &str,
     used_by: &str,
+    icons_format: &str,
     markup: bool,
     font_check: &mut Option<FontCheck>,
     fallback_rows: &mut usize,
@@ -1896,10 +1957,13 @@ fn push_icon_rows(
             .collect(),
     };
     for (row_name, glyph) in rows {
-        let codes = codepoints(glyph);
+        // What the bar actually draws: icons_format wraps every icon, and
+        // whatever it adds is rendered with the same font questions.
+        let effective = icons_format.replace("{icon}", glyph);
+        let codes = codepoints(&effective);
         // An icon value containing markup is not a plain glyph: fontconfig
         // cannot be asked which font draws it.
-        let markup = markup || glyph.contains('<');
+        let markup = markup || contains_markup(&effective);
         let (provider, mark) = if markup {
             // Pango markup applies to this icon; doctor does not emulate
             // pango, so which font draws the glyph is unknown.
@@ -1907,7 +1971,7 @@ fn push_icon_rows(
         } else {
             match font_check.as_mut() {
                 None => ("?".to_string(), ""),
-                Some(check) => match glyph_provider(check, glyph) {
+                Some(check) => match glyph_provider(check, &effective) {
                     GlyphProvider::Known(family) => (first_family(&family), ""),
                     GlyphProvider::Fallback(family) => {
                         *fallback_rows += 1;
@@ -1922,7 +1986,9 @@ fn push_icon_rows(
         };
         used_rows.push(IconRow {
             name: row_name,
-            glyph: glyph.to_string(),
+            // Icon values are user-supplied: never let one emit terminal
+            // control sequences into the table.
+            glyph: escape_control(&effective),
             codes,
             provider: format!("{provider}{mark}{tag}"),
             used_by: used_by.to_string(),
