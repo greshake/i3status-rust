@@ -193,18 +193,9 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     };
     // `volume` is removed when muted (unless `show_volume_when_muted`) and
     // `active_port` can be absent or mapped away, so neither is guaranteed.
-    let with_guarantees = |output: OutputPlan| output.icon("icon", icons());
-    let mut outputs = vec![with_guarantees(OutputPlan::new(
-        "main",
-        config.format.with_default(" $icon {$volume.eng(w:2)|} ")?,
-    ))];
-    if let Some(format_alt) = &config.format_alt {
-        outputs.push(with_guarantees(OutputPlan::new(
-            "alt",
-            format_alt.with_default("")?,
-        )));
-    }
-    BlockPlan::new(outputs)
+    let declare = |output: OutputPlan| output.icon("icon", icons());
+    let formats = config.formats.with_default(" $icon {$volume.eng(w:2)|} ")?;
+    BlockPlan::new(format_outputs(&formats, declare))
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -216,12 +207,7 @@ pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Res
         (MouseButton::WheelDown, None, "volume_down"),
     ])?;
 
-    let output_main = plan.output("main")?;
-    let output_alt = match &config.format_alt {
-        Some(_) => Some(plan.output("alt")?),
-        None => None,
-    };
-    let mut alt_shown = false;
+    let mut formats = FormatRotation::new(plan)?;
 
     let device_kind = config.device_kind;
     let step_width = config.step_width.clamp(0, 50) as i32;
@@ -325,10 +311,7 @@ pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Res
             && device_kind == DeviceKind::Sink
             && is_headphones(&*device);
 
-        let output = match (&output_alt, alt_shown) {
-            (Some(alt), true) => alt,
-            _ => &output_main,
-        };
+        let output = formats.current();
         let mut values = map! {
             "icon" => output.icon_progression(
                 "icon",
@@ -360,8 +343,12 @@ pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Res
                 }
                 _ = api.wait_for_update_request() => break,
                 Some(action) = actions.recv() => match action.as_ref() {
-                    "toggle_format" if output_alt.is_some() => {
-                        alt_shown = !alt_shown;
+                    "next_format" | "toggle_format" => {
+                        formats.next();
+                        break;
+                    }
+                    "prev_format" => {
+                        formats.prev();
                         break;
                     }
                     "toggle_mute" => {
@@ -419,14 +406,18 @@ trait SoundDevice {
 mod tests {
     use super::*;
 
+    fn config(toml_str: &str) -> Config {
+        toml::from_str(toml_str).unwrap()
+    }
+
     #[test]
     fn plan_declares_device_kind_specific_icons() {
         // Default: sink without headphones indicator.
         let plan = prepare(&Config::default()).unwrap();
         let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
-        assert_eq!(ids, ["main"]);
+        assert_eq!(ids, ["format"]);
         let choices = plan
-            .output("main")
+            .output("format")
             .unwrap()
             .output()
             .choices_for("icon")
@@ -445,7 +436,7 @@ mod tests {
         };
         let plan = prepare(&config).unwrap();
         let choices = plan
-            .output("main")
+            .output("format")
             .unwrap()
             .output()
             .choices_for("icon")
@@ -465,7 +456,7 @@ mod tests {
         };
         let plan = prepare(&config).unwrap();
         assert!(
-            plan.output("main")
+            plan.output("format")
                 .unwrap()
                 .output()
                 .choices_for("icon")
@@ -482,7 +473,7 @@ mod tests {
         let plan = prepare(&config).unwrap();
         assert!(
             !plan
-                .output("main")
+                .output("format")
                 .unwrap()
                 .output()
                 .choices_for("icon")
@@ -492,16 +483,22 @@ mod tests {
     }
 
     #[test]
-    fn alt_output_exists_only_when_configured() {
+    fn every_configured_format_gets_an_output() {
         let plan = prepare(&Config::default()).unwrap();
-        assert!(plan.output("alt").is_err());
+        assert!(plan.output("format2").is_err());
 
-        let config = Config {
-            format_alt: Some(" $icon $output_name ".parse().unwrap()),
-            ..Config::default()
-        };
-        let plan = prepare(&config).unwrap();
-        let alt = plan.output("alt").unwrap();
+        let plan = prepare(&config(r#"format = [" $icon ", " $icon $output_name "]"#)).unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["format", "format2"]);
+        let alt = plan.output("format2").unwrap();
+        assert!(alt.format().contains_key("output_name"));
+        assert!(alt.output().choices_for("icon").unwrap().permits("volume"));
+    }
+
+    #[test]
+    fn format_alt_still_produces_a_second_output() {
+        let plan = prepare(&config(r#"format_alt = " $icon $output_name ""#)).unwrap();
+        let alt = plan.output("format2").unwrap();
         assert!(alt.format().contains_key("output_name"));
         assert!(alt.output().choices_for("icon").unwrap().permits("volume"));
     }

@@ -85,26 +85,22 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     // conditional and stay undeclared.
     let device_output =
         |output: OutputPlan| output.icon("icon", IconChoices::fixed(NetDevice::ALL_ICONS));
-    let mut outputs = vec![
-        device_output(OutputPlan::new(
-            "main",
-            config.format.with_default(
-                " $icon ^icon_net_down $speed_down.eng(prefix:K) ^icon_net_up $speed_up.eng(prefix:K) ",
-            )?,
-        )),
-        device_output(OutputPlan::new(
-            "inactive",
-            config.inactive_format.with_default(" $icon Down ")?,
-        )),
-        // `missing` sets no values at all: nothing to declare.
-        OutputPlan::new("missing", config.missing_format.with_default(" × ")?),
-    ];
-    if let Some(format_alt) = &config.format_alt {
-        outputs.push(device_output(OutputPlan::new(
-            "alt",
-            format_alt.with_default("")?,
-        )));
-    }
+    let formats = config.formats.with_default(
+        " $icon ^icon_net_down $speed_down.eng(prefix:K) ^icon_net_up $speed_up.eng(prefix:K) ",
+    )?;
+    // One output per format the user can rotate to, plus the two states that
+    // are not format variants at all: an inactive interface and a missing
+    // device each have their own format and are selected by `run()`.
+    let mut outputs = format_outputs(&formats, device_output);
+    outputs.push(device_output(OutputPlan::new(
+        "inactive",
+        config.inactive_format.with_default(" $icon Down ")?,
+    )));
+    // `missing` sets no values at all: nothing to declare.
+    outputs.push(OutputPlan::new(
+        "missing",
+        config.missing_format.with_default(" × ")?,
+    ));
     BlockPlan::new(outputs)
 }
 
@@ -115,14 +111,11 @@ pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Res
         (MouseButton::Right, None, "prev_format"),
     ])?;
 
-    let output_main = plan.output("main")?;
+    // The plan also holds the `inactive` and `missing` states; the rotation
+    // covers the format outputs alone.
+    let mut formats = FormatRotation::new(plan)?;
     let output_inactive = plan.output("inactive")?;
     let output_missing = plan.output("missing")?;
-    let output_alt = match &config.format_alt {
-        Some(_) => Some(plan.output("alt")?),
-        None => None,
-    };
-    let mut alt_shown = false;
 
     let mut timer = config.interval.timer();
 
@@ -146,10 +139,7 @@ pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Res
             }
             Some(device) => {
                 let output = if device.is_up() {
-                    match (&output_alt, alt_shown) {
-                        (Some(alt), true) => alt,
-                        _ => &output_main,
-                    }
+                    formats.current()
                 } else {
                     &output_inactive
                 };
@@ -214,8 +204,12 @@ pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Res
                 _ = timer.tick() => break,
                 _ = api.wait_for_update_request() => break,
                 Some(action) = actions.recv() => match action.as_ref() {
-                    "toggle_format" if output_alt.is_some() => {
-                        alt_shown = !alt_shown;
+                    "next_format" | "toggle_format" => {
+                        formats.next();
+                        break;
+                    }
+                    "prev_format" => {
+                        formats.prev();
                         break;
                     }
                     _ => ()
@@ -238,9 +232,9 @@ mod tests {
     fn plan_declares_device_icon_set_on_every_rendering_state() {
         let plan = prepare(&Config::default()).unwrap();
         let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
-        assert_eq!(ids, ["main", "inactive", "missing"]);
+        assert_eq!(ids, ["format", "inactive", "missing"]);
 
-        for id in ["main", "inactive"] {
+        for id in ["format", "inactive"] {
             let output = plan.output(id).unwrap();
             let choices = output.output().choices_for("icon").unwrap();
             for icon in NetDevice::ALL_ICONS {
@@ -255,18 +249,19 @@ mod tests {
     }
 
     #[test]
-    fn alt_output_exists_only_when_configured() {
+    fn every_configured_format_becomes_an_output() {
         let plan = prepare(&Config::default()).unwrap();
-        assert!(plan.output("alt").is_err());
+        assert!(plan.output("format2").is_err());
 
-        let config = Config {
-            format_alt: Some(" $icon $device ".parse().unwrap()),
-            ..Config::default()
-        };
+        let config: Config = toml::from_str(r#"format = [" $icon ", " $icon $device "]"#).unwrap();
         let plan = prepare(&config).unwrap();
-        let alt = plan.output("alt").unwrap();
-        assert!(alt.format().contains_key("device"));
-        let choices = alt.output().choices_for("icon").unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        // The extra states stay alongside the per-format outputs.
+        assert_eq!(ids, ["format", "format2", "inactive", "missing"]);
+
+        let second = plan.output("format2").unwrap();
+        assert!(second.format().contains_key("device"));
+        let choices = second.output().choices_for("icon").unwrap();
         assert!(choices.permits("net_wireless"));
     }
 

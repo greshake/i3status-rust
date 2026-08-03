@@ -187,7 +187,7 @@ pub enum PlayerName {
 }
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
-    let with_icons = |output: OutputPlan| {
+    let declare = |output: OutputPlan| {
         output
             .icon("icon", IconChoices::one("music"))
             .icon("play", IconChoices::fixed(["music_play", "music_pause"]))
@@ -197,19 +197,10 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
         // `icon` is the only value set both with and without a player;
         // everything else (buttons, player info, volume) is conditional.
     };
-    let mut outputs = vec![with_icons(OutputPlan::new(
-        "main",
-        config
-            .format
-            .with_default(" $icon {$combo.str(max_w:25,rot_interval:0.5) $play |}")?,
-    ))];
-    if let Some(format_alt) = &config.format_alt {
-        outputs.push(with_icons(OutputPlan::new(
-            "alt",
-            format_alt.with_default("")?,
-        )));
-    }
-    BlockPlan::new(outputs)
+    let formats = config
+        .formats
+        .with_default(" $icon {$combo.str(max_w:25,rot_interval:0.5) $play |}")?;
+    BlockPlan::new(format_outputs(&formats, declare))
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -226,12 +217,7 @@ pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Res
 
     let dbus_conn = new_dbus_connection().await?;
 
-    let output_main = plan.output("main")?;
-    let output_alt = match &config.format_alt {
-        Some(_) => Some(plan.output("alt")?),
-        None => None,
-    };
-    let mut alt_shown = false;
+    let mut formats = FormatRotation::new(plan)?;
 
     let volume_step = config.volume_step.clamp(0.0, 50.0) / 100.0;
 
@@ -324,10 +310,7 @@ pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Res
         debug!("available players: {}", DisplaySlice(&players));
 
         let avail = players.len();
-        let output = match (&output_alt, alt_shown) {
-            (Some(alt), true) => alt,
-            _ => &output_main,
-        };
+        let output = formats.current();
         let player = cur_player.map(|c| players.get_mut(c).unwrap());
         match player {
             Some(player) => {
@@ -517,8 +500,12 @@ pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Res
                             "volume_down" => {
                                 player.set_volume(-volume_step).await?;
                             }
-                            "toggle_format" if output_alt.is_some() => {
-                                alt_shown = !alt_shown;
+                            "next_format" | "toggle_format" => {
+                                formats.next();
+                                break;
+                            }
+                            "prev_format" => {
+                                formats.prev();
                                 break;
                             }
                             _ => (),
@@ -731,9 +718,9 @@ mod tests {
     fn plan_declares_every_icon_placeholder() {
         let plan = prepare(&Config::default()).unwrap();
         let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
-        assert_eq!(ids, ["main"]);
+        assert_eq!(ids, ["format"]);
 
-        let main = plan.output("main").unwrap();
+        let main = plan.output("format").unwrap();
         assert_eq!(main.single_icon("icon").unwrap(), "music");
         assert_eq!(main.single_icon("next").unwrap(), "music_next");
         assert_eq!(main.single_icon("prev").unwrap(), "music_prev");
@@ -747,21 +734,20 @@ mod tests {
     }
 
     #[test]
-    fn alt_output_exists_only_when_configured() {
-        let plan = prepare(&Config::default()).unwrap();
-        assert!(plan.output("alt").is_err());
-
-        let config = Config {
-            format_alt: Some(" $icon $player ".parse().unwrap()),
-            ..Config::default()
-        };
+    fn every_configured_format_becomes_an_output() {
+        let config: Config =
+            toml::from_str(r#"format = [" $icon $combo ", " $icon $player "]"#).unwrap();
         let plan = prepare(&config).unwrap();
-        let alt = plan.output("alt").unwrap();
-        assert!(alt.format().contains_key("player"));
-        // The alt output can carry the same icon values as the main one.
-        assert_eq!(alt.single_icon("icon").unwrap(), "music");
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["format", "format2"]);
+
+        // Every format the user can rotate to carries the same icon set.
+        let second = plan.output("format2").unwrap();
+        assert!(second.format().contains_key("player"));
+        assert_eq!(second.single_icon("icon").unwrap(), "music");
         assert!(
-            alt.output()
+            second
+                .output()
                 .choices_for("play")
                 .unwrap()
                 .permits("music_pause")

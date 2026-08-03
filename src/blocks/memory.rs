@@ -97,23 +97,17 @@ pub struct Config {
 }
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    // Both icons are available in every format, and every numeric value
+    // below is inserted on every render.
     let icons = |output: OutputPlan| {
-        let output = output
-            .icon("icon", IconChoices::one("memory_mem"))
-            .icon("icon_swap", IconChoices::one("memory_swap"));
-        // Every numeric value below is inserted on every render.
         output
+            .icon("icon", IconChoices::one("memory_mem"))
+            .icon("icon_swap", IconChoices::one("memory_swap"))
     };
-    let mut outputs = vec![icons(OutputPlan::new(
-        "main",
-        config.format.with_default(
-            " $icon $mem_used.eng(prefix:Mi)/$mem_total.eng(prefix:Mi)($mem_used_percents.eng(w:2)) ",
-        )?,
-    ))];
-    if let Some(format_alt) = &config.format_alt {
-        outputs.push(icons(OutputPlan::new("alt", format_alt.with_default("")?)));
-    }
-    BlockPlan::new(outputs)
+    let formats = config.formats.with_default(
+        " $icon $mem_used.eng(prefix:Mi)/$mem_total.eng(prefix:Mi)($mem_used_percents.eng(w:2)) ",
+    )?;
+    BlockPlan::new(format_outputs(&formats, icons))
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -123,12 +117,7 @@ pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Res
         (MouseButton::Right, None, "prev_format"),
     ])?;
 
-    let output_main = plan.output("main")?;
-    let output_alt = match &config.format_alt {
-        Some(_) => Some(plan.output("alt")?),
-        None => None,
-    };
-    let mut alt_shown = false;
+    let mut formats = FormatRotation::new(plan)?;
 
     let mut timer = config.interval.timer();
 
@@ -202,10 +191,7 @@ pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Res
             0.0
         };
 
-        let output = match (&output_alt, alt_shown) {
-            (Some(alt), true) => alt,
-            _ => &output_main,
-        };
+        let output = formats.current();
         let mut widget = output.new_widget();
         widget.set_values(map! {
             "icon" => output.icon_value("icon")?,
@@ -264,8 +250,12 @@ pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Res
                 _ = timer.tick() => break,
                 _ = api.wait_for_update_request() => break,
                 Some(action) = actions.recv() => match action.as_ref() {
-                    "toggle_format" if output_alt.is_some() => {
-                        alt_shown = !alt_shown;
+                    "next_format" | "toggle_format" => {
+                        formats.next();
+                        break;
+                    }
+                    "prev_format" => {
+                        formats.prev();
                         break;
                     }
                     _ => (),
@@ -413,26 +403,26 @@ mod tests {
     fn plan_declares_both_memory_icons() {
         let plan = prepare(&Config::default()).unwrap();
         let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
-        assert_eq!(ids, ["main"]);
-        let main = plan.output("main").unwrap();
-        assert_eq!(main.single_icon("icon").unwrap(), "memory_mem");
-        assert_eq!(main.single_icon("icon_swap").unwrap(), "memory_swap");
-        assert!(main.format().contains_key("mem_used"));
+        assert_eq!(ids, ["format"]);
+        let format = plan.output("format").unwrap();
+        assert_eq!(format.single_icon("icon").unwrap(), "memory_mem");
+        assert_eq!(format.single_icon("icon_swap").unwrap(), "memory_swap");
+        assert!(format.format().contains_key("mem_used"));
     }
 
     #[test]
-    fn alt_output_exists_only_when_configured() {
+    fn every_configured_format_declares_both_icons() {
         let plan = prepare(&Config::default()).unwrap();
-        assert!(plan.output("alt").is_err());
+        assert!(plan.output("format2").is_err());
 
-        let config = Config {
-            format_alt: Some(" $icon_swap $swap_used ".parse().unwrap()),
-            ..Config::default()
-        };
+        let config: Config =
+            toml::from_str(r#"format = [" $icon $mem_used ", " $icon_swap $swap_used "]"#).unwrap();
         let plan = prepare(&config).unwrap();
-        let alt = plan.output("alt").unwrap();
-        assert!(alt.format().contains_key("swap_used"));
-        assert_eq!(alt.single_icon("icon").unwrap(), "memory_mem");
-        assert_eq!(alt.single_icon("icon_swap").unwrap(), "memory_swap");
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["format", "format2"]);
+        let second = plan.output("format2").unwrap();
+        assert!(second.format().contains_key("swap_used"));
+        assert_eq!(second.single_icon("icon").unwrap(), "memory_mem");
+        assert_eq!(second.single_icon("icon_swap").unwrap(), "memory_swap");
     }
 }

@@ -444,22 +444,13 @@ impl Forecast {
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     let weather_icons = || IconChoices::fixed(WeatherIcon::ALL_NAMES);
-    let mut outputs = vec![
-        OutputPlan::new(
-            "main",
-            config.format.with_default(" $icon $weather $temp ")?,
-        )
-        .icon("icon", weather_icons())
-        .icon("icon_ffin", weather_icons()),
-    ];
-    if let Some(format_alt) = &config.format_alt {
-        outputs.push(
-            OutputPlan::new("alt", format_alt.with_default("")?)
-                .icon("icon", weather_icons())
-                .icon("icon_ffin", weather_icons()),
-        );
-    }
-    BlockPlan::new(outputs)
+    let declare = |output: OutputPlan| {
+        output
+            .icon("icon", weather_icons())
+            .icon("icon_ffin", weather_icons())
+    };
+    let formats = config.formats.with_default(" $icon $weather $temp ")?;
+    BlockPlan::new(format_outputs(&formats, declare))
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -469,12 +460,7 @@ pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Res
         (MouseButton::Right, None, "prev_format"),
     ])?;
 
-    let output_main = plan.output("main")?;
-    let output_alt = match &config.format_alt {
-        Some(_) => Some(plan.output("alt")?),
-        None => None,
-    };
-    let mut alt_shown = false;
+    let mut formats = FormatRotation::new(plan)?;
 
     let (provider, service_units): (Box<dyn WeatherProvider + Send + Sync>, UnitSystem) =
         match &config.service {
@@ -493,11 +479,12 @@ pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Res
         };
     let units = config.units.unwrap_or(service_units);
 
-    let autolocate_interval = config.autolocate_interval.unwrap_or(config.interval);
-    let need_forecast = need_forecast(
-        output_main.format(),
-        output_alt.as_ref().map(|o| o.format()),
-    );
+    let autolocate_interval = config.autolocate_interval.unwrap_or(config.interval).0;
+    // The plan holds one output per configured format, so the formats the
+    // user can rotate to are exactly the ones a forecast may be needed for.
+    let need_forecast = need_forecast(&MultiFormat::new(
+        plan.outputs().map(|o| o.format().clone()).collect(),
+    ));
 
     let mut timer = config.interval.timer();
 
@@ -511,15 +498,12 @@ pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Res
 
         let fetch = || provider.get_weather(location.as_ref(), need_forecast);
         let data = fetch.retry(ExponentialBuilder::default()).await?;
-        // Both outputs declare the same icon choices, so minting against
-        // "main" is valid for whichever output renders the values.
-        let data_values = data.into_values(&units, &output_main)?;
+        // Every output declares the same icon choices, so minting against the
+        // currently selected one stays valid after a format rotation.
+        let data_values = data.into_values(&units, formats.current())?;
 
         loop {
-            let output = match (&output_alt, alt_shown) {
-                (Some(alt), true) => alt,
-                _ => &output_main,
-            };
+            let output = formats.current();
             let mut widget = output.new_widget();
             widget.set_values(data_values.clone());
             api.set_widget(widget)?;
@@ -528,8 +512,11 @@ pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Res
                 _ = timer.tick() => break,
                 _ = api.wait_for_update_request() => break,
                 Some(action) = actions.recv() => match action.as_ref() {
-                        "toggle_format" if output_alt.is_some() => {
-                            alt_shown = !alt_shown;
+                        "next_format" | "toggle_format" => {
+                            formats.next();
+                        }
+                        "prev_format" => {
+                            formats.prev();
                         }
                         _ => (),
                     }
@@ -763,19 +750,54 @@ mod tests {
     }
 
     #[test]
-    fn alt_output_exists_only_when_configured() {
+    fn every_configured_format_gets_an_output() {
         let plan = prepare(&config("service = { name = \"metno\" }")).unwrap();
-        assert!(plan.output("main").is_ok());
-        assert!(plan.output("alt").is_err());
+        assert!(plan.output("format").is_ok());
+        assert!(plan.output("format2").is_err());
 
         let plan = prepare(&config(
-            "service = { name = \"metno\" }\nformat_alt = \" $humidity \"",
+            "service = { name = \"metno\" }\nformat = [\" $icon $temp \", \" $humidity \"]",
         ))
         .unwrap();
-        let alt = plan.output("alt").unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["format", "format2"]);
+        let alt = plan.output("format2").unwrap();
         assert!(alt.format().contains_key("humidity"));
         let choices = alt.output().choices_for("icon").unwrap();
         assert!(choices.permits("weather_snow"));
         assert!(!choices.permits("bat"));
+    }
+
+    #[test]
+    fn format_alt_still_produces_a_second_output() {
+        let plan = prepare(&config(
+            "service = { name = \"metno\" }\nformat_alt = \" $humidity \"",
+        ))
+        .unwrap();
+        let alt = plan.output("format2").unwrap();
+        assert!(alt.format().contains_key("humidity"));
+        assert!(
+            alt.output()
+                .choices_for("icon_ffin")
+                .unwrap()
+                .permits("weather_default")
+        );
+    }
+
+    #[test]
+    fn forecast_is_needed_when_any_rotated_format_asks_for_it() {
+        let plan = prepare(&config(
+            "service = { name = \"metno\" }\nformat = [\" $icon $temp \", \" $temp_favg \"]",
+        ))
+        .unwrap();
+        let formats = MultiFormat::new(plan.outputs().map(|o| o.format().clone()).collect());
+        assert!(need_forecast(&formats));
+
+        let plan = prepare(&config(
+            "service = { name = \"metno\" }\nformat = [\" $icon $temp \", \" $humidity \"]",
+        ))
+        .unwrap();
+        let formats = MultiFormat::new(plan.outputs().map(|o| o.format().clone()).collect());
+        assert!(!need_forecast(&formats));
     }
 }

@@ -75,15 +75,11 @@ pub enum Timezone {
 }
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
-    BlockPlan::new(vec![
-        OutputPlan::new(
-            "main",
-            config
-                .format
-                .with_default(" $icon $timestamp.datetime() ")?,
-        )
-        .icon("icon", IconChoices::one("time")),
-    ])
+    let declare = |output: OutputPlan| output.icon("icon", IconChoices::one("time"));
+    let formats = config
+        .formats
+        .with_default(" $icon $timestamp.datetime() ")?;
+    BlockPlan::new(format_outputs(&formats, declare))
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -93,7 +89,7 @@ pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Res
         (MouseButton::Right, None, "prev_timezone"),
     ])?;
 
-    let output_main = plan.output("main")?;
+    let mut formats = FormatRotation::new(plan)?;
 
     let timezones = match config.timezone.clone() {
         Some(tzs) => match tzs {
@@ -118,11 +114,12 @@ pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Res
     timer.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
 
     loop {
-        let mut widget = output_main.new_widget();
+        let output = formats.current();
+        let mut widget = output.new_widget();
         let now = Utc::now();
 
         widget.set_values(map! {
-            "icon" => output_main.icon_value("icon")?,
+            "icon" => output.icon_value("icon")?,
             "timestamp" => Value::datetime(now, timezone.copied())
         });
 
@@ -144,10 +141,10 @@ pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Res
                     timezone = timezone_iter.nth(prev_step_length);
                 },
                 "next_format" => {
-                    formats.next_format();
+                    formats.next();
                 },
                 "prev_format" => {
-                   formats.prev_format();
+                   formats.prev();
                 },
                 _ => (),
             }
@@ -159,25 +156,38 @@ pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Res
 mod tests {
     use super::*;
 
+    fn config(toml_str: &str) -> Config {
+        toml::from_str(toml_str).unwrap()
+    }
+
     #[test]
     fn plan_declares_single_output_with_time_icon() {
         let plan = prepare(&Config::default()).unwrap();
         let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
-        assert_eq!(ids, ["main"]);
-        let main = plan.output("main").unwrap();
+        assert_eq!(ids, ["format"]);
+        let main = plan.output("format").unwrap();
         assert_eq!(main.single_icon("icon").unwrap(), "time");
         assert!(main.format().contains_key("timestamp"));
     }
 
     #[test]
     fn plan_uses_configured_format() {
-        let config = Config {
-            format: " $timestamp.datetime(f:%R) ".parse().unwrap(),
-            ..Config::default()
-        };
-        let plan = prepare(&config).unwrap();
-        let main = plan.output("main").unwrap();
+        let plan = prepare(&config(r#"format = " $timestamp.datetime(f:%R) ""#)).unwrap();
+        let main = plan.output("format").unwrap();
         assert!(main.format().contains_key("timestamp"));
         assert!(!main.format().contains_key("icon"));
+    }
+
+    #[test]
+    fn every_configured_format_gets_an_output() {
+        let plan = prepare(&config(
+            r#"format = [" $icon ", " $icon $timestamp.datetime(f:%R) "]"#,
+        ))
+        .unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["format", "format2"]);
+        let second = plan.output("format2").unwrap();
+        assert!(second.format().contains_key("timestamp"));
+        assert_eq!(second.single_icon("icon").unwrap(), "time");
     }
 }

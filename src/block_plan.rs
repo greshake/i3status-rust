@@ -85,22 +85,22 @@ pub struct IconToken {
 /// values the block guarantees to provide on every render.
 #[derive(Debug, Clone)]
 pub struct OutputPlan {
-    id: &'static str,
+    id: Cow<'static, str>,
     format: Format,
     icons: Vec<(&'static str, IconChoices)>,
 }
 
 impl OutputPlan {
-    pub fn new(id: &'static str, format: Format) -> Self {
+    pub fn new(id: impl Into<Cow<'static, str>>, format: Format) -> Self {
         Self {
-            id,
+            id: id.into(),
             format,
             icons: Vec::new(),
         }
     }
 
-    pub fn id(&self) -> &'static str {
-        self.id
+    pub fn id(&self) -> &str {
+        &self.id
     }
 
     pub fn format(&self) -> &Format {
@@ -123,6 +123,64 @@ impl OutputPlan {
 
     pub fn icon_placeholders(&self) -> impl Iterator<Item = (&'static str, &IconChoices)> {
         self.icons.iter().map(|(p, c)| (*p, c))
+    }
+}
+
+/// One [`OutputPlan`] per format the user configured, so a block that can
+/// rotate through several formats declares each of them. `declare` adds the
+/// icon choices, which are the same whichever format is on screen.
+pub fn format_outputs(
+    formats: &crate::formatting::MultiFormat,
+    declare: impl Fn(OutputPlan) -> OutputPlan,
+) -> Vec<OutputPlan> {
+    formats
+        .iter()
+        .enumerate()
+        .map(|(index, format)| declare(OutputPlan::new(format_id(index), format.clone())))
+        .collect()
+}
+
+/// The output id of the `index`th configured format.
+pub fn format_id(index: usize) -> Cow<'static, str> {
+    match index {
+        0 => "format".into(),
+        n => format!("format{}", n + 1).into(),
+    }
+}
+
+/// Rotating over the outputs [`format_outputs`] produced, mirroring the
+/// bar's own next/prev format actions.
+pub struct FormatRotation {
+    outputs: Vec<OutputHandle>,
+    index: usize,
+}
+
+impl FormatRotation {
+    /// Collects the plan's format outputs. A block may declare further
+    /// outputs for states that are not format variants (net's `inactive`
+    /// and `missing`); those are left alone.
+    pub fn new(plan: &Arc<BlockPlan>) -> Result<Self> {
+        let outputs: Vec<OutputHandle> = (0..)
+            .map_while(|index| plan.output(&format_id(index)).ok())
+            .collect();
+        if outputs.is_empty() {
+            return Err(Error::new(
+                "block contract bug: no format outputs to rotate over",
+            ));
+        }
+        Ok(Self { outputs, index: 0 })
+    }
+
+    pub fn current(&self) -> &OutputHandle {
+        &self.outputs[self.index]
+    }
+
+    pub fn next(&mut self) {
+        self.index = (self.index + 1) % self.outputs.len();
+    }
+
+    pub fn prev(&mut self) {
+        self.index = (self.index + self.outputs.len() - 1) % self.outputs.len();
     }
 }
 
@@ -195,8 +253,8 @@ impl OutputHandle {
         &self.plan.outputs[self.index]
     }
 
-    pub fn id(&self) -> &'static str {
-        self.output().id
+    pub fn id(&self) -> &str {
+        self.output().id()
     }
 
     pub fn format(&self) -> &Format {

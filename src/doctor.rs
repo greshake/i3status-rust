@@ -335,8 +335,8 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
             .and_then(|t| t.get("icons_format"))
             .and_then(|v| v.as_str())
             .map(contains_markup);
-        // Every format variant the block can switch to, whichever naming
-        // it uses: `format`, `format_alt`, `full_format`, ...
+        // Every format the block can show, whichever naming it uses: a
+        // `format` list, `full_format`, `disconnected_format`, ...
         let format_markup = table.is_some_and(|t| {
             t.iter().any(|(key, value)| {
                 (key == "format" || key.starts_with("format_") || key.ends_with("_format"))
@@ -788,6 +788,9 @@ fn format_value_is_markup(value: &toml::Value) -> bool {
     match value {
         toml::Value::String(s) => contains_markup(s),
         toml::Value::Table(t) => t.values().any(|v| v.as_str().is_some_and(contains_markup)),
+        // A block can rotate through several formats, so a format value may
+        // be a list of any of the above.
+        toml::Value::Array(items) => items.iter().any(format_value_is_markup),
         _ => false,
     }
 }

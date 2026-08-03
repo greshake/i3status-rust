@@ -184,14 +184,16 @@ impl PrivacyDriver {
 }
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
-    let format = config.format.with_default(
-        "{ $icon_audio |}{ $icon_audio_sink |}{ $icon_video |}{ $icon_webcam |}{ $icon_unknown |}",
-    )?;
-    let format_alt = config.format_alt.with_default("{ $icon_audio $info_audio |}{ $icon_audio_sink $info_audio_sink |}{ $icon_video $info_video |}{ $icon_webcam $info_webcam |}{ $icon_unknown $info_unknown |}")?;
+    let formats = config.formats.with_default_formats(&[
+        "{ $icon_audio |}{ $icon_audio_sink |}{ $icon_video |}{ $icon_webcam |}{ $icon_unknown |}"
+            .parse()?,
+        "{ $icon_audio $info_audio |}{ $icon_audio_sink $info_audio_sink |}{ $icon_video $info_video |}{ $icon_webcam $info_webcam |}{ $icon_unknown $info_unknown |}"
+            .parse()?,
+    ]);
 
     // Only capture types some configured driver can actually report are
     // declared: a V4L-only setup can never set the audio or video icons.
-    let with_icons = |mut output: OutputPlan| {
+    let declare = |mut output: OutputPlan| {
         for (ty, placeholder, icon) in &TYPE_ICONS {
             if config
                 .driver
@@ -203,10 +205,7 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
         }
         output
     };
-    BlockPlan::new(vec![
-        with_icons(OutputPlan::new("main", format)),
-        with_icons(OutputPlan::new("alt", format_alt)),
-    ])
+    BlockPlan::new(format_outputs(&formats, declare))
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -216,9 +215,7 @@ pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Res
         (MouseButton::Right, None, "prev_format"),
     ])?;
 
-    let output_main = plan.output("main")?;
-    let output_alt = plan.output("alt")?;
-    let mut alt_shown = false;
+    let mut formats = FormatRotation::new(plan)?;
 
     let mut drivers: Vec<Box<dyn PrivacyMonitor + Send + Sync>> = Vec::new();
 
@@ -235,7 +232,7 @@ pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Res
     }
 
     loop {
-        let output = if alt_shown { &output_alt } else { &output_main };
+        let output = formats.current();
         let mut widget = output.new_widget();
 
         let mut info = PrivacyInfo::default();
@@ -293,8 +290,11 @@ pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Res
             _ = api.wait_for_update_request() => (),
             _ = select_all(drivers.iter_mut().map(|driver| driver.wait_for_change())) =>(),
             Some(action) = actions.recv() => match action.as_ref() {
-                "toggle_format" => {
-                    alt_shown = !alt_shown;
+                "next_format" | "toggle_format" => {
+                    formats.next();
+                }
+                "prev_format" => {
+                    formats.prev();
                 }
                 _ => (),
             }
@@ -308,8 +308,7 @@ mod tests {
 
     fn config() -> Config {
         Config {
-            format: Default::default(),
-            format_alt: Default::default(),
+            formats: Default::default(),
             driver: Vec::new(),
         }
     }
@@ -324,7 +323,7 @@ mod tests {
         let config = config_with_drivers("[[driver]]\nname = \"v4l\"");
         let plan = prepare(&config).unwrap();
         let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
-        assert_eq!(ids, ["main", "alt"]);
+        assert_eq!(ids, ["format", "format2"]);
         for id in ids {
             let output = plan.output(id).unwrap();
             assert_eq!(output.single_icon("icon_webcam").unwrap(), "webcam");
@@ -341,7 +340,7 @@ mod tests {
     fn pipewire_declares_every_type_icon() {
         let config = config_with_drivers("[[driver]]\nname = \"pipewire\"");
         let plan = prepare(&config).unwrap();
-        for id in ["main", "alt"] {
+        for id in ["format", "format2"] {
             let output = plan.output(id).unwrap();
             for (_, placeholder, icon) in &TYPE_ICONS {
                 assert_eq!(
@@ -383,20 +382,38 @@ mod tests {
     }
 
     #[test]
-    fn alt_output_uses_the_alternate_format() {
+    fn the_second_default_format_is_the_detailed_one() {
         let plan = prepare(&config()).unwrap();
         assert!(
             !plan
-                .output("main")
+                .output("format")
                 .unwrap()
                 .format()
                 .contains_key("info_audio")
         );
         assert!(
-            plan.output("alt")
+            plan.output("format2")
                 .unwrap()
                 .format()
                 .contains_key("info_audio")
         );
+    }
+
+    #[test]
+    fn every_configured_format_becomes_an_output() {
+        let config: Config = toml::from_str(
+            "format = [\"{ $icon_webcam |}\", \"{ $icon_webcam $info_webcam |}\"]\n\
+             [[driver]]\nname = \"v4l\"",
+        )
+        .unwrap();
+        let plan = prepare(&config).unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["format", "format2"]);
+        for id in ids {
+            assert_eq!(
+                plan.output(id).unwrap().single_icon("icon_webcam").unwrap(),
+                "webcam"
+            );
+        }
     }
 }

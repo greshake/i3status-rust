@@ -92,17 +92,8 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
             .icon("icon", IconChoices::one("cpu"))
             .icon("boost", IconChoices::fixed(BOOST_ICON_NAMES))
     };
-    let mut outputs = vec![declare(OutputPlan::new(
-        "main",
-        config.format.with_default(" $icon $utilization ")?,
-    ))];
-    if let Some(format_alt) = &config.format_alt {
-        outputs.push(declare(OutputPlan::new(
-            "alt",
-            format_alt.with_default("")?,
-        )));
-    }
-    BlockPlan::new(outputs)
+    let formats = config.formats.with_default(" $icon $utilization ")?;
+    BlockPlan::new(format_outputs(&formats, declare))
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -112,12 +103,7 @@ pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Res
         (MouseButton::Right, None, "prev_format"),
     ])?;
 
-    let output_main = plan.output("main")?;
-    let output_alt = match &config.format_alt {
-        Some(_) => Some(plan.output("alt")?),
-        None => None,
-    };
-    let mut alt_shown = false;
+    let mut formats = FormatRotation::new(plan)?;
 
     // Store previous /proc/stat state
     let mut cputime = read_proc_stat().await?;
@@ -154,10 +140,7 @@ pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Res
         // Read boost state on intel CPUs
         let boost = boost_status().await.map(boost_icon);
 
-        let output = match (&output_alt, alt_shown) {
-            (Some(alt), true) => alt,
-            _ => &output_main,
-        };
+        let output = formats.current();
 
         let mut values = map!(
             "icon" => output.icon_progression("icon", "cpu", utilization_avg)?,
@@ -194,8 +177,12 @@ pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Res
                 _ = timer.tick() => break,
                 _ = api.wait_for_update_request() => break,
                 Some(action) = actions.recv() => match action.as_ref() {
-                    "toggle_format" if output_alt.is_some() => {
-                        alt_shown = !alt_shown;
+                    "next_format" | "toggle_format" => {
+                        formats.next();
+                        break;
+                    }
+                    "prev_format" => {
+                        formats.prev();
                         break;
                     }
                     _ => (),
@@ -314,27 +301,28 @@ mod tests {
     #[test]
     fn plan_declares_icon_and_boost_choices() {
         let plan = prepare(&Config::default()).unwrap();
-        let main = plan.output("main").unwrap();
-        assert_eq!(main.single_icon("icon").unwrap(), "cpu");
-        let boost = main.output().choices_for("boost").unwrap();
+        let format = plan.output("format").unwrap();
+        assert_eq!(format.single_icon("icon").unwrap(), "cpu");
+        let boost = format.output().choices_for("boost").unwrap();
         assert!(boost.permits("cpu_boost_on"));
         assert!(boost.permits("cpu_boost_off"));
         assert!(!boost.permits("cpu"));
-        assert!(plan.output("alt").is_err());
+        // One format configured, so there is nothing to rotate to.
+        assert!(plan.output("format2").is_err());
     }
 
     #[test]
-    fn alt_output_mirrors_icon_declarations() {
-        let config = Config {
-            format_alt: Some(" $icon $frequency ".parse().unwrap()),
-            ..Config::default()
-        };
+    fn every_configured_format_becomes_an_output() {
+        let config: Config =
+            toml::from_str(r#"format = [" $icon ", " $icon $frequency "]"#).unwrap();
         let plan = prepare(&config).unwrap();
-        let alt = plan.output("alt").unwrap();
-        assert!(alt.format().contains_key("frequency"));
-        assert_eq!(alt.single_icon("icon").unwrap(), "cpu");
+        let second = plan.output("format2").unwrap();
+        assert!(second.format().contains_key("frequency"));
+        // Every format the user can rotate to carries the same contract.
+        assert_eq!(second.single_icon("icon").unwrap(), "cpu");
         assert!(
-            alt.output()
+            second
+                .output()
                 .choices_for("boost")
                 .unwrap()
                 .permits("cpu_boost_off")
@@ -347,5 +335,25 @@ mod tests {
             assert!(BOOST_ICON_NAMES.contains(&boost_icon(on)));
         }
         assert_eq!(BOOST_ICON_NAMES.len(), 2);
+    }
+
+    #[test]
+    fn legacy_format_alt_still_declares_both_formats() {
+        // Upstream kept `format` + `format_alt` working alongside the new
+        // list form, so both spellings must yield two outputs.
+        let split: Config =
+            toml::from_str("format = \" $icon \"\nformat_alt = \" $icon $frequency \"").unwrap();
+        let list: Config = toml::from_str(r#"format = [" $icon ", " $icon $frequency "]"#).unwrap();
+        for config in [split, list] {
+            let plan = prepare(&config).unwrap();
+            let ids: Vec<_> = plan.outputs().map(|o| o.id().to_string()).collect();
+            assert_eq!(ids, ["format", "format2"]);
+            assert!(
+                plan.output("format2")
+                    .unwrap()
+                    .format()
+                    .contains_key("frequency")
+            );
+        }
     }
 }

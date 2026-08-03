@@ -54,20 +54,11 @@ pub struct Config {
 }
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
-    // Both outputs render the same value set, built unconditionally on
+    // Every output renders the same value set, built unconditionally on
     // every update.
     let declare = |output: OutputPlan| output.icon("icon", IconChoices::one("gpu"));
-    let mut outputs = vec![declare(OutputPlan::new(
-        "main",
-        config.format.with_default(" $icon $utilization ")?,
-    ))];
-    if let Some(format_alt) = &config.format_alt {
-        outputs.push(declare(OutputPlan::new(
-            "alt",
-            format_alt.with_default("")?,
-        )));
-    }
-    BlockPlan::new(outputs)
+    let formats = config.formats.with_default(" $icon $utilization ")?;
+    BlockPlan::new(format_outputs(&formats, declare))
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -77,12 +68,7 @@ pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Res
         (MouseButton::Right, None, "prev_format"),
     ])?;
 
-    let output_main = plan.output("main")?;
-    let output_alt = match &config.format_alt {
-        Some(_) => Some(plan.output("alt")?),
-        None => None,
-    };
-    let mut alt_shown = false;
+    let mut formats = FormatRotation::new(plan)?;
 
     let device = match &config.device {
         Some(name) => Device::new(name).await?,
@@ -93,10 +79,7 @@ pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Res
     };
 
     loop {
-        let output = match (&output_alt, alt_shown) {
-            (Some(alt), true) => alt,
-            _ => &output_main,
-        };
+        let output = formats.current();
         let mut widget = output.new_widget();
 
         let info = device.read_info().await?;
@@ -123,8 +106,12 @@ pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Res
                 _ = sleep(config.interval.0) => break,
                 _ = api.wait_for_update_request() => break,
                 Some(action) = actions.recv() => match action.as_ref() {
-                    "toggle_format" if output_alt.is_some() => {
-                        alt_shown = !alt_shown;
+                    "next_format" | "toggle_format" => {
+                        formats.next();
+                        break;
+                    }
+                    "prev_format" => {
+                        formats.prev();
                         break;
                     }
                     _ => (),
@@ -217,23 +204,24 @@ mod tests {
     }
 
     #[test]
-    fn plan_declares_main_with_gpu_icon() {
+    fn plan_declares_single_format_with_gpu_icon() {
         let plan = prepare(&Config::default()).unwrap();
-        let main = plan.output("main").unwrap();
-        assert_eq!(main.single_icon("icon").unwrap(), "gpu");
-        assert!(main.format().contains_key("utilization"));
-        assert!(plan.output("alt").is_err());
+        let format = plan.output("format").unwrap();
+        assert_eq!(format.single_icon("icon").unwrap(), "gpu");
+        assert!(format.format().contains_key("utilization"));
+        assert!(plan.output("format2").is_err());
     }
 
     #[test]
-    fn alt_output_exists_only_when_configured() {
-        let config = Config {
-            format_alt: Some(" $icon $vram_used_percents ".parse().unwrap()),
-            ..Config::default()
-        };
+    fn every_configured_format_is_declared() {
+        let config: Config =
+            toml::from_str(r#"format = [" $icon $utilization ", " $icon $vram_used_percents "]"#)
+                .unwrap();
         let plan = prepare(&config).unwrap();
-        let alt = plan.output("alt").unwrap();
-        assert!(alt.format().contains_key("vram_used_percents"));
-        assert_eq!(alt.single_icon("icon").unwrap(), "gpu");
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["format", "format2"]);
+        let second = plan.output("format2").unwrap();
+        assert!(second.format().contains_key("vram_used_percents"));
+        assert_eq!(second.single_icon("icon").unwrap(), "gpu");
     }
 }
