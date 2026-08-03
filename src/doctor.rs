@@ -599,6 +599,9 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                     &label,
                 );
             }
+            if reports.iter().any(|report| !report.flags.is_empty()) {
+                println!("{FLAG_FOOTNOTE}");
+            }
             println!();
         }
     }
@@ -1466,6 +1469,17 @@ fn escape_control_multiline(text: &str) -> String {
         .join("\n")
 }
 
+/// Marks a country flag a block generated. The `*` points at
+/// [`FLAG_FOOTNOTE`]: the same codepoints ligate into a flag on the bar
+/// but usually not in a terminal, so what doctor prints and what the bar
+/// draws can differ.
+fn flag_cell(country_code: &str, flag: &str) -> String {
+    format!("{flag} ({country_code} country flag) *")
+}
+
+const FLAG_FOOTNOTE: &str = "* Country flags are drawn differently in your terminal than on your bar, so a flag above \
+     may not look like the one the bar shows.";
+
 /// Render control characters visibly, leaving printable text (including
 /// icon glyphs and flags) untouched.
 fn escape_control(text: &str) -> String {
@@ -1507,7 +1521,7 @@ fn print_block_report(
         report
             .flags
             .iter()
-            .map(|(code, flag)| format!("{flag} ({code} country flag)")),
+            .map(|(code, flag)| flag_cell(code, flag)),
     );
     let icons_cell = if cells.is_empty() {
         "-".to_string()
@@ -2697,6 +2711,15 @@ mod tests {
         );
         assert_eq!(parse_font_directive(""), Vec::<String>::new());
         assert_eq!(parse_font_directive("pango:"), Vec::<String>::new());
+    }
+
+    #[test]
+    fn flag_cells_point_at_the_terminal_footnote() {
+        let cell = flag_cell("US", "\u{1f1fa}\u{1f1f8}");
+        assert_eq!(cell, "\u{1f1fa}\u{1f1f8} (US country flag) *");
+        // The marker is only useful if the footnote explaining it exists.
+        assert!(FLAG_FOOTNOTE.starts_with('*'));
+        assert!(FLAG_FOOTNOTE.contains("terminal") && FLAG_FOOTNOTE.contains("bar"));
     }
 
     #[test]
