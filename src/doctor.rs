@@ -42,7 +42,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use std::time::Duration;
-use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
+use unicode_width::UnicodeWidthStr;
 
 use futures::StreamExt as _;
 use tokio::sync::mpsc;
@@ -1546,9 +1546,15 @@ fn escape_control(text: &str) -> String {
     text.chars()
         .flat_map(|c| {
             // Invisible characters are shown, not obeyed: a bidi override
-            // can reorder a whole line of doctor's own report.
-            if c.is_control() || !is_drawn(c) && !c.is_whitespace() {
+            // can reorder a whole line of doctor's own report. Visible text
+            // is left alone, combining marks included.
+            if c.is_control() {
+                // \n, \t and friends read better than their codepoints.
                 c.escape_debug().collect::<Vec<_>>()
+            } else if is_invisible(c) {
+                // Rust considers several of these printable, so the escape
+                // has to be spelled out rather than delegated.
+                format!("\\u{{{:x}}}", c as u32).chars().collect::<Vec<_>>()
             } else {
                 vec![c]
             }
@@ -2163,24 +2169,50 @@ fn first_family(family: &str) -> String {
     family.split(',').next().unwrap_or(family).to_string()
 }
 
-/// Interlinear annotation controls: `Cf` characters that
-/// [`UnicodeWidthChar`] nevertheless reports as one column wide, so the
-/// width test below does not catch them.
+/// Unicode's `Default_Ignorable_Code_Point` property (DerivedCoreProperties
+/// in the UCD): characters a renderer is expected to draw nothing for —
+/// joiners, variation selectors, bidi controls, fillers, tags. Combining
+/// marks are deliberately absent: an acute accent has no advance width but
+/// very much has a glyph.
+///
+/// Transcribed rather than pulled from a Unicode crate, which the project
+/// does not depend on. The ranges below include the blocks Unicode reserves
+/// for future default-ignorables (2060..206F, FFF0..FFF8, E0000..E0FFF), so
+/// this does not need revisiting for a new Unicode release.
+fn is_default_ignorable(c: char) -> bool {
+    matches!(c,
+        '\u{00ad}' | '\u{034f}' | '\u{061c}' | '\u{3164}' | '\u{feff}' | '\u{ffa0}'
+        | '\u{115f}'..='\u{1160}'
+        | '\u{17b4}'..='\u{17b5}'
+        | '\u{180b}'..='\u{180f}'
+        | '\u{200b}'..='\u{200f}'
+        | '\u{202a}'..='\u{202e}'
+        | '\u{2060}'..='\u{206f}'
+        | '\u{fe00}'..='\u{fe0f}'
+        | '\u{fff0}'..='\u{fff8}'
+        | '\u{1bca0}'..='\u{1bca3}'
+        | '\u{1d173}'..='\u{1d17a}'
+        | '\u{e0000}'..='\u{e0fff}'
+    )
+}
+
+/// Interlinear annotation controls: `Cf` characters that are not
+/// default-ignorable but are still an editing protocol rather than text.
 fn is_annotation_char(c: char) -> bool {
     matches!(c, '\u{fff9}'..='\u{fffb}')
 }
 
-/// Characters that draw nothing on their own. Instead of enumerating
-/// Unicode's formatting characters by hand — a list that grows with every
-/// Unicode release — this asks the UCD-derived width tables: a character
-/// occupying no columns (joiners, variation selectors, bidi controls,
-/// combining marks) has no glyph of its own, so asking fontconfig which
-/// font draws it is meaningless.
+/// Characters with no glyph of their own, which fontconfig cannot
+/// meaningfully be asked about.
+fn is_invisible(c: char) -> bool {
+    is_default_ignorable(c) || is_annotation_char(c)
+}
+
+/// Whether a character has a glyph a font must supply. Zero *advance
+/// width* is not the test — combining marks draw perfectly visible
+/// accents — so this asks Unicode which characters are ignorable.
 fn is_drawn(c: char) -> bool {
-    !c.is_control()
-        && !c.is_whitespace()
-        && !is_annotation_char(c)
-        && UnicodeWidthChar::width(c) != Some(0)
+    !c.is_control() && !c.is_whitespace() && !is_invisible(c)
 }
 
 fn glyph_provider(check: &mut FontCheck, glyph: &str) -> GlyphProvider {
@@ -2532,12 +2564,14 @@ fn parse_font_directive(raw: &str) -> Vec<String> {
     let raw = raw.strip_prefix("pango:").unwrap_or(raw);
     // A pango description is
     //   FAMILY-LIST [STYLE-OPTIONS] [SIZE] [VARIATIONS]
-    // and VARIATIONS ("@wght=200,wdth=90") is itself comma-separated, so it
-    // has to go before commas are read as family separators.
-    let raw = raw.split('@').next().unwrap_or(raw);
-    raw.split(',')
-        .map(strip_font_modifiers)
-        .filter(|f| !f.is_empty())
+    // where everything after the family list applies to the description as
+    // a whole. So the trailing parts come off first, and only what remains
+    // is split into families: in "Source Serif 4, Noto Sans 12" the 12 is
+    // the size while the 4 belongs to the first family's name.
+    strip_font_modifiers(raw)
+        .split(',')
+        .map(|family| family.trim().to_string())
+        .filter(|family| !family.is_empty())
         .collect()
 }
 
@@ -2613,14 +2647,24 @@ fn strip_font_modifiers(family: &str) -> String {
             .flat_map(char::to_lowercase)
             .collect()
     }
+    /// A pango size: a positive decimal number, optionally in pixels.
+    /// "-1" is not one, so it stays part of the family name.
+    fn is_size(token: &str) -> bool {
+        let number = token.strip_suffix("px").unwrap_or(token);
+        !number.is_empty()
+            && number.chars().all(|c| c.is_ascii_digit() || c == '.')
+            && number.parse::<f64>().is_ok_and(|size| size > 0.0)
+    }
+
     let mut parts: Vec<&str> = family.split_whitespace().collect();
+    // Variations are a trailing, whitespace-delimited "@axis=value" token;
+    // an at-sign inside a family name is literal.
+    while parts.len() > 1 && parts.last().is_some_and(|last| last.starts_with('@')) {
+        parts.pop();
+    }
     // At most ONE trailing size, and never the whole name: "Source Serif 4
     // 12" is the family "Source Serif 4" at size 12, and "3270" is a family.
-    if parts.len() > 1
-        && parts
-            .last()
-            .is_some_and(|last| last.trim_end_matches("px").parse::<f64>().is_ok())
-    {
+    if parts.len() > 1 && parts.last().is_some_and(|last| is_size(last)) {
         parts.pop();
     }
     while let Some(last) = parts.last() {
@@ -2864,6 +2908,31 @@ mod tests {
     }
 
     #[test]
+    fn font_directive_modifiers_apply_after_the_whole_fallback_list() {
+        // Pango parses only the final `12` as the description's size.  The
+        // `4` belongs to the first family name, not to a per-family size.
+        assert_eq!(
+            parse_font_directive("pango:Source Serif 4, Noto Sans 12"),
+            ["Source Serif 4", "Noto Sans"]
+        );
+    }
+
+    #[test]
+    fn font_directive_at_sign_is_not_always_a_variations_suffix() {
+        // Pango recognizes variations at a trailing, whitespace-delimited
+        // `@`; an at-sign embedded in a family name remains literal.
+        assert_eq!(
+            parse_font_directive("pango:Foo@Bar, Noto Sans 12"),
+            ["Foo@Bar", "Noto Sans"]
+        );
+    }
+
+    #[test]
+    fn font_directive_does_not_accept_non_pango_sizes() {
+        assert_eq!(parse_font_directive("pango:Noto Sans -1"), ["Noto Sans -1"]);
+    }
+
+    #[test]
     fn flag_cells_point_at_the_terminal_footnote() {
         let cell = flag_cell("US", "\u{1f1fa}\u{1f1f8}");
         assert_eq!(cell, "\u{1f1fa}\u{1f1f8} (US country flag) *");
@@ -2911,6 +2980,34 @@ mod tests {
             !is_drawn('\u{206a}'),
             "an inhibit-symmetric-swapping control is not a glyph"
         );
+    }
+
+    #[test]
+    fn glyph_checks_include_zero_advance_combining_marks() {
+        assert!(
+            is_drawn('\u{0301}'),
+            "a combining acute accent has a visible glyph despite having zero advance width"
+        );
+    }
+
+    #[test]
+    fn glyph_checks_skip_spacing_default_ignorables() {
+        assert!(
+            !is_drawn('\u{115f}'),
+            "a Hangul choseong filler is invisible despite occupying terminal columns"
+        );
+    }
+
+    #[test]
+    fn terminal_escaping_preserves_visible_combining_marks() {
+        assert_eq!(escape_control("e\u{0301}"), "e\u{0301}");
+    }
+
+    #[test]
+    fn terminal_escaping_makes_all_invisible_characters_visible() {
+        let escaped = escape_control("safe\u{1160}text");
+        assert!(!escaped.contains('\u{1160}'));
+        assert_eq!(escaped, "safe\\u{1160}text");
     }
 
     #[test]
