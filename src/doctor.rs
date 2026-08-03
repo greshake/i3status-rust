@@ -2554,127 +2554,27 @@ fn detect_bar_font() -> Option<DetectedFont> {
     None
 }
 
-/// Accept the i3/sway font directive as-is: strip the "pango:" prefix and
-/// per-family trailing size and style options, split the fallback list on
-/// commas.
+/// The font families an i3/sway font directive names, in order.
 ///
 /// `"pango:DejaVu Sans Mono Bold 12, Font Awesome 6 Free"` →
 /// `["DejaVu Sans Mono", "Font Awesome 6 Free"]`
+///
+/// The description is parsed by pango itself — the same library the bar
+/// hands it to — so doctor cannot disagree with the renderer about where a
+/// family name ends, which style words are qualifiers, or what counts as a
+/// size. All doctor does is split the family list pango returns.
 fn parse_font_directive(raw: &str) -> Vec<String> {
     let raw = raw.strip_prefix("pango:").unwrap_or(raw);
-    // A pango description is
-    //   FAMILY-LIST [STYLE-OPTIONS] [SIZE] [VARIATIONS]
-    // where everything after the family list applies to the description as
-    // a whole. So the trailing parts come off first, and only what remains
-    // is split into families: in "Source Serif 4, Noto Sans 12" the 12 is
-    // the size while the 4 belongs to the first family's name.
-    strip_font_modifiers(raw)
-        .split(',')
-        .map(|family| family.trim().to_string())
-        .filter(|family| !family.is_empty())
-        .collect()
-}
-
-/// Strip the trailing style keywords and size of a pango font description
-/// so only the family remains: "DejaVu Sans Mono Bold 13.5" → "DejaVu Sans
-/// Mono".
-///
-/// Doctor does not link pango, so this implements pango's documented
-/// grammar rather than observing its parser: the keywords below are the
-/// nicks of pango's style, variant, weight, stretch and gravity enums, and
-/// they are matched the way pango matches them — case-insensitively and
-/// ignoring `-` and `_`, so "SmallCaps", "small-caps" and "Small_Caps" are
-/// one keyword. A description that uses anything outside that grammar is
-/// left alone rather than guessed at.
-fn strip_font_modifiers(family: &str) -> String {
-    const STYLE_WORDS: &[&str] = &[
-        // style
-        "italic",
-        "oblique",
-        "roman",
-        "normal",
-        // variant
-        "smallcaps",
-        "allsmallcaps",
-        "petitecaps",
-        "allpetitecaps",
-        "unicase",
-        "titlecaps",
-        // weight
-        "thin",
-        "ultralight",
-        "extralight",
-        "light",
-        "semilight",
-        "demilight",
-        "book",
-        "regular",
-        "medium",
-        "semibold",
-        "demibold",
-        "bold",
-        "ultrabold",
-        "extrabold",
-        "heavy",
-        "black",
-        "ultraheavy",
-        "extraheavy",
-        "ultrablack",
-        "extrablack",
-        // stretch
-        "ultracondensed",
-        "extracondensed",
-        "condensed",
-        "semicondensed",
-        "semiexpanded",
-        "expanded",
-        "extraexpanded",
-        "ultraexpanded",
-        // gravity
-        "notrotated",
-        "south",
-        "upsidedown",
-        "north",
-        "rotatedleft",
-        "east",
-        "rotatedright",
-        "west",
-    ];
-    /// Pango compares keywords ignoring case, `-` and `_`.
-    fn keyword(word: &str) -> String {
-        word.chars()
-            .filter(|c| *c != '-' && *c != '_')
-            .flat_map(char::to_lowercase)
-            .collect()
-    }
-    /// A pango size: a positive decimal number, optionally in pixels.
-    /// "-1" is not one, so it stays part of the family name.
-    fn is_size(token: &str) -> bool {
-        let number = token.strip_suffix("px").unwrap_or(token);
-        !number.is_empty()
-            && number.chars().all(|c| c.is_ascii_digit() || c == '.')
-            && number.parse::<f64>().is_ok_and(|size| size > 0.0)
-    }
-
-    let mut parts: Vec<&str> = family.split_whitespace().collect();
-    // Variations are a trailing, whitespace-delimited "@axis=value" token;
-    // an at-sign inside a family name is literal.
-    while parts.len() > 1 && parts.last().is_some_and(|last| last.starts_with('@')) {
-        parts.pop();
-    }
-    // At most ONE trailing size, and never the whole name: "Source Serif 4
-    // 12" is the family "Source Serif 4" at size 12, and "3270" is a family.
-    if parts.len() > 1 && parts.last().is_some_and(|last| is_size(last)) {
-        parts.pop();
-    }
-    while let Some(last) = parts.last() {
-        if parts.len() > 1 && STYLE_WORDS.contains(&keyword(last).as_str()) {
-            parts.pop();
-        } else {
-            break;
-        }
-    }
-    parts.join(" ")
+    pango::FontDescription::from_string(raw)
+        .family()
+        .map(|families| {
+            families
+                .split(',')
+                .map(|family| family.trim().to_string())
+                .filter(|family| !family.is_empty())
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 // ---------------------------------------------------------------------------
