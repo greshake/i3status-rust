@@ -6,8 +6,10 @@
 //! resolved), and the icon names each icon-valued placeholder can carry.
 //!
 //! The runtime renders through [`OutputHandle`]s derived from the plan, which
-//! install the effective format and check icon values against the declared
-//! choices. `--doctor` analyzes the same plan. Because both sides consume the
+//! install the effective format and mint icon values checked against the
+//! declared choices. The guarantee is enforced when a widget is published
+//! (see [`Widget::check_contract`][crate::widget::Widget]), so an icon built
+//! any other way is caught there rather than by the constructor. `--doctor` analyzes the same plan. Because both sides consume the
 //! same prepared data, doctor's static conclusions cannot drift from what the
 //! block actually does at runtime.
 //!
@@ -72,17 +74,8 @@ impl IconChoices {
     }
 }
 
-/// Proof that an icon value was created through a plan handle after being
-/// checked against the declared choices. Only this module can mint one, so
-/// blocks cannot construct icon values that bypass their contract.
-#[derive(Debug)]
-pub struct IconToken {
-    _private: (),
-}
-
-/// One output variant of a block: a named state, its effective format, the
-/// icons each icon-valued placeholder may carry in that state, and the
-/// values the block guarantees to provide on every render.
+/// One output variant of a block: a named state, its effective format, and
+/// the icons each icon-valued placeholder may carry in that state.
 #[derive(Debug, Clone)]
 pub struct OutputPlan {
     id: Cow<'static, str>,
@@ -279,7 +272,7 @@ impl OutputHandle {
     /// The single declared icon of `placeholder`, as a value.
     pub fn icon_value(&self, placeholder: &str) -> Result<Value> {
         let name = self.single_icon(placeholder)?;
-        Ok(Value::icon(name, IconToken { _private: () }))
+        Ok(Value::icon(name))
     }
 
     /// A declared icon of `placeholder` by name. For open (dynamic)
@@ -291,7 +284,7 @@ impl OutputHandle {
     {
         let name = name.into();
         self.check_declared(placeholder, &name)?;
-        Ok(Value::icon(name, IconToken { _private: () }))
+        Ok(Value::icon(name))
     }
 
     /// A declared progression icon of `placeholder`, with `value` in 0..=1.
@@ -301,11 +294,7 @@ impl OutputHandle {
     {
         let name = name.into();
         self.check_declared(placeholder, &name)?;
-        Ok(Value::icon_progression(
-            name,
-            value,
-            IconToken { _private: () },
-        ))
+        Ok(Value::icon_progression(name, value))
     }
 
     /// Like [`Self::icon_progression`], with `value` first clamped to
@@ -470,15 +459,27 @@ mod tests {
     fn declared_icon_passes_validation() {
         let plan = plan();
         let handle = plan.output("connected").unwrap();
-        let values = map!("icon" => crate::formatting::value::Value::test_icon("net_vpn"));
+        let values = map!("icon" => crate::formatting::value::Value::icon("net_vpn"));
         assert!(handle.icon_violations(&values).is_empty());
+    }
+
+    #[test]
+    fn an_icon_built_outside_the_plan_is_still_caught() {
+        // The published Value::icon constructor is unchecked by design;
+        // the contract is enforced when the widget is published, so a
+        // block that bypasses its handle does not get away with it.
+        let plan = plan();
+        let handle = plan.output("connected").unwrap();
+        let mut widget = handle.new_widget();
+        widget.set_values(map!("icon" => crate::formatting::value::Value::icon("net_wired")));
+        assert!(widget.check_contract().is_err());
     }
 
     #[test]
     fn undeclared_icon_is_a_violation() {
         let plan = plan();
         let handle = plan.output("connected").unwrap();
-        let values = map!("icon" => crate::formatting::value::Value::test_icon("net_wired"));
+        let values = map!("icon" => crate::formatting::value::Value::icon("net_wired"));
         let violations = handle.icon_violations(&values);
         assert_eq!(violations.len(), 1);
         assert!(violations[0].contains("net_wired"));
@@ -489,7 +490,7 @@ mod tests {
     fn undeclared_placeholder_is_a_violation() {
         let plan = plan();
         let handle = plan.output("connected").unwrap();
-        let values = map!("other" => crate::formatting::value::Value::test_icon("net_vpn"));
+        let values = map!("other" => crate::formatting::value::Value::icon("net_vpn"));
         assert_eq!(handle.icon_violations(&values).len(), 1);
     }
 
@@ -515,7 +516,7 @@ mod tests {
             "refresh"
         );
         let values = map!(
-            "restart_block_icon" => crate::formatting::value::Value::test_icon("refresh"),
+            "restart_block_icon" => crate::formatting::value::Value::icon("refresh"),
             "full_error_message" => crate::formatting::value::Value::text("boom".into()),
         );
         assert!(outputs.error.icon_violations(&values).is_empty());

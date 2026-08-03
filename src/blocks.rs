@@ -88,7 +88,7 @@ macro_rules! define_blocks {
             /// [`crate::block_plan`]). Every block module must define
             /// `prepare(config) -> Result<Arc<BlockPlan>>`; a block without
             /// one fails to compile here.
-            pub fn plan(&self) -> Result<Arc<crate::block_plan::BlockPlan>> {
+            pub(crate) fn plan(&self) -> Result<Arc<crate::block_plan::BlockPlan>> {
                 match self {
                     $(
                         $(#[cfg(feature = $feat)])?

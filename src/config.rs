@@ -47,13 +47,6 @@ pub struct SharedConfig {
     pub icons: Arc<Icons>,
     #[serde(default = "default_icons_format")]
     pub icons_format: Arc<String>,
-    /// When set, every icon that is actually rendered is recorded here as
-    /// (name, produced string). Used by `--doctor` for exact render-time
-    /// accounting: only icons on the format branch that succeeded pass
-    /// through `get_icon`, and the produced string tells the live-output
-    /// analysis which characters came from an icon.
-    #[serde(skip)]
-    pub(crate) icon_recorder: Option<Arc<std::sync::Mutex<Vec<(String, String)>>>>,
 }
 
 impl Default for SharedConfig {
@@ -62,7 +55,6 @@ impl Default for SharedConfig {
             theme: Default::default(),
             icons: Default::default(),
             icons_format: default_icons_format(),
-            icon_recorder: None,
         }
     }
 }
@@ -83,6 +75,37 @@ fn default_icons_format() -> Arc<String> {
     Arc::new("{icon}".into())
 }
 
+/// Doctor-only: when enabled (inside a doctor worker process, never in the
+/// real bar), every icon that actually renders is recorded as (name,
+/// produced string). Only icons on the format branch that succeeded pass
+/// through `get_icon`, and the produced string tells the live-output
+/// analysis which characters came from an icon.
+///
+/// Worker-local by construction: a worker renders one block, so the
+/// recording belongs to that render.
+static ICON_RECORDER: std::sync::OnceLock<std::sync::Mutex<Vec<(String, String)>>> =
+    std::sync::OnceLock::new();
+
+pub(crate) fn enable_icon_recorder() {
+    let _ = ICON_RECORDER.set(std::sync::Mutex::new(Vec::new()));
+}
+
+/// The icons recorded so far, clearing the record.
+pub(crate) fn take_recorded_icons() -> Vec<(String, String)> {
+    ICON_RECORDER
+        .get()
+        .and_then(|recorder| recorder.lock().ok().map(|mut r| std::mem::take(&mut *r)))
+        .unwrap_or_default()
+}
+
+fn record_icon(icon: &str, produced: &str) {
+    if let Some(recorder) = ICON_RECORDER.get()
+        && let Ok(mut recorder) = recorder.lock()
+    {
+        recorder.push((icon.to_string(), produced.to_string()));
+    }
+}
+
 impl SharedConfig {
     pub fn get_icon(&self, icon: &str, value: Option<f64>) -> Result<String> {
         if icon.is_empty() {
@@ -94,11 +117,7 @@ impl SharedConfig {
                 .get(icon, value)
                 .or_error(|| format!("Icon '{icon}' not found"))?,
         );
-        if let Some(recorder) = &self.icon_recorder
-            && let Ok(mut recorder) = recorder.lock()
-        {
-            recorder.push((icon.to_string(), produced.clone()));
-        }
+        record_icon(icon, &produced);
         Ok(produced)
     }
 }

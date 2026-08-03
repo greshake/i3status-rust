@@ -20,10 +20,10 @@
 //!
 //! - Problems: numbered findings with concrete fixes.
 //!
-//! A block can only request icons its prepared contract declares
-//! ([`crate::block_plan::BlockPlan`], enforced by the capability its output
-//! handles mint), so doctor validates the whole declared contract and takes
-//! every declared icon as in use by that block. It does not try to prove
+//! A block can only request icons its prepared contract declares — the
+//! block plan each block builds from its configuration, checked when the
+//! block publishes a widget — so doctor validates the whole declared
+//! contract and takes every declared icon as in use by that block. It does not try to prove
 //! which declarations a particular configuration or runtime state would
 //! reach: a declaration a format never renders is reported as undefined
 //! just the same, because the contract is what the block is allowed to ask
@@ -1383,13 +1383,11 @@ fn render_widget(widget: &Widget, shared: &SharedConfig, index: usize) -> LiveVe
     // Record which icons rendering actually consumes: syntactic inspection
     // of the format is not enough, because a fallback branch containing
     // $icon may never be evaluated.
-    let recorder = Arc::new(std::sync::Mutex::new(Vec::new()));
-    let mut shared = shared.clone();
-    shared.icon_recorder = Some(recorder.clone());
-    match widget.get_data(&shared, index) {
+    crate::config::enable_icon_recorder();
+    let _ = crate::config::take_recorded_icons();
+    match widget.get_data(shared, index) {
         Ok(segments) => {
-            let recorded: Vec<(String, String)> =
-                recorder.lock().map(|r| r.clone()).unwrap_or_default();
+            let recorded = crate::config::take_recorded_icons();
             let mut icons: Vec<String> = recorded.iter().map(|(name, _)| name.clone()).collect();
             icons.sort_unstable();
             icons.dedup();

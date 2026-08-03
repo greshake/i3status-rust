@@ -7,7 +7,9 @@
 
 #[macro_use]
 pub mod util;
-pub mod block_plan;
+/// The per-block output contracts `--doctor` analyses. Internal: the
+/// published surface is the blocks' own configuration and output.
+pub(crate) mod block_plan;
 pub mod blocks;
 pub mod click;
 pub mod config;
