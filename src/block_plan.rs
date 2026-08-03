@@ -26,6 +26,11 @@ use crate::formatting::Format;
 use crate::formatting::value::{Value, ValueInner};
 use crate::widget::Widget;
 
+/// Marks an error caused by a block breaking its own contract rather than
+/// by the user's configuration. `--doctor` classifies on it, so the two
+/// sides must agree on the wording.
+pub(crate) const CONTRACT_BUG: &str = "block contract bug";
+
 /// The icon names one placeholder of one output variant can carry.
 #[derive(Debug, Clone)]
 pub enum IconChoices {

@@ -48,6 +48,7 @@ use icu_properties::props::DefaultIgnorableCodePoint;
 use tokio::sync::mpsc;
 use unicode_width::UnicodeWidthStr;
 
+use crate::block_plan::CONTRACT_BUG;
 use crate::blocks::CommonApi;
 use crate::config::{BlockConfigEntry, Config, SharedConfig};
 use crate::errors::*;
@@ -101,19 +102,38 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
     println!();
 
     // === Config file ===
-    let (config_path, trace) = resolve_file(config_arg, None);
-    let Some(config_path) = config_path else {
-        problems.push(Problem {
-            diagnosis: escape_control_multiline(&format!(
-                "Configuration file {config_arg:?} not found. Searched:\n{trace}"
-            )),
-            fix: Some(
-                "Create ~/.config/i3status-rust/config.toml, or pass a path: i3status-rs --doctor <path>"
-                    .into(),
-            ),
-        });
-        print_problems(&problems, false, &style);
-        return problems.len();
+    let (resolved, trace) = resolve_file(config_arg, None);
+    let config_path = match resolved {
+        Resolved::Found(path) => path,
+        Resolved::Missing => {
+            problems.push(Problem {
+                diagnosis: escape_control_multiline(&format!(
+                    "Configuration file {config_arg:?} not found. Searched:\n{trace}"
+                )),
+                fix: Some(
+                    "Create ~/.config/i3status-rust/config.toml, or pass a path: i3status-rs --doctor <path>"
+                        .into(),
+                ),
+            });
+            print_problems(&problems, false, &style);
+            return problems.len();
+        }
+        Resolved::Failed(err) => {
+            problems.push(Problem {
+                diagnosis: escape_control_multiline(&format!(
+                    "Configuration file {config_arg:?} cannot be resolved: {err}. The bar's own \
+                     lookup stops at this candidate, so it would not start either — and the \
+                     locations after it are never consulted. Searched:\n{trace}"
+                )),
+                fix: Some(
+                    "Repair or remove that path; a broken symlink or an unreadable directory is \
+                     the usual cause."
+                        .into(),
+                ),
+            });
+            print_problems(&problems, false, &style);
+            return problems.len();
+        }
     };
     println!(
         "Config:   {}",
@@ -164,7 +184,25 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
     } else {
         let (file, trace) = resolve_file(set_name, Some("icons"));
         match file {
-            None => {
+            Resolved::Failed(err) => {
+                problems.push(Problem {
+                    diagnosis: escape_control_multiline(&format!(
+                        "Icon set {set_name:?} cannot be resolved: {err}. The bar's own lookup \
+                         stops at this candidate, so the locations after it are never \
+                         consulted. Searched:\n{trace}"
+                    )),
+                    fix: Some(
+                        "Repair or remove that path; a broken symlink or an unreadable \
+                         directory is the usual cause."
+                            .into(),
+                    ),
+                });
+                (
+                    builtin.clone(),
+                    "built-in text icons (fallback)".to_string(),
+                )
+            }
+            Resolved::Missing => {
                 // The typed parse fails on the same lookup; let this
                 // specific diagnosis stand in for it.
                 explained_parse_errors.push(format!("Icon set '{set_name}' not found"));
@@ -184,10 +222,11 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                     "built-in text icons (fallback)".to_string(),
                 )
             }
-            Some(file) => match util::deserialize_toml_file::<HashMap<String, Icon>, _>(&file) {
-                Err(err) => {
-                    explained_parse_errors.push(err.to_string().trim().to_string());
-                    problems.push(Problem {
+            Resolved::Found(file) => {
+                match util::deserialize_toml_file::<HashMap<String, Icon>, _>(&file) {
+                    Err(err) => {
+                        explained_parse_errors.push(err.to_string().trim().to_string());
+                        problems.push(Problem {
                         diagnosis: escape_control_multiline(&format!(
                             "Icon set file {} cannot be parsed: {err}",
                             file.display()
@@ -197,21 +236,22 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                                 .into(),
                         ),
                     });
-                    (
-                        builtin.clone(),
-                        "built-in text icons (fallback)".to_string(),
-                    )
+                        (
+                            builtin.clone(),
+                            "built-in text icons (fallback)".to_string(),
+                        )
+                    }
+                    Ok(map) => {
+                        let file = file.display().to_string();
+                        let desc = if set_name == file {
+                            format!("{file} ({} names)", map.len())
+                        } else {
+                            format!("{set_name} ({file}, {} names)", map.len())
+                        };
+                        (map, desc)
+                    }
                 }
-                Ok(map) => {
-                    let file = file.display().to_string();
-                    let desc = if set_name == file {
-                        format!("{file} ({} names)", map.len())
-                    } else {
-                        format!("{set_name} ({file}, {} names)", map.len())
-                    };
-                    (map, desc)
-                }
-            },
+            }
         }
     };
     println!("Icon set: {}", escape_control(&set_desc));
@@ -571,7 +611,6 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                     LiveVerdict::Rendered {
                         check_text,
                         icon_glyphs,
-                        contract_violations,
                         ..
                     } => {
                         // The block's actual output contains pango markup
@@ -585,18 +624,6 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                             check_text.clone(),
                             icon_glyphs.clone(),
                         ));
-                        for violation in contract_violations {
-                            problems.push(Problem {
-                                diagnosis: format!(
-                                    "`{label}` violated its own output contract: {violation}. \
-                                     This is a bug in i3status-rs, not in your configuration."
-                                ),
-                                fix: Some(
-                                    "Report it at https://github.com/greshake/i3status-rust/issues."
-                                        .into(),
-                                ),
-                            });
-                        }
                     }
                     // A block skipped by if_command keeps its declared icon
                     // obligations: the command's result is a property of
@@ -915,10 +942,6 @@ enum LiveVerdict {
         icons: Vec<String>,
         /// All icon values the block provided: placeholder key -> icon name.
         provided_icons: Vec<(String, String)>,
-        /// Prepared-contract violations (icons set outside the declared
-        /// choices): internal i3status-rust bugs, not config problems.
-        #[serde(default)]
-        contract_violations: Vec<String>,
     },
     RenderError {
         error: String,
@@ -1143,6 +1166,9 @@ async fn run_worker_process(exe: &Path, config_arg: &str, index: usize) -> Block
     command
         .arg("--doctor-worker")
         .arg(index.to_string())
+        // The parent may have been given the name after its own `--`;
+        // without one here the worker reads a leading dash as an option.
+        .arg("--")
         .arg(config_arg)
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::piped())
@@ -1415,7 +1441,6 @@ fn render_widget(widget: &Widget, shared: &SharedConfig, index: usize) -> LiveVe
                 icon_glyphs,
                 icons,
                 provided_icons: provided_icon_values(widget),
-                contract_violations: widget.contract_violations(),
             }
         }
         Err(error) => {
@@ -1641,6 +1666,20 @@ fn print_block_report(
             problems.push(Problem {
                 diagnosis: format!("{}: render error: {}", report.name, escape_control(error)),
                 fix,
+            });
+        }
+        LiveVerdict::BlockError(error) if error.contains(CONTRACT_BUG) => {
+            // set_widget rejects a widget whose icons its plan does not
+            // declare, so the violation arrives here as a block error.
+            // That is a fault in i3status-rs, not in the configuration.
+            problems.push(Problem {
+                diagnosis: format!(
+                    "`{}` violated its own output contract: {}. This is a bug in i3status-rs, \
+                     not in your configuration.",
+                    report.name,
+                    escape_control(error)
+                ),
+                fix: Some("Report it at https://github.com/greshake/i3status-rust/issues.".into()),
             });
         }
         LiveVerdict::BlockError(error) => {
@@ -2255,8 +2294,21 @@ fn print_problems(problems: &[Problem], live_ran: bool, style: &Style) {
 // ---------------------------------------------------------------------------
 
 /// Returns the winning path and a human-readable trace of every candidate.
-fn resolve_file(file: &str, subdir: Option<&str>) -> (Option<PathBuf>, String) {
+/// What the bar's own lookup would do with this name.
+enum Resolved {
+    /// The file the bar would use.
+    Found(PathBuf),
+    /// No candidate exists.
+    Missing,
+    /// A candidate could not be examined. [`util::find_file`] returns the
+    /// error rather than moving on, so the bar never reaches the
+    /// lower-priority candidates and neither may doctor.
+    Failed(String),
+}
+
+fn resolve_file(file: &str, subdir: Option<&str>) -> (Resolved, String) {
     let mut found: Option<PathBuf> = None;
+    let mut failure: Option<String> = None;
     let mut trace = String::new();
     if !Path::new(file).is_absolute() {
         trace.push_str("   (not an absolute path; standard locations searched in order)\n");
@@ -2281,14 +2333,26 @@ fn resolve_file(file: &str, subdir: Option<&str>) -> (Option<PathBuf>, String) {
                 "   ✗ {}\n",
                 escape_control(&candidate.display().to_string())
             ),
-            (Err(err), _) => format!(
-                "   ? {} (could not check: {err})\n",
-                escape_control(&candidate.display().to_string())
-            ),
+            (Err(err), _) => {
+                let line = format!(
+                    "   ✗ {} (cannot be examined: {err} — the bar stops here)\n",
+                    escape_control(&candidate.display().to_string())
+                );
+                failure = Some(format!("{}: {err}", candidate.display()));
+                line
+            }
         };
         trace.push_str(&line);
+        if failure.is_some() {
+            break;
+        }
     }
-    (found, trace.trim_end().to_string())
+    let resolved = match (failure, found) {
+        (Some(err), _) => Resolved::Failed(err),
+        (None, Some(path)) => Resolved::Found(path),
+        (None, None) => Resolved::Missing,
+    };
+    (resolved, trace.trim_end().to_string())
 }
 
 // ---------------------------------------------------------------------------
@@ -2961,5 +3025,46 @@ mod tests {
                 .contains("D-Bus")
         );
         assert!(suggest_fix("time", "something exotic").is_none());
+    }
+
+    #[test]
+    fn publication_time_contract_failures_are_reported_as_internal_bugs() {
+        // CommonApi::set_widget checks the contract before sending the
+        // widget, so a violation reaches the worker as BlockError rather
+        // than render_widget's contract_violations field.
+        let report = BlockReport {
+            index: 0,
+            name: "test".into(),
+            verdict: LiveVerdict::BlockError(
+                "block contract bug: icon 'bad' is not declared".into(),
+            ),
+            flags: Vec::new(),
+        };
+        let mut problems = Vec::new();
+        print_block_report(
+            &report,
+            1,
+            4,
+            1,
+            &Style { red: "", reset: "" },
+            &mut problems,
+            &mut BTreeMap::new(),
+            &HashSet::new(),
+            "test",
+        );
+
+        assert_eq!(problems.len(), 1);
+        assert!(
+            problems[0].diagnosis.contains("bug in i3status-rs"),
+            "contract failures must not be presented as user configuration problems: {}",
+            problems[0].diagnosis
+        );
+        assert!(
+            problems[0]
+                .fix
+                .as_deref()
+                .is_some_and(|fix| fix.contains("Report it")),
+            "contract failures should tell the user to report the internal bug"
+        );
     }
 }

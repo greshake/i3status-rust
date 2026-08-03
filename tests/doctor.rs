@@ -117,6 +117,90 @@ fn command_is_available(command: &str) -> bool {
 }
 
 #[test]
+fn live_worker_accepts_a_config_name_that_starts_with_a_dash() {
+    let fixture = FixtureDir::new("dash-prefixed-config");
+    let config_dir = fixture.0.join("i3status-rust");
+    std::fs::create_dir(&config_dir).expect("create XDG config directory");
+    std::fs::write(
+        config_dir.join("--doctor-fixture.toml"),
+        r#"
+error_format = " $short_error_message "
+error_fullscreen_format = " $full_error_message "
+
+[[block]]
+block = "custom"
+command = "printf ok"
+interval = "once"
+"#,
+    )
+    .expect("write dash-prefixed config");
+
+    let output = Command::new(env!("CARGO_BIN_EXE_i3status-rs"))
+        .arg("--doctor")
+        .arg("--font")
+        .arg("monospace")
+        .arg("--")
+        .arg("--doctor-fixture")
+        .env("XDG_CONFIG_HOME", &fixture.0)
+        .env_remove("I3RS_DBUS_NAME")
+        .output()
+        .expect("run doctor with a dash-prefixed config name");
+
+    assert!(
+        output.status.success(),
+        "the worker must preserve the parent's end-of-options boundary:\n{}",
+        stdout(&output)
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn config_search_errors_are_not_skipped_for_lower_priority_files() {
+    use std::os::unix::fs::symlink;
+
+    let fixture = FixtureDir::new("config-search-error");
+    let config_home = fixture.0.join("config/i3status-rust");
+    let data_home = fixture.0.join("data/i3status-rust");
+    std::fs::create_dir_all(&config_home).expect("create XDG config directory");
+    std::fs::create_dir_all(&data_home).expect("create XDG data directory");
+
+    // The real bar stops at this ELOOP error. Doctor must not continue and
+    // claim the lower-priority XDG_DATA_HOME configuration is usable.
+    symlink("config.toml", config_home.join("config.toml"))
+        .expect("create self-referential config symlink");
+    std::fs::write(
+        data_home.join("config.toml"),
+        r#"
+error_format = " $short_error_message "
+error_fullscreen_format = " $full_error_message "
+
+[[block]]
+block = "time"
+format = " clock "
+"#,
+    )
+    .expect("write lower-priority config");
+
+    let output = Command::new(env!("CARGO_BIN_EXE_i3status-rs"))
+        .arg("--doctor")
+        .arg("--doctor-skip-live")
+        .arg("--font")
+        .arg("monospace")
+        .arg("config.toml")
+        .env("XDG_CONFIG_HOME", fixture.0.join("config"))
+        .env("XDG_DATA_HOME", fixture.0.join("data"))
+        .env_remove("I3RS_DBUS_NAME")
+        .output()
+        .expect("run doctor with a failing higher-priority candidate");
+
+    let stdout = stdout(&output);
+    assert!(
+        !output.status.success(),
+        "doctor must fail when the bar's own file search would fail:\n{stdout}"
+    );
+}
+
+#[test]
 fn undefined_declared_icon_is_a_problem_without_a_live_run() {
     let fixture = FixtureDir::new("undefined-declaration");
     let icons = fixture.write("icons.toml", "");

@@ -61,6 +61,7 @@ words:
   - docsrs
   - dtolnay
   - dunst
+  - ELOOP
   - esac
   - exdate
   - exdates
