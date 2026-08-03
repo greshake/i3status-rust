@@ -86,12 +86,10 @@ pub enum DriverType {
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     let format = config.format.with_default(" $icon ")?;
     BlockPlan::new(vec![
-        OutputPlan::new("enabled", format.clone())
-            .icon("icon", IconChoices::one(ICON_ON)),
+        OutputPlan::new("enabled", format.clone()).icon("icon", IconChoices::one(ICON_ON)),
         // The paused output is only ever rendered when `is_paused` is true,
         // so the `paused` flag is set on every render of this output.
-        OutputPlan::new("paused", format)
-            .icon("icon", IconChoices::one(ICON_OFF)),
+        OutputPlan::new("paused", format).icon("icon", IconChoices::one(ICON_OFF)),
     ])
 }
 
@@ -379,7 +377,6 @@ mod tests {
             ICON_OFF
         );
     }
-
 
     #[test]
     fn both_states_share_the_same_format() {

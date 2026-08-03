@@ -82,9 +82,10 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     // Everything else (version, region, country_*, in_eu, ...) is optional
     // in the geolocator response and inserted conditionally, so it stays
     // undeclared.
-    BlockPlan::new(vec![
-        OutputPlan::new("main", config.format.with_default(" $ip $country_flag ")?),
-    ])
+    BlockPlan::new(vec![OutputPlan::new(
+        "main",
+        config.format.with_default(" $ip $country_flag ")?,
+    )])
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -254,5 +255,4 @@ mod tests {
         assert!(main.format().contains_key("country_code"));
         assert!(!main.format().contains_key("country_flag"));
     }
-
 }

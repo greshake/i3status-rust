@@ -277,14 +277,11 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
         .redirect_format
         .with_default(" $icon Check your web browser ")?;
     BlockPlan::new(vec![
-        OutputPlan::new("no_events", no_events_format)
-            .icon("icon", IconChoices::one("calendar")),
-        OutputPlan::new("next_event", next_event_format)
-            .icon("icon", IconChoices::one("calendar")),
+        OutputPlan::new("no_events", no_events_format).icon("icon", IconChoices::one("calendar")),
+        OutputPlan::new("next_event", next_event_format).icon("icon", IconChoices::one("calendar")),
         OutputPlan::new("ongoing_event", ongoing_event_format)
             .icon("icon", IconChoices::one("calendar")),
-        OutputPlan::new("redirect", redirect_format)
-            .icon("icon", IconChoices::one("calendar")),
+        OutputPlan::new("redirect", redirect_format).icon("icon", IconChoices::one("calendar")),
     ])
 }
 
@@ -657,7 +654,6 @@ mod tests {
             assert_eq!(output.single_icon("icon").unwrap(), "calendar");
         }
     }
-
 
     #[test]
     fn each_state_resolves_its_own_format() {

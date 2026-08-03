@@ -84,8 +84,7 @@ pub struct Config {
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     let format = config.format.with_default(" $icon $temperature ")?;
     BlockPlan::new(vec![
-        OutputPlan::new("main", format)
-            .icon("icon", IconChoices::one("hueshift")),
+        OutputPlan::new("main", format).icon("icon", IconChoices::one("hueshift")),
     ])
 }
 
@@ -416,7 +415,6 @@ mod tests {
         assert_eq!(main.single_icon("icon").unwrap(), "hueshift");
         assert!(main.format().contains_key("temperature"));
     }
-
 
     #[test]
     fn configured_format_is_installed() {

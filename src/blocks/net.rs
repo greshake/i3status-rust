@@ -83,10 +83,8 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     // Every state that renders a device sets these on every render; the
     // wifi-only values (ssid, signal_strength, ...) and the addresses are
     // conditional and stay undeclared.
-    let device_output = |output: OutputPlan| {
-        output
-            .icon("icon", IconChoices::fixed(NetDevice::ALL_ICONS))
-    };
+    let device_output =
+        |output: OutputPlan| output.icon("icon", IconChoices::fixed(NetDevice::ALL_ICONS));
     let mut outputs = vec![
         device_output(OutputPlan::new(
             "main",
@@ -255,7 +253,6 @@ mod tests {
         let missing = plan.output("missing").unwrap();
         assert_eq!(missing.output().icon_placeholders().count(), 0);
     }
-
 
     #[test]
     fn alt_output_exists_only_when_configured() {

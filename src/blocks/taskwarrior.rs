@@ -240,7 +240,6 @@ mod tests {
         }
     }
 
-
     #[test]
     fn each_count_state_resolves_its_own_format() {
         // The "hide when everything is done" configuration from the docs:

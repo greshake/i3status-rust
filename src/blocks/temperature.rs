@@ -109,10 +109,7 @@ impl TemperatureScale {
 }
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
-    let declare = |output: OutputPlan| {
-        output
-            .icon("icon", IconChoices::one("thermometer"))
-    };
+    let declare = |output: OutputPlan| output.icon("icon", IconChoices::one("thermometer"));
     let mut outputs = vec![declare(OutputPlan::new(
         "main",
         config
@@ -273,5 +270,4 @@ mod tests {
         assert!(alt.format().contains_key("min"));
         assert_eq!(alt.single_icon("icon").unwrap(), "thermometer");
     }
-
 }

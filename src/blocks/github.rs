@@ -232,5 +232,4 @@ mod tests {
         assert!(main.format().contains_key("mention"));
         assert!(!main.format().contains_key("total"));
     }
-
 }

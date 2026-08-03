@@ -88,10 +88,8 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
         .clone()
         .unwrap_or_else(|| "toggle_off".into());
     BlockPlan::new(vec![
-        OutputPlan::new("on", format.clone())
-            .icon("icon", IconChoices::one(icon_on)),
-        OutputPlan::new("off", format)
-            .icon("icon", IconChoices::one(icon_off)),
+        OutputPlan::new("on", format.clone()).icon("icon", IconChoices::one(icon_on)),
+        OutputPlan::new("off", format).icon("icon", IconChoices::one(icon_off)),
     ])
 }
 

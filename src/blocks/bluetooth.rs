@@ -502,7 +502,6 @@ mod tests {
         );
     }
 
-
     #[test]
     fn every_device_icon_is_declared() {
         // Tie the runtime chooser to the declared set.

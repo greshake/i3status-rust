@@ -264,7 +264,6 @@ mod tests {
         assert_eq!(missing.output().icon_placeholders().count(), 0);
     }
 
-
     #[test]
     fn custom_missing_format_is_used() {
         let config = Config {

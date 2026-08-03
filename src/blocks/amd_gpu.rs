@@ -56,10 +56,7 @@ pub struct Config {
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     // Both outputs render the same value set, built unconditionally on
     // every update.
-    let declare = |output: OutputPlan| {
-        output
-            .icon("icon", IconChoices::one("gpu"))
-    };
+    let declare = |output: OutputPlan| output.icon("icon", IconChoices::one("gpu"));
     let mut outputs = vec![declare(OutputPlan::new(
         "main",
         config.format.with_default(" $icon $utilization ")?,
@@ -239,5 +236,4 @@ mod tests {
         assert!(alt.format().contains_key("vram_used_percents"));
         assert_eq!(alt.single_icon("icon").unwrap(), "gpu");
     }
-
 }

@@ -117,8 +117,7 @@ pub enum BatteryDriver {
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     let format = config.format.with_default(" $icon $percentage ")?;
     BlockPlan::new(vec![
-        OutputPlan::new("discharging", format.clone())
-            .icon("icon", IconChoices::one("bat")),
+        OutputPlan::new("discharging", format.clone()).icon("icon", IconChoices::one("bat")),
         OutputPlan::new(
             "charging",
             config.charging_format.with_default_format(&format),
@@ -342,10 +341,21 @@ mod tests {
             ..Config::default()
         };
         let plan = prepare(&config).unwrap();
-        assert!(!plan.output("charging").unwrap().format().contains_key("icon"));
+        assert!(
+            !plan
+                .output("charging")
+                .unwrap()
+                .format()
+                .contains_key("icon")
+        );
 
         let plan = prepare(&Config::default()).unwrap();
-        assert!(plan.output("charging").unwrap().format().contains_key("icon"));
+        assert!(
+            plan.output("charging")
+                .unwrap()
+                .format()
+                .contains_key("icon")
+        );
     }
 
     #[test]
@@ -356,7 +366,12 @@ mod tests {
             ..Config::default()
         };
         let plan = prepare(&config).unwrap();
-        assert!(plan.output("charging").unwrap().format().contains_key("icon"));
+        assert!(
+            plan.output("charging")
+                .unwrap()
+                .format()
+                .contains_key("icon")
+        );
     }
 
     #[test]

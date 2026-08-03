@@ -353,7 +353,6 @@ mod tests {
         }
     }
 
-
     #[test]
     fn every_capture_type_has_a_declared_icon() {
         // Drift test: the exhaustive match stops compiling when a `Type`

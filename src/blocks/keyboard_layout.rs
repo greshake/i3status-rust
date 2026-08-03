@@ -122,9 +122,10 @@ pub enum KeyboardLayoutDriver {
 }
 
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
-    BlockPlan::new(vec![
-        OutputPlan::new("main", config.format.with_default(" $layout ")?),
-    ])
+    BlockPlan::new(vec![OutputPlan::new(
+        "main",
+        config.format.with_default(" $layout ")?,
+    )])
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -205,7 +206,6 @@ mod tests {
         assert!(main.format().contains_key("layout"));
         assert_eq!(main.output().icon_placeholders().count(), 0);
     }
-
 
     #[test]
     fn plan_uses_configured_format() {

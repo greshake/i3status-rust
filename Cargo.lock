@@ -1198,6 +1198,7 @@ dependencies = [
  "icalendar",
  "icu_datetime",
  "icu_locale",
+ "icu_properties",
  "indexmap",
  "inotify",
  "itertools 0.13.0",

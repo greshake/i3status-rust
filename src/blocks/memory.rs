@@ -435,5 +435,4 @@ mod tests {
         assert_eq!(alt.single_icon("icon").unwrap(), "memory_mem");
         assert_eq!(alt.single_icon("icon_swap").unwrap(), "memory_swap");
     }
-
 }

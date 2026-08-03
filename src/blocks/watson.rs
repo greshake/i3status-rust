@@ -261,5 +261,4 @@ mod tests {
         let plan = prepare(&config).unwrap();
         assert!(plan.output("main").unwrap().format().contains_key("text"));
     }
-
 }

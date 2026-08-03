@@ -299,5 +299,4 @@ mod tests {
         assert!(main.format().contains_key("fan_speed"));
         assert!(!main.format().contains_key("utilization"));
     }
-
 }

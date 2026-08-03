@@ -254,5 +254,4 @@ mod tests {
         let missing = plan.output("missing").unwrap();
         assert!(missing.format().contains_key("device"));
     }
-
 }

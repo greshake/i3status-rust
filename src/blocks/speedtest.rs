@@ -54,14 +54,12 @@ pub struct Config {
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     // The icons (`ping`, `net_down`, `net_up`) are rendered by `^icon_*`
     // format tokens, not icon-valued placeholders, so no icons are declared.
-    BlockPlan::new(vec![
-        OutputPlan::new(
-            "main",
-            config.format.with_default(
-                " ^icon_ping $ping ^icon_net_down $speed_down ^icon_net_up $speed_up ",
-            )?,
-        ),
-    ])
+    BlockPlan::new(vec![OutputPlan::new(
+        "main",
+        config
+            .format
+            .with_default(" ^icon_ping $ping ^icon_net_down $speed_down ^icon_net_up $speed_up ")?,
+    )])
 }
 
 pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
@@ -118,7 +116,6 @@ mod tests {
         let output = plan.output("main").unwrap();
         assert_eq!(output.output().icon_placeholders().count(), 0);
     }
-
 
     #[test]
     fn custom_format_is_respected() {

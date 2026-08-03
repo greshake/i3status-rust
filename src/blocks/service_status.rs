@@ -236,7 +236,6 @@ mod tests {
         }
     }
 
-
     #[test]
     fn plan_uses_configured_formats() {
         let config = Config {

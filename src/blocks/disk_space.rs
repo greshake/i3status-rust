@@ -110,10 +110,7 @@ pub struct Config {
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     // Both outputs render the same value set, built unconditionally on
     // every update.
-    let declare = |output: OutputPlan| {
-        output
-            .icon("icon", IconChoices::one("disk_drive"))
-    };
+    let declare = |output: OutputPlan| output.icon("icon", IconChoices::one("disk_drive"));
     let mut outputs = vec![declare(OutputPlan::new(
         "main",
         config.format.with_default(" $icon $available ")?,
@@ -348,5 +345,4 @@ mod tests {
         assert!(alt.format().contains_key("total"));
         assert_eq!(alt.single_icon("icon").unwrap(), "disk_drive");
     }
-
 }

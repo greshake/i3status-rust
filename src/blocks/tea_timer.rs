@@ -59,9 +59,8 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
                 .format
                 .with_default(" $icon {$time.duration(hms:true) |}")?,
         )
-        .icon("icon", IconChoices::one("tea"))
-        // `time`, `hours`, `minutes`, and `seconds` are only set while the
-        // timer is active, so they must not be guaranteed.,
+        .icon("icon", IconChoices::one("tea")), // `time`, `hours`, `minutes`, and `seconds` are only set while the
+                                                // timer is active, so they must not be guaranteed.,
     ])
 }
 
@@ -155,7 +154,6 @@ mod tests {
         let output = plan.output("main").unwrap();
         assert_eq!(output.single_icon("icon").unwrap(), "tea");
     }
-
 
     #[test]
     fn custom_format_is_respected() {

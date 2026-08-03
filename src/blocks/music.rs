@@ -194,8 +194,8 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
             .icon("next", IconChoices::one("music_next"))
             .icon("prev", IconChoices::one("music_prev"))
             .icon("volume_icon", IconChoices::one("volume"))
-            // `icon` is the only value set both with and without a player;
-            // everything else (buttons, player info, volume) is conditional.
+        // `icon` is the only value set both with and without a player;
+        // everything else (buttons, player info, volume) is conditional.
     };
     let mut outputs = vec![with_icons(OutputPlan::new(
         "main",
@@ -745,7 +745,6 @@ mod tests {
         assert!(play.permits("music_pause"));
         assert!(!play.permits("music"));
     }
-
 
     #[test]
     fn alt_output_exists_only_when_configured() {

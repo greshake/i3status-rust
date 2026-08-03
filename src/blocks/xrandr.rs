@@ -382,7 +382,6 @@ mod tests {
         assert_eq!(main.single_icon("res_icon").unwrap(), "resolution");
     }
 
-
     #[test]
     fn plan_uses_configured_format() {
         let config = Config {

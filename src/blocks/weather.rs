@@ -445,9 +445,12 @@ impl Forecast {
 pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     let weather_icons = || IconChoices::fixed(WeatherIcon::ALL_NAMES);
     let mut outputs = vec![
-        OutputPlan::new("main", config.format.with_default(" $icon $weather $temp ")?)
-            .icon("icon", weather_icons())
-            .icon("icon_ffin", weather_icons()),
+        OutputPlan::new(
+            "main",
+            config.format.with_default(" $icon $weather $temp ")?,
+        )
+        .icon("icon", weather_icons())
+        .icon("icon_ffin", weather_icons()),
     ];
     if let Some(format_alt) = &config.format_alt {
         outputs.push(
@@ -732,7 +735,6 @@ mod tests {
             degrees += 15.0;
         }
     }
-
 
     fn config(toml_str: &str) -> Config {
         toml::from_str(toml_str).unwrap()

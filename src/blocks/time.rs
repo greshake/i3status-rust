@@ -180,5 +180,4 @@ mod tests {
         assert!(main.format().contains_key("timestamp"));
         assert!(!main.format().contains_key("icon"));
     }
-
 }

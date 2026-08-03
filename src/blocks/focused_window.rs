@@ -133,7 +133,6 @@ mod tests {
         assert_eq!(main.output().icon_placeholders().count(), 0);
     }
 
-
     #[test]
     fn custom_format_is_used() {
         let config = Config {

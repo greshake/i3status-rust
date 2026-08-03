@@ -116,7 +116,6 @@ mod tests {
         assert_eq!(output.single_icon("icon").unwrap(), "docker");
     }
 
-
     #[test]
     fn custom_format_is_respected() {
         let config = Config {

@@ -319,10 +319,8 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
             .icon("icon", base())
             .icon("status_icon", IconChoices::one("pomodoro_stopped")),
         // Prompt and notify renders always carry the interactive message.
-        OutputPlan::new("prompt", format.clone())
-            .icon("icon", base()),
-        OutputPlan::new("notify", format)
-            .icon("icon", base()),
+        OutputPlan::new("prompt", format.clone()).icon("icon", base()),
+        OutputPlan::new("notify", format).icon("icon", base()),
         OutputPlan::new("running", pomodoro_format.clone())
             .icon("icon", base())
             .icon("status_icon", IconChoices::one("pomodoro_started")),
@@ -421,7 +419,6 @@ mod tests {
             }
         }
     }
-
 
     #[test]
     fn states_share_the_expected_formats() {

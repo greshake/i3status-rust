@@ -41,6 +41,8 @@ use std::io::IsTerminal as _;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use icu_properties::CodePointSetData;
+use icu_properties::props::DefaultIgnorableCodePoint;
 use std::time::Duration;
 use unicode_width::UnicodeWidthStr;
 
@@ -2169,31 +2171,16 @@ fn first_family(family: &str) -> String {
     family.split(',').next().unwrap_or(family).to_string()
 }
 
-/// Unicode's `Default_Ignorable_Code_Point` property (DerivedCoreProperties
-/// in the UCD): characters a renderer is expected to draw nothing for —
-/// joiners, variation selectors, bidi controls, fillers, tags. Combining
-/// marks are deliberately absent: an acute accent has no advance width but
-/// very much has a glyph.
+/// Unicode's `Default_Ignorable_Code_Point` property: characters a
+/// renderer is expected to draw nothing for — joiners, variation
+/// selectors, bidi controls, fillers, tags. Answered by ICU's Unicode
+/// data rather than by a table maintained here.
 ///
-/// Transcribed rather than pulled from a Unicode crate, which the project
-/// does not depend on. The ranges below include the blocks Unicode reserves
-/// for future default-ignorables (2060..206F, FFF0..FFF8, E0000..E0FFF), so
-/// this does not need revisiting for a new Unicode release.
+/// This is not the same question as the general category: U+115F HANGUL
+/// CHOSEONG FILLER is a letter that draws nothing, while a combining
+/// acute accent has no advance width but a very visible glyph.
 fn is_default_ignorable(c: char) -> bool {
-    matches!(c,
-        '\u{00ad}' | '\u{034f}' | '\u{061c}' | '\u{3164}' | '\u{feff}' | '\u{ffa0}'
-        | '\u{115f}'..='\u{1160}'
-        | '\u{17b4}'..='\u{17b5}'
-        | '\u{180b}'..='\u{180f}'
-        | '\u{200b}'..='\u{200f}'
-        | '\u{202a}'..='\u{202e}'
-        | '\u{2060}'..='\u{206f}'
-        | '\u{fe00}'..='\u{fe0f}'
-        | '\u{fff0}'..='\u{fff8}'
-        | '\u{1bca0}'..='\u{1bca3}'
-        | '\u{1d173}'..='\u{1d17a}'
-        | '\u{e0000}'..='\u{e0fff}'
-    )
+    CodePointSetData::new::<DefaultIgnorableCodePoint>().contains(c)
 }
 
 /// Interlinear annotation controls: `Cf` characters that are not

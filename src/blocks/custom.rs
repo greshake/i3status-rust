@@ -95,7 +95,6 @@
 //! # TODO:
 //! - Use `shellexpand`
 
-
 use super::prelude::*;
 use inotify::{Inotify, WatchMask};
 use std::process::Stdio;

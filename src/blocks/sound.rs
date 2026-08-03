@@ -193,10 +193,7 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     };
     // `volume` is removed when muted (unless `show_volume_when_muted`) and
     // `active_port` can be absent or mapped away, so neither is guaranteed.
-    let with_guarantees = |output: OutputPlan| {
-        output
-            .icon("icon", icons())
-    };
+    let with_guarantees = |output: OutputPlan| output.icon("icon", icons());
     let mut outputs = vec![with_guarantees(OutputPlan::new(
         "main",
         config.format.with_default(" $icon {$volume.eng(w:2)|} ")?,
@@ -508,7 +505,6 @@ mod tests {
         assert!(alt.format().contains_key("output_name"));
         assert!(alt.output().choices_for("icon").unwrap().permits("volume"));
     }
-
 
     #[test]
     fn chooser_only_produces_declared_names() {

@@ -348,5 +348,4 @@ mod tests {
         }
         assert_eq!(BOOST_ICON_NAMES.len(), 2);
     }
-
 }
