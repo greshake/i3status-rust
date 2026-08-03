@@ -27,7 +27,7 @@ jobs:
     steps:
     - name: Get required packages and config git
       run: |
-        pacman --noconfirm --noprogressbar -Syu base-devel clang git libpipewire libpulse lm_sensors notmuch openssl pango rsync
+        pacman --noconfirm --noprogressbar -Syu base-devel clang git libpipewire libpulse lm_sensors notmuch openssl pango rsync ttf-dejavu
         git config --global --add safe.directory "$GITHUB_WORKSPACE"
     - uses: actions/checkout@v5
     - uses: dtolnay/rust-toolchain@stable
