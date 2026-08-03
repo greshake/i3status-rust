@@ -15,21 +15,18 @@
 //!   real work: network requests, command execution, D-Bus calls.
 //! - Icons: one row per glyph with its codepoint and the font that will
 //!   actually draw it (via fontconfig). Rows drawn by fonts outside the
-//!   bar's font list are highlighted; icons not used by any configured
-//!   block are collapsed at the end. "Used by" combines what blocks
-//!   requested during the live test with static analysis (state-dependent
-//!   icons a block did not request this cycle are marked "may").
+//!   bar's font list are highlighted. "Used by" lists the blocks that can
+//!   request the icon.
 //!
-//! Static analysis is driven by each block's prepared contract
-//! ([`crate::block_plan::BlockPlan`]): the same effective formats and
-//! declared icon choices the runtime renders through, so the analysis cannot
-//! drift from block behavior. An icon is required only when it is reachable
-//! from the instance's effective formats — declared icons whose placeholder
-//! or output variant the configured formats never reference are reported as
-//! unused, not as problems. Every block has a contract (enforced at compile
-//! time); a block instance whose configuration fails to deserialize is
-//! analyzed conservatively (nothing claimed unused) and the configuration
-//! error is reported.
+//! A block can only request icons its prepared contract declares
+//! ([`crate::block_plan::BlockPlan`], enforced by the capability its output
+//! handles mint), so doctor takes every declared icon as in use by that
+//! block — no attempt is made to prove which of them a particular
+//! configuration or runtime state would reach. An icon a block declares but
+//! never renders costs nothing; a declared icon with no definition is a
+//! real gap, because the bar errors whenever that state comes up. Blocks
+//! that choose names at runtime (`custom`, `custom_dbus`) declare that
+//! openly and are reported as such.
 //! - Problems: numbered findings with concrete fixes.
 //!
 //! Doctor never aborts: missing tools or broken config sections are
@@ -163,14 +160,18 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
         let (file, trace) = resolve_file(set_name, Some("icons"));
         match file {
             None => {
+                // The typed parse fails on the same lookup; let this
+                // specific diagnosis stand in for it.
+                explained_parse_errors.push(format!("Icon set '{set_name}' not found"));
                 problems.push(Problem {
                     diagnosis: escape_control_multiline(&format!(
                         "Icon set {set_name:?} not found. Icon sets are plain TOML files looked \
                          up on disk, not built into the binary. Searched:\n{trace}"
                     )),
                     fix: Some(escape_control(&format!(
-                        "Copy the set (e.g. files/icons/{set_name}.toml from the source tree) \
-                         into ~/.config/i3status-rust/icons/, or use an absolute path in `icons = `."
+                        "Copy the set (e.g. files/icons/{}.toml from the source tree) into \
+                         ~/.config/i3status-rust/icons/, or use an absolute path in `icons = `.",
+                        escape_control(set_name)
                     ))),
                 });
                 (
@@ -382,13 +383,13 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                     .is_some_and(|r| r.split(',').any(|m| family_eq(m, family)))
             };
             if !installed {
-                let diagnosis = format!(
+                let diagnosis = escape_control(&format!(
                     "Font {family:?} is in the bar's font list but not installed{}.",
                     resolved
                         .as_ref()
                         .map(|r| format!(" (fontconfig silently uses {r:?} in its place)"))
                         .unwrap_or_default()
-                );
+                ));
                 if font_authoritative {
                     problems.push(Problem {
                         diagnosis,
@@ -434,10 +435,9 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
         }
     };
 
-    // may-use: the icons each block instance may request in some state,
-    // attributed by label: only the icons reachable from the instance's
-    // effective formats, per its prepared contract.
-    let mut may_use: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    // Icon name -> the block instances whose contract declares it. Every
+    // declared icon counts as in use by that block.
+    let mut declared_by: BTreeMap<String, Vec<String>> = BTreeMap::new();
 
     // Labels whose block configuration failed to deserialize: the static
     // problem below already covers them, so the live report must not
@@ -484,7 +484,10 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                     .insert(label.clone());
             }
             for icon in &analysis.required {
-                may_use.entry(icon.clone()).or_default().push(label.clone());
+                declared_by
+                    .entry(icon.clone())
+                    .or_default()
+                    .push(label.clone());
             }
         }
         // Errors render through the shared error-widget plan with the
@@ -515,7 +518,7 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
             });
         if let Some(error_rel) = &error_rel {
             for icon in &error_rel.required {
-                let users = may_use.entry(icon.clone()).or_default();
+                let users = declared_by.entry(icon.clone()).or_default();
                 if !users.contains(&label) {
                     users.push(label.clone());
                 }
@@ -703,7 +706,7 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
         global_overrides: &global_overrides,
         block_overrides: &block_overrides,
         used_now: &used_now,
-        may_use: &may_use,
+        declared_by: &declared_by,
         live_reported: &live_reported,
         icons_formats: &icons_formats,
         markup_labels: &markup_labels,
@@ -720,7 +723,11 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                 .iter()
                 .map(|run| format!("{} ({})", escape_control(run), codepoints(run)))
                 .collect();
-            println!("   {} — {family} ({label})", shown.join(", "));
+            println!(
+                "   {} — {} ({label})",
+                shown.join(", "),
+                escape_control(family)
+            );
         }
         println!(
             "   Like * rows above, these depend on which fonts happen to be installed; \
@@ -1535,7 +1542,9 @@ const FLAG_FOOTNOTE: &str = "* Country flags are drawn differently in your termi
 fn escape_control(text: &str) -> String {
     text.chars()
         .flat_map(|c| {
-            if c.is_control() {
+            // Format characters are invisible by design: a bidi override
+            // can reorder a whole line, so show them instead of obeying.
+            if c.is_control() || is_format_char(c) {
                 c.escape_debug().collect::<Vec<_>>()
             } else {
                 vec![c]
@@ -1764,10 +1773,8 @@ struct IconTableInput<'a> {
     global_overrides: &'a HashMap<String, Icon>,
     block_overrides: &'a [(String, HashMap<String, Icon>)],
     used_now: &'a BTreeMap<String, HashSet<String>>,
-    /// Icon name -> labels of block instances that may request it in some
-    /// state (computed in [`run`]: exact per-instance reachability for
-    /// contract blocks, documented icon lists for legacy blocks).
-    may_use: &'a BTreeMap<String, Vec<String>>,
+    /// Icon name -> labels of block instances whose contract declares it.
+    declared_by: &'a BTreeMap<String, Vec<String>>,
     /// (label, icon) pairs already diagnosed by a live render error.
     live_reported: &'a HashSet<(String, String)>,
     /// Per block label: its effective icons_format (the wrapper applied to
@@ -1788,7 +1795,7 @@ fn print_icon_table(input: IconTableInput) {
         global_overrides,
         block_overrides,
         used_now,
-        may_use,
+        declared_by,
         live_reported,
         icons_formats,
         markup_labels,
@@ -1828,7 +1835,7 @@ fn print_icon_table(input: IconTableInput) {
             usage.entry(icon.clone()).or_default().push(block.clone());
         }
     }
-    for (icon, blocks) in may_use {
+    for (icon, blocks) in declared_by {
         for block in blocks {
             let users = usage.entry((*icon).to_string()).or_default();
             if !users.contains(block) {
@@ -2077,10 +2084,10 @@ fn push_icon_rows(
             match font_check.as_mut() {
                 None => ("?".to_string(), ""),
                 Some(check) => match glyph_provider(check, &effective) {
-                    GlyphProvider::Known(family) => (first_family(&family), ""),
+                    GlyphProvider::Known(family) => (escape_control(&first_family(&family)), ""),
                     GlyphProvider::Fallback(family) => {
                         *fallback_rows += 1;
-                        (first_family(&family), " *")
+                        (escape_control(&first_family(&family)), " *")
                     }
                     GlyphProvider::Missing => {
                         *missing_rows += 1;
@@ -2163,6 +2170,7 @@ fn is_format_char(c: char) -> bool {
         | '\u{2060}'..='\u{2064}'
         | '\u{2066}'..='\u{2069}'
         | '\u{fe00}'..='\u{fe0f}'
+        | '\u{fff9}'..='\u{fffb}'
         | '\u{e0000}'..='\u{e007f}'
         | '\u{e0100}'..='\u{e01ef}'
     )
@@ -2235,13 +2243,27 @@ fn resolve_file(file: &str, subdir: Option<&str>) -> (Option<PathBuf>, String) {
     for candidate in util::file_candidates(file, subdir, Some("toml")) {
         let line = match (candidate.try_exists(), &found) {
             (Ok(true), None) => {
-                let line = format!("   ✓ {} ← using this\n", candidate.display());
+                let line = format!(
+                    "   ✓ {} ← using this\n",
+                    escape_control(&candidate.display().to_string())
+                );
                 found = Some(candidate);
                 line
             }
-            (Ok(true), Some(_)) => format!("   ✓ {} (shadowed)\n", candidate.display()),
-            (Ok(false), _) => format!("   ✗ {}\n", candidate.display()),
-            (Err(err), _) => format!("   ? {} (could not check: {err})\n", candidate.display()),
+            // Candidates embed the configured name: a newline in it must
+            // not forge a line in doctor's own report.
+            (Ok(true), Some(_)) => format!(
+                "   ✓ {} (shadowed)\n",
+                escape_control(&candidate.display().to_string())
+            ),
+            (Ok(false), _) => format!(
+                "   ✗ {}\n",
+                escape_control(&candidate.display().to_string())
+            ),
+            (Err(err), _) => format!(
+                "   ? {} (could not check: {err})\n",
+                escape_control(&candidate.display().to_string())
+            ),
         };
         trace.push_str(&line);
     }
@@ -2517,33 +2539,85 @@ fn parse_font_directive(raw: &str) -> Vec<String> {
 /// trailing style words and size so only the family remains:
 /// "DejaVu Sans Mono Bold 13.5" → "DejaVu Sans Mono"
 fn strip_font_modifiers(family: &str) -> String {
-    // Pango style keywords that no font family is named after. Weight and
-    // width words (Light, Medium, Black, Condensed, Expanded) and Roman
-    // are deliberately NOT here: "Arial Black", "DejaVu Sans Condensed"
-    // and "Times New Roman" are family names, and rewriting them would
-    // make doctor check a font nobody configured.
+    // Pango's own style, weight, stretch, variant and gravity keywords: a
+    // description is parsed by the renderer, so "Arial Black 12" selects
+    // family Arial at weight Black, whatever the font file is called.
     const STYLE_WORDS: &[&str] = &[
         "italic",
         "oblique",
-        "bold",
+        "roman",
+        "normal",
+        "small-caps",
+        "all-small-caps",
+        "petite-caps",
+        "all-petite-caps",
+        "unicase",
+        "title-caps",
+        "thin",
+        "ultralight",
+        "ultra-light",
+        "extralight",
+        "extra-light",
+        "light",
+        "semilight",
+        "semi-light",
+        "demilight",
+        "demi-light",
+        "book",
+        "regular",
+        "medium",
         "semibold",
         "semi-bold",
         "demibold",
         "demi-bold",
+        "bold",
         "ultrabold",
         "ultra-bold",
         "extrabold",
         "extra-bold",
-        "small-caps",
+        "heavy",
+        "black",
+        "ultraheavy",
+        "ultra-heavy",
+        "extrablack",
+        "extra-black",
+        "ultrablack",
+        "ultra-black",
+        "ultracondensed",
+        "ultra-condensed",
+        "extracondensed",
+        "extra-condensed",
+        "condensed",
+        "semicondensed",
+        "semi-condensed",
+        "semiexpanded",
+        "semi-expanded",
+        "extraexpanded",
+        "extra-expanded",
+        "ultraexpanded",
+        "ultra-expanded",
+        "expanded",
         "not-rotated",
+        "south",
         "upside-down",
+        "north",
         "rotated-left",
+        "east",
         "rotated-right",
+        "west",
     ];
     let mut parts: Vec<&str> = family.split_whitespace().collect();
+    // At most ONE trailing size, and never the whole name: "Source Serif 4
+    // 12" is the family "Source Serif 4" at size 12, and "3270" is a family.
+    if parts.len() > 1
+        && parts
+            .last()
+            .is_some_and(|last| last.trim_end_matches("px").parse::<f64>().is_ok())
+    {
+        parts.pop();
+    }
     while let Some(last) = parts.last() {
-        let last = last.trim_end_matches("px");
-        if last.parse::<f64>().is_ok() || STYLE_WORDS.contains(&last.to_lowercase().as_str()) {
+        if parts.len() > 1 && STYLE_WORDS.contains(&last.to_lowercase().as_str()) {
             parts.pop();
         } else {
             break;
@@ -2750,15 +2824,24 @@ mod tests {
     }
 
     #[test]
-    fn font_family_names_ending_in_style_words_are_preserved() {
+    fn font_directive_parsing_matches_pango_family_boundaries() {
+        // These are the families returned by
+        // pango_font_description_get_family after parsing each description;
+        // Doctor must model the renderer, not font-file naming conventions.
         assert_eq!(
             parse_font_directive("pango:DejaVu Sans Condensed 11"),
-            ["DejaVu Sans Condensed"]
+            ["DejaVu Sans"]
+        );
+        assert_eq!(parse_font_directive("pango:Arial Black 12"), ["Arial"]);
+        assert_eq!(
+            parse_font_directive("pango:DejaVu Sans Mono Light 11"),
+            ["DejaVu Sans Mono"]
         );
         assert_eq!(
-            parse_font_directive("pango:Arial Black 12"),
-            ["Arial Black"]
+            parse_font_directive("pango:Source Serif 4 12"),
+            ["Source Serif 4"]
         );
+        assert_eq!(parse_font_directive("pango:3270 12"), ["3270"]);
     }
 
     #[test]
@@ -2801,6 +2884,17 @@ mod tests {
             !is_drawn('\u{fe0f}'),
             "an emoji variation selector is not a glyph"
         );
+        assert!(
+            !is_drawn('\u{fff9}'),
+            "an interlinear annotation anchor is not a glyph"
+        );
+    }
+
+    #[test]
+    fn terminal_escaping_makes_bidi_controls_visible() {
+        let escaped = escape_control("safe\u{202e}spoofed");
+        assert!(!escaped.contains('\u{202e}'));
+        assert_eq!(escaped, "safe\\u{202e}spoofed");
     }
 
     #[test]

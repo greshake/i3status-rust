@@ -25,6 +25,17 @@ impl FixtureDir {
         std::fs::write(&path, contents).expect("write doctor fixture");
         path
     }
+
+    #[cfg(unix)]
+    fn write_executable(&self, name: &str, contents: &str) -> PathBuf {
+        let path = self.write(name, contents);
+        let mut permissions = std::fs::metadata(&path)
+            .expect("read fixture executable metadata")
+            .permissions();
+        permissions.set_mode(0o755);
+        std::fs::set_permissions(&path, permissions).expect("make fixture executable");
+        path
+    }
 }
 
 impl Drop for FixtureDir {
@@ -48,6 +59,15 @@ fn doctor_with_font(config: &Path, skip_live: bool, font: &str) -> Output {
         .env_remove("I3RS_DBUS_NAME")
         .output()
         .expect("run doctor")
+}
+
+#[cfg(unix)]
+fn path_with_front(path: &Path) -> std::ffi::OsString {
+    let mut paths = vec![path.to_path_buf()];
+    if let Some(current) = std::env::var_os("PATH") {
+        paths.extend(std::env::split_paths(&current));
+    }
+    std::env::join_paths(paths).expect("construct fixture PATH")
 }
 
 fn font_family_lacks_codepoint(family: &str, codepoint: &str) -> bool {
@@ -961,6 +981,33 @@ icons = "definitely-not-an-installed-icon-set"
 }
 
 #[test]
+fn missing_icon_set_is_reported_once() {
+    let fixture = FixtureDir::new("missing-icon-set-once");
+    let config = fixture.write(
+        "config.toml",
+        r#"
+error_format = " $short_error_message "
+error_fullscreen_format = " $full_error_message "
+
+[[block]]
+block = "load"
+format = " load "
+
+[icons]
+icons = "definitely-not-an-installed-icon-set"
+"#,
+    );
+
+    let output = doctor(&config, true);
+    let stdout = stdout(&output);
+    assert!(!output.status.success(), "{stdout}");
+    assert!(
+        stdout.contains("Problems (1)"),
+        "a missing icon set must not produce both a specific and generic diagnosis:\n{stdout}"
+    );
+}
+
+#[test]
 fn skipped_live_test_does_not_claim_dynamic_icons_were_observed() {
     let fixture = FixtureDir::new("skipped-open-contract");
     let config = fixture.write(
@@ -1061,6 +1108,34 @@ icons = "\u001b[31mmissing"
 }
 
 #[test]
+fn missing_icon_search_trace_escapes_embedded_newlines() {
+    let fixture = FixtureDir::new("newline-missing-icon-path");
+    let config = fixture.write(
+        "config.toml",
+        r#"
+error_format = " $short_error_message "
+error_fullscreen_format = " $full_error_message "
+
+[[block]]
+block = "load"
+format = " load "
+
+[icons]
+icons = "missing\nFORGED-REPORT-LINE"
+"#,
+    );
+
+    let output = doctor(&config, true);
+    let stdout = stdout(&output);
+    assert!(!output.status.success(), "{stdout:?}");
+    assert!(stdout.contains("not found"), "{stdout:?}");
+    assert!(
+        !stdout.contains("\nFORGED-REPORT-LINE"),
+        "a newline embedded in an icon-set path must be rendered visibly, not forge a report line:\n{stdout:?}"
+    );
+}
+
+#[test]
 fn reported_bar_font_escapes_control_characters() {
     let fixture = FixtureDir::new("control-font-name");
     let config = fixture.write(
@@ -1085,18 +1160,105 @@ format = " load "
 
 #[cfg(unix)]
 #[test]
+fn reported_fontconfig_family_escapes_control_characters() {
+    let fixture = FixtureDir::new("control-fontconfig-family");
+    fixture.write_executable("fc-list", "#!/bin/sh\nprintf 'Fake Font\\n'\n");
+    fixture.write_executable("fc-match", "#!/bin/sh\nprintf 'Fake Font\\033[31m'\n");
+    let config = fixture.write(
+        "config.toml",
+        r#"
+error_format = " $short_error_message "
+error_fullscreen_format = " $full_error_message "
+
+[[block]]
+block = "load"
+format = " load "
+"#,
+    );
+
+    let mut command = Command::new(env!("CARGO_BIN_EXE_i3status-rs"));
+    command
+        .arg("--doctor")
+        .arg("--doctor-skip-live")
+        .arg("--font")
+        .arg("monospace")
+        .arg(&config)
+        .env_remove("I3RS_DBUS_NAME")
+        .env("PATH", &fixture.0);
+    let output = command.output().expect("run doctor with fake fontconfig");
+    let stdout = stdout(&output);
+    assert!(output.status.success(), "{stdout:?}");
+    assert!(stdout.contains("Fake Font"), "{stdout:?}");
+    assert!(
+        !stdout.contains('\u{1b}'),
+        "font family names returned by fontconfig must not inject terminal controls:\n{stdout:?}"
+    );
+    let header = stdout
+        .lines()
+        .find(|line| line.starts_with("Name  Glyph"))
+        .expect("icon-table header");
+    let row = stdout
+        .lines()
+        .find(|line| line.starts_with("cogs"))
+        .expect("cogs icon row");
+    assert_eq!(
+        header.find("Used by"),
+        row.rfind("load"),
+        "escaping a provider name must not break display-column alignment:\n{stdout:?}"
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn reported_text_fallback_family_escapes_control_characters() {
+    let fixture = FixtureDir::new("control-text-fallback-family");
+    fixture.write_executable("fc-list", "#!/bin/sh\nprintf 'Fake Font\\n'\n");
+    fixture.write_executable(
+        "fc-match",
+        "#!/bin/sh\ncase \"$*\" in\n  *charset=*) printf 'Fallback Font\\033[31m' ;;\n  *) printf 'Base Font' ;;\nesac\n",
+    );
+    let config = fixture.write(
+        "config.toml",
+        r#"
+error_format = " $short_error_message "
+error_fullscreen_format = " $full_error_message "
+
+[[block]]
+block = "custom"
+command = "printf '!'"
+interval = "once"
+"#,
+    );
+
+    let mut command = Command::new(env!("CARGO_BIN_EXE_i3status-rs"));
+    command
+        .arg("--doctor")
+        .arg("--font")
+        .arg("monospace")
+        .arg(&config)
+        .env_remove("I3RS_DBUS_NAME")
+        .env("PATH", path_with_front(&fixture.0));
+    let output = command
+        .output()
+        .expect("run doctor with fake text fallback");
+    let stdout = stdout(&output);
+    assert!(output.status.success(), "{stdout:?}");
+    assert!(stdout.contains("Fallback Font"), "{stdout:?}");
+    assert!(
+        !stdout.contains('\u{1b}'),
+        "text fallback families returned by fontconfig must not inject terminal controls:\n{stdout:?}"
+    );
+}
+
+#[cfg(unix)]
+#[test]
 fn generated_but_unrendered_country_flag_is_not_reported_as_used() {
     let fixture = FixtureDir::new("unrendered-country-flag");
-    let nordvpn = fixture.write(
+    fixture.write_executable(
         "nordvpn",
         "#!/bin/sh\nprintf '%s\\n' 'Status: Connected' 'Country: United States' \
          'Hostname: us123.nordvpn.com'\n",
     );
-    let mut permissions = std::fs::metadata(&nordvpn)
-        .expect("read fake nordvpn metadata")
-        .permissions();
-    permissions.set_mode(0o755);
-    std::fs::set_permissions(&nordvpn, permissions).expect("make fake nordvpn executable");
 
     let config = fixture.write(
         "config.toml",
@@ -1111,11 +1273,6 @@ format_connected = " $country "
 "#,
     );
 
-    let mut paths = vec![fixture.0.clone()];
-    if let Some(current) = std::env::var_os("PATH") {
-        paths.extend(std::env::split_paths(&current));
-    }
-    let path = std::env::join_paths(paths).expect("construct PATH for fake nordvpn");
     let mut command = Command::new(env!("CARGO_BIN_EXE_i3status-rs"));
     command
         .arg("--doctor")
@@ -1123,7 +1280,7 @@ format_connected = " $country "
         .arg("monospace")
         .arg(&config)
         .env_remove("I3RS_DBUS_NAME")
-        .env("PATH", path);
+        .env("PATH", path_with_front(&fixture.0));
     let output = command.output().expect("run doctor with fake nordvpn");
     let stdout = stdout(&output);
     assert!(output.status.success(), "{stdout}");
