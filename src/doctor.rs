@@ -18,20 +18,23 @@
 //!   bar's font list are highlighted. "Used by" lists the blocks that can
 //!   request the icon.
 //!
-//! A block can only request icons its prepared contract declares
-//! ([`crate::block_plan::BlockPlan`], enforced by the capability its output
-//! handles mint), so doctor takes every declared icon as in use by that
-//! block — no attempt is made to prove which of them a particular
-//! configuration or runtime state would reach. An icon a block declares but
-//! never renders costs nothing; a declared icon with no definition is a
-//! real gap, because the bar errors whenever that state comes up. Blocks
-//! that choose names at runtime (`custom`, `custom_dbus`) declare that
-//! openly and are reported as such.
 //! - Problems: numbered findings with concrete fixes.
 //!
-//! Doctor never aborts: missing tools or broken config sections are
-//! reported (with install/fix instructions where known) and the rest of the
-//! report still runs.
+//! A block can only request icons its prepared contract declares
+//! ([`crate::block_plan::BlockPlan`], enforced by the capability its output
+//! handles mint), so doctor validates the whole declared contract and takes
+//! every declared icon as in use by that block. It does not try to prove
+//! which declarations a particular configuration or runtime state would
+//! reach: a declaration a format never renders is reported as undefined
+//! just the same, because the contract is what the block is allowed to ask
+//! for. Blocks that choose names at runtime (`custom`, `custom_dbus`)
+//! declare that openly and are reported as such.
+//!
+//! Doctor continues after recoverable failures: a missing tool, an
+//! unreadable section, a block that fails its live test are reported (with
+//! install or fix instructions where known) and the rest of the report
+//! still runs. It stops early only when there is nothing left to inspect —
+//! a configuration file that is missing, unreadable, or not valid TOML.
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::io::IsTerminal as _;
@@ -39,7 +42,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use std::time::Duration;
-use unicode_width::UnicodeWidthStr;
+use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
 
 use futures::StreamExt as _;
 use tokio::sync::mpsc;
@@ -1542,9 +1545,9 @@ const FLAG_FOOTNOTE: &str = "* Country flags are drawn differently in your termi
 fn escape_control(text: &str) -> String {
     text.chars()
         .flat_map(|c| {
-            // Format characters are invisible by design: a bidi override
-            // can reorder a whole line, so show them instead of obeying.
-            if c.is_control() || is_format_char(c) {
+            // Invisible characters are shown, not obeyed: a bidi override
+            // can reorder a whole line of doctor's own report.
+            if c.is_control() || !is_drawn(c) && !c.is_whitespace() {
                 c.escape_debug().collect::<Vec<_>>()
             } else {
                 vec![c]
@@ -2160,26 +2163,24 @@ fn first_family(family: &str) -> String {
     family.split(',').next().unwrap_or(family).to_string()
 }
 
-/// Formatting characters: they steer shaping (joiners, variation
-/// selectors, bidi controls) but have no glyph of their own.
-fn is_format_char(c: char) -> bool {
-    matches!(c,
-        '\u{00ad}' | '\u{061c}' | '\u{180e}' | '\u{feff}'
-        | '\u{200b}'..='\u{200f}'
-        | '\u{202a}'..='\u{202e}'
-        | '\u{2060}'..='\u{2064}'
-        | '\u{2066}'..='\u{2069}'
-        | '\u{fe00}'..='\u{fe0f}'
-        | '\u{fff9}'..='\u{fffb}'
-        | '\u{e0000}'..='\u{e007f}'
-        | '\u{e0100}'..='\u{e01ef}'
-    )
+/// Interlinear annotation controls: `Cf` characters that
+/// [`UnicodeWidthChar`] nevertheless reports as one column wide, so the
+/// width test below does not catch them.
+fn is_annotation_char(c: char) -> bool {
+    matches!(c, '\u{fff9}'..='\u{fffb}')
 }
 
-/// Characters that draw nothing on their own: whitespace, control codes
-/// and formatting characters. Asking fontconfig about them is meaningless.
+/// Characters that draw nothing on their own. Instead of enumerating
+/// Unicode's formatting characters by hand — a list that grows with every
+/// Unicode release — this asks the UCD-derived width tables: a character
+/// occupying no columns (joiners, variation selectors, bidi controls,
+/// combining marks) has no glyph of its own, so asking fontconfig which
+/// font draws it is meaningless.
 fn is_drawn(c: char) -> bool {
-    !c.is_control() && !c.is_whitespace() && !is_format_char(c)
+    !c.is_control()
+        && !c.is_whitespace()
+        && !is_annotation_char(c)
+        && UnicodeWidthChar::width(c) != Some(0)
 }
 
 fn glyph_provider(check: &mut FontCheck, glyph: &str) -> GlyphProvider {
@@ -2529,83 +2530,89 @@ fn detect_bar_font() -> Option<DetectedFont> {
 /// `["DejaVu Sans Mono", "Font Awesome 6 Free"]`
 fn parse_font_directive(raw: &str) -> Vec<String> {
     let raw = raw.strip_prefix("pango:").unwrap_or(raw);
+    // A pango description is
+    //   FAMILY-LIST [STYLE-OPTIONS] [SIZE] [VARIATIONS]
+    // and VARIATIONS ("@wght=200,wdth=90") is itself comma-separated, so it
+    // has to go before commas are read as family separators.
+    let raw = raw.split('@').next().unwrap_or(raw);
     raw.split(',')
         .map(strip_font_modifiers)
         .filter(|f| !f.is_empty())
         .collect()
 }
 
-/// Pango font descriptions are `FAMILY [STYLE-OPTIONS] [SIZE]`; drop the
-/// trailing style words and size so only the family remains:
-/// "DejaVu Sans Mono Bold 13.5" → "DejaVu Sans Mono"
+/// Strip the trailing style keywords and size of a pango font description
+/// so only the family remains: "DejaVu Sans Mono Bold 13.5" → "DejaVu Sans
+/// Mono".
+///
+/// Doctor does not link pango, so this implements pango's documented
+/// grammar rather than observing its parser: the keywords below are the
+/// nicks of pango's style, variant, weight, stretch and gravity enums, and
+/// they are matched the way pango matches them — case-insensitively and
+/// ignoring `-` and `_`, so "SmallCaps", "small-caps" and "Small_Caps" are
+/// one keyword. A description that uses anything outside that grammar is
+/// left alone rather than guessed at.
 fn strip_font_modifiers(family: &str) -> String {
-    // Pango's own style, weight, stretch, variant and gravity keywords: a
-    // description is parsed by the renderer, so "Arial Black 12" selects
-    // family Arial at weight Black, whatever the font file is called.
     const STYLE_WORDS: &[&str] = &[
+        // style
         "italic",
         "oblique",
         "roman",
         "normal",
-        "small-caps",
-        "all-small-caps",
-        "petite-caps",
-        "all-petite-caps",
+        // variant
+        "smallcaps",
+        "allsmallcaps",
+        "petitecaps",
+        "allpetitecaps",
         "unicase",
-        "title-caps",
+        "titlecaps",
+        // weight
         "thin",
         "ultralight",
-        "ultra-light",
         "extralight",
-        "extra-light",
         "light",
         "semilight",
-        "semi-light",
         "demilight",
-        "demi-light",
         "book",
         "regular",
         "medium",
         "semibold",
-        "semi-bold",
         "demibold",
-        "demi-bold",
         "bold",
         "ultrabold",
-        "ultra-bold",
         "extrabold",
-        "extra-bold",
         "heavy",
         "black",
         "ultraheavy",
-        "ultra-heavy",
-        "extrablack",
-        "extra-black",
+        "extraheavy",
         "ultrablack",
-        "ultra-black",
+        "extrablack",
+        // stretch
         "ultracondensed",
-        "ultra-condensed",
         "extracondensed",
-        "extra-condensed",
         "condensed",
         "semicondensed",
-        "semi-condensed",
         "semiexpanded",
-        "semi-expanded",
-        "extraexpanded",
-        "extra-expanded",
-        "ultraexpanded",
-        "ultra-expanded",
         "expanded",
-        "not-rotated",
+        "extraexpanded",
+        "ultraexpanded",
+        // gravity
+        "notrotated",
         "south",
-        "upside-down",
+        "upsidedown",
         "north",
-        "rotated-left",
+        "rotatedleft",
         "east",
-        "rotated-right",
+        "rotatedright",
         "west",
     ];
+    /// Pango compares keywords ignoring case, `-` and `_`.
+    fn keyword(word: &str) -> String {
+        word.chars()
+            .filter(|c| *c != '-' && *c != '_')
+            .flat_map(char::to_lowercase)
+            .collect()
+    }
     let mut parts: Vec<&str> = family.split_whitespace().collect();
     // At most ONE trailing size, and never the whole name: "Source Serif 4
     // 12" is the family "Source Serif 4" at size 12, and "3270" is a family.
@@ -2617,7 +2624,7 @@ fn strip_font_modifiers(family: &str) -> String {
         parts.pop();
     }
     while let Some(last) = parts.last() {
-        if parts.len() > 1 && STYLE_WORDS.contains(&last.to_lowercase().as_str()) {
+        if parts.len() > 1 && STYLE_WORDS.contains(&keyword(last).as_str()) {
             parts.pop();
         } else {
             break;
@@ -2842,6 +2849,18 @@ mod tests {
             ["Source Serif 4"]
         );
         assert_eq!(parse_font_directive("pango:3270 12"), ["3270"]);
+        assert_eq!(
+            parse_font_directive("pango:Noto Sans SmallCaps 12"),
+            ["Noto Sans"]
+        );
+        assert_eq!(
+            parse_font_directive("pango:Cantarell Bold 11 @wght=200"),
+            ["Cantarell"]
+        );
+        assert_eq!(
+            parse_font_directive("pango:Cantarell 11 @wght=200,wdth=90"),
+            ["Cantarell"]
+        );
     }
 
     #[test]
@@ -2887,6 +2906,10 @@ mod tests {
         assert!(
             !is_drawn('\u{fff9}'),
             "an interlinear annotation anchor is not a glyph"
+        );
+        assert!(
+            !is_drawn('\u{206a}'),
+            "an inhibit-symmetric-swapping control is not a glyph"
         );
     }
 
