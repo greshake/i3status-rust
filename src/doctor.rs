@@ -113,7 +113,10 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
         print_problems(&problems, false, &style);
         return problems.len();
     };
-    println!("Config:   {}", config_path.display());
+    println!(
+        "Config:   {}",
+        escape_control(&config_path.display().to_string())
+    );
 
     let raw: Option<toml::Value> = match std::fs::read_to_string(&config_path) {
         Err(err) => {
@@ -149,6 +152,9 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
     };
 
     // === Icon set ===
+    // Parser complaints already explained in specific terms, so the typed
+    // parse below does not report the same defect a second time.
+    let mut explained_parse_errors: Vec<String> = Vec::new();
     let builtin = Icons::default().0;
     let (set_name, overrides_value) = icons_config(&raw, &mut problems);
     let (base_map, set_desc) = if set_name == "none" {
@@ -158,14 +164,14 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
         match file {
             None => {
                 problems.push(Problem {
-                    diagnosis: format!(
+                    diagnosis: escape_control_multiline(&format!(
                         "Icon set {set_name:?} not found. Icon sets are plain TOML files looked \
                          up on disk, not built into the binary. Searched:\n{trace}"
-                    ),
-                    fix: Some(format!(
+                    )),
+                    fix: Some(escape_control(&format!(
                         "Copy the set (e.g. files/icons/{set_name}.toml from the source tree) \
                          into ~/.config/i3status-rust/icons/, or use an absolute path in `icons = `."
-                    )),
+                    ))),
                 });
                 (
                     builtin.clone(),
@@ -174,6 +180,7 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
             }
             Some(file) => match util::deserialize_toml_file::<HashMap<String, Icon>, _>(&file) {
                 Err(err) => {
+                    explained_parse_errors.push(err.to_string().trim().to_string());
                     problems.push(Problem {
                         diagnosis: escape_control_multiline(&format!(
                             "Icon set file {} cannot be parsed: {err}",
@@ -201,13 +208,14 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
             },
         }
     };
-    println!("Icon set: {set_desc}");
+    println!("Icon set: {}", escape_control(&set_desc));
 
     let global_overrides: HashMap<String, Icon> = match overrides_value {
         None => HashMap::new(),
         Some(value) => match value.clone().try_into() {
             Ok(overrides) => overrides,
             Err(err) => {
+                explained_parse_errors.push(err.to_string().trim().to_string());
                 problems.push(Problem {
                     diagnosis: escape_control_multiline(&format!(
                         "[icons.overrides] is not a valid icon table: {err}"
@@ -219,10 +227,9 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
         },
     };
 
-    // Every problem found so far describes the structure of the config
-    // file itself (icon set, overrides): the typed parse below cannot add
-    // information about the same defect.
-    let structural_defect_reported = !problems.is_empty();
+    // Per-instance icons_overrides tables, inspected here so a malformed
+    // one is explained before the typed parse reports the same complaint.
+    let raw_overrides = raw_block_overrides(&raw, &mut problems, &mut explained_parse_errors);
 
     // === Bar font ===
     let detected = if font_arg.is_none() {
@@ -249,7 +256,10 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
     // not affect the exit code.
     match (&font_check, font_arg, &detected) {
         (None, ..) if is_xlfd => {
-            println!("Bar font: {} (X core font)", font_pattern.unwrap_or(""));
+            println!(
+                "Bar font: {} (X core font)",
+                escape_control(font_pattern.unwrap_or(""))
+            );
             println!(
                 "   note: XLFD fonts bypass fontconfig, so doctor cannot analyze which font\n   \
                  draws each glyph; the font check is skipped."
@@ -263,18 +273,25 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                  fontconfig utilities (package `fontconfig` on most distros) and re-run."
             );
         }
-        (Some(_), Some(font), _) => println!("Bar font: {font} (from --font)"),
+        (Some(_), Some(font), _) => {
+            println!("Bar font: {} (from --font)", escape_control(font));
+        }
         (Some(_), None, Some(d)) => {
             println!(
                 "Bar font: {} (auto-detected via {}, {})",
-                d.font, d.tool, d.bar_id
+                escape_control(&d.font),
+                d.tool,
+                escape_control(&d.bar_id)
             );
             if let Some(note) = &d.note {
-                println!("   note: {note}");
+                println!("   note: {}", escape_control(note));
             }
         }
         (Some(check), None, None) => {
-            println!("Bar font: fontconfig default ({:?})", check.base_family);
+            println!(
+                "Bar font: fontconfig default ({})",
+                escape_control(&check.base_family)
+            );
             println!(
                 "   note: no --font given and no running i3/sway answered over IPC; glyph\n   \
                  providers below may not match your actual bar and are reported as notes,\n   \
@@ -399,10 +416,16 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
             // The same defect the icon-set/overrides inspection above
             // already described in specific terms would fail this parse
             // too; do not report one root cause twice.
-            if !structural_defect_reported {
+            // Skip only what a specific problem above already explained:
+            // the typed parse repeats the same parser complaint verbatim.
+            let text = err.to_string();
+            if !explained_parse_errors
+                .iter()
+                .any(|explained| text.contains(explained))
+            {
                 problems.push(Problem {
                     diagnosis: escape_control_multiline(&format!(
-                        "Configuration does not validate: {err}"
+                        "Configuration does not validate: {text}"
                     )),
                     fix: None,
                 });
@@ -526,8 +549,10 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                 .max()
                 .unwrap_or(0);
             println!(
-                "{:>num_w$}  {:<name_w$}  {:<out_w$}  Icons/text glyphs used during this run",
-                "#", "Name", "Output"
+                "{:>num_w$}  {}  {}  Icons/text glyphs used during this run",
+                "#",
+                pad_right("Name", name_w),
+                pad_right("Output", out_w)
             );
             for report in &reports {
                 let label = labels
@@ -599,7 +624,11 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                     &label,
                 );
             }
-            if reports.iter().any(|report| !report.flags.is_empty()) {
+            if reports.iter().any(|report| {
+                rendered_flags(&report.verdict, &report.flags)
+                    .next()
+                    .is_some()
+            }) {
                 println!("{FLAG_FOOTNOTE}");
             }
             println!();
@@ -607,11 +636,10 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
     }
 
     // === Icons table ===
-    let block_overrides: Vec<(String, HashMap<String, Icon>)> =
-        raw_block_overrides(&raw, &mut problems)
-            .into_iter()
-            .map(|(index, overrides)| (labels[index].clone(), overrides))
-            .collect();
+    let block_overrides: Vec<(String, HashMap<String, Icon>)> = raw_overrides
+        .into_iter()
+        .map(|(index, overrides)| (labels[index].clone(), overrides))
+        .collect();
     // === Text glyphs in live output ===
     // Blocks emit text glyphs too (country flags, unit symbols, ...) whose
     // rendering depends on installed fonts just like icons. Doctor asks
@@ -782,6 +810,7 @@ fn icons_config<'a>(
 fn raw_block_overrides(
     raw: &toml::Value,
     problems: &mut Vec<Problem>,
+    explained_parse_errors: &mut Vec<String>,
 ) -> Vec<(usize, HashMap<String, Icon>)> {
     let Some(blocks) = raw.get("block").and_then(|v| v.as_array()) else {
         return Vec::new();
@@ -797,12 +826,15 @@ fn raw_block_overrides(
         };
         match value.clone().try_into() {
             Ok(overrides) => out.push((index, overrides)),
-            Err(err) => problems.push(Problem {
-                diagnosis: escape_control_multiline(&format!(
-                    "{name}: icons_overrides is not a valid icon table: {err}"
-                )),
-                fix: None,
-            }),
+            Err(err) => {
+                explained_parse_errors.push(err.to_string().trim().to_string());
+                problems.push(Problem {
+                    diagnosis: escape_control_multiline(&format!(
+                        "{name}: icons_overrides is not a valid icon table: {err}"
+                    )),
+                    fix: None,
+                });
+            }
         }
     }
     out
@@ -1469,6 +1501,24 @@ fn escape_control_multiline(text: &str) -> String {
         .join("\n")
 }
 
+/// The flags a block generated AND rendered: a block can compute a value
+/// its configured format never shows (vpn's `$country_flag` when the
+/// format asks only for `$country`), and what the bar never draws is not
+/// something doctor should report as used.
+fn rendered_flags<'a>(
+    verdict: &'a LiveVerdict,
+    flags: &'a [(String, String)],
+) -> impl Iterator<Item = (&'a str, &'a str)> {
+    let rendered = match verdict {
+        LiveVerdict::Rendered { check_text, .. } => check_text.as_str(),
+        _ => "",
+    };
+    flags
+        .iter()
+        .filter(move |(_, flag)| rendered.contains(flag.as_str()))
+        .map(|(code, flag)| (code.as_str(), flag.as_str()))
+}
+
 /// Marks a country flag a block generated. The `*` points at
 /// [`FLAG_FOOTNOTE`]: the same codepoints ligate into a flag on the bar
 /// but usually not in a terminal, so what doctor prints and what the bar
@@ -1518,23 +1568,18 @@ fn print_block_report(
     // straight from a command's JSON, so escape them too.
     let mut cells: Vec<String> = icons.iter().map(|name| escape_control(name)).collect();
     cells.extend(
-        report
-            .flags
-            .iter()
-            .map(|(code, flag)| flag_cell(code, flag)),
+        rendered_flags(&report.verdict, &report.flags).map(|(code, flag)| flag_cell(code, flag)),
     );
     let icons_cell = if cells.is_empty() {
         "-".to_string()
     } else {
         cells.join(", ")
     };
-    // pad by display width: the cell may contain icon glyphs
-    let pad = out_w.saturating_sub(UnicodeWidthStr::width(cell.as_str()));
     let line = format!(
-        "{:>num_w$}  {:<name_w$}  {cell}{:pad$}  {icons_cell}",
+        "{:>num_w$}  {}  {}  {icons_cell}",
         report.index + 1,
-        report.name,
-        ""
+        pad_right(&report.name, name_w),
+        pad_right(&cell, out_w)
     );
     if red {
         println!("{}{line}{}", style.red, style.reset);
@@ -1890,19 +1935,24 @@ fn print_icon_table(input: IconTableInput) {
     let glyph_w = used_rows
         .iter()
         .map(|r| UnicodeWidthStr::width(r.glyph.as_str()) + 2)
-        .chain(["Glyph".len()])
+        .chain([UnicodeWidthStr::width("Glyph")])
         .max()
         .unwrap_or(5);
     println!(
-        "{:<name_w$}  {:<glyph_w$}  {:<codes_w$}  {:<provider_w$}  Used by",
-        "Name", "Glyph", "Code", "Effectively provided by"
+        "{}  {}  {}  {}  Used by",
+        pad_right("Name", name_w),
+        pad_right("Glyph", glyph_w),
+        pad_right("Code", codes_w),
+        pad_right("Effectively provided by", provider_w)
     );
     for row in &used_rows {
-        let cell = format!("\"{}\"", row.glyph);
-        let pad = glyph_w.saturating_sub(UnicodeWidthStr::width(cell.as_str()));
         let line = format!(
-            "{:<name_w$}  {cell}{:pad$}  {:<codes_w$}  {:<provider_w$}  {}",
-            row.name, "", row.codes, row.provider, row.used_by
+            "{}  {}  {}  {}  {}",
+            pad_right(&row.name, name_w),
+            pad_right(&format!("\"{}\"", row.glyph), glyph_w),
+            pad_right(&row.codes, codes_w),
+            pad_right(&row.provider, provider_w),
+            row.used_by
         );
         if row.red {
             println!("{}{line}{}", style.red, style.reset);
@@ -2061,6 +2111,14 @@ struct IconRow {
     red: bool,
 }
 
+/// Pad `text` with spaces until it occupies `width` terminal cells. The
+/// standard formatter pads by character count, which misaligns any table
+/// containing wide (CJK, emoji) or zero-width characters.
+fn pad_right(text: &str, width: usize) -> String {
+    let padding = width.saturating_sub(UnicodeWidthStr::width(text));
+    format!("{text}{}", " ".repeat(padding))
+}
+
 fn column_width<'a>(header: &str, values: impl Iterator<Item = &'a str>) -> usize {
     values
         .map(UnicodeWidthStr::width)
@@ -2095,10 +2153,25 @@ fn first_family(family: &str) -> String {
     family.split(',').next().unwrap_or(family).to_string()
 }
 
-/// Characters that draw nothing on their own: whitespace and control
-/// codes. Asking fontconfig about them is meaningless.
+/// Formatting characters: they steer shaping (joiners, variation
+/// selectors, bidi controls) but have no glyph of their own.
+fn is_format_char(c: char) -> bool {
+    matches!(c,
+        '\u{00ad}' | '\u{061c}' | '\u{180e}' | '\u{feff}'
+        | '\u{200b}'..='\u{200f}'
+        | '\u{202a}'..='\u{202e}'
+        | '\u{2060}'..='\u{2064}'
+        | '\u{2066}'..='\u{2069}'
+        | '\u{fe00}'..='\u{fe0f}'
+        | '\u{e0000}'..='\u{e007f}'
+        | '\u{e0100}'..='\u{e01ef}'
+    )
+}
+
+/// Characters that draw nothing on their own: whitespace, control codes
+/// and formatting characters. Asking fontconfig about them is meaningless.
 fn is_drawn(c: char) -> bool {
-    !c.is_control() && !c.is_whitespace()
+    !c.is_control() && !c.is_whitespace() && !is_format_char(c)
 }
 
 fn glyph_provider(check: &mut FontCheck, glyph: &str) -> GlyphProvider {
@@ -2444,65 +2517,28 @@ fn parse_font_directive(raw: &str) -> Vec<String> {
 /// trailing style words and size so only the family remains:
 /// "DejaVu Sans Mono Bold 13.5" → "DejaVu Sans Mono"
 fn strip_font_modifiers(family: &str) -> String {
-    // Pango style, weight, stretch, variant and gravity keywords
+    // Pango style keywords that no font family is named after. Weight and
+    // width words (Light, Medium, Black, Condensed, Expanded) and Roman
+    // are deliberately NOT here: "Arial Black", "DejaVu Sans Condensed"
+    // and "Times New Roman" are family names, and rewriting them would
+    // make doctor check a font nobody configured.
     const STYLE_WORDS: &[&str] = &[
         "italic",
         "oblique",
-        "roman",
-        "thin",
-        "ultralight",
-        "ultra-light",
-        "extralight",
-        "extra-light",
-        "light",
-        "semilight",
-        "semi-light",
-        "demilight",
-        "demi-light",
-        "book",
-        "regular",
-        "normal",
-        "medium",
+        "bold",
         "semibold",
         "semi-bold",
         "demibold",
         "demi-bold",
-        "bold",
         "ultrabold",
         "ultra-bold",
         "extrabold",
         "extra-bold",
-        "heavy",
-        "black",
-        "ultraheavy",
-        "ultra-heavy",
-        "extrablack",
-        "extra-black",
-        "ultrablack",
-        "ultra-black",
         "small-caps",
-        "ultracondensed",
-        "ultra-condensed",
-        "extracondensed",
-        "extra-condensed",
-        "semicondensed",
-        "semi-condensed",
-        "condensed",
-        "semiexpanded",
-        "semi-expanded",
-        "extraexpanded",
-        "extra-expanded",
-        "ultraexpanded",
-        "ultra-expanded",
-        "expanded",
         "not-rotated",
-        "south",
         "upside-down",
-        "north",
         "rotated-left",
-        "east",
         "rotated-right",
-        "west",
     ];
     let mut parts: Vec<&str> = family.split_whitespace().collect();
     while let Some(last) = parts.last() {
@@ -2714,6 +2750,18 @@ mod tests {
     }
 
     #[test]
+    fn font_family_names_ending_in_style_words_are_preserved() {
+        assert_eq!(
+            parse_font_directive("pango:DejaVu Sans Condensed 11"),
+            ["DejaVu Sans Condensed"]
+        );
+        assert_eq!(
+            parse_font_directive("pango:Arial Black 12"),
+            ["Arial Black"]
+        );
+    }
+
+    #[test]
     fn flag_cells_point_at_the_terminal_footnote() {
         let cell = flag_cell("US", "\u{1f1fa}\u{1f1f8}");
         assert_eq!(cell, "\u{1f1fa}\u{1f1f8} (US country flag) *");
@@ -2733,6 +2781,26 @@ mod tests {
     fn table_column_width_uses_terminal_display_width() {
         assert_eq!(column_width("", ["é"].into_iter()), 1);
         assert_eq!(column_width("", ["界"].into_iter()), 2);
+    }
+
+    #[test]
+    fn display_padding_handles_wide_characters() {
+        for text in ["界", "ab", "a"] {
+            let padded = pad_right(text, 2);
+            assert_eq!(UnicodeWidthStr::width(padded.as_str()), 2);
+        }
+
+        assert_eq!(pad_right("界", 2), "界");
+        assert_eq!(pad_right("a", 2), "a ");
+    }
+
+    #[test]
+    fn glyph_checks_skip_non_rendering_format_characters() {
+        assert!(!is_drawn('\u{200d}'), "a zero-width joiner is not a glyph");
+        assert!(
+            !is_drawn('\u{fe0f}'),
+            "an emoji variation selector is not a glyph"
+        );
     }
 
     #[test]
@@ -2757,7 +2825,7 @@ mod tests {
         )
         .unwrap();
         let mut problems = Vec::new();
-        let overrides = raw_block_overrides(&raw, &mut problems);
+        let overrides = raw_block_overrides(&raw, &mut problems, &mut Vec::new());
         assert!(problems.is_empty());
         assert_eq!(overrides.len(), 1);
         assert_eq!(overrides[0].0, 0);

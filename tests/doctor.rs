@@ -2,6 +2,9 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
+
 static NEXT_FIXTURE: AtomicUsize = AtomicUsize::new(0);
 
 struct FixtureDir(PathBuf);
@@ -903,6 +906,61 @@ overrides = "not a table"
 }
 
 #[test]
+fn invalid_per_block_icon_overrides_are_reported_once() {
+    let fixture = FixtureDir::new("invalid-block-overrides");
+    let config = fixture.write(
+        "config.toml",
+        r#"
+error_format = " $short_error_message "
+error_fullscreen_format = " $full_error_message "
+
+[[block]]
+block = "load"
+format = " load "
+icons_overrides = "not a table"
+"#,
+    );
+
+    let output = doctor(&config, true);
+    let stdout = stdout(&output);
+    assert!(!output.status.success(), "{stdout}");
+    assert!(
+        stdout.contains("Problems (1)"),
+        "one malformed per-block override must not produce both generic and specific diagnoses:\n{stdout}"
+    );
+}
+
+#[test]
+fn icon_set_problem_does_not_suppress_an_unrelated_config_error() {
+    let fixture = FixtureDir::new("independent-structural-errors");
+    let config = fixture.write(
+        "config.toml",
+        r#"
+error_format = " $short_error_message "
+error_fullscreen_format = " $full_error_message "
+icons_format = 42
+
+[[block]]
+block = "load"
+format = " load "
+
+[icons]
+icons = "definitely-not-an-installed-icon-set"
+"#,
+    );
+
+    let output = doctor(&config, true);
+    let stdout = stdout(&output);
+    assert!(!output.status.success(), "{stdout}");
+    assert!(stdout.contains("Icon set"), "{stdout}");
+    assert!(
+        stdout.contains("Configuration does not validate"),
+        "an icon-set lookup failure must not hide an independent typed-config error:\n{stdout}"
+    );
+    assert!(stdout.contains("Problems (2)"), "{stdout}");
+}
+
+#[test]
 fn skipped_live_test_does_not_claim_dynamic_icons_were_observed() {
     let fixture = FixtureDir::new("skipped-open-contract");
     let config = fixture.write(
@@ -940,5 +998,142 @@ fn toml_parse_errors_escape_control_characters() {
     assert!(
         !stdout.contains('\u{1b}'),
         "source excerpts in TOML diagnostics must not inject terminal controls:\n{stdout:?}"
+    );
+}
+
+#[test]
+fn reported_file_paths_escape_control_characters() {
+    let fixture = FixtureDir::new("control-paths");
+    let icons = fixture.write("icons-\u{1b}[31m.toml", "cogs = \"COGS\"\n");
+    let escaped_icons_path = toml_path(&icons).replace('\u{1b}', r"\u001b");
+    let config = fixture.write(
+        "config-\u{1b}[31m.toml",
+        &format!(
+            r#"
+error_format = " $short_error_message "
+error_fullscreen_format = " $full_error_message "
+
+[[block]]
+block = "load"
+format = " load "
+
+[icons]
+icons = "{escaped_icons_path}"
+"#,
+        ),
+    );
+
+    let output = doctor(&config, true);
+    let stdout = stdout(&output);
+    assert!(output.status.success(), "{stdout:?}");
+    assert!(
+        !stdout.contains('\u{1b}'),
+        "config and icon-set paths must not inject terminal controls into the report:\n{stdout:?}"
+    );
+}
+
+#[test]
+fn missing_icon_search_trace_escapes_control_characters() {
+    let fixture = FixtureDir::new("control-missing-icon-path");
+    let config = fixture.write(
+        "config.toml",
+        r#"
+error_format = " $short_error_message "
+error_fullscreen_format = " $full_error_message "
+
+[[block]]
+block = "load"
+format = " load "
+
+[icons]
+icons = "\u001b[31mmissing"
+"#,
+    );
+
+    let output = doctor(&config, true);
+    let stdout = stdout(&output);
+    assert!(!output.status.success(), "{stdout:?}");
+    assert!(stdout.contains("not found"), "{stdout:?}");
+    assert!(
+        !stdout.contains('\u{1b}'),
+        "a missing icon set's search trace must not inject terminal controls:\n{stdout:?}"
+    );
+}
+
+#[test]
+fn reported_bar_font_escapes_control_characters() {
+    let fixture = FixtureDir::new("control-font-name");
+    let config = fixture.write(
+        "config.toml",
+        r#"
+error_format = " $short_error_message "
+error_fullscreen_format = " $full_error_message "
+
+[[block]]
+block = "load"
+format = " load "
+"#,
+    );
+
+    let output = doctor_with_font(&config, true, "monospace\u{1b}[31m");
+    let stdout = stdout(&output);
+    assert!(
+        !stdout.contains('\u{1b}'),
+        "a configured or auto-detected bar font must not inject terminal controls:\n{stdout:?}"
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn generated_but_unrendered_country_flag_is_not_reported_as_used() {
+    let fixture = FixtureDir::new("unrendered-country-flag");
+    let nordvpn = fixture.write(
+        "nordvpn",
+        "#!/bin/sh\nprintf '%s\\n' 'Status: Connected' 'Country: United States' \
+         'Hostname: us123.nordvpn.com'\n",
+    );
+    let mut permissions = std::fs::metadata(&nordvpn)
+        .expect("read fake nordvpn metadata")
+        .permissions();
+    permissions.set_mode(0o755);
+    std::fs::set_permissions(&nordvpn, permissions).expect("make fake nordvpn executable");
+
+    let config = fixture.write(
+        "config.toml",
+        r#"
+error_format = " $short_error_message "
+error_fullscreen_format = " $full_error_message "
+
+[[block]]
+block = "vpn"
+driver = "nordvpn"
+format_connected = " $country "
+"#,
+    );
+
+    let mut paths = vec![fixture.0.clone()];
+    if let Some(current) = std::env::var_os("PATH") {
+        paths.extend(std::env::split_paths(&current));
+    }
+    let path = std::env::join_paths(paths).expect("construct PATH for fake nordvpn");
+    let mut command = Command::new(env!("CARGO_BIN_EXE_i3status-rs"));
+    command
+        .arg("--doctor")
+        .arg("--font")
+        .arg("monospace")
+        .arg(&config)
+        .env_remove("I3RS_DBUS_NAME")
+        .env("PATH", path);
+    let output = command.output().expect("run doctor with fake nordvpn");
+    let stdout = stdout(&output);
+    assert!(output.status.success(), "{stdout}");
+    assert!(stdout.contains("United States"), "{stdout}");
+    assert!(
+        !stdout.contains("(US country flag)"),
+        "a flag that was computed but excluded by the format was not used:\n{stdout}"
+    );
+    assert!(
+        !stdout.contains("Country flags are drawn differently"),
+        "the flag footnote must only appear when a rendered flag is reported:\n{stdout}"
     );
 }
