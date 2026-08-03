@@ -102,7 +102,9 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
     let (config_path, trace) = resolve_file(config_arg, None);
     let Some(config_path) = config_path else {
         problems.push(Problem {
-            diagnosis: format!("Configuration file {config_arg:?} not found. Searched:\n{trace}"),
+            diagnosis: escape_control_multiline(&format!(
+                "Configuration file {config_arg:?} not found. Searched:\n{trace}"
+            )),
             fix: Some(
                 "Create ~/.config/i3status-rust/config.toml, or pass a path: i3status-rs --doctor <path>"
                     .into(),
@@ -116,7 +118,10 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
     let raw: Option<toml::Value> = match std::fs::read_to_string(&config_path) {
         Err(err) => {
             problems.push(Problem {
-                diagnosis: format!("Cannot read {}: {err}", config_path.display()),
+                diagnosis: escape_control_multiline(&format!(
+                    "Cannot read {}: {err}",
+                    config_path.display()
+                )),
                 fix: None,
             });
             None
@@ -125,7 +130,10 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
             Ok(value) => Some(value),
             Err(err) => {
                 problems.push(Problem {
-                    diagnosis: format!("Configuration is not valid TOML:\n{err}"),
+                    diagnosis: format!(
+                    "Configuration is not valid TOML:\n{}",
+                    escape_control_multiline(&err.to_string())
+                ),
                     fix: Some(
                         "Fix the syntax error above; nothing else can be checked until the file parses."
                             .into(),
@@ -167,10 +175,10 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
             Some(file) => match util::deserialize_toml_file::<HashMap<String, Icon>, _>(&file) {
                 Err(err) => {
                     problems.push(Problem {
-                        diagnosis: format!(
+                        diagnosis: escape_control_multiline(&format!(
                             "Icon set file {} cannot be parsed: {err}",
                             file.display()
-                        ),
+                        )),
                         fix: Some(
                             "Fix the file, or remove `icons = ` to use the built-in text icons."
                                 .into(),
@@ -201,13 +209,20 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
             Ok(overrides) => overrides,
             Err(err) => {
                 problems.push(Problem {
-                    diagnosis: format!("[icons.overrides] is not a valid icon table: {err}"),
+                    diagnosis: escape_control_multiline(&format!(
+                        "[icons.overrides] is not a valid icon table: {err}"
+                    )),
                     fix: None,
                 });
                 HashMap::new()
             }
         },
     };
+
+    // Every problem found so far describes the structure of the config
+    // file itself (icon set, overrides): the typed parse below cannot add
+    // information about the same defect.
+    let structural_defect_reported = !problems.is_empty();
 
     // === Bar font ===
     let detected = if font_arg.is_none() {
@@ -381,10 +396,17 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
     let parsed: Option<Config> = match util::deserialize_toml_file::<Config, _>(&config_path) {
         Ok(config) => Some(config),
         Err(err) => {
-            problems.push(Problem {
-                diagnosis: format!("Configuration does not validate: {err}"),
-                fix: None,
-            });
+            // The same defect the icon-set/overrides inspection above
+            // already described in specific terms would fail this parse
+            // too; do not report one root cause twice.
+            if !structural_defect_reported {
+                problems.push(Problem {
+                    diagnosis: escape_control_multiline(&format!(
+                        "Configuration does not validate: {err}"
+                    )),
+                    fix: None,
+                });
+            }
             None
         }
     };
@@ -548,10 +570,13 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
                     // this moment, not of the configuration, and the bar
                     // will render the block whenever it succeeds.
                     LiveVerdict::RenderError { error, .. } => {
+                        // The name is delimited by the message's own
+                        // wording, not by the first quote: icon names may
+                        // contain apostrophes.
                         if let Some(icon) = error
-                            .split("Icon '")
-                            .nth(1)
-                            .and_then(|rest| rest.split('\'').next())
+                            .split_once("Icon '")
+                            .and_then(|(_, rest)| rest.rsplit_once("' not found"))
+                            .map(|(icon, _)| icon)
                         {
                             live_reported.insert((label.clone(), icon.to_string()));
                         }
@@ -611,7 +636,7 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
             // same sequence; anything skipped in between ends it.
             let mut adjacent = false;
             for c in text.chars() {
-                if c.is_ascii() || icon_chars.contains(&c) {
+                if !is_drawn(c) || icon_chars.contains(&c) {
                     adjacent = false;
                     continue;
                 }
@@ -662,7 +687,7 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
         for ((label, family), runs) in &text_fallbacks {
             let shown: Vec<String> = runs
                 .iter()
-                .map(|run| format!("{run} ({})", codepoints(run)))
+                .map(|run| format!("{} ({})", escape_control(run), codepoints(run)))
                 .collect();
             println!("   {} — {family} ({label})", shown.join(", "));
         }
@@ -675,7 +700,7 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
     for (label, runs) in &text_missing {
         let listed: Vec<String> = runs
             .iter()
-            .map(|run| format!("{run} ({})", codepoints(run)))
+            .map(|run| format!("{} ({})", escape_control(run), codepoints(run)))
             .collect();
         problems.push(Problem {
             diagnosis: format!(
@@ -688,15 +713,19 @@ pub fn run(config_arg: &str, font_arg: Option<&str>, skip_live: bool) -> usize {
     }
 
     if !open_labels.is_empty() {
+        let listed = open_labels
+            .iter()
+            .map(String::as_str)
+            .collect::<Vec<_>>()
+            .join(", ");
         println!(
-            "note: dynamic icon source in: {}. These blocks choose icon names at runtime, so\n\
-             doctor cannot enumerate them in advance — the names above are what this run\n\
-             observed, not the complete set.",
-            open_labels
-                .iter()
-                .map(String::as_str)
-                .collect::<Vec<_>>()
-                .join(", ")
+            "note: dynamic icon source in: {listed}. These blocks choose icon names at runtime,\n\
+             so doctor cannot enumerate them in advance — {}",
+            if live_ran {
+                "the names above are what this run observed, not the complete set."
+            } else {
+                "and the live block test did not run, so none were observed."
+            }
         );
         println!();
     }
@@ -766,7 +795,9 @@ fn raw_block_overrides(
         match value.clone().try_into() {
             Ok(overrides) => out.push((index, overrides)),
             Err(err) => problems.push(Problem {
-                diagnosis: format!("{name}: icons_overrides is not a valid icon table: {err}"),
+                diagnosis: escape_control_multiline(&format!(
+                    "{name}: icons_overrides is not a valid icon table: {err}"
+                )),
                 fix: None,
             }),
         }
@@ -1426,6 +1457,15 @@ fn output_cell_raw(verdict: &LiveVerdict) -> (String, bool) {
     }
 }
 
+/// Like [`escape_control`], but keeping newlines: for diagnostics whose
+/// own layout is multi-line (TOML parse errors, search traces).
+fn escape_control_multiline(text: &str) -> String {
+    text.split('\n')
+        .map(escape_control)
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 /// Render control characters visibly, leaving printable text (including
 /// icon glyphs and flags) untouched.
 fn escape_control(text: &str) -> String {
@@ -1948,8 +1988,9 @@ fn push_icon_rows(
     fallback_rows: &mut usize,
     missing_rows: &mut usize,
 ) {
+    let name = escape_control(name);
     let rows: Vec<(String, &str)> = match icon {
-        Icon::Single(s) => vec![(name.to_string(), s.as_str())],
+        Icon::Single(s) => vec![(name.clone(), s.as_str())],
         Icon::Progression(steps) => steps
             .iter()
             .enumerate()
@@ -2008,8 +2049,8 @@ struct IconRow {
 
 fn column_width<'a>(header: &str, values: impl Iterator<Item = &'a str>) -> usize {
     values
-        .map(str::len)
-        .chain([header.len()])
+        .map(UnicodeWidthStr::width)
+        .chain([UnicodeWidthStr::width(header)])
         .max()
         .unwrap_or(0)
 }
@@ -2040,10 +2081,16 @@ fn first_family(family: &str) -> String {
     family.split(',').next().unwrap_or(family).to_string()
 }
 
+/// Characters that draw nothing on their own: whitespace and control
+/// codes. Asking fontconfig about them is meaningless.
+fn is_drawn(c: char) -> bool {
+    !c.is_control() && !c.is_whitespace()
+}
+
 fn glyph_provider(check: &mut FontCheck, glyph: &str) -> GlyphProvider {
     let mut result = GlyphProvider::Known(check.base_family.clone());
     for c in glyph.chars() {
-        if c.is_ascii() {
+        if !is_drawn(c) {
             continue;
         }
         match check.check(c) {
@@ -2657,6 +2704,12 @@ mod tests {
         assert_eq!(codepoints("BAT"), "-");
         assert_eq!(codepoints("\u{f244}"), "U+F244");
         assert_eq!(codepoints("🍅"), "U+1F345");
+    }
+
+    #[test]
+    fn table_column_width_uses_terminal_display_width() {
+        assert_eq!(column_width("", ["é"].into_iter()), 1);
+        assert_eq!(column_width("", ["界"].into_iter()), 2);
     }
 
     #[test]

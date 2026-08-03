@@ -31,8 +31,12 @@ impl Drop for FixtureDir {
 }
 
 fn doctor(config: &Path, skip_live: bool) -> Output {
+    doctor_with_font(config, skip_live, "monospace")
+}
+
+fn doctor_with_font(config: &Path, skip_live: bool, font: &str) -> Output {
     let mut command = Command::new(env!("CARGO_BIN_EXE_i3status-rs"));
-    command.arg("--doctor").arg("--font").arg("monospace");
+    command.arg("--doctor").arg("--font").arg(font);
     if skip_live {
         command.arg("--doctor-skip-live");
     }
@@ -41,6 +45,21 @@ fn doctor(config: &Path, skip_live: bool) -> Output {
         .env_remove("I3RS_DBUS_NAME")
         .output()
         .expect("run doctor")
+}
+
+fn font_family_lacks_codepoint(family: &str, codepoint: &str) -> bool {
+    let query = |pattern: &str| {
+        Command::new("fc-list")
+            .arg(pattern)
+            .arg("family")
+            .output()
+            .ok()
+            .filter(|output| output.status.success())
+            .map(|output| !output.stdout.is_empty())
+    };
+    query(family) == Some(true)
+        && query(&format!("{family}:charset={codepoint}")) == Some(false)
+        && query(&format!(":charset={codepoint}")) == Some(true)
 }
 
 fn stdout(output: &Output) -> String {
@@ -700,5 +719,226 @@ icons = "{}"
     assert!(
         stdout.contains(r"first\n"),
         "icon-table newlines should be displayed in escaped form:\n{stdout:?}"
+    );
+}
+
+#[test]
+fn icon_table_name_control_characters_are_escaped() {
+    let fixture = FixtureDir::new("control-icon-name");
+    let icons = fixture.write("icons.toml", r#""\u001b[31mBAD" = "SAFE""#);
+    let config = fixture.write(
+        "config.toml",
+        &format!(
+            r#"
+error_format = " $short_error_message "
+error_fullscreen_format = " $full_error_message "
+
+[[block]]
+block = "custom"
+command = '''printf '%s\n' '{{"text":"x","icon":"\u001b[31mBAD"}}' '''
+json = true
+interval = "once"
+
+[icons]
+icons = "{}"
+"#,
+            toml_path(&icons)
+        ),
+    );
+
+    let output = doctor(&config, false);
+    let stdout = stdout(&output);
+    assert!(output.status.success(), "{stdout:?}");
+    assert!(
+        !stdout.contains('\u{1b}'),
+        "an icon name must not inject terminal controls into its table row:\n{stdout:?}"
+    );
+}
+
+#[test]
+fn missing_icon_name_with_an_apostrophe_is_reported_once() {
+    let fixture = FixtureDir::new("apostrophe-icon-name");
+    let config = fixture.write(
+        "config.toml",
+        r#"
+error_format = " $short_error_message "
+error_fullscreen_format = " $full_error_message "
+
+[[block]]
+block = "custom"
+command = '''printf '%s\n' '{"text":"x","icon":"can'\''t"}' '''
+json = true
+interval = "once"
+"#,
+    );
+
+    let output = doctor(&config, false);
+    let stdout = stdout(&output);
+    assert!(!output.status.success(), "{stdout}");
+    assert!(
+        stdout.contains("Problems (1)"),
+        "one missing icon must produce one diagnosis even when its name contains an apostrophe:\n{stdout}"
+    );
+}
+
+#[test]
+fn text_glyph_diagnostics_escape_control_characters() {
+    let fixture = FixtureDir::new("control-text-diagnostic");
+    let config = fixture.write(
+        "config.toml",
+        r#"
+error_format = " $short_error_message "
+error_fullscreen_format = " $full_error_message "
+
+[[block]]
+block = "custom"
+command = '''printf '%s\n' '{"text":"\u0085"}' '''
+json = true
+interval = "once"
+"#,
+    );
+
+    let output = doctor(&config, false);
+    let stdout = stdout(&output);
+    assert!(output.status.success(), "{stdout:?}");
+    assert!(
+        !stdout.contains('\u{85}'),
+        "a live text glyph must not inject a control character through a font diagnostic:\n{stdout:?}"
+    );
+}
+
+#[test]
+fn ascii_icon_glyphs_are_font_checked() {
+    const FONT: &str = "Font Awesome 5 Free";
+    if !font_family_lacks_codepoint(FONT, "21") {
+        eprintln!("skipping: {FONT} must be installed without U+0021 for this regression test");
+        return;
+    }
+
+    let fixture = FixtureDir::new("ascii-icon-font");
+    let icons = fixture.write("icons.toml", "cogs = \"!\"\n");
+    let config = fixture.write(
+        "config.toml",
+        &format!(
+            r#"
+error_format = " $short_error_message "
+error_fullscreen_format = " $full_error_message "
+
+[[block]]
+block = "load"
+format = " $icon "
+
+[icons]
+icons = "{}"
+"#,
+            toml_path(&icons)
+        ),
+    );
+
+    let output = doctor_with_font(&config, true, FONT);
+    let stdout = stdout(&output);
+    assert!(
+        !output.status.success(),
+        "a printable ASCII glyph missing from the configured font must be diagnosed:\n{stdout}"
+    );
+    assert!(stdout.contains("outside the bar's font list"), "{stdout}");
+}
+
+#[test]
+fn ascii_text_glyphs_are_font_checked() {
+    const FONT: &str = "Font Awesome 5 Free";
+    if !font_family_lacks_codepoint(FONT, "21") {
+        eprintln!("skipping: {FONT} must be installed without U+0021 for this regression test");
+        return;
+    }
+
+    let fixture = FixtureDir::new("ascii-text-font");
+    let config = fixture.write(
+        "config.toml",
+        r#"
+error_format = " $short_error_message "
+error_fullscreen_format = " $full_error_message "
+
+[[block]]
+block = "custom"
+command = "printf '!\\n'"
+interval = "once"
+"#,
+    );
+
+    let output = doctor_with_font(&config, false, FONT);
+    let stdout = stdout(&output);
+    assert!(output.status.success(), "{stdout}");
+    assert!(
+        stdout.contains("Text glyphs in live output drawn by fonts outside the bar's font list"),
+        "printable ASCII text must be checked for font substitution too:\n{stdout}"
+    );
+}
+
+#[test]
+fn invalid_global_icon_overrides_are_reported_once() {
+    let fixture = FixtureDir::new("invalid-global-overrides");
+    let config = fixture.write(
+        "config.toml",
+        r#"
+error_format = " $short_error_message "
+error_fullscreen_format = " $full_error_message "
+
+[[block]]
+block = "load"
+format = " load "
+
+[icons]
+overrides = "not a table"
+"#,
+    );
+
+    let output = doctor(&config, true);
+    let stdout = stdout(&output);
+    assert!(!output.status.success(), "{stdout}");
+    assert!(
+        stdout.contains("Problems (1)"),
+        "one malformed overrides value must not be reported as two configuration problems:\n{stdout}"
+    );
+}
+
+#[test]
+fn skipped_live_test_does_not_claim_dynamic_icons_were_observed() {
+    let fixture = FixtureDir::new("skipped-open-contract");
+    let config = fixture.write(
+        "config.toml",
+        r#"
+error_format = " $short_error_message "
+error_fullscreen_format = " $full_error_message "
+
+[[block]]
+block = "custom"
+command = "true"
+json = true
+interval = "once"
+"#,
+    );
+
+    let output = doctor(&config, true);
+    let stdout = stdout(&output);
+    assert!(output.status.success(), "{stdout}");
+    assert!(stdout.contains("dynamic icon source"), "{stdout}");
+    assert!(
+        !stdout.contains("what this run"),
+        "--doctor-skip-live must not claim that a run observed dynamic icon names:\n{stdout}"
+    );
+}
+
+#[test]
+fn toml_parse_errors_escape_control_characters() {
+    let fixture = FixtureDir::new("control-toml-error");
+    let config = fixture.write("config.toml", "\u{1b}[31m = invalid\n");
+
+    let output = doctor(&config, true);
+    let stdout = stdout(&output);
+    assert!(!output.status.success(), "{stdout:?}");
+    assert!(
+        !stdout.contains('\u{1b}'),
+        "source excerpts in TOML diagnostics must not inject terminal controls:\n{stdout:?}"
     );
 }
