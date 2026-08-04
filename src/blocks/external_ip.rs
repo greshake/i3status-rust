@@ -71,6 +71,8 @@ use super::prelude::*;
 use crate::geolocator::is_rate_limited;
 use crate::util::{country_flag_from_iso_code, new_system_dbus_connection};
 
+make_log_macro!(debug, "external_ip");
+
 /// How long the network-change signal stream must stay quiet before the IP is
 /// re-queried; a transition keeps emitting signals for a while, often before
 /// connectivity is actually usable.
@@ -179,11 +181,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             }
             Err(err) => return Err(err),
         };
-        log::debug!(
-            "external_ip: got {} after {:?}",
-            info.ip,
-            fetch_start.elapsed()
-        );
+        debug!("got {} after {:?}", info.ip, fetch_start.elapsed());
 
         let mut values = map! {
             "ip" => Value::text(info.ip),
@@ -270,7 +268,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                         break;
                     }
                 }
-                log::debug!("external_ip: signals settled after {:?}", settle_start.elapsed());
+                debug!("signals settled after {:?}", settle_start.elapsed());
             }
         }
     }
