@@ -36,9 +36,9 @@
 //! ```
 //!
 //! # Icons Used
-//! - `ping`
-//! - `net_down`
-//! - `net_up`
+//! - `ping` (`^icon_ping`)
+//! - `net_down` (`^icon_net_down`)
+//! - `net_up` (`^icon_net_up`)
 
 use super::prelude::*;
 use tokio::process::Command;
@@ -51,10 +51,19 @@ pub struct Config {
     pub interval: Seconds,
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let format = config
-        .format
-        .with_default(" ^icon_ping $ping ^icon_net_down $speed_down ^icon_net_up $speed_up ")?;
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    // The icons (`ping`, `net_down`, `net_up`) are rendered by `^icon_*`
+    // format tokens, not icon-valued placeholders, so no icons are declared.
+    BlockPlan::new(vec![OutputPlan::new(
+        "main",
+        config
+            .format
+            .with_default(" ^icon_ping $ping ^icon_net_down $speed_down ^icon_net_up $speed_up ")?,
+    )])
+}
+
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
+    let output_main = plan.output("main")?;
 
     let mut command = Command::new("speedtest-cli");
     command.arg("--json");
@@ -70,7 +79,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let output: SpeedtestCliOutput =
             serde_json::from_str(output).error("'speedtest-cli' produced wrong JSON")?;
 
-        let mut widget = Widget::new().with_format(format.clone());
+        let mut widget = output_main.new_widget();
         widget.set_values(map! {
             "ping" => Value::seconds(output.ping * 1e-3),
             "speed_down" => Value::bits(output.download),
@@ -93,4 +102,30 @@ struct SpeedtestCliOutput {
     upload: f64,
     /// Ping time in ms
     ping: f64,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_main_output_without_icon_placeholders() {
+        let plan = prepare(&Config::default()).unwrap();
+        let declared: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(declared, ["main"]);
+        let output = plan.output("main").unwrap();
+        assert_eq!(output.output().icon_placeholders().count(), 0);
+    }
+
+    #[test]
+    fn custom_format_is_respected() {
+        let config = Config {
+            format: " $ping ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        let output = plan.output("main").unwrap();
+        assert!(output.format().contains_key("ping"));
+        assert!(!output.format().contains_key("speed_down"));
+    }
 }

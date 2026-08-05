@@ -64,9 +64,22 @@ pub enum DriverType {
     Systemd,
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let active_format = config.active_format.with_default(" $service active ")?;
-    let inactive_format = config.inactive_format.with_default(" $service inactive ")?;
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    BlockPlan::new(vec![
+        OutputPlan::new(
+            "active",
+            config.active_format.with_default(" $service active ")?,
+        ),
+        OutputPlan::new(
+            "inactive",
+            config.inactive_format.with_default(" $service inactive ")?,
+        ),
+    ])
+}
+
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
+    let output_active = plan.output("active")?;
+    let output_inactive = plan.output("inactive")?;
 
     let active_state = config.active_state.unwrap_or(State::Idle);
     let inactive_state = config.inactive_state.unwrap_or(State::Critical);
@@ -80,14 +93,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     loop {
         let service_active_state = driver.is_active().await?;
 
-        let mut widget = Widget::new();
-
-        if service_active_state {
-            widget.state = active_state;
-            widget.set_format(active_format.clone());
+        let mut widget = if service_active_state {
+            output_active.new_widget().with_state(active_state)
         } else {
-            widget.state = inactive_state;
-            widget.set_format(inactive_format.clone());
+            output_inactive.new_widget().with_state(inactive_state)
         };
 
         widget.set_values(map! {
@@ -209,4 +218,44 @@ trait Unit {
 trait Service {
     #[zbus(property, name = "Type")]
     fn type_(&self) -> zbus::Result<String>;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_both_states_without_icons() {
+        let plan = prepare(&Config::default()).unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["active", "inactive"]);
+        for id in ["active", "inactive"] {
+            let output = plan.output(id).unwrap();
+            assert!(output.format().contains_key("service"));
+            assert_eq!(output.output().icon_placeholders().count(), 0);
+        }
+    }
+
+    #[test]
+    fn plan_uses_configured_formats() {
+        let config = Config {
+            active_format: " up ".parse().unwrap(),
+            inactive_format: " $service down ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        assert!(
+            !plan
+                .output("active")
+                .unwrap()
+                .format()
+                .contains_key("service")
+        );
+        assert!(
+            plan.output("inactive")
+                .unwrap()
+                .format()
+                .contains_key("service")
+        );
+    }
 }

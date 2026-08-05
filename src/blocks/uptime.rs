@@ -40,8 +40,15 @@ pub struct Config {
     pub interval: Seconds,
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let format = config.format.with_default(" $icon $uptime ")?;
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    BlockPlan::new(vec![
+        OutputPlan::new("main", config.format.with_default(" $icon $uptime ")?)
+            .icon("icon", IconChoices::one("uptime")),
+    ])
+}
+
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
+    let output_main = plan.output("main")?;
 
     loop {
         let uptime = read_to_string("/proc/uptime")
@@ -74,9 +81,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             format!("{minutes}m {seconds}s")
         };
 
-        let mut widget = Widget::new().with_format(format.clone());
+        let mut widget = output_main.new_widget();
         widget.set_values(map! {
-          "icon" => Value::icon("uptime"),
+          "icon" => output_main.icon_value("icon")?,
           "text" => Value::text(text),
           "uptime" => Value::duration(uptime)
         });
@@ -86,5 +93,31 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             _ = sleep(config.interval.0) => (),
             _ = api.wait_for_update_request() => (),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_main_output_with_uptime_icon() {
+        let plan = prepare(&Config::default()).unwrap();
+        let declared: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(declared, ["main"]);
+        let output = plan.output("main").unwrap();
+        assert_eq!(output.single_icon("icon").unwrap(), "uptime");
+    }
+
+    #[test]
+    fn custom_format_is_respected() {
+        let config = Config {
+            format: " $uptime ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        let output = plan.output("main").unwrap();
+        assert!(output.format().contains_key("uptime"));
+        assert!(!output.format().contains_key("icon"));
     }
 }

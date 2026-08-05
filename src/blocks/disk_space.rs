@@ -107,14 +107,22 @@ pub struct Config {
     pub alert: f64,
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    // Every output renders the same value set, built unconditionally on
+    // every update.
+    let declare = |output: OutputPlan| output.icon("icon", IconChoices::one("disk_drive"));
+    let formats = config.formats.with_default(" $icon $available ")?;
+    BlockPlan::new(format_outputs(&formats, declare))
+}
+
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, None, "next_format"),
         (MouseButton::Right, None, "prev_format"),
     ])?;
 
-    let mut formats = config.formats.with_default(" $icon $available ")?;
+    let mut formats = FormatRotation::new(plan)?;
 
     let unit = match config.alert_unit.as_deref() {
         // Decimal
@@ -139,7 +147,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut timer = config.interval.timer();
 
     loop {
-        let mut widget = Widget::new().with_format(formats.get_format());
+        let output = formats.current();
+        let mut widget = output.new_widget();
 
         let (total, used, available, free) = match config.backend {
             Backend::Vfs => get_vfs(&*path)?,
@@ -154,7 +163,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         let percentage = result / (total as f64) * 100.;
         widget.set_values(map! {
-            "icon" => Value::icon("disk_drive"),
+            "icon" => output.icon_value("icon")?,
             "path" => Value::text(path.to_string()),
             "percentage" => Value::percents(percentage),
             "total" => Value::bytes(total as f64),
@@ -199,11 +208,11 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 _ = api.wait_for_update_request() => break,
                 Some(action) = actions.recv() => match action.as_ref() {
                     "next_format" | "toggle_format" => {
-                        formats.next_format();
+                        formats.next();
                         break;
                     }
                     "prev_format" => {
-                        formats.prev_format();
+                        formats.prev();
                         break;
                     }
                     _ => (),
@@ -296,5 +305,32 @@ async fn get_btrfs(path: &str) -> Result<(u64, u64, u64, u64)> {
             *final_free.get().ok_or(Error::new(OUTPUT_CHANGED))?,
             *final_free.get().ok_or(Error::new(OUTPUT_CHANGED))?,
         ))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_single_format_with_disk_drive_icon() {
+        let plan = prepare(&Config::default()).unwrap();
+        let format = plan.output("format").unwrap();
+        assert_eq!(format.single_icon("icon").unwrap(), "disk_drive");
+        assert!(format.format().contains_key("available"));
+        assert!(plan.output("format2").is_err());
+    }
+
+    #[test]
+    fn every_configured_format_is_declared() {
+        let config: Config =
+            toml::from_str(r#"format = [" $icon $available ", " $icon $available / $total "]"#)
+                .unwrap();
+        let plan = prepare(&config).unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["format", "format2"]);
+        let second = plan.output("format2").unwrap();
+        assert!(second.format().contains_key("total"));
+        assert_eq!(second.single_icon("icon").unwrap(), "disk_drive");
     }
 }

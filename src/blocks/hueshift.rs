@@ -81,7 +81,14 @@ pub struct Config {
     pub click_temp: u16,
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    let format = config.format.with_default(" $icon $temperature ")?;
+    BlockPlan::new(vec![
+        OutputPlan::new("main", format).icon("icon", IconChoices::one("hueshift")),
+    ])
+}
+
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, None, "set_click_temp"),
@@ -90,7 +97,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         (MouseButton::WheelDown, None, "temperature_down"),
     ])?;
 
-    let format = config.format.with_default(" $icon $temperature ")?;
+    let output_main = plan.output("main")?;
 
     // limit too big steps at 500K to avoid too brutal changes
     let step = config.step.min(500);
@@ -130,9 +137,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut current_temp = driver.get().await?.unwrap_or(config.current_temp);
 
     loop {
-        let mut widget = Widget::new().with_format(format.clone());
+        let mut widget = output_main.new_widget();
         widget.set_values(map! {
-            "icon" => Value::icon("hueshift"),
+            "icon" => output_main.icon_value("icon")?,
             "temperature" => Value::number(current_temp)
         });
         api.set_widget(widget)?;
@@ -393,4 +400,31 @@ trait WlGammarelayRsBus {
     fn temperature(&self) -> zbus::Result<u16>;
     #[zbus(property)]
     fn set_temperature(&self, value: u16) -> zbus::Result<()>;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_a_single_output_with_its_icon() {
+        let plan = prepare(&Config::default()).unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["main"]);
+        let main = plan.output("main").unwrap();
+        assert_eq!(main.single_icon("icon").unwrap(), "hueshift");
+        assert!(main.format().contains_key("temperature"));
+    }
+
+    #[test]
+    fn configured_format_is_installed() {
+        let config = Config {
+            format: " $temperature ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        let main = plan.output("main").unwrap();
+        assert!(!main.format().contains_key("icon"));
+        assert!(main.format().contains_key("temperature"));
+    }
 }

@@ -53,14 +53,22 @@ pub struct Config {
     pub interval: Seconds,
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    // Every output renders the same value set, built unconditionally on
+    // every update.
+    let declare = |output: OutputPlan| output.icon("icon", IconChoices::one("gpu"));
+    let formats = config.formats.with_default(" $icon $utilization ")?;
+    BlockPlan::new(format_outputs(&formats, declare))
+}
+
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, None, "next_format"),
         (MouseButton::Right, None, "prev_format"),
     ])?;
 
-    let mut formats = config.formats.with_default(" $icon $utilization ")?;
+    let mut formats = FormatRotation::new(plan)?;
 
     let device = match &config.device {
         Some(name) => Device::new(name).await?,
@@ -71,12 +79,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     };
 
     loop {
-        let mut widget = Widget::new().with_format(formats.get_format());
+        let output = formats.current();
+        let mut widget = output.new_widget();
 
         let info = device.read_info().await?;
 
         widget.set_values(map! {
-            "icon" => Value::icon("gpu"),
+            "icon" => output.icon_value("icon")?,
             "utilization" => Value::percents(info.utilization_percents),
             "vram_total" => Value::bytes(info.vram_total_bytes),
             "vram_used" => Value::bytes(info.vram_used_bytes),
@@ -98,11 +107,11 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 _ = api.wait_for_update_request() => break,
                 Some(action) = actions.recv() => match action.as_ref() {
                     "next_format" | "toggle_format" => {
-                        formats.next_format();
+                        formats.next();
                         break;
                     }
                     "prev_format" => {
-                        formats.prev_format();
+                        formats.prev();
                         break;
                     }
                     _ => (),
@@ -192,5 +201,27 @@ mod tests {
     async fn test_non_existing_gpu_device() {
         let device = Device::new("/nope").await;
         assert!(device.is_err());
+    }
+
+    #[test]
+    fn plan_declares_single_format_with_gpu_icon() {
+        let plan = prepare(&Config::default()).unwrap();
+        let format = plan.output("format").unwrap();
+        assert_eq!(format.single_icon("icon").unwrap(), "gpu");
+        assert!(format.format().contains_key("utilization"));
+        assert!(plan.output("format2").is_err());
+    }
+
+    #[test]
+    fn every_configured_format_is_declared() {
+        let config: Config =
+            toml::from_str(r#"format = [" $icon $utilization ", " $icon $vram_used_percents "]"#)
+                .unwrap();
+        let plan = prepare(&config).unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["format", "format2"]);
+        let second = plan.output("format2").unwrap();
+        assert!(second.format().contains_key("vram_used_percents"));
+        assert_eq!(second.single_icon("icon").unwrap(), "gpu");
     }
 }

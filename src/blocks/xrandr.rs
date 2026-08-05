@@ -57,7 +57,21 @@ pub struct Config {
     pub invert_icons: bool,
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    BlockPlan::new(vec![
+        OutputPlan::new(
+            "main",
+            config
+                .format
+                .with_default(" $icon $display $brightness_icon $brightness ")?,
+        )
+        .icon("icon", IconChoices::one("xrandr"))
+        .icon("brightness_icon", IconChoices::one("backlight"))
+        .icon("res_icon", IconChoices::one("resolution")),
+    ])
+}
+
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, None, "cycle_outputs"),
@@ -65,9 +79,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         (MouseButton::WheelDown, None, "brightness_down"),
     ])?;
 
-    let format = config
-        .format
-        .with_default(" $icon $display $brightness_icon $brightness ")?;
+    let output_main = plan.output("main")?;
 
     let mut cur_index = 0;
     let mut timer = config.interval.timer();
@@ -79,7 +91,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         }
 
         loop {
-            let mut widget = Widget::new().with_format(format.clone());
+            let mut widget = output_main.new_widget();
 
             if let Some(mon) = monitors.get(cur_index) {
                 let mut icon_value = mon.brightness as f64;
@@ -87,12 +99,20 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     icon_value = 1.0 - icon_value;
                 }
                 widget.set_values(map! {
-                    "icon" => Value::icon("xrandr"),
+                    "icon" => output_main.icon_value("icon")?,
                     "display" => Value::text(mon.name.clone()),
                     "brightness" => Value::percents(mon.brightness_percent()),
-                    "brightness_icon" => Value::icon_progression("backlight", icon_value),
+                    // xrandr gamma "brightness" can exceed 1.0; clamp into the
+                    // progression's 0..=1 range.
+                    "brightness_icon" => output_main.icon_progression_bound(
+                        "brightness_icon",
+                        "backlight",
+                        icon_value,
+                        0.0,
+                        1.0,
+                    )?,
                     "resolution" => Value::text(mon.resolution()),
-                    "res_icon" => Value::icon("resolution"),
+                    "res_icon" => output_main.icon_value("res_icon")?,
                     "refresh_rate" => Value::hertz(mon.refresh_hz),
                 });
             }
@@ -343,5 +363,34 @@ mod parser {
                 }
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_single_output_with_static_icons() {
+        let plan = prepare(&Config::default()).unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["main"]);
+
+        let main = plan.output("main").unwrap();
+        assert_eq!(main.single_icon("icon").unwrap(), "xrandr");
+        assert_eq!(main.single_icon("brightness_icon").unwrap(), "backlight");
+        assert_eq!(main.single_icon("res_icon").unwrap(), "resolution");
+    }
+
+    #[test]
+    fn plan_uses_configured_format() {
+        let config = Config {
+            format: " $icon $resolution ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        let main = plan.output("main").unwrap();
+        assert!(main.format().contains_key("resolution"));
+        assert!(!main.format().contains_key("brightness"));
     }
 }

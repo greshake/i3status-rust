@@ -265,7 +265,7 @@ enum WidgetStatus {
     FetchSources,
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     let next_event_format = config
         .next_event_format
         .with_default(" $icon $start.datetime(f:'%a %H:%M') $summary ")?;
@@ -276,6 +276,20 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let redirect_format = config
         .redirect_format
         .with_default(" $icon Check your web browser ")?;
+    BlockPlan::new(vec![
+        OutputPlan::new("no_events", no_events_format).icon("icon", IconChoices::one("calendar")),
+        OutputPlan::new("next_event", next_event_format).icon("icon", IconChoices::one("calendar")),
+        OutputPlan::new("ongoing_event", ongoing_event_format)
+            .icon("icon", IconChoices::one("calendar")),
+        OutputPlan::new("redirect", redirect_format).icon("icon", IconChoices::one("calendar")),
+    ])
+}
+
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
+    let output_no_events = plan.output("no_events")?;
+    let output_next_event = plan.output("next_event")?;
+    let output_ongoing_event = plan.output("ongoing_event")?;
+    let output_redirect = plan.output("redirect")?;
 
     api.set_default_actions(&[(MouseButton::Left, None, "open_link")])?;
 
@@ -311,10 +325,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut next_events = OverlappingEvents::default();
 
     loop {
-        let mut widget = Widget::new().with_format(no_events_format.clone());
-        widget.set_values(map! {
-            "icon" => Value::icon("calendar"),
-        });
+        let mut output = &output_no_events;
+        let mut values = map! {
+            "icon" => output.icon_value("icon")?,
+        };
 
         if matches!(widget_status, WidgetStatus::FetchSources) {
             for retries in 0..=1 {
@@ -332,8 +346,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                                 .error("Authorization failed")?;
                             match &authorization {
                                 Authorize::AskUser(AuthorizeUrl { url, .. }) if retries == 0 => {
-                                    widget.set_format(redirect_format.clone());
-                                    api.set_widget(widget.clone())?;
+                                    output = &output_redirect;
+                                    let mut widget = output.new_widget();
+                                    widget.set_values(values.clone());
+                                    api.set_widget(widget)?;
                                     open_browser(config, url).await?;
                                     source
                                         .client
@@ -359,30 +375,36 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             }
         }
 
+        let mut warning = false;
         if let Some(event) = next_events.current().cloned()
             && let Some(start_date) = event.start_at
             && let Some(end_date) = event.end_at
         {
             let warn_datetime = start_date - warning_threshold;
             if warn_datetime < Utc::now() && Utc::now() < start_date {
-                widget.state = State::Warning;
+                warning = true;
             }
-            if start_date < Utc::now() && Utc::now() < end_date {
-                widget.set_format(ongoing_event_format.clone());
+            output = if start_date < Utc::now() && Utc::now() < end_date {
+                &output_ongoing_event
             } else {
-                widget.set_format(next_event_format.clone());
-            }
-            widget.set_values(map! {
-                  "icon" => Value::icon("calendar"),
-                   [if let Some(summary) = event.summary] "summary" => Value::text(summary),
-                   [if let Some(description) = event.description] "description" => Value::text(description),
-                   [if let Some(location) = event.location] "location" => Value::text(location),
-                   [if let Some(url) = event.url] "url" => Value::text(url),
-                   "start" => Value::datetime(start_date, None),
-                   "end" => Value::datetime(end_date, None),
-                });
+                &output_next_event
+            };
+            values = map! {
+              "icon" => output.icon_value("icon")?,
+               [if let Some(summary) = event.summary] "summary" => Value::text(summary),
+               [if let Some(description) = event.description] "description" => Value::text(description),
+               [if let Some(location) = event.location] "location" => Value::text(location),
+               [if let Some(url) = event.url] "url" => Value::text(url),
+               "start" => Value::datetime(start_date, None),
+               "end" => Value::datetime(end_date, None),
+            };
         }
 
+        let mut widget = output.new_widget();
+        if warning {
+            widget.state = State::Warning;
+        }
+        widget.set_values(values);
         api.set_widget(widget)?;
         loop {
             select! {
@@ -613,4 +635,45 @@ pub enum CalendarError {
     StoreToken(#[from] TokenStoreError),
     #[error("local time falls in a _gap_ in the local time, or if there was an error")]
     TzConversion,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_every_state_with_the_calendar_icon() {
+        let plan = prepare(&Config::default()).unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(
+            ids,
+            ["no_events", "next_event", "ongoing_event", "redirect"]
+        );
+        for id in ids {
+            let output = plan.output(id).unwrap();
+            assert_eq!(output.single_icon("icon").unwrap(), "calendar");
+        }
+    }
+
+    #[test]
+    fn each_state_resolves_its_own_format() {
+        let config = Config {
+            next_event_format: " $icon $summary ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        assert!(
+            plan.output("next_event")
+                .unwrap()
+                .format()
+                .contains_key("summary")
+        );
+        assert!(
+            !plan
+                .output("no_events")
+                .unwrap()
+                .format()
+                .contains_key("summary")
+        );
+    }
 }

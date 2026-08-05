@@ -71,6 +71,7 @@ pub struct Config {
 }
 
 struct Block {
+    output: OutputHandle,
     widget: Widget,
     api: CommonApi,
     icon: Option<String>,
@@ -78,12 +79,13 @@ struct Block {
     short_text: Option<String>,
 }
 
-fn block_values(block: &Block) -> HashMap<Cow<'static, str>, Value> {
-    map! {
-        [if let Some(icon) = &block.icon] "icon" => Value::icon(icon.to_string()),
+fn block_values(block: &Block) -> Result<HashMap<Cow<'static, str>, Value>> {
+    Ok(map! {
+        [if let Some(icon) = &block.icon] "icon" =>
+            block.output.named_icon_value("icon", icon.to_string())?,
         [if let Some(text) = &block.text] "text" => Value::text(text.to_string()),
         [if let Some(short_text) = &block.short_text] "short_text" => Value::text(short_text.to_string()),
-    }
+    })
 }
 
 #[zbus::interface(name = "rs.i3status.custom")]
@@ -94,7 +96,7 @@ impl Block {
         } else {
             Some(icon.to_string())
         };
-        self.widget.set_values(block_values(self));
+        self.widget.set_values(block_values(self)?);
         self.api.set_widget(self.widget.clone())?;
         Ok(())
     }
@@ -102,7 +104,7 @@ impl Block {
     async fn set_text(&mut self, full: String, short: String) -> fdo::Result<()> {
         self.text = Some(full);
         self.short_text = Some(short);
-        self.widget.set_values(block_values(self));
+        self.widget.set_values(block_values(self)?);
         self.api.set_widget(self.widget.clone())?;
         Ok(())
     }
@@ -121,11 +123,24 @@ impl Block {
     }
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let widget = Widget::new().with_format(config.format.with_defaults(
-        "{ $icon|}{ $text.pango-str()|} ",
-        "{ $icon|} $short_text.pango-str() | ",
-    )?);
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    // The icon name arrives over D-Bus at runtime, so any name is permitted;
+    // it resolves through the normal icon set and override rules.
+    BlockPlan::new(vec![
+        OutputPlan::new(
+            "main",
+            config.format.with_defaults(
+                "{ $icon|}{ $text.pango-str()|} ",
+                "{ $icon|} $short_text.pango-str() | ",
+            )?,
+        )
+        .icon("icon", IconChoices::OpenResolvable),
+    ])
+}
+
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
+    let output = plan.output("main")?;
+    let widget = output.new_widget();
 
     let dbus_conn = DBUS_CONNECTION
         .get_or_init(dbus_conn)
@@ -137,6 +152,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         .at(
             config.path.clone(),
             Block {
+                output,
                 widget,
                 api: api.clone(),
                 icon: None,
@@ -149,15 +165,53 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     Ok(())
 }
 
+/// Doctor-only override, set in-process by the doctor worker before the
+/// block runs. It never touches the environment, so if_command and custom
+/// commands observe exactly what the user's shell exported.
+static DOCTOR_NAME_OVERRIDE: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+
+pub(crate) fn set_doctor_dbus_suffix(suffix: String) {
+    let _ = DOCTOR_NAME_OVERRIDE.set(suffix);
+}
+
+/// The well-known name to request. The doctor override takes precedence
+/// over the documented public `I3RS_DBUS_NAME`; it is not part of the
+/// public interface.
+fn dbus_name(doctor_override: Option<&str>, public: Option<&str>) -> String {
+    match doctor_override.or(public) {
+        Some(v) => format!("{DBUS_NAME}.{v}"),
+        None => DBUS_NAME.to_string(),
+    }
+}
+
 async fn dbus_conn() -> Result<zbus::Connection> {
-    let dbus_interface_name = match env::var("I3RS_DBUS_NAME") {
-        Ok(v) => format!("{DBUS_NAME}.{v}"),
-        Err(_) => DBUS_NAME.to_string(),
-    };
+    let public = env::var("I3RS_DBUS_NAME").ok();
+    let dbus_interface_name = dbus_name(
+        DOCTOR_NAME_OVERRIDE.get().map(String::as_str),
+        public.as_deref(),
+    );
 
     let conn = new_dbus_connection().await?;
     conn.request_name(dbus_interface_name)
         .await
         .error("Failed to request DBus name")?;
     Ok(conn)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn doctor_override_wins_without_touching_the_public_name() {
+        assert_eq!(dbus_name(None, None), "rs.i3status");
+        assert_eq!(dbus_name(None, Some("top")), "rs.i3status.top");
+        // Doctor workers set only the internal override; the public
+        // variable keeps whatever value the user's environment has.
+        assert_eq!(dbus_name(Some("doctor3"), None), "rs.i3status.doctor3");
+        assert_eq!(
+            dbus_name(Some("doctor3"), Some("top")),
+            "rs.i3status.doctor3"
+        );
+    }
 }

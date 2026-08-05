@@ -95,8 +95,6 @@
 //! # TODO:
 //! - Use `shellexpand`
 
-use crate::formatting::Format;
-
 use super::prelude::*;
 use inotify::{Inotify, WatchMask};
 use std::process::Stdio;
@@ -118,14 +116,31 @@ pub struct Config {
     pub watch_files: Vec<ShellString>,
 }
 
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    let mut output = OutputPlan::new(
+        "main",
+        config.format.with_defaults(
+            "{ $icon|} $text.pango-str() ",
+            "{ $icon|} $short_text.pango-str() |",
+        )?,
+    );
+    // Only JSON output can carry an icon name; a plain-text command never
+    // sets one. When it can, any name is permitted and resolves through the
+    // normal icon set and override rules.
+    if config.json {
+        output = output.icon("icon", IconChoices::OpenResolvable);
+    }
+    BlockPlan::new(vec![output])
+}
+
 async fn update_bar(
     stdout: &str,
     hide_when_empty: bool,
     json: bool,
     api: &CommonApi,
-    format: Format,
+    output: &OutputHandle,
 ) -> Result<()> {
-    let mut widget = Widget::new().with_format(format);
+    let mut widget = output.new_widget();
 
     let text_empty;
 
@@ -135,7 +150,7 @@ async fn update_bar(
                 text_empty = input.text.is_empty();
                 widget.set_values(map! {
                     "text" => Value::text(input.text),
-                    [if !input.icon.is_empty()] "icon" => Value::icon(input.icon),
+                    [if !input.icon.is_empty()] "icon" => output.named_icon_value("icon", input.icon)?,
                     [if let Some(t) = input.short_text] "short_text" => Value::text(t)
                 });
                 widget.state = input.state;
@@ -154,13 +169,10 @@ async fn update_bar(
     }
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     api.set_default_actions(&[(MouseButton::Left, None, "cycle")])?;
 
-    let format = config.format.with_defaults(
-        "{ $icon|} $text.pango-str() ",
-        "{ $icon|} $short_text.pango-str() |",
-    )?;
+    let output_main = plan.output("main")?;
 
     let mut timer = config.interval.timer();
 
@@ -232,7 +244,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 config.hide_when_empty,
                 config.json,
                 api,
-                format.clone(),
+                &output_main,
             )
             .await?;
         }
@@ -265,7 +277,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 config.hide_when_empty,
                 config.json,
                 api,
-                format.clone(),
+                &output_main,
             )
             .await?;
 
@@ -294,4 +306,27 @@ struct Input {
     state: State,
     text: String,
     short_text: Option<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn icon_choices_are_open_only_with_json() {
+        // A plain-text command can never set an icon.
+        let plan = prepare(&Config::default()).unwrap();
+        let output = plan.output("main").unwrap();
+        assert!(output.output().choices_for("icon").is_none());
+
+        let config = Config {
+            json: true,
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        let output = plan.output("main").unwrap();
+        let choices = output.output().choices_for("icon").unwrap();
+        assert!(choices.is_open());
+        assert!(choices.permits("any_name_the_command_emits"));
+    }
 }

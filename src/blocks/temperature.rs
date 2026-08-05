@@ -108,16 +108,22 @@ impl TemperatureScale {
     }
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    let declare = |output: OutputPlan| output.icon("icon", IconChoices::one("thermometer"));
+    let formats = config
+        .formats
+        .with_default(" $icon $average avg, $max max ")?;
+    BlockPlan::new(format_outputs(&formats, declare))
+}
+
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, None, "next_format"),
         (MouseButton::Right, None, "prev_format"),
     ])?;
 
-    let mut formats = config
-        .formats
-        .with_default(" $icon $average avg, $max max ")?;
+    let mut formats = FormatRotation::new(plan)?;
 
     let good = config
         .good
@@ -186,7 +192,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             .unwrap_or(0.0);
         let avg_temp = temp.iter().sum::<f64>() / temp.len() as f64;
 
-        let mut widget = Widget::new().with_format(formats.get_format());
+        let output = formats.current();
+        let mut widget = output.new_widget();
 
         widget.state = match max_temp {
             x if x <= good => State::Good,
@@ -197,7 +204,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         };
 
         widget.set_values(map! {
-            "icon" => Value::icon_progression_bound("thermometer", max_temp, good, warn),
+            "icon" => output.icon_progression_bound("icon", "thermometer", max_temp, good, warn)?,
             "average" => config_scale.as_value(avg_temp),
             "min" => config_scale.as_value(min_temp),
             "max" => config_scale.as_value(max_temp),
@@ -210,13 +217,56 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             _ = api.wait_for_update_request() => (),
             Some(action) = actions.recv() => match action.as_ref() {
                 "next_format" | "toggle_format" => {
-                    formats.next_format();
+                    formats.next();
                 }
                 "prev_format" => {
-                    formats.prev_format();
+                    formats.prev();
                 }
                 _ => (),
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn config(toml_str: &str) -> Config {
+        toml::from_str(toml_str).unwrap()
+    }
+
+    #[test]
+    fn plan_declares_thermometer_icon() {
+        let plan = prepare(&Config::default()).unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["format"]);
+        let main = plan.output("format").unwrap();
+        assert_eq!(main.single_icon("icon").unwrap(), "thermometer");
+        assert!(main.format().contains_key("average"));
+    }
+
+    #[test]
+    fn every_configured_format_gets_an_output() {
+        let plan = prepare(&Config::default()).unwrap();
+        assert!(plan.output("format2").is_err());
+
+        let plan = prepare(&config(
+            r#"format = [" $icon $max max ", " $icon $min min "]"#,
+        ))
+        .unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["format", "format2"]);
+        let alt = plan.output("format2").unwrap();
+        assert!(alt.format().contains_key("min"));
+        assert_eq!(alt.single_icon("icon").unwrap(), "thermometer");
+    }
+
+    #[test]
+    fn format_alt_still_produces_a_second_output() {
+        let plan = prepare(&config(r#"format_alt = " $icon $min min ""#)).unwrap();
+        let alt = plan.output("format2").unwrap();
+        assert!(alt.format().contains_key("min"));
+        assert_eq!(alt.single_icon("icon").unwrap(), "thermometer");
     }
 }

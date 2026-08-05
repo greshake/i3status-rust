@@ -94,7 +94,16 @@ impl Block<'_> {
     }
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+// Result-wrapped to match the `prepare` signature shared by every block,
+// even though this plan cannot fail to build.
+#[allow(clippy::unnecessary_wraps)]
+pub(crate) fn prepare(_config: &Config) -> Result<Arc<BlockPlan>> {
+    // This block renders plain text through `Widget::with_text` — it has no
+    // formats and no icons, so its plan declares no outputs.
+    BlockPlan::new(Vec::new())
+}
+
+pub async fn run(config: &Config, api: &CommonApi, _plan: &Arc<BlockPlan>) -> Result<()> {
     api.set_default_actions(&[
         (MouseButton::Left, None, "_left"),
         (MouseButton::Right, None, "_right"),
@@ -120,5 +129,20 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             }
             spawn_shell(&res.cmd).or_error(|| format!("Failed to run '{}'", res.cmd))?;
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_no_outputs() {
+        let config = Config {
+            text: "menu".into(),
+            items: Vec::new(),
+        };
+        let plan = prepare(&config).unwrap();
+        assert!((plan.outputs().count() == 0));
     }
 }

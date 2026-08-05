@@ -218,6 +218,14 @@ impl Format {
         self.full.contains_key(key) || self.short.contains_key(key)
     }
 
+    pub(crate) fn full_template(&self) -> &FormatTemplate {
+        &self.full
+    }
+
+    pub(crate) fn short_template(&self) -> &FormatTemplate {
+        &self.short
+    }
+
     pub fn intervals(&self) -> Vec<u64> {
         self.intervals.clone()
     }

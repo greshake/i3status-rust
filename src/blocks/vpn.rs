@@ -73,10 +73,10 @@
 //!
 //! # Icons Used
 //!
-//! - `net_vpn`
-//! - `net_wired`
-//! - `net_wireless` (for connecting state)
-//! - `net_down`
+//! - `net_vpn` (`$icon`, in `format_connected`)
+//! - `net_wired` (`$icon`, in `format_disconnected`)
+//! - `net_wireless` (`$icon`, in `format_connecting`)
+//! - `net_down` (`$icon`, in `format_disconnected`, on errors)
 //! - country code flags (if supported by font)
 //!
 //! Flags: They are not icons but unicode glyphs. You will need a font that
@@ -131,24 +131,59 @@ enum Status {
     Error(Option<String>),
 }
 
-impl Status {
-    fn icon(&self) -> Cow<'static, str> {
-        match self {
-            Status::Connected { .. } => "net_vpn".into(),
-            Status::Disconnected { .. } => "net_wired".into(),
-            Status::Connecting { .. } => "net_wireless".into(),
-            Status::Error(_) => "net_down".into(),
-        }
+impl DriverType {
+    /// Whether the driver's `get_status` can ever report `Connecting`.
+    /// Only mullvad has an intermediate connecting state; the other CLIs
+    /// report connected, disconnected, or an error.
+    fn can_report_connecting(&self) -> bool {
+        matches!(self, DriverType::Mullvad)
     }
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    let mut outputs = vec![
+        OutputPlan::new(
+            "connected",
+            config.format_connected.with_default(" VPN: $icon ")?,
+        )
+        .icon("icon", IconChoices::one("net_vpn")),
+        OutputPlan::new(
+            "disconnected",
+            config.format_disconnected.with_default(" VPN: $icon ")?,
+        )
+        .icon("icon", IconChoices::one("net_wired")),
+    ];
+    if config.driver.can_report_connecting() {
+        outputs.push(
+            OutputPlan::new(
+                "connecting",
+                config.format_connecting.with_default(" VPN: $icon ")?,
+            )
+            .icon("icon", IconChoices::one("net_wireless")),
+        );
+    }
+    outputs.push(
+        OutputPlan::new(
+            "error",
+            config.format_disconnected.with_default(" VPN: $icon ")?,
+        )
+        .icon("icon", IconChoices::one("net_down")),
+    );
+    BlockPlan::new(outputs)
+}
+
+pub async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[(MouseButton::Left, None, "toggle")])?;
 
-    let format_connected = config.format_connected.with_default(" VPN: $icon ")?;
-    let format_disconnected = config.format_disconnected.with_default(" VPN: $icon ")?;
-    let format_connecting = config.format_connecting.with_default(" VPN: $icon ")?;
+    let output_connected = plan.output("connected")?;
+    let output_disconnected = plan.output("disconnected")?;
+    let output_connecting = if config.driver.can_report_connecting() {
+        Some(plan.output("connecting")?)
+    } else {
+        None
+    };
+    let output_error = plan.output("error")?;
 
     let driver: Box<dyn Driver> = match config.driver {
         DriverType::Mullvad => Box::new(MullvadDriver::new().await),
@@ -160,7 +195,19 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     loop {
         let status = driver.get_status().await?;
 
-        let mut widget = Widget::new();
+        let output = match &status {
+            Status::Connected { .. } => &output_connected,
+            Status::Disconnected { .. } => &output_disconnected,
+            // A driver reporting a state outside its declared capability is
+            // an internal bug; degrade to the disconnected output.
+            Status::Connecting { .. } => output_connecting.as_ref().unwrap_or_else(|| {
+                debug_assert!(false, "driver reported Connecting without the capability");
+                &output_disconnected
+            }),
+            Status::Error(_) => &output_error,
+        };
+        let mut widget = output.new_widget();
+        let icon = output.icon_value("icon")?;
 
         widget.state = match &status {
             Status::Connected {
@@ -169,36 +216,32 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 profile,
             } => {
                 widget.set_values(map!(
-                        "icon" => Value::icon(status.icon()),
+                        "icon" => icon.clone(),
                         [if let Some(country) = country] "country" => Value::text(country.into()),
                         [if let Some(flag) = country_flag] "flag" => Value::text(flag.into()),
                         [if let Some(profile) = profile] "profile" => Value::text(profile.into()),
                 ));
-                widget.set_format(format_connected.clone());
                 config.state_connected
             }
             Status::Disconnected { profile } => {
                 widget.set_values(map! {
-                    "icon" => Value::icon(status.icon()),
+                    "icon" => icon.clone(),
                     [if let Some(profile) = profile] "profile" => Value::text(profile.into()),
                 });
-                widget.set_format(format_disconnected.clone());
                 config.state_disconnected
             }
             Status::Connecting { profile } => {
                 widget.set_values(map!(
-                        "icon" => Value::icon(status.icon()),
+                        "icon" => icon.clone(),
                         [if let Some(profile) = profile] "profile" => Value::text(profile.into()),
                 ));
-                widget.set_format(format_connecting.clone());
                 State::Info
             }
             Status::Error(error) => {
                 widget.set_values(map!(
-                        "icon" => Value::icon(status.icon()),
+                        "icon" => icon.clone(),
                         [if let Some(error) = error] "error" => Value::text(error.into())
                 ));
-                widget.set_format(format_disconnected.clone());
                 State::Critical
             }
         };
@@ -220,4 +263,62 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 trait Driver {
     async fn get_status(&self) -> Result<Status>;
     async fn toggle_connection(&self, status: &Status) -> Result<()>;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_states_reachable_for_the_driver() {
+        // Default driver is nordvpn, which never reports Connecting.
+        let plan = prepare(&Config::default()).unwrap();
+        let declared: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(declared, ["connected", "disconnected", "error"]);
+
+        let mullvad = Config {
+            driver: DriverType::Mullvad,
+            ..Config::default()
+        };
+        let plan = prepare(&mullvad).unwrap();
+        let declared: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(
+            declared,
+            ["connected", "disconnected", "connecting", "error"]
+        );
+        for (id, icon) in [
+            ("connected", "net_vpn"),
+            ("disconnected", "net_wired"),
+            ("connecting", "net_wireless"),
+            ("error", "net_down"),
+        ] {
+            let output = plan.output(id).unwrap();
+            let choices = output.output().choices_for("icon").unwrap();
+            assert!(choices.permits(icon), "{id} must permit {icon}");
+        }
+    }
+
+    #[test]
+    fn each_output_declares_exactly_one_icon() {
+        let plan = prepare(&Config::default()).unwrap();
+        for (id, icon) in [
+            ("connected", "net_vpn"),
+            ("disconnected", "net_wired"),
+            ("error", "net_down"),
+        ] {
+            let output = plan.output(id).unwrap();
+            assert_eq!(output.single_icon("icon").unwrap(), icon);
+        }
+    }
+
+    #[test]
+    fn error_state_uses_disconnected_format() {
+        let config = Config {
+            format_disconnected: " off ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        let error = plan.output("error").unwrap();
+        assert!(!error.format().contains_key("icon"));
+    }
 }

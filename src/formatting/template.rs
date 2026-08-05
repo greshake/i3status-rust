@@ -32,6 +32,10 @@ pub enum Token {
 }
 
 impl FormatTemplate {
+    pub(crate) fn token_lists(&self) -> &[TokenList] {
+        &self.0
+    }
+
     pub fn contains_key(&self, key: &str) -> bool {
         self.0.iter().any(|token_list| {
             token_list.0.iter().any(|token| match token {
