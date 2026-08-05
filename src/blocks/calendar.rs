@@ -1,6 +1,7 @@
 //! Calendar
 //!
-//! This block displays upcoming calendar events retrieved from a CalDav ICalendar server.
+//! This block displays upcoming calendar events retrieved from a CalDAV server or an iCalendar
+//! (`.ics`) feed.
 //!
 //! # Configuration
 //!
@@ -21,9 +22,10 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `url` | CalDav calendar server URL | N/A
+//! `type` | Source protocol: `"caldav"` or `"ics"` | `"caldav"`
+//! `url` | CalDAV server or ICS feed URL | N/A
 //! `auth` | Authentication configuration (unauthenticated, basic, or oauth2) | `unauthenticated`
-//! `calendars` | List of calendar names to monitor. If empty, all calendars will be fetched. | `[]`
+//! `calendars` | CalDAV only: list of calendar names to monitor. If empty, all calendars will be fetched. | `[]`
 //!
 //! Note: Currently only one source is supported
 //!
@@ -32,6 +34,47 @@
 //! `open_link` | Opens the HTML link of the event | Left
 //!
 //! # Examples
+//!
+//! ## ICS Feed
+//!
+//! A Google Calendar ICS URL can be used directly for read-only access, without OAuth or a Google
+//! Cloud project.
+//!
+//! ### Getting the URL from Google Calendar
+//!
+//! 1. Open Google Calendar in a desktop browser and select **Settings**.
+//! 2. Under **Settings for my calendars**, select the calendar to display.
+//! 3. Open **Integrate calendar**.
+//! 4. Copy **Secret address in iCal format** and use it as the source `url` below.
+//!
+//! Do not use **Calendar ID**, **Public URL to this calendar**, or the embed code. **Public address
+//! in iCal format** only works when the calendar is public; use **Secret address in iCal format**
+//! to keep the calendar private.
+//!
+//! The secret address grants read-only access to the calendar. Treat it like a password, do not
+//! share it, and ensure that the i3status-rust configuration file is only readable by your user.
+//! If it is exposed, reset the address in Google Calendar to invalidate the old URL. For work or
+//! school accounts, an administrator may disable secret addresses.
+//!
+//! See [Google Calendar Help](https://support.google.com/calendar/answer/37648) for Google's
+//! current instructions.
+//!
+//! ```toml
+//! [[block]]
+//! block = "calendar"
+//! fetch_interval = 900
+//! events_within_hours = 48
+//! [[block.source]]
+//! type = "ics"
+//! url = "https://calendar.google.com/calendar/ical/.../basic.ics"
+//! ```
+//!
+//! ICS feeds are downloaded in full on every refresh, so use a longer `fetch_interval` for large
+//! calendars. Responses larger than 32 MiB are rejected. Event time zones must use recognized
+//! IANA `TZID` values; embedded custom `VTIMEZONE` definitions are not interpreted. Recurrences
+//! whose estimated expansion exceeds 100,000 frequency intervals are not expanded, and expansion
+//! is limited to 4,096 instances per event. Event series that use
+//! `RECURRENCE-ID;RANGE=THISANDFUTURE` are skipped because that override mode is not supported.
 //!
 //! ## Unauthenticated
 //!
@@ -91,9 +134,12 @@
 //! credentials_path = "~/.config/i3status-rust/example_credentials.toml"
 //! ```
 //!
-//! ## OAuth2 Authentication (Google Calendar)
+//! ## Google CalDAV with OAuth2 Authentication
 //!
-//! To access the CalDav API of Google, follow these steps to enable the API and obtain the `client_id` and `client_secret`:
+//! This section configures Google's CalDAV API. For read-only access without Google Cloud, use the
+//! ICS feed example above instead.
+//!
+//! To access the CalDAV API of Google, follow these steps to enable the API and obtain the `client_id` and `client_secret`:
 //! 1. **Go to the Google Cloud Console**: Navigate to the [Google Cloud Console](https://console.cloud.google.com/).
 //! 2. **Create a New Project**: If you don't already have a project, click on the project dropdown and select "New Project". Give your project a name and click "Create".
 //! 3. **Enable the CalDAV API**: In the project dashboard, go to the "APIs & Services" > "Library". Search for "CalDAV API" and click on it, then click "Enable".
@@ -167,7 +213,7 @@
 //! # Icons Used
 //! - `calendar`
 
-use chrono::{Duration, Local, Utc};
+use chrono::{Duration, Utc};
 use oauth2::{AuthUrl, ClientId, ClientSecret, Scope, TokenUrl};
 use reqwest::Url;
 
@@ -176,16 +222,16 @@ use crate::{subprocess::spawn_process, util::has_command};
 
 mod auth;
 mod caldav;
+mod ical;
+mod ics;
 
 use self::auth::{Authorize, AuthorizeUrl, OAuth2Flow, TokenStore, TokenStoreError};
-use self::caldav::Event;
+use self::ical::Event;
 
 use super::prelude::*;
 
 use std::path::Path;
 use std::sync::Arc;
-
-use caldav::Client;
 
 #[derive(Deserialize, Debug, SmartDefault, Clone)]
 #[serde(deny_unknown_fields, default)]
@@ -232,9 +278,19 @@ pub enum AuthConfig {
     OAuth2(OAuth2Config),
 }
 
+#[derive(Deserialize, Default, Debug, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum SourceType {
+    #[default]
+    CalDav,
+    Ics,
+}
+
 #[derive(Deserialize, Debug, SmartDefault, Clone)]
 #[serde(deny_unknown_fields, default)]
 pub struct SourceConfig {
+    #[serde(rename = "type")]
+    pub source_type: SourceType,
     pub url: String,
     pub auth: AuthConfig,
     pub calendars: Vec<String>,
@@ -279,12 +335,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     api.set_default_actions(&[(MouseButton::Left, None, "open_link")])?;
 
-    let source_config = match config.source.len() {
-        0 => return Err(Error::new("A calendar source must be supplied")),
-        1 => config
-            .source
-            .first()
-            .expect("There must be a first entry since the length is 1"),
+    let source_config = match config.source.as_slice() {
+        [] => return Err(Error::new("A calendar source must be supplied")),
+        [source] => source,
         _ => {
             return Err(Error::new(
                 "Currently only one calendar source is supported",
@@ -325,21 +378,14 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     }
                     Err(err) => match err {
                         CalendarError::AuthRequired => {
-                            let authorization = source
-                                .client
-                                .authorize()
-                                .await
-                                .error("Authorization failed")?;
-                            match &authorization {
-                                Authorize::AskUser(AuthorizeUrl { url, .. }) if retries == 0 => {
+                            let authorization =
+                                source.authorize().await.error("Authorization failed")?;
+                            match authorization {
+                                Authorize::AskUser(authorize) if retries == 0 => {
                                     widget.set_format(redirect_format.clone());
                                     api.set_widget(widget.clone())?;
-                                    open_browser(config, url).await?;
-                                    source
-                                        .client
-                                        .ask_user(authorization)
-                                        .await
-                                        .error("Ask user failed")?;
+                                    open_browser(config, &authorize.url).await?;
+                                    source.ask_user(authorize).await.error("Ask user failed")?;
                                 }
                                 _ => {
                                     return Err(Error::new(
@@ -359,10 +405,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             }
         }
 
-        if let Some(event) = next_events.current().cloned()
-            && let Some(start_date) = event.start_at
-            && let Some(end_date) = event.end_at
-        {
+        if let Some(event) = next_events.current().cloned() {
+            let start_date = event.start_at;
+            let end_date = event.end_at;
             let warn_datetime = start_date - warning_threshold;
             if warn_datetime < Utc::now() && Utc::now() < start_date {
                 widget.state = State::Warning;
@@ -410,14 +455,30 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     }
 }
 
-struct Source {
-    pub client: caldav::Client,
-    pub config: SourceConfig,
+enum Source {
+    CalDav {
+        client: caldav::Client,
+        calendars: Vec<String>,
+    },
+    Ics(ics::Client),
 }
 
 impl Source {
     async fn new(config: SourceConfig) -> Result<Self> {
-        let auth = match &config.auth {
+        let SourceConfig {
+            source_type,
+            url,
+            auth: auth_config,
+            calendars,
+        } = config;
+
+        if source_type == SourceType::Ics && !calendars.is_empty() {
+            return Err(Error::new(
+                "`calendars` is only supported for CalDAV calendar sources",
+            ));
+        }
+
+        let auth = match auth_config {
             AuthConfig::Unauthenticated => auth::Auth::Unauthenticated,
             AuthConfig::Basic(BasicAuthConfig {
                 credentials,
@@ -428,7 +489,7 @@ impl Source {
                         .await
                         .error("Failed to read basic credentials file")?
                 } else {
-                    credentials.clone()
+                    credentials
                 };
                 let BasicCredentials {
                     username: Some(username),
@@ -440,12 +501,12 @@ impl Source {
                 auth::Auth::basic(username, password)
             }
             AuthConfig::OAuth2(oauth2) => {
-                let credentials = if let Some(path) = &oauth2.credentials_path {
+                let credentials = if let Some(path) = oauth2.credentials_path {
                     util::async_deserialize_toml_file(path.expand()?.to_string())
                         .await
                         .error("Failed to read oauth2 credentials file")?
                 } else {
-                    oauth2.credentials.clone()
+                    oauth2.credentials
                 };
                 let OAuth2Credentials {
                     client_id: Some(client_id),
@@ -454,10 +515,8 @@ impl Source {
                 else {
                     return Err(Error::new("Oauth2 credentials are not configured"));
                 };
-                let auth_url =
-                    AuthUrl::new(oauth2.auth_url.clone()).error("Invalid authorization url")?;
-                let token_url =
-                    TokenUrl::new(oauth2.token_url.clone()).error("Invalid token url")?;
+                let auth_url = AuthUrl::new(oauth2.auth_url).error("Invalid authorization url")?;
+                let token_url = TokenUrl::new(oauth2.token_url).error("Invalid token url")?;
 
                 let flow = OAuth2Flow::new(
                     ClientId::new(client_id),
@@ -468,15 +527,17 @@ impl Source {
                 );
                 let token_store =
                     TokenStore::new(Path::new(&oauth2.auth_token.expand()?.to_string()));
-                auth::Auth::oauth2(flow, token_store, oauth2.scopes.clone())
+                auth::Auth::oauth2(flow, token_store, oauth2.scopes)
             }
         };
-        Ok(Self {
-            client: Client::new(
-                Url::parse(&config.url).error("Invalid CalDav server url")?,
-                auth,
-            ),
-            config,
+
+        let url = Url::parse(&url).error("Invalid calendar source URL")?;
+        Ok(match source_type {
+            SourceType::CalDav => Self::CalDav {
+                client: caldav::Client::new(url, auth),
+                calendars,
+            },
+            SourceType::Ics => Self::Ics(ics::Client::new(url, auth)),
         })
     }
 
@@ -484,50 +545,39 @@ impl Source {
         &mut self,
         within: Duration,
     ) -> Result<OverlappingEvents, CalendarError> {
-        let calendars: Vec<_> = self
-            .client
-            .calendars()
-            .await?
-            .into_iter()
-            .filter(|c| self.config.calendars.is_empty() || self.config.calendars.contains(&c.name))
-            .collect();
-        let mut events: Vec<Event> = vec![];
-        for calendar in calendars {
-            let calendar_events: Vec<_> = self
-                .client
-                .events(
-                    &calendar,
-                    Local::now()
-                        .date_naive()
-                        .and_hms_opt(0, 0, 0)
-                        .expect("A valid time")
-                        .and_local_timezone(Local)
-                        .earliest()
-                        .expect("A valid datetime")
-                        .to_utc(),
-                    Utc::now() + within,
-                )
-                .await?
-                .into_iter()
-                .filter(|e| {
-                    let not_started = e.start_at.is_some_and(|d| d > Utc::now());
-                    let is_ongoing = e.start_at.is_some_and(|d| d < Utc::now())
-                        && e.end_at.is_some_and(|d| d > Utc::now());
-                    not_started || is_ongoing
-                })
-                .collect();
-            events.extend(calendar_events);
-        }
-
+        let now = Utc::now();
+        let end = now
+            .checked_add_signed(within)
+            .ok_or_else(|| CalendarError::Parsing("Calendar search window is too large".into()))?;
+        let mut events =
+            match self {
+                Self::CalDav { client, calendars } => {
+                    let mut events = vec![];
+                    for calendar in client.calendars().await?.into_iter().filter(|calendar| {
+                        calendars.is_empty() || calendars.contains(&calendar.name)
+                    }) {
+                        events.extend(client.events(&calendar, now, end).await?);
+                    }
+                    events
+                }
+                Self::Ics(client) => client.events(now, end).await?,
+            };
         events.sort_by_key(|e| e.start_at);
-        let Some(next_event) = events.first().cloned() else {
-            return Ok(OverlappingEvents::default());
-        };
-        let overlapping_events = events
-            .into_iter()
-            .take_while(|e| e.start_at <= next_event.end_at)
-            .collect();
-        Ok(OverlappingEvents::new(overlapping_events))
+        Ok(next_overlapping_events(events))
+    }
+
+    async fn authorize(&mut self) -> Result<Authorize, CalendarError> {
+        match self {
+            Self::CalDav { client, .. } => client.authorize().await,
+            Self::Ics(client) => client.authorize().await,
+        }
+    }
+
+    async fn ask_user(&mut self, authorize: AuthorizeUrl) -> Result<(), CalendarError> {
+        match self {
+            Self::CalDav { client, .. } => client.ask_user(authorize).await,
+            Self::Ics(client) => client.ask_user(authorize).await,
+        }
     }
 }
 
@@ -558,22 +608,22 @@ impl OverlappingEvents {
 
     fn cycle_warning_or_ongoing(&mut self, warning_threshold: Duration) {
         self.current = if let Some(current) = &self.current {
-            if self.events.iter().any(|e| e.uid == current.uid) {
-                let mut iter = self
-                    .events
+            if let Some(position) = self
+                .events
+                .iter()
+                .position(|event| same_event(event, current))
+            {
+                let now = Utc::now();
+                self.events
                     .iter()
                     .cycle()
-                    .skip_while(|e| e.uid != current.uid);
-                iter.next();
-                iter.find(|e| {
-                    let is_ongoing = e.start_at.is_some_and(|d| d < Utc::now())
-                        && e.end_at.is_some_and(|d| d > Utc::now());
-                    let is_warning = e
-                        .start_at
-                        .is_some_and(|d| d - warning_threshold < Utc::now() && Utc::now() < d);
-                    e.uid == current.uid || is_warning || is_ongoing
-                })
-                .cloned()
+                    .skip(position + 1)
+                    .find(|e| {
+                        let is_ongoing = e.start_at < now && e.end_at > now;
+                        let is_warning = e.start_at - warning_threshold < now && now < e.start_at;
+                        same_event(e, current) || is_warning || is_ongoing
+                    })
+                    .cloned()
             } else {
                 self.events.first().cloned()
             }
@@ -581,6 +631,21 @@ impl OverlappingEvents {
             self.events.first().cloned()
         };
     }
+}
+
+fn next_overlapping_events(mut events: Vec<Event>) -> OverlappingEvents {
+    let Some(first_end) = events.first().map(|event| event.end_at) else {
+        return OverlappingEvents::default();
+    };
+    let overlapping_len = events
+        .partition_point(|event| event.start_at < first_end)
+        .max(1);
+    events.truncate(overlapping_len);
+    OverlappingEvents::new(events)
+}
+
+fn same_event(left: &Event, right: &Event) -> bool {
+    left.uid == right.uid && left.start_at == right.start_at
 }
 
 async fn open_browser(config: &Config, url: &Url) -> Result<()> {
@@ -597,8 +662,6 @@ pub enum CalendarError {
     Http(#[from] reqwest::Error),
     #[error(transparent)]
     Deserialize(#[from] quick_xml::de::DeError),
-    #[error(transparent)]
-    RecurrenceError(#[from] icalendar::RecurrenceError),
     #[error("Parsing error: {0}")]
     Parsing(String),
     #[error("Auth required")]
@@ -611,6 +674,85 @@ pub enum CalendarError {
     RequestToken(String),
     #[error("Store token error: {0}")]
     StoreToken(#[from] TokenStoreError),
-    #[error("local time falls in a _gap_ in the local time, or if there was an error")]
-    TzConversion,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn event(uid: &str, start: chrono::DateTime<Utc>, end: chrono::DateTime<Utc>) -> Event {
+        Event {
+            uid: uid.into(),
+            summary: None,
+            description: None,
+            location: None,
+            url: None,
+            start_at: start,
+            end_at: end,
+        }
+    }
+
+    #[test]
+    fn deserializes_source_types() {
+        let caldav: SourceConfig =
+            toml::from_str(r#"url = "https://caldav.example/calendar/""#).unwrap();
+        let ics: SourceConfig = toml::from_str(
+            r#"
+            type = "ics"
+            url = "https://calendar.example/private/basic.ics"
+            "#,
+        )
+        .unwrap();
+
+        assert_eq!(caldav.source_type, SourceType::CalDav);
+        assert_eq!(ics.source_type, SourceType::Ics);
+        assert!(
+            toml::from_str::<SourceConfig>(
+                r#"
+            type = "webcal"
+            url = "https://calendar.example/calendar"
+            "#,
+            )
+            .is_err()
+        );
+    }
+
+    #[tokio::test]
+    async fn rejects_caldav_calendar_filter_for_ics_source() {
+        let source: SourceConfig = toml::from_str(
+            r#"
+            type = "ics"
+            url = "https://calendar.example/private/basic.ics"
+            calendars = ["ignored"]
+            "#,
+        )
+        .unwrap();
+
+        assert!(Source::new(source).await.is_err());
+    }
+
+    #[test]
+    fn back_to_back_events_do_not_overlap() {
+        let first_start = "2026-07-29T16:00:00Z".parse().unwrap();
+        let boundary = "2026-07-29T17:00:00Z".parse().unwrap();
+        let second_end = "2026-07-29T18:00:00Z".parse().unwrap();
+
+        let events = next_overlapping_events(vec![
+            event("first", first_start, boundary),
+            event("second", boundary, second_end),
+        ]);
+
+        assert_eq!(events.events.len(), 1);
+        assert_eq!(events.events[0].uid, "first");
+    }
+
+    #[test]
+    fn zero_duration_next_event_is_still_selected() {
+        let start = "2026-07-29T16:00:00Z".parse().unwrap();
+
+        let events = next_overlapping_events(vec![event("instant", start, start)]);
+
+        assert_eq!(events.events.len(), 1);
+        assert_eq!(events.current().unwrap().uid, "instant");
+    }
 }
