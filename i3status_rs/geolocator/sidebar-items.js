@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["GeolocatorBackend"],"struct":["Geolocator","IPAddressInfo"]};
+window.SIDEBAR_ITEMS = {"enum":["GeolocatorBackend"],"fn":["is_rate_limited"],"struct":["Geolocator","GeolocatorConfig","IPAddressInfo","RateLimited"]};

@@ -100,26 +100,36 @@
 <a href=#100 id=100 data-nosnippet>100</a>    }
 <a href=#101 id=101 data-nosnippet>101</a>
 <a href=#102 id=102 data-nosnippet>102</a>    <span class="kw">pub async fn </span>get_info(<span class="kw-2">&amp;</span><span class="self">self</span>, client: <span class="kw-2">&amp;</span>reqwest::Client) -&gt; <span class="prelude-ty">Result</span>&lt;IPAddressInfo&gt; {
-<a href=#103 id=103 data-nosnippet>103</a>        <span class="kw">let </span>response: ApiResponse = client
+<a href=#103 id=103 data-nosnippet>103</a>        <span class="kw">let </span>response = client
 <a href=#104 id=104 data-nosnippet>104</a>            .get(IP_API_URL)
-<a href=#105 id=105 data-nosnippet>105</a>            .send()
-<a href=#106 id=106 data-nosnippet>106</a>            .<span class="kw">await
-<a href=#107 id=107 data-nosnippet>107</a>            </span>.error(<span class="string">"Failed during request for current location"</span>)<span class="question-mark">?
-<a href=#108 id=108 data-nosnippet>108</a>            </span>.json()
-<a href=#109 id=109 data-nosnippet>109</a>            .<span class="kw">await
-<a href=#110 id=110 data-nosnippet>110</a>            </span>.error(<span class="string">"Failed while parsing location API result"</span>)<span class="question-mark">?</span>;
-<a href=#111 id=111 data-nosnippet>111</a>
-<a href=#112 id=112 data-nosnippet>112</a>        <span class="kw">if </span>response.error {
-<a href=#113 id=113 data-nosnippet>113</a>            <span class="prelude-val">Err</span>(Error {
-<a href=#114 id=114 data-nosnippet>114</a>                message: <span class="prelude-val">Some</span>(<span class="string">"ipapi.co error"</span>.into()),
-<a href=#115 id=115 data-nosnippet>115</a>                cause: <span class="prelude-val">Some</span>(Arc::new(response.reason)),
-<a href=#116 id=116 data-nosnippet>116</a>            })
-<a href=#117 id=117 data-nosnippet>117</a>        } <span class="kw">else </span>{
-<a href=#118 id=118 data-nosnippet>118</a>            <span class="prelude-val">Ok</span>(response
-<a href=#119 id=119 data-nosnippet>119</a>                .data
-<a href=#120 id=120 data-nosnippet>120</a>                .error(<span class="string">"Failed while parsing location API result"</span>)<span class="question-mark">?
-<a href=#121 id=121 data-nosnippet>121</a>                </span>.into())
-<a href=#122 id=122 data-nosnippet>122</a>        }
-<a href=#123 id=123 data-nosnippet>123</a>    }
-<a href=#124 id=124 data-nosnippet>124</a>}
+<a href=#105 id=105 data-nosnippet>105</a>            .timeout(REQUEST_TIMEOUT)
+<a href=#106 id=106 data-nosnippet>106</a>            .send()
+<a href=#107 id=107 data-nosnippet>107</a>            .<span class="kw">await
+<a href=#108 id=108 data-nosnippet>108</a>            </span>.error(<span class="string">"Failed during request for current location"</span>)<span class="question-mark">?</span>;
+<a href=#109 id=109 data-nosnippet>109</a>
+<a href=#110 id=110 data-nosnippet>110</a>        <span class="kw">if </span>response.status() == reqwest::StatusCode::TOO_MANY_REQUESTS {
+<a href=#111 id=111 data-nosnippet>111</a>            <span class="kw">return </span><span class="prelude-val">Err</span>(Error {
+<a href=#112 id=112 data-nosnippet>112</a>                message: <span class="prelude-val">Some</span>(<span class="string">"ipapi.co rate limit exceeded"</span>.into()),
+<a href=#113 id=113 data-nosnippet>113</a>                cause: <span class="prelude-val">Some</span>(Arc::new(RateLimited)),
+<a href=#114 id=114 data-nosnippet>114</a>            });
+<a href=#115 id=115 data-nosnippet>115</a>        }
+<a href=#116 id=116 data-nosnippet>116</a>
+<a href=#117 id=117 data-nosnippet>117</a>        <span class="kw">let </span>response: ApiResponse = response
+<a href=#118 id=118 data-nosnippet>118</a>            .json()
+<a href=#119 id=119 data-nosnippet>119</a>            .<span class="kw">await
+<a href=#120 id=120 data-nosnippet>120</a>            </span>.error(<span class="string">"Failed while parsing location API result"</span>)<span class="question-mark">?</span>;
+<a href=#121 id=121 data-nosnippet>121</a>
+<a href=#122 id=122 data-nosnippet>122</a>        <span class="kw">if </span>response.error {
+<a href=#123 id=123 data-nosnippet>123</a>            <span class="prelude-val">Err</span>(Error {
+<a href=#124 id=124 data-nosnippet>124</a>                message: <span class="prelude-val">Some</span>(<span class="string">"ipapi.co error"</span>.into()),
+<a href=#125 id=125 data-nosnippet>125</a>                cause: <span class="prelude-val">Some</span>(Arc::new(response.reason)),
+<a href=#126 id=126 data-nosnippet>126</a>            })
+<a href=#127 id=127 data-nosnippet>127</a>        } <span class="kw">else </span>{
+<a href=#128 id=128 data-nosnippet>128</a>            <span class="prelude-val">Ok</span>(response
+<a href=#129 id=129 data-nosnippet>129</a>                .data
+<a href=#130 id=130 data-nosnippet>130</a>                .error(<span class="string">"Failed while parsing location API result"</span>)<span class="question-mark">?
+<a href=#131 id=131 data-nosnippet>131</a>                </span>.into())
+<a href=#132 id=132 data-nosnippet>132</a>        }
+<a href=#133 id=133 data-nosnippet>133</a>    }
+<a href=#134 id=134 data-nosnippet>134</a>}
 </code></pre></div></section></main></body></html>

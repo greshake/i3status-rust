@@ -206,31 +206,40 @@
 <a href=#206 id=206 data-nosnippet>206</a>        client: <span class="kw-2">&amp;</span>reqwest::Client,
 <a href=#207 id=207 data-nosnippet>207</a>        api_key: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>String&gt;,
 <a href=#208 id=208 data-nosnippet>208</a>    ) -&gt; <span class="prelude-ty">Result</span>&lt;IPAddressInfo&gt; {
-<a href=#209 id=209 data-nosnippet>209</a>        <span class="kw">let </span><span class="kw-2">mut </span>request_builder = client.get(IP_API_URL);
+<a href=#209 id=209 data-nosnippet>209</a>        <span class="kw">let </span><span class="kw-2">mut </span>request_builder = client.get(IP_API_URL).timeout(REQUEST_TIMEOUT);
 <a href=#210 id=210 data-nosnippet>210</a>
 <a href=#211 id=211 data-nosnippet>211</a>        <span class="kw">if let </span><span class="prelude-val">Some</span>(api_key) = api_key {
 <a href=#212 id=212 data-nosnippet>212</a>            request_builder = request_builder.query(<span class="kw-2">&amp;</span>[(<span class="string">"key"</span>, api_key)]);
 <a href=#213 id=213 data-nosnippet>213</a>        }
 <a href=#214 id=214 data-nosnippet>214</a>
-<a href=#215 id=215 data-nosnippet>215</a>        <span class="kw">let </span>response: ApiResponse = request_builder
+<a href=#215 id=215 data-nosnippet>215</a>        <span class="kw">let </span>response = request_builder
 <a href=#216 id=216 data-nosnippet>216</a>            .send()
 <a href=#217 id=217 data-nosnippet>217</a>            .<span class="kw">await
-<a href=#218 id=218 data-nosnippet>218</a>            </span>.error(<span class="string">"Failed during request for current location"</span>)<span class="question-mark">?
-<a href=#219 id=219 data-nosnippet>219</a>            </span>.json()
-<a href=#220 id=220 data-nosnippet>220</a>            .<span class="kw">await
-<a href=#221 id=221 data-nosnippet>221</a>            </span>.error(<span class="string">"Failed while parsing location API result"</span>)<span class="question-mark">?</span>;
-<a href=#222 id=222 data-nosnippet>222</a>
-<a href=#223 id=223 data-nosnippet>223</a>        <span class="kw">if let </span><span class="prelude-val">Some</span>(error) = response.error {
-<a href=#224 id=224 data-nosnippet>224</a>            <span class="prelude-val">Err</span>(Error {
-<a href=#225 id=225 data-nosnippet>225</a>                message: <span class="prelude-val">Some</span>(<span class="string">"ip2location.io error"</span>.into()),
-<a href=#226 id=226 data-nosnippet>226</a>                cause: <span class="prelude-val">Some</span>(Arc::new(error)),
-<a href=#227 id=227 data-nosnippet>227</a>            })
-<a href=#228 id=228 data-nosnippet>228</a>        } <span class="kw">else </span>{
-<a href=#229 id=229 data-nosnippet>229</a>            <span class="prelude-val">Ok</span>(response
-<a href=#230 id=230 data-nosnippet>230</a>                .data
-<a href=#231 id=231 data-nosnippet>231</a>                .error(<span class="string">"Failed while parsing location API result"</span>)<span class="question-mark">?
-<a href=#232 id=232 data-nosnippet>232</a>                </span>.into())
-<a href=#233 id=233 data-nosnippet>233</a>        }
-<a href=#234 id=234 data-nosnippet>234</a>    }
-<a href=#235 id=235 data-nosnippet>235</a>}
+<a href=#218 id=218 data-nosnippet>218</a>            </span>.error(<span class="string">"Failed during request for current location"</span>)<span class="question-mark">?</span>;
+<a href=#219 id=219 data-nosnippet>219</a>
+<a href=#220 id=220 data-nosnippet>220</a>        <span class="kw">if </span>response.status() == reqwest::StatusCode::TOO_MANY_REQUESTS {
+<a href=#221 id=221 data-nosnippet>221</a>            <span class="kw">return </span><span class="prelude-val">Err</span>(Error {
+<a href=#222 id=222 data-nosnippet>222</a>                message: <span class="prelude-val">Some</span>(<span class="string">"ip2location.io rate limit exceeded"</span>.into()),
+<a href=#223 id=223 data-nosnippet>223</a>                cause: <span class="prelude-val">Some</span>(Arc::new(RateLimited)),
+<a href=#224 id=224 data-nosnippet>224</a>            });
+<a href=#225 id=225 data-nosnippet>225</a>        }
+<a href=#226 id=226 data-nosnippet>226</a>
+<a href=#227 id=227 data-nosnippet>227</a>        <span class="kw">let </span>response: ApiResponse = response
+<a href=#228 id=228 data-nosnippet>228</a>            .json()
+<a href=#229 id=229 data-nosnippet>229</a>            .<span class="kw">await
+<a href=#230 id=230 data-nosnippet>230</a>            </span>.error(<span class="string">"Failed while parsing location API result"</span>)<span class="question-mark">?</span>;
+<a href=#231 id=231 data-nosnippet>231</a>
+<a href=#232 id=232 data-nosnippet>232</a>        <span class="kw">if let </span><span class="prelude-val">Some</span>(error) = response.error {
+<a href=#233 id=233 data-nosnippet>233</a>            <span class="prelude-val">Err</span>(Error {
+<a href=#234 id=234 data-nosnippet>234</a>                message: <span class="prelude-val">Some</span>(<span class="string">"ip2location.io error"</span>.into()),
+<a href=#235 id=235 data-nosnippet>235</a>                cause: <span class="prelude-val">Some</span>(Arc::new(error)),
+<a href=#236 id=236 data-nosnippet>236</a>            })
+<a href=#237 id=237 data-nosnippet>237</a>        } <span class="kw">else </span>{
+<a href=#238 id=238 data-nosnippet>238</a>            <span class="prelude-val">Ok</span>(response
+<a href=#239 id=239 data-nosnippet>239</a>                .data
+<a href=#240 id=240 data-nosnippet>240</a>                .error(<span class="string">"Failed while parsing location API result"</span>)<span class="question-mark">?
+<a href=#241 id=241 data-nosnippet>241</a>                </span>.into())
+<a href=#242 id=242 data-nosnippet>242</a>        }
+<a href=#243 id=243 data-nosnippet>243</a>    }
+<a href=#244 id=244 data-nosnippet>244</a>}
 </code></pre></div></section></main></body></html>
