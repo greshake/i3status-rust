@@ -26,7 +26,6 @@ pub struct NetDevice {
     pub ip: Option<Ipv4Addr>,
     pub ipv6: Option<Ipv6Addr>,
     pub icon: &'static str,
-    pub tun_wg_ppp: bool,
     pub nameservers: Vec<IpAddr>,
 }
 
@@ -102,16 +101,21 @@ impl NetDevice {
             ip,
             ipv6,
             icon,
-            tun_wg_ppp: tun | wg | ppp,
             nameservers,
         }))
     }
 
+    /// An interface is active only when its operational state allows traffic
+    /// and it has an address. In particular, `Operstate::Up` only describes
+    /// the link state, so an Ethernet interface can remain `Up` after a
+    /// network manager disconnects it and removes its addresses (#1917).
+    ///
+    /// Tun/wireguard/ppp interfaces are not special-cased to be always up (as
+    /// they were since #350): they usually report `Operstate::Unknown`, which
+    /// is covered by the has-an-address clause below.
     pub fn is_up(&self) -> bool {
-        self.tun_wg_ppp
-            || self.iface.operstate == Operstate::Up
-            || (self.iface.operstate == Operstate::Unknown
-                && (self.ip.is_some() || self.ipv6.is_some()))
+        (self.iface.operstate == Operstate::Up || self.iface.operstate == Operstate::Unknown)
+            && (self.ip.is_some() || self.ipv6.is_some())
     }
 
     pub fn ssid(&self) -> Option<String> {
@@ -495,5 +499,48 @@ impl From<u8> for Operstate {
             6 => Self::Up,
             _ => Self::Unknown,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn device(operstate: Operstate, ip: Option<Ipv4Addr>, ipv6: Option<Ipv6Addr>) -> NetDevice {
+        NetDevice {
+            iface: Interface {
+                index: 1,
+                operstate,
+                name: "net0".into(),
+                stats: None,
+            },
+            wifi_info: None,
+            ip,
+            ipv6,
+            icon: "net_vpn",
+            nameservers: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn is_up_by_operstate_and_address() {
+        let ip = Some(Ipv4Addr::new(10, 0, 0, 2));
+
+        // A physical link can remain up after NetworkManager disconnects it,
+        // but without an address it is inactive.
+        assert!(!device(Operstate::Up, None, None).is_up());
+        assert!(device(Operstate::Up, ip, None).is_up());
+
+        // tun/wireguard/ppp interfaces usually report Unknown; they count as
+        // up only while they have an address
+        assert!(device(Operstate::Unknown, ip, None).is_up());
+        assert!(device(Operstate::Unknown, None, Some(Ipv6Addr::LOCALHOST)).is_up());
+        assert!(!device(Operstate::Unknown, None, None).is_up());
+
+        // regression test for #1917: a VPN interface that is administratively
+        // down must not be reported as up, so that `inactive_format` is used
+        assert!(!device(Operstate::Down, None, None).is_up());
+        assert!(!device(Operstate::Down, ip, None).is_up());
+        assert!(!device(Operstate::Lowerlayerdown, None, None).is_up());
     }
 }
