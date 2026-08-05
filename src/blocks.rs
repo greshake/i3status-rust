@@ -50,12 +50,15 @@ pub(super) const RESTART_BLOCK_BTN: &str = "restart_block_btn";
 macro_rules! define_blocks {
     {
         $(
+            $(#[cfg(target_os = $target_os: literal)])?
             $(#[cfg(feature = $feat: literal)])?
             $(#[deprecated($($dep_k: ident = $dep_v: literal),+)])?
             $block: ident $(,)?
         )*
     } => {
         $(
+            $(#[cfg(target_os = $target_os)])?
+            $(#[cfg_attr(docsrs, doc(cfg(target_os = $target_os)))])?
             $(#[cfg(feature = $feat)])?
             $(#[cfg_attr(docsrs, doc(cfg(feature = $feat)))])?
             $(#[deprecated($($dep_k = $dep_v),+)])?
@@ -65,6 +68,7 @@ macro_rules! define_blocks {
         #[derive(Debug)]
         pub enum BlockConfig {
             $(
+                $(#[cfg(target_os = $target_os)])?
                 $(#[cfg(feature = $feat)])?
                 #[allow(non_camel_case_types)]
                 #[allow(deprecated)]
@@ -77,6 +81,7 @@ macro_rules! define_blocks {
             pub fn name(&self) -> &'static str {
                 match self {
                     $(
+                        $(#[cfg(target_os = $target_os)])?
                         $(#[cfg(feature = $feat)])?
                         Self::$block { .. } => stringify!($block),
                     )*
@@ -87,6 +92,7 @@ macro_rules! define_blocks {
             pub fn spawn(self, api: CommonApi, futures: &mut FuturesUnordered<BoxedFuture<()>>) {
                 match self {
                     $(
+                        $(#[cfg(target_os = $target_os)])?
                         $(#[cfg(feature = $feat)])?
                         #[allow(deprecated)]
                         Self::$block(config) => futures.push(async move {
@@ -147,12 +153,21 @@ macro_rules! define_blocks {
 
                 match block_name {
                     $(
+                        $(#[cfg(target_os = $target_os)])?
                         $(#[cfg(feature = $feat)])?
                         #[allow(deprecated)]
                         stringify!($block) => match $block::Config::deserialize(table) {
                             Ok(config) => Ok(BlockConfig::$block(config)),
                             Err(err) => Ok(BlockConfig::Err(stringify!($block), crate::errors::Error::new(err.to_string()))),
                         }
+                        $(
+                            #[cfg(not(target_os = $target_os))]
+                            stringify!($block) => Err(D::Error::custom(format!(
+                                "block {} is only available on {}",
+                                stringify!($block),
+                                $target_os,
+                            ))),
+                        )?
                         $(
                             #[cfg(not(feature = $feat))]
                             stringify!($block) => Err(D::Error::custom(format!(
@@ -171,17 +186,21 @@ macro_rules! define_blocks {
 
 define_blocks!(
     amd_gpu,
+    #[cfg(target_os = "linux")]
     backlight,
     battery,
     bluetooth,
     calendar,
     cpu,
+    #[cfg(target_os = "linux")]
     custom,
     custom_dbus,
     disk_iostats,
+    #[cfg(target_os = "linux")]
     disk_space,
     docker,
     external_ip,
+    #[cfg(target_os = "linux")]
     focused_window,
     github,
     hueshift,
@@ -192,27 +211,36 @@ define_blocks!(
     menu,
     memory,
     music,
+    #[cfg(target_os = "linux")]
     net,
     notify,
+    #[cfg(target_os = "linux")]
     #[cfg(feature = "notmuch")]
     notmuch,
     nvidia_gpu,
     packages,
     pomodoro,
+    #[cfg(target_os = "linux")]
     privacy,
     rofication,
     service_status,
+    #[cfg(target_os = "linux")]
     scratchpad,
+    #[cfg(target_os = "linux")]
     sound,
     speedtest,
+    #[cfg(target_os = "linux")]
     keyboard_layout,
+    #[cfg(target_os = "linux")]
     taskwarrior,
+    #[cfg(target_os = "linux")]
     temperature,
     time,
     tea_timer,
     toggle,
     uptime,
     vpn,
+    #[cfg(target_os = "linux")]
     watson,
     weather,
     xrandr,

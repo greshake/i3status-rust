@@ -1,0 +1,25 @@
+name: pre-commit-freebsd
+
+on: [push, pull_request]
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        hook: [
+                cargo-fmt,
+                cargo-clippy,
+                cargo-test,
+              ]
+    steps:
+    - uses: actions/checkout@v6
+    - name: Test in FreeBSD
+      uses: vmactions/freebsd-vm@v1
+      with:
+          run: |
+            pkg update
+            pkg install -y git py311-pre-commit rust
+            git config --global --add safe.directory "$GITHUB_WORKSPACE"
+            pre-commit run ${{ matrix.hook }} --all-files
