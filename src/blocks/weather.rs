@@ -456,8 +456,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     loop {
         let location = if config.autolocate {
-            let fetch = || api.find_ip_location(&REQWEST_CLIENT, autolocate_interval);
-            Some(fetch.retry(ExponentialBuilder::default()).await?)
+            Some(
+                api.find_ip_location(&REQWEST_CLIENT, autolocate_interval)
+                    .await?,
+            )
         } else {
             None
         };
