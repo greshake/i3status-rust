@@ -1,3 +1,7 @@
+use std::env;
+use std::fs::File;
+use std::io::{BufRead, BufReader, BufWriter, Write};
+use std::path::Path;
 use std::process::Command;
 
 fn main() {
@@ -24,4 +28,32 @@ fn main() {
     } else {
         println!("cargo:rustc-env=VERSION={}", env!("CARGO_PKG_VERSION"));
     }
+
+    let mut builder = phf_codegen::Map::new();
+
+    for line in BufReader::new(File::open("src/themes/xorg-rgb.txt").unwrap()).lines() {
+        let line = line.unwrap();
+        if line.starts_with("!") {
+            continue;
+        }
+        let mut line_split = line.split_whitespace();
+        let r = line_split.next().unwrap();
+        let g = line_split.next().unwrap();
+        let b = line_split.next().unwrap();
+        let name = line_split.collect::<Vec<_>>().join(" ").to_lowercase();
+        builder.entry(
+            name,
+            format!("Color::Rgba(Rgba {{ r: {r}, g: {g}, b: {b}, a: 255 }})"),
+        );
+    }
+
+    writeln!(
+        &mut BufWriter::new(
+            File::create(Path::new(&env::var("OUT_DIR").unwrap()).join("xorg_rgb_codegen.rs"))
+                .unwrap(),
+        ),
+        "static XORG_COLORS: ::phf::Map<&'static str, Color> = {};",
+        builder.build()
+    )
+    .unwrap();
 }
