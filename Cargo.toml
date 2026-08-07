@@ -21,7 +21,7 @@ pulseaudio = ["libpulse-binding"]
 pipewire = ["dep:pipewire"]
 notmuch = ["dep:notmuch"]
 maildir = ["dep:maildir", "glob"]
-icu_calendar = ["dep:icu_datetime", "dep:icu_locale"]
+icu_calendar = ["dep:icu_datetime", "dep:icu_locale", "dep:jiff-icu"]
 debug_borders = []                # Make widgets' borders visible
 
 [package.metadata.docs.rs]
@@ -52,6 +52,8 @@ icu_locale = { version = "2.2", optional = true }
 indexmap = { version = "2.0", features = ["serde"] }
 inotify = "0.11"
 itertools = "0.13"
+jiff = { version = "0.2", features = ["serde"] }
+jiff-icu = { version = "0.2.2", optional = true }
 libc = "0.2"
 libpulse-binding = { version = "2.0", default-features = false, optional = true }
 log = "0.4"
@@ -74,7 +76,7 @@ shellexpand = "3.0"
 signal-hook = "0.3"
 signal-hook-tokio = { version = "0.3", features = ["futures-v0_3"] }
 smart-default = "0.7"
-sunrise = "3.0"
+sunrise = { git = "https://github.com/bim9262/rust-sunrise.git", branch = "jiff", default-features = false, features = ["std", "jiff"]}
 swayipc-async = "3.0.0"
 thiserror = "2.0"
 tokio-util = { version = "0.7", features = ["codec"] }

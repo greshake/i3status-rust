@@ -31,10 +31,9 @@
 //! # TODO
 //! - Extend functionality: start / stop watson using this block
 
-use chrono::{DateTime, offset::Local};
 use dirs::config_dir;
 use inotify::{Inotify, WatchMask};
-use serde::de::Deserializer;
+use jiff::{SpanTotal, Timestamp, Unit};
 use std::path::PathBuf;
 use tokio::fs::read_to_string;
 
@@ -99,7 +98,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             state @ WatsonState::Active { .. } => {
                 widget.state = State::Good;
                 widget.set_values(map!(
-                  "text" => Value::text(state.format(show_time, "started", format_delta_past))
+                  "text" => Value::text(state.format(show_time, "started", format_delta_past)?)
                 ));
                 prev_state = Some(state);
             }
@@ -109,7 +108,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     // tracking. This means that we could show some statistics.
                     widget.state = State::Idle;
                     widget.set_values(map!(
-                      "text" => Value::text(prev.format(true, "stopped", format_delta_after))
+                      "text" => Value::text(prev.format(true, "stopped", format_delta_after)?)
                     ));
                 } else {
                     // File is empty which means that there is currently no active time tracking,
@@ -146,36 +145,81 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     }
 }
 
-fn format_delta_past(delta: &chrono::Duration) -> String {
+fn format_delta_past(delta: &jiff::Span) -> Result<String> {
     let spans = &[
-        ("week", delta.num_weeks()),
-        ("day", delta.num_days()),
-        ("hour", delta.num_hours()),
-        ("minute", delta.num_minutes()),
+        (
+            "week",
+            delta
+                .total(SpanTotal::from(Unit::Week).days_are_24_hours())
+                .error("Could not calculate total weeks")? as i64,
+        ),
+        (
+            "day",
+            delta
+                .total(SpanTotal::from(Unit::Day).days_are_24_hours())
+                .error("Could not calculate total days")? as i64,
+        ),
+        (
+            "hour",
+            delta
+                .total(SpanTotal::from(Unit::Hour))
+                .error("Could not calculate total hours")? as i64,
+        ),
+        (
+            "minute",
+            delta
+                .total(SpanTotal::from(Unit::Minute))
+                .error("Could not calculate total minutes")? as i64,
+        ),
     ];
 
-    spans
+    Ok(spans
         .iter()
         .filter(|&(_, n)| *n != 0)
         .map(|&(label, n)| format!("{n} {label}{} ago", if n > 1 { "s" } else { "" }))
         .next()
-        .unwrap_or_else(|| "now".into())
+        .unwrap_or_else(|| "now".into()))
 }
 
-fn format_delta_after(delta: &chrono::Duration) -> String {
+fn format_delta_after(delta: &jiff::Span) -> Result<String> {
     let spans = &[
-        ("week", delta.num_weeks()),
-        ("day", delta.num_days()),
-        ("hour", delta.num_hours()),
-        ("minute", delta.num_minutes()),
-        ("second", delta.num_seconds()),
+        (
+            "week",
+            delta
+                .total(SpanTotal::from(Unit::Week).days_are_24_hours())
+                .error("Could not calculate total weeks")? as i64,
+        ),
+        (
+            "day",
+            delta
+                .total(SpanTotal::from(Unit::Day).days_are_24_hours())
+                .error("Could not calculate total days")? as i64,
+        ),
+        (
+            "hour",
+            delta
+                .total(SpanTotal::from(Unit::Hour))
+                .error("Could not calculate total hours")? as i64,
+        ),
+        (
+            "minute",
+            delta
+                .total(SpanTotal::from(Unit::Minute))
+                .error("Could not calculate total minutes")? as i64,
+        ),
+        (
+            "second",
+            delta
+                .total(SpanTotal::from(Unit::Second))
+                .error("Could not calculate total seconds")? as i64,
+        ),
     ];
 
-    spans
+    Ok(spans
         .iter()
         .find(|&(_, n)| *n != 0)
         .map(|&(label, n)| format!("after {n} {label}{}", if n > 1 { "s" } else { "" }))
-        .unwrap_or_else(|| "now".into())
+        .unwrap_or_else(|| "now".into()))
 }
 
 #[derive(Deserialize, Clone, Debug)]
@@ -183,8 +227,8 @@ fn format_delta_after(delta: &chrono::Duration) -> String {
 enum WatsonState {
     Active {
         project: String,
-        #[serde(deserialize_with = "deserialize_local_timestamp")]
-        start: DateTime<Local>,
+        #[serde(deserialize_with = "jiff::fmt::serde::timestamp::second::required::deserialize")]
+        start: Timestamp,
         tags: Vec<String>,
     },
     // This matches an empty JSON object
@@ -192,7 +236,12 @@ enum WatsonState {
 }
 
 impl WatsonState {
-    fn format(&self, show_time: bool, verb: &str, f: fn(&chrono::Duration) -> String) -> String {
+    fn format(
+        &self,
+        show_time: bool,
+        verb: &str,
+        f: fn(&jiff::Span) -> Result<String>,
+    ) -> Result<String> {
         if let WatsonState::Active {
             project,
             start,
@@ -212,21 +261,15 @@ impl WatsonState {
             if show_time {
                 s.push(' ');
                 s.push_str(verb);
-                let delta = Local::now() - *start;
+                let delta = Timestamp::now() - *start;
                 s.push(' ');
-                s.push_str(&f(&delta));
+                s.push_str(&f(&delta)?);
             }
-            s
+            Ok(s)
         } else {
-            panic!("WatsonState::Idle does not have a specified format")
+            Err(Error::new(
+                "WatsonState::Idle does not have a specified format",
+            ))
         }
     }
-}
-
-pub fn deserialize_local_timestamp<'de, D>(deserializer: D) -> Result<DateTime<Local>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    use chrono::TimeZone as _;
-    i64::deserialize(deserializer).map(|seconds| Local.timestamp_opt(seconds, 0).single().unwrap())
 }

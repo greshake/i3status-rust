@@ -1,7 +1,3 @@
-use chrono::format::{Fixed, Item, StrftimeItems};
-use chrono::{DateTime, Local, Locale, TimeZone};
-use chrono_tz::{OffsetName as _, Tz};
-
 use std::fmt::Display;
 use std::sync::LazyLock;
 
@@ -16,9 +12,10 @@ pub static DEFAULT_DATETIME_FORMATTER: LazyLock<DatetimeFormatter> =
 
 #[derive(Debug)]
 pub enum DatetimeFormatter {
-    Chrono {
-        items: Vec<Item<'static>>,
-        locale: Option<Locale>,
+    ChronoOrJiff {
+        fmt: String,
+        items: Vec<chrono::format::Item<'static>>,
+        locale: Option<chrono::Locale>,
     },
     #[cfg(feature = "icu_calendar")]
     Icu {
@@ -118,7 +115,7 @@ impl DatetimeFormatter {
                     ));
                 }
                 (
-                    StrftimeItems::new_with_locale(
+                    chrono::format::StrftimeItems::new_with_locale(
                         format.unwrap_or(DEFAULT_DATETIME_FORMAT),
                         locale,
                     ),
@@ -132,13 +129,14 @@ impl DatetimeFormatter {
                     ));
                 }
                 (
-                    StrftimeItems::new(format.unwrap_or(DEFAULT_DATETIME_FORMAT)),
+                    chrono::format::StrftimeItems::new(format.unwrap_or(DEFAULT_DATETIME_FORMAT)),
                     None,
                 )
             }
         };
 
-        Ok(Self::Chrono {
+        Ok(Self::ChronoOrJiff {
+            fmt: format.unwrap_or(DEFAULT_DATETIME_FORMAT).to_string(),
             items: items.parse_to_owned().error(format!(
                 "Invalid format: \"{}\"",
                 format.unwrap_or(DEFAULT_DATETIME_FORMAT)
@@ -149,14 +147,17 @@ impl DatetimeFormatter {
 }
 
 pub(crate) trait TimezoneName {
-    fn timezone_name(datetime: &DateTime<Self>) -> Result<Item<'_>>
+    fn timezone_name(datetime: &chrono::DateTime<Self>) -> Result<chrono::format::Item<'_>>
     where
-        Self: TimeZone;
+        Self: chrono::TimeZone;
 }
 
-impl TimezoneName for Tz {
-    fn timezone_name(datetime: &DateTime<Tz>) -> Result<Item<'_>> {
-        Ok(Item::Literal(
+impl TimezoneName for chrono_tz::Tz {
+    fn timezone_name(
+        datetime: &chrono::DateTime<chrono_tz::Tz>,
+    ) -> Result<chrono::format::Item<'_>> {
+        use chrono_tz::OffsetName as _;
+        Ok(chrono::format::Item::Literal(
             datetime
                 .offset()
                 .abbreviation()
@@ -165,8 +166,11 @@ impl TimezoneName for Tz {
     }
 }
 
-impl TimezoneName for Local {
-    fn timezone_name(datetime: &DateTime<Local>) -> Result<Item<'_>> {
+impl TimezoneName for chrono::Local {
+    fn timezone_name(
+        datetime: &chrono::DateTime<chrono::Local>,
+    ) -> Result<chrono::format::Item<'_>> {
+        use chrono_tz::Tz;
         let tz_name = iana_time_zone::get_timezone().error("Could not get local timezone")?;
         let tz = tz_name
             .parse::<Tz>()
@@ -175,7 +179,8 @@ impl TimezoneName for Local {
     }
 }
 
-fn borrow_item<'a>(item: &'a Item) -> Item<'a> {
+fn borrow_item<'a>(item: &'a chrono::format::Item) -> chrono::format::Item<'a> {
+    use chrono::format::Item;
     match item {
         Item::Literal(s) => Item::Literal(s),
         Item::OwnedLiteral(s) => Item::Literal(s),
@@ -192,14 +197,15 @@ impl Formatter for DatetimeFormatter {
         #[allow(clippy::unnecessary_wraps)]
         fn for_generic_datetime<T>(
             this: &DatetimeFormatter,
-            datetime: DateTime<T>,
+            datetime: chrono::DateTime<T>,
         ) -> Result<String, FormatError>
         where
-            T: TimeZone + TimezoneName,
+            T: chrono::TimeZone + TimezoneName,
             T::Offset: Display,
         {
+            use chrono::format::{Fixed, Item};
             Ok(match this {
-                DatetimeFormatter::Chrono { items, locale } => {
+                DatetimeFormatter::ChronoOrJiff { items, locale, .. } => {
                     let new_items = items.iter().map(|item| match item {
                         Item::Fixed(Fixed::TimezoneName) => match T::timezone_name(&datetime) {
                             Ok(name) => name,
@@ -246,10 +252,40 @@ impl Formatter for DatetimeFormatter {
             })
         }
         match val {
-            Value::Datetime(datetime, timezone) => match timezone {
+            Value::ChronoDatetime(datetime, timezone) => match timezone {
                 Some(tz) => for_generic_datetime(self, datetime.with_timezone(tz)),
-                None => for_generic_datetime(self, datetime.with_timezone(&Local)),
+                None => for_generic_datetime(self, datetime.with_timezone(&chrono::Local)),
             },
+            Value::JiffDatetime(timestamp, timezone) => {
+                let zoned = timestamp
+                    .to_owned()
+                    .to_zoned(timezone.clone().unwrap_or_else(jiff::tz::TimeZone::system));
+                match self {
+                    DatetimeFormatter::ChronoOrJiff { fmt, .. } => {
+                        jiff::fmt::strtime::format(fmt, &zoned).map_err(|_| {
+                            FormatError::IncompatibleFormatter {
+                                ty: "JiffDatetime",
+                                fmt: "datetime",
+                            }
+                        })
+                    }
+                    #[cfg(feature = "icu_calendar")]
+                    DatetimeFormatter::Icu {
+                        locale,
+                        fieldset: length,
+                    } => {
+                        use jiff_icu::ConvertFrom as _;
+                        let dft = icu_datetime::DateTimeFormatter::try_new(locale.into(), *length)
+                            .ok()
+                            .error("locale should be present in compiled data")?;
+                        Ok(dft
+                            .format(&icu_datetime::input::DateTime::convert_from(
+                                zoned.datetime(),
+                            ))
+                            .to_string())
+                    }
+                }
+            }
             other => Err(FormatError::IncompatibleFormatter {
                 ty: other.type_name(),
                 fmt: "datetime",
