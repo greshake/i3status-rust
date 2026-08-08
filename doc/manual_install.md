@@ -31,4 +31,6 @@ By default, this will install the binary to `~/.cargo/bin/i3status-rs`, runtime 
 
 Runtime files from `files` directory are expected to be installed in `/usr/share/i3status-rust` or `$XDG_DATA_HOME/i3status-rust`.
 
+The icon font at `fonts/i3status-icons/i3status-icons.ttf` is deliberately **not** in `files`, because it must not be installed there: fontconfig does not scan `/usr/share/i3status-rust`, so a font placed alongside the themes would never be found. Install it under `/usr/share/fonts` instead — `/usr/share/fonts/truetype/i3status-icons/` on Debian-family systems, `/usr/share/fonts/i3status-icons/` on Fedora and Arch. The font is optional: only the `i3status-icons` icon set needs it, and i3status-rs runs without it. Distributions that package fonts separately may prefer to ship it as its own (sub)package.
+
 Manual page at `man/i3status-rs.1` can be generated with `cargo xtask generate-manpage` (`pandoc` binary is required).
