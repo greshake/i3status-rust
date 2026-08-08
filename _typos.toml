@@ -24,4 +24,6 @@ ue = "ue"
 BA = "BA"
 # typos thinks this should be "sought"
 seeked = "seeked"
+# 'loca' is an OpenType table name (glyph location offsets), not "local"
+loca = "loca"
 
