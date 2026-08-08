@@ -76,10 +76,26 @@ Note: screenshots were generated using [this config](../gen-screenshots/screensh
 * `awesome6` (Font Awesome 6.x)
 * `awesome7pro` (Font Awesome 7.x Pro)
 * `emoji`
+* `i3status-icons` (this project's own icon font)
 * `material`
 * `material-nf` (Any font from Nerd Fonts collection)
 
  **Note**: In order to use the material icon set, you need a patched material icons font which can be found [here](https://gist.github.com/draoncc/3c20d8d4262892ccd2e227eefeafa8ef/raw/3e6e12c213fba1ec28aaa26430c3606874754c30/MaterialIcons-Regular-for-inline.ttf). Make sure to pass it in your i3 configuration bar block.
+
+ **Note**: The `i3status-icons` set was drawn for this project and covers every icon name, progressions included. It needs the "i3status Icons" font, which ships in this repository at `fonts/i3status-icons/i3status-icons.ttf`. `install.sh` installs it to `$XDG_DATA_HOME/fonts`; if you installed from a distribution package, the font may be packaged separately. Check that it resolves:
+
+```shell
+$ fc-match "i3status Icons"
+i3status-icons.ttf: "i3status Icons" "Regular"
+```
+
+Then add it to your bar's `font` directive, before any Nerd Font in the list — the icons live in the Private Use Area (U+E900–U+E962), which Nerd Fonts also populate, so a Nerd Font listed first will supply its own glyphs instead:
+
+```text
+font pango:i3status Icons, DejaVu Sans Mono 12
+```
+
+To modify the icons or rebuild the font from its SVG sources, see [`fonts/i3status-icons/README.md`](../fonts/i3status-icons/README.md).
 
 ## Overriding themes and icon sets
 
