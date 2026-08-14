@@ -1,0 +1,28 @@
+name: Icon font release upload
+on:
+  release:
+    types: [published]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  font:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:base-devel
+    permissions:
+      contents: write
+    steps:
+    - name: Get required packages and config git
+      run: |
+        pacman --noconfirm --noprogressbar --needed -Syu base-devel clang git libpipewire libpulse lm_sensors notmuch openssl github-cli
+        git config --global --add safe.directory "$GITHUB_WORKSPACE"
+    - uses: actions/checkout@v5
+    - uses: dtolnay/rust-toolchain@stable
+    - name: Build and upload the icon font
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        cargo xtask build-font
+        gh release upload -R ${{ github.repository }} --clobber ${{ github.event.release.tag_name }} ./fonts/i3status-icons/i3status-icons.ttf
