@@ -2,8 +2,6 @@ use crate::errors::*;
 use crate::util;
 use serde::Deserialize;
 use std::collections::HashMap;
-#[cfg(test)]
-use std::collections::HashSet;
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(try_from = "IconsConfigRaw")]
@@ -263,6 +261,7 @@ impl TryFrom<IconsConfigRaw> for Icons {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::HashSet;
 
     #[test]
     fn default_icons_cover_every_key() {

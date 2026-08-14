@@ -14,6 +14,7 @@ cp -r files/* $XDG_DATA_HOME/i3status-rust/
 # Icon font. This must not go under i3status-rust/: fontconfig only looks in
 # /usr/share/fonts, /usr/local/share/fonts, $XDG_DATA_HOME/fonts and ~/.fonts,
 # so a font installed alongside the themes would never be found.
+cargo xtask build-font
 mkdir -p $XDG_DATA_HOME/fonts
 cp fonts/i3status-icons/i3status-icons.ttf $XDG_DATA_HOME/fonts/
 if command -v fc-cache >/dev/null 2>&1; then
