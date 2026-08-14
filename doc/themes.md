@@ -85,7 +85,7 @@ Note: screenshots were generated using [this config](../gen-screenshots/screensh
 
  **Note**: For `awesome5`, `awesome6`, and `awesome7`, brand icons (`bluetooth`, `docker`, `github`) live in the separate `Font Awesome <N> Brands` font family rather than `Font Awesome <N> Free`, so include both in your bar's `font` directive (e.g. `font pango:DejaVu Sans Mono, Font Awesome 7 Free, Font Awesome 7 Brands 10`). Additionally, `awesome4`–`awesome7` use standard Unicode symbols/emojis for icons that have no Font Awesome Free equivalent (`backlight`, `phone_disconnected`, `pomodoro`), which fall back to your system symbol/emoji fonts (e.g. `DejaVu Sans`, `Noto Color Emoji`); only `awesome7pro` provides Font Awesome brightness icons.
 
- **Note**: The `i3status-icons` set was drawn for this project and covers every icon name, progressions included. It needs the "i3status Icons" font, which ships in this repository at `fonts/i3status-icons/i3status-icons.ttf`. `install.sh` installs it to `$XDG_DATA_HOME/fonts`; if you installed from a distribution package, the font may be packaged separately. Check that it resolves:
+ **Note**: The `i3status-icons` set was drawn for this project and covers every icon name, progressions included. It needs the "i3status Icons" font, which is built from source with `cargo xtask build-font` and attached to each release. `install.sh` builds and installs it to `$XDG_DATA_HOME/fonts`; if you installed from a distribution package, the font may be packaged separately. Check that it resolves:
 
 ```shell
 $ fc-match "i3status Icons"
