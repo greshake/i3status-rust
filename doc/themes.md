@@ -82,7 +82,7 @@ Note: screenshots were generated using [this config](../gen-screenshots/screensh
 
  **Note**: In order to use the material icon set, you need a patched material icons font which can be found [here](https://gist.github.com/draoncc/3c20d8d4262892ccd2e227eefeafa8ef/raw/3e6e12c213fba1ec28aaa26430c3606874754c30/MaterialIcons-Regular-for-inline.ttf). Make sure to pass it in your i3 configuration bar block.
 
- **Note**: The `i3status-icons` set was drawn for this project and covers every icon name, progressions included. It needs the "i3status Icons" font, which ships in this repository at `fonts/i3status-icons/i3status-icons.ttf`. `install.sh` installs it to `$XDG_DATA_HOME/fonts`; if you installed from a distribution package, the font may be packaged separately. Check that it resolves:
+ **Note**: The `i3status-icons` set was drawn for this project and covers every icon name, progressions included. It needs the "i3status Icons" font, which is built from source with `cargo xtask build-font` and attached to each release. `install.sh` builds and installs it to `$XDG_DATA_HOME/fonts`; if you installed from a distribution package, the font may be packaged separately. Check that it resolves:
 
 ```shell
 $ fc-match "i3status Icons"
