@@ -20,13 +20,16 @@ This file is for changing it.
 $ cargo xtask build-font
 ```
 
-That reads `svg/*.svg` and rewrites two files:
+That reads `svg/*.svg` and writes two files:
 
-- `i3status-icons.ttf` — the font
-- `../../files/icons/i3status-icons.toml` — the icon set that maps icon names to codepoints
+- `i3status-icons.ttf` — the font. Generated, like the manpage: it is not checked
+  in, `install.sh` builds it, and it is attached to each release.
+- `../../files/icons/i3status-icons.toml` — the icon set that maps icon names to
+  codepoints. This one **is** checked in, because it is a runtime data file like
+  the other sets in `files/icons/`, and the tests read it.
 
-Both are checked in, so neither users nor packagers ever need to run this. Only
-run it when you change the SVGs.
+So after changing anything in `svg/`, run this and commit the regenerated icon
+set along with your SVG.
 
 The build is pure Rust and needs no tools beyond cargo. It parses each SVG with
 `usvg`, converts strokes to filled outlines with the `tiny-skia` stroker,
