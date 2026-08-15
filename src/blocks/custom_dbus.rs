@@ -162,11 +162,31 @@ pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>)
     Ok(())
 }
 
+/// Doctor-only override, set in-process by the doctor worker before the
+/// block runs. It never touches the environment, so if_command and custom
+/// commands observe exactly what the user's shell exported.
+static DOCTOR_NAME_OVERRIDE: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+
+pub(crate) fn set_doctor_dbus_suffix(suffix: String) {
+    let _ = DOCTOR_NAME_OVERRIDE.set(suffix);
+}
+
+/// The well-known name to request. The doctor override takes precedence
+/// over the documented public `I3RS_DBUS_NAME`; it is not part of the
+/// public interface.
+fn dbus_name(doctor_override: Option<&str>, public: Option<&str>) -> String {
+    match doctor_override.or(public) {
+        Some(v) => format!("{DBUS_NAME}.{v}"),
+        None => DBUS_NAME.to_string(),
+    }
+}
+
 async fn dbus_conn() -> Result<zbus::Connection> {
-    let dbus_interface_name = match env::var("I3RS_DBUS_NAME") {
-        Ok(v) => format!("{DBUS_NAME}.{v}"),
-        Err(_) => DBUS_NAME.to_string(),
-    };
+    let public = env::var("I3RS_DBUS_NAME").ok();
+    let dbus_interface_name = dbus_name(
+        DOCTOR_NAME_OVERRIDE.get().map(String::as_str),
+        public.as_deref(),
+    );
 
     let conn = new_dbus_connection().await?;
     conn.request_name(dbus_interface_name)
@@ -215,5 +235,18 @@ mod tests {
         assert!(output.format().contains_key("text"));
         assert!(output.format().contains_key("short_text"));
         assert!(!output.format().contains_key("icon"));
+    }
+
+    #[test]
+    fn doctor_override_wins_without_touching_the_public_name() {
+        assert_eq!(dbus_name(None, None), "rs.i3status");
+        assert_eq!(dbus_name(None, Some("top")), "rs.i3status.top");
+        // Doctor workers set only the internal override; the public
+        // variable keeps whatever value the user's environment has.
+        assert_eq!(dbus_name(Some("doctor3"), None), "rs.i3status.doctor3");
+        assert_eq!(
+            dbus_name(Some("doctor3"), Some("top")),
+            "rs.i3status.doctor3"
+        );
     }
 }

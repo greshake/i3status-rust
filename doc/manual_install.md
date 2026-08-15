@@ -3,6 +3,7 @@
 - `rustc`, `cargo` and `gcc`
 - `libssl-dev`
 - `libsensors-dev`
+- `libpango1.0-dev` (used by `--doctor` to parse your bar's font directive exactly as the bar's renderer does)
 - `libpulse-dev` (required for `pulseaudio` driver of sound block, compile with `--no-default-features` to opt-out)
 - `libnotmuch-dev` (required for optional `notmuch` block, compile with `--features notmuch` to opt-in)
 - `libpipewire-0.3-dev` and `clang` (required for optional `pipewire` block, compile with `--features pipewire` to opt-in)
