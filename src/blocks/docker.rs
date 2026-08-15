@@ -28,7 +28,7 @@
 //!
 //! # Icons Used
 //!
-//! - `docker`
+//! - `docker` (`$icon`)
 
 use super::prelude::*;
 
@@ -42,8 +42,18 @@ pub struct Config {
     pub socket_path: ShellString,
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let format = config.format.with_default(" $icon $running.eng(w:1) ")?;
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    BlockPlan::new(vec![
+        OutputPlan::new(
+            "main",
+            config.format.with_default(" $icon $running.eng(w:1) ")?,
+        )
+        .icon("icon", IconChoices::one(icons::DOCKER)),
+    ])
+}
+
+pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
+    let output_main = plan.output("main")?;
     let socket_path = config.socket_path.expand()?;
 
     let client = reqwest::Client::builder()
@@ -61,7 +71,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             .await
             .error("Failed to deserialize JSON")?;
 
-        let mut widget = Widget::new().with_format(format.clone());
+        let mut widget = output_main.new_widget();
         widget.set_values(map! {
             "icon" => Value::icon(icons::DOCKER),
             "total" =>   Value::number(status.total),
@@ -91,4 +101,30 @@ struct Status {
     paused: i64,
     #[serde(rename = "Images")]
     images: i64,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_main_output_with_docker_icon() {
+        let plan = prepare(&Config::default()).unwrap();
+        let declared: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(declared, ["main"]);
+        let output = plan.output("main").unwrap();
+        assert_eq!(output.single_icon("icon").unwrap(), "docker");
+    }
+
+    #[test]
+    fn custom_format_is_respected() {
+        let config = Config {
+            format: " $running ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        let output = plan.output("main").unwrap();
+        assert!(output.format().contains_key("running"));
+        assert!(!output.format().contains_key("icon"));
+    }
 }

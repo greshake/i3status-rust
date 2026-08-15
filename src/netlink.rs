@@ -39,6 +39,28 @@ pub struct WifiInfo {
 }
 
 impl NetDevice {
+    /// Every icon name [`Self::icon_for`] can return. The interface kind is
+    /// externally determined but finite, so block plans declare the full set.
+    pub const ALL_ICONS: [&'static str; 4] = [
+        crate::icons::NET_WIRELESS,
+        crate::icons::NET_VPN,
+        crate::icons::NET_LOOPBACK,
+        crate::icons::NET_WIRED,
+    ];
+
+    /// Choose the device icon from the interface kind.
+    pub fn icon_for(is_wireless: bool, tun_wg_ppp: bool, name: &str) -> &'static str {
+        if is_wireless {
+            crate::icons::NET_WIRELESS
+        } else if tun_wg_ppp {
+            crate::icons::NET_VPN
+        } else if name == "lo" {
+            crate::icons::NET_LOOPBACK
+        } else {
+            crate::icons::NET_WIRED
+        }
+    }
+
     pub async fn new(iface_re: Option<&Regex>) -> Result<Option<Self>> {
         let mut sock = NlSocket::new(
             NlSocketHandle::connect(NlFamily::Route, None, &[]).error("Socket error")?,
@@ -86,15 +108,7 @@ impl NetDevice {
                 (c.contains("wireguard"), c.contains("ppp"))
             });
 
-        let icon = if wifi_info.is_some() {
-            crate::icons::NET_WIRELESS
-        } else if tun || wg || ppp {
-            crate::icons::NET_VPN
-        } else if iface.name == "lo" {
-            crate::icons::NET_LOOPBACK
-        } else {
-            crate::icons::NET_WIRED
-        };
+        let icon = Self::icon_for(wifi_info.is_some(), tun || wg || ppp, &iface.name);
 
         Ok(Some(Self {
             iface,

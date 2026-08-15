@@ -1,3 +1,7 @@
+// The block plan is internal (see `block_plan`). Denying this turns any
+// future leak of it into a public signature — which would put an
+// unnameable type in the published API — into a compile error.
+#![deny(private_interfaces)]
 #![warn(clippy::match_same_arms)]
 #![warn(clippy::semicolon_if_nothing_returned)]
 #![warn(clippy::unnecessary_wraps)]
@@ -7,6 +11,10 @@
 
 #[macro_use]
 pub mod util;
+/// The per-block output contracts the framework prepares and enforces.
+/// Internal: the published surface is the blocks' own configuration and
+/// output.
+pub(crate) mod block_plan;
 pub mod blocks;
 pub mod click;
 pub mod config;
@@ -43,7 +51,6 @@ use crate::blocks::{BlockAction, BlockError, CommonApi, RESTART_BLOCK_BTN};
 use crate::click::{ClickHandler, MouseButton};
 use crate::config::{BlockConfigEntry, Config, SharedConfig};
 use crate::errors::*;
-use crate::formatting::Format;
 use crate::formatting::value::Value;
 use crate::protocol::i3bar_block::I3BarBlock;
 use crate::protocol::i3bar_event::{self, I3BarEvent};
@@ -157,8 +164,7 @@ pub struct Block {
     signal: Option<i32>,
     shared_config: SharedConfig,
 
-    error_format: Format,
-    error_fullscreen_format: Format,
+    error_outputs: block_plan::ErrorOutputs,
 
     state: BlockState,
 }
@@ -198,18 +204,26 @@ impl Block {
             error,
         };
 
-        let mut widget = Widget::new()
-            .with_state(State::Critical)
-            .with_format(if fullscreen {
-                self.error_fullscreen_format.clone()
-            } else {
-                self.error_format.clone()
-            });
+        let output = if fullscreen {
+            &self.error_outputs.fullscreen
+        } else {
+            &self.error_outputs.error
+        };
+        let mut widget = output.new_widget().with_state(State::Critical);
+        let restart_icon =
+            restartable.then(|| Value::icon(icons::REFRESH).with_instance(RESTART_BLOCK_BTN));
         widget.set_values(map! {
             "full_error_message" => Value::text(error.to_string()),
             [if let Some(v) = &error.error.message] "short_error_message" => Value::text(v.to_string()),
-            [if restartable] "restart_block_icon" => Value::icon(icons::REFRESH).with_instance(RESTART_BLOCK_BTN),
+            [if let Some(icon) = restart_icon] "restart_block_icon" => icon,
         });
+        // The bar renders this widget itself rather than through
+        // `CommonApi::set_widget`, so nothing downstream would catch drift
+        // between `error_plan` and this renderer.
+        if let Err(err) = widget.check_contract() {
+            log::error!("error widget: {err}");
+            debug_assert!(false, "error widget: {err}");
+        }
         self.state = BlockState::Error { widget };
     }
 }
@@ -280,14 +294,19 @@ impl BarState {
             max_retries: block_config.common.max_retries,
         };
 
-        let error_format = block_config
-            .common
-            .error_format
-            .with_default_config(&self.config.error_format);
-        let error_fullscreen_format = block_config
-            .common
-            .error_fullscreen_format
-            .with_default_config(&self.config.error_fullscreen_format);
+        let error_outputs = block_plan::error_outputs(
+            block_config
+                .common
+                .error_format
+                .with_default_config(&self.config.error_format),
+            block_config
+                .common
+                .error_fullscreen_format
+                .with_default_config(&self.config.error_fullscreen_format),
+            // Without a retry limit the block retries forever and the
+            // restart button is never rendered.
+            block_config.common.max_retries.is_some(),
+        );
 
         let block = Block {
             id: self.blocks.len(),
@@ -301,8 +320,7 @@ impl BarState {
             signal: block_config.common.signal,
             shared_config,
 
-            error_format,
-            error_fullscreen_format,
+            error_outputs,
 
             state: BlockState::None,
         };
@@ -433,10 +451,10 @@ impl BarState {
                         } else {
                             if self.fullscreen_block == Some(event.id) {
                                 self.fullscreen_block = None;
-                                widget.set_format(block.error_format.clone());
+                                widget.set_output(&block.error_outputs.error);
                             } else {
                                 self.fullscreen_block = Some(event.id);
-                                widget.set_format(block.error_fullscreen_format.clone());
+                                widget.set_output(&block.error_outputs.fullscreen);
                             }
                             block.notify_intervals(&self.widget_updates_sender);
                             self.render_block(event.id)?;

@@ -87,6 +87,7 @@ impl Value {
     {
         Self::new(ValueInner::Icon(name.into(), Some(value)))
     }
+
     pub fn icon_progression_bound<S>(name: S, value: f64, low: f64, high: f64) -> Self
     where
         S: Into<Cow<'static, str>>,
