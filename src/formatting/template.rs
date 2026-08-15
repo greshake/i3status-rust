@@ -6,8 +6,10 @@ use crate::errors::*;
 use std::str::FromStr;
 use std::sync::Arc;
 
+/// The alternative token lists `render` tries in order. Crate-visible so a
+/// prepared block plan can inspect a template without rendering it.
 #[derive(Debug, Clone)]
-pub struct FormatTemplate(Arc<[TokenList]>);
+pub struct FormatTemplate(pub(crate) Arc<[TokenList]>);
 
 impl Default for FormatTemplate {
     fn default() -> Self {

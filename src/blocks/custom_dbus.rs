@@ -121,11 +121,24 @@ impl Block {
     }
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let widget = Widget::new().with_format(config.format.with_defaults(
-        "{ $icon|}{ $text.pango-str()|} ",
-        "{ $icon|} $short_text.pango-str() | ",
-    )?);
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    // The icon name arrives over D-Bus at runtime, so any name is permitted;
+    // it resolves through the normal icon set and override rules.
+    BlockPlan::new(vec![
+        OutputPlan::new(
+            "main",
+            config.format.with_defaults(
+                "{ $icon|}{ $text.pango-str()|} ",
+                "{ $icon|} $short_text.pango-str() | ",
+            )?,
+        )
+        .icon("icon", IconChoices::OpenResolvable),
+    ])
+}
+
+pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
+    let output = plan.output("main")?;
+    let widget = output.new_widget();
 
     let dbus_conn = DBUS_CONNECTION
         .get_or_init(dbus_conn)
@@ -160,4 +173,47 @@ async fn dbus_conn() -> Result<zbus::Connection> {
         .await
         .error("Failed to request DBus name")?;
     Ok(conn)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn config(toml: &str) -> Config {
+        toml::from_str(toml).unwrap()
+    }
+
+    #[test]
+    fn plan_declares_an_open_icon_because_the_name_arrives_over_dbus() {
+        let plan = prepare(&config(r#"path = "/my_path""#)).unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["main"]);
+
+        let output = plan.output("main").unwrap();
+        let choices = output.output().choices_for("icon").unwrap();
+        assert!(matches!(choices, IconChoices::OpenResolvable));
+        assert!(choices.permits("any_name_set_over_dbus"));
+        // Whatever name arrives over D-Bus passes the publish-time check,
+        // which is where the contract is enforced.
+        let mut widget = output.new_widget();
+        widget.set_values(map!("icon" => Value::icon("whatever_was_sent")));
+        widget.check_contract().unwrap();
+    }
+
+    #[test]
+    fn custom_format_is_respected() {
+        // The default short format also carries `$icon`, so both halves have
+        // to be overridden for the icon to be gone from the output.
+        let plan = prepare(&config(
+            r#"
+            path = "/my_path"
+            format = { full = " $text.pango-str() ", short = " $short_text.pango-str() " }
+            "#,
+        ))
+        .unwrap();
+        let output = plan.output("main").unwrap();
+        assert!(output.format().contains_key("text"));
+        assert!(output.format().contains_key("short_text"));
+        assert!(!output.format().contains_key("icon"));
+    }
 }

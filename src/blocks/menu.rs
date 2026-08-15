@@ -55,6 +55,7 @@ pub struct Item {
 struct Block<'a> {
     actions: UnboundedReceiver<BlockAction>,
     api: &'a CommonApi,
+    output: OutputHandle,
     text: &'a str,
     items: &'a [Item],
 }
@@ -65,7 +66,7 @@ impl Block<'_> {
     }
 
     async fn set_text(&mut self, text: String) -> Result<()> {
-        self.api.set_widget(Widget::new().with_text(text))
+        self.api.set_widget(self.output.new_text_widget(text))
     }
 
     async fn wait_for_click(&mut self, button: &str) -> Result<()> {
@@ -94,7 +95,14 @@ impl Block<'_> {
     }
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub(crate) fn prepare(_config: &Config) -> Result<Arc<BlockPlan>> {
+    // The bar text is the configured label, a menu item's display string or a
+    // confirmation message — plain text with no placeholders and no icons, so
+    // the block declares a single text output rather than a format.
+    BlockPlan::new(vec![OutputPlan::text("main")])
+}
+
+pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     api.set_default_actions(&[
         (MouseButton::Left, None, "_left"),
         (MouseButton::Right, None, "_right"),
@@ -105,6 +113,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut block = Block {
         actions: api.get_actions()?,
         api,
+        output: plan.output("main")?,
         text: &config.text,
         items: &config.items,
     };
@@ -119,6 +128,44 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 continue;
             }
             spawn_shell(&res.cmd).or_error(|| format!("Failed to run '{}'", res.cmd))?;
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use crate::block_plan::OutputKind;
+
+    fn config() -> Config {
+        Config {
+            text: "menu".into(),
+            items: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn plan_declares_one_text_output_and_no_icons() {
+        let plan = prepare(&config()).unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["main"]);
+
+        let output = plan.output("main").unwrap();
+        assert_eq!(output.output().kind(), OutputKind::Text);
+        assert_eq!(output.output().icon_placeholders().count(), 0);
+    }
+
+    #[test]
+    fn every_text_this_block_renders_carries_the_contract() {
+        let plan = prepare(&config()).unwrap();
+        let output = plan.output("main").unwrap();
+        // The three strings the block can put on the bar: the label, a menu
+        // item's display string and a confirmation message.
+        for text in ["menu", "Shut down", "Are you sure?"] {
+            let widget = output.new_text_widget(text.into());
+            assert!(widget.contract().is_some(), "{text}");
+            widget.check_contract().unwrap();
         }
     }
 }
