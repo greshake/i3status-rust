@@ -35,7 +35,8 @@
 //! `artist`      | Current artist | Text
 //! `title`       | Current title  | Text
 //! `url`         | Current song url | Text
-//! `combo`       | Resolves to "`$artist[sep]$title"`, `"$artist"`, `"$title"`, or `"$url"` depending on what information is available. `[sep]` is set by `separator` option. | Text
+//! `combo`       | Resolves to `"$title[sep]$artist"`, `"$artist"`, `"$title"`, or `"$url"` depending on what information is available. `[sep]` is set by `separator` option. | Text
+//! `combo_reversed`       | Resolves to `"$artist[sep]$title"`, `"$artist"`, `"$title"`, or `"$url"` depending on what information is available. `[sep]` is set by `separator` option. | Text
 //! `player`      | Name of the current player (taken from the last part of its MPRIS bus name) | Text
 //! `avail`       | Total number of players available to switch between | Number
 //! `cur`         | The current player index of the available players | Number
@@ -334,10 +335,12 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 ) {
                     (Some(t), None, _) => {
                         values.insert("combo".into(), Value::text(t.clone()));
+                        values.insert("combo_reversed".into(), Value::text(t.clone()));
                         values.insert("title".into(), Value::text(t.clone()));
                     }
                     (None, Some(a), _) => {
                         values.insert("combo".into(), Value::text(a.clone()));
+                        values.insert("combo_reversed".into(), Value::text(a.clone()));
                         values.insert("artist".into(), Value::text(a.clone()));
                     }
                     (Some(t), Some(a), _) => {
@@ -345,11 +348,16 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                             "combo".into(),
                             Value::text(format!("{t}{}{a}", config.separator)),
                         );
+                        values.insert(
+                            "combo_reversed".into(),
+                            Value::text(format!("{a}{}{t}", config.separator)),
+                        );
                         values.insert("title".into(), Value::text(t.clone()));
                         values.insert("artist".into(), Value::text(a.clone()));
                     }
                     (None, None, Some(url)) => {
                         values.insert("combo".into(), Value::text(url.clone()));
+                        values.insert("combo_reversed".into(), Value::text(url.clone()));
                     }
                     _ => (),
                 }
