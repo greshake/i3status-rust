@@ -20,6 +20,8 @@ hellow554 = "hellow554"
 [default.extend-words]
 # ue is used in a test to make sure that 'val ue' was parsed correctly
 ue = "ue"
+# wdth is the OpenType width axis, used in pango font variation syntax
+wdth = "wdth"
 # BA is part of a example mac address that is tripping up typos
 BA = "BA"
 # typos thinks this should be "sought"
