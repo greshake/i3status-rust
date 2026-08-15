@@ -49,6 +49,7 @@ iana-time-zone = "0.1.60"
 icalendar = { version = "0.17.9", features = ["chrono-tz", "recurrence"] }
 icu_datetime = { version = "2.2", optional = true, default-features = false, features = ["compiled_data"] }
 icu_locale = { version = "2.2", optional = true }
+icu_properties = "2.2"
 indexmap = { version = "2.0", features = ["serde"] }
 inotify = "0.11"
 itertools = "0.13"
@@ -63,6 +64,7 @@ nom = "8.0.0"
 notmuch = { version = "0.8", optional = true }
 num-traits = "0.2"
 oauth2 = { version = "5.0.0", default-features = false, features = ["reqwest"] }
+pango = "0.20"
 pipewire = { version = "0.10", default-features = false, optional = true }
 quick-xml = { version = "0.37", features = ["serialize"] }
 regex = "1.5"
@@ -80,6 +82,7 @@ thiserror = "2.0"
 tokio-util = { version = "0.7", features = ["codec"] }
 toml = { version = "0.8", features = ["preserve_order"] }
 unicode-segmentation = "1.10.1"
+unicode-width = "0.2"
 wayrs-client = { version = "1.0", features = ["tokio"] }
 wayrs-protocols = { version = "0.14", features = ["wlr-foreign-toplevel-management-unstable-v1"] }
 x11rb-async = { version = "0.13.1", features = ["xkb"] }

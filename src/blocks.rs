@@ -84,6 +84,19 @@ macro_rules! define_blocks {
                 }
             }
 
+            /// The prepared output contract of this block instance (see
+            /// [`crate::block_plan`]), which is what `--doctor` analyzes.
+            pub(crate) fn plan(&self) -> Result<Arc<crate::block_plan::BlockPlan>> {
+                match self {
+                    $(
+                        $(#[cfg(feature = $feat)])?
+                        #[allow(deprecated)]
+                        Self::$block(config) => $block::prepare(config),
+                    )*
+                    Self::Err(_name, err) => Err(err.clone()),
+                }
+            }
+
             pub fn spawn(self, api: CommonApi, futures: &mut FuturesUnordered<BoxedFuture<()>>) {
                 match self {
                     $(

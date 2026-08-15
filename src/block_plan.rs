@@ -167,9 +167,8 @@ impl OutputPlan {
     /// The icon-valued placeholders this output declares. The bar itself
     /// renders through [`OutputHandle`] and looks placeholders up by name, so
     /// nothing in the hot path needs this — it exists because a plan that can
-    /// only be queried by a name you already know is not inspectable. The
-    /// declaration tests are its consumer today.
-    #[cfg(test)]
+    /// only be queried by a name you already know is not inspectable. It is
+    /// what `--doctor` and the declaration tests walk.
     pub(crate) fn icon_placeholders(&self) -> impl Iterator<Item = (&'static str, &IconChoices)> {
         self.icons.iter().map(|(p, c)| (*p, c))
     }
