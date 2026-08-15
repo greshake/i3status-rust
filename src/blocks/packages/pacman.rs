@@ -2,11 +2,11 @@ use std::env;
 use std::path::PathBuf;
 use std::process::Stdio;
 
+use super::*;
+use crate::subprocess::get_output;
+use crate::util::has_command;
 use tokio::fs::{create_dir_all, symlink};
 use tokio::process::Command;
-
-use super::*;
-use crate::util::has_command;
 
 make_log_macro!(debug, "pacman");
 
@@ -136,9 +136,7 @@ impl Backend for Aur {
     }
 
     async fn get_updates_list(&self) -> Result<Vec<String>> {
-        let stdout = Command::new("sh")
-            .args(["-c", &self.aur_command])
-            .output()
+        let stdout = get_output(&self.aur_command)
             .await
             .or_error(|| format!("aur command: {} failed", self.aur_command))?
             .stdout;
