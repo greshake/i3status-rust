@@ -135,23 +135,24 @@
 //!
 //! # Used Icons
 //!
-//! - `weather_sun` (when weather is reported as "Clear" during the day)
-//! - `weather_moon` (when weather is reported as "Clear" at night)
-//! - `weather_clouds` (when weather is reported as "Clouds" during the day)
-//! - `weather_clouds_night` (when weather is reported as "Clouds" at night)
-//! - `weather_fog` (when weather is reported as "Fog" or "Mist" during the day)
-//! - `weather_fog_night` (when weather is reported as "Fog" or "Mist" at night)
-//! - `weather_rain` (when weather is reported as "Rain" or "Drizzle" during the day)
-//! - `weather_rain_night` (when weather is reported as "Rain" or "Drizzle" at night)
-//! - `weather_snow` (when weather is reported as "Snow")
-//! - `weather_thunder` (when weather is reported as "Thunderstorm" during the day)
-//! - `weather_thunder_night` (when weather is reported as "Thunderstorm" at night)
+//! - `weather_sun` (`$icon` `$icon_ffin`, when weather is reported as "Clear" during the day)
+//! - `weather_moon` (`$icon` `$icon_ffin`, when weather is reported as "Clear" at night)
+//! - `weather_clouds` (`$icon` `$icon_ffin`, when weather is reported as "Clouds" during the day)
+//! - `weather_clouds_night` (`$icon` `$icon_ffin`, when weather is reported as "Clouds" at night)
+//! - `weather_fog` (`$icon` `$icon_ffin`, when weather is reported as "Fog" or "Mist" during the day)
+//! - `weather_fog_night` (`$icon` `$icon_ffin`, when weather is reported as "Fog" or "Mist" at night)
+//! - `weather_rain` (`$icon` `$icon_ffin`, when weather is reported as "Rain" or "Drizzle" during the day)
+//! - `weather_rain_night` (`$icon` `$icon_ffin`, when weather is reported as "Rain" or "Drizzle" at night)
+//! - `weather_snow` (`$icon` `$icon_ffin`, when weather is reported as "Snow")
+//! - `weather_thunder` (`$icon` `$icon_ffin`, when weather is reported as "Thunderstorm" during the day)
+//! - `weather_thunder_night` (`$icon` `$icon_ffin`, when weather is reported as "Thunderstorm" at night)
+//! - `weather_default` (`$icon` `$icon_ffin`, in all other cases)
 
 use chrono::{DateTime, Utc};
 use sunrise::{SolarDay, SolarEvent};
 
 use super::prelude::*;
-use crate::formatting::{Format, MultiFormat};
+use crate::formatting::Format;
 pub(super) use crate::geolocator::IPAddressInfo;
 use crate::util::{celsius_to_fahrenheit, kmh_to_mph, kmh_to_mps};
 
@@ -216,6 +217,24 @@ enum WeatherIcon {
 }
 
 impl WeatherIcon {
+    /// Every icon name [`Self::to_icon_str`] can return. The weather
+    /// condition is externally selected but finite, so the block plan
+    /// declares the full set.
+    const ALL_NAMES: [&'static str; 12] = [
+        "weather_sun",
+        "weather_moon",
+        "weather_clouds",
+        "weather_clouds_night",
+        "weather_fog",
+        "weather_fog_night",
+        "weather_rain",
+        "weather_rain_night",
+        "weather_snow",
+        "weather_thunder",
+        "weather_thunder_night",
+        "weather_default",
+    ];
+
     fn to_icon_str(self) -> &'static str {
         match self {
             Self::Clear { is_night: false } => "weather_sun",
@@ -423,14 +442,25 @@ impl Forecast {
     }
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    let weather_icons = || IconChoices::fixed(WeatherIcon::ALL_NAMES);
+    let declare = |output: OutputPlan| {
+        output
+            .icon("icon", weather_icons())
+            .icon("icon_ffin", weather_icons())
+    };
+    let formats = config.formats.with_default(" $icon $weather $temp ")?;
+    BlockPlan::new(format_outputs(formats, declare))
+}
+
+pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, None, "next_format"),
         (MouseButton::Right, None, "prev_format"),
     ])?;
 
-    let mut formats = config.formats.with_default(" $icon $weather $temp ")?;
+    let mut formats = FormatRotation::new(plan)?;
 
     let (provider, service_units): (Box<dyn WeatherProvider + Send + Sync>, UnitSystem) =
         match &config.service {
@@ -450,7 +480,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let units = config.units.unwrap_or(service_units);
 
     let autolocate_interval = config.autolocate_interval.unwrap_or(config.interval).0;
-    let need_forecast = need_forecast(&formats);
+    // The plan holds one output per configured format, so the formats the
+    // user can rotate to are exactly the ones a forecast may be needed for.
+    let declared_formats: Vec<Format> = plan.outputs().map(|o| o.format().clone()).collect();
+    let need_forecast = need_forecast(&declared_formats);
 
     let mut timer = config.interval.timer();
 
@@ -466,10 +499,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         let fetch = || provider.get_weather(location.as_ref(), need_forecast);
         let data = fetch.retry(ExponentialBuilder::default()).await?;
+        // Every output declares the same icon choices, so minting against the
+        // currently selected one stays valid after a format rotation.
         let data_values = data.into_values(&units);
 
         loop {
-            let mut widget = Widget::new().with_format(formats.get_format());
+            let output = formats.current();
+            let mut widget = output.new_widget();
             widget.set_values(data_values.clone());
             api.set_widget(widget)?;
 
@@ -478,10 +514,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 _ = api.wait_for_update_request() => break,
                 Some(action) = actions.recv() => match action.as_ref() {
                         "next_format" | "toggle_format" => {
-                            formats.next_format();
+                            formats.next();
                         }
                         "prev_format" => {
-                            formats.prev_format();
+                            formats.prev();
                         }
                         _ => (),
                     }
@@ -490,7 +526,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     }
 }
 
-fn need_forecast(formats: &MultiFormat) -> bool {
+fn need_forecast(formats: &[Format]) -> bool {
     fn has_forecast_key(format: &Format) -> bool {
         macro_rules! format_suffix {
             ($($suffix: literal),* $(,)?) => {
@@ -686,5 +722,83 @@ mod tests {
             assert!(forecast.avg.wind_direction.unwrap() < high);
             degrees += 15.0;
         }
+    }
+
+    fn config(toml_str: &str) -> Config {
+        toml::from_str(toml_str).unwrap()
+    }
+
+    #[test]
+    fn every_condition_icon_is_declared() {
+        let all_variants = [
+            WeatherIcon::Clear { is_night: false },
+            WeatherIcon::Clear { is_night: true },
+            WeatherIcon::Clouds { is_night: false },
+            WeatherIcon::Clouds { is_night: true },
+            WeatherIcon::Fog { is_night: false },
+            WeatherIcon::Fog { is_night: true },
+            WeatherIcon::Rain { is_night: false },
+            WeatherIcon::Rain { is_night: true },
+            WeatherIcon::Snow,
+            WeatherIcon::Thunder { is_night: false },
+            WeatherIcon::Thunder { is_night: true },
+            WeatherIcon::Default,
+        ];
+        assert_eq!(all_variants.len(), WeatherIcon::ALL_NAMES.len());
+        for variant in all_variants {
+            assert!(WeatherIcon::ALL_NAMES.contains(&variant.to_icon_str()));
+        }
+    }
+
+    #[test]
+    fn every_configured_format_gets_an_output() {
+        let plan = prepare(&config("service = { name = \"metno\" }")).unwrap();
+        assert!(plan.output("format").is_ok());
+        assert!(plan.output("format2").is_err());
+
+        let plan = prepare(&config(
+            "service = { name = \"metno\" }\nformat = [\" $icon $temp \", \" $humidity \"]",
+        ))
+        .unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["format", "format2"]);
+        let alt = plan.output("format2").unwrap();
+        assert!(alt.format().contains_key("humidity"));
+        let choices = alt.output().choices_for("icon").unwrap();
+        assert!(choices.permits("weather_snow"));
+        assert!(!choices.permits("bat"));
+    }
+
+    #[test]
+    fn format_alt_still_produces_a_second_output() {
+        let plan = prepare(&config(
+            "service = { name = \"metno\" }\nformat_alt = \" $humidity \"",
+        ))
+        .unwrap();
+        let alt = plan.output("format2").unwrap();
+        assert!(alt.format().contains_key("humidity"));
+        assert!(
+            alt.output()
+                .choices_for("icon_ffin")
+                .unwrap()
+                .permits("weather_default")
+        );
+    }
+
+    #[test]
+    fn forecast_is_needed_when_any_rotated_format_asks_for_it() {
+        let plan = prepare(&config(
+            "service = { name = \"metno\" }\nformat = [\" $icon $temp \", \" $temp_favg \"]",
+        ))
+        .unwrap();
+        let formats: Vec<Format> = plan.outputs().map(|o| o.format().clone()).collect();
+        assert!(need_forecast(&formats));
+
+        let plan = prepare(&config(
+            "service = { name = \"metno\" }\nformat = [\" $icon $temp \", \" $humidity \"]",
+        ))
+        .unwrap();
+        let formats: Vec<Format> = plan.outputs().map(|o| o.format().clone()).collect();
+        assert!(!need_forecast(&formats));
     }
 }

@@ -66,6 +66,8 @@ use super::prelude::*;
 use inotify::{Inotify, WatchMask};
 use tokio::process::Command;
 
+const ICON: &str = "tasks";
+
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
@@ -98,17 +100,37 @@ impl Default for Config {
     }
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    BlockPlan::new(vec![
+        OutputPlan::new(
+            "main",
+            config.format.with_default(" $icon $count.eng(w:1) ")?,
+        )
+        .icon("icon", IconChoices::one(ICON)),
+        OutputPlan::new(
+            "singular",
+            config
+                .format_singular
+                .with_default(" $icon $count.eng(w:1) ")?,
+        )
+        .icon("icon", IconChoices::one(ICON)),
+        OutputPlan::new(
+            "everything_done",
+            config
+                .format_everything_done
+                .with_default(" $icon $count.eng(w:1) ")?,
+        )
+        .icon("icon", IconChoices::one(ICON)),
+    ])
+}
+
+pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[(MouseButton::Right, None, "next_filter")])?;
 
-    let format = config.format.with_default(" $icon $count.eng(w:1) ")?;
-    let format_singular = config
-        .format_singular
-        .with_default(" $icon $count.eng(w:1) ")?;
-    let format_everything_done = config
-        .format_everything_done
-        .with_default(" $icon $count.eng(w:1) ")?;
+    let output_main = plan.output("main")?;
+    let output_singular = plan.output("singular")?;
+    let output_everything_done = plan.output("everything_done")?;
 
     let mut filters = config.filters.iter().cycle();
     let mut filter = filters.next().error("`filters` is empty")?;
@@ -125,16 +147,15 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     loop {
         let number_of_tasks = get_number_of_tasks(filter).await?;
 
-        let mut widget = Widget::new();
-
-        widget.set_format(match number_of_tasks {
-            0 => format_everything_done.clone(),
-            1 => format_singular.clone(),
-            _ => format.clone(),
-        });
+        let output = match number_of_tasks {
+            0 => &output_everything_done,
+            1 => &output_singular,
+            _ => &output_main,
+        };
+        let mut widget = output.new_widget();
 
         widget.set_values(map! {
-            "icon" => Value::icon("tasks"),
+            "icon" => Value::icon(ICON),
             "count" => Value::number(number_of_tasks),
             "filter_name" => Value::text(filter.name.clone()),
         });
@@ -246,5 +267,40 @@ mod tests {
             .unwrap();
         let user = args.iter().position(|a| *a == "rc.context=work").unwrap();
         assert!(user < gc && user < rec);
+    }
+
+    #[test]
+    fn plan_declares_count_states_with_tasks_icon() {
+        let plan = prepare(&Config::default()).unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["main", "singular", "everything_done"]);
+        for id in ["main", "singular", "everything_done"] {
+            let output = plan.output(id).unwrap();
+            assert_eq!(output.single_icon("icon").unwrap(), "tasks", "{id}");
+        }
+    }
+
+    #[test]
+    fn each_count_state_resolves_its_own_format() {
+        // The "hide when everything is done" configuration from the docs:
+        // an empty format for that state only.
+        let config = Config {
+            format_everything_done: "".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        assert!(
+            !plan
+                .output("everything_done")
+                .unwrap()
+                .format()
+                .contains_key("count")
+        );
+        for id in ["main", "singular"] {
+            assert!(
+                plan.output(id).unwrap().format().contains_key("count"),
+                "{id}"
+            );
+        }
     }
 }

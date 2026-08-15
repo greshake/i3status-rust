@@ -42,12 +42,12 @@
 //! ```
 //!
 //! # Icons Used
-//! - `bat` (as a progression)
-//! - `bat_charging` (as a progression)
-//! - `net_cellular` (as a progression)
+//! - `bat` (`$bat_icon`, as a progression)
+//! - `bat_charging` (`$bat_icon`, as a progression)
+//! - `net_cellular` (`$network_icon`, as a progression)
 //! - `notification`
-//! - `phone`
-//! - `phone_disconnected`
+//! - `phone` (`$icon`, in `format`)
+//! - `phone_disconnected` (`$icon`, in `disconnected_format` `missing_format`)
 
 use super::prelude::*;
 
@@ -55,6 +55,8 @@ mod battery;
 mod connectivity_report;
 use battery::BatteryDbusProxy;
 use connectivity_report::ConnectivityDbusProxy;
+
+const DISCONNECTED_ICON: &str = "phone_disconnected";
 
 make_log_macro!(debug, "kdeconnect");
 
@@ -75,12 +77,35 @@ pub struct Config {
     pub bat_critical: u8,
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let format = config
-        .format
-        .with_default(" $icon $name {$bat_icon $bat_charge |}{$notif_icon |}")?;
-    let disconnected_format = config.disconnected_format.with_default(" $icon ")?;
-    let missing_format = config.missing_format.with_default(" $icon x ")?;
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    BlockPlan::new(vec![
+        OutputPlan::new(
+            "connected",
+            config
+                .format
+                .with_default(" $icon $name {$bat_icon $bat_charge |}{$notif_icon |}")?,
+        )
+        .icon("icon", IconChoices::one("phone"))
+        .icon("bat_icon", IconChoices::fixed(["bat", "bat_charging"]))
+        .icon("network_icon", IconChoices::one("net_cellular"))
+        .icon("notif_icon", IconChoices::one("notification")),
+        OutputPlan::new(
+            "disconnected",
+            config.disconnected_format.with_default(" $icon ")?,
+        )
+        .icon("icon", IconChoices::one(DISCONNECTED_ICON))
+        .icon("bat_icon", IconChoices::fixed(["bat", "bat_charging"]))
+        .icon("network_icon", IconChoices::one("net_cellular"))
+        .icon("notif_icon", IconChoices::one("notification")),
+        OutputPlan::new("missing", config.missing_format.with_default(" $icon x ")?)
+            .icon("icon", IconChoices::one(DISCONNECTED_ICON)),
+    ])
+}
+
+pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
+    let output_connected = plan.output("connected")?;
+    let output_disconnected = plan.output("disconnected")?;
+    let output_missing = plan.output("missing")?;
 
     let battery_state = (
         config.bat_good,
@@ -94,16 +119,15 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     loop {
         match monitor.get_device_info().await {
             Some(info) => {
-                let mut widget = Widget::new();
-                if info.connected {
-                    widget.set_format(format.clone());
+                let output = if info.connected {
+                    &output_connected
                 } else {
-                    widget.set_format(disconnected_format.clone());
-                }
+                    &output_disconnected
+                };
+                let mut widget = output.new_widget();
 
                 let mut values = map! {
-                    [if info.connected] "icon" => Value::icon("phone"),
-                    [if !info.connected] "icon" => Value::icon("phone_disconnected"),
+                    "icon" => output.icon_value("icon")?,
                     [if let Some(name) = info.name] "name" => Value::text(name),
                     [if info.notifications > 0] "notif_count" => Value::number(info.notifications),
                     [if info.notifications > 0] "notif_icon" => Value::icon("notification"),
@@ -171,8 +195,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 api.set_widget(widget)?;
             }
             None => {
-                let mut widget = Widget::new().with_format(missing_format.clone());
-                widget.set_values(map! { "icon" => Value::icon("phone_disconnected") });
+                let mut widget = output_missing.new_widget();
+                widget.set_values(map! { "icon" => Value::icon(DISCONNECTED_ICON) });
                 api.set_widget(widget)?;
             }
         }
@@ -487,4 +511,36 @@ trait NotificationsDbus {
 
     #[zbus(signal, name = "notificationRemoved")]
     fn notification_removed(&self, id: &str) -> zbus::Result<()>;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_connection_states_and_icons() {
+        let plan = prepare(&Config::default()).unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["connected", "disconnected", "missing"]);
+
+        let connected = plan.output("connected").unwrap();
+        assert_eq!(connected.single_icon("icon").unwrap(), "phone");
+        let bat = connected.output().choices_for("bat_icon").unwrap();
+        assert!(bat.permits("bat") && bat.permits("bat_charging"));
+        assert!(!bat.permits("phone"));
+
+        for id in ["disconnected", "missing"] {
+            let output = plan.output(id).unwrap();
+            assert_eq!(output.single_icon("icon").unwrap(), "phone_disconnected");
+        }
+        // `missing` renders only `$icon`; the battery/network/notification
+        // values are never set in that state.
+        assert!(
+            plan.output("missing")
+                .unwrap()
+                .output()
+                .choices_for("bat_icon")
+                .is_none()
+        );
+    }
 }

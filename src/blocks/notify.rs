@@ -55,8 +55,8 @@
 //! ```
 //!
 //! # Icons Used
-//! - `bell`
-//! - `bell-slash`
+//! - `bell` (`$icon`)
+//! - `bell-slash` (`$icon`)
 //!
 //! [^dunst_version_note]: when using `notification_count` with the `dunst` driver use dunst > 1.9.0
 //! [^history_count_note]: `history_count` is the same as `notification_count` in SwayNC
@@ -83,11 +83,22 @@ pub enum DriverType {
     SwayNC,
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    let format = config.format.with_default(" $icon ")?;
+    BlockPlan::new(vec![
+        OutputPlan::new("enabled", format.clone()).icon("icon", IconChoices::one(ICON_ON)),
+        // The paused output is only ever rendered when `is_paused` is true,
+        // so the `paused` flag is set on every render of this output.
+        OutputPlan::new("paused", format).icon("icon", IconChoices::one(ICON_OFF)),
+    ])
+}
+
+pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[(MouseButton::Left, None, "toggle_paused")])?;
 
-    let format = config.format.with_default(" $icon ")?;
+    let output_enabled = plan.output("enabled")?;
+    let output_paused = plan.output("paused")?;
 
     let mut driver: Box<dyn Driver> = match config.driver {
         DriverType::Dunst => Box::new(DunstDriver::new().await?),
@@ -101,9 +112,14 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             driver.history_count()
         )?;
 
-        let mut widget = Widget::new().with_format(format.clone());
+        let output = if is_paused {
+            &output_paused
+        } else {
+            &output_enabled
+        };
+        let mut widget = output.new_widget();
         widget.set_values(map!(
-            "icon" => Value::icon(if is_paused { ICON_OFF } else { ICON_ON }),
+            "icon" => output.icon_value("icon")?,
             [if notification_count != 0] "notification_count" => Value::number(notification_count),
             [if history_count != 0] "history_count" => Value::number(history_count),
             [if is_paused] "paused" => Value::flag(),
@@ -341,4 +357,41 @@ trait SwayNCDbus {
         cc_open: bool,
         inhibited: bool,
     ) -> zbus::Result<()>;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_both_states_with_their_icons() {
+        let plan = prepare(&Config::default()).unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["enabled", "paused"]);
+        assert_eq!(
+            plan.output("enabled").unwrap().single_icon("icon").unwrap(),
+            ICON_ON
+        );
+        assert_eq!(
+            plan.output("paused").unwrap().single_icon("icon").unwrap(),
+            ICON_OFF
+        );
+    }
+
+    #[test]
+    fn both_states_share_the_same_format() {
+        let config = Config {
+            format: " $icon $notification_count ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        for id in ["enabled", "paused"] {
+            assert!(
+                plan.output(id)
+                    .unwrap()
+                    .format()
+                    .contains_key("notification_count")
+            );
+        }
+    }
 }

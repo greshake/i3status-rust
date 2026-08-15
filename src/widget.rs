@@ -1,3 +1,4 @@
+use crate::block_plan::{CONTRACT_BUG, OutputHandle, OutputKind};
 use crate::config::SharedConfig;
 use crate::errors::*;
 use crate::formatting::{Format, Fragment, Values};
@@ -10,6 +11,9 @@ pub struct Widget {
     pub state: State,
     source: Source,
     values: Values,
+    /// The declared output variant this widget renders, when the block has
+    /// been migrated to a prepared [`crate::block_plan::BlockPlan`].
+    contract: Option<OutputHandle>,
 }
 
 impl Widget {
@@ -46,14 +50,106 @@ impl Widget {
         } else {
             self.source = Source::Text(text);
         }
+        // Same reasoning as `set_format`: raw text is not what the output
+        // handle promised, so the contract no longer describes this widget.
+        // Text output is declared and rendered via `new_text_widget`.
+        self.contract = None;
     }
 
     pub fn set_format(&mut self, format: Format) {
         self.source = Source::Format(format);
+        // A raw format replacement invalidates whatever output contract the
+        // widget carried: the plan no longer describes what will render.
+        // Contracted widgets must switch outputs via `set_output` instead;
+        // publishing this widget now fails the contract check.
+        self.contract = None;
     }
 
     pub fn set_values(&mut self, new_values: Values) {
         self.values = new_values;
+    }
+
+    /// A widget rendering `output`'s declared format. Source and contract are
+    /// set together and only here: there is deliberately no way to attach a
+    /// handle to a widget whose source did not come from it, which would let
+    /// an arbitrary format pass validation under a valid output's name.
+    pub(crate) fn from_output(output: &OutputHandle) -> Self {
+        let mut widget = Self::new();
+        widget.set_output(output);
+        widget
+    }
+
+    /// A widget rendering `text` as `output`, which must be a text output.
+    /// See [`Self::from_output`] for why this is a constructor.
+    pub(crate) fn text_from_output(output: &OutputHandle, text: String) -> Self {
+        let mut widget = Self::new();
+        widget.set_text(text);
+        widget.contract = Some(output.clone());
+        widget
+    }
+
+    /// Switch this widget to another declared output: installs that output's
+    /// effective format and contract together.
+    pub(crate) fn set_output(&mut self, output: &OutputHandle) {
+        self.set_format(output.format().clone());
+        self.contract = Some(output.clone());
+    }
+
+    #[cfg(test)]
+    pub(crate) fn contract(&self) -> Option<&OutputHandle> {
+        self.contract.as_ref()
+    }
+
+    /// Enforce the prepared contract at the point a block publishes this
+    /// widget: everything that renders — a format or plain text alike — must
+    /// come from an output handle of the matching kind, and every icon value
+    /// must be declared. A failure here is an i3status-rs bug (the bar shows
+    /// it as a block error), never a configuration problem.
+    pub(crate) fn check_contract(&self) -> Result<()> {
+        // A widget with no source renders nothing at all, so there is no
+        // output to hold it to.
+        if matches!(self.source, Source::None) {
+            return Ok(());
+        }
+        let Some(handle) = &self.contract else {
+            let kind = match self.source {
+                Source::Format(_) => "format",
+                _ => "text",
+            };
+            return Err(Error::new(format!(
+                "{CONTRACT_BUG}: a {kind} widget was published without a \
+                 prepared output handle"
+            )));
+        };
+        let declared = handle.output().kind();
+        let matches_source = match self.source {
+            Source::Format(_) => declared == OutputKind::Format,
+            Source::Text(_) => declared == OutputKind::Text,
+            Source::None => true,
+        };
+        if !matches_source {
+            return Err(Error::new(format!(
+                "{CONTRACT_BUG}: output '{}' is declared as {declared:?} but \
+                 the published widget renders {}",
+                handle.id(),
+                match self.source {
+                    Source::Format(_) => "a format",
+                    _ => "text",
+                }
+            )));
+        }
+        if let Some(violation) = self.contract_violations().into_iter().next() {
+            return Err(Error::new(violation));
+        }
+        Ok(())
+    }
+
+    /// Icon values not declared by this widget's output contract.
+    pub(crate) fn contract_violations(&self) -> Vec<String> {
+        match &self.contract {
+            Some(handle) => handle.icon_violations(&self.values),
+            None => Vec::new(),
+        }
     }
 
     pub fn intervals(&self) -> Vec<u64> {

@@ -73,6 +73,8 @@ const FORMAT: &str = "--format=csv,noheader,nounits";
 
 use super::prelude::*;
 
+const ICON: &str = "gpu";
+
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
@@ -91,7 +93,19 @@ pub struct Config {
     pub warning: u32,
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    BlockPlan::new(vec![
+        OutputPlan::new(
+            "main",
+            config
+                .format
+                .with_default(" $icon $utilization $memory $temperature ")?,
+        )
+        .icon("icon", IconChoices::one(ICON)),
+    ])
+}
+
+pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, Some(MEM_BTN), "toggle_mem_total"),
@@ -100,9 +114,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         (MouseButton::WheelDown, Some(FAN_BTN), "fan_speed_down"),
     ])?;
 
-    let format = config
-        .format
-        .with_default(" $icon $utilization $memory $temperature ")?;
+    let output_main = plan.output("main")?;
 
     // Run `nvidia-smi` command
     let mut child = Command::new("nvidia-smi")
@@ -126,7 +138,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut fan_controlled = false;
 
     loop {
-        let mut widget = Widget::new().with_format(format.clone());
+        let mut widget = output_main.new_widget();
 
         widget.state = match info.temperature {
             t if t <= config.idle => State::Idle,
@@ -137,7 +149,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         };
 
         widget.set_values(map! {
-            "icon" => Value::icon("gpu"),
+            "icon" => Value::icon(ICON),
             "name" => Value::text(info.name.clone()),
             "utilization" => Value::percents(info.utilization),
             "memory" => Value::bytes(if show_mem_total {info.mem_total} else {info.mem_used}).with_instance(MEM_BTN),
@@ -261,5 +273,32 @@ async fn set_fan_speed(id: u64, speed: Option<u32>) -> Result<()> {
         Ok(())
     } else {
         Err(Error::new(ERR_MSG))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_single_output_with_gpu_icon() {
+        let plan = prepare(&Config::default()).unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["main"]);
+        let main = plan.output("main").unwrap();
+        assert_eq!(main.single_icon("icon").unwrap(), "gpu");
+        assert!(main.format().contains_key("utilization"));
+    }
+
+    #[test]
+    fn plan_uses_configured_format() {
+        let config = Config {
+            format: " $icon $fan_speed ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        let main = plan.output("main").unwrap();
+        assert!(main.format().contains_key("fan_speed"));
+        assert!(!main.format().contains_key("utilization"));
     }
 }
