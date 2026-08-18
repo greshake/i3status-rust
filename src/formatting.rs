@@ -81,7 +81,7 @@
 //! ## `datetime` - Display datetime
 //! Argument               | Description                                                                                                                                                                           |Default value
 //! -----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------
-//! `format` or `f`        | [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options, or `short`, `medium`, `long`, or `full` for icu datetimes                   | `'%a %d/%m %R'`
+//! `format` or `f`        | [jiff docs](https://docs.rs/jiff/latest/jiff/fmt/strtime/index.html#conversion-specifications) for all options, or `short`, `medium`, `long`, or `full` for icu datetimes                   | `'%a %d/%m %R'`
 //! `locale` or `l`        | Locale to apply when formatting the time                                                                                                                                              | System locale
 //! `precision` or `p`     | Precision to apply when formatting an icu datetime (`hours`/`hour`/`h`, `minutes`/`minute`/`m`, or `seconds`/`second`/`s`), if none is specified then only the date will be displayed | None
 //!

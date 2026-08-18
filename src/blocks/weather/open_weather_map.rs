@@ -1,6 +1,6 @@
 use super::*;
 use crate::util::mps_to_kmh;
-use chrono::{DateTime, Utc};
+use jiff::Timestamp;
 use reqwest::Url;
 use serde::{Deserializer, de};
 
@@ -339,13 +339,12 @@ impl WeatherProvider for Service<'_> {
         let current_weather = current_data.to_moment();
 
         let sunrise = Some(
-            DateTime::<Utc>::from_timestamp(current_data.sys.sunrise, 0)
-                .error("Unable to convert timestamp to DateTime")?,
+            Timestamp::from_second(current_data.sys.sunrise)
+                .error("Unable to convert Timestamp")?,
         );
 
         let sunset = Some(
-            DateTime::<Utc>::from_timestamp(current_data.sys.sunset, 0)
-                .error("Unable to convert timestamp to DateTime")?,
+            Timestamp::from_second(current_data.sys.sunset).error("Unable to convert Timestamp")?,
         );
 
         if !need_forecast || self.forecast_hours == 0 {

@@ -4,7 +4,7 @@
 //!
 //! Key        | Values | Default
 //! -----------|--------|--------
-//! `format`   | [MultiFormat][MaybeMultiFormatConfig] string. See [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. | `[" $icon $timestamp.datetime() "]`
+//! `format`   | [MultiFormat][MaybeMultiFormatConfig] string. See [jiff docs](https://docs.rs/jiff/latest/jiff/fmt/strtime/index.html#conversion-specifications) for all options. | `[" $icon $timestamp.datetime() "]`
 //! `interval` | Update interval in seconds | `10`
 //! `timezone` | A timezone specifier (e.g. "Europe/Lisbon") | Local timezone
 //!
@@ -34,7 +34,7 @@
 //! # Non Gregorian calendars
 //!
 //! You can use calendars other than the Gregorian calendar by adding the calendar specifier in the locale string. When using
-//! this feature you can't use chrono style format string, and you should use one of the options provided by
+//! this feature you can't use jiff style format string, and you should use one of the options provided by
 //! the `icu4x` crate: `short`, `medium`, `long`, `full`.
 //! If you set `precision` to `hours`/`hour`/`h`, `minutes`/`minute`/`m`, or `seconds`/`second`/`s` then then the datetime will be formatted accordingly, otherwise only the date will be displayed.
 //!
@@ -52,8 +52,9 @@
 //! # Icons Used
 //! - `time`
 
-use chrono::{Timelike as _, Utc};
-use chrono_tz::Tz;
+use jiff::tz::TimeZone;
+use jiff::{Timestamp, fmt::temporal};
+use serde::de::{self, Deserializer};
 
 use super::prelude::*;
 
@@ -64,14 +65,16 @@ pub struct Config {
     pub formats: MaybeMultiFormatConfig,
     #[default(10.into())]
     pub interval: Seconds,
-    pub timezone: Option<Timezone>,
+    pub timezone: Option<Timezones>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(untagged)]
-pub enum Timezone {
-    Timezone(Tz),
-    Timezones(Vec<Tz>),
+pub enum Timezones {
+    #[serde(deserialize_with = "jiff::fmt::serde::tz::required::deserialize")]
+    Timezone(TimeZone),
+    #[serde(deserialize_with = "deserialize_timezones")]
+    Timezones(Vec<TimeZone>),
 }
 
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
@@ -87,8 +90,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     let timezones = match config.timezone.clone() {
         Some(tzs) => match tzs {
-            Timezone::Timezone(tz) => vec![tz],
-            Timezone::Timezones(tzs) => tzs,
+            Timezones::Timezone(tz) => vec![tz],
+            Timezones::Timezones(tzs) => tzs,
         },
         None => Vec::new(),
     };
@@ -109,16 +112,16 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     loop {
         let mut widget = Widget::new().with_format(formats.get_format());
-        let now = Utc::now();
+        let now = Timestamp::now();
 
         widget.set_values(map! {
             "icon" => Value::icon("time"),
-            "timestamp" => Value::datetime(now, timezone.copied())
+            "timestamp" => Value::jiff_timestamp(now, timezone.cloned())
         });
 
         api.set_widget(widget)?;
 
-        let phase = now.second() as u64 % interval_seconds;
+        let phase = now.as_second() as u64 % interval_seconds;
         if phase != 0 {
             timer.reset_after(Duration::from_secs(interval_seconds - phase));
         }
@@ -143,4 +146,16 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             }
         }
     }
+}
+
+pub fn deserialize_timezones<'de, D>(deserializer: D) -> Result<Vec<TimeZone>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    Vec::<String>::deserialize(deserializer).and_then(|tzs| {
+        static PARSER: temporal::DateTimeParser = temporal::DateTimeParser::new();
+        tzs.into_iter()
+            .map(|value| PARSER.parse_time_zone(value).map_err(de::Error::custom))
+            .collect()
+    })
 }
