@@ -42,34 +42,70 @@ impl BarFormatter {
             vertical,
         })
     }
+
+    #[inline]
+    fn norm(&self, val: f64, max_value: f64) -> f64 {
+        // NOTE: This has the drawback of potentially ignoring the max_value set by the user.
+        Some(val / max_value)
+            .filter(|v| v.is_finite())
+            .unwrap_or(0.0)
+            .clamp(0.0, 1.0)
+    }
+
+    #[inline]
+    fn format_single_vertical(&self, val: f64, max_value: f64) -> char {
+        let val = self.norm(val, max_value);
+        VERTICAL_BAR_CHARS[(val * 8.0).ceil() as usize]
+    }
+
+    #[inline]
+    fn format_horizontal_cell(&self, val: f64, max_value: f64, i: usize) -> char {
+        let val = self.norm(val, max_value);
+        let chars_to_fill = val * self.width as f64;
+        HORIZONTAL_BAR_CHARS[((chars_to_fill - i as f64).clamp(0.0, 1.0) * 8.0).ceil() as usize]
+    }
+
+    #[inline]
+    fn format_horizontal_bar(&self, val: f64, max_value: f64) -> String {
+        (0..self.width)
+            .map(|i| self.format_horizontal_cell(val, max_value, i))
+            .collect()
+    }
 }
 
-const HORIZONTAL_BAR_CHARS: [char; 9] = [
-    ' ', '\u{258f}', '\u{258e}', '\u{258d}', '\u{258c}', '\u{258b}', '\u{258a}', '\u{2589}',
-    '\u{2588}',
-];
-
-const VERTICAL_BAR_CHARS: [char; 9] = [
-    ' ', '\u{2581}', '\u{2582}', '\u{2583}', '\u{2584}', '\u{2585}', '\u{2586}', '\u{2587}',
-    '\u{2588}',
-];
+const HORIZONTAL_BAR_CHARS: [char; 9] = [' ', '▏', '▎', '▍', '▌', '▋', '▊', '▉', '█'];
+const VERTICAL_BAR_CHARS: [char; 9] = [' ', '▁', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
 
 impl Formatter for BarFormatter {
     fn format(&self, val: &Value, _config: &SharedConfig) -> Result<String, FormatError> {
         match val {
-            &Value::Number { mut val, .. } => {
-                val = (val / self.max_value).clamp(0., 1.);
+            Value::Number { val, .. } => {
                 if self.vertical {
-                    let vert_char = VERTICAL_BAR_CHARS[(val * 8.) as usize];
-                    Ok((0..self.width).map(|_| vert_char).collect())
+                    let c = self.format_single_vertical(*val, self.max_value.max(*val));
+                    Ok(std::iter::repeat_n(c, self.width).collect())
                 } else {
-                    let chars_to_fill = val * self.width as f64;
-                    Ok((0..self.width)
-                        .map(|i| {
-                            HORIZONTAL_BAR_CHARS
-                                [((chars_to_fill - i as f64).clamp(0., 1.) * 8.) as usize]
-                        })
+                    Ok(self.format_horizontal_bar(*val, self.max_value.max(*val)))
+                }
+            }
+            Value::Numbers { vals, .. } => {
+                if self.vertical {
+                    // NOTE: print at most `width` values as a windowed chart
+                    let start = vals.len().saturating_sub(self.width);
+                    let shown = vals.len() - start;
+                    let max = vals
+                        .iter()
+                        .copied()
+                        .max_by(f64::total_cmp)
+                        .unwrap_or(self.max_value);
+
+                    Ok(std::iter::repeat_n(0.0, self.width - shown)
+                        .chain(vals[start..].iter().copied())
+                        .map(|val| self.format_single_vertical(val, self.max_value.max(max)))
                         .collect())
+                } else {
+                    // NOTE: print the last value as a horizontal bar
+                    let last = vals.last().copied().unwrap_or(0.0);
+                    Ok(self.format_horizontal_bar(last, self.max_value.max(last)))
                 }
             }
             other => Err(FormatError::IncompatibleFormatter {
@@ -77,5 +113,117 @@ impl Formatter for BarFormatter {
                 fmt: "bar",
             }),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::formatting::unit::Unit;
+
+    fn fmt_horiz(width: usize, max_value: f64) -> BarFormatter {
+        BarFormatter {
+            width,
+            max_value,
+            vertical: false,
+        }
+    }
+
+    fn fmt_vert(width: usize, max_value: f64) -> BarFormatter {
+        BarFormatter {
+            width,
+            max_value,
+            vertical: true,
+        }
+    }
+
+    fn number(val: f64) -> Value {
+        Value::Number {
+            val,
+            unit: Unit::None,
+        }
+    }
+
+    fn numbers(vals: &[f64]) -> Value {
+        Value::Numbers {
+            vals: vals.to_vec(),
+            unit: Unit::None,
+        }
+    }
+
+    #[test]
+    fn single_number_horizontal_basic() {
+        let fmt = fmt_horiz(8, 8.0);
+        let out = fmt.format(&number(4.0), &Default::default()).unwrap();
+        assert_eq!(out, "████    ");
+    }
+
+    #[test]
+    fn single_number_horizontal_fractional() {
+        let fmt = fmt_horiz(8, 8.0);
+        let out = fmt.format(&number(3.5), &Default::default()).unwrap();
+        assert_eq!(out, "███▌    ");
+    }
+
+    #[test]
+    fn single_number_vertical_basic() {
+        let fmt = fmt_vert(5, 8.0);
+        let out = fmt.format(&number(4.0), &Default::default()).unwrap();
+        assert_eq!(out, "▄▄▄▄▄");
+    }
+
+    #[test]
+    fn single_number_vertical_clamps() {
+        let fmt = fmt_vert(3, 8.0);
+        let out = fmt
+            .format(&number(999.0), &SharedConfig::default())
+            .unwrap();
+        assert_eq!(out, "███");
+
+        let fmt = fmt_vert(3, 8.0);
+        let out = fmt.format(&number(-1.0), &Default::default()).unwrap();
+        assert_eq!(out, "   ");
+    }
+
+    #[test]
+    fn multiple_values_horizontal_uses_last_value() {
+        let fmt = fmt_horiz(8, 8.0);
+        let out = fmt
+            .format(&numbers(&[1.0, 2.0, 4.0]), &Default::default())
+            .unwrap();
+        assert_eq!(out, "████    ");
+    }
+
+    #[test]
+    fn multiple_values_vertical_graph() {
+        let fmt = fmt_vert(9, 8.0);
+        let out = fmt
+            .format(
+                &numbers(&[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]),
+                &SharedConfig::default(),
+            )
+            .unwrap();
+        assert_eq!(out, " ▁▂▃▄▅▆▇█");
+    }
+
+    #[test]
+    fn multiple_values_vertical_pads_when_short() {
+        let fmt = fmt_vert(5, 8.0);
+        let out = fmt
+            .format(&numbers(&[4.0, 8.0]), &Default::default())
+            .unwrap();
+        assert_eq!(out, "   ▄█");
+    }
+
+    #[test]
+    fn multiple_values_vertical_truncates_when_long() {
+        let fmt = fmt_vert(4, 8.0);
+        let out = fmt
+            .format(
+                &numbers(&[0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]),
+                &Default::default(),
+            )
+            .unwrap();
+        assert_eq!(out, "▅▆▇█");
     }
 }
