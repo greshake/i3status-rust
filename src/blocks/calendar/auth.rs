@@ -8,6 +8,7 @@ use oauth2::{
     EndpointSet, PkceCodeChallenge, PkceCodeVerifier, RedirectUrl, RefreshToken, Scope,
     StandardRevocableToken, TokenResponse as _, TokenUrl,
 };
+use oauth2_reqwest::ReqwestClient;
 use reqwest;
 use reqwest::Url;
 use reqwest::header::{AUTHORIZATION, HeaderMap, HeaderValue};
@@ -20,14 +21,16 @@ use tokio::net::TcpListener;
 use super::CalendarError;
 use crate::{APP_USER_AGENT, REQWEST_TIMEOUT};
 
-static REQWEST_CLIENT: LazyLock<reqwest::Client> = LazyLock::new(|| {
-    reqwest::Client::builder()
-        .user_agent(APP_USER_AGENT)
-        .timeout(REQWEST_TIMEOUT)
-        // Following redirects opens the client up to SSRF vulnerabilities.
-        .redirect(reqwest::redirect::Policy::none())
-        .build()
-        .unwrap()
+static REQWEST_CLIENT: LazyLock<ReqwestClient> = LazyLock::new(|| {
+    ReqwestClient::from(
+        reqwest::Client::builder()
+            .user_agent(APP_USER_AGENT)
+            .timeout(REQWEST_TIMEOUT)
+            // Following redirects opens the client up to SSRF vulnerabilities.
+            .redirect(reqwest::redirect::Policy::none())
+            .build()
+            .unwrap(),
+    )
 });
 
 type BasicClient<
