@@ -102,6 +102,7 @@ pub struct BlockConfigEntry {
 #[serde(default)]
 pub struct CommonBlockConfig {
     pub click: ClickHandler,
+    #[cfg(target_os = "linux")]
     pub signal: Option<i32>,
     pub icons_format: Option<String>,
     pub theme_overrides: Option<ThemeOverrides>,
