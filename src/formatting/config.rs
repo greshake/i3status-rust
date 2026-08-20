@@ -1,4 +1,4 @@
-use super::{Format, MultiFormat, template::FormatTemplate};
+use super::{Format, template::FormatTemplate};
 use crate::errors::*;
 use itertools::Itertools as _;
 use serde::de::{MapAccess, Visitor};
@@ -142,12 +142,12 @@ pub enum MaybeMultiConfig {
 }
 
 impl MaybeMultiConfig {
-    pub fn with_default(&self, default_full: &str) -> Result<MultiFormat> {
+    pub fn with_default(&self, default_full: &str) -> Result<Vec<Format>> {
         self.with_defaults(default_full, "")
     }
 
-    pub fn with_defaults(&self, default_full: &str, default_short: &str) -> Result<MultiFormat> {
-        Ok(MultiFormat::new(match self.clone() {
+    pub fn with_defaults(&self, default_full: &str, default_short: &str) -> Result<Vec<Format>> {
+        Ok(match self.clone() {
             MaybeMultiConfig::Multiple { configs } => configs
                 .into_iter()
                 .enumerate()
@@ -171,28 +171,26 @@ impl MaybeMultiConfig {
                 }
                 formats
             }
-        }))
+        })
     }
 
-    pub fn with_default_formats(&self, default_formats: &[Format]) -> MultiFormat {
-        MultiFormat::new(
-            match self.clone() {
-                MaybeMultiConfig::Multiple { configs } => configs,
-                MaybeMultiConfig::Split { config, config_alt } => {
-                    vec![config.unwrap_or_default(), config_alt.unwrap_or_default()]
-                }
+    pub fn with_default_formats(&self, default_formats: &[Format]) -> Vec<Format> {
+        match self.clone() {
+            MaybeMultiConfig::Multiple { configs } => configs,
+            MaybeMultiConfig::Split { config, config_alt } => {
+                vec![config.unwrap_or_default(), config_alt.unwrap_or_default()]
             }
-            .into_iter()
-            .zip_longest(default_formats)
-            .filter_map(|pair| match pair {
-                itertools::EitherOrBoth::Both(config, default_format) => {
-                    Some(config.with_default_format(default_format))
-                }
-                itertools::EitherOrBoth::Left(config) => Some(config.into()),
-                itertools::EitherOrBoth::Right(_) => None,
-            })
-            .collect(),
-        )
+        }
+        .into_iter()
+        .zip_longest(default_formats)
+        .filter_map(|pair| match pair {
+            itertools::EitherOrBoth::Both(config, default_format) => {
+                Some(config.with_default_format(default_format))
+            }
+            itertools::EitherOrBoth::Left(config) => Some(config.into()),
+            itertools::EitherOrBoth::Right(_) => None,
+        })
+        .collect()
     }
 }
 

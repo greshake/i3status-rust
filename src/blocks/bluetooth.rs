@@ -51,16 +51,19 @@
 //! ```
 //!
 //! # Icons Used
-//! - `headphones` for bluetooth devices identifying as "audio-card", "audio-headset" or "audio-headphones"
-//! - `joystick` for bluetooth devices identifying as "input-gaming"
-//! - `keyboard` for bluetooth devices identifying as "input-keyboard"
-//! - `mouse` for bluetooth devices identifying as "input-mouse"
-//! - `bluetooth` for all other devices
+//! - `headphones` (`$icon`) for bluetooth devices identifying as "audio-card", "audio-headset" or "audio-headphones"
+//! - `joystick` (`$icon`) for bluetooth devices identifying as "input-gaming"
+//! - `keyboard` (`$icon`) for bluetooth devices identifying as "input-keyboard"
+//! - `mouse` (`$icon`) for bluetooth devices identifying as "input-mouse"
+//! - `bluetooth` (`$icon`, in `disconnected_format`) when the device is unavailable
+//! - `bat` (`$battery_icon`, as a progression) for devices reporting a battery level
 
 use zbus::fdo::{DBusProxy, ObjectManagerProxy, PropertiesProxy};
 
 use super::prelude::*;
 use crate::wrappers::RangeMap;
+
+const UNAVAILABLE_ICON: &str = "bluetooth";
 
 make_log_macro!(debug, "bluetooth");
 
@@ -78,14 +81,44 @@ pub struct Config {
     pub battery_state: Option<RangeMap<u8, State>>,
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let mut actions = api.get_actions()?;
-    api.set_default_actions(&[(MouseButton::Right, None, "toggle")])?;
+/// Every icon name [`device_icon`] can return. The device type is externally
+/// selected but finite, so the block plan declares the full set.
+const DEVICE_ICONS: [&str; 5] = ["headphones", "joystick", "keyboard", "mouse", "bluetooth"];
 
+fn device_icon(bluez_icon: Option<&str>) -> &'static str {
+    match bluez_icon {
+        Some("audio-card" | "audio-headset" | "audio-headphones") => "headphones",
+        Some("input-gaming") => "joystick",
+        Some("input-keyboard") => "keyboard",
+        Some("input-mouse") => "mouse",
+        _ => "bluetooth",
+    }
+}
+
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     let format = config.format.with_default(" $icon $name{ $percentage|} ")?;
     let disconnected_format = config
         .disconnected_format
         .with_default(" $icon{ $name|} ")?;
+    BlockPlan::new(vec![
+        OutputPlan::new("connected", format)
+            .icon("icon", IconChoices::fixed(DEVICE_ICONS))
+            .icon("battery_icon", IconChoices::one("bat")),
+        OutputPlan::new("disconnected", disconnected_format.clone())
+            .icon("icon", IconChoices::fixed(DEVICE_ICONS))
+            .icon("battery_icon", IconChoices::one("bat")),
+        OutputPlan::new("unavailable", disconnected_format)
+            .icon("icon", IconChoices::one(UNAVAILABLE_ICON)),
+    ])
+}
+
+pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
+    let mut actions = api.get_actions()?;
+    api.set_default_actions(&[(MouseButton::Right, None, "toggle")])?;
+
+    let output_connected = plan.output("connected")?;
+    let output_disconnected = plan.output("disconnected")?;
+    let output_unavailable = plan.output("unavailable")?;
 
     let mut monitor = DeviceMonitor::new(config.mac.clone(), config.adapter_mac.clone()).await?;
 
@@ -105,7 +138,12 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             Some(device) => {
                 debug!("Device available, info: {device:?}");
 
-                let mut widget = Widget::new();
+                let output = if device.connected {
+                    &output_connected
+                } else {
+                    &output_disconnected
+                };
+                let mut widget = output.new_widget();
 
                 let values = map! {
                     "icon" => Value::icon(device.icon),
@@ -117,13 +155,11 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 };
 
                 if device.connected {
-                    widget.set_format(format.clone());
                     widget.state = battery_states
                         .get(&device.battery_percentage.unwrap_or(100))
                         .copied()
                         .unwrap_or(State::Good);
                 } else {
-                    widget.set_format(disconnected_format.clone());
                     widget.state = State::Idle;
                 }
 
@@ -133,8 +169,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             // Unavailable
             None => {
                 debug!("Showing device as unavailable");
-                let mut widget = Widget::new().with_format(disconnected_format.clone());
-                widget.set_values(map!("icon" => Value::icon("bluetooth")));
+                let mut widget = output_unavailable.new_widget();
+                widget.set_values(map!("icon" => Value::icon(UNAVAILABLE_ICON)));
                 api.set_widget(widget)?;
             }
         }
@@ -304,13 +340,7 @@ impl DeviceMonitor {
         };
 
         //icon can be null, so ignore errors when fetching it
-        let icon: &str = match device.device.icon().await.ok().as_deref() {
-            Some("audio-card" | "audio-headset" | "audio-headphones") => "headphones",
-            Some("input-gaming") => "joystick",
-            Some("input-keyboard") => "keyboard",
-            Some("input-mouse") => "mouse",
-            _ => "bluetooth",
-        };
+        let icon: &str = device_icon(device.device.icon().await.ok().as_deref());
 
         Some(DeviceInfo {
             connected,
@@ -433,4 +463,79 @@ trait Device1 {
 trait Battery1 {
     #[zbus(property)]
     fn percentage(&self) -> zbus::Result<u8>;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn config() -> Config {
+        Config {
+            mac: "00:00:00:00:00:00".into(),
+            adapter_mac: None,
+            format: Default::default(),
+            disconnected_format: Default::default(),
+            battery_state: None,
+        }
+    }
+
+    #[test]
+    fn plan_declares_every_state_with_its_icons() {
+        let plan = prepare(&config()).unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["connected", "disconnected", "unavailable"]);
+
+        // The device values (icon, battery_icon) are set regardless of the
+        // connection state, so both connected and disconnected declare them.
+        for id in ["connected", "disconnected"] {
+            let output = plan.output(id).unwrap();
+            let choices = output.output().choices_for("icon").unwrap();
+            for name in DEVICE_ICONS {
+                assert!(choices.permits(name), "{id} must permit {name}");
+            }
+            assert_eq!(output.single_icon("battery_icon").unwrap(), "bat");
+        }
+
+        let unavailable = plan.output("unavailable").unwrap();
+        assert_eq!(unavailable.single_icon("icon").unwrap(), "bluetooth");
+        assert!(
+            unavailable.output().choices_for("battery_icon").is_none(),
+            "battery values are never set when the device is unavailable"
+        );
+    }
+
+    #[test]
+    fn every_device_icon_is_declared() {
+        // Tie the runtime chooser to the declared set.
+        for input in [
+            Some("audio-card"),
+            Some("audio-headset"),
+            Some("audio-headphones"),
+            Some("input-gaming"),
+            Some("input-keyboard"),
+            Some("input-mouse"),
+            Some("something-else"),
+            None,
+        ] {
+            assert!(DEVICE_ICONS.contains(&device_icon(input)));
+        }
+    }
+
+    #[test]
+    fn unavailable_shares_the_disconnected_format() {
+        let config = Config {
+            disconnected_format: " off ".parse().unwrap(),
+            ..config()
+        };
+        let plan = prepare(&config).unwrap();
+        for id in ["disconnected", "unavailable"] {
+            assert!(!plan.output(id).unwrap().format().contains_key("icon"));
+        }
+        assert!(
+            plan.output("connected")
+                .unwrap()
+                .format()
+                .contains_key("icon")
+        );
+    }
 }

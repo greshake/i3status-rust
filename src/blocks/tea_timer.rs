@@ -43,6 +43,8 @@ use crate::subprocess::spawn_shell;
 
 use std::time::{Duration, Instant};
 
+const ICON: &str = "tea";
+
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
@@ -51,7 +53,21 @@ pub struct Config {
     pub done_cmd: Option<String>,
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    BlockPlan::new(vec![
+        OutputPlan::new(
+            "main",
+            config
+                .format
+                .with_default(" $icon {$time.duration(hms:true) |}")?,
+        )
+        // `time`, `hours`, `minutes` and `seconds` are only set while the
+        // timer is active, so they are not guaranteed.
+        .icon("icon", IconChoices::one(ICON)),
+    ])
+}
+
+pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, None, "increment"),
@@ -63,9 +79,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let interval: Seconds = 1.into();
     let mut timer = interval.timer();
 
-    let format = config
-        .format
-        .with_default(" $icon {$time.duration(hms:true) |}")?;
+    let output_main = plan.output("main")?;
+    let format = output_main.format().clone();
 
     let increment = Duration::from_secs(config.increment.unwrap_or(30));
     let mut timer_end = Instant::now();
@@ -73,7 +88,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut timer_was_active = false;
 
     loop {
-        let mut widget = Widget::new().with_format(format.clone());
+        let mut widget = output_main.new_widget();
 
         let remaining_time = timer_end - Instant::now();
         let is_timer_active = !remaining_time.is_zero();
@@ -87,7 +102,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         timer_was_active = is_timer_active;
 
         let mut values = map!(
-            "icon" => Value::icon("tea"),
+            "icon" => Value::icon(ICON),
         );
 
         if is_timer_active {
@@ -127,5 +142,32 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_main_output_with_tea_icon() {
+        let plan = prepare(&Config::default()).unwrap();
+        let declared: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(declared, ["main"]);
+        let output = plan.output("main").unwrap();
+        assert_eq!(output.single_icon("icon").unwrap(), "tea");
+    }
+
+    #[test]
+    fn custom_format_is_respected() {
+        let config = Config {
+            format: " $minutes:$seconds ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        let output = plan.output("main").unwrap();
+        assert!(output.format().contains_key("minutes"));
+        assert!(output.format().contains_key("seconds"));
+        assert!(!output.format().contains_key("icon"));
     }
 }

@@ -87,11 +87,11 @@
 //!
 //! #  Icons Used
 //!
-//! - `microphone_muted` (as a progression)
-//! - `microphone` (as a progression)
-//! - `volume_muted` (as a progression)
-//! - `volume` (as a progression)
-//! - `headphones`
+//! - `microphone_muted` (`$icon`, as a progression)
+//! - `microphone` (`$icon`, as a progression)
+//! - `volume_muted` (`$icon`, as a progression)
+//! - `volume` (`$icon`, as a progression)
+//! - `headphones` (`$icon`)
 
 make_log_macro!(debug, "sound");
 
@@ -132,7 +132,73 @@ enum Mappings<'a> {
     Regex(Vec<(Regex, &'a str)>),
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+/// Whether the device should be represented by the `headphones` icon.
+fn is_headphones(device: &dyn SoundDevice) -> bool {
+    let form_factor = device.form_factor();
+    let active_port = device.active_port();
+    debug!("form_factor = {form_factor:?} active_port = {active_port:?}");
+    match form_factor {
+        // form_factor's possible values are listed at:
+        // https://docs.rs/libpulse-binding/2.25.0/libpulse_binding/proplist/properties/constant.DEVICE_FORM_FACTOR.html
+        Some("headset") | Some("headphone") | Some("hands-free") | Some("portable") => true,
+        // Per discussion at
+        // https://github.com/greshake/i3status-rust/pull/1363#issuecomment-1046095869,
+        // fall back to checking active_port if form_factor is absent, unknown, or doesn't match
+        // known headphone values (common on PipeWire/WirePlumber systems).
+        _ => active_port
+            .as_ref()
+            .is_some_and(|p| p.to_lowercase().contains("headphone")),
+    }
+}
+
+/// The icon name for the current device state. `headphones` can only be true
+/// when `headphones_indicator` is set and the device is a sink.
+fn icon_name(device_kind: DeviceKind, headphones: bool, muted: bool) -> &'static str {
+    if headphones {
+        return "headphones";
+    }
+    if muted {
+        match device_kind {
+            DeviceKind::Source => "microphone_muted",
+            DeviceKind::Sink => "volume_muted",
+        }
+    } else {
+        match device_kind {
+            DeviceKind::Source => "microphone",
+            DeviceKind::Sink => "volume",
+        }
+    }
+}
+
+/// Every name [`icon_name`] can return for this configuration. The runtime
+/// state (muted, headphones plugged in) is externally selected but finite,
+/// so the block plan declares the full set.
+fn declared_icon_names(device_kind: DeviceKind, headphones_indicator: bool) -> Vec<&'static str> {
+    let mut names = match device_kind {
+        DeviceKind::Sink => vec!["volume", "volume_muted"],
+        DeviceKind::Source => vec!["microphone", "microphone_muted"],
+    };
+    if headphones_indicator && device_kind == DeviceKind::Sink {
+        names.push("headphones");
+    }
+    names
+}
+
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    let icons = || {
+        IconChoices::fixed(declared_icon_names(
+            config.device_kind,
+            config.headphones_indicator,
+        ))
+    };
+    // `volume` is removed when muted (unless `show_volume_when_muted`) and
+    // `active_port` can be absent or mapped away, so neither is guaranteed.
+    let declare = |output: OutputPlan| output.icon("icon", icons());
+    let formats = config.formats.with_default(" $icon {$volume.eng(w:2)|} ")?;
+    BlockPlan::new(format_outputs(formats, declare))
+}
+
+pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, None, "next_format"),
@@ -141,44 +207,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         (MouseButton::WheelDown, None, "volume_down"),
     ])?;
 
-    let mut formats = config.formats.with_default(" $icon {$volume.eng(w:2)|} ")?;
+    let mut formats = FormatRotation::new(plan)?;
 
     let device_kind = config.device_kind;
     let step_width = config.step_width.clamp(0, 50) as i32;
-
-    let icon = |muted: bool, device: &dyn SoundDevice| -> &'static str {
-        if config.headphones_indicator && device_kind == DeviceKind::Sink {
-            let form_factor = device.form_factor();
-            let active_port = device.active_port();
-            debug!("form_factor = {form_factor:?} active_port = {active_port:?}");
-            let headphones = match form_factor {
-                // form_factor's possible values are listed at:
-                // https://docs.rs/libpulse-binding/2.25.0/libpulse_binding/proplist/properties/constant.DEVICE_FORM_FACTOR.html
-                Some("headset") | Some("headphone") | Some("hands-free") | Some("portable") => true,
-                // Per discussion at
-                // https://github.com/greshake/i3status-rust/pull/1363#issuecomment-1046095869,
-                // fall back to checking active_port if form_factor is absent, unknown, or doesn't match
-                // known headphone values (common on PipeWire/WirePlumber systems).
-                _ => active_port
-                    .as_ref()
-                    .is_some_and(|p| p.to_lowercase().contains("headphone")),
-            };
-            if headphones {
-                return "headphones";
-            }
-        }
-        if muted {
-            match device_kind {
-                DeviceKind::Source => "microphone_muted",
-                DeviceKind::Sink => "volume_muted",
-            }
-        } else {
-            match device_kind {
-                DeviceKind::Source => "microphone",
-                DeviceKind::Sink => "volume",
-            }
-        }
-    };
 
     type DeviceType = Box<dyn SoundDevice>;
     let mut device: DeviceType = match config.driver {
@@ -275,15 +307,21 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             .output_description()
             .unwrap_or_else(|| output_name.clone());
 
+        let headphones = config.headphones_indicator
+            && device_kind == DeviceKind::Sink
+            && is_headphones(&*device);
+
+        let output = formats.current();
         let mut values = map! {
-            "icon" => Value::icon_progression(icon(muted, &*device), volume as f64 / 100.0),
+            "icon" => Value::icon_progression(
+                icon_name(device_kind, headphones, muted),
+                volume as f64 / 100.0),
             "volume" => Value::percents(volume),
             "output_name" => Value::text(output_name),
             "output_description" => Value::text(output_description),
             [if let Some(ap) = active_port] "active_port" => Value::text(ap),
         };
-
-        let mut widget = Widget::new().with_format(formats.get_format());
+        let mut widget = output.new_widget();
 
         if muted {
             widget.state = State::Warning;
@@ -304,11 +342,11 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 _ = api.wait_for_update_request() => break,
                 Some(action) = actions.recv() => match action.as_ref() {
                     "next_format" | "toggle_format" => {
-                        formats.next_format();
+                        formats.next();
                         break;
                     }
                     "prev_format" => {
-                        formats.prev_format();
+                        formats.prev();
                         break;
                     }
                     "toggle_mute" => {
@@ -360,4 +398,133 @@ trait SoundDevice {
     async fn set_volume(&mut self, step: i32, max_vol: Option<u32>) -> Result<()>;
     async fn toggle(&mut self) -> Result<()>;
     async fn wait_for_update(&mut self) -> Result<()>;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn config(toml_str: &str) -> Config {
+        toml::from_str(toml_str).unwrap()
+    }
+
+    #[test]
+    fn plan_declares_device_kind_specific_icons() {
+        // Default: sink without headphones indicator.
+        let plan = prepare(&Config::default()).unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["format"]);
+        let choices = plan
+            .output("format")
+            .unwrap()
+            .output()
+            .choices_for("icon")
+            .unwrap()
+            .clone();
+        assert!(choices.permits("volume"));
+        assert!(choices.permits("volume_muted"));
+        assert!(!choices.permits("headphones"));
+        assert!(!choices.permits("microphone"));
+        assert!(!choices.permits("microphone_muted"));
+
+        // Source devices use the microphone icons.
+        let config = Config {
+            device_kind: DeviceKind::Source,
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        let choices = plan
+            .output("format")
+            .unwrap()
+            .output()
+            .choices_for("icon")
+            .unwrap()
+            .clone();
+        assert!(choices.permits("microphone"));
+        assert!(choices.permits("microphone_muted"));
+        assert!(!choices.permits("volume"));
+        assert!(!choices.permits("headphones"));
+    }
+
+    #[test]
+    fn headphones_icon_declared_only_for_sinks_with_indicator() {
+        let config = Config {
+            headphones_indicator: true,
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        assert!(
+            plan.output("format")
+                .unwrap()
+                .output()
+                .choices_for("icon")
+                .unwrap()
+                .permits("headphones")
+        );
+
+        // The indicator only applies to sinks.
+        let config = Config {
+            headphones_indicator: true,
+            device_kind: DeviceKind::Source,
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        assert!(
+            !plan
+                .output("format")
+                .unwrap()
+                .output()
+                .choices_for("icon")
+                .unwrap()
+                .permits("headphones")
+        );
+    }
+
+    #[test]
+    fn every_configured_format_gets_an_output() {
+        let plan = prepare(&Config::default()).unwrap();
+        assert!(plan.output("format2").is_err());
+
+        let plan = prepare(&config(r#"format = [" $icon ", " $icon $output_name "]"#)).unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["format", "format2"]);
+        let alt = plan.output("format2").unwrap();
+        assert!(alt.format().contains_key("output_name"));
+        assert!(alt.output().choices_for("icon").unwrap().permits("volume"));
+    }
+
+    #[test]
+    fn format_alt_still_produces_a_second_output() {
+        let plan = prepare(&config(r#"format_alt = " $icon $output_name ""#)).unwrap();
+        let alt = plan.output("format2").unwrap();
+        assert!(alt.format().contains_key("output_name"));
+        assert!(alt.output().choices_for("icon").unwrap().permits("volume"));
+    }
+
+    #[test]
+    fn chooser_only_produces_declared_names() {
+        for device_kind in [DeviceKind::Sink, DeviceKind::Source] {
+            for headphones_indicator in [false, true] {
+                let declared = declared_icon_names(device_kind, headphones_indicator);
+                // Headphones can only be detected for sinks with the
+                // indicator enabled; mirror that reachability here.
+                let headphone_states: &[bool] =
+                    if headphones_indicator && device_kind == DeviceKind::Sink {
+                        &[false, true]
+                    } else {
+                        &[false]
+                    };
+                for &headphones in headphone_states {
+                    for muted in [false, true] {
+                        let name = icon_name(device_kind, headphones, muted);
+                        assert!(
+                            declared.contains(&name),
+                            "icon '{name}' not declared for {device_kind:?} \
+                             (headphones_indicator: {headphones_indicator})"
+                        );
+                    }
+                }
+            }
+        }
+    }
 }

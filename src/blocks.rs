@@ -84,14 +84,42 @@ macro_rules! define_blocks {
                 }
             }
 
+            /// The prepared output contract of this block instance (see
+            /// [`crate::block_plan`]), which is what `--doctor` analyzes.
+            pub(crate) fn plan(&self) -> Result<Arc<crate::block_plan::BlockPlan>> {
+                match self {
+                    $(
+                        $(#[cfg(feature = $feat)])?
+                        #[allow(deprecated)]
+                        Self::$block(config) => $block::prepare(config),
+                    )*
+                    Self::Err(_name, err) => Err(err.clone()),
+                }
+            }
+
             pub fn spawn(self, api: CommonApi, futures: &mut FuturesUnordered<BoxedFuture<()>>) {
                 match self {
                     $(
                         $(#[cfg(feature = $feat)])?
                         #[allow(deprecated)]
                         Self::$block(config) => futures.push(async move {
+                            // The block's declared output contract, resolved
+                            // once and passed into run. Every block module
+                            // must define `prepare(config) ->
+                            // Result<Arc<BlockPlan>>`; a block without one
+                            // fails to compile here.
+                            let plan = match $block::prepare(&config) {
+                                Ok(plan) => plan,
+                                Err(err) => {
+                                    let _ = api.set_error(Error {
+                                        message: Some("Failed to prepare block".into()),
+                                        cause: Some(Arc::new(err)),
+                                    });
+                                    return;
+                                }
+                            };
                             let mut error_count: u8 = 0;
-                            while let Err(mut err) = $block::run(&config, &api).await {
+                            while let Err(mut err) = $block::run(&config, &api, &plan).await {
                                 let Ok(mut actions) = api.get_actions() else { return };
                                 if api.set_default_actions(&[
                                     (MouseButton::Left, Some(RESTART_BLOCK_BTN), "error_count_reset"),
@@ -242,6 +270,7 @@ pub struct CommonApi {
 impl CommonApi {
     /// Sends the widget to be displayed.
     pub fn set_widget(&self, widget: Widget) -> Result<()> {
+        widget.check_contract()?;
         self.request_sender
             .send(Request {
                 block_id: self.id,

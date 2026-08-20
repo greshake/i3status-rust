@@ -163,41 +163,12 @@ pub enum FormatError {
     Other(#[from] Error),
 }
 
-#[derive(Debug)]
-pub struct MultiFormat {
-    // The length is always at least one, so we don't need to worry about
-    // dividing by zero when doing the modulo math to calculate the
-    // previous and next formats.
-    formats: Vec<Format>,
-    index: usize,
-}
-
-impl MultiFormat {
-    pub fn new(formats: Vec<Format>) -> Self {
-        Self { formats, index: 0 }
-    }
-
-    pub fn iter(&self) -> std::slice::Iter<'_, Format> {
-        self.formats.iter()
-    }
-
-    pub fn get_format(&self) -> Format {
-        self.formats[self.index].clone()
-    }
-
-    pub fn next_format(&mut self) {
-        self.index = (self.index + 1) % self.formats.len();
-    }
-
-    pub fn prev_format(&mut self) {
-        self.index = (self.index + (self.formats.len() - 1)) % self.formats.len();
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct Format {
-    full: FormatTemplate,
-    short: FormatTemplate,
+    /// Crate-visible so a prepared block plan can inspect what this format
+    /// renders without rendering it (see [`crate::block_plan`]).
+    pub(crate) full: FormatTemplate,
+    pub(crate) short: FormatTemplate,
     intervals: Vec<u64>,
 }
 

@@ -59,8 +59,18 @@ pub enum Driver {
     WlrToplevelManagement,
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let format = config.format.with_default(" $title.str(max_w:21) |")?;
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    // No value guarantees: `title`, `marks` and `visible_marks` are only set
+    // when the focused window has a non-empty title, so every value is
+    // conditional.
+    BlockPlan::new(vec![OutputPlan::new(
+        "main",
+        config.format.with_default(" $title.str(max_w:21) |")?,
+    )])
+}
+
+pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
+    let output_main = plan.output("main")?;
 
     let mut backend: Box<dyn Backend> = match config.driver {
         Driver::Auto => match SwayIpc::new().await {
@@ -74,7 +84,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     loop {
         let Info { title, marks } = backend.get_info().await?;
 
-        let mut widget = Widget::new().with_format(format.clone());
+        let mut widget = output_main.new_widget();
 
         if !title.is_empty() {
             let join_marks = |mut s: String, m: &String| {
@@ -108,4 +118,30 @@ trait Backend {
 struct Info {
     title: String,
     marks: Vec<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_single_output_without_icons() {
+        let plan = prepare(&Config::default()).unwrap();
+        assert_eq!(plan.outputs().count(), 1);
+        let main = plan.output("main").unwrap();
+        assert!(main.format().contains_key("title"));
+        assert_eq!(main.output().icon_placeholders().count(), 0);
+    }
+
+    #[test]
+    fn custom_format_is_used() {
+        let config = Config {
+            format: " $visible_marks ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        let main = plan.output("main").unwrap();
+        assert!(main.format().contains_key("visible_marks"));
+        assert!(!main.format().contains_key("title"));
+    }
 }

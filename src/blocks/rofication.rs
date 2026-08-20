@@ -33,6 +33,8 @@
 use super::prelude::*;
 use tokio::net::UnixStream;
 
+const ICON: &str = "bell";
+
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
 pub struct Config {
@@ -43,8 +45,15 @@ pub struct Config {
     pub format: FormatConfig,
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let format = config.format.with_default(" $icon $num.eng(w:1) ")?;
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    BlockPlan::new(vec![
+        OutputPlan::new("main", config.format.with_default(" $icon $num.eng(w:1) ")?)
+            .icon("icon", IconChoices::one(ICON)),
+    ])
+}
+
+pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
+    let output_main = plan.output("main")?;
 
     let path = config.socket_path.expand()?;
     let mut timer = config.interval.timer();
@@ -52,10 +61,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     loop {
         let (num, crit) = rofication_status(&path).await?;
 
-        let mut widget = Widget::new().with_format(format.clone());
+        let mut widget = output_main.new_widget();
 
         widget.set_values(map!(
-            "icon" => Value::icon("bell"),
+            "icon" => Value::icon(ICON),
             "num" => Value::number(num)
         ));
 
@@ -101,4 +110,30 @@ async fn rofication_status(socket_path: &str) -> Result<(usize, usize)> {
         num.parse().error("Incorrect response")?,
         crit.parse().error("Incorrect response")?,
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_main_output_with_bell_icon() {
+        let plan = prepare(&Config::default()).unwrap();
+        let declared: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(declared, ["main"]);
+        let output = plan.output("main").unwrap();
+        assert_eq!(output.single_icon("icon").unwrap(), "bell");
+    }
+
+    #[test]
+    fn custom_format_is_respected() {
+        let config = Config {
+            format: " $num ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        let output = plan.output("main").unwrap();
+        assert!(output.format().contains_key("num"));
+        assert!(!output.format().contains_key("icon"));
+    }
 }

@@ -56,9 +56,11 @@
 //! ```
 //!
 //! # Icons Used
-//! - `github`
+//! - `github` (`$icon`)
 
 use super::prelude::*;
+
+const ICON: &str = "github";
 
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(deny_unknown_fields, default)]
@@ -74,8 +76,35 @@ pub struct Config {
     pub critical: Option<Vec<String>>,
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let format = config.format.with_default(" $icon $total.eng(w:1) ")?;
+/// Stat placeholders [`get_stats`] inserts on every fetch (defaulting to
+/// zero), and which the plan therefore guarantees on every render.
+const STAT_KEYS: [&str; 13] = [
+    "total",
+    "assign",
+    "author",
+    "comment",
+    "ci_activity",
+    "invitation",
+    "manual",
+    "mention",
+    "review_requested",
+    "security_alert",
+    "state_change",
+    "subscribed",
+    "team_mention",
+];
+
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    let main = OutputPlan::new(
+        "main",
+        config.format.with_default(" $icon $total.eng(w:1) ")?,
+    )
+    .icon("icon", IconChoices::one(ICON));
+    BlockPlan::new(vec![main])
+}
+
+pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
+    let output_main = plan.output("main")?;
 
     let mut interval = config.interval.timer();
     let token = config
@@ -88,7 +117,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let stats = get_stats(&token).await?;
 
         if stats.get("total").is_some_and(|x| *x > 0) || !config.hide_if_total_is_zero {
-            let mut widget = Widget::new().with_format(format.clone());
+            let mut widget = output_main.new_widget();
 
             'outer: for (list_opt, ret) in [
                 (&config.critical, State::Critical),
@@ -110,7 +139,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 .into_iter()
                 .map(|(k, v)| (k.into(), Value::number(v)))
                 .collect();
-            values.insert("icon".into(), Value::icon("github"));
+            values.insert("icon".into(), Value::icon(ICON));
             widget.set_values(values);
 
             api.set_widget(widget)?;
@@ -145,19 +174,11 @@ async fn get_stats(token: &str) -> Result<HashMap<String, usize>> {
         }
     }
     stats.insert("total".into(), total);
-    stats.entry("total".into()).or_insert(0);
-    stats.entry("assign".into()).or_insert(0);
-    stats.entry("author".into()).or_insert(0);
-    stats.entry("comment".into()).or_insert(0);
-    stats.entry("ci_activity".into()).or_insert(0);
-    stats.entry("invitation".into()).or_insert(0);
-    stats.entry("manual".into()).or_insert(0);
-    stats.entry("mention".into()).or_insert(0);
-    stats.entry("review_requested".into()).or_insert(0);
-    stats.entry("security_alert".into()).or_insert(0);
-    stats.entry("state_change".into()).or_insert(0);
-    stats.entry("subscribed".into()).or_insert(0);
-    stats.entry("team_mention".into()).or_insert(0);
+    // Default every declared stat to zero so the plan's value guarantees
+    // hold on every render.
+    for key in STAT_KEYS {
+        stats.entry(key.into()).or_insert(0);
+    }
     Ok(stats)
 }
 
@@ -186,5 +207,31 @@ async fn get_on_page(token: &str, page: usize) -> Result<Vec<Notification>> {
     match response {
         Response::Notifications(n) => Ok(n),
         Response::ErrorMessage { message } => Err(Error::new(format!("API error: {message}"))),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_main_with_github_icon() {
+        let plan = prepare(&Config::default()).unwrap();
+        assert_eq!(plan.outputs().count(), 1);
+        let main = plan.output("main").unwrap();
+        assert_eq!(main.single_icon("icon").unwrap(), "github");
+        assert!(main.format().contains_key("total"));
+    }
+
+    #[test]
+    fn custom_format_is_used() {
+        let config = Config {
+            format: " $icon $mention.eng(w:1) ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        let main = plan.output("main").unwrap();
+        assert!(main.format().contains_key("mention"));
+        assert!(!main.format().contains_key("total"));
     }
 }
