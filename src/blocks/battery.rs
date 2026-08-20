@@ -61,15 +61,17 @@
 //! ```
 //!
 //! # Icons Used
-//! - `bat` (as a progression)
-//! - `bat_charging` (as a progression)
-//! - `bat_not_available`
+//! - `bat` (`$icon`, in `format` `full_format` `empty_format` `not_charging_format`, as a progression)
+//! - `bat_charging` (`$icon`, in `charging_format`, as a progression)
+//! - `bat_not_available` (`$icon`, in `missing_format`)
 
 use regex::Regex;
 use std::convert::Infallible;
 use std::str::FromStr;
 
 use super::prelude::*;
+
+const MISSING_ICON: &str = "bat_not_available";
 
 mod apc_ups;
 mod sysfs;
@@ -114,13 +116,36 @@ pub enum BatteryDriver {
     Upower,
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     let format = config.format.with_default(" $icon $percentage ")?;
-    let format_full = config.full_format.with_default(" $icon ")?;
-    let charging_format = config.charging_format.with_default_format(&format);
-    let format_empty = config.empty_format.with_default(" $icon ")?;
-    let format_not_charging = config.not_charging_format.with_default(" $icon ")?;
-    let missing_format = config.missing_format.with_default(" $icon ")?;
+    BlockPlan::new(vec![
+        OutputPlan::new("discharging", format.clone()).icon("icon", IconChoices::one("bat")),
+        OutputPlan::new(
+            "charging",
+            config.charging_format.with_default_format(&format),
+        )
+        .icon("icon", IconChoices::one("bat_charging")),
+        OutputPlan::new("full", config.full_format.with_default(" $icon ")?)
+            .icon("icon", IconChoices::one("bat")),
+        OutputPlan::new("empty", config.empty_format.with_default(" $icon ")?)
+            .icon("icon", IconChoices::one("bat")),
+        OutputPlan::new(
+            "not_charging",
+            config.not_charging_format.with_default(" $icon ")?,
+        )
+        .icon("icon", IconChoices::one("bat")),
+        OutputPlan::new("missing", config.missing_format.with_default(" $icon ")?)
+            .icon("icon", IconChoices::one(MISSING_ICON)),
+    ])
+}
+
+pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
+    let output_discharging = plan.output("discharging")?;
+    let output_charging = plan.output("charging")?;
+    let output_full = plan.output("full")?;
+    let output_empty = plan.output("empty")?;
+    let output_not_charging = plan.output("not_charging")?;
+    let output_missing = plan.output("missing")?;
 
     let dev_name = DeviceName::new(config.device.clone())?;
     let mut device: Box<dyn BatteryDevice + Send + Sync> = match config.driver {
@@ -150,15 +175,14 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         match info {
             Some(info) => {
-                let mut widget = Widget::new();
-
-                widget.set_format(match info.status {
-                    BatteryStatus::Empty => format_empty.clone(),
-                    BatteryStatus::Full => format_full.clone(),
-                    BatteryStatus::Charging => charging_format.clone(),
-                    BatteryStatus::NotCharging => format_not_charging.clone(),
-                    _ => format.clone(),
-                });
+                let output = match info.status {
+                    BatteryStatus::Empty => &output_empty,
+                    BatteryStatus::Full => &output_full,
+                    BatteryStatus::Charging => &output_charging,
+                    BatteryStatus::NotCharging => &output_not_charging,
+                    _ => &output_discharging,
+                };
+                let mut widget = output.new_widget();
 
                 let mut values = map!(
                     "percentage" => Value::percents(info.capacity)
@@ -219,10 +243,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 api.set_widget(widget)?;
             }
             None => {
-                let mut widget = Widget::new()
-                    .with_format(missing_format.clone())
-                    .with_state(State::Critical);
-                widget.set_values(map!("icon" => Value::icon("bat_not_available")));
+                let mut widget = output_missing.new_widget().with_state(State::Critical);
+                widget.set_values(map!("icon" => Value::icon(MISSING_ICON)));
                 api.set_widget(widget)?;
             }
         }
@@ -305,5 +327,71 @@ impl FromStr for BatteryStatus {
             "Not charging" => Self::NotCharging,
             _ => Self::Unknown,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn charging_format_inherits_configured_format() {
+        // With no explicit charging_format, charging must render whatever
+        // `format` resolved to — including a format with no $icon.
+        let config = Config {
+            format: " $percentage ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        assert!(
+            !plan
+                .output("charging")
+                .unwrap()
+                .format()
+                .contains_key("icon")
+        );
+
+        let plan = prepare(&Config::default()).unwrap();
+        assert!(
+            plan.output("charging")
+                .unwrap()
+                .format()
+                .contains_key("icon")
+        );
+    }
+
+    #[test]
+    fn explicit_charging_format_wins_over_inheritance() {
+        let config = Config {
+            format: " $percentage ".parse().unwrap(),
+            charging_format: " $icon ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        assert!(
+            plan.output("charging")
+                .unwrap()
+                .format()
+                .contains_key("icon")
+        );
+    }
+
+    #[test]
+    fn icons_are_state_specific() {
+        let plan = prepare(&Config::default()).unwrap();
+        for (id, icon) in [
+            ("discharging", "bat"),
+            ("charging", "bat_charging"),
+            ("full", "bat"),
+            ("empty", "bat"),
+            ("not_charging", "bat"),
+            ("missing", "bat_not_available"),
+        ] {
+            assert_eq!(
+                plan.output(id).unwrap().single_icon("icon").unwrap(),
+                icon,
+                "{id}"
+            );
+        }
     }
 }

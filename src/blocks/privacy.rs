@@ -157,21 +157,65 @@ trait PrivacyMonitor {
     async fn wait_for_change(&mut self) -> Result<()>;
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+/// The icon each icon-valued placeholder carries, per capture type.
+const TYPE_ICONS: [(Type, &str, &str); 5] = [
+    (Type::Audio, "icon_audio", "microphone"),
+    (Type::AudioSink, "icon_audio_sink", "volume"),
+    (Type::Video, "icon_video", "xrandr"),
+    (Type::Webcam, "icon_webcam", "webcam"),
+    (Type::Unknown, "icon_unknown", "unknown"),
+];
+
+impl PrivacyDriver {
+    /// The capture types this driver's monitor can report.
+    fn capture_types(&self) -> &'static [Type] {
+        match self {
+            #[cfg(feature = "pipewire")]
+            PrivacyDriver::Pipewire(_) => &[
+                Type::Audio,
+                Type::AudioSink,
+                Type::Video,
+                Type::Webcam,
+                Type::Unknown,
+            ],
+            PrivacyDriver::V4l(_) => &[Type::Webcam],
+        }
+    }
+}
+
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    let formats = config.formats.with_default_formats(&[
+        "{ $icon_audio |}{ $icon_audio_sink |}{ $icon_video |}{ $icon_webcam |}{ $icon_unknown |}"
+            .parse()?,
+        "{ $icon_audio $info_audio |}{ $icon_audio_sink $info_audio_sink |}{ $icon_video $info_video |}{ $icon_webcam $info_webcam |}{ $icon_unknown $info_unknown |}"
+            .parse()?,
+    ]);
+
+    // Only capture types some configured driver can actually report are
+    // declared: a V4L-only setup can never set the audio or video icons.
+    let declare = |mut output: OutputPlan| {
+        for (ty, placeholder, icon) in &TYPE_ICONS {
+            if config
+                .driver
+                .iter()
+                .any(|driver| driver.capture_types().contains(ty))
+            {
+                output = output.icon(placeholder, IconChoices::one(*icon));
+            }
+        }
+        output
+    };
+    BlockPlan::new(format_outputs(formats, declare))
+}
+
+pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, None, "next_format"),
         (MouseButton::Right, None, "prev_format"),
     ])?;
 
-    let mut formats = config
-        .formats
-        .with_default_formats(&[
-            "{ $icon_audio |}{ $icon_audio_sink |}{ $icon_video |}{ $icon_webcam |}{ $icon_unknown |}"
-                .parse()?,
-            "{ $icon_audio $info_audio |}{ $icon_audio_sink $info_audio_sink |}{ $icon_video $info_video |}{ $icon_webcam $info_webcam |}{ $icon_unknown $info_unknown |}"
-                .parse()?
-        ]);
+    let mut formats = FormatRotation::new(plan)?;
 
     let mut drivers: Vec<Box<dyn PrivacyMonitor + Send + Sync>> = Vec::new();
 
@@ -188,7 +232,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     }
 
     loop {
-        let mut widget = Widget::new().with_format(formats.get_format());
+        let output = formats.current();
+        let mut widget = output.new_widget();
 
         let mut info = PrivacyInfo::default();
         //Merge driver info
@@ -246,13 +291,129 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             _ = select_all(drivers.iter_mut().map(|driver| driver.wait_for_change())) =>(),
             Some(action) = actions.recv() => match action.as_ref() {
                 "next_format" | "toggle_format" => {
-                    formats.next_format();
+                    formats.next();
                 }
                 "prev_format" => {
-                    formats.prev_format();
+                    formats.prev();
                 }
                 _ => (),
             }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn config() -> Config {
+        Config {
+            formats: Default::default(),
+            driver: Vec::new(),
+        }
+    }
+
+    fn config_with_drivers(toml_drivers: &str) -> Config {
+        toml::from_str(toml_drivers).unwrap()
+    }
+
+    #[test]
+    fn plan_declares_driver_reachable_icons_on_both_outputs() {
+        // A V4L-only configuration can only ever report webcam capture.
+        let config = config_with_drivers("[[driver]]\nname = \"v4l\"");
+        let plan = prepare(&config).unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["format", "format2"]);
+        for id in ids {
+            let output = plan.output(id).unwrap();
+            assert_eq!(output.single_icon("icon_webcam").unwrap(), "webcam");
+            assert_eq!(
+                output.output().icon_placeholders().count(),
+                1,
+                "{id} must declare only V4L-reachable icons"
+            );
+        }
+    }
+
+    #[cfg(feature = "pipewire")]
+    #[test]
+    fn pipewire_declares_every_type_icon() {
+        let config = config_with_drivers("[[driver]]\nname = \"pipewire\"");
+        let plan = prepare(&config).unwrap();
+        for id in ["format", "format2"] {
+            let output = plan.output(id).unwrap();
+            for (_, placeholder, icon) in &TYPE_ICONS {
+                assert_eq!(
+                    output.single_icon(placeholder).unwrap(),
+                    *icon,
+                    "{id} must declare {icon} for ${placeholder}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn every_capture_type_has_a_declared_icon() {
+        // Drift test: the exhaustive match stops compiling when a `Type`
+        // variant is added, forcing TYPE_ICONS (and the value mapping in
+        // `run()`) to be extended in lockstep.
+        let types = [
+            Type::Audio,
+            Type::AudioSink,
+            Type::Video,
+            Type::Webcam,
+            Type::Unknown,
+        ];
+        assert_eq!(types.len(), TYPE_ICONS.len());
+        for type_ in types {
+            let (placeholder, icon) = match type_ {
+                Type::Audio => ("icon_audio", "microphone"),
+                Type::AudioSink => ("icon_audio_sink", "volume"),
+                Type::Video => ("icon_video", "xrandr"),
+                Type::Webcam => ("icon_webcam", "webcam"),
+                Type::Unknown => ("icon_unknown", "unknown"),
+            };
+            assert!(
+                TYPE_ICONS
+                    .iter()
+                    .any(|(t, p, i)| *t == type_ && *p == placeholder && *i == icon)
+            );
+        }
+    }
+
+    #[test]
+    fn the_second_default_format_is_the_detailed_one() {
+        let plan = prepare(&config()).unwrap();
+        assert!(
+            !plan
+                .output("format")
+                .unwrap()
+                .format()
+                .contains_key("info_audio")
+        );
+        assert!(
+            plan.output("format2")
+                .unwrap()
+                .format()
+                .contains_key("info_audio")
+        );
+    }
+
+    #[test]
+    fn every_configured_format_becomes_an_output() {
+        let config: Config = toml::from_str(
+            "format = [\"{ $icon_webcam |}\", \"{ $icon_webcam $info_webcam |}\"]\n\
+             [[driver]]\nname = \"v4l\"",
+        )
+        .unwrap();
+        let plan = prepare(&config).unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["format", "format2"]);
+        for id in ids {
+            assert_eq!(
+                plan.output(id).unwrap().single_icon("icon_webcam").unwrap(),
+                "webcam"
+            );
         }
     }
 }

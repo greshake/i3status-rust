@@ -79,6 +79,9 @@ use tokio::io::{AsyncBufReadExt as _, BufReader};
 use super::prelude::*;
 use crate::util::read_file;
 
+const ICON: &str = "memory_mem";
+const ICON_SWAP: &str = "memory_swap";
+
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(default)]
 pub struct Config {
@@ -96,16 +99,28 @@ pub struct Config {
     pub critical_swap: f64,
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    // Both icons are available in every format, and every numeric value
+    // below is inserted on every render.
+    let icons = |output: OutputPlan| {
+        output
+            .icon("icon", IconChoices::one(ICON))
+            .icon("icon_swap", IconChoices::one(ICON_SWAP))
+    };
+    let formats = config.formats.with_default(
+        " $icon $mem_used.eng(prefix:Mi)/$mem_total.eng(prefix:Mi)($mem_used_percents.eng(w:2)) ",
+    )?;
+    BlockPlan::new(format_outputs(formats, icons))
+}
+
+pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, None, "next_format"),
         (MouseButton::Right, None, "prev_format"),
     ])?;
 
-    let mut formats = config.formats.with_default(
-        " $icon $mem_used.eng(prefix:Mi)/$mem_total.eng(prefix:Mi)($mem_used_percents.eng(w:2)) ",
-    )?;
+    let mut formats = FormatRotation::new(plan)?;
 
     let mut timer = config.interval.timer();
 
@@ -179,10 +194,11 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             0.0
         };
 
-        let mut widget = Widget::new().with_format(formats.get_format());
+        let output = formats.current();
+        let mut widget = output.new_widget();
         widget.set_values(map! {
-            "icon" => Value::icon("memory_mem"),
-            "icon_swap" => Value::icon("memory_swap"),
+            "icon" => Value::icon(ICON),
+            "icon_swap" => Value::icon(ICON_SWAP),
             "mem_total" => Value::bytes(mem_total),
             "mem_free" => Value::bytes(mem_free),
             "mem_free_percents" => Value::percents(mem_free / mem_total * 100.),
@@ -238,11 +254,11 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 _ = api.wait_for_update_request() => break,
                 Some(action) = actions.recv() => match action.as_ref() {
                     "next_format" | "toggle_format" => {
-                        formats.next_format();
+                        formats.next();
                         break;
                     }
                     "prev_format" => {
-                        formats.prev_format();
+                        formats.prev();
                         break;
                     }
                     _ => (),
@@ -379,5 +395,37 @@ impl Memstate {
         }
 
         Ok(mem_state)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_both_memory_icons() {
+        let plan = prepare(&Config::default()).unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["format"]);
+        let format = plan.output("format").unwrap();
+        assert_eq!(format.single_icon("icon").unwrap(), "memory_mem");
+        assert_eq!(format.single_icon("icon_swap").unwrap(), "memory_swap");
+        assert!(format.format().contains_key("mem_used"));
+    }
+
+    #[test]
+    fn every_configured_format_declares_both_icons() {
+        let plan = prepare(&Config::default()).unwrap();
+        assert!(plan.output("format2").is_err());
+
+        let config: Config =
+            toml::from_str(r#"format = [" $icon $mem_used ", " $icon_swap $swap_used "]"#).unwrap();
+        let plan = prepare(&config).unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["format", "format2"]);
+        let second = plan.output("format2").unwrap();
+        assert!(second.format().contains_key("swap_used"));
+        assert_eq!(second.single_icon("icon").unwrap(), "memory_mem");
+        assert_eq!(second.single_icon("icon_swap").unwrap(), "memory_swap");
     }
 }

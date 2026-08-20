@@ -135,10 +135,10 @@
 //! # Icons Used
 //! - `music`
 //! - `music_next`
-//! - `music_play`
+//! - `music_pause` (`$play`)
+//! - `music_play` (`$play`)
 //! - `music_prev`
-//! - `volume_muted`
-//! - `volume` (as a progression)
+//! - `volume` (`$volume_icon`, as a progression)
 //!
 //! [MediaPlayer2 Interface]: https://specifications.freedesktop.org/mpris-spec/latest/Player_Interface.html
 
@@ -150,6 +150,10 @@ use std::fmt;
 use zbus::fdo::{DBusProxy, NameOwnerChanged, PropertiesChanged};
 use zbus::names::{OwnedBusName, OwnedUniqueName};
 use zbus::{MatchRule, MessageStream};
+
+const ICON: &str = "music";
+const NEXT_ICON: &str = "music_next";
+const PREV_ICON: &str = "music_prev";
 
 mod zbus_mpris;
 mod zbus_playerctld;
@@ -186,7 +190,24 @@ pub enum PlayerName {
     Multiple(Vec<String>),
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    let declare = |output: OutputPlan| {
+        output
+            .icon("icon", IconChoices::one(ICON))
+            .icon("play", IconChoices::fixed(["music_play", "music_pause"]))
+            .icon("next", IconChoices::one(NEXT_ICON))
+            .icon("prev", IconChoices::one(PREV_ICON))
+            .icon("volume_icon", IconChoices::one("volume"))
+        // `icon` is the only value set both with and without a player;
+        // everything else (buttons, player info, volume) is conditional.
+    };
+    let formats = config
+        .formats
+        .with_default(" $icon {$combo.str(max_w:25,rot_interval:0.5) $play |}")?;
+    BlockPlan::new(format_outputs(formats, declare))
+}
+
+pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, Some(PLAY_PAUSE_BTN), "play_pause"),
@@ -200,9 +221,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     let dbus_conn = new_dbus_connection().await?;
 
-    let mut formats = config
-        .formats
-        .with_default(" $icon {$combo.str(max_w:25,rot_interval:0.5) $play |}")?;
+    let mut formats = FormatRotation::new(plan)?;
 
     let volume_step = config.volume_step.clamp(0.0, 50.0) / 100.0;
 
@@ -216,16 +235,6 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         .unwrap_or(config.seek_step_secs)
         .0
         .as_micros() as i64);
-
-    let new_btn = |icon: &str, instance: &'static str| -> Result<Value> {
-        Ok(Value::icon(icon.to_string()).with_instance(instance))
-    };
-
-    let values = map! {
-        "icon" => Value::icon("music"),
-        "next" => new_btn("music_next", NEXT_BTN)?,
-        "prev" => new_btn("music_prev", PREV_BTN)?,
-    };
 
     let preferred_players = match config.player.clone() {
         PlayerName::Single(name) => vec![name],
@@ -305,10 +314,15 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         debug!("available players: {}", DisplaySlice(&players));
 
         let avail = players.len();
+        let output = formats.current();
         let player = cur_player.map(|c| players.get_mut(c).unwrap());
         match player {
             Some(player) => {
-                let mut values = values.clone();
+                let mut values = map! {
+                    "icon" => Value::icon(ICON),
+                    "next" => Value::icon(NEXT_ICON).with_instance(NEXT_BTN),
+                    "prev" => Value::icon(PREV_ICON).with_instance(PREV_BTN),
+                };
                 values.insert("avail".into(), Value::number(avail));
                 values.insert("cur".into(), Value::number(cur_player.unwrap() + 1));
                 values.insert(
@@ -323,7 +337,10 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     Some(PlaybackStatus::Playing) => (State::Info, "music_pause"),
                     _ => (State::Idle, "music_play"),
                 };
-                values.insert("play".into(), new_btn(play_icon, PLAY_PAUSE_BTN)?);
+                values.insert(
+                    "play".into(),
+                    Value::icon(play_icon).with_instance(PLAY_PAUSE_BTN),
+                );
                 if let Some(url) = &player.metadata.url {
                     values.insert("url".into(), Value::text(url.clone()));
                 }
@@ -360,14 +377,14 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     );
                     values.insert("volume".into(), Value::percents(volume * 100.0));
                 }
-                let mut widget = Widget::new().with_format(formats.get_format());
+                let mut widget = output.new_widget();
                 widget.set_values(values);
                 widget.state = state;
                 api.set_widget(widget)?;
             }
             None => {
-                let mut widget = Widget::new().with_format(formats.get_format());
-                widget.set_values(map!("icon" => Value::icon("music")));
+                let mut widget = output.new_widget();
+                widget.set_values(map!("icon" => Value::icon(ICON)));
                 api.set_widget(widget)?;
             }
         }
@@ -486,11 +503,11 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                                 player.set_volume(-volume_step).await?;
                             }
                             "next_format" | "toggle_format" => {
-                                formats.next_format();
+                                formats.next();
                                 break;
                             }
                             "prev_format" => {
-                                formats.prev_format();
+                                formats.prev();
                                 break;
                             }
                             _ => (),
@@ -697,5 +714,45 @@ mod tests {
             &[],
             &exclude
         ));
+    }
+
+    #[test]
+    fn plan_declares_every_icon_placeholder() {
+        let plan = prepare(&Config::default()).unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["format"]);
+
+        let main = plan.output("format").unwrap();
+        assert_eq!(main.single_icon("icon").unwrap(), "music");
+        assert_eq!(main.single_icon("next").unwrap(), "music_next");
+        assert_eq!(main.single_icon("prev").unwrap(), "music_prev");
+        assert_eq!(main.single_icon("volume_icon").unwrap(), "volume");
+
+        // $play carries either button icon depending on playback status.
+        let play = main.output().choices_for("play").unwrap();
+        assert!(play.permits("music_play"));
+        assert!(play.permits("music_pause"));
+        assert!(!play.permits("music"));
+    }
+
+    #[test]
+    fn every_configured_format_becomes_an_output() {
+        let config: Config =
+            toml::from_str(r#"format = [" $icon $combo ", " $icon $player "]"#).unwrap();
+        let plan = prepare(&config).unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["format", "format2"]);
+
+        // Every format the user can rotate to carries the same icon set.
+        let second = plan.output("format2").unwrap();
+        assert!(second.format().contains_key("player"));
+        assert_eq!(second.single_icon("icon").unwrap(), "music");
+        assert!(
+            second
+                .output()
+                .choices_for("play")
+                .unwrap()
+                .permits("music_pause")
+        );
     }
 }
