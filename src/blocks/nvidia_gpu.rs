@@ -10,6 +10,10 @@
 //!
 //! Requires `nvidia-smi` for displaying info and `nvidia_settings` for setting fan speed.
 //!
+//! On laptops with switchable graphics, `nvidia-smi` powers on the dedicated GPU every time it
+//! runs, which keeps the GPU awake and raises power consumption. Increase `interval` or avoid this
+//! block if that matters on battery.
+//!
 //! # Configuration
 //!
 //! Key | Values | Default
