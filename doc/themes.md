@@ -155,6 +155,11 @@ Feel free to take a look at the provided color schemes for reference.
 * `end_separator`
 * `start_separator`
 
+Theme overrides can also be set per block via `[block.theme_overrides]`. Since
+separators are drawn *between* blocks, a separator takes the settings from the
+theme of the block it precedes, and `end_separator` takes them from the last
+block's theme.
+
 # Available icon overrides
 
 These can be directly set to a string containing the desired unicode codepoint(s) or use a TOML escape sequence like `"\uf0f3"` for up to 4-nibble codepoints and `"\U0001f312"` for up to 8-nibble codepoints.
