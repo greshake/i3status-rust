@@ -20,7 +20,7 @@ mod netlink;
 pub mod pipewire;
 pub mod protocol;
 mod signals;
-mod subprocess;
+pub mod subprocess;
 pub mod themes;
 pub mod widget;
 mod wrappers;
@@ -36,7 +36,6 @@ use std::time::Duration;
 
 use futures::Stream;
 use futures::stream::{FuturesUnordered, StreamExt as _};
-use tokio::process::Command;
 use tokio::sync::{Notify, mpsc};
 
 use crate::blocks::{BlockAction, BlockError, CommonApi, RESTART_BLOCK_BTN};
@@ -48,6 +47,7 @@ use crate::formatting::value::Value;
 use crate::protocol::i3bar_block::I3BarBlock;
 use crate::protocol::i3bar_event::{self, I3BarEvent};
 use crate::signals::Signal;
+use crate::subprocess::get_output;
 use crate::widget::{State, Widget};
 
 const APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
@@ -244,9 +244,7 @@ impl BarState {
     pub async fn spawn_block(&mut self, block_config: BlockConfigEntry) -> Result<()> {
         if let Some(cmd) = &block_config.common.if_command {
             // TODO: async
-            if !Command::new("sh")
-                .args(["-c", cmd])
-                .output()
+            if !get_output(cmd)
                 .await
                 .error("failed to run if_command")?
                 .status

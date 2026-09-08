@@ -3,7 +3,6 @@ use std::path::{Path, PathBuf};
 use dirs::{config_dir, data_dir};
 use serde::de::DeserializeOwned;
 use tokio::io::AsyncReadExt as _;
-use tokio::process::Command;
 
 use crate::errors::*;
 
@@ -152,15 +151,10 @@ pub async fn read_file(path: impl AsRef<Path>) -> std::io::Result<String> {
 }
 
 pub async fn has_command(command: &str) -> Result<bool> {
-    Command::new("sh")
-        .args([
-            "-c",
-            format!("command -v {command} >/dev/null 2>&1").as_ref(),
-        ])
-        .status()
+    get_output(format!("command -v {command} >/dev/null 2>&1").as_ref())
         .await
         .or_error(|| format!("Failed to check {command} presence"))
-        .map(|status| status.success())
+        .map(|output| output.status.success())
 }
 
 /// # Example
@@ -210,6 +204,7 @@ macro_rules! map {
     }};
 }
 
+use crate::subprocess::get_output;
 pub use map;
 
 macro_rules! regex {
@@ -333,15 +328,18 @@ impl<T: futures::StreamExt + Unpin> StreamExtDebounced for T {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::subprocess::{SubprocessConfig, subprocess_init};
 
     #[tokio::test]
     async fn test_has_command_ok() {
+        let _ = subprocess_init(&SubprocessConfig::default(), "");
         // we assume sh is always available
         assert!(has_command("sh").await.unwrap());
     }
 
     #[tokio::test]
     async fn test_has_command_err() {
+        let _ = subprocess_init(&SubprocessConfig::default(), "");
         // we assume thequickbrownfoxjumpsoverthelazydog command does not exist
         assert!(
             !has_command("thequickbrownfoxjumpsoverthelazydog")

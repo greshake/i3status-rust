@@ -9,6 +9,7 @@ use crate::errors::*;
 use crate::formatting::config::Config as FormatConfig;
 use crate::geolocator::Geolocator;
 use crate::icons::{Icon, Icons};
+use crate::subprocess::SubprocessConfig;
 use crate::themes::{Theme, ThemeOverrides, ThemeUserConfig};
 
 #[derive(Deserialize, Debug)]
@@ -32,6 +33,9 @@ pub struct Config {
     pub error_format: FormatConfig,
     #[serde(default = "default_error_fullscreen")]
     pub error_fullscreen_format: FormatConfig,
+
+    #[serde(default)]
+    pub subprocess: SubprocessConfig,
 
     #[serde(default)]
     #[serde(rename = "block")]

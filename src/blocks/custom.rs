@@ -96,6 +96,7 @@
 //! - Use `shellexpand`
 
 use crate::formatting::Format;
+use crate::subprocess::{CommandExt as _, get_output, get_shell};
 
 use super::prelude::*;
 use inotify::{Inotify, WatchMask};
@@ -190,11 +191,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         }
     };
 
-    let shell = config
-        .shell
-        .clone()
-        .or_else(|| std::env::var("SHELL").ok())
-        .unwrap_or_else(|| "sh".to_string());
+    let shell = config.shell.clone().unwrap_or_else(get_shell);
 
     if config.persistent {
         let mut process = Command::new(&shell)
@@ -208,6 +205,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             .stdout(Stdio::piped())
             .stdin(Stdio::null())
             .kill_on_drop(true)
+            .with_environment()
+            .error("Could not add environment to child process")?
             .spawn()
             .error("failed to run command")?;
 
@@ -250,12 +249,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         loop {
             // Run command
-            let output = Command::new(&shell)
-                .args(["-c", &cmd])
-                .stdin(Stdio::null())
-                .output()
-                .await
-                .error("failed to run command")?;
+            let output = get_output(&cmd).await.error("failed to run command")?;
             let stdout = std::str::from_utf8(&output.stdout)
                 .error("the output of command is invalid UTF-8")?
                 .trim();
