@@ -2,6 +2,7 @@
 
 ### New Blocks and Features
 
+* `calendar`: added support for direct iCalendar (`.ics`) feeds
 * `packages`: added support for `zypper` (#2254)
 
 ### Bug Fixes and Improvements
