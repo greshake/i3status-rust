@@ -19,3 +19,7 @@ clap_mangen = "0.2"
 pandoc = "0.8"
 
 i3status-rs = { path = "..", default-features = false }
+kurbo = "0.13.1"
+usvg = "0.48.1"
+tiny-skia-path = "0.12.0"
+write-fonts = "0.51.0"
