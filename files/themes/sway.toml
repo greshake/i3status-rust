@@ -15,6 +15,6 @@ info_fg = "#FFFFFF"
 #alternating_tint_fg = ""
 separator_bg = "auto"
 separator_fg = "auto"
-separator = "\ue0b2" # Looks weird with monospace 10, the default font
+separator = "\ue0b2"
 #end_separator = ""
 #start_separator = ""
