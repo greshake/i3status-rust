@@ -18,3 +18,23 @@ separator_fg = "auto"
 separator = "\ue0b2"
 #end_separator = ""
 #start_separator = ""
+
+# alt-sway.toml
+# A theme for i3status-rust which uses Sway's default workspace colors.
+# This is an edit of sway.toml that uses a less problematic separator.
+#
+#idle_bg = "#000000"
+#idle_fg = "#888888"
+#good_bg = "#000000"
+#good_fg = "#FFFFFF"
+#warning_fg = "#900000"
+#warning_bg = "#000000"
+#critical_fg = "#900000"
+#critical_bg = "#000000"
+#info_bg = "#000000"
+#info_fg = "#4C7899"
+#separator_fg="#333333"
+#separator_bg="#000000"
+#separator = "|"
+#start_separator = ""
+#end_separator = ""
