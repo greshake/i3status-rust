@@ -5,6 +5,7 @@
 //! Supports all music players that implement the [MediaPlayer2 Interface]. This includes:
 //!
 //! - Spotify
+//! - QBZ
 //! - VLC
 //! - mpd (via [mpDris2](https://github.com/eonpatapon/mpDris2))
 //!
@@ -75,6 +76,15 @@
 //! block = "music"
 //! format = " $icon {$combo.str(max_w:20) $play $next |}"
 //! player = "spotify"
+//! ```
+//!
+//! Same thing for QBZ. Note that QBZ's MPRIS bus name is `com.blitzfc.qbz`, not just `qbz`:
+//!
+//! ```toml
+//! [[block]]
+//! block = "music"
+//! format = " $icon {$combo.str(max_w:20) $play $next |}"
+//! player = "com.blitzfc.qbz"
 //! ```
 //!
 //! Same thing for any compatible player, takes the first active on the bus, but ignores "mpd" or anything with "kdeconnect" in the name:
