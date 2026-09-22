@@ -1,20 +1,16 @@
 # sway.toml
 # A theme for i3status-rust which uses Sway's default workspace colors.
 
-idle_bg = "#222222"
-idle_fg = "#888888"
-good_bg = "#5F676A"
-good_fg = "#FFFFFF"
-warning_bg = "#900000"
-warning_fg = "#FFFFFF"
-critical_bg = "#900000"
-critical_fg = "#FFFFFF"
-info_bg = "#285577"
-info_fg = "#FFFFFF"
-#alternating_tint_bg = ""
-#alternating_tint_fg = ""
+idle_bg = "#222222"     # inactive_workspace.background
+idle_fg = "#888888"     # inactive_workspace.text
+good_bg = "#285577"     # focused_workspace.background
+good_fg = "#FFFFFF"     # focused_workspace.text
+warning_bg = "#5F676A"  # active_workspace.background
+warning_fg = "#FFFFFF"  # active_workspace.text
+critical_bg = "#900000" # urgent_workspace.background
+critical_fg = "#FFFFFF" # urgent_workspace.text
+info_bg = "#285577"     # focused_workspace.background
+info_fg = "#FFFFFF"     # focused_workspace.text
 separator_bg = "auto"
 separator_fg = "auto"
 separator = "\ue0b2"
-#end_separator = ""
-#start_separator = ""
