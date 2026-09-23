@@ -6,7 +6,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders | `" $text |"`
+//! `format` | A string to customise the output of this block. See below for available placeholders | `" $text \|"`
 //! `show_time` | Whether to show recorded time. | `false`
 //! `state_path` | Path to the Watson state file. Supports path expansions e.g. `~`. | `$XDG_CONFIG_HOME/watson/state`
 //! `interval` | Update interval, in seconds. | `60`
