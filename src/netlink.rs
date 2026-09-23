@@ -87,13 +87,13 @@ impl NetDevice {
             });
 
         let icon = if wifi_info.is_some() {
-            "net_wireless"
+            crate::icons::NET_WIRELESS
         } else if tun || wg || ppp {
-            "net_vpn"
+            crate::icons::NET_VPN
         } else if iface.name == "lo" {
-            "net_loopback"
+            crate::icons::NET_LOOPBACK
         } else {
-            "net_wired"
+            crate::icons::NET_WIRED
         };
 
         Ok(Some(Self {

@@ -102,11 +102,11 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 }
 
                 let mut values = map! {
-                    [if info.connected] "icon" => Value::icon("phone"),
-                    [if !info.connected] "icon" => Value::icon("phone_disconnected"),
+                    [if info.connected] "icon" => Value::icon(icons::PHONE),
+                    [if !info.connected] "icon" => Value::icon(icons::PHONE_DISCONNECTED),
                     [if let Some(name) = info.name] "name" => Value::text(name),
                     [if info.notifications > 0] "notif_count" => Value::number(info.notifications),
-                    [if info.notifications > 0] "notif_icon" => Value::icon("notification"),
+                    [if info.notifications > 0] "notif_icon" => Value::icon(icons::NOTIFICATION),
                     [if let Some(bat) = info.bat_level] "bat_charge" => Value::percents(bat),
                 };
 
@@ -114,7 +114,11 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     values.insert(
                         "bat_icon".into(),
                         Value::icon_progression(
-                            if info.charging { "bat_charging" } else { "bat" },
+                            if info.charging {
+                                icons::BAT_CHARGING
+                            } else {
+                                icons::BAT
+                            },
                             bat_level as f64 / 100.0,
                         ),
                     );
@@ -150,7 +154,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     values.insert(
                         "network_icon".into(),
                         Value::icon_progression(
-                            "net_cellular",
+                            icons::NET_CELLULAR,
                             (info.cellular_network_strength + 1).clamp(0, 5) as f64 / 5.0,
                         ),
                     );
@@ -172,7 +176,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             }
             None => {
                 let mut widget = Widget::new().with_format(missing_format.clone());
-                widget.set_values(map! { "icon" => Value::icon("phone_disconnected") });
+                widget.set_values(map! { "icon" => Value::icon(icons::PHONE_DISCONNECTED) });
                 api.set_widget(widget)?;
             }
         }

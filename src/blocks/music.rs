@@ -222,9 +222,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     };
 
     let values = map! {
-        "icon" => Value::icon("music"),
-        "next" => new_btn("music_next", NEXT_BTN)?,
-        "prev" => new_btn("music_prev", PREV_BTN)?,
+        "icon" => Value::icon(icons::MUSIC),
+        "next" => new_btn(icons::MUSIC_NEXT, NEXT_BTN)?,
+        "prev" => new_btn(icons::MUSIC_PREV, PREV_BTN)?,
     };
 
     let preferred_players = match config.player.clone() {
@@ -320,8 +320,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     ),
                 );
                 let (state, play_icon) = match player.status {
-                    Some(PlaybackStatus::Playing) => (State::Info, "music_pause"),
-                    _ => (State::Idle, "music_play"),
+                    Some(PlaybackStatus::Playing) => (State::Info, icons::MUSIC_PAUSE),
+                    _ => (State::Idle, icons::MUSIC_PLAY),
                 };
                 values.insert("play".into(), new_btn(play_icon, PLAY_PAUSE_BTN)?);
                 if let Some(url) = &player.metadata.url {
@@ -356,7 +356,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 if let Some(volume) = player.volume {
                     values.insert(
                         "volume_icon".into(),
-                        Value::icon_progression("volume", volume),
+                        Value::icon_progression(icons::VOLUME, volume),
                     );
                     values.insert("volume".into(), Value::percents(volume * 100.0));
                 }
@@ -367,7 +367,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             }
             None => {
                 let mut widget = Widget::new().with_format(formats.get_format());
-                widget.set_values(map!("icon" => Value::icon("music")));
+                widget.set_values(map!("icon" => Value::icon(icons::MUSIC)));
                 api.set_widget(widget)?;
             }
         }

@@ -154,7 +154,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         let percentage = result / (total as f64) * 100.;
         widget.set_values(map! {
-            "icon" => Value::icon("disk_drive"),
+            "icon" => Value::icon(icons::DISK_DRIVE),
             "path" => Value::text(path.to_string()),
             "percentage" => Value::percents(percentage),
             "total" => Value::bytes(total as f64),

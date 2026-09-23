@@ -208,31 +208,31 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         if let Some(info_by_type) = info.get(&Type::Audio) {
             map! { @extend values
-                "icon_audio" => Value::icon("microphone"),
+                "icon_audio" => Value::icon(icons::MICROPHONE),
                 "info_audio" => Value::text(info_by_type.to_string())
             }
         }
         if let Some(info_by_type) = info.get(&Type::AudioSink) {
             map! { @extend values
-                "icon_audio_sink" => Value::icon("volume"),
+                "icon_audio_sink" => Value::icon(icons::VOLUME),
                 "info_audio_sink" => Value::text(info_by_type.to_string())
             }
         }
         if let Some(info_by_type) = info.get(&Type::Video) {
             map! { @extend values
-                "icon_video" => Value::icon("xrandr"),
+                "icon_video" => Value::icon(icons::XRANDR),
                 "info_video" => Value::text(info_by_type.to_string())
             }
         }
         if let Some(info_by_type) = info.get(&Type::Webcam) {
             map! { @extend values
-                "icon_webcam" => Value::icon("webcam"),
+                "icon_webcam" => Value::icon(icons::WEBCAM),
                 "info_webcam" => Value::text(info_by_type.to_string())
             }
         }
         if let Some(info_by_type) = info.get(&Type::Unknown) {
             map! { @extend values
-                "icon_unknown" => Value::icon("unknown"),
+                "icon_unknown" => Value::icon(icons::UNKNOWN),
                 "info_unknown" => Value::text(info_by_type.to_string())
             }
         }

@@ -313,7 +313,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     loop {
         let mut widget = Widget::new().with_format(no_events_format.clone());
         widget.set_values(map! {
-            "icon" => Value::icon("calendar"),
+            "icon" => Value::icon(icons::CALENDAR),
         });
 
         if matches!(widget_status, WidgetStatus::FetchSources) {
@@ -373,7 +373,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 widget.set_format(next_event_format.clone());
             }
             widget.set_values(map! {
-                  "icon" => Value::icon("calendar"),
+                  "icon" => Value::icon(icons::CALENDAR),
                    [if let Some(summary) = event.summary] "summary" => Value::text(summary),
                    [if let Some(description) = event.description] "description" => Value::text(description),
                    [if let Some(location) = event.location] "location" => Value::text(location),

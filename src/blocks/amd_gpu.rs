@@ -76,7 +76,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let info = device.read_info().await?;
 
         widget.set_values(map! {
-            "icon" => Value::icon("gpu"),
+            "icon" => Value::icon(icons::GPU),
             "utilization" => Value::percents(info.utilization_percents),
             "vram_total" => Value::bytes(info.vram_total_bytes),
             "vram_used" => Value::bytes(info.vram_used_bytes),

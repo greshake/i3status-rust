@@ -65,8 +65,8 @@ use super::prelude::*;
 use tokio::{join, try_join};
 use zbus::proxy::PropertyStream;
 
-const ICON_ON: &str = "bell";
-const ICON_OFF: &str = "bell-slash";
+const ICON_ON: &str = icons::BELL;
+const ICON_OFF: &str = icons::BELL_SLASH;
 
 #[derive(Deserialize, Debug, Default)]
 #[serde(deny_unknown_fields, default)]

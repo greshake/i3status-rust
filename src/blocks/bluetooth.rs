@@ -113,7 +113,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     "available" => Value::flag(),
                     [if let Some(p) = device.battery_percentage] "percentage" => Value::percents(p),
                     [if let Some(p) = device.battery_percentage]
-                        "battery_icon" => Value::icon_progression("bat", p as f64 / 100.0),
+                        "battery_icon" => Value::icon_progression(icons::BAT, p as f64 / 100.0),
                 };
 
                 if device.connected {
@@ -134,7 +134,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             None => {
                 debug!("Showing device as unavailable");
                 let mut widget = Widget::new().with_format(disconnected_format.clone());
-                widget.set_values(map!("icon" => Value::icon("bluetooth")));
+                widget.set_values(map!("icon" => Value::icon(icons::BLUETOOTH)));
                 api.set_widget(widget)?;
             }
         }
@@ -305,11 +305,11 @@ impl DeviceMonitor {
 
         //icon can be null, so ignore errors when fetching it
         let icon: &str = match device.device.icon().await.ok().as_deref() {
-            Some("audio-card" | "audio-headset" | "audio-headphones") => "headphones",
-            Some("input-gaming") => "joystick",
-            Some("input-keyboard") => "keyboard",
-            Some("input-mouse") => "mouse",
-            _ => "bluetooth",
+            Some("audio-card" | "audio-headset" | "audio-headphones") => icons::HEADPHONES,
+            Some("input-gaming") => icons::JOYSTICK,
+            Some("input-keyboard") => icons::KEYBOARD,
+            Some("input-mouse") => icons::MOUSE,
+            _ => icons::BLUETOOTH,
         };
 
         Some(DeviceInfo {

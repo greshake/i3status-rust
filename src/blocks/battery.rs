@@ -182,15 +182,15 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 });
 
                 let (icon_name, icon_value, state) = match (info.status, info.capacity) {
-                    (BatteryStatus::Empty, _) => ("bat", 0.0, State::Critical),
+                    (BatteryStatus::Empty, _) => (icons::BAT, 0.0, State::Critical),
                     (BatteryStatus::Full | BatteryStatus::NotCharging, _) => {
-                        ("bat", 1.0, State::Idle)
+                        (icons::BAT, 1.0, State::Idle)
                     }
                     (status, capacity) => (
                         if status == BatteryStatus::Charging {
-                            "bat_charging"
+                            icons::BAT_CHARGING
                         } else {
-                            "bat"
+                            icons::BAT
                         },
                         capacity / 100.0,
                         if status == BatteryStatus::Charging {
@@ -222,7 +222,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 let mut widget = Widget::new()
                     .with_format(missing_format.clone())
                     .with_state(State::Critical);
-                widget.set_values(map!("icon" => Value::icon("bat_not_available")));
+                widget.set_values(map!("icon" => Value::icon(icons::BAT_NOT_AVAILABLE)));
                 api.set_widget(widget)?;
             }
         }

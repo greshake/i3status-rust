@@ -7,7 +7,7 @@ EXITCODE=0
 
 for f in files/icons/*.toml; do
     echo == Verifying $f ==
-    comm -3 <(sed -n '/impl Default for Icons {/, /}/p' src/icons.rs | awk -F '"' '/=>/ {print $2}' | sort) <(awk '!/^#/ && /=/ {print $1}' $f | sort) > $TMP
+    comm -3 <(sed -n '/^icon_keys! {/, /^}/p' src/icons.rs | awk -F '"' '/=/ {print $2}' | sort) <(awk '!/^#/ && /=/ {print $1}' $f | sort) > $TMP
     if [ -s $TMP ]; then
         echo "Found the following conflicts❗"
         cat $TMP

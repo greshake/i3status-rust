@@ -87,8 +87,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let interval = config.interval.map(Duration::from_secs);
     let mut widget = Widget::new().with_format(config.format.with_default(" $icon ")?);
 
-    let icon_on = config.icon_on.as_deref().unwrap_or("toggle_on");
-    let icon_off = config.icon_off.as_deref().unwrap_or("toggle_off");
+    let icon_on = config.icon_on.as_deref().unwrap_or(icons::TOGGLE_ON);
+    let icon_off = config.icon_off.as_deref().unwrap_or(icons::TOGGLE_OFF);
 
     let shell = env::var("SHELL").unwrap_or_else(|_| "sh".to_string());
 

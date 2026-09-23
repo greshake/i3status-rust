@@ -218,18 +218,18 @@ enum WeatherIcon {
 impl WeatherIcon {
     fn to_icon_str(self) -> &'static str {
         match self {
-            Self::Clear { is_night: false } => "weather_sun",
-            Self::Clear { is_night: true } => "weather_moon",
-            Self::Clouds { is_night: false } => "weather_clouds",
-            Self::Clouds { is_night: true } => "weather_clouds_night",
-            Self::Fog { is_night: false } => "weather_fog",
-            Self::Fog { is_night: true } => "weather_fog_night",
-            Self::Rain { is_night: false } => "weather_rain",
-            Self::Rain { is_night: true } => "weather_rain_night",
-            Self::Snow => "weather_snow",
-            Self::Thunder { is_night: false } => "weather_thunder",
-            Self::Thunder { is_night: true } => "weather_thunder_night",
-            Self::Default => "weather_default",
+            Self::Clear { is_night: false } => icons::WEATHER_SUN,
+            Self::Clear { is_night: true } => icons::WEATHER_MOON,
+            Self::Clouds { is_night: false } => icons::WEATHER_CLOUDS,
+            Self::Clouds { is_night: true } => icons::WEATHER_CLOUDS_NIGHT,
+            Self::Fog { is_night: false } => icons::WEATHER_FOG,
+            Self::Fog { is_night: true } => icons::WEATHER_FOG_NIGHT,
+            Self::Rain { is_night: false } => icons::WEATHER_RAIN,
+            Self::Rain { is_night: true } => icons::WEATHER_RAIN_NIGHT,
+            Self::Snow => icons::WEATHER_SNOW,
+            Self::Thunder { is_night: false } => icons::WEATHER_THUNDER,
+            Self::Thunder { is_night: true } => icons::WEATHER_THUNDER_NIGHT,
+            Self::Default => icons::WEATHER_DEFAULT,
         }
     }
 }

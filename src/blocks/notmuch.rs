@@ -77,7 +77,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let mut widget = Widget::new().with_format(format.clone());
 
         widget.set_values(map! {
-            "icon" => Value::icon("mail"),
+            "icon" => Value::icon(icons::MAIL),
             "count" => Value::number(count)
         });
 

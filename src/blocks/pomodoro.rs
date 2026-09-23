@@ -107,10 +107,10 @@ impl PomodoroState {
     fn get_status_icon(&self) -> Option<&'static str> {
         use PomodoroState::*;
         match self {
-            Idle => Some("pomodoro_stopped"),
-            Break => Some("pomodoro_break"),
-            PomodoroRunning => Some("pomodoro_started"),
-            PomodoroPaused => Some("pomodoro_paused"),
+            Idle => Some(icons::POMODORO_STOPPED),
+            Break => Some(icons::POMODORO_BREAK),
+            PomodoroRunning => Some(icons::POMODORO_STARTED),
+            PomodoroPaused => Some(icons::POMODORO_PAUSED),
             _ => None,
         }
     }
@@ -130,7 +130,7 @@ struct Block<'a> {
 impl Block<'_> {
     async fn set_text(&mut self, additional_values: Values) -> Result<()> {
         let mut values = map! {
-            "icon" => Value::icon("pomodoro"),
+            "icon" => Value::icon(icons::POMODORO),
         };
         values.extend(additional_values);
 

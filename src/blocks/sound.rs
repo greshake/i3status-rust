@@ -164,18 +164,18 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     .is_some_and(|p| p.to_lowercase().contains("headphone")),
             };
             if headphones {
-                return "headphones";
+                return icons::HEADPHONES;
             }
         }
         if muted {
             match device_kind {
-                DeviceKind::Source => "microphone_muted",
-                DeviceKind::Sink => "volume_muted",
+                DeviceKind::Source => icons::MICROPHONE_MUTED,
+                DeviceKind::Sink => icons::VOLUME_MUTED,
             }
         } else {
             match device_kind {
-                DeviceKind::Source => "microphone",
-                DeviceKind::Sink => "volume",
+                DeviceKind::Source => icons::MICROPHONE,
+                DeviceKind::Sink => icons::VOLUME,
             }
         }
     };
