@@ -208,7 +208,7 @@ impl Block {
         widget.set_values(map! {
             "full_error_message" => Value::text(error.to_string()),
             [if let Some(v) = &error.error.message] "short_error_message" => Value::text(v.to_string()),
-            [if restartable] "restart_block_icon" => Value::icon("refresh").with_instance(RESTART_BLOCK_BTN),
+            [if restartable] "restart_block_icon" => Value::icon(icons::REFRESH).with_instance(RESTART_BLOCK_BTN),
         });
         self.state = BlockState::Error { widget };
     }

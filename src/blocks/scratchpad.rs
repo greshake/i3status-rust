@@ -64,7 +64,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let count = count_scratchpad_windows(&root_node);
 
         widget.set_values(map! {
-            "icon" => Value::icon("scratchpad"),
+            "icon" => Value::icon(icons::SCRATCHPAD),
             "count" => Value::number(count),
         });
 

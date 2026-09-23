@@ -108,7 +108,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 old_stats = Some(new_stats);
 
                 widget.set_values(map! {
-                    "icon" => Value::icon("disk_drive"),
+                    "icon" => Value::icon(icons::DISK_DRIVE),
                     "speed_read" => Value::bytes(speed_read),
                     "speed_write" => Value::bytes(speed_write),
                     "device" => Value::text(device),

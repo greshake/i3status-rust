@@ -8,6 +8,7 @@ pub use crate::formatting::{
     Values, config::Config as FormatConfig, config::MaybeMultiConfig as MaybeMultiFormatConfig,
     value::Value,
 };
+pub(crate) use crate::icons;
 pub use crate::util::{default, new_dbus_connection, new_system_dbus_connection};
 pub use crate::widget::{State, Widget};
 pub use crate::wrappers::{Seconds, ShellString};

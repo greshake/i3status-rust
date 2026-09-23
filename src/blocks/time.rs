@@ -112,7 +112,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         let now = Utc::now();
 
         widget.set_values(map! {
-            "icon" => Value::icon("time"),
+            "icon" => Value::icon(icons::TIME),
             "timestamp" => Value::datetime(now, timezone.copied())
         });
 

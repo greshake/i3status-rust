@@ -89,7 +89,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             State::Idle
         };
         widget.set_values(map!(
-            "icon" => Value::icon("mail"),
+            "icon" => Value::icon(icons::MAIL),
             "status" => Value::number(newmails)
         ));
         api.set_widget(widget)?;

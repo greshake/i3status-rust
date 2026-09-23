@@ -87,12 +87,12 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     icon_value = 1.0 - icon_value;
                 }
                 widget.set_values(map! {
-                    "icon" => Value::icon("xrandr"),
+                    "icon" => Value::icon(icons::XRANDR),
                     "display" => Value::text(mon.name.clone()),
                     "brightness" => Value::percents(mon.brightness_percent()),
-                    "brightness_icon" => Value::icon_progression("backlight", icon_value),
+                    "brightness_icon" => Value::icon_progression(icons::BACKLIGHT, icon_value),
                     "resolution" => Value::text(mon.resolution()),
-                    "res_icon" => Value::icon("resolution"),
+                    "res_icon" => Value::icon(icons::RESOLUTION),
                     "refresh_rate" => Value::hertz(mon.refresh_hz),
                 });
             }

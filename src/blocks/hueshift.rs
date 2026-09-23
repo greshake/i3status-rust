@@ -136,7 +136,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     loop {
         let mut widget = Widget::new().with_format(format.clone());
         widget.set_values(map! {
-            "icon" => Value::icon("hueshift"),
+            "icon" => Value::icon(icons::HUESHIFT),
             "temperature" => Value::number(current_temp)
         });
         api.set_widget(widget)?;

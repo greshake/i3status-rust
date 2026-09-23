@@ -186,7 +186,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                     icon_value = 1.0 - icon_value;
                 }
                 widget.set_values(map! {
-                    "icon" => Value::icon_progression("backlight", icon_value),
+                    "icon" => Value::icon_progression(icons::BACKLIGHT, icon_value),
                     "brightness" => Value::percents((brightness * 100.0).round())
                 });
                 api.set_widget(widget)?;

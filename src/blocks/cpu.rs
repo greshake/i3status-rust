@@ -114,12 +114,12 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         // Read boost state on intel CPUs
         let boost = boost_status().await.map(|status| match status {
-            true => "cpu_boost_on",
-            false => "cpu_boost_off",
+            true => icons::CPU_BOOST_ON,
+            false => icons::CPU_BOOST_OFF,
         });
 
         let mut values = map!(
-            "icon" => Value::icon_progression("cpu", utilization_avg),
+            "icon" => Value::icon_progression(icons::CPU, utilization_avg),
             "barchart" => Value::text(barchart),
             "utilization" => Value::percents(utilization_avg * 100.),
             [if !freqs.is_empty()] "frequency" => Value::hertz(freqs.iter().sum::<f64>() / (freqs.len() as f64)),

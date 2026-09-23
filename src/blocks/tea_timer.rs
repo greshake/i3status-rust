@@ -87,7 +87,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         timer_was_active = is_timer_active;
 
         let mut values = map!(
-            "icon" => Value::icon("tea"),
+            "icon" => Value::icon(icons::TEA),
         );
 
         if is_timer_active {

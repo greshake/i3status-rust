@@ -487,7 +487,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         let mut widget = Widget::new();
 
-        package_manager_map.insert("icon".into(), Value::icon("update"));
+        package_manager_map.insert("icon".into(), Value::icon(icons::UPDATE));
         package_manager_map.insert("total".into(), Value::number(total_count));
 
         widget.set_format(match total_count {

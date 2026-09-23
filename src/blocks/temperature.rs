@@ -197,7 +197,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         };
 
         widget.set_values(map! {
-            "icon" => Value::icon_progression_bound("thermometer", max_temp, good, warn),
+            "icon" => Value::icon_progression_bound(icons::THERMOMETER, max_temp, good, warn),
             "average" => config_scale.as_value(avg_temp),
             "min" => config_scale.as_value(min_temp),
             "max" => config_scale.as_value(max_temp),
