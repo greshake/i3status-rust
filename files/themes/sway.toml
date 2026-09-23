@@ -12,6 +12,7 @@ critical_fg = "#FFFFFF"       # urgent_workspace.text
 info_bg = "#285577"           # focused_workspace.background
 info_fg = "#FFFFFF"           # focused_workspace.text
 alternating_tint_bg="#111111" # This plus #222222 is inactive_workspace.border
+#alternating_tint_fg="#111111" # To help with contrast
 separator_bg = "auto"
 separator_fg = "auto"
 separator = "\ue0b2"
