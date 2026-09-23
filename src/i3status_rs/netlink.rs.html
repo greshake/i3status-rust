@@ -87,14 +87,14 @@
 <a href=#87 id=87 data-nosnippet>87</a>            });
 <a href=#88 id=88 data-nosnippet>88</a>
 <a href=#89 id=89 data-nosnippet>89</a>        <span class="kw">let </span>icon = <span class="kw">if </span>wifi_info.is_some() {
-<a href=#90 id=90 data-nosnippet>90</a>            <span class="string">"net_wireless"
-<a href=#91 id=91 data-nosnippet>91</a>        </span>} <span class="kw">else if </span>tun || wg || ppp {
-<a href=#92 id=92 data-nosnippet>92</a>            <span class="string">"net_vpn"
-<a href=#93 id=93 data-nosnippet>93</a>        </span>} <span class="kw">else if </span>iface.name == <span class="string">"lo" </span>{
-<a href=#94 id=94 data-nosnippet>94</a>            <span class="string">"net_loopback"
-<a href=#95 id=95 data-nosnippet>95</a>        </span>} <span class="kw">else </span>{
-<a href=#96 id=96 data-nosnippet>96</a>            <span class="string">"net_wired"
-<a href=#97 id=97 data-nosnippet>97</a>        </span>};
+<a href=#90 id=90 data-nosnippet>90</a>            <span class="kw">crate</span>::icons::NET_WIRELESS
+<a href=#91 id=91 data-nosnippet>91</a>        } <span class="kw">else if </span>tun || wg || ppp {
+<a href=#92 id=92 data-nosnippet>92</a>            <span class="kw">crate</span>::icons::NET_VPN
+<a href=#93 id=93 data-nosnippet>93</a>        } <span class="kw">else if </span>iface.name == <span class="string">"lo" </span>{
+<a href=#94 id=94 data-nosnippet>94</a>            <span class="kw">crate</span>::icons::NET_LOOPBACK
+<a href=#95 id=95 data-nosnippet>95</a>        } <span class="kw">else </span>{
+<a href=#96 id=96 data-nosnippet>96</a>            <span class="kw">crate</span>::icons::NET_WIRED
+<a href=#97 id=97 data-nosnippet>97</a>        };
 <a href=#98 id=98 data-nosnippet>98</a>
 <a href=#99 id=99 data-nosnippet>99</a>        <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="self">Self </span>{
 <a href=#100 id=100 data-nosnippet>100</a>            iface,

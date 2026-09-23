@@ -208,31 +208,31 @@
 <a href=#208 id=208 data-nosnippet>208</a>
 <a href=#209 id=209 data-nosnippet>209</a>        <span class="kw">if let </span><span class="prelude-val">Some</span>(info_by_type) = info.get(<span class="kw-2">&amp;</span>Type::Audio) {
 <a href=#210 id=210 data-nosnippet>210</a>            <span class="macro">map!</span> { @extend values
-<a href=#211 id=211 data-nosnippet>211</a>                <span class="string">"icon_audio" </span>=&gt; Value::icon(<span class="string">"microphone"</span>),
+<a href=#211 id=211 data-nosnippet>211</a>                <span class="string">"icon_audio" </span>=&gt; Value::icon(icons::MICROPHONE),
 <a href=#212 id=212 data-nosnippet>212</a>                <span class="string">"info_audio" </span>=&gt; Value::text(info_by_type.to_string())
 <a href=#213 id=213 data-nosnippet>213</a>            }
 <a href=#214 id=214 data-nosnippet>214</a>        }
 <a href=#215 id=215 data-nosnippet>215</a>        <span class="kw">if let </span><span class="prelude-val">Some</span>(info_by_type) = info.get(<span class="kw-2">&amp;</span>Type::AudioSink) {
 <a href=#216 id=216 data-nosnippet>216</a>            <span class="macro">map!</span> { @extend values
-<a href=#217 id=217 data-nosnippet>217</a>                <span class="string">"icon_audio_sink" </span>=&gt; Value::icon(<span class="string">"volume"</span>),
+<a href=#217 id=217 data-nosnippet>217</a>                <span class="string">"icon_audio_sink" </span>=&gt; Value::icon(icons::VOLUME),
 <a href=#218 id=218 data-nosnippet>218</a>                <span class="string">"info_audio_sink" </span>=&gt; Value::text(info_by_type.to_string())
 <a href=#219 id=219 data-nosnippet>219</a>            }
 <a href=#220 id=220 data-nosnippet>220</a>        }
 <a href=#221 id=221 data-nosnippet>221</a>        <span class="kw">if let </span><span class="prelude-val">Some</span>(info_by_type) = info.get(<span class="kw-2">&amp;</span>Type::Video) {
 <a href=#222 id=222 data-nosnippet>222</a>            <span class="macro">map!</span> { @extend values
-<a href=#223 id=223 data-nosnippet>223</a>                <span class="string">"icon_video" </span>=&gt; Value::icon(<span class="string">"xrandr"</span>),
+<a href=#223 id=223 data-nosnippet>223</a>                <span class="string">"icon_video" </span>=&gt; Value::icon(icons::XRANDR),
 <a href=#224 id=224 data-nosnippet>224</a>                <span class="string">"info_video" </span>=&gt; Value::text(info_by_type.to_string())
 <a href=#225 id=225 data-nosnippet>225</a>            }
 <a href=#226 id=226 data-nosnippet>226</a>        }
 <a href=#227 id=227 data-nosnippet>227</a>        <span class="kw">if let </span><span class="prelude-val">Some</span>(info_by_type) = info.get(<span class="kw-2">&amp;</span>Type::Webcam) {
 <a href=#228 id=228 data-nosnippet>228</a>            <span class="macro">map!</span> { @extend values
-<a href=#229 id=229 data-nosnippet>229</a>                <span class="string">"icon_webcam" </span>=&gt; Value::icon(<span class="string">"webcam"</span>),
+<a href=#229 id=229 data-nosnippet>229</a>                <span class="string">"icon_webcam" </span>=&gt; Value::icon(icons::WEBCAM),
 <a href=#230 id=230 data-nosnippet>230</a>                <span class="string">"info_webcam" </span>=&gt; Value::text(info_by_type.to_string())
 <a href=#231 id=231 data-nosnippet>231</a>            }
 <a href=#232 id=232 data-nosnippet>232</a>        }
 <a href=#233 id=233 data-nosnippet>233</a>        <span class="kw">if let </span><span class="prelude-val">Some</span>(info_by_type) = info.get(<span class="kw-2">&amp;</span>Type::Unknown) {
 <a href=#234 id=234 data-nosnippet>234</a>            <span class="macro">map!</span> { @extend values
-<a href=#235 id=235 data-nosnippet>235</a>                <span class="string">"icon_unknown" </span>=&gt; Value::icon(<span class="string">"unknown"</span>),
+<a href=#235 id=235 data-nosnippet>235</a>                <span class="string">"icon_unknown" </span>=&gt; Value::icon(icons::UNKNOWN),
 <a href=#236 id=236 data-nosnippet>236</a>                <span class="string">"info_unknown" </span>=&gt; Value::text(info_by_type.to_string())
 <a href=#237 id=237 data-nosnippet>237</a>            }
 <a href=#238 id=238 data-nosnippet>238</a>        }

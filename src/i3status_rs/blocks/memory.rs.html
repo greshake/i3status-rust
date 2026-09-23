@@ -181,8 +181,8 @@
 <a href=#181 id=181 data-nosnippet>181</a>
 <a href=#182 id=182 data-nosnippet>182</a>        <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(formats.get_format());
 <a href=#183 id=183 data-nosnippet>183</a>        widget.set_values(<span class="macro">map!</span> {
-<a href=#184 id=184 data-nosnippet>184</a>            <span class="string">"icon" </span>=&gt; Value::icon(<span class="string">"memory_mem"</span>),
-<a href=#185 id=185 data-nosnippet>185</a>            <span class="string">"icon_swap" </span>=&gt; Value::icon(<span class="string">"memory_swap"</span>),
+<a href=#184 id=184 data-nosnippet>184</a>            <span class="string">"icon" </span>=&gt; Value::icon(icons::MEMORY_MEM),
+<a href=#185 id=185 data-nosnippet>185</a>            <span class="string">"icon_swap" </span>=&gt; Value::icon(icons::MEMORY_SWAP),
 <a href=#186 id=186 data-nosnippet>186</a>            <span class="string">"mem_total" </span>=&gt; Value::bytes(mem_total),
 <a href=#187 id=187 data-nosnippet>187</a>            <span class="string">"mem_free" </span>=&gt; Value::bytes(mem_free),
 <a href=#188 id=188 data-nosnippet>188</a>            <span class="string">"mem_free_percents" </span>=&gt; Value::percents(mem_free / mem_total * <span class="number">100.</span>),

@@ -313,7 +313,7 @@
 <a href=#313 id=313 data-nosnippet>313</a>    <span class="kw">loop </span>{
 <a href=#314 id=314 data-nosnippet>314</a>        <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(no_events_format.clone());
 <a href=#315 id=315 data-nosnippet>315</a>        widget.set_values(<span class="macro">map!</span> {
-<a href=#316 id=316 data-nosnippet>316</a>            <span class="string">"icon" </span>=&gt; Value::icon(<span class="string">"calendar"</span>),
+<a href=#316 id=316 data-nosnippet>316</a>            <span class="string">"icon" </span>=&gt; Value::icon(icons::CALENDAR),
 <a href=#317 id=317 data-nosnippet>317</a>        });
 <a href=#318 id=318 data-nosnippet>318</a>
 <a href=#319 id=319 data-nosnippet>319</a>        <span class="kw">if </span><span class="macro">matches!</span>(widget_status, WidgetStatus::FetchSources) {
@@ -373,7 +373,7 @@
 <a href=#373 id=373 data-nosnippet>373</a>                widget.set_format(next_event_format.clone());
 <a href=#374 id=374 data-nosnippet>374</a>            }
 <a href=#375 id=375 data-nosnippet>375</a>            widget.set_values(<span class="macro">map!</span> {
-<a href=#376 id=376 data-nosnippet>376</a>                  <span class="string">"icon" </span>=&gt; Value::icon(<span class="string">"calendar"</span>),
+<a href=#376 id=376 data-nosnippet>376</a>                  <span class="string">"icon" </span>=&gt; Value::icon(icons::CALENDAR),
 <a href=#377 id=377 data-nosnippet>377</a>                   [<span class="kw">if let </span><span class="prelude-val">Some</span>(summary) = event.summary] <span class="string">"summary" </span>=&gt; Value::text(summary),
 <a href=#378 id=378 data-nosnippet>378</a>                   [<span class="kw">if let </span><span class="prelude-val">Some</span>(description) = event.description] <span class="string">"description" </span>=&gt; Value::text(description),
 <a href=#379 id=379 data-nosnippet>379</a>                   [<span class="kw">if let </span><span class="prelude-val">Some</span>(location) = event.location] <span class="string">"location" </span>=&gt; Value::text(location),

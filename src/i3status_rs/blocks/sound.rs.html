@@ -164,18 +164,18 @@
 <a href=#164 id=164 data-nosnippet>164</a>                    .is_some_and(|p| p.to_lowercase().contains(<span class="string">"headphone"</span>)),
 <a href=#165 id=165 data-nosnippet>165</a>            };
 <a href=#166 id=166 data-nosnippet>166</a>            <span class="kw">if </span>headphones {
-<a href=#167 id=167 data-nosnippet>167</a>                <span class="kw">return </span><span class="string">"headphones"</span>;
+<a href=#167 id=167 data-nosnippet>167</a>                <span class="kw">return </span>icons::HEADPHONES;
 <a href=#168 id=168 data-nosnippet>168</a>            }
 <a href=#169 id=169 data-nosnippet>169</a>        }
 <a href=#170 id=170 data-nosnippet>170</a>        <span class="kw">if </span>muted {
 <a href=#171 id=171 data-nosnippet>171</a>            <span class="kw">match </span>device_kind {
-<a href=#172 id=172 data-nosnippet>172</a>                DeviceKind::Source =&gt; <span class="string">"microphone_muted"</span>,
-<a href=#173 id=173 data-nosnippet>173</a>                DeviceKind::Sink =&gt; <span class="string">"volume_muted"</span>,
+<a href=#172 id=172 data-nosnippet>172</a>                DeviceKind::Source =&gt; icons::MICROPHONE_MUTED,
+<a href=#173 id=173 data-nosnippet>173</a>                DeviceKind::Sink =&gt; icons::VOLUME_MUTED,
 <a href=#174 id=174 data-nosnippet>174</a>            }
 <a href=#175 id=175 data-nosnippet>175</a>        } <span class="kw">else </span>{
 <a href=#176 id=176 data-nosnippet>176</a>            <span class="kw">match </span>device_kind {
-<a href=#177 id=177 data-nosnippet>177</a>                DeviceKind::Source =&gt; <span class="string">"microphone"</span>,
-<a href=#178 id=178 data-nosnippet>178</a>                DeviceKind::Sink =&gt; <span class="string">"volume"</span>,
+<a href=#177 id=177 data-nosnippet>177</a>                DeviceKind::Source =&gt; icons::MICROPHONE,
+<a href=#178 id=178 data-nosnippet>178</a>                DeviceKind::Sink =&gt; icons::VOLUME,
 <a href=#179 id=179 data-nosnippet>179</a>            }
 <a href=#180 id=180 data-nosnippet>180</a>        }
 <a href=#181 id=181 data-nosnippet>181</a>    };

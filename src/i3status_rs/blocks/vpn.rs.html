@@ -134,10 +134,10 @@
 <a href=#134 id=134 data-nosnippet>134</a><span class="kw">impl </span>Status {
 <a href=#135 id=135 data-nosnippet>135</a>    <span class="kw">fn </span>icon(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Cow&lt;<span class="lifetime">'static</span>, str&gt; {
 <a href=#136 id=136 data-nosnippet>136</a>        <span class="kw">match </span><span class="self">self </span>{
-<a href=#137 id=137 data-nosnippet>137</a>            Status::Connected { .. } =&gt; <span class="string">"net_vpn"</span>.into(),
-<a href=#138 id=138 data-nosnippet>138</a>            Status::Disconnected { .. } =&gt; <span class="string">"net_wired"</span>.into(),
-<a href=#139 id=139 data-nosnippet>139</a>            Status::Connecting { .. } =&gt; <span class="string">"net_wireless"</span>.into(),
-<a href=#140 id=140 data-nosnippet>140</a>            Status::Error(<span class="kw">_</span>) =&gt; <span class="string">"net_down"</span>.into(),
+<a href=#137 id=137 data-nosnippet>137</a>            Status::Connected { .. } =&gt; icons::NET_VPN.into(),
+<a href=#138 id=138 data-nosnippet>138</a>            Status::Disconnected { .. } =&gt; icons::NET_WIRED.into(),
+<a href=#139 id=139 data-nosnippet>139</a>            Status::Connecting { .. } =&gt; icons::NET_WIRELESS.into(),
+<a href=#140 id=140 data-nosnippet>140</a>            Status::Error(<span class="kw">_</span>) =&gt; icons::NET_DOWN.into(),
 <a href=#141 id=141 data-nosnippet>141</a>        }
 <a href=#142 id=142 data-nosnippet>142</a>    }
 <a href=#143 id=143 data-nosnippet>143</a>}

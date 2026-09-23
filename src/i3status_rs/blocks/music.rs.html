@@ -222,9 +222,9 @@
 <a href=#222 id=222 data-nosnippet>222</a>    };
 <a href=#223 id=223 data-nosnippet>223</a>
 <a href=#224 id=224 data-nosnippet>224</a>    <span class="kw">let </span>values = <span class="macro">map!</span> {
-<a href=#225 id=225 data-nosnippet>225</a>        <span class="string">"icon" </span>=&gt; Value::icon(<span class="string">"music"</span>),
-<a href=#226 id=226 data-nosnippet>226</a>        <span class="string">"next" </span>=&gt; new_btn(<span class="string">"music_next"</span>, NEXT_BTN)<span class="question-mark">?</span>,
-<a href=#227 id=227 data-nosnippet>227</a>        <span class="string">"prev" </span>=&gt; new_btn(<span class="string">"music_prev"</span>, PREV_BTN)<span class="question-mark">?</span>,
+<a href=#225 id=225 data-nosnippet>225</a>        <span class="string">"icon" </span>=&gt; Value::icon(icons::MUSIC),
+<a href=#226 id=226 data-nosnippet>226</a>        <span class="string">"next" </span>=&gt; new_btn(icons::MUSIC_NEXT, NEXT_BTN)<span class="question-mark">?</span>,
+<a href=#227 id=227 data-nosnippet>227</a>        <span class="string">"prev" </span>=&gt; new_btn(icons::MUSIC_PREV, PREV_BTN)<span class="question-mark">?</span>,
 <a href=#228 id=228 data-nosnippet>228</a>    };
 <a href=#229 id=229 data-nosnippet>229</a>
 <a href=#230 id=230 data-nosnippet>230</a>    <span class="kw">let </span>preferred_players = <span class="kw">match </span>config.player.clone() {
@@ -320,8 +320,8 @@
 <a href=#320 id=320 data-nosnippet>320</a>                    ),
 <a href=#321 id=321 data-nosnippet>321</a>                );
 <a href=#322 id=322 data-nosnippet>322</a>                <span class="kw">let </span>(state, play_icon) = <span class="kw">match </span>player.status {
-<a href=#323 id=323 data-nosnippet>323</a>                    <span class="prelude-val">Some</span>(PlaybackStatus::Playing) =&gt; (State::Info, <span class="string">"music_pause"</span>),
-<a href=#324 id=324 data-nosnippet>324</a>                    <span class="kw">_ </span>=&gt; (State::Idle, <span class="string">"music_play"</span>),
+<a href=#323 id=323 data-nosnippet>323</a>                    <span class="prelude-val">Some</span>(PlaybackStatus::Playing) =&gt; (State::Info, icons::MUSIC_PAUSE),
+<a href=#324 id=324 data-nosnippet>324</a>                    <span class="kw">_ </span>=&gt; (State::Idle, icons::MUSIC_PLAY),
 <a href=#325 id=325 data-nosnippet>325</a>                };
 <a href=#326 id=326 data-nosnippet>326</a>                values.insert(<span class="string">"play"</span>.into(), new_btn(play_icon, PLAY_PAUSE_BTN)<span class="question-mark">?</span>);
 <a href=#327 id=327 data-nosnippet>327</a>                <span class="kw">if let </span><span class="prelude-val">Some</span>(url) = <span class="kw-2">&amp;</span>player.metadata.url {
@@ -356,7 +356,7 @@
 <a href=#356 id=356 data-nosnippet>356</a>                <span class="kw">if let </span><span class="prelude-val">Some</span>(volume) = player.volume {
 <a href=#357 id=357 data-nosnippet>357</a>                    values.insert(
 <a href=#358 id=358 data-nosnippet>358</a>                        <span class="string">"volume_icon"</span>.into(),
-<a href=#359 id=359 data-nosnippet>359</a>                        Value::icon_progression(<span class="string">"volume"</span>, volume),
+<a href=#359 id=359 data-nosnippet>359</a>                        Value::icon_progression(icons::VOLUME, volume),
 <a href=#360 id=360 data-nosnippet>360</a>                    );
 <a href=#361 id=361 data-nosnippet>361</a>                    values.insert(<span class="string">"volume"</span>.into(), Value::percents(volume * <span class="number">100.0</span>));
 <a href=#362 id=362 data-nosnippet>362</a>                }
@@ -367,7 +367,7 @@
 <a href=#367 id=367 data-nosnippet>367</a>            }
 <a href=#368 id=368 data-nosnippet>368</a>            <span class="prelude-val">None </span>=&gt; {
 <a href=#369 id=369 data-nosnippet>369</a>                <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(formats.get_format());
-<a href=#370 id=370 data-nosnippet>370</a>                widget.set_values(<span class="macro">map!</span>(<span class="string">"icon" </span>=&gt; Value::icon(<span class="string">"music"</span>)));
+<a href=#370 id=370 data-nosnippet>370</a>                widget.set_values(<span class="macro">map!</span>(<span class="string">"icon" </span>=&gt; Value::icon(icons::MUSIC)));
 <a href=#371 id=371 data-nosnippet>371</a>                api.set_widget(widget)<span class="question-mark">?</span>;
 <a href=#372 id=372 data-nosnippet>372</a>            }
 <a href=#373 id=373 data-nosnippet>373</a>        }

@@ -218,18 +218,18 @@
 <a href=#218 id=218 data-nosnippet>218</a><span class="kw">impl </span>WeatherIcon {
 <a href=#219 id=219 data-nosnippet>219</a>    <span class="kw">fn </span>to_icon_str(<span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str {
 <a href=#220 id=220 data-nosnippet>220</a>        <span class="kw">match </span><span class="self">self </span>{
-<a href=#221 id=221 data-nosnippet>221</a>            <span class="self">Self</span>::Clear { is_night: <span class="bool-val">false </span>} =&gt; <span class="string">"weather_sun"</span>,
-<a href=#222 id=222 data-nosnippet>222</a>            <span class="self">Self</span>::Clear { is_night: <span class="bool-val">true </span>} =&gt; <span class="string">"weather_moon"</span>,
-<a href=#223 id=223 data-nosnippet>223</a>            <span class="self">Self</span>::Clouds { is_night: <span class="bool-val">false </span>} =&gt; <span class="string">"weather_clouds"</span>,
-<a href=#224 id=224 data-nosnippet>224</a>            <span class="self">Self</span>::Clouds { is_night: <span class="bool-val">true </span>} =&gt; <span class="string">"weather_clouds_night"</span>,
-<a href=#225 id=225 data-nosnippet>225</a>            <span class="self">Self</span>::Fog { is_night: <span class="bool-val">false </span>} =&gt; <span class="string">"weather_fog"</span>,
-<a href=#226 id=226 data-nosnippet>226</a>            <span class="self">Self</span>::Fog { is_night: <span class="bool-val">true </span>} =&gt; <span class="string">"weather_fog_night"</span>,
-<a href=#227 id=227 data-nosnippet>227</a>            <span class="self">Self</span>::Rain { is_night: <span class="bool-val">false </span>} =&gt; <span class="string">"weather_rain"</span>,
-<a href=#228 id=228 data-nosnippet>228</a>            <span class="self">Self</span>::Rain { is_night: <span class="bool-val">true </span>} =&gt; <span class="string">"weather_rain_night"</span>,
-<a href=#229 id=229 data-nosnippet>229</a>            <span class="self">Self</span>::Snow =&gt; <span class="string">"weather_snow"</span>,
-<a href=#230 id=230 data-nosnippet>230</a>            <span class="self">Self</span>::Thunder { is_night: <span class="bool-val">false </span>} =&gt; <span class="string">"weather_thunder"</span>,
-<a href=#231 id=231 data-nosnippet>231</a>            <span class="self">Self</span>::Thunder { is_night: <span class="bool-val">true </span>} =&gt; <span class="string">"weather_thunder_night"</span>,
-<a href=#232 id=232 data-nosnippet>232</a>            <span class="self">Self</span>::Default =&gt; <span class="string">"weather_default"</span>,
+<a href=#221 id=221 data-nosnippet>221</a>            <span class="self">Self</span>::Clear { is_night: <span class="bool-val">false </span>} =&gt; icons::WEATHER_SUN,
+<a href=#222 id=222 data-nosnippet>222</a>            <span class="self">Self</span>::Clear { is_night: <span class="bool-val">true </span>} =&gt; icons::WEATHER_MOON,
+<a href=#223 id=223 data-nosnippet>223</a>            <span class="self">Self</span>::Clouds { is_night: <span class="bool-val">false </span>} =&gt; icons::WEATHER_CLOUDS,
+<a href=#224 id=224 data-nosnippet>224</a>            <span class="self">Self</span>::Clouds { is_night: <span class="bool-val">true </span>} =&gt; icons::WEATHER_CLOUDS_NIGHT,
+<a href=#225 id=225 data-nosnippet>225</a>            <span class="self">Self</span>::Fog { is_night: <span class="bool-val">false </span>} =&gt; icons::WEATHER_FOG,
+<a href=#226 id=226 data-nosnippet>226</a>            <span class="self">Self</span>::Fog { is_night: <span class="bool-val">true </span>} =&gt; icons::WEATHER_FOG_NIGHT,
+<a href=#227 id=227 data-nosnippet>227</a>            <span class="self">Self</span>::Rain { is_night: <span class="bool-val">false </span>} =&gt; icons::WEATHER_RAIN,
+<a href=#228 id=228 data-nosnippet>228</a>            <span class="self">Self</span>::Rain { is_night: <span class="bool-val">true </span>} =&gt; icons::WEATHER_RAIN_NIGHT,
+<a href=#229 id=229 data-nosnippet>229</a>            <span class="self">Self</span>::Snow =&gt; icons::WEATHER_SNOW,
+<a href=#230 id=230 data-nosnippet>230</a>            <span class="self">Self</span>::Thunder { is_night: <span class="bool-val">false </span>} =&gt; icons::WEATHER_THUNDER,
+<a href=#231 id=231 data-nosnippet>231</a>            <span class="self">Self</span>::Thunder { is_night: <span class="bool-val">true </span>} =&gt; icons::WEATHER_THUNDER_NIGHT,
+<a href=#232 id=232 data-nosnippet>232</a>            <span class="self">Self</span>::Default =&gt; icons::WEATHER_DEFAULT,
 <a href=#233 id=233 data-nosnippet>233</a>        }
 <a href=#234 id=234 data-nosnippet>234</a>    }
 <a href=#235 id=235 data-nosnippet>235</a>}

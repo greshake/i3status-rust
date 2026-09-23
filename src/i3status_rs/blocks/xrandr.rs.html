@@ -87,12 +87,12 @@
 <a href=#87 id=87 data-nosnippet>87</a>                    icon_value = <span class="number">1.0 </span>- icon_value;
 <a href=#88 id=88 data-nosnippet>88</a>                }
 <a href=#89 id=89 data-nosnippet>89</a>                widget.set_values(<span class="macro">map!</span> {
-<a href=#90 id=90 data-nosnippet>90</a>                    <span class="string">"icon" </span>=&gt; Value::icon(<span class="string">"xrandr"</span>),
+<a href=#90 id=90 data-nosnippet>90</a>                    <span class="string">"icon" </span>=&gt; Value::icon(icons::XRANDR),
 <a href=#91 id=91 data-nosnippet>91</a>                    <span class="string">"display" </span>=&gt; Value::text(mon.name.clone()),
 <a href=#92 id=92 data-nosnippet>92</a>                    <span class="string">"brightness" </span>=&gt; Value::percents(mon.brightness_percent()),
-<a href=#93 id=93 data-nosnippet>93</a>                    <span class="string">"brightness_icon" </span>=&gt; Value::icon_progression(<span class="string">"backlight"</span>, icon_value),
+<a href=#93 id=93 data-nosnippet>93</a>                    <span class="string">"brightness_icon" </span>=&gt; Value::icon_progression(icons::BACKLIGHT, icon_value),
 <a href=#94 id=94 data-nosnippet>94</a>                    <span class="string">"resolution" </span>=&gt; Value::text(mon.resolution()),
-<a href=#95 id=95 data-nosnippet>95</a>                    <span class="string">"res_icon" </span>=&gt; Value::icon(<span class="string">"resolution"</span>),
+<a href=#95 id=95 data-nosnippet>95</a>                    <span class="string">"res_icon" </span>=&gt; Value::icon(icons::RESOLUTION),
 <a href=#96 id=96 data-nosnippet>96</a>                    <span class="string">"refresh_rate" </span>=&gt; Value::hertz(mon.refresh_hz),
 <a href=#97 id=97 data-nosnippet>97</a>                });
 <a href=#98 id=98 data-nosnippet>98</a>            }

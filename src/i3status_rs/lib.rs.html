@@ -208,7 +208,7 @@
 <a href=#208 id=208 data-nosnippet>208</a>        widget.set_values(<span class="macro">map!</span> {
 <a href=#209 id=209 data-nosnippet>209</a>            <span class="string">"full_error_message" </span>=&gt; Value::text(error.to_string()),
 <a href=#210 id=210 data-nosnippet>210</a>            [<span class="kw">if let </span><span class="prelude-val">Some</span>(v) = <span class="kw-2">&amp;</span>error.error.message] <span class="string">"short_error_message" </span>=&gt; Value::text(v.to_string()),
-<a href=#211 id=211 data-nosnippet>211</a>            [<span class="kw">if </span>restartable] <span class="string">"restart_block_icon" </span>=&gt; Value::icon(<span class="string">"refresh"</span>).with_instance(RESTART_BLOCK_BTN),
+<a href=#211 id=211 data-nosnippet>211</a>            [<span class="kw">if </span>restartable] <span class="string">"restart_block_icon" </span>=&gt; Value::icon(icons::REFRESH).with_instance(RESTART_BLOCK_BTN),
 <a href=#212 id=212 data-nosnippet>212</a>        });
 <a href=#213 id=213 data-nosnippet>213</a>        <span class="self">self</span>.state = BlockState::Error { widget };
 <a href=#214 id=214 data-nosnippet>214</a>    }

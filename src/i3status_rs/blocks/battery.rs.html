@@ -182,16 +182,16 @@
 <a href=#182 id=182 data-nosnippet>182</a>                });
 <a href=#183 id=183 data-nosnippet>183</a>
 <a href=#184 id=184 data-nosnippet>184</a>                <span class="kw">let </span>(icon_name, icon_value, state) = <span class="kw">match </span>(info.status, info.capacity) {
-<a href=#185 id=185 data-nosnippet>185</a>                    (BatteryStatus::Empty, <span class="kw">_</span>) =&gt; (<span class="string">"bat"</span>, <span class="number">0.0</span>, State::Critical),
+<a href=#185 id=185 data-nosnippet>185</a>                    (BatteryStatus::Empty, <span class="kw">_</span>) =&gt; (icons::BAT, <span class="number">0.0</span>, State::Critical),
 <a href=#186 id=186 data-nosnippet>186</a>                    (BatteryStatus::Full | BatteryStatus::NotCharging, <span class="kw">_</span>) =&gt; {
-<a href=#187 id=187 data-nosnippet>187</a>                        (<span class="string">"bat"</span>, <span class="number">1.0</span>, State::Idle)
+<a href=#187 id=187 data-nosnippet>187</a>                        (icons::BAT, <span class="number">1.0</span>, State::Idle)
 <a href=#188 id=188 data-nosnippet>188</a>                    }
 <a href=#189 id=189 data-nosnippet>189</a>                    (status, capacity) =&gt; (
 <a href=#190 id=190 data-nosnippet>190</a>                        <span class="kw">if </span>status == BatteryStatus::Charging {
-<a href=#191 id=191 data-nosnippet>191</a>                            <span class="string">"bat_charging"
-<a href=#192 id=192 data-nosnippet>192</a>                        </span>} <span class="kw">else </span>{
-<a href=#193 id=193 data-nosnippet>193</a>                            <span class="string">"bat"
-<a href=#194 id=194 data-nosnippet>194</a>                        </span>},
+<a href=#191 id=191 data-nosnippet>191</a>                            icons::BAT_CHARGING
+<a href=#192 id=192 data-nosnippet>192</a>                        } <span class="kw">else </span>{
+<a href=#193 id=193 data-nosnippet>193</a>                            icons::BAT
+<a href=#194 id=194 data-nosnippet>194</a>                        },
 <a href=#195 id=195 data-nosnippet>195</a>                        capacity / <span class="number">100.0</span>,
 <a href=#196 id=196 data-nosnippet>196</a>                        <span class="kw">if </span>status == BatteryStatus::Charging {
 <a href=#197 id=197 data-nosnippet>197</a>                            State::Good
@@ -222,7 +222,7 @@
 <a href=#222 id=222 data-nosnippet>222</a>                <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new()
 <a href=#223 id=223 data-nosnippet>223</a>                    .with_format(missing_format.clone())
 <a href=#224 id=224 data-nosnippet>224</a>                    .with_state(State::Critical);
-<a href=#225 id=225 data-nosnippet>225</a>                widget.set_values(<span class="macro">map!</span>(<span class="string">"icon" </span>=&gt; Value::icon(<span class="string">"bat_not_available"</span>)));
+<a href=#225 id=225 data-nosnippet>225</a>                widget.set_values(<span class="macro">map!</span>(<span class="string">"icon" </span>=&gt; Value::icon(icons::BAT_NOT_AVAILABLE)));
 <a href=#226 id=226 data-nosnippet>226</a>                api.set_widget(widget)<span class="question-mark">?</span>;
 <a href=#227 id=227 data-nosnippet>227</a>            }
 <a href=#228 id=228 data-nosnippet>228</a>        }

@@ -113,7 +113,7 @@
 <a href=#113 id=113 data-nosnippet>113</a>                    <span class="string">"available" </span>=&gt; Value::flag(),
 <a href=#114 id=114 data-nosnippet>114</a>                    [<span class="kw">if let </span><span class="prelude-val">Some</span>(p) = device.battery_percentage] <span class="string">"percentage" </span>=&gt; Value::percents(p),
 <a href=#115 id=115 data-nosnippet>115</a>                    [<span class="kw">if let </span><span class="prelude-val">Some</span>(p) = device.battery_percentage]
-<a href=#116 id=116 data-nosnippet>116</a>                        <span class="string">"battery_icon" </span>=&gt; Value::icon_progression(<span class="string">"bat"</span>, p <span class="kw">as </span>f64 / <span class="number">100.0</span>),
+<a href=#116 id=116 data-nosnippet>116</a>                        <span class="string">"battery_icon" </span>=&gt; Value::icon_progression(icons::BAT, p <span class="kw">as </span>f64 / <span class="number">100.0</span>),
 <a href=#117 id=117 data-nosnippet>117</a>                };
 <a href=#118 id=118 data-nosnippet>118</a>
 <a href=#119 id=119 data-nosnippet>119</a>                <span class="kw">if </span>device.connected {
@@ -134,7 +134,7 @@
 <a href=#134 id=134 data-nosnippet>134</a>            </span><span class="prelude-val">None </span>=&gt; {
 <a href=#135 id=135 data-nosnippet>135</a>                <span class="macro">debug!</span>(<span class="string">"Showing device as unavailable"</span>);
 <a href=#136 id=136 data-nosnippet>136</a>                <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(disconnected_format.clone());
-<a href=#137 id=137 data-nosnippet>137</a>                widget.set_values(<span class="macro">map!</span>(<span class="string">"icon" </span>=&gt; Value::icon(<span class="string">"bluetooth"</span>)));
+<a href=#137 id=137 data-nosnippet>137</a>                widget.set_values(<span class="macro">map!</span>(<span class="string">"icon" </span>=&gt; Value::icon(icons::BLUETOOTH)));
 <a href=#138 id=138 data-nosnippet>138</a>                api.set_widget(widget)<span class="question-mark">?</span>;
 <a href=#139 id=139 data-nosnippet>139</a>            }
 <a href=#140 id=140 data-nosnippet>140</a>        }
@@ -305,11 +305,11 @@
 <a href=#305 id=305 data-nosnippet>305</a>
 <a href=#306 id=306 data-nosnippet>306</a>        <span class="comment">//icon can be null, so ignore errors when fetching it
 <a href=#307 id=307 data-nosnippet>307</a>        </span><span class="kw">let </span>icon: <span class="kw-2">&amp;</span>str = <span class="kw">match </span>device.device.icon().<span class="kw">await</span>.ok().as_deref() {
-<a href=#308 id=308 data-nosnippet>308</a>            <span class="prelude-val">Some</span>(<span class="string">"audio-card" </span>| <span class="string">"audio-headset" </span>| <span class="string">"audio-headphones"</span>) =&gt; <span class="string">"headphones"</span>,
-<a href=#309 id=309 data-nosnippet>309</a>            <span class="prelude-val">Some</span>(<span class="string">"input-gaming"</span>) =&gt; <span class="string">"joystick"</span>,
-<a href=#310 id=310 data-nosnippet>310</a>            <span class="prelude-val">Some</span>(<span class="string">"input-keyboard"</span>) =&gt; <span class="string">"keyboard"</span>,
-<a href=#311 id=311 data-nosnippet>311</a>            <span class="prelude-val">Some</span>(<span class="string">"input-mouse"</span>) =&gt; <span class="string">"mouse"</span>,
-<a href=#312 id=312 data-nosnippet>312</a>            <span class="kw">_ </span>=&gt; <span class="string">"bluetooth"</span>,
+<a href=#308 id=308 data-nosnippet>308</a>            <span class="prelude-val">Some</span>(<span class="string">"audio-card" </span>| <span class="string">"audio-headset" </span>| <span class="string">"audio-headphones"</span>) =&gt; icons::HEADPHONES,
+<a href=#309 id=309 data-nosnippet>309</a>            <span class="prelude-val">Some</span>(<span class="string">"input-gaming"</span>) =&gt; icons::JOYSTICK,
+<a href=#310 id=310 data-nosnippet>310</a>            <span class="prelude-val">Some</span>(<span class="string">"input-keyboard"</span>) =&gt; icons::KEYBOARD,
+<a href=#311 id=311 data-nosnippet>311</a>            <span class="prelude-val">Some</span>(<span class="string">"input-mouse"</span>) =&gt; icons::MOUSE,
+<a href=#312 id=312 data-nosnippet>312</a>            <span class="kw">_ </span>=&gt; icons::BLUETOOTH,
 <a href=#313 id=313 data-nosnippet>313</a>        };
 <a href=#314 id=314 data-nosnippet>314</a>
 <a href=#315 id=315 data-nosnippet>315</a>        <span class="prelude-val">Some</span>(DeviceInfo {
