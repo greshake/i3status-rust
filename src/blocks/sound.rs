@@ -32,11 +32,11 @@
 //! `output_description` | PulseAudio device description, will fallback to `output_name` if no description is available and will be overwritten by mappings (mappings will still use `output_name`) | Text | -
 //! `active_port`        | Active port (same as information in Ports section of `pactl list cards`). Will be absent if not supported by `driver` or if mapped to `""` in `active_port_mappings`. | Text | -
 //!
-//! Action          | Default button
-//! ----------------|---------------
-//! `toggle_mute`   | Right
-//! `volume_down`   | Wheel Down
-//! `volume_up`     | Wheel Up
+//! Action          | Description                     | Default button
+//! ----------------|---------------------------------|---------------
+//! `toggle_mute`   | Toggle mute                         | Right
+//! `volume_down`   | Decrease volume                     | Wheel Down
+//! `volume_up`     | Increase volume                     | Wheel Up
 //! `toggle_format` **DEPRECATED** | Toggles between `format` and `format_alt` | -
 //! `next_format`  | Switches to the next format in the list     | Left
 //! `prev_format`  | Switches to the previous format in the list | -

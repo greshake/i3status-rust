@@ -4,7 +4,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format`          | A string to customise the output of this block | ` $icon $count.eng(range:1..) |`
+//! `format`          | A string to customise the output of this block | ` $icon $count.eng(range:1..) \|`
 //!
 //! Placeholder | Value                                      | Type   | Unit
 //! ------------|--------------------------------------------|--------|-----
