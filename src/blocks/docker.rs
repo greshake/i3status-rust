@@ -34,9 +34,6 @@
 //! socket_path = "/run/user/1000/podman/podman.sock"
 //! ```
 //!
-
-socket_path = "/run/user/1000/podman/podman.sock"
-
 //! # Icons Used
 //!
 //! - `docker`
