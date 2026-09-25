@@ -21,6 +21,17 @@ fn main() {
     let args = i3status_rs::CliArgs::parse();
     let blocking_threads = args.blocking_threads;
 
+    if let Some(index) = args.doctor_worker {
+        i3status_rs::doctor::run_worker(&args.config, index);
+        std::process::exit(0);
+    }
+
+    if args.doctor {
+        let problems =
+            i3status_rs::doctor::run(&args.config, args.font.as_deref(), args.doctor_skip_live);
+        std::process::exit(if problems > 0 { 1 } else { 0 });
+    }
+
     if !args.no_init {
         protocol::init(args.never_pause);
     }
