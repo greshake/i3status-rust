@@ -87,11 +87,11 @@
 <a href=#87 id=87 data-nosnippet>87</a>//!
 <a href=#88 id=88 data-nosnippet>88</a>//! #  Icons Used
 <a href=#89 id=89 data-nosnippet>89</a>//!
-<a href=#90 id=90 data-nosnippet>90</a>//! - `microphone_muted` (as a progression)
-<a href=#91 id=91 data-nosnippet>91</a>//! - `microphone` (as a progression)
-<a href=#92 id=92 data-nosnippet>92</a>//! - `volume_muted` (as a progression)
-<a href=#93 id=93 data-nosnippet>93</a>//! - `volume` (as a progression)
-<a href=#94 id=94 data-nosnippet>94</a>//! - `headphones`
+<a href=#90 id=90 data-nosnippet>90</a>//! - `microphone_muted` (`$icon`, as a progression)
+<a href=#91 id=91 data-nosnippet>91</a>//! - `microphone` (`$icon`, as a progression)
+<a href=#92 id=92 data-nosnippet>92</a>//! - `volume_muted` (`$icon`, as a progression)
+<a href=#93 id=93 data-nosnippet>93</a>//! - `volume` (`$icon`, as a progression)
+<a href=#94 id=94 data-nosnippet>94</a>//! - `headphones` (`$icon`)
 <a href=#95 id=95 data-nosnippet>95</a>
 <a href=#96 id=96 data-nosnippet>96</a></span><span class="macro">make_log_macro!</span>(debug, <span class="string">"sound"</span>);
 <a href=#97 id=97 data-nosnippet>97</a>
@@ -132,233 +132,400 @@
 <a href=#132 id=132 data-nosnippet>132</a>    Regex(Vec&lt;(Regex, <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str)&gt;),
 <a href=#133 id=133 data-nosnippet>133</a>}
 <a href=#134 id=134 data-nosnippet>134</a>
-<a href=#135 id=135 data-nosnippet>135</a><span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-<a href=#136 id=136 data-nosnippet>136</a>    <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions()<span class="question-mark">?</span>;
-<a href=#137 id=137 data-nosnippet>137</a>    api.set_default_actions(<span class="kw-2">&amp;</span>[
-<a href=#138 id=138 data-nosnippet>138</a>        (MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">"next_format"</span>),
-<a href=#139 id=139 data-nosnippet>139</a>        (MouseButton::Right, <span class="prelude-val">None</span>, <span class="string">"toggle_mute"</span>),
-<a href=#140 id=140 data-nosnippet>140</a>        (MouseButton::WheelUp, <span class="prelude-val">None</span>, <span class="string">"volume_up"</span>),
-<a href=#141 id=141 data-nosnippet>141</a>        (MouseButton::WheelDown, <span class="prelude-val">None</span>, <span class="string">"volume_down"</span>),
-<a href=#142 id=142 data-nosnippet>142</a>    ])<span class="question-mark">?</span>;
-<a href=#143 id=143 data-nosnippet>143</a>
-<a href=#144 id=144 data-nosnippet>144</a>    <span class="kw">let </span><span class="kw-2">mut </span>formats = config.formats.with_default(<span class="string">" $icon {$volume.eng(w:2)|} "</span>)<span class="question-mark">?</span>;
-<a href=#145 id=145 data-nosnippet>145</a>
-<a href=#146 id=146 data-nosnippet>146</a>    <span class="kw">let </span>device_kind = config.device_kind;
-<a href=#147 id=147 data-nosnippet>147</a>    <span class="kw">let </span>step_width = config.step_width.clamp(<span class="number">0</span>, <span class="number">50</span>) <span class="kw">as </span>i32;
-<a href=#148 id=148 data-nosnippet>148</a>
-<a href=#149 id=149 data-nosnippet>149</a>    <span class="kw">let </span>icon = |muted: bool, device: <span class="kw-2">&amp;</span><span class="kw">dyn </span>SoundDevice| -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str {
-<a href=#150 id=150 data-nosnippet>150</a>        <span class="kw">if </span>config.headphones_indicator &amp;&amp; device_kind == DeviceKind::Sink {
-<a href=#151 id=151 data-nosnippet>151</a>            <span class="kw">let </span>form_factor = device.form_factor();
-<a href=#152 id=152 data-nosnippet>152</a>            <span class="kw">let </span>active_port = device.active_port();
-<a href=#153 id=153 data-nosnippet>153</a>            <span class="macro">debug!</span>(<span class="string">"form_factor = {form_factor:?} active_port = {active_port:?}"</span>);
-<a href=#154 id=154 data-nosnippet>154</a>            <span class="kw">let </span>headphones = <span class="kw">match </span>form_factor {
-<a href=#155 id=155 data-nosnippet>155</a>                <span class="comment">// form_factor's possible values are listed at:
-<a href=#156 id=156 data-nosnippet>156</a>                // https://docs.rs/libpulse-binding/2.25.0/libpulse_binding/proplist/properties/constant.DEVICE_FORM_FACTOR.html
-<a href=#157 id=157 data-nosnippet>157</a>                </span><span class="prelude-val">Some</span>(<span class="string">"headset"</span>) | <span class="prelude-val">Some</span>(<span class="string">"headphone"</span>) | <span class="prelude-val">Some</span>(<span class="string">"hands-free"</span>) | <span class="prelude-val">Some</span>(<span class="string">"portable"</span>) =&gt; <span class="bool-val">true</span>,
-<a href=#158 id=158 data-nosnippet>158</a>                <span class="comment">// Per discussion at
-<a href=#159 id=159 data-nosnippet>159</a>                // https://github.com/greshake/i3status-rust/pull/1363#issuecomment-1046095869,
-<a href=#160 id=160 data-nosnippet>160</a>                // fall back to checking active_port if form_factor is absent, unknown, or doesn't match
-<a href=#161 id=161 data-nosnippet>161</a>                // known headphone values (common on PipeWire/WirePlumber systems).
-<a href=#162 id=162 data-nosnippet>162</a>                </span><span class="kw">_ </span>=&gt; active_port
-<a href=#163 id=163 data-nosnippet>163</a>                    .as_ref()
-<a href=#164 id=164 data-nosnippet>164</a>                    .is_some_and(|p| p.to_lowercase().contains(<span class="string">"headphone"</span>)),
-<a href=#165 id=165 data-nosnippet>165</a>            };
-<a href=#166 id=166 data-nosnippet>166</a>            <span class="kw">if </span>headphones {
-<a href=#167 id=167 data-nosnippet>167</a>                <span class="kw">return </span>icons::HEADPHONES;
-<a href=#168 id=168 data-nosnippet>168</a>            }
+<a href=#135 id=135 data-nosnippet>135</a><span class="doccomment">/// Whether the device should be represented by the `headphones` icon.
+<a href=#136 id=136 data-nosnippet>136</a></span><span class="kw">fn </span>is_headphones(device: <span class="kw-2">&amp;</span><span class="kw">dyn </span>SoundDevice) -&gt; bool {
+<a href=#137 id=137 data-nosnippet>137</a>    <span class="kw">let </span>form_factor = device.form_factor();
+<a href=#138 id=138 data-nosnippet>138</a>    <span class="kw">let </span>active_port = device.active_port();
+<a href=#139 id=139 data-nosnippet>139</a>    <span class="macro">debug!</span>(<span class="string">"form_factor = {form_factor:?} active_port = {active_port:?}"</span>);
+<a href=#140 id=140 data-nosnippet>140</a>    <span class="kw">match </span>form_factor {
+<a href=#141 id=141 data-nosnippet>141</a>        <span class="comment">// form_factor's possible values are listed at:
+<a href=#142 id=142 data-nosnippet>142</a>        // https://docs.rs/libpulse-binding/2.25.0/libpulse_binding/proplist/properties/constant.DEVICE_FORM_FACTOR.html
+<a href=#143 id=143 data-nosnippet>143</a>        </span><span class="prelude-val">Some</span>(<span class="string">"headset"</span>) | <span class="prelude-val">Some</span>(<span class="string">"headphone"</span>) | <span class="prelude-val">Some</span>(<span class="string">"hands-free"</span>) | <span class="prelude-val">Some</span>(<span class="string">"portable"</span>) =&gt; <span class="bool-val">true</span>,
+<a href=#144 id=144 data-nosnippet>144</a>        <span class="comment">// Per discussion at
+<a href=#145 id=145 data-nosnippet>145</a>        // https://github.com/greshake/i3status-rust/pull/1363#issuecomment-1046095869,
+<a href=#146 id=146 data-nosnippet>146</a>        // fall back to checking active_port if form_factor is absent, unknown, or doesn't match
+<a href=#147 id=147 data-nosnippet>147</a>        // known headphone values (common on PipeWire/WirePlumber systems).
+<a href=#148 id=148 data-nosnippet>148</a>        </span><span class="kw">_ </span>=&gt; active_port
+<a href=#149 id=149 data-nosnippet>149</a>            .as_ref()
+<a href=#150 id=150 data-nosnippet>150</a>            .is_some_and(|p| p.to_lowercase().contains(<span class="string">"headphone"</span>)),
+<a href=#151 id=151 data-nosnippet>151</a>    }
+<a href=#152 id=152 data-nosnippet>152</a>}
+<a href=#153 id=153 data-nosnippet>153</a>
+<a href=#154 id=154 data-nosnippet>154</a><span class="doccomment">/// The icon name for the current device state. `headphones` can only be true
+<a href=#155 id=155 data-nosnippet>155</a>/// when `headphones_indicator` is set and the device is a sink.
+<a href=#156 id=156 data-nosnippet>156</a></span><span class="kw">fn </span>icon_name(device_kind: DeviceKind, headphones: bool, muted: bool) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str {
+<a href=#157 id=157 data-nosnippet>157</a>    <span class="kw">if </span>headphones {
+<a href=#158 id=158 data-nosnippet>158</a>        <span class="kw">return </span>icons::HEADPHONES;
+<a href=#159 id=159 data-nosnippet>159</a>    }
+<a href=#160 id=160 data-nosnippet>160</a>    <span class="kw">if </span>muted {
+<a href=#161 id=161 data-nosnippet>161</a>        <span class="kw">match </span>device_kind {
+<a href=#162 id=162 data-nosnippet>162</a>            DeviceKind::Source =&gt; icons::MICROPHONE_MUTED,
+<a href=#163 id=163 data-nosnippet>163</a>            DeviceKind::Sink =&gt; icons::VOLUME_MUTED,
+<a href=#164 id=164 data-nosnippet>164</a>        }
+<a href=#165 id=165 data-nosnippet>165</a>    } <span class="kw">else </span>{
+<a href=#166 id=166 data-nosnippet>166</a>        <span class="kw">match </span>device_kind {
+<a href=#167 id=167 data-nosnippet>167</a>            DeviceKind::Source =&gt; icons::MICROPHONE,
+<a href=#168 id=168 data-nosnippet>168</a>            DeviceKind::Sink =&gt; icons::VOLUME,
 <a href=#169 id=169 data-nosnippet>169</a>        }
-<a href=#170 id=170 data-nosnippet>170</a>        <span class="kw">if </span>muted {
-<a href=#171 id=171 data-nosnippet>171</a>            <span class="kw">match </span>device_kind {
-<a href=#172 id=172 data-nosnippet>172</a>                DeviceKind::Source =&gt; icons::MICROPHONE_MUTED,
-<a href=#173 id=173 data-nosnippet>173</a>                DeviceKind::Sink =&gt; icons::VOLUME_MUTED,
-<a href=#174 id=174 data-nosnippet>174</a>            }
-<a href=#175 id=175 data-nosnippet>175</a>        } <span class="kw">else </span>{
-<a href=#176 id=176 data-nosnippet>176</a>            <span class="kw">match </span>device_kind {
-<a href=#177 id=177 data-nosnippet>177</a>                DeviceKind::Source =&gt; icons::MICROPHONE,
-<a href=#178 id=178 data-nosnippet>178</a>                DeviceKind::Sink =&gt; icons::VOLUME,
-<a href=#179 id=179 data-nosnippet>179</a>            }
-<a href=#180 id=180 data-nosnippet>180</a>        }
-<a href=#181 id=181 data-nosnippet>181</a>    };
-<a href=#182 id=182 data-nosnippet>182</a>
-<a href=#183 id=183 data-nosnippet>183</a>    <span class="kw">type </span>DeviceType = Box&lt;<span class="kw">dyn </span>SoundDevice&gt;;
-<a href=#184 id=184 data-nosnippet>184</a>    <span class="kw">let </span><span class="kw-2">mut </span>device: DeviceType = <span class="kw">match </span>config.driver {
-<a href=#185 id=185 data-nosnippet>185</a>        SoundDriver::Alsa =&gt; Box::new(alsa::Device::new(
-<a href=#186 id=186 data-nosnippet>186</a>            config.name.clone().unwrap_or_else(|| <span class="string">"Master"</span>.into()),
-<a href=#187 id=187 data-nosnippet>187</a>            config.device.clone().unwrap_or_else(|| <span class="string">"default"</span>.into()),
-<a href=#188 id=188 data-nosnippet>188</a>            config.natural_mapping,
-<a href=#189 id=189 data-nosnippet>189</a>        )<span class="question-mark">?</span>),
-<a href=#190 id=190 data-nosnippet>190</a>        <span class="attr">#[cfg(feature = <span class="string">"pipewire"</span>)]
-<a href=#191 id=191 data-nosnippet>191</a>        </span>SoundDriver::Pipewire =&gt; {
-<a href=#192 id=192 data-nosnippet>192</a>            Box::new(pipewire::Device::new(config.device_kind, config.name.clone()).<span class="kw">await</span><span class="question-mark">?</span>)
-<a href=#193 id=193 data-nosnippet>193</a>        }
-<a href=#194 id=194 data-nosnippet>194</a>        <span class="attr">#[cfg(feature = <span class="string">"pulseaudio"</span>)]
-<a href=#195 id=195 data-nosnippet>195</a>        </span>SoundDriver::PulseAudio =&gt; Box::new(pulseaudio::Device::new(
-<a href=#196 id=196 data-nosnippet>196</a>            config.device_kind,
-<a href=#197 id=197 data-nosnippet>197</a>            config.name.clone(),
-<a href=#198 id=198 data-nosnippet>198</a>        )<span class="question-mark">?</span>),
-<a href=#199 id=199 data-nosnippet>199</a>        SoundDriver::Auto =&gt; <span class="lifetime">'blk</span>: {
-<a href=#200 id=200 data-nosnippet>200</a>            <span class="attr">#[cfg(feature = <span class="string">"pulseaudio"</span>)]
-<a href=#201 id=201 data-nosnippet>201</a>            </span><span class="kw">if let </span><span class="prelude-val">Ok</span>(pulse) = pulseaudio::Device::new(config.device_kind, config.name.clone()) {
-<a href=#202 id=202 data-nosnippet>202</a>                <span class="kw">break </span><span class="lifetime">'blk </span>Box::new(pulse);
-<a href=#203 id=203 data-nosnippet>203</a>            }
-<a href=#204 id=204 data-nosnippet>204</a>            <span class="attr">#[cfg(feature = <span class="string">"pipewire"</span>)]
-<a href=#205 id=205 data-nosnippet>205</a>            </span><span class="kw">if let </span><span class="prelude-val">Ok</span>(pipewire) =
-<a href=#206 id=206 data-nosnippet>206</a>                pipewire::Device::new(config.device_kind, config.name.clone()).<span class="kw">await
-<a href=#207 id=207 data-nosnippet>207</a>            </span>{
-<a href=#208 id=208 data-nosnippet>208</a>                <span class="kw">break </span><span class="lifetime">'blk </span>Box::new(pipewire);
-<a href=#209 id=209 data-nosnippet>209</a>            }
-<a href=#210 id=210 data-nosnippet>210</a>            Box::new(alsa::Device::new(
-<a href=#211 id=211 data-nosnippet>211</a>                config.name.clone().unwrap_or_else(|| <span class="string">"Master"</span>.into()),
-<a href=#212 id=212 data-nosnippet>212</a>                config.device.clone().unwrap_or_else(|| <span class="string">"default"</span>.into()),
-<a href=#213 id=213 data-nosnippet>213</a>                config.natural_mapping,
-<a href=#214 id=214 data-nosnippet>214</a>            )<span class="question-mark">?</span>)
-<a href=#215 id=215 data-nosnippet>215</a>        }
-<a href=#216 id=216 data-nosnippet>216</a>    };
-<a href=#217 id=217 data-nosnippet>217</a>
-<a href=#218 id=218 data-nosnippet>218</a>    <span class="kw">let </span>mappings = <span class="kw">match </span><span class="kw-2">&amp;</span>config.mappings {
-<a href=#219 id=219 data-nosnippet>219</a>        <span class="prelude-val">Some</span>(m) =&gt; {
-<a href=#220 id=220 data-nosnippet>220</a>            <span class="kw">if </span>config.mappings_use_regex {
-<a href=#221 id=221 data-nosnippet>221</a>                <span class="prelude-val">Some</span>(Mappings::Regex(
-<a href=#222 id=222 data-nosnippet>222</a>                    m.iter()
-<a href=#223 id=223 data-nosnippet>223</a>                        .map(|(key, val)| {
-<a href=#224 id=224 data-nosnippet>224</a>                            <span class="prelude-val">Ok</span>((
-<a href=#225 id=225 data-nosnippet>225</a>                                Regex::new(key)
-<a href=#226 id=226 data-nosnippet>226</a>                                    .error(<span class="string">"Failed to parse `{key}` in mappings as regex"</span>)<span class="question-mark">?</span>,
-<a href=#227 id=227 data-nosnippet>227</a>                                val.as_str(),
-<a href=#228 id=228 data-nosnippet>228</a>                            ))
-<a href=#229 id=229 data-nosnippet>229</a>                        })
-<a href=#230 id=230 data-nosnippet>230</a>                        .collect::&lt;<span class="prelude-ty">Result</span>&lt;<span class="kw">_</span>&gt;&gt;()<span class="question-mark">?</span>,
-<a href=#231 id=231 data-nosnippet>231</a>                ))
-<a href=#232 id=232 data-nosnippet>232</a>            } <span class="kw">else </span>{
-<a href=#233 id=233 data-nosnippet>233</a>                <span class="prelude-val">Some</span>(Mappings::Exact(m))
-<a href=#234 id=234 data-nosnippet>234</a>            }
-<a href=#235 id=235 data-nosnippet>235</a>        }
-<a href=#236 id=236 data-nosnippet>236</a>        <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
-<a href=#237 id=237 data-nosnippet>237</a>    };
-<a href=#238 id=238 data-nosnippet>238</a>
-<a href=#239 id=239 data-nosnippet>239</a>    <span class="kw">loop </span>{
-<a href=#240 id=240 data-nosnippet>240</a>        device.get_info().<span class="kw">await</span><span class="question-mark">?</span>;
-<a href=#241 id=241 data-nosnippet>241</a>        <span class="kw">let </span>volume = device.volume();
-<a href=#242 id=242 data-nosnippet>242</a>        <span class="kw">let </span>muted = device.muted();
-<a href=#243 id=243 data-nosnippet>243</a>        <span class="kw">let </span><span class="kw-2">mut </span>output_name = device.output_name();
-<a href=#244 id=244 data-nosnippet>244</a>        <span class="kw">let </span><span class="kw-2">mut </span>active_port = device.active_port();
-<a href=#245 id=245 data-nosnippet>245</a>        <span class="kw">match </span><span class="kw-2">&amp;</span>mappings {
-<a href=#246 id=246 data-nosnippet>246</a>            <span class="prelude-val">Some</span>(Mappings::Regex(m)) =&gt; {
-<a href=#247 id=247 data-nosnippet>247</a>                <span class="kw">if let </span><span class="prelude-val">Some</span>((regex, mapped)) =
-<a href=#248 id=248 data-nosnippet>248</a>                    m.iter().find(|(regex, <span class="kw">_</span>)| regex.is_match(<span class="kw-2">&amp;</span>output_name))
-<a href=#249 id=249 data-nosnippet>249</a>                {
-<a href=#250 id=250 data-nosnippet>250</a>                    output_name = regex.replace(<span class="kw-2">&amp;</span>output_name, <span class="kw-2">*</span>mapped).into_owned();
-<a href=#251 id=251 data-nosnippet>251</a>                }
-<a href=#252 id=252 data-nosnippet>252</a>            }
-<a href=#253 id=253 data-nosnippet>253</a>            <span class="prelude-val">Some</span>(Mappings::Exact(m)) =&gt; {
-<a href=#254 id=254 data-nosnippet>254</a>                <span class="kw">if let </span><span class="prelude-val">Some</span>(mapped) = m.get(<span class="kw-2">&amp;</span>output_name) {
-<a href=#255 id=255 data-nosnippet>255</a>                    output_name.clone_from(mapped);
-<a href=#256 id=256 data-nosnippet>256</a>                }
-<a href=#257 id=257 data-nosnippet>257</a>            }
-<a href=#258 id=258 data-nosnippet>258</a>            <span class="prelude-val">None </span>=&gt; (),
-<a href=#259 id=259 data-nosnippet>259</a>        }
-<a href=#260 id=260 data-nosnippet>260</a>        <span class="kw">if let </span><span class="prelude-val">Some</span>(ap) = <span class="kw-2">&amp;</span>active_port
-<a href=#261 id=261 data-nosnippet>261</a>            &amp;&amp; <span class="kw">let </span><span class="prelude-val">Some</span>((regex, mapped)) = config
-<a href=#262 id=262 data-nosnippet>262</a>                .active_port_mappings
-<a href=#263 id=263 data-nosnippet>263</a>                .iter()
-<a href=#264 id=264 data-nosnippet>264</a>                .find(|(regex, <span class="kw">_</span>)| regex.<span class="number">0</span>.is_match(ap))
-<a href=#265 id=265 data-nosnippet>265</a>        {
-<a href=#266 id=266 data-nosnippet>266</a>            <span class="kw">let </span>mapped = regex.<span class="number">0</span>.replace(ap, mapped);
-<a href=#267 id=267 data-nosnippet>267</a>            <span class="kw">if </span>mapped.is_empty() {
-<a href=#268 id=268 data-nosnippet>268</a>                active_port = <span class="prelude-val">None</span>;
-<a href=#269 id=269 data-nosnippet>269</a>            } <span class="kw">else </span>{
-<a href=#270 id=270 data-nosnippet>270</a>                active_port = <span class="prelude-val">Some</span>(mapped.into_owned());
-<a href=#271 id=271 data-nosnippet>271</a>            }
-<a href=#272 id=272 data-nosnippet>272</a>        }
-<a href=#273 id=273 data-nosnippet>273</a>
-<a href=#274 id=274 data-nosnippet>274</a>        <span class="kw">let </span>output_description = device
-<a href=#275 id=275 data-nosnippet>275</a>            .output_description()
-<a href=#276 id=276 data-nosnippet>276</a>            .unwrap_or_else(|| output_name.clone());
-<a href=#277 id=277 data-nosnippet>277</a>
-<a href=#278 id=278 data-nosnippet>278</a>        <span class="kw">let </span><span class="kw-2">mut </span>values = <span class="macro">map!</span> {
-<a href=#279 id=279 data-nosnippet>279</a>            <span class="string">"icon" </span>=&gt; Value::icon_progression(icon(muted, <span class="kw-2">&amp;*</span>device), volume <span class="kw">as </span>f64 / <span class="number">100.0</span>),
-<a href=#280 id=280 data-nosnippet>280</a>            <span class="string">"volume" </span>=&gt; Value::percents(volume),
-<a href=#281 id=281 data-nosnippet>281</a>            <span class="string">"output_name" </span>=&gt; Value::text(output_name),
-<a href=#282 id=282 data-nosnippet>282</a>            <span class="string">"output_description" </span>=&gt; Value::text(output_description),
-<a href=#283 id=283 data-nosnippet>283</a>            [<span class="kw">if let </span><span class="prelude-val">Some</span>(ap) = active_port] <span class="string">"active_port" </span>=&gt; Value::text(ap),
-<a href=#284 id=284 data-nosnippet>284</a>        };
-<a href=#285 id=285 data-nosnippet>285</a>
-<a href=#286 id=286 data-nosnippet>286</a>        <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(formats.get_format());
-<a href=#287 id=287 data-nosnippet>287</a>
-<a href=#288 id=288 data-nosnippet>288</a>        <span class="kw">if </span>muted {
-<a href=#289 id=289 data-nosnippet>289</a>            widget.state = State::Warning;
-<a href=#290 id=290 data-nosnippet>290</a>            <span class="kw">if </span>!config.show_volume_when_muted {
-<a href=#291 id=291 data-nosnippet>291</a>                values.remove(<span class="string">"volume"</span>);
-<a href=#292 id=292 data-nosnippet>292</a>            }
-<a href=#293 id=293 data-nosnippet>293</a>        }
-<a href=#294 id=294 data-nosnippet>294</a>
-<a href=#295 id=295 data-nosnippet>295</a>        widget.set_values(values);
-<a href=#296 id=296 data-nosnippet>296</a>        api.set_widget(widget)<span class="question-mark">?</span>;
-<a href=#297 id=297 data-nosnippet>297</a>
-<a href=#298 id=298 data-nosnippet>298</a>        <span class="kw">loop </span>{
-<a href=#299 id=299 data-nosnippet>299</a>            <span class="macro">select!</span> {
-<a href=#300 id=300 data-nosnippet>300</a>                val = device.wait_for_update() =&gt; {
-<a href=#301 id=301 data-nosnippet>301</a>                    val<span class="question-mark">?</span>;
-<a href=#302 id=302 data-nosnippet>302</a>                    <span class="kw">break</span>;
-<a href=#303 id=303 data-nosnippet>303</a>                }
-<a href=#304 id=304 data-nosnippet>304</a>                <span class="kw">_ </span>= api.wait_for_update_request() =&gt; <span class="kw">break</span>,
-<a href=#305 id=305 data-nosnippet>305</a>                <span class="prelude-val">Some</span>(action) = actions.recv() =&gt; <span class="kw">match </span>action.as_ref() {
-<a href=#306 id=306 data-nosnippet>306</a>                    <span class="string">"next_format" </span>| <span class="string">"toggle_format" </span>=&gt; {
-<a href=#307 id=307 data-nosnippet>307</a>                        formats.next_format();
-<a href=#308 id=308 data-nosnippet>308</a>                        <span class="kw">break</span>;
-<a href=#309 id=309 data-nosnippet>309</a>                    }
-<a href=#310 id=310 data-nosnippet>310</a>                    <span class="string">"prev_format" </span>=&gt; {
-<a href=#311 id=311 data-nosnippet>311</a>                        formats.prev_format();
-<a href=#312 id=312 data-nosnippet>312</a>                        <span class="kw">break</span>;
-<a href=#313 id=313 data-nosnippet>313</a>                    }
-<a href=#314 id=314 data-nosnippet>314</a>                    <span class="string">"toggle_mute" </span>=&gt; {
-<a href=#315 id=315 data-nosnippet>315</a>                        device.toggle().<span class="kw">await</span><span class="question-mark">?</span>;
-<a href=#316 id=316 data-nosnippet>316</a>                    }
-<a href=#317 id=317 data-nosnippet>317</a>                    <span class="string">"volume_up" </span>=&gt; {
-<a href=#318 id=318 data-nosnippet>318</a>                        device.set_volume(step_width, config.max_vol).<span class="kw">await</span><span class="question-mark">?</span>;
-<a href=#319 id=319 data-nosnippet>319</a>                    }
-<a href=#320 id=320 data-nosnippet>320</a>                    <span class="string">"volume_down" </span>=&gt; {
-<a href=#321 id=321 data-nosnippet>321</a>                        device.set_volume(-step_width, config.max_vol).<span class="kw">await</span><span class="question-mark">?</span>;
-<a href=#322 id=322 data-nosnippet>322</a>                    }
-<a href=#323 id=323 data-nosnippet>323</a>                    <span class="kw">_ </span>=&gt; (),
-<a href=#324 id=324 data-nosnippet>324</a>                }
-<a href=#325 id=325 data-nosnippet>325</a>            }
-<a href=#326 id=326 data-nosnippet>326</a>        }
-<a href=#327 id=327 data-nosnippet>327</a>    }
-<a href=#328 id=328 data-nosnippet>328</a>}
-<a href=#329 id=329 data-nosnippet>329</a>
-<a href=#330 id=330 data-nosnippet>330</a><span class="attr">#[derive(Deserialize, Debug, SmartDefault, Clone, Copy)]
-<a href=#331 id=331 data-nosnippet>331</a>#[serde(rename_all = <span class="string">"lowercase"</span>)]
-<a href=#332 id=332 data-nosnippet>332</a></span><span class="kw">pub enum </span>SoundDriver {
-<a href=#333 id=333 data-nosnippet>333</a>    <span class="attr">#[default]
-<a href=#334 id=334 data-nosnippet>334</a>    </span>Auto,
-<a href=#335 id=335 data-nosnippet>335</a>    Alsa,
-<a href=#336 id=336 data-nosnippet>336</a>    <span class="attr">#[cfg(feature = <span class="string">"pipewire"</span>)]
-<a href=#337 id=337 data-nosnippet>337</a>    </span>Pipewire,
-<a href=#338 id=338 data-nosnippet>338</a>    <span class="attr">#[cfg(feature = <span class="string">"pulseaudio"</span>)]
-<a href=#339 id=339 data-nosnippet>339</a>    </span>PulseAudio,
-<a href=#340 id=340 data-nosnippet>340</a>}
-<a href=#341 id=341 data-nosnippet>341</a>
-<a href=#342 id=342 data-nosnippet>342</a><span class="attr">#[derive(Deserialize, Debug, SmartDefault, Clone, Copy, PartialEq, Eq, Hash)]
-<a href=#343 id=343 data-nosnippet>343</a>#[serde(rename_all = <span class="string">"lowercase"</span>)]
-<a href=#344 id=344 data-nosnippet>344</a></span><span class="kw">pub enum </span>DeviceKind {
-<a href=#345 id=345 data-nosnippet>345</a>    <span class="attr">#[default]
-<a href=#346 id=346 data-nosnippet>346</a>    </span>Sink,
-<a href=#347 id=347 data-nosnippet>347</a>    Source,
-<a href=#348 id=348 data-nosnippet>348</a>}
-<a href=#349 id=349 data-nosnippet>349</a>
-<a href=#350 id=350 data-nosnippet>350</a><span class="attr">#[async_trait::async_trait]
-<a href=#351 id=351 data-nosnippet>351</a></span><span class="kw">trait </span>SoundDevice {
-<a href=#352 id=352 data-nosnippet>352</a>    <span class="kw">fn </span>volume(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u32;
-<a href=#353 id=353 data-nosnippet>353</a>    <span class="kw">fn </span>muted(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool;
-<a href=#354 id=354 data-nosnippet>354</a>    <span class="kw">fn </span>output_name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String;
-<a href=#355 id=355 data-nosnippet>355</a>    <span class="kw">fn </span>output_description(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt;;
-<a href=#356 id=356 data-nosnippet>356</a>    <span class="kw">fn </span>active_port(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt;;
-<a href=#357 id=357 data-nosnippet>357</a>    <span class="kw">fn </span>form_factor(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt;;
-<a href=#358 id=358 data-nosnippet>358</a>
-<a href=#359 id=359 data-nosnippet>359</a>    <span class="kw">async fn </span>get_info(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
-<a href=#360 id=360 data-nosnippet>360</a>    <span class="kw">async fn </span>set_volume(<span class="kw-2">&amp;mut </span><span class="self">self</span>, step: i32, max_vol: <span class="prelude-ty">Option</span>&lt;u32&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
-<a href=#361 id=361 data-nosnippet>361</a>    <span class="kw">async fn </span>toggle(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
-<a href=#362 id=362 data-nosnippet>362</a>    <span class="kw">async fn </span>wait_for_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
-<a href=#363 id=363 data-nosnippet>363</a>}
+<a href=#170 id=170 data-nosnippet>170</a>    }
+<a href=#171 id=171 data-nosnippet>171</a>}
+<a href=#172 id=172 data-nosnippet>172</a>
+<a href=#173 id=173 data-nosnippet>173</a><span class="doccomment">/// Every name [`icon_name`] can return for this configuration. The runtime
+<a href=#174 id=174 data-nosnippet>174</a>/// state (muted, headphones plugged in) is externally selected but finite,
+<a href=#175 id=175 data-nosnippet>175</a>/// so the block plan declares the full set.
+<a href=#176 id=176 data-nosnippet>176</a></span><span class="kw">fn </span>declared_icon_names(device_kind: DeviceKind, headphones_indicator: bool) -&gt; Vec&lt;<span class="kw-2">&amp;</span><span class="lifetime">'static </span>str&gt; {
+<a href=#177 id=177 data-nosnippet>177</a>    <span class="kw">let </span><span class="kw-2">mut </span>names = <span class="kw">match </span>device_kind {
+<a href=#178 id=178 data-nosnippet>178</a>        DeviceKind::Sink =&gt; <span class="macro">vec!</span>[icons::VOLUME, icons::VOLUME_MUTED],
+<a href=#179 id=179 data-nosnippet>179</a>        DeviceKind::Source =&gt; <span class="macro">vec!</span>[icons::MICROPHONE, icons::MICROPHONE_MUTED],
+<a href=#180 id=180 data-nosnippet>180</a>    };
+<a href=#181 id=181 data-nosnippet>181</a>    <span class="kw">if </span>headphones_indicator &amp;&amp; device_kind == DeviceKind::Sink {
+<a href=#182 id=182 data-nosnippet>182</a>        names.push(icons::HEADPHONES);
+<a href=#183 id=183 data-nosnippet>183</a>    }
+<a href=#184 id=184 data-nosnippet>184</a>    names
+<a href=#185 id=185 data-nosnippet>185</a>}
+<a href=#186 id=186 data-nosnippet>186</a>
+<a href=#187 id=187 data-nosnippet>187</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>prepare(config: <span class="kw-2">&amp;</span>Config) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;BlockPlan&gt;&gt; {
+<a href=#188 id=188 data-nosnippet>188</a>    <span class="kw">let </span>icons = || {
+<a href=#189 id=189 data-nosnippet>189</a>        IconChoices::fixed(declared_icon_names(
+<a href=#190 id=190 data-nosnippet>190</a>            config.device_kind,
+<a href=#191 id=191 data-nosnippet>191</a>            config.headphones_indicator,
+<a href=#192 id=192 data-nosnippet>192</a>        ))
+<a href=#193 id=193 data-nosnippet>193</a>    };
+<a href=#194 id=194 data-nosnippet>194</a>    <span class="comment">// `volume` is removed when muted (unless `show_volume_when_muted`) and
+<a href=#195 id=195 data-nosnippet>195</a>    // `active_port` can be absent or mapped away, so neither is guaranteed.
+<a href=#196 id=196 data-nosnippet>196</a>    </span><span class="kw">let </span>declare = |output: OutputPlan| output.icon(<span class="string">"icon"</span>, icons());
+<a href=#197 id=197 data-nosnippet>197</a>    <span class="kw">let </span>formats = config.formats.with_default(<span class="string">" $icon {$volume.eng(w:2)|} "</span>)<span class="question-mark">?</span>;
+<a href=#198 id=198 data-nosnippet>198</a>    BlockPlan::new(format_outputs(formats, declare))
+<a href=#199 id=199 data-nosnippet>199</a>}
+<a href=#200 id=200 data-nosnippet>200</a>
+<a href=#201 id=201 data-nosnippet>201</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi, plan: <span class="kw-2">&amp;</span>Arc&lt;BlockPlan&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+<a href=#202 id=202 data-nosnippet>202</a>    <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions()<span class="question-mark">?</span>;
+<a href=#203 id=203 data-nosnippet>203</a>    api.set_default_actions(<span class="kw-2">&amp;</span>[
+<a href=#204 id=204 data-nosnippet>204</a>        (MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">"next_format"</span>),
+<a href=#205 id=205 data-nosnippet>205</a>        (MouseButton::Right, <span class="prelude-val">None</span>, <span class="string">"toggle_mute"</span>),
+<a href=#206 id=206 data-nosnippet>206</a>        (MouseButton::WheelUp, <span class="prelude-val">None</span>, <span class="string">"volume_up"</span>),
+<a href=#207 id=207 data-nosnippet>207</a>        (MouseButton::WheelDown, <span class="prelude-val">None</span>, <span class="string">"volume_down"</span>),
+<a href=#208 id=208 data-nosnippet>208</a>    ])<span class="question-mark">?</span>;
+<a href=#209 id=209 data-nosnippet>209</a>
+<a href=#210 id=210 data-nosnippet>210</a>    <span class="kw">let </span><span class="kw-2">mut </span>formats = FormatRotation::new(plan)<span class="question-mark">?</span>;
+<a href=#211 id=211 data-nosnippet>211</a>
+<a href=#212 id=212 data-nosnippet>212</a>    <span class="kw">let </span>device_kind = config.device_kind;
+<a href=#213 id=213 data-nosnippet>213</a>    <span class="kw">let </span>step_width = config.step_width.clamp(<span class="number">0</span>, <span class="number">50</span>) <span class="kw">as </span>i32;
+<a href=#214 id=214 data-nosnippet>214</a>
+<a href=#215 id=215 data-nosnippet>215</a>    <span class="kw">type </span>DeviceType = Box&lt;<span class="kw">dyn </span>SoundDevice&gt;;
+<a href=#216 id=216 data-nosnippet>216</a>    <span class="kw">let </span><span class="kw-2">mut </span>device: DeviceType = <span class="kw">match </span>config.driver {
+<a href=#217 id=217 data-nosnippet>217</a>        SoundDriver::Alsa =&gt; Box::new(alsa::Device::new(
+<a href=#218 id=218 data-nosnippet>218</a>            config.name.clone().unwrap_or_else(|| <span class="string">"Master"</span>.into()),
+<a href=#219 id=219 data-nosnippet>219</a>            config.device.clone().unwrap_or_else(|| <span class="string">"default"</span>.into()),
+<a href=#220 id=220 data-nosnippet>220</a>            config.natural_mapping,
+<a href=#221 id=221 data-nosnippet>221</a>        )<span class="question-mark">?</span>),
+<a href=#222 id=222 data-nosnippet>222</a>        <span class="attr">#[cfg(feature = <span class="string">"pipewire"</span>)]
+<a href=#223 id=223 data-nosnippet>223</a>        </span>SoundDriver::Pipewire =&gt; {
+<a href=#224 id=224 data-nosnippet>224</a>            Box::new(pipewire::Device::new(config.device_kind, config.name.clone()).<span class="kw">await</span><span class="question-mark">?</span>)
+<a href=#225 id=225 data-nosnippet>225</a>        }
+<a href=#226 id=226 data-nosnippet>226</a>        <span class="attr">#[cfg(feature = <span class="string">"pulseaudio"</span>)]
+<a href=#227 id=227 data-nosnippet>227</a>        </span>SoundDriver::PulseAudio =&gt; Box::new(pulseaudio::Device::new(
+<a href=#228 id=228 data-nosnippet>228</a>            config.device_kind,
+<a href=#229 id=229 data-nosnippet>229</a>            config.name.clone(),
+<a href=#230 id=230 data-nosnippet>230</a>        )<span class="question-mark">?</span>),
+<a href=#231 id=231 data-nosnippet>231</a>        SoundDriver::Auto =&gt; <span class="lifetime">'blk</span>: {
+<a href=#232 id=232 data-nosnippet>232</a>            <span class="attr">#[cfg(feature = <span class="string">"pulseaudio"</span>)]
+<a href=#233 id=233 data-nosnippet>233</a>            </span><span class="kw">if let </span><span class="prelude-val">Ok</span>(pulse) = pulseaudio::Device::new(config.device_kind, config.name.clone()) {
+<a href=#234 id=234 data-nosnippet>234</a>                <span class="kw">break </span><span class="lifetime">'blk </span>Box::new(pulse);
+<a href=#235 id=235 data-nosnippet>235</a>            }
+<a href=#236 id=236 data-nosnippet>236</a>            <span class="attr">#[cfg(feature = <span class="string">"pipewire"</span>)]
+<a href=#237 id=237 data-nosnippet>237</a>            </span><span class="kw">if let </span><span class="prelude-val">Ok</span>(pipewire) =
+<a href=#238 id=238 data-nosnippet>238</a>                pipewire::Device::new(config.device_kind, config.name.clone()).<span class="kw">await
+<a href=#239 id=239 data-nosnippet>239</a>            </span>{
+<a href=#240 id=240 data-nosnippet>240</a>                <span class="kw">break </span><span class="lifetime">'blk </span>Box::new(pipewire);
+<a href=#241 id=241 data-nosnippet>241</a>            }
+<a href=#242 id=242 data-nosnippet>242</a>            Box::new(alsa::Device::new(
+<a href=#243 id=243 data-nosnippet>243</a>                config.name.clone().unwrap_or_else(|| <span class="string">"Master"</span>.into()),
+<a href=#244 id=244 data-nosnippet>244</a>                config.device.clone().unwrap_or_else(|| <span class="string">"default"</span>.into()),
+<a href=#245 id=245 data-nosnippet>245</a>                config.natural_mapping,
+<a href=#246 id=246 data-nosnippet>246</a>            )<span class="question-mark">?</span>)
+<a href=#247 id=247 data-nosnippet>247</a>        }
+<a href=#248 id=248 data-nosnippet>248</a>    };
+<a href=#249 id=249 data-nosnippet>249</a>
+<a href=#250 id=250 data-nosnippet>250</a>    <span class="kw">let </span>mappings = <span class="kw">match </span><span class="kw-2">&amp;</span>config.mappings {
+<a href=#251 id=251 data-nosnippet>251</a>        <span class="prelude-val">Some</span>(m) =&gt; {
+<a href=#252 id=252 data-nosnippet>252</a>            <span class="kw">if </span>config.mappings_use_regex {
+<a href=#253 id=253 data-nosnippet>253</a>                <span class="prelude-val">Some</span>(Mappings::Regex(
+<a href=#254 id=254 data-nosnippet>254</a>                    m.iter()
+<a href=#255 id=255 data-nosnippet>255</a>                        .map(|(key, val)| {
+<a href=#256 id=256 data-nosnippet>256</a>                            <span class="prelude-val">Ok</span>((
+<a href=#257 id=257 data-nosnippet>257</a>                                Regex::new(key)
+<a href=#258 id=258 data-nosnippet>258</a>                                    .error(<span class="string">"Failed to parse `{key}` in mappings as regex"</span>)<span class="question-mark">?</span>,
+<a href=#259 id=259 data-nosnippet>259</a>                                val.as_str(),
+<a href=#260 id=260 data-nosnippet>260</a>                            ))
+<a href=#261 id=261 data-nosnippet>261</a>                        })
+<a href=#262 id=262 data-nosnippet>262</a>                        .collect::&lt;<span class="prelude-ty">Result</span>&lt;<span class="kw">_</span>&gt;&gt;()<span class="question-mark">?</span>,
+<a href=#263 id=263 data-nosnippet>263</a>                ))
+<a href=#264 id=264 data-nosnippet>264</a>            } <span class="kw">else </span>{
+<a href=#265 id=265 data-nosnippet>265</a>                <span class="prelude-val">Some</span>(Mappings::Exact(m))
+<a href=#266 id=266 data-nosnippet>266</a>            }
+<a href=#267 id=267 data-nosnippet>267</a>        }
+<a href=#268 id=268 data-nosnippet>268</a>        <span class="prelude-val">None </span>=&gt; <span class="prelude-val">None</span>,
+<a href=#269 id=269 data-nosnippet>269</a>    };
+<a href=#270 id=270 data-nosnippet>270</a>
+<a href=#271 id=271 data-nosnippet>271</a>    <span class="kw">loop </span>{
+<a href=#272 id=272 data-nosnippet>272</a>        device.get_info().<span class="kw">await</span><span class="question-mark">?</span>;
+<a href=#273 id=273 data-nosnippet>273</a>        <span class="kw">let </span>volume = device.volume();
+<a href=#274 id=274 data-nosnippet>274</a>        <span class="kw">let </span>muted = device.muted();
+<a href=#275 id=275 data-nosnippet>275</a>        <span class="kw">let </span><span class="kw-2">mut </span>output_name = device.output_name();
+<a href=#276 id=276 data-nosnippet>276</a>        <span class="kw">let </span><span class="kw-2">mut </span>active_port = device.active_port();
+<a href=#277 id=277 data-nosnippet>277</a>        <span class="kw">match </span><span class="kw-2">&amp;</span>mappings {
+<a href=#278 id=278 data-nosnippet>278</a>            <span class="prelude-val">Some</span>(Mappings::Regex(m)) =&gt; {
+<a href=#279 id=279 data-nosnippet>279</a>                <span class="kw">if let </span><span class="prelude-val">Some</span>((regex, mapped)) =
+<a href=#280 id=280 data-nosnippet>280</a>                    m.iter().find(|(regex, <span class="kw">_</span>)| regex.is_match(<span class="kw-2">&amp;</span>output_name))
+<a href=#281 id=281 data-nosnippet>281</a>                {
+<a href=#282 id=282 data-nosnippet>282</a>                    output_name = regex.replace(<span class="kw-2">&amp;</span>output_name, <span class="kw-2">*</span>mapped).into_owned();
+<a href=#283 id=283 data-nosnippet>283</a>                }
+<a href=#284 id=284 data-nosnippet>284</a>            }
+<a href=#285 id=285 data-nosnippet>285</a>            <span class="prelude-val">Some</span>(Mappings::Exact(m)) =&gt; {
+<a href=#286 id=286 data-nosnippet>286</a>                <span class="kw">if let </span><span class="prelude-val">Some</span>(mapped) = m.get(<span class="kw-2">&amp;</span>output_name) {
+<a href=#287 id=287 data-nosnippet>287</a>                    output_name.clone_from(mapped);
+<a href=#288 id=288 data-nosnippet>288</a>                }
+<a href=#289 id=289 data-nosnippet>289</a>            }
+<a href=#290 id=290 data-nosnippet>290</a>            <span class="prelude-val">None </span>=&gt; (),
+<a href=#291 id=291 data-nosnippet>291</a>        }
+<a href=#292 id=292 data-nosnippet>292</a>        <span class="kw">if let </span><span class="prelude-val">Some</span>(ap) = <span class="kw-2">&amp;</span>active_port
+<a href=#293 id=293 data-nosnippet>293</a>            &amp;&amp; <span class="kw">let </span><span class="prelude-val">Some</span>((regex, mapped)) = config
+<a href=#294 id=294 data-nosnippet>294</a>                .active_port_mappings
+<a href=#295 id=295 data-nosnippet>295</a>                .iter()
+<a href=#296 id=296 data-nosnippet>296</a>                .find(|(regex, <span class="kw">_</span>)| regex.<span class="number">0</span>.is_match(ap))
+<a href=#297 id=297 data-nosnippet>297</a>        {
+<a href=#298 id=298 data-nosnippet>298</a>            <span class="kw">let </span>mapped = regex.<span class="number">0</span>.replace(ap, mapped);
+<a href=#299 id=299 data-nosnippet>299</a>            <span class="kw">if </span>mapped.is_empty() {
+<a href=#300 id=300 data-nosnippet>300</a>                active_port = <span class="prelude-val">None</span>;
+<a href=#301 id=301 data-nosnippet>301</a>            } <span class="kw">else </span>{
+<a href=#302 id=302 data-nosnippet>302</a>                active_port = <span class="prelude-val">Some</span>(mapped.into_owned());
+<a href=#303 id=303 data-nosnippet>303</a>            }
+<a href=#304 id=304 data-nosnippet>304</a>        }
+<a href=#305 id=305 data-nosnippet>305</a>
+<a href=#306 id=306 data-nosnippet>306</a>        <span class="kw">let </span>output_description = device
+<a href=#307 id=307 data-nosnippet>307</a>            .output_description()
+<a href=#308 id=308 data-nosnippet>308</a>            .unwrap_or_else(|| output_name.clone());
+<a href=#309 id=309 data-nosnippet>309</a>
+<a href=#310 id=310 data-nosnippet>310</a>        <span class="kw">let </span>headphones = config.headphones_indicator
+<a href=#311 id=311 data-nosnippet>311</a>            &amp;&amp; device_kind == DeviceKind::Sink
+<a href=#312 id=312 data-nosnippet>312</a>            &amp;&amp; is_headphones(<span class="kw-2">&amp;*</span>device);
+<a href=#313 id=313 data-nosnippet>313</a>
+<a href=#314 id=314 data-nosnippet>314</a>        <span class="kw">let </span>output = formats.current();
+<a href=#315 id=315 data-nosnippet>315</a>        <span class="kw">let </span><span class="kw-2">mut </span>values = <span class="macro">map!</span> {
+<a href=#316 id=316 data-nosnippet>316</a>            <span class="string">"icon" </span>=&gt; Value::icon_progression(
+<a href=#317 id=317 data-nosnippet>317</a>                icon_name(device_kind, headphones, muted),
+<a href=#318 id=318 data-nosnippet>318</a>                volume <span class="kw">as </span>f64 / <span class="number">100.0</span>),
+<a href=#319 id=319 data-nosnippet>319</a>            <span class="string">"volume" </span>=&gt; Value::percents(volume),
+<a href=#320 id=320 data-nosnippet>320</a>            <span class="string">"output_name" </span>=&gt; Value::text(output_name),
+<a href=#321 id=321 data-nosnippet>321</a>            <span class="string">"output_description" </span>=&gt; Value::text(output_description),
+<a href=#322 id=322 data-nosnippet>322</a>            [<span class="kw">if let </span><span class="prelude-val">Some</span>(ap) = active_port] <span class="string">"active_port" </span>=&gt; Value::text(ap),
+<a href=#323 id=323 data-nosnippet>323</a>        };
+<a href=#324 id=324 data-nosnippet>324</a>        <span class="kw">let </span><span class="kw-2">mut </span>widget = output.new_widget();
+<a href=#325 id=325 data-nosnippet>325</a>
+<a href=#326 id=326 data-nosnippet>326</a>        <span class="kw">if </span>muted {
+<a href=#327 id=327 data-nosnippet>327</a>            widget.state = State::Warning;
+<a href=#328 id=328 data-nosnippet>328</a>            <span class="kw">if </span>!config.show_volume_when_muted {
+<a href=#329 id=329 data-nosnippet>329</a>                values.remove(<span class="string">"volume"</span>);
+<a href=#330 id=330 data-nosnippet>330</a>            }
+<a href=#331 id=331 data-nosnippet>331</a>        }
+<a href=#332 id=332 data-nosnippet>332</a>
+<a href=#333 id=333 data-nosnippet>333</a>        widget.set_values(values);
+<a href=#334 id=334 data-nosnippet>334</a>        api.set_widget(widget)<span class="question-mark">?</span>;
+<a href=#335 id=335 data-nosnippet>335</a>
+<a href=#336 id=336 data-nosnippet>336</a>        <span class="kw">loop </span>{
+<a href=#337 id=337 data-nosnippet>337</a>            <span class="macro">select!</span> {
+<a href=#338 id=338 data-nosnippet>338</a>                val = device.wait_for_update() =&gt; {
+<a href=#339 id=339 data-nosnippet>339</a>                    val<span class="question-mark">?</span>;
+<a href=#340 id=340 data-nosnippet>340</a>                    <span class="kw">break</span>;
+<a href=#341 id=341 data-nosnippet>341</a>                }
+<a href=#342 id=342 data-nosnippet>342</a>                <span class="kw">_ </span>= api.wait_for_update_request() =&gt; <span class="kw">break</span>,
+<a href=#343 id=343 data-nosnippet>343</a>                <span class="prelude-val">Some</span>(action) = actions.recv() =&gt; <span class="kw">match </span>action.as_ref() {
+<a href=#344 id=344 data-nosnippet>344</a>                    <span class="string">"next_format" </span>| <span class="string">"toggle_format" </span>=&gt; {
+<a href=#345 id=345 data-nosnippet>345</a>                        formats.next();
+<a href=#346 id=346 data-nosnippet>346</a>                        <span class="kw">break</span>;
+<a href=#347 id=347 data-nosnippet>347</a>                    }
+<a href=#348 id=348 data-nosnippet>348</a>                    <span class="string">"prev_format" </span>=&gt; {
+<a href=#349 id=349 data-nosnippet>349</a>                        formats.prev();
+<a href=#350 id=350 data-nosnippet>350</a>                        <span class="kw">break</span>;
+<a href=#351 id=351 data-nosnippet>351</a>                    }
+<a href=#352 id=352 data-nosnippet>352</a>                    <span class="string">"toggle_mute" </span>=&gt; {
+<a href=#353 id=353 data-nosnippet>353</a>                        device.toggle().<span class="kw">await</span><span class="question-mark">?</span>;
+<a href=#354 id=354 data-nosnippet>354</a>                    }
+<a href=#355 id=355 data-nosnippet>355</a>                    <span class="string">"volume_up" </span>=&gt; {
+<a href=#356 id=356 data-nosnippet>356</a>                        device.set_volume(step_width, config.max_vol).<span class="kw">await</span><span class="question-mark">?</span>;
+<a href=#357 id=357 data-nosnippet>357</a>                    }
+<a href=#358 id=358 data-nosnippet>358</a>                    <span class="string">"volume_down" </span>=&gt; {
+<a href=#359 id=359 data-nosnippet>359</a>                        device.set_volume(-step_width, config.max_vol).<span class="kw">await</span><span class="question-mark">?</span>;
+<a href=#360 id=360 data-nosnippet>360</a>                    }
+<a href=#361 id=361 data-nosnippet>361</a>                    <span class="kw">_ </span>=&gt; (),
+<a href=#362 id=362 data-nosnippet>362</a>                }
+<a href=#363 id=363 data-nosnippet>363</a>            }
+<a href=#364 id=364 data-nosnippet>364</a>        }
+<a href=#365 id=365 data-nosnippet>365</a>    }
+<a href=#366 id=366 data-nosnippet>366</a>}
+<a href=#367 id=367 data-nosnippet>367</a>
+<a href=#368 id=368 data-nosnippet>368</a><span class="attr">#[derive(Deserialize, Debug, SmartDefault, Clone, Copy)]
+<a href=#369 id=369 data-nosnippet>369</a>#[serde(rename_all = <span class="string">"lowercase"</span>)]
+<a href=#370 id=370 data-nosnippet>370</a></span><span class="kw">pub enum </span>SoundDriver {
+<a href=#371 id=371 data-nosnippet>371</a>    <span class="attr">#[default]
+<a href=#372 id=372 data-nosnippet>372</a>    </span>Auto,
+<a href=#373 id=373 data-nosnippet>373</a>    Alsa,
+<a href=#374 id=374 data-nosnippet>374</a>    <span class="attr">#[cfg(feature = <span class="string">"pipewire"</span>)]
+<a href=#375 id=375 data-nosnippet>375</a>    </span>Pipewire,
+<a href=#376 id=376 data-nosnippet>376</a>    <span class="attr">#[cfg(feature = <span class="string">"pulseaudio"</span>)]
+<a href=#377 id=377 data-nosnippet>377</a>    </span>PulseAudio,
+<a href=#378 id=378 data-nosnippet>378</a>}
+<a href=#379 id=379 data-nosnippet>379</a>
+<a href=#380 id=380 data-nosnippet>380</a><span class="attr">#[derive(Deserialize, Debug, SmartDefault, Clone, Copy, PartialEq, Eq, Hash)]
+<a href=#381 id=381 data-nosnippet>381</a>#[serde(rename_all = <span class="string">"lowercase"</span>)]
+<a href=#382 id=382 data-nosnippet>382</a></span><span class="kw">pub enum </span>DeviceKind {
+<a href=#383 id=383 data-nosnippet>383</a>    <span class="attr">#[default]
+<a href=#384 id=384 data-nosnippet>384</a>    </span>Sink,
+<a href=#385 id=385 data-nosnippet>385</a>    Source,
+<a href=#386 id=386 data-nosnippet>386</a>}
+<a href=#387 id=387 data-nosnippet>387</a>
+<a href=#388 id=388 data-nosnippet>388</a><span class="attr">#[async_trait::async_trait]
+<a href=#389 id=389 data-nosnippet>389</a></span><span class="kw">trait </span>SoundDevice {
+<a href=#390 id=390 data-nosnippet>390</a>    <span class="kw">fn </span>volume(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u32;
+<a href=#391 id=391 data-nosnippet>391</a>    <span class="kw">fn </span>muted(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool;
+<a href=#392 id=392 data-nosnippet>392</a>    <span class="kw">fn </span>output_name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; String;
+<a href=#393 id=393 data-nosnippet>393</a>    <span class="kw">fn </span>output_description(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt;;
+<a href=#394 id=394 data-nosnippet>394</a>    <span class="kw">fn </span>active_port(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;String&gt;;
+<a href=#395 id=395 data-nosnippet>395</a>    <span class="kw">fn </span>form_factor(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>str&gt;;
+<a href=#396 id=396 data-nosnippet>396</a>
+<a href=#397 id=397 data-nosnippet>397</a>    <span class="kw">async fn </span>get_info(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
+<a href=#398 id=398 data-nosnippet>398</a>    <span class="kw">async fn </span>set_volume(<span class="kw-2">&amp;mut </span><span class="self">self</span>, step: i32, max_vol: <span class="prelude-ty">Option</span>&lt;u32&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
+<a href=#399 id=399 data-nosnippet>399</a>    <span class="kw">async fn </span>toggle(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
+<a href=#400 id=400 data-nosnippet>400</a>    <span class="kw">async fn </span>wait_for_update(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;;
+<a href=#401 id=401 data-nosnippet>401</a>}
+<a href=#402 id=402 data-nosnippet>402</a>
+<a href=#403 id=403 data-nosnippet>403</a><span class="attr">#[cfg(test)]
+<a href=#404 id=404 data-nosnippet>404</a></span><span class="kw">mod </span>tests {
+<a href=#405 id=405 data-nosnippet>405</a>    <span class="kw">use super</span>::<span class="kw-2">*</span>;
+<a href=#406 id=406 data-nosnippet>406</a>
+<a href=#407 id=407 data-nosnippet>407</a>    <span class="kw">fn </span>config(toml_str: <span class="kw-2">&amp;</span>str) -&gt; Config {
+<a href=#408 id=408 data-nosnippet>408</a>        toml::from_str(toml_str).unwrap()
+<a href=#409 id=409 data-nosnippet>409</a>    }
+<a href=#410 id=410 data-nosnippet>410</a>
+<a href=#411 id=411 data-nosnippet>411</a>    <span class="attr">#[test]
+<a href=#412 id=412 data-nosnippet>412</a>    </span><span class="kw">fn </span>plan_declares_device_kind_specific_icons() {
+<a href=#413 id=413 data-nosnippet>413</a>        <span class="comment">// Default: sink without headphones indicator.
+<a href=#414 id=414 data-nosnippet>414</a>        </span><span class="kw">let </span>plan = prepare(<span class="kw-2">&amp;</span>Config::default()).unwrap();
+<a href=#415 id=415 data-nosnippet>415</a>        <span class="kw">let </span>ids: Vec&lt;<span class="kw">_</span>&gt; = plan.outputs().map(|o| o.id()).collect();
+<a href=#416 id=416 data-nosnippet>416</a>        <span class="macro">assert_eq!</span>(ids, [<span class="string">"format"</span>]);
+<a href=#417 id=417 data-nosnippet>417</a>        <span class="kw">let </span>choices = plan
+<a href=#418 id=418 data-nosnippet>418</a>            .output(<span class="string">"format"</span>)
+<a href=#419 id=419 data-nosnippet>419</a>            .unwrap()
+<a href=#420 id=420 data-nosnippet>420</a>            .output()
+<a href=#421 id=421 data-nosnippet>421</a>            .choices_for(<span class="string">"icon"</span>)
+<a href=#422 id=422 data-nosnippet>422</a>            .unwrap()
+<a href=#423 id=423 data-nosnippet>423</a>            .clone();
+<a href=#424 id=424 data-nosnippet>424</a>        <span class="macro">assert!</span>(choices.permits(<span class="string">"volume"</span>));
+<a href=#425 id=425 data-nosnippet>425</a>        <span class="macro">assert!</span>(choices.permits(<span class="string">"volume_muted"</span>));
+<a href=#426 id=426 data-nosnippet>426</a>        <span class="macro">assert!</span>(!choices.permits(<span class="string">"headphones"</span>));
+<a href=#427 id=427 data-nosnippet>427</a>        <span class="macro">assert!</span>(!choices.permits(<span class="string">"microphone"</span>));
+<a href=#428 id=428 data-nosnippet>428</a>        <span class="macro">assert!</span>(!choices.permits(<span class="string">"microphone_muted"</span>));
+<a href=#429 id=429 data-nosnippet>429</a>
+<a href=#430 id=430 data-nosnippet>430</a>        <span class="comment">// Source devices use the microphone icons.
+<a href=#431 id=431 data-nosnippet>431</a>        </span><span class="kw">let </span>config = Config {
+<a href=#432 id=432 data-nosnippet>432</a>            device_kind: DeviceKind::Source,
+<a href=#433 id=433 data-nosnippet>433</a>            ..Config::default()
+<a href=#434 id=434 data-nosnippet>434</a>        };
+<a href=#435 id=435 data-nosnippet>435</a>        <span class="kw">let </span>plan = prepare(<span class="kw-2">&amp;</span>config).unwrap();
+<a href=#436 id=436 data-nosnippet>436</a>        <span class="kw">let </span>choices = plan
+<a href=#437 id=437 data-nosnippet>437</a>            .output(<span class="string">"format"</span>)
+<a href=#438 id=438 data-nosnippet>438</a>            .unwrap()
+<a href=#439 id=439 data-nosnippet>439</a>            .output()
+<a href=#440 id=440 data-nosnippet>440</a>            .choices_for(<span class="string">"icon"</span>)
+<a href=#441 id=441 data-nosnippet>441</a>            .unwrap()
+<a href=#442 id=442 data-nosnippet>442</a>            .clone();
+<a href=#443 id=443 data-nosnippet>443</a>        <span class="macro">assert!</span>(choices.permits(<span class="string">"microphone"</span>));
+<a href=#444 id=444 data-nosnippet>444</a>        <span class="macro">assert!</span>(choices.permits(<span class="string">"microphone_muted"</span>));
+<a href=#445 id=445 data-nosnippet>445</a>        <span class="macro">assert!</span>(!choices.permits(<span class="string">"volume"</span>));
+<a href=#446 id=446 data-nosnippet>446</a>        <span class="macro">assert!</span>(!choices.permits(<span class="string">"headphones"</span>));
+<a href=#447 id=447 data-nosnippet>447</a>    }
+<a href=#448 id=448 data-nosnippet>448</a>
+<a href=#449 id=449 data-nosnippet>449</a>    <span class="attr">#[test]
+<a href=#450 id=450 data-nosnippet>450</a>    </span><span class="kw">fn </span>headphones_icon_declared_only_for_sinks_with_indicator() {
+<a href=#451 id=451 data-nosnippet>451</a>        <span class="kw">let </span>config = Config {
+<a href=#452 id=452 data-nosnippet>452</a>            headphones_indicator: <span class="bool-val">true</span>,
+<a href=#453 id=453 data-nosnippet>453</a>            ..Config::default()
+<a href=#454 id=454 data-nosnippet>454</a>        };
+<a href=#455 id=455 data-nosnippet>455</a>        <span class="kw">let </span>plan = prepare(<span class="kw-2">&amp;</span>config).unwrap();
+<a href=#456 id=456 data-nosnippet>456</a>        <span class="macro">assert!</span>(
+<a href=#457 id=457 data-nosnippet>457</a>            plan.output(<span class="string">"format"</span>)
+<a href=#458 id=458 data-nosnippet>458</a>                .unwrap()
+<a href=#459 id=459 data-nosnippet>459</a>                .output()
+<a href=#460 id=460 data-nosnippet>460</a>                .choices_for(<span class="string">"icon"</span>)
+<a href=#461 id=461 data-nosnippet>461</a>                .unwrap()
+<a href=#462 id=462 data-nosnippet>462</a>                .permits(<span class="string">"headphones"</span>)
+<a href=#463 id=463 data-nosnippet>463</a>        );
+<a href=#464 id=464 data-nosnippet>464</a>
+<a href=#465 id=465 data-nosnippet>465</a>        <span class="comment">// The indicator only applies to sinks.
+<a href=#466 id=466 data-nosnippet>466</a>        </span><span class="kw">let </span>config = Config {
+<a href=#467 id=467 data-nosnippet>467</a>            headphones_indicator: <span class="bool-val">true</span>,
+<a href=#468 id=468 data-nosnippet>468</a>            device_kind: DeviceKind::Source,
+<a href=#469 id=469 data-nosnippet>469</a>            ..Config::default()
+<a href=#470 id=470 data-nosnippet>470</a>        };
+<a href=#471 id=471 data-nosnippet>471</a>        <span class="kw">let </span>plan = prepare(<span class="kw-2">&amp;</span>config).unwrap();
+<a href=#472 id=472 data-nosnippet>472</a>        <span class="macro">assert!</span>(
+<a href=#473 id=473 data-nosnippet>473</a>            !plan
+<a href=#474 id=474 data-nosnippet>474</a>                .output(<span class="string">"format"</span>)
+<a href=#475 id=475 data-nosnippet>475</a>                .unwrap()
+<a href=#476 id=476 data-nosnippet>476</a>                .output()
+<a href=#477 id=477 data-nosnippet>477</a>                .choices_for(<span class="string">"icon"</span>)
+<a href=#478 id=478 data-nosnippet>478</a>                .unwrap()
+<a href=#479 id=479 data-nosnippet>479</a>                .permits(<span class="string">"headphones"</span>)
+<a href=#480 id=480 data-nosnippet>480</a>        );
+<a href=#481 id=481 data-nosnippet>481</a>    }
+<a href=#482 id=482 data-nosnippet>482</a>
+<a href=#483 id=483 data-nosnippet>483</a>    <span class="attr">#[test]
+<a href=#484 id=484 data-nosnippet>484</a>    </span><span class="kw">fn </span>every_configured_format_gets_an_output() {
+<a href=#485 id=485 data-nosnippet>485</a>        <span class="kw">let </span>plan = prepare(<span class="kw-2">&amp;</span>Config::default()).unwrap();
+<a href=#486 id=486 data-nosnippet>486</a>        <span class="macro">assert!</span>(plan.output(<span class="string">"format2"</span>).is_err());
+<a href=#487 id=487 data-nosnippet>487</a>
+<a href=#488 id=488 data-nosnippet>488</a>        <span class="kw">let </span>plan = prepare(<span class="kw-2">&amp;</span>config(<span class="string">r#"format = [" $icon ", " $icon $output_name "]"#</span>)).unwrap();
+<a href=#489 id=489 data-nosnippet>489</a>        <span class="kw">let </span>ids: Vec&lt;<span class="kw">_</span>&gt; = plan.outputs().map(|o| o.id()).collect();
+<a href=#490 id=490 data-nosnippet>490</a>        <span class="macro">assert_eq!</span>(ids, [<span class="string">"format"</span>, <span class="string">"format2"</span>]);
+<a href=#491 id=491 data-nosnippet>491</a>        <span class="kw">let </span>alt = plan.output(<span class="string">"format2"</span>).unwrap();
+<a href=#492 id=492 data-nosnippet>492</a>        <span class="macro">assert!</span>(alt.format().contains_key(<span class="string">"output_name"</span>));
+<a href=#493 id=493 data-nosnippet>493</a>        <span class="macro">assert!</span>(alt.output().choices_for(<span class="string">"icon"</span>).unwrap().permits(<span class="string">"volume"</span>));
+<a href=#494 id=494 data-nosnippet>494</a>    }
+<a href=#495 id=495 data-nosnippet>495</a>
+<a href=#496 id=496 data-nosnippet>496</a>    <span class="attr">#[test]
+<a href=#497 id=497 data-nosnippet>497</a>    </span><span class="kw">fn </span>format_alt_still_produces_a_second_output() {
+<a href=#498 id=498 data-nosnippet>498</a>        <span class="kw">let </span>plan = prepare(<span class="kw-2">&amp;</span>config(<span class="string">r#"format_alt = " $icon $output_name ""#</span>)).unwrap();
+<a href=#499 id=499 data-nosnippet>499</a>        <span class="kw">let </span>alt = plan.output(<span class="string">"format2"</span>).unwrap();
+<a href=#500 id=500 data-nosnippet>500</a>        <span class="macro">assert!</span>(alt.format().contains_key(<span class="string">"output_name"</span>));
+<a href=#501 id=501 data-nosnippet>501</a>        <span class="macro">assert!</span>(alt.output().choices_for(<span class="string">"icon"</span>).unwrap().permits(<span class="string">"volume"</span>));
+<a href=#502 id=502 data-nosnippet>502</a>    }
+<a href=#503 id=503 data-nosnippet>503</a>
+<a href=#504 id=504 data-nosnippet>504</a>    <span class="attr">#[test]
+<a href=#505 id=505 data-nosnippet>505</a>    </span><span class="kw">fn </span>chooser_only_produces_declared_names() {
+<a href=#506 id=506 data-nosnippet>506</a>        <span class="kw">for </span>device_kind <span class="kw">in </span>[DeviceKind::Sink, DeviceKind::Source] {
+<a href=#507 id=507 data-nosnippet>507</a>            <span class="kw">for </span>headphones_indicator <span class="kw">in </span>[<span class="bool-val">false</span>, <span class="bool-val">true</span>] {
+<a href=#508 id=508 data-nosnippet>508</a>                <span class="kw">let </span>declared = declared_icon_names(device_kind, headphones_indicator);
+<a href=#509 id=509 data-nosnippet>509</a>                <span class="comment">// Headphones can only be detected for sinks with the
+<a href=#510 id=510 data-nosnippet>510</a>                // indicator enabled; mirror that reachability here.
+<a href=#511 id=511 data-nosnippet>511</a>                </span><span class="kw">let </span>headphone_states: <span class="kw-2">&amp;</span>[bool] =
+<a href=#512 id=512 data-nosnippet>512</a>                    <span class="kw">if </span>headphones_indicator &amp;&amp; device_kind == DeviceKind::Sink {
+<a href=#513 id=513 data-nosnippet>513</a>                        <span class="kw-2">&amp;</span>[<span class="bool-val">false</span>, <span class="bool-val">true</span>]
+<a href=#514 id=514 data-nosnippet>514</a>                    } <span class="kw">else </span>{
+<a href=#515 id=515 data-nosnippet>515</a>                        <span class="kw-2">&amp;</span>[<span class="bool-val">false</span>]
+<a href=#516 id=516 data-nosnippet>516</a>                    };
+<a href=#517 id=517 data-nosnippet>517</a>                <span class="kw">for </span><span class="kw-2">&amp;</span>headphones <span class="kw">in </span>headphone_states {
+<a href=#518 id=518 data-nosnippet>518</a>                    <span class="kw">for </span>muted <span class="kw">in </span>[<span class="bool-val">false</span>, <span class="bool-val">true</span>] {
+<a href=#519 id=519 data-nosnippet>519</a>                        <span class="kw">let </span>name = icon_name(device_kind, headphones, muted);
+<a href=#520 id=520 data-nosnippet>520</a>                        <span class="macro">assert!</span>(
+<a href=#521 id=521 data-nosnippet>521</a>                            declared.contains(<span class="kw-2">&amp;</span>name),
+<a href=#522 id=522 data-nosnippet>522</a>                            <span class="string">"icon '{name}' not declared for {device_kind:?} \
+<a href=#523 id=523 data-nosnippet>523</a>                             (headphones_indicator: {headphones_indicator})"
+<a href=#524 id=524 data-nosnippet>524</a>                        </span>);
+<a href=#525 id=525 data-nosnippet>525</a>                    }
+<a href=#526 id=526 data-nosnippet>526</a>                }
+<a href=#527 id=527 data-nosnippet>527</a>            }
+<a href=#528 id=528 data-nosnippet>528</a>        }
+<a href=#529 id=529 data-nosnippet>529</a>    }
+<a href=#530 id=530 data-nosnippet>530</a>}
 </code></pre></div></section></main></body></html>

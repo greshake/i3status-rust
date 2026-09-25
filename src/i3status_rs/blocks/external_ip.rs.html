@@ -102,32 +102,32 @@
 <a href=#102 id=102 data-nosnippet>102</a>    </span><span class="kw">pub </span>use_ipv4: bool,
 <a href=#103 id=103 data-nosnippet>103</a>}
 <a href=#104 id=104 data-nosnippet>104</a>
-<a href=#105 id=105 data-nosnippet>105</a><span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-<a href=#106 id=106 data-nosnippet>106</a>    <span class="kw">let </span>format = config.format.with_default(<span class="string">" $ip $country_flag "</span>)<span class="question-mark">?</span>;
-<a href=#107 id=107 data-nosnippet>107</a>
-<a href=#108 id=108 data-nosnippet>108</a>    <span class="kw">type </span>UpdatesStream = Pin&lt;Box&lt;<span class="kw">dyn </span>Stream&lt;Item = ()&gt;&gt;&gt;;
-<a href=#109 id=109 data-nosnippet>109</a>    <span class="kw">let </span><span class="kw-2">mut </span>stream: UpdatesStream = <span class="kw">if </span>config.with_network_manager {
-<a href=#110 id=110 data-nosnippet>110</a>        <span class="kw">let </span>dbus = new_system_dbus_connection().<span class="kw">await</span><span class="question-mark">?</span>;
-<a href=#111 id=111 data-nosnippet>111</a>        <span class="kw">let </span>proxy = zbus::fdo::DBusProxy::new(<span class="kw-2">&amp;</span>dbus)
-<a href=#112 id=112 data-nosnippet>112</a>            .<span class="kw">await
-<a href=#113 id=113 data-nosnippet>113</a>            </span>.error(<span class="string">"Failed to create DBusProxy"</span>)<span class="question-mark">?</span>;
-<a href=#114 id=114 data-nosnippet>114</a>        proxy
-<a href=#115 id=115 data-nosnippet>115</a>            .add_match_rule(
-<a href=#116 id=116 data-nosnippet>116</a>                MatchRule::builder()
-<a href=#117 id=117 data-nosnippet>117</a>                    .msg_type(zbus::message::Type::Signal)
-<a href=#118 id=118 data-nosnippet>118</a>                    .path(<span class="string">"/org/freedesktop/NetworkManager"</span>)
-<a href=#119 id=119 data-nosnippet>119</a>                    .and_then(|x| x.interface(<span class="string">"org.freedesktop.DBus.Properties"</span>))
-<a href=#120 id=120 data-nosnippet>120</a>                    .and_then(|x| x.member(<span class="string">"PropertiesChanged"</span>))
-<a href=#121 id=121 data-nosnippet>121</a>                    .unwrap()
-<a href=#122 id=122 data-nosnippet>122</a>                    .build(),
-<a href=#123 id=123 data-nosnippet>123</a>            )
+<a href=#105 id=105 data-nosnippet>105</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>prepare(config: <span class="kw-2">&amp;</span>Config) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;BlockPlan&gt;&gt; {
+<a href=#106 id=106 data-nosnippet>106</a>    <span class="comment">// Only the required `IPAddressInfo` fields are set on every render.
+<a href=#107 id=107 data-nosnippet>107</a>    // Everything else (version, region, country_*, in_eu, ...) is optional
+<a href=#108 id=108 data-nosnippet>108</a>    // in the geolocator response and inserted conditionally, so it stays
+<a href=#109 id=109 data-nosnippet>109</a>    // undeclared.
+<a href=#110 id=110 data-nosnippet>110</a>    </span>BlockPlan::new(<span class="macro">vec!</span>[OutputPlan::new(
+<a href=#111 id=111 data-nosnippet>111</a>        <span class="string">"main"</span>,
+<a href=#112 id=112 data-nosnippet>112</a>        config.format.with_default(<span class="string">" $ip $country_flag "</span>)<span class="question-mark">?</span>,
+<a href=#113 id=113 data-nosnippet>113</a>    )])
+<a href=#114 id=114 data-nosnippet>114</a>}
+<a href=#115 id=115 data-nosnippet>115</a>
+<a href=#116 id=116 data-nosnippet>116</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi, plan: <span class="kw-2">&amp;</span>Arc&lt;BlockPlan&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+<a href=#117 id=117 data-nosnippet>117</a>    <span class="kw">let </span>output_main = plan.output(<span class="string">"main"</span>)<span class="question-mark">?</span>;
+<a href=#118 id=118 data-nosnippet>118</a>    <span class="kw">let </span>format = output_main.format();
+<a href=#119 id=119 data-nosnippet>119</a>
+<a href=#120 id=120 data-nosnippet>120</a>    <span class="kw">type </span>UpdatesStream = Pin&lt;Box&lt;<span class="kw">dyn </span>Stream&lt;Item = ()&gt;&gt;&gt;;
+<a href=#121 id=121 data-nosnippet>121</a>    <span class="kw">let </span><span class="kw-2">mut </span>stream: UpdatesStream = <span class="kw">if </span>config.with_network_manager {
+<a href=#122 id=122 data-nosnippet>122</a>        <span class="kw">let </span>dbus = new_system_dbus_connection().<span class="kw">await</span><span class="question-mark">?</span>;
+<a href=#123 id=123 data-nosnippet>123</a>        <span class="kw">let </span>proxy = zbus::fdo::DBusProxy::new(<span class="kw-2">&amp;</span>dbus)
 <a href=#124 id=124 data-nosnippet>124</a>            .<span class="kw">await
-<a href=#125 id=125 data-nosnippet>125</a>            </span>.error(<span class="string">"Failed to add match"</span>)<span class="question-mark">?</span>;
+<a href=#125 id=125 data-nosnippet>125</a>            </span>.error(<span class="string">"Failed to create DBusProxy"</span>)<span class="question-mark">?</span>;
 <a href=#126 id=126 data-nosnippet>126</a>        proxy
 <a href=#127 id=127 data-nosnippet>127</a>            .add_match_rule(
 <a href=#128 id=128 data-nosnippet>128</a>                MatchRule::builder()
 <a href=#129 id=129 data-nosnippet>129</a>                    .msg_type(zbus::message::Type::Signal)
-<a href=#130 id=130 data-nosnippet>130</a>                    .path_namespace(<span class="string">"/org/freedesktop/NetworkManager/ActiveConnection"</span>)
+<a href=#130 id=130 data-nosnippet>130</a>                    .path(<span class="string">"/org/freedesktop/NetworkManager"</span>)
 <a href=#131 id=131 data-nosnippet>131</a>                    .and_then(|x| x.interface(<span class="string">"org.freedesktop.DBus.Properties"</span>))
 <a href=#132 id=132 data-nosnippet>132</a>                    .and_then(|x| x.member(<span class="string">"PropertiesChanged"</span>))
 <a href=#133 id=133 data-nosnippet>133</a>                    .unwrap()
@@ -139,7 +139,7 @@
 <a href=#139 id=139 data-nosnippet>139</a>            .add_match_rule(
 <a href=#140 id=140 data-nosnippet>140</a>                MatchRule::builder()
 <a href=#141 id=141 data-nosnippet>141</a>                    .msg_type(zbus::message::Type::Signal)
-<a href=#142 id=142 data-nosnippet>142</a>                    .path_namespace(<span class="string">"/org/freedesktop/NetworkManager/IP4Config"</span>)
+<a href=#142 id=142 data-nosnippet>142</a>                    .path_namespace(<span class="string">"/org/freedesktop/NetworkManager/ActiveConnection"</span>)
 <a href=#143 id=143 data-nosnippet>143</a>                    .and_then(|x| x.interface(<span class="string">"org.freedesktop.DBus.Properties"</span>))
 <a href=#144 id=144 data-nosnippet>144</a>                    .and_then(|x| x.member(<span class="string">"PropertiesChanged"</span>))
 <a href=#145 id=145 data-nosnippet>145</a>                    .unwrap()
@@ -147,130 +147,169 @@
 <a href=#147 id=147 data-nosnippet>147</a>            )
 <a href=#148 id=148 data-nosnippet>148</a>            .<span class="kw">await
 <a href=#149 id=149 data-nosnippet>149</a>            </span>.error(<span class="string">"Failed to add match"</span>)<span class="question-mark">?</span>;
-<a href=#150 id=150 data-nosnippet>150</a>        <span class="kw">let </span>stream: zbus::MessageStream = dbus.into();
-<a href=#151 id=151 data-nosnippet>151</a>        <span class="comment">// If the D-Bus connection dies the stream ends; without the chained
-<a href=#152 id=152 data-nosnippet>152</a>        // pending stream, polling it again would resolve instantly forever,
-<a href=#153 id=153 data-nosnippet>153</a>        // turning the loop below into a busy loop of API requests.
-<a href=#154 id=154 data-nosnippet>154</a>        </span>Box::pin(stream.map(|<span class="kw">_</span>| ()).chain(futures::stream::pending()))
-<a href=#155 id=155 data-nosnippet>155</a>    } <span class="kw">else </span>{
-<a href=#156 id=156 data-nosnippet>156</a>        Box::pin(futures::stream::pending())
-<a href=#157 id=157 data-nosnippet>157</a>    };
-<a href=#158 id=158 data-nosnippet>158</a>
-<a href=#159 id=159 data-nosnippet>159</a>    <span class="kw">let </span>client = <span class="kw">if </span>config.use_ipv4 {
-<a href=#160 id=160 data-nosnippet>160</a>        <span class="kw-2">&amp;</span>REQWEST_CLIENT_IPV4
-<a href=#161 id=161 data-nosnippet>161</a>    } <span class="kw">else </span>{
-<a href=#162 id=162 data-nosnippet>162</a>        <span class="kw-2">&amp;</span>REQWEST_CLIENT
-<a href=#163 id=163 data-nosnippet>163</a>    };
-<a href=#164 id=164 data-nosnippet>164</a>
-<a href=#165 id=165 data-nosnippet>165</a>    <span class="kw">loop </span>{
-<a href=#166 id=166 data-nosnippet>166</a>        <span class="kw">let </span>fetch_start = tokio::time::Instant::now();
-<a href=#167 id=167 data-nosnippet>167</a>        <span class="kw">let </span>info = <span class="kw">match </span>api
-<a href=#168 id=168 data-nosnippet>168</a>            .find_ip_location(client, config.autolocate_interval.<span class="number">0</span>)
-<a href=#169 id=169 data-nosnippet>169</a>            .<span class="kw">await
-<a href=#170 id=170 data-nosnippet>170</a>        </span>{
-<a href=#171 id=171 data-nosnippet>171</a>            <span class="prelude-val">Ok</span>(info) =&gt; info,
-<a href=#172 id=172 data-nosnippet>172</a>            <span class="prelude-val">Err</span>(err) <span class="kw">if </span>is_rate_limited(<span class="kw-2">&amp;</span>err) =&gt; {
-<a href=#173 id=173 data-nosnippet>173</a>                <span class="comment">// Keep displaying the last known IP and try again once the
-<a href=#174 id=174 data-nosnippet>174</a>                // geolocator's rate limit interval has passed (plus a margin
-<a href=#175 id=175 data-nosnippet>175</a>                // so we don't wake up just before it expires); erroring out
-<a href=#176 id=176 data-nosnippet>176</a>                // here would make the block restart machinery re-query every
-<a href=#177 id=177 data-nosnippet>177</a>                // `error_interval` seconds, which keeps the rate limit from
-<a href=#178 id=178 data-nosnippet>178</a>                // ever lifting.
-<a href=#179 id=179 data-nosnippet>179</a>                </span>sleep(api.locator_rate_limit_interval() + Duration::from_secs(<span class="number">1</span>)).<span class="kw">await</span>;
-<a href=#180 id=180 data-nosnippet>180</a>                <span class="kw">continue</span>;
-<a href=#181 id=181 data-nosnippet>181</a>            }
-<a href=#182 id=182 data-nosnippet>182</a>            <span class="prelude-val">Err</span>(err) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(err),
-<a href=#183 id=183 data-nosnippet>183</a>        };
-<a href=#184 id=184 data-nosnippet>184</a>        <span class="macro">debug!</span>(<span class="string">"got {} after {:?}"</span>, info.ip, fetch_start.elapsed());
-<a href=#185 id=185 data-nosnippet>185</a>
-<a href=#186 id=186 data-nosnippet>186</a>        <span class="kw">let </span><span class="kw-2">mut </span>values = <span class="macro">map!</span> {
-<a href=#187 id=187 data-nosnippet>187</a>            <span class="string">"ip" </span>=&gt; Value::text(info.ip),
-<a href=#188 id=188 data-nosnippet>188</a>            <span class="string">"city" </span>=&gt; Value::text(info.city),
-<a href=#189 id=189 data-nosnippet>189</a>            <span class="string">"latitude" </span>=&gt; Value::number(info.latitude),
-<a href=#190 id=190 data-nosnippet>190</a>            <span class="string">"longitude" </span>=&gt; Value::number(info.longitude),
-<a href=#191 id=191 data-nosnippet>191</a>        };
-<a href=#192 id=192 data-nosnippet>192</a>
-<a href=#193 id=193 data-nosnippet>193</a>        <span class="macro">macro_rules!</span> map_push_if_some { ($(<span class="macro-nonterminal">$key</span>:ident: <span class="macro-nonterminal">$type</span>:ident),* $(,)<span class="question-mark">?</span>) =&gt; {
-<a href=#194 id=194 data-nosnippet>194</a>            $({
-<a href=#195 id=195 data-nosnippet>195</a>                <span class="kw">let </span>key = <span class="macro">stringify!</span>(<span class="macro-nonterminal">$key</span>);
-<a href=#196 id=196 data-nosnippet>196</a>                <span class="kw">if let </span><span class="prelude-val">Some</span>(value) = info.<span class="macro-nonterminal">$key </span>{
-<a href=#197 id=197 data-nosnippet>197</a>                    values.insert(key.into(), Value::<span class="macro-nonterminal">$type</span>(value));
-<a href=#198 id=198 data-nosnippet>198</a>                } <span class="kw">else if </span>format.contains_key(key) {
-<a href=#199 id=199 data-nosnippet>199</a>                    <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(
-<a href=#200 id=200 data-nosnippet>200</a>                        <span class="string">"The format string contains '{key}', but the {key} field is not provided by {} (an api key may be required)"</span>,
-<a href=#201 id=201 data-nosnippet>201</a>                        api.locator_name()
-<a href=#202 id=202 data-nosnippet>202</a>                    )));
-<a href=#203 id=203 data-nosnippet>203</a>                }
-<a href=#204 id=204 data-nosnippet>204</a>            })*
-<a href=#205 id=205 data-nosnippet>205</a>        } }
-<a href=#206 id=206 data-nosnippet>206</a>
-<a href=#207 id=207 data-nosnippet>207</a>        <span class="macro">map_push_if_some!</span>(
-<a href=#208 id=208 data-nosnippet>208</a>            version: text,
-<a href=#209 id=209 data-nosnippet>209</a>            region: text,
-<a href=#210 id=210 data-nosnippet>210</a>            region_code: text,
-<a href=#211 id=211 data-nosnippet>211</a>            country: text,
-<a href=#212 id=212 data-nosnippet>212</a>            country_name: text,
-<a href=#213 id=213 data-nosnippet>213</a>            country_code_iso3: text,
-<a href=#214 id=214 data-nosnippet>214</a>            country_capital: text,
-<a href=#215 id=215 data-nosnippet>215</a>            country_tld: text,
-<a href=#216 id=216 data-nosnippet>216</a>            continent_code: text,
-<a href=#217 id=217 data-nosnippet>217</a>            postal: text,
-<a href=#218 id=218 data-nosnippet>218</a>            timezone: text,
-<a href=#219 id=219 data-nosnippet>219</a>            utc_offset: text,
-<a href=#220 id=220 data-nosnippet>220</a>            country_calling_code: text,
-<a href=#221 id=221 data-nosnippet>221</a>            currency: text,
-<a href=#222 id=222 data-nosnippet>222</a>            currency_name: text,
-<a href=#223 id=223 data-nosnippet>223</a>            languages: text,
-<a href=#224 id=224 data-nosnippet>224</a>            country_area: number,
-<a href=#225 id=225 data-nosnippet>225</a>            country_population: number,
-<a href=#226 id=226 data-nosnippet>226</a>            asn: text,
-<a href=#227 id=227 data-nosnippet>227</a>            org: text,
-<a href=#228 id=228 data-nosnippet>228</a>        );
-<a href=#229 id=229 data-nosnippet>229</a>
-<a href=#230 id=230 data-nosnippet>230</a>        <span class="kw">if let </span><span class="prelude-val">Some</span>(country_code) = info.country_code {
-<a href=#231 id=231 data-nosnippet>231</a>            values.insert(
-<a href=#232 id=232 data-nosnippet>232</a>                <span class="string">"country_flag"</span>.into(),
-<a href=#233 id=233 data-nosnippet>233</a>                Value::text(country_flag_from_iso_code(<span class="kw-2">&amp;</span>country_code)),
-<a href=#234 id=234 data-nosnippet>234</a>            );
-<a href=#235 id=235 data-nosnippet>235</a>            values.insert(<span class="string">"country_code"</span>.into(), Value::text(country_code));
-<a href=#236 id=236 data-nosnippet>236</a>        } <span class="kw">else if </span>format.contains_key(<span class="string">"country_code"</span>) || format.contains_key(<span class="string">"country_flag"</span>) {
-<a href=#237 id=237 data-nosnippet>237</a>            <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(
-<a href=#238 id=238 data-nosnippet>238</a>                <span class="string">"The format string contains 'country_code' or 'country_flag', but the country_code field is not provided by {}"</span>,
-<a href=#239 id=239 data-nosnippet>239</a>                api.locator_name()
-<a href=#240 id=240 data-nosnippet>240</a>            )));
-<a href=#241 id=241 data-nosnippet>241</a>        }
-<a href=#242 id=242 data-nosnippet>242</a>
-<a href=#243 id=243 data-nosnippet>243</a>        <span class="kw">if let </span><span class="prelude-val">Some</span>(in_eu) = info.in_eu {
-<a href=#244 id=244 data-nosnippet>244</a>            <span class="kw">if </span>in_eu {
-<a href=#245 id=245 data-nosnippet>245</a>                values.insert(<span class="string">"in_eu"</span>.into(), Value::flag());
-<a href=#246 id=246 data-nosnippet>246</a>            }
-<a href=#247 id=247 data-nosnippet>247</a>        } <span class="kw">else if </span>format.contains_key(<span class="string">"in_eu"</span>) {
-<a href=#248 id=248 data-nosnippet>248</a>            <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(
-<a href=#249 id=249 data-nosnippet>249</a>                <span class="string">"The format string contains 'in_eu', but the in_eu field is not provided by {}"</span>,
-<a href=#250 id=250 data-nosnippet>250</a>                api.locator_name()
-<a href=#251 id=251 data-nosnippet>251</a>            )));
-<a href=#252 id=252 data-nosnippet>252</a>        }
-<a href=#253 id=253 data-nosnippet>253</a>
-<a href=#254 id=254 data-nosnippet>254</a>        <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
-<a href=#255 id=255 data-nosnippet>255</a>        widget.set_values(values);
-<a href=#256 id=256 data-nosnippet>256</a>        api.set_widget(widget)<span class="question-mark">?</span>;
-<a href=#257 id=257 data-nosnippet>257</a>
-<a href=#258 id=258 data-nosnippet>258</a>        <span class="macro">select!</span> {
-<a href=#259 id=259 data-nosnippet>259</a>            <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt; (),
-<a href=#260 id=260 data-nosnippet>260</a>            <span class="kw">_ </span>= api.wait_for_update_request() =&gt; (),
-<a href=#261 id=261 data-nosnippet>261</a>            <span class="kw">_ </span>= stream.next_debounced() =&gt; {
-<a href=#262 id=262 data-nosnippet>262</a>                <span class="comment">// Wait for the burst of signals to die down before re-querying,
-<a href=#263 id=263 data-nosnippet>263</a>                // so that one network transition results in one request, made
-<a href=#264 id=264 data-nosnippet>264</a>                // once the new connection is likely up.
-<a href=#265 id=265 data-nosnippet>265</a>                </span><span class="kw">let </span>settle_start = tokio::time::Instant::now();
-<a href=#266 id=266 data-nosnippet>266</a>                <span class="kw">while let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="kw">_</span>)) = tokio::time::timeout(SETTLE_QUIET, stream.next()).<span class="kw">await </span>{
-<a href=#267 id=267 data-nosnippet>267</a>                    <span class="kw">if </span>settle_start.elapsed() &gt;= SETTLE_MAX {
-<a href=#268 id=268 data-nosnippet>268</a>                        <span class="kw">break</span>;
-<a href=#269 id=269 data-nosnippet>269</a>                    }
-<a href=#270 id=270 data-nosnippet>270</a>                }
-<a href=#271 id=271 data-nosnippet>271</a>                <span class="macro">debug!</span>(<span class="string">"signals settled after {:?}"</span>, settle_start.elapsed());
-<a href=#272 id=272 data-nosnippet>272</a>            }
-<a href=#273 id=273 data-nosnippet>273</a>        }
-<a href=#274 id=274 data-nosnippet>274</a>    }
-<a href=#275 id=275 data-nosnippet>275</a>}
+<a href=#150 id=150 data-nosnippet>150</a>        proxy
+<a href=#151 id=151 data-nosnippet>151</a>            .add_match_rule(
+<a href=#152 id=152 data-nosnippet>152</a>                MatchRule::builder()
+<a href=#153 id=153 data-nosnippet>153</a>                    .msg_type(zbus::message::Type::Signal)
+<a href=#154 id=154 data-nosnippet>154</a>                    .path_namespace(<span class="string">"/org/freedesktop/NetworkManager/IP4Config"</span>)
+<a href=#155 id=155 data-nosnippet>155</a>                    .and_then(|x| x.interface(<span class="string">"org.freedesktop.DBus.Properties"</span>))
+<a href=#156 id=156 data-nosnippet>156</a>                    .and_then(|x| x.member(<span class="string">"PropertiesChanged"</span>))
+<a href=#157 id=157 data-nosnippet>157</a>                    .unwrap()
+<a href=#158 id=158 data-nosnippet>158</a>                    .build(),
+<a href=#159 id=159 data-nosnippet>159</a>            )
+<a href=#160 id=160 data-nosnippet>160</a>            .<span class="kw">await
+<a href=#161 id=161 data-nosnippet>161</a>            </span>.error(<span class="string">"Failed to add match"</span>)<span class="question-mark">?</span>;
+<a href=#162 id=162 data-nosnippet>162</a>        <span class="kw">let </span>stream: zbus::MessageStream = dbus.into();
+<a href=#163 id=163 data-nosnippet>163</a>        <span class="comment">// If the D-Bus connection dies the stream ends; without the chained
+<a href=#164 id=164 data-nosnippet>164</a>        // pending stream, polling it again would resolve instantly forever,
+<a href=#165 id=165 data-nosnippet>165</a>        // turning the loop below into a busy loop of API requests.
+<a href=#166 id=166 data-nosnippet>166</a>        </span>Box::pin(stream.map(|<span class="kw">_</span>| ()).chain(futures::stream::pending()))
+<a href=#167 id=167 data-nosnippet>167</a>    } <span class="kw">else </span>{
+<a href=#168 id=168 data-nosnippet>168</a>        Box::pin(futures::stream::pending())
+<a href=#169 id=169 data-nosnippet>169</a>    };
+<a href=#170 id=170 data-nosnippet>170</a>
+<a href=#171 id=171 data-nosnippet>171</a>    <span class="kw">let </span>client = <span class="kw">if </span>config.use_ipv4 {
+<a href=#172 id=172 data-nosnippet>172</a>        <span class="kw-2">&amp;</span>REQWEST_CLIENT_IPV4
+<a href=#173 id=173 data-nosnippet>173</a>    } <span class="kw">else </span>{
+<a href=#174 id=174 data-nosnippet>174</a>        <span class="kw-2">&amp;</span>REQWEST_CLIENT
+<a href=#175 id=175 data-nosnippet>175</a>    };
+<a href=#176 id=176 data-nosnippet>176</a>
+<a href=#177 id=177 data-nosnippet>177</a>    <span class="kw">loop </span>{
+<a href=#178 id=178 data-nosnippet>178</a>        <span class="kw">let </span>fetch_start = tokio::time::Instant::now();
+<a href=#179 id=179 data-nosnippet>179</a>        <span class="kw">let </span>info = <span class="kw">match </span>api
+<a href=#180 id=180 data-nosnippet>180</a>            .find_ip_location(client, config.autolocate_interval.<span class="number">0</span>)
+<a href=#181 id=181 data-nosnippet>181</a>            .<span class="kw">await
+<a href=#182 id=182 data-nosnippet>182</a>        </span>{
+<a href=#183 id=183 data-nosnippet>183</a>            <span class="prelude-val">Ok</span>(info) =&gt; info,
+<a href=#184 id=184 data-nosnippet>184</a>            <span class="prelude-val">Err</span>(err) <span class="kw">if </span>is_rate_limited(<span class="kw-2">&amp;</span>err) =&gt; {
+<a href=#185 id=185 data-nosnippet>185</a>                <span class="comment">// Keep displaying the last known IP and try again once the
+<a href=#186 id=186 data-nosnippet>186</a>                // geolocator's rate limit interval has passed (plus a margin
+<a href=#187 id=187 data-nosnippet>187</a>                // so we don't wake up just before it expires); erroring out
+<a href=#188 id=188 data-nosnippet>188</a>                // here would make the block restart machinery re-query every
+<a href=#189 id=189 data-nosnippet>189</a>                // `error_interval` seconds, which keeps the rate limit from
+<a href=#190 id=190 data-nosnippet>190</a>                // ever lifting.
+<a href=#191 id=191 data-nosnippet>191</a>                </span>sleep(api.locator_rate_limit_interval() + Duration::from_secs(<span class="number">1</span>)).<span class="kw">await</span>;
+<a href=#192 id=192 data-nosnippet>192</a>                <span class="kw">continue</span>;
+<a href=#193 id=193 data-nosnippet>193</a>            }
+<a href=#194 id=194 data-nosnippet>194</a>            <span class="prelude-val">Err</span>(err) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(err),
+<a href=#195 id=195 data-nosnippet>195</a>        };
+<a href=#196 id=196 data-nosnippet>196</a>        <span class="macro">debug!</span>(<span class="string">"got {} after {:?}"</span>, info.ip, fetch_start.elapsed());
+<a href=#197 id=197 data-nosnippet>197</a>
+<a href=#198 id=198 data-nosnippet>198</a>        <span class="kw">let </span><span class="kw-2">mut </span>values = <span class="macro">map!</span> {
+<a href=#199 id=199 data-nosnippet>199</a>            <span class="string">"ip" </span>=&gt; Value::text(info.ip),
+<a href=#200 id=200 data-nosnippet>200</a>            <span class="string">"city" </span>=&gt; Value::text(info.city),
+<a href=#201 id=201 data-nosnippet>201</a>            <span class="string">"latitude" </span>=&gt; Value::number(info.latitude),
+<a href=#202 id=202 data-nosnippet>202</a>            <span class="string">"longitude" </span>=&gt; Value::number(info.longitude),
+<a href=#203 id=203 data-nosnippet>203</a>        };
+<a href=#204 id=204 data-nosnippet>204</a>
+<a href=#205 id=205 data-nosnippet>205</a>        <span class="macro">macro_rules!</span> map_push_if_some { ($(<span class="macro-nonterminal">$key</span>:ident: <span class="macro-nonterminal">$type</span>:ident),* $(,)<span class="question-mark">?</span>) =&gt; {
+<a href=#206 id=206 data-nosnippet>206</a>            $({
+<a href=#207 id=207 data-nosnippet>207</a>                <span class="kw">let </span>key = <span class="macro">stringify!</span>(<span class="macro-nonterminal">$key</span>);
+<a href=#208 id=208 data-nosnippet>208</a>                <span class="kw">if let </span><span class="prelude-val">Some</span>(value) = info.<span class="macro-nonterminal">$key </span>{
+<a href=#209 id=209 data-nosnippet>209</a>                    values.insert(key.into(), Value::<span class="macro-nonterminal">$type</span>(value));
+<a href=#210 id=210 data-nosnippet>210</a>                } <span class="kw">else if </span>format.contains_key(key) {
+<a href=#211 id=211 data-nosnippet>211</a>                    <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(
+<a href=#212 id=212 data-nosnippet>212</a>                        <span class="string">"The format string contains '{key}', but the {key} field is not provided by {} (an api key may be required)"</span>,
+<a href=#213 id=213 data-nosnippet>213</a>                        api.locator_name()
+<a href=#214 id=214 data-nosnippet>214</a>                    )));
+<a href=#215 id=215 data-nosnippet>215</a>                }
+<a href=#216 id=216 data-nosnippet>216</a>            })*
+<a href=#217 id=217 data-nosnippet>217</a>        } }
+<a href=#218 id=218 data-nosnippet>218</a>
+<a href=#219 id=219 data-nosnippet>219</a>        <span class="macro">map_push_if_some!</span>(
+<a href=#220 id=220 data-nosnippet>220</a>            version: text,
+<a href=#221 id=221 data-nosnippet>221</a>            region: text,
+<a href=#222 id=222 data-nosnippet>222</a>            region_code: text,
+<a href=#223 id=223 data-nosnippet>223</a>            country: text,
+<a href=#224 id=224 data-nosnippet>224</a>            country_name: text,
+<a href=#225 id=225 data-nosnippet>225</a>            country_code_iso3: text,
+<a href=#226 id=226 data-nosnippet>226</a>            country_capital: text,
+<a href=#227 id=227 data-nosnippet>227</a>            country_tld: text,
+<a href=#228 id=228 data-nosnippet>228</a>            continent_code: text,
+<a href=#229 id=229 data-nosnippet>229</a>            postal: text,
+<a href=#230 id=230 data-nosnippet>230</a>            timezone: text,
+<a href=#231 id=231 data-nosnippet>231</a>            utc_offset: text,
+<a href=#232 id=232 data-nosnippet>232</a>            country_calling_code: text,
+<a href=#233 id=233 data-nosnippet>233</a>            currency: text,
+<a href=#234 id=234 data-nosnippet>234</a>            currency_name: text,
+<a href=#235 id=235 data-nosnippet>235</a>            languages: text,
+<a href=#236 id=236 data-nosnippet>236</a>            country_area: number,
+<a href=#237 id=237 data-nosnippet>237</a>            country_population: number,
+<a href=#238 id=238 data-nosnippet>238</a>            asn: text,
+<a href=#239 id=239 data-nosnippet>239</a>            org: text,
+<a href=#240 id=240 data-nosnippet>240</a>        );
+<a href=#241 id=241 data-nosnippet>241</a>
+<a href=#242 id=242 data-nosnippet>242</a>        <span class="kw">if let </span><span class="prelude-val">Some</span>(country_code) = info.country_code {
+<a href=#243 id=243 data-nosnippet>243</a>            values.insert(
+<a href=#244 id=244 data-nosnippet>244</a>                <span class="string">"country_flag"</span>.into(),
+<a href=#245 id=245 data-nosnippet>245</a>                Value::text(country_flag_from_iso_code(<span class="kw-2">&amp;</span>country_code)),
+<a href=#246 id=246 data-nosnippet>246</a>            );
+<a href=#247 id=247 data-nosnippet>247</a>            values.insert(<span class="string">"country_code"</span>.into(), Value::text(country_code));
+<a href=#248 id=248 data-nosnippet>248</a>        } <span class="kw">else if </span>format.contains_key(<span class="string">"country_code"</span>) || format.contains_key(<span class="string">"country_flag"</span>) {
+<a href=#249 id=249 data-nosnippet>249</a>            <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(
+<a href=#250 id=250 data-nosnippet>250</a>                <span class="string">"The format string contains 'country_code' or 'country_flag', but the country_code field is not provided by {}"</span>,
+<a href=#251 id=251 data-nosnippet>251</a>                api.locator_name()
+<a href=#252 id=252 data-nosnippet>252</a>            )));
+<a href=#253 id=253 data-nosnippet>253</a>        }
+<a href=#254 id=254 data-nosnippet>254</a>
+<a href=#255 id=255 data-nosnippet>255</a>        <span class="kw">if let </span><span class="prelude-val">Some</span>(in_eu) = info.in_eu {
+<a href=#256 id=256 data-nosnippet>256</a>            <span class="kw">if </span>in_eu {
+<a href=#257 id=257 data-nosnippet>257</a>                values.insert(<span class="string">"in_eu"</span>.into(), Value::flag());
+<a href=#258 id=258 data-nosnippet>258</a>            }
+<a href=#259 id=259 data-nosnippet>259</a>        } <span class="kw">else if </span>format.contains_key(<span class="string">"in_eu"</span>) {
+<a href=#260 id=260 data-nosnippet>260</a>            <span class="kw">return </span><span class="prelude-val">Err</span>(Error::new(<span class="macro">format!</span>(
+<a href=#261 id=261 data-nosnippet>261</a>                <span class="string">"The format string contains 'in_eu', but the in_eu field is not provided by {}"</span>,
+<a href=#262 id=262 data-nosnippet>262</a>                api.locator_name()
+<a href=#263 id=263 data-nosnippet>263</a>            )));
+<a href=#264 id=264 data-nosnippet>264</a>        }
+<a href=#265 id=265 data-nosnippet>265</a>
+<a href=#266 id=266 data-nosnippet>266</a>        <span class="kw">let </span><span class="kw-2">mut </span>widget = output_main.new_widget();
+<a href=#267 id=267 data-nosnippet>267</a>        widget.set_values(values);
+<a href=#268 id=268 data-nosnippet>268</a>        api.set_widget(widget)<span class="question-mark">?</span>;
+<a href=#269 id=269 data-nosnippet>269</a>
+<a href=#270 id=270 data-nosnippet>270</a>        <span class="macro">select!</span> {
+<a href=#271 id=271 data-nosnippet>271</a>            <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt; (),
+<a href=#272 id=272 data-nosnippet>272</a>            <span class="kw">_ </span>= api.wait_for_update_request() =&gt; (),
+<a href=#273 id=273 data-nosnippet>273</a>            <span class="kw">_ </span>= stream.next_debounced() =&gt; {
+<a href=#274 id=274 data-nosnippet>274</a>                <span class="comment">// Wait for the burst of signals to die down before re-querying,
+<a href=#275 id=275 data-nosnippet>275</a>                // so that one network transition results in one request, made
+<a href=#276 id=276 data-nosnippet>276</a>                // once the new connection is likely up.
+<a href=#277 id=277 data-nosnippet>277</a>                </span><span class="kw">let </span>settle_start = tokio::time::Instant::now();
+<a href=#278 id=278 data-nosnippet>278</a>                <span class="kw">while let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="kw">_</span>)) = tokio::time::timeout(SETTLE_QUIET, stream.next()).<span class="kw">await </span>{
+<a href=#279 id=279 data-nosnippet>279</a>                    <span class="kw">if </span>settle_start.elapsed() &gt;= SETTLE_MAX {
+<a href=#280 id=280 data-nosnippet>280</a>                        <span class="kw">break</span>;
+<a href=#281 id=281 data-nosnippet>281</a>                    }
+<a href=#282 id=282 data-nosnippet>282</a>                }
+<a href=#283 id=283 data-nosnippet>283</a>                <span class="macro">debug!</span>(<span class="string">"signals settled after {:?}"</span>, settle_start.elapsed());
+<a href=#284 id=284 data-nosnippet>284</a>            }
+<a href=#285 id=285 data-nosnippet>285</a>        }
+<a href=#286 id=286 data-nosnippet>286</a>    }
+<a href=#287 id=287 data-nosnippet>287</a>}
+<a href=#288 id=288 data-nosnippet>288</a>
+<a href=#289 id=289 data-nosnippet>289</a><span class="attr">#[cfg(test)]
+<a href=#290 id=290 data-nosnippet>290</a></span><span class="kw">mod </span>tests {
+<a href=#291 id=291 data-nosnippet>291</a>    <span class="kw">use super</span>::<span class="kw-2">*</span>;
+<a href=#292 id=292 data-nosnippet>292</a>
+<a href=#293 id=293 data-nosnippet>293</a>    <span class="attr">#[test]
+<a href=#294 id=294 data-nosnippet>294</a>    </span><span class="kw">fn </span>plan_declares_single_output_without_icons() {
+<a href=#295 id=295 data-nosnippet>295</a>        <span class="kw">let </span>plan = prepare(<span class="kw-2">&amp;</span>Config::default()).unwrap();
+<a href=#296 id=296 data-nosnippet>296</a>        <span class="macro">assert_eq!</span>(plan.outputs().count(), <span class="number">1</span>);
+<a href=#297 id=297 data-nosnippet>297</a>        <span class="kw">let </span>main = plan.output(<span class="string">"main"</span>).unwrap();
+<a href=#298 id=298 data-nosnippet>298</a>        <span class="macro">assert!</span>(main.format().contains_key(<span class="string">"ip"</span>));
+<a href=#299 id=299 data-nosnippet>299</a>        <span class="macro">assert!</span>(main.format().contains_key(<span class="string">"country_flag"</span>));
+<a href=#300 id=300 data-nosnippet>300</a>        <span class="macro">assert_eq!</span>(main.output().icon_placeholders().count(), <span class="number">0</span>);
+<a href=#301 id=301 data-nosnippet>301</a>    }
+<a href=#302 id=302 data-nosnippet>302</a>
+<a href=#303 id=303 data-nosnippet>303</a>    <span class="attr">#[test]
+<a href=#304 id=304 data-nosnippet>304</a>    </span><span class="kw">fn </span>custom_format_is_used() {
+<a href=#305 id=305 data-nosnippet>305</a>        <span class="kw">let </span>config = Config {
+<a href=#306 id=306 data-nosnippet>306</a>            format: <span class="string">" $ip $country_code "</span>.parse().unwrap(),
+<a href=#307 id=307 data-nosnippet>307</a>            ..Config::default()
+<a href=#308 id=308 data-nosnippet>308</a>        };
+<a href=#309 id=309 data-nosnippet>309</a>        <span class="kw">let </span>plan = prepare(<span class="kw-2">&amp;</span>config).unwrap();
+<a href=#310 id=310 data-nosnippet>310</a>        <span class="kw">let </span>main = plan.output(<span class="string">"main"</span>).unwrap();
+<a href=#311 id=311 data-nosnippet>311</a>        <span class="macro">assert!</span>(main.format().contains_key(<span class="string">"country_code"</span>));
+<a href=#312 id=312 data-nosnippet>312</a>        <span class="macro">assert!</span>(!main.format().contains_key(<span class="string">"country_flag"</span>));
+<a href=#313 id=313 data-nosnippet>313</a>    }
+<a href=#314 id=314 data-nosnippet>314</a>}
 </code></pre></div></section></main></body></html>

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["HueShifter"],"fn":["run"],"struct":["Config"]};
+window.SIDEBAR_ITEMS = {"enum":["HueShifter"],"struct":["Config"]};

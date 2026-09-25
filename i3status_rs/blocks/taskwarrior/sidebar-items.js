@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["run"],"struct":["Config","Filter"]};
+window.SIDEBAR_ITEMS = {"struct":["Config","Filter"]};

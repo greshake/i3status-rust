@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["PrivacyDriver"],"fn":["run"],"struct":["Config"]};
+window.SIDEBAR_ITEMS = {"enum":["PrivacyDriver"],"struct":["Config"]};

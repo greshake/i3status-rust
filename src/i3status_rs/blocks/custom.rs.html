@@ -95,204 +95,239 @@
 <a href=#95 id=95 data-nosnippet>95</a>//! # TODO:
 <a href=#96 id=96 data-nosnippet>96</a>//! - Use `shellexpand`
 <a href=#97 id=97 data-nosnippet>97</a>
-<a href=#98 id=98 data-nosnippet>98</a></span><span class="kw">use </span><span class="kw">crate</span>::formatting::Format;
-<a href=#99 id=99 data-nosnippet>99</a>
-<a href=#100 id=100 data-nosnippet>100</a><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
-<a href=#101 id=101 data-nosnippet>101</a><span class="kw">use </span>inotify::{Inotify, WatchMask};
-<a href=#102 id=102 data-nosnippet>102</a><span class="kw">use </span>std::process::Stdio;
-<a href=#103 id=103 data-nosnippet>103</a><span class="kw">use </span>tokio::io::{<span class="self">self</span>, BufReader};
-<a href=#104 id=104 data-nosnippet>104</a><span class="kw">use </span>tokio::process::Command;
-<a href=#105 id=105 data-nosnippet>105</a>
-<a href=#106 id=106 data-nosnippet>106</a><span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
-<a href=#107 id=107 data-nosnippet>107</a>#[serde(deny_unknown_fields, default)]
-<a href=#108 id=108 data-nosnippet>108</a></span><span class="kw">pub struct </span>Config {
-<a href=#109 id=109 data-nosnippet>109</a>    <span class="kw">pub </span>format: FormatConfig,
-<a href=#110 id=110 data-nosnippet>110</a>    <span class="kw">pub </span>command: <span class="prelude-ty">Option</span>&lt;String&gt;,
-<a href=#111 id=111 data-nosnippet>111</a>    <span class="kw">pub </span>persistent: bool,
-<a href=#112 id=112 data-nosnippet>112</a>    <span class="kw">pub </span>cycle: <span class="prelude-ty">Option</span>&lt;Vec&lt;String&gt;&gt;,
-<a href=#113 id=113 data-nosnippet>113</a>    <span class="attr">#[default(<span class="number">10</span>.into())]
-<a href=#114 id=114 data-nosnippet>114</a>    </span><span class="kw">pub </span>interval: Seconds,
-<a href=#115 id=115 data-nosnippet>115</a>    <span class="kw">pub </span>json: bool,
-<a href=#116 id=116 data-nosnippet>116</a>    <span class="kw">pub </span>hide_when_empty: bool,
-<a href=#117 id=117 data-nosnippet>117</a>    <span class="kw">pub </span>shell: <span class="prelude-ty">Option</span>&lt;String&gt;,
-<a href=#118 id=118 data-nosnippet>118</a>    <span class="kw">pub </span>watch_files: Vec&lt;ShellString&gt;,
-<a href=#119 id=119 data-nosnippet>119</a>}
-<a href=#120 id=120 data-nosnippet>120</a>
-<a href=#121 id=121 data-nosnippet>121</a><span class="kw">async fn </span>update_bar(
-<a href=#122 id=122 data-nosnippet>122</a>    stdout: <span class="kw-2">&amp;</span>str,
-<a href=#123 id=123 data-nosnippet>123</a>    hide_when_empty: bool,
-<a href=#124 id=124 data-nosnippet>124</a>    json: bool,
-<a href=#125 id=125 data-nosnippet>125</a>    api: <span class="kw-2">&amp;</span>CommonApi,
-<a href=#126 id=126 data-nosnippet>126</a>    format: Format,
-<a href=#127 id=127 data-nosnippet>127</a>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-<a href=#128 id=128 data-nosnippet>128</a>    <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format);
-<a href=#129 id=129 data-nosnippet>129</a>
-<a href=#130 id=130 data-nosnippet>130</a>    <span class="kw">let </span>text_empty;
-<a href=#131 id=131 data-nosnippet>131</a>
-<a href=#132 id=132 data-nosnippet>132</a>    <span class="kw">if </span>json {
-<a href=#133 id=133 data-nosnippet>133</a>        <span class="kw">match </span>serde_json::from_str::&lt;Input&gt;(stdout).error(<span class="string">"Invalid JSON"</span>) {
-<a href=#134 id=134 data-nosnippet>134</a>            <span class="prelude-val">Ok</span>(input) =&gt; {
-<a href=#135 id=135 data-nosnippet>135</a>                text_empty = input.text.is_empty();
-<a href=#136 id=136 data-nosnippet>136</a>                widget.set_values(<span class="macro">map!</span> {
-<a href=#137 id=137 data-nosnippet>137</a>                    <span class="string">"text" </span>=&gt; Value::text(input.text),
-<a href=#138 id=138 data-nosnippet>138</a>                    [<span class="kw">if </span>!input.icon.is_empty()] <span class="string">"icon" </span>=&gt; Value::icon(input.icon),
-<a href=#139 id=139 data-nosnippet>139</a>                    [<span class="kw">if let </span><span class="prelude-val">Some</span>(t) = input.short_text] <span class="string">"short_text" </span>=&gt; Value::text(t)
-<a href=#140 id=140 data-nosnippet>140</a>                });
-<a href=#141 id=141 data-nosnippet>141</a>                widget.state = input.state;
-<a href=#142 id=142 data-nosnippet>142</a>            }
-<a href=#143 id=143 data-nosnippet>143</a>            <span class="prelude-val">Err</span>(error) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(error),
-<a href=#144 id=144 data-nosnippet>144</a>        }
-<a href=#145 id=145 data-nosnippet>145</a>    } <span class="kw">else </span>{
-<a href=#146 id=146 data-nosnippet>146</a>        text_empty = stdout.is_empty();
-<a href=#147 id=147 data-nosnippet>147</a>        widget.set_values(<span class="macro">map!</span>(<span class="string">"text" </span>=&gt; Value::text(stdout.into())));
-<a href=#148 id=148 data-nosnippet>148</a>    }
-<a href=#149 id=149 data-nosnippet>149</a>
-<a href=#150 id=150 data-nosnippet>150</a>    <span class="kw">if </span>text_empty &amp;&amp; hide_when_empty {
-<a href=#151 id=151 data-nosnippet>151</a>        api.hide()
-<a href=#152 id=152 data-nosnippet>152</a>    } <span class="kw">else </span>{
-<a href=#153 id=153 data-nosnippet>153</a>        api.set_widget(widget)
-<a href=#154 id=154 data-nosnippet>154</a>    }
-<a href=#155 id=155 data-nosnippet>155</a>}
-<a href=#156 id=156 data-nosnippet>156</a>
-<a href=#157 id=157 data-nosnippet>157</a><span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-<a href=#158 id=158 data-nosnippet>158</a>    api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">"cycle"</span>)])<span class="question-mark">?</span>;
-<a href=#159 id=159 data-nosnippet>159</a>
-<a href=#160 id=160 data-nosnippet>160</a>    <span class="kw">let </span>format = config.format.with_defaults(
-<a href=#161 id=161 data-nosnippet>161</a>        <span class="string">"{ $icon|} $text.pango-str() "</span>,
-<a href=#162 id=162 data-nosnippet>162</a>        <span class="string">"{ $icon|} $short_text.pango-str() |"</span>,
-<a href=#163 id=163 data-nosnippet>163</a>    )<span class="question-mark">?</span>;
+<a href=#98 id=98 data-nosnippet>98</a></span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
+<a href=#99 id=99 data-nosnippet>99</a><span class="kw">use </span>inotify::{Inotify, WatchMask};
+<a href=#100 id=100 data-nosnippet>100</a><span class="kw">use </span>std::process::Stdio;
+<a href=#101 id=101 data-nosnippet>101</a><span class="kw">use </span>tokio::io::{<span class="self">self</span>, BufReader};
+<a href=#102 id=102 data-nosnippet>102</a><span class="kw">use </span>tokio::process::Command;
+<a href=#103 id=103 data-nosnippet>103</a>
+<a href=#104 id=104 data-nosnippet>104</a><span class="attr">#[derive(Deserialize, Debug, SmartDefault)]
+<a href=#105 id=105 data-nosnippet>105</a>#[serde(deny_unknown_fields, default)]
+<a href=#106 id=106 data-nosnippet>106</a></span><span class="kw">pub struct </span>Config {
+<a href=#107 id=107 data-nosnippet>107</a>    <span class="kw">pub </span>format: FormatConfig,
+<a href=#108 id=108 data-nosnippet>108</a>    <span class="kw">pub </span>command: <span class="prelude-ty">Option</span>&lt;String&gt;,
+<a href=#109 id=109 data-nosnippet>109</a>    <span class="kw">pub </span>persistent: bool,
+<a href=#110 id=110 data-nosnippet>110</a>    <span class="kw">pub </span>cycle: <span class="prelude-ty">Option</span>&lt;Vec&lt;String&gt;&gt;,
+<a href=#111 id=111 data-nosnippet>111</a>    <span class="attr">#[default(<span class="number">10</span>.into())]
+<a href=#112 id=112 data-nosnippet>112</a>    </span><span class="kw">pub </span>interval: Seconds,
+<a href=#113 id=113 data-nosnippet>113</a>    <span class="kw">pub </span>json: bool,
+<a href=#114 id=114 data-nosnippet>114</a>    <span class="kw">pub </span>hide_when_empty: bool,
+<a href=#115 id=115 data-nosnippet>115</a>    <span class="kw">pub </span>shell: <span class="prelude-ty">Option</span>&lt;String&gt;,
+<a href=#116 id=116 data-nosnippet>116</a>    <span class="kw">pub </span>watch_files: Vec&lt;ShellString&gt;,
+<a href=#117 id=117 data-nosnippet>117</a>}
+<a href=#118 id=118 data-nosnippet>118</a>
+<a href=#119 id=119 data-nosnippet>119</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>prepare(config: <span class="kw-2">&amp;</span>Config) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;BlockPlan&gt;&gt; {
+<a href=#120 id=120 data-nosnippet>120</a>    <span class="kw">let </span><span class="kw-2">mut </span>output = OutputPlan::new(
+<a href=#121 id=121 data-nosnippet>121</a>        <span class="string">"main"</span>,
+<a href=#122 id=122 data-nosnippet>122</a>        config.format.with_defaults(
+<a href=#123 id=123 data-nosnippet>123</a>            <span class="string">"{ $icon|} $text.pango-str() "</span>,
+<a href=#124 id=124 data-nosnippet>124</a>            <span class="string">"{ $icon|} $short_text.pango-str() |"</span>,
+<a href=#125 id=125 data-nosnippet>125</a>        )<span class="question-mark">?</span>,
+<a href=#126 id=126 data-nosnippet>126</a>    );
+<a href=#127 id=127 data-nosnippet>127</a>    <span class="comment">// Only JSON output can carry an icon name; a plain-text command never
+<a href=#128 id=128 data-nosnippet>128</a>    // sets one. When it can, any name is permitted and resolves through the
+<a href=#129 id=129 data-nosnippet>129</a>    // normal icon set and override rules.
+<a href=#130 id=130 data-nosnippet>130</a>    </span><span class="kw">if </span>config.json {
+<a href=#131 id=131 data-nosnippet>131</a>        output = output.icon(<span class="string">"icon"</span>, IconChoices::OpenResolvable);
+<a href=#132 id=132 data-nosnippet>132</a>    }
+<a href=#133 id=133 data-nosnippet>133</a>    BlockPlan::new(<span class="macro">vec!</span>[output])
+<a href=#134 id=134 data-nosnippet>134</a>}
+<a href=#135 id=135 data-nosnippet>135</a>
+<a href=#136 id=136 data-nosnippet>136</a><span class="kw">async fn </span>update_bar(
+<a href=#137 id=137 data-nosnippet>137</a>    stdout: <span class="kw-2">&amp;</span>str,
+<a href=#138 id=138 data-nosnippet>138</a>    hide_when_empty: bool,
+<a href=#139 id=139 data-nosnippet>139</a>    json: bool,
+<a href=#140 id=140 data-nosnippet>140</a>    api: <span class="kw-2">&amp;</span>CommonApi,
+<a href=#141 id=141 data-nosnippet>141</a>    output: <span class="kw-2">&amp;</span>OutputHandle,
+<a href=#142 id=142 data-nosnippet>142</a>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+<a href=#143 id=143 data-nosnippet>143</a>    <span class="kw">let </span><span class="kw-2">mut </span>widget = output.new_widget();
+<a href=#144 id=144 data-nosnippet>144</a>
+<a href=#145 id=145 data-nosnippet>145</a>    <span class="kw">let </span>text_empty;
+<a href=#146 id=146 data-nosnippet>146</a>
+<a href=#147 id=147 data-nosnippet>147</a>    <span class="kw">if </span>json {
+<a href=#148 id=148 data-nosnippet>148</a>        <span class="kw">match </span>serde_json::from_str::&lt;Input&gt;(stdout).error(<span class="string">"Invalid JSON"</span>) {
+<a href=#149 id=149 data-nosnippet>149</a>            <span class="prelude-val">Ok</span>(input) =&gt; {
+<a href=#150 id=150 data-nosnippet>150</a>                text_empty = input.text.is_empty();
+<a href=#151 id=151 data-nosnippet>151</a>                widget.set_values(<span class="macro">map!</span> {
+<a href=#152 id=152 data-nosnippet>152</a>                    <span class="string">"text" </span>=&gt; Value::text(input.text),
+<a href=#153 id=153 data-nosnippet>153</a>                    [<span class="kw">if </span>!input.icon.is_empty()] <span class="string">"icon" </span>=&gt; Value::icon(input.icon),
+<a href=#154 id=154 data-nosnippet>154</a>                    [<span class="kw">if let </span><span class="prelude-val">Some</span>(t) = input.short_text] <span class="string">"short_text" </span>=&gt; Value::text(t)
+<a href=#155 id=155 data-nosnippet>155</a>                });
+<a href=#156 id=156 data-nosnippet>156</a>                widget.state = input.state;
+<a href=#157 id=157 data-nosnippet>157</a>            }
+<a href=#158 id=158 data-nosnippet>158</a>            <span class="prelude-val">Err</span>(error) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(error),
+<a href=#159 id=159 data-nosnippet>159</a>        }
+<a href=#160 id=160 data-nosnippet>160</a>    } <span class="kw">else </span>{
+<a href=#161 id=161 data-nosnippet>161</a>        text_empty = stdout.is_empty();
+<a href=#162 id=162 data-nosnippet>162</a>        widget.set_values(<span class="macro">map!</span>(<span class="string">"text" </span>=&gt; Value::text(stdout.into())));
+<a href=#163 id=163 data-nosnippet>163</a>    }
 <a href=#164 id=164 data-nosnippet>164</a>
-<a href=#165 id=165 data-nosnippet>165</a>    <span class="kw">let </span><span class="kw-2">mut </span>timer = config.interval.timer();
-<a href=#166 id=166 data-nosnippet>166</a>
-<a href=#167 id=167 data-nosnippet>167</a>    <span class="kw">type </span>FileStream = Pin&lt;Box&lt;<span class="kw">dyn </span>Stream&lt;Item = io::Result&lt;inotify::EventOwned&gt;&gt; + Send + Sync&gt;&gt;;
-<a href=#168 id=168 data-nosnippet>168</a>    <span class="kw">let </span><span class="kw-2">mut </span>file_updates: FileStream = <span class="kw">match </span>config.watch_files.as_slice() {
-<a href=#169 id=169 data-nosnippet>169</a>        [] =&gt; Box::pin(futures::stream::pending()),
-<a href=#170 id=170 data-nosnippet>170</a>        files =&gt; {
-<a href=#171 id=171 data-nosnippet>171</a>            <span class="kw">let </span>notify = Inotify::init().error(<span class="string">"Failed to start inotify"</span>)<span class="question-mark">?</span>;
-<a href=#172 id=172 data-nosnippet>172</a>            <span class="kw">let </span><span class="kw-2">mut </span>watches = notify.watches();
-<a href=#173 id=173 data-nosnippet>173</a>            <span class="kw">for </span>file <span class="kw">in </span>files {
-<a href=#174 id=174 data-nosnippet>174</a>                <span class="kw">let </span>file = file.expand()<span class="question-mark">?</span>;
-<a href=#175 id=175 data-nosnippet>175</a>                watches
-<a href=#176 id=176 data-nosnippet>176</a>                    .add(
-<a href=#177 id=177 data-nosnippet>177</a>                        <span class="kw-2">&amp;*</span>file,
-<a href=#178 id=178 data-nosnippet>178</a>                        WatchMask::MODIFY
-<a href=#179 id=179 data-nosnippet>179</a>                            | WatchMask::CLOSE_WRITE
-<a href=#180 id=180 data-nosnippet>180</a>                            | WatchMask::DELETE
-<a href=#181 id=181 data-nosnippet>181</a>                            | WatchMask::MOVE,
-<a href=#182 id=182 data-nosnippet>182</a>                    )
-<a href=#183 id=183 data-nosnippet>183</a>                    .error(<span class="string">"Failed to add file watch"</span>)<span class="question-mark">?</span>;
-<a href=#184 id=184 data-nosnippet>184</a>            }
-<a href=#185 id=185 data-nosnippet>185</a>            Box::pin(
-<a href=#186 id=186 data-nosnippet>186</a>                notify
-<a href=#187 id=187 data-nosnippet>187</a>                    .into_event_stream([<span class="number">0</span>; <span class="number">1024</span>])
-<a href=#188 id=188 data-nosnippet>188</a>                    .error(<span class="string">"Failed to create event stream"</span>)<span class="question-mark">?</span>,
-<a href=#189 id=189 data-nosnippet>189</a>            )
-<a href=#190 id=190 data-nosnippet>190</a>        }
-<a href=#191 id=191 data-nosnippet>191</a>    };
-<a href=#192 id=192 data-nosnippet>192</a>
-<a href=#193 id=193 data-nosnippet>193</a>    <span class="kw">let </span>shell = config
-<a href=#194 id=194 data-nosnippet>194</a>        .shell
-<a href=#195 id=195 data-nosnippet>195</a>        .clone()
-<a href=#196 id=196 data-nosnippet>196</a>        .or_else(|| std::env::var(<span class="string">"SHELL"</span>).ok())
-<a href=#197 id=197 data-nosnippet>197</a>        .unwrap_or_else(|| <span class="string">"sh"</span>.to_string());
-<a href=#198 id=198 data-nosnippet>198</a>
-<a href=#199 id=199 data-nosnippet>199</a>    <span class="kw">if </span>config.persistent {
-<a href=#200 id=200 data-nosnippet>200</a>        <span class="kw">let </span><span class="kw-2">mut </span>process = Command::new(<span class="kw-2">&amp;</span>shell)
-<a href=#201 id=201 data-nosnippet>201</a>            .args([
-<a href=#202 id=202 data-nosnippet>202</a>                <span class="string">"-c"</span>,
-<a href=#203 id=203 data-nosnippet>203</a>                config
-<a href=#204 id=204 data-nosnippet>204</a>                    .command
-<a href=#205 id=205 data-nosnippet>205</a>                    .as_deref()
-<a href=#206 id=206 data-nosnippet>206</a>                    .error(<span class="string">"'command' must be specified when 'persistent' is set"</span>)<span class="question-mark">?</span>,
-<a href=#207 id=207 data-nosnippet>207</a>            ])
-<a href=#208 id=208 data-nosnippet>208</a>            .stdout(Stdio::piped())
-<a href=#209 id=209 data-nosnippet>209</a>            .stdin(Stdio::null())
-<a href=#210 id=210 data-nosnippet>210</a>            .kill_on_drop(<span class="bool-val">true</span>)
-<a href=#211 id=211 data-nosnippet>211</a>            .spawn()
-<a href=#212 id=212 data-nosnippet>212</a>            .error(<span class="string">"failed to run command"</span>)<span class="question-mark">?</span>;
-<a href=#213 id=213 data-nosnippet>213</a>
-<a href=#214 id=214 data-nosnippet>214</a>        <span class="kw">let </span>stdout = process
-<a href=#215 id=215 data-nosnippet>215</a>            .stdout
-<a href=#216 id=216 data-nosnippet>216</a>            .take()
-<a href=#217 id=217 data-nosnippet>217</a>            .expect(<span class="string">"child did not have a handle to stdout"</span>);
-<a href=#218 id=218 data-nosnippet>218</a>        <span class="kw">let </span><span class="kw-2">mut </span>reader = BufReader::new(stdout).lines();
-<a href=#219 id=219 data-nosnippet>219</a>
-<a href=#220 id=220 data-nosnippet>220</a>        tokio::spawn(<span class="kw">async move </span>{
-<a href=#221 id=221 data-nosnippet>221</a>            <span class="kw">let _ </span>= process.wait().<span class="kw">await</span>;
-<a href=#222 id=222 data-nosnippet>222</a>        });
-<a href=#223 id=223 data-nosnippet>223</a>
-<a href=#224 id=224 data-nosnippet>224</a>        <span class="kw">loop </span>{
-<a href=#225 id=225 data-nosnippet>225</a>            <span class="kw">let </span>line = reader
-<a href=#226 id=226 data-nosnippet>226</a>                .next_line()
-<a href=#227 id=227 data-nosnippet>227</a>                .<span class="kw">await
-<a href=#228 id=228 data-nosnippet>228</a>                </span>.error(<span class="string">"error reading line from child process"</span>)<span class="question-mark">?
-<a href=#229 id=229 data-nosnippet>229</a>                </span>.error(<span class="string">"child process exited unexpectedly"</span>)<span class="question-mark">?</span>;
-<a href=#230 id=230 data-nosnippet>230</a>            update_bar(
-<a href=#231 id=231 data-nosnippet>231</a>                <span class="kw-2">&amp;</span>line,
-<a href=#232 id=232 data-nosnippet>232</a>                config.hide_when_empty,
-<a href=#233 id=233 data-nosnippet>233</a>                config.json,
-<a href=#234 id=234 data-nosnippet>234</a>                api,
-<a href=#235 id=235 data-nosnippet>235</a>                format.clone(),
-<a href=#236 id=236 data-nosnippet>236</a>            )
-<a href=#237 id=237 data-nosnippet>237</a>            .<span class="kw">await</span><span class="question-mark">?</span>;
-<a href=#238 id=238 data-nosnippet>238</a>        }
-<a href=#239 id=239 data-nosnippet>239</a>    } <span class="kw">else </span>{
-<a href=#240 id=240 data-nosnippet>240</a>        <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions()<span class="question-mark">?</span>;
-<a href=#241 id=241 data-nosnippet>241</a>
-<a href=#242 id=242 data-nosnippet>242</a>        <span class="kw">let </span><span class="kw-2">mut </span>cycle = config
-<a href=#243 id=243 data-nosnippet>243</a>            .cycle
-<a href=#244 id=244 data-nosnippet>244</a>            .clone()
-<a href=#245 id=245 data-nosnippet>245</a>            .or_else(|| config.command.clone().map(|cmd| <span class="macro">vec!</span>[cmd]))
-<a href=#246 id=246 data-nosnippet>246</a>            .error(<span class="string">"either 'command' or 'cycle' must be specified"</span>)<span class="question-mark">?
-<a href=#247 id=247 data-nosnippet>247</a>            </span>.into_iter()
-<a href=#248 id=248 data-nosnippet>248</a>            .cycle();
-<a href=#249 id=249 data-nosnippet>249</a>        <span class="kw">let </span><span class="kw-2">mut </span>cmd = cycle.next().unwrap();
-<a href=#250 id=250 data-nosnippet>250</a>
-<a href=#251 id=251 data-nosnippet>251</a>        <span class="kw">loop </span>{
-<a href=#252 id=252 data-nosnippet>252</a>            <span class="comment">// Run command
-<a href=#253 id=253 data-nosnippet>253</a>            </span><span class="kw">let </span>output = Command::new(<span class="kw-2">&amp;</span>shell)
-<a href=#254 id=254 data-nosnippet>254</a>                .args([<span class="string">"-c"</span>, <span class="kw-2">&amp;</span>cmd])
-<a href=#255 id=255 data-nosnippet>255</a>                .stdin(Stdio::null())
-<a href=#256 id=256 data-nosnippet>256</a>                .output()
-<a href=#257 id=257 data-nosnippet>257</a>                .<span class="kw">await
-<a href=#258 id=258 data-nosnippet>258</a>                </span>.error(<span class="string">"failed to run command"</span>)<span class="question-mark">?</span>;
-<a href=#259 id=259 data-nosnippet>259</a>            <span class="kw">let </span>stdout = std::str::from_utf8(<span class="kw-2">&amp;</span>output.stdout)
-<a href=#260 id=260 data-nosnippet>260</a>                .error(<span class="string">"the output of command is invalid UTF-8"</span>)<span class="question-mark">?
-<a href=#261 id=261 data-nosnippet>261</a>                </span>.trim();
+<a href=#165 id=165 data-nosnippet>165</a>    <span class="kw">if </span>text_empty &amp;&amp; hide_when_empty {
+<a href=#166 id=166 data-nosnippet>166</a>        api.hide()
+<a href=#167 id=167 data-nosnippet>167</a>    } <span class="kw">else </span>{
+<a href=#168 id=168 data-nosnippet>168</a>        api.set_widget(widget)
+<a href=#169 id=169 data-nosnippet>169</a>    }
+<a href=#170 id=170 data-nosnippet>170</a>}
+<a href=#171 id=171 data-nosnippet>171</a>
+<a href=#172 id=172 data-nosnippet>172</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi, plan: <span class="kw-2">&amp;</span>Arc&lt;BlockPlan&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+<a href=#173 id=173 data-nosnippet>173</a>    api.set_default_actions(<span class="kw-2">&amp;</span>[(MouseButton::Left, <span class="prelude-val">None</span>, <span class="string">"cycle"</span>)])<span class="question-mark">?</span>;
+<a href=#174 id=174 data-nosnippet>174</a>
+<a href=#175 id=175 data-nosnippet>175</a>    <span class="kw">let </span>output_main = plan.output(<span class="string">"main"</span>)<span class="question-mark">?</span>;
+<a href=#176 id=176 data-nosnippet>176</a>
+<a href=#177 id=177 data-nosnippet>177</a>    <span class="kw">let </span><span class="kw-2">mut </span>timer = config.interval.timer();
+<a href=#178 id=178 data-nosnippet>178</a>
+<a href=#179 id=179 data-nosnippet>179</a>    <span class="kw">type </span>FileStream = Pin&lt;Box&lt;<span class="kw">dyn </span>Stream&lt;Item = io::Result&lt;inotify::EventOwned&gt;&gt; + Send + Sync&gt;&gt;;
+<a href=#180 id=180 data-nosnippet>180</a>    <span class="kw">let </span><span class="kw-2">mut </span>file_updates: FileStream = <span class="kw">match </span>config.watch_files.as_slice() {
+<a href=#181 id=181 data-nosnippet>181</a>        [] =&gt; Box::pin(futures::stream::pending()),
+<a href=#182 id=182 data-nosnippet>182</a>        files =&gt; {
+<a href=#183 id=183 data-nosnippet>183</a>            <span class="kw">let </span>notify = Inotify::init().error(<span class="string">"Failed to start inotify"</span>)<span class="question-mark">?</span>;
+<a href=#184 id=184 data-nosnippet>184</a>            <span class="kw">let </span><span class="kw-2">mut </span>watches = notify.watches();
+<a href=#185 id=185 data-nosnippet>185</a>            <span class="kw">for </span>file <span class="kw">in </span>files {
+<a href=#186 id=186 data-nosnippet>186</a>                <span class="kw">let </span>file = file.expand()<span class="question-mark">?</span>;
+<a href=#187 id=187 data-nosnippet>187</a>                watches
+<a href=#188 id=188 data-nosnippet>188</a>                    .add(
+<a href=#189 id=189 data-nosnippet>189</a>                        <span class="kw-2">&amp;*</span>file,
+<a href=#190 id=190 data-nosnippet>190</a>                        WatchMask::MODIFY
+<a href=#191 id=191 data-nosnippet>191</a>                            | WatchMask::CLOSE_WRITE
+<a href=#192 id=192 data-nosnippet>192</a>                            | WatchMask::DELETE
+<a href=#193 id=193 data-nosnippet>193</a>                            | WatchMask::MOVE,
+<a href=#194 id=194 data-nosnippet>194</a>                    )
+<a href=#195 id=195 data-nosnippet>195</a>                    .error(<span class="string">"Failed to add file watch"</span>)<span class="question-mark">?</span>;
+<a href=#196 id=196 data-nosnippet>196</a>            }
+<a href=#197 id=197 data-nosnippet>197</a>            Box::pin(
+<a href=#198 id=198 data-nosnippet>198</a>                notify
+<a href=#199 id=199 data-nosnippet>199</a>                    .into_event_stream([<span class="number">0</span>; <span class="number">1024</span>])
+<a href=#200 id=200 data-nosnippet>200</a>                    .error(<span class="string">"Failed to create event stream"</span>)<span class="question-mark">?</span>,
+<a href=#201 id=201 data-nosnippet>201</a>            )
+<a href=#202 id=202 data-nosnippet>202</a>        }
+<a href=#203 id=203 data-nosnippet>203</a>    };
+<a href=#204 id=204 data-nosnippet>204</a>
+<a href=#205 id=205 data-nosnippet>205</a>    <span class="kw">let </span>shell = config
+<a href=#206 id=206 data-nosnippet>206</a>        .shell
+<a href=#207 id=207 data-nosnippet>207</a>        .clone()
+<a href=#208 id=208 data-nosnippet>208</a>        .or_else(|| std::env::var(<span class="string">"SHELL"</span>).ok())
+<a href=#209 id=209 data-nosnippet>209</a>        .unwrap_or_else(|| <span class="string">"sh"</span>.to_string());
+<a href=#210 id=210 data-nosnippet>210</a>
+<a href=#211 id=211 data-nosnippet>211</a>    <span class="kw">if </span>config.persistent {
+<a href=#212 id=212 data-nosnippet>212</a>        <span class="kw">let </span><span class="kw-2">mut </span>process = Command::new(<span class="kw-2">&amp;</span>shell)
+<a href=#213 id=213 data-nosnippet>213</a>            .args([
+<a href=#214 id=214 data-nosnippet>214</a>                <span class="string">"-c"</span>,
+<a href=#215 id=215 data-nosnippet>215</a>                config
+<a href=#216 id=216 data-nosnippet>216</a>                    .command
+<a href=#217 id=217 data-nosnippet>217</a>                    .as_deref()
+<a href=#218 id=218 data-nosnippet>218</a>                    .error(<span class="string">"'command' must be specified when 'persistent' is set"</span>)<span class="question-mark">?</span>,
+<a href=#219 id=219 data-nosnippet>219</a>            ])
+<a href=#220 id=220 data-nosnippet>220</a>            .stdout(Stdio::piped())
+<a href=#221 id=221 data-nosnippet>221</a>            .stdin(Stdio::null())
+<a href=#222 id=222 data-nosnippet>222</a>            .kill_on_drop(<span class="bool-val">true</span>)
+<a href=#223 id=223 data-nosnippet>223</a>            .spawn()
+<a href=#224 id=224 data-nosnippet>224</a>            .error(<span class="string">"failed to run command"</span>)<span class="question-mark">?</span>;
+<a href=#225 id=225 data-nosnippet>225</a>
+<a href=#226 id=226 data-nosnippet>226</a>        <span class="kw">let </span>stdout = process
+<a href=#227 id=227 data-nosnippet>227</a>            .stdout
+<a href=#228 id=228 data-nosnippet>228</a>            .take()
+<a href=#229 id=229 data-nosnippet>229</a>            .expect(<span class="string">"child did not have a handle to stdout"</span>);
+<a href=#230 id=230 data-nosnippet>230</a>        <span class="kw">let </span><span class="kw-2">mut </span>reader = BufReader::new(stdout).lines();
+<a href=#231 id=231 data-nosnippet>231</a>
+<a href=#232 id=232 data-nosnippet>232</a>        tokio::spawn(<span class="kw">async move </span>{
+<a href=#233 id=233 data-nosnippet>233</a>            <span class="kw">let _ </span>= process.wait().<span class="kw">await</span>;
+<a href=#234 id=234 data-nosnippet>234</a>        });
+<a href=#235 id=235 data-nosnippet>235</a>
+<a href=#236 id=236 data-nosnippet>236</a>        <span class="kw">loop </span>{
+<a href=#237 id=237 data-nosnippet>237</a>            <span class="kw">let </span>line = reader
+<a href=#238 id=238 data-nosnippet>238</a>                .next_line()
+<a href=#239 id=239 data-nosnippet>239</a>                .<span class="kw">await
+<a href=#240 id=240 data-nosnippet>240</a>                </span>.error(<span class="string">"error reading line from child process"</span>)<span class="question-mark">?
+<a href=#241 id=241 data-nosnippet>241</a>                </span>.error(<span class="string">"child process exited unexpectedly"</span>)<span class="question-mark">?</span>;
+<a href=#242 id=242 data-nosnippet>242</a>            update_bar(
+<a href=#243 id=243 data-nosnippet>243</a>                <span class="kw-2">&amp;</span>line,
+<a href=#244 id=244 data-nosnippet>244</a>                config.hide_when_empty,
+<a href=#245 id=245 data-nosnippet>245</a>                config.json,
+<a href=#246 id=246 data-nosnippet>246</a>                api,
+<a href=#247 id=247 data-nosnippet>247</a>                <span class="kw-2">&amp;</span>output_main,
+<a href=#248 id=248 data-nosnippet>248</a>            )
+<a href=#249 id=249 data-nosnippet>249</a>            .<span class="kw">await</span><span class="question-mark">?</span>;
+<a href=#250 id=250 data-nosnippet>250</a>        }
+<a href=#251 id=251 data-nosnippet>251</a>    } <span class="kw">else </span>{
+<a href=#252 id=252 data-nosnippet>252</a>        <span class="kw">let </span><span class="kw-2">mut </span>actions = api.get_actions()<span class="question-mark">?</span>;
+<a href=#253 id=253 data-nosnippet>253</a>
+<a href=#254 id=254 data-nosnippet>254</a>        <span class="kw">let </span><span class="kw-2">mut </span>cycle = config
+<a href=#255 id=255 data-nosnippet>255</a>            .cycle
+<a href=#256 id=256 data-nosnippet>256</a>            .clone()
+<a href=#257 id=257 data-nosnippet>257</a>            .or_else(|| config.command.clone().map(|cmd| <span class="macro">vec!</span>[cmd]))
+<a href=#258 id=258 data-nosnippet>258</a>            .error(<span class="string">"either 'command' or 'cycle' must be specified"</span>)<span class="question-mark">?
+<a href=#259 id=259 data-nosnippet>259</a>            </span>.into_iter()
+<a href=#260 id=260 data-nosnippet>260</a>            .cycle();
+<a href=#261 id=261 data-nosnippet>261</a>        <span class="kw">let </span><span class="kw-2">mut </span>cmd = cycle.next().unwrap();
 <a href=#262 id=262 data-nosnippet>262</a>
-<a href=#263 id=263 data-nosnippet>263</a>            update_bar(
-<a href=#264 id=264 data-nosnippet>264</a>                stdout,
-<a href=#265 id=265 data-nosnippet>265</a>                config.hide_when_empty,
-<a href=#266 id=266 data-nosnippet>266</a>                config.json,
-<a href=#267 id=267 data-nosnippet>267</a>                api,
-<a href=#268 id=268 data-nosnippet>268</a>                format.clone(),
-<a href=#269 id=269 data-nosnippet>269</a>            )
-<a href=#270 id=270 data-nosnippet>270</a>            .<span class="kw">await</span><span class="question-mark">?</span>;
-<a href=#271 id=271 data-nosnippet>271</a>
-<a href=#272 id=272 data-nosnippet>272</a>            <span class="kw">loop </span>{
-<a href=#273 id=273 data-nosnippet>273</a>                <span class="macro">select!</span> {
-<a href=#274 id=274 data-nosnippet>274</a>                    <span class="kw">_ </span>= timer.tick() =&gt; <span class="kw">break</span>,
-<a href=#275 id=275 data-nosnippet>275</a>                    <span class="kw">_ </span>= file_updates.next_debounced() =&gt; <span class="kw">break</span>,
-<a href=#276 id=276 data-nosnippet>276</a>                    <span class="kw">_ </span>= api.wait_for_update_request() =&gt; <span class="kw">break</span>,
-<a href=#277 id=277 data-nosnippet>277</a>                    <span class="prelude-val">Some</span>(action) = actions.recv() =&gt; <span class="kw">match </span>action.as_ref() {
-<a href=#278 id=278 data-nosnippet>278</a>                        <span class="string">"cycle" </span>=&gt; {
-<a href=#279 id=279 data-nosnippet>279</a>                            cmd = cycle.next().unwrap();
-<a href=#280 id=280 data-nosnippet>280</a>                            <span class="kw">break</span>;
-<a href=#281 id=281 data-nosnippet>281</a>                        }
-<a href=#282 id=282 data-nosnippet>282</a>                        <span class="kw">_ </span>=&gt; (),
-<a href=#283 id=283 data-nosnippet>283</a>                    }
-<a href=#284 id=284 data-nosnippet>284</a>                }
-<a href=#285 id=285 data-nosnippet>285</a>            }
-<a href=#286 id=286 data-nosnippet>286</a>        }
-<a href=#287 id=287 data-nosnippet>287</a>    }
-<a href=#288 id=288 data-nosnippet>288</a>}
-<a href=#289 id=289 data-nosnippet>289</a>
-<a href=#290 id=290 data-nosnippet>290</a><span class="attr">#[derive(Deserialize, Debug, Default)]
-<a href=#291 id=291 data-nosnippet>291</a>#[serde(default)]
-<a href=#292 id=292 data-nosnippet>292</a></span><span class="kw">struct </span>Input {
-<a href=#293 id=293 data-nosnippet>293</a>    icon: String,
-<a href=#294 id=294 data-nosnippet>294</a>    state: State,
-<a href=#295 id=295 data-nosnippet>295</a>    text: String,
-<a href=#296 id=296 data-nosnippet>296</a>    short_text: <span class="prelude-ty">Option</span>&lt;String&gt;,
-<a href=#297 id=297 data-nosnippet>297</a>}
+<a href=#263 id=263 data-nosnippet>263</a>        <span class="kw">loop </span>{
+<a href=#264 id=264 data-nosnippet>264</a>            <span class="comment">// Run command
+<a href=#265 id=265 data-nosnippet>265</a>            </span><span class="kw">let </span>output = Command::new(<span class="kw-2">&amp;</span>shell)
+<a href=#266 id=266 data-nosnippet>266</a>                .args([<span class="string">"-c"</span>, <span class="kw-2">&amp;</span>cmd])
+<a href=#267 id=267 data-nosnippet>267</a>                .stdin(Stdio::null())
+<a href=#268 id=268 data-nosnippet>268</a>                .output()
+<a href=#269 id=269 data-nosnippet>269</a>                .<span class="kw">await
+<a href=#270 id=270 data-nosnippet>270</a>                </span>.error(<span class="string">"failed to run command"</span>)<span class="question-mark">?</span>;
+<a href=#271 id=271 data-nosnippet>271</a>            <span class="kw">let </span>stdout = std::str::from_utf8(<span class="kw-2">&amp;</span>output.stdout)
+<a href=#272 id=272 data-nosnippet>272</a>                .error(<span class="string">"the output of command is invalid UTF-8"</span>)<span class="question-mark">?
+<a href=#273 id=273 data-nosnippet>273</a>                </span>.trim();
+<a href=#274 id=274 data-nosnippet>274</a>
+<a href=#275 id=275 data-nosnippet>275</a>            update_bar(
+<a href=#276 id=276 data-nosnippet>276</a>                stdout,
+<a href=#277 id=277 data-nosnippet>277</a>                config.hide_when_empty,
+<a href=#278 id=278 data-nosnippet>278</a>                config.json,
+<a href=#279 id=279 data-nosnippet>279</a>                api,
+<a href=#280 id=280 data-nosnippet>280</a>                <span class="kw-2">&amp;</span>output_main,
+<a href=#281 id=281 data-nosnippet>281</a>            )
+<a href=#282 id=282 data-nosnippet>282</a>            .<span class="kw">await</span><span class="question-mark">?</span>;
+<a href=#283 id=283 data-nosnippet>283</a>
+<a href=#284 id=284 data-nosnippet>284</a>            <span class="kw">loop </span>{
+<a href=#285 id=285 data-nosnippet>285</a>                <span class="macro">select!</span> {
+<a href=#286 id=286 data-nosnippet>286</a>                    <span class="kw">_ </span>= timer.tick() =&gt; <span class="kw">break</span>,
+<a href=#287 id=287 data-nosnippet>287</a>                    <span class="kw">_ </span>= file_updates.next_debounced() =&gt; <span class="kw">break</span>,
+<a href=#288 id=288 data-nosnippet>288</a>                    <span class="kw">_ </span>= api.wait_for_update_request() =&gt; <span class="kw">break</span>,
+<a href=#289 id=289 data-nosnippet>289</a>                    <span class="prelude-val">Some</span>(action) = actions.recv() =&gt; <span class="kw">match </span>action.as_ref() {
+<a href=#290 id=290 data-nosnippet>290</a>                        <span class="string">"cycle" </span>=&gt; {
+<a href=#291 id=291 data-nosnippet>291</a>                            cmd = cycle.next().unwrap();
+<a href=#292 id=292 data-nosnippet>292</a>                            <span class="kw">break</span>;
+<a href=#293 id=293 data-nosnippet>293</a>                        }
+<a href=#294 id=294 data-nosnippet>294</a>                        <span class="kw">_ </span>=&gt; (),
+<a href=#295 id=295 data-nosnippet>295</a>                    }
+<a href=#296 id=296 data-nosnippet>296</a>                }
+<a href=#297 id=297 data-nosnippet>297</a>            }
+<a href=#298 id=298 data-nosnippet>298</a>        }
+<a href=#299 id=299 data-nosnippet>299</a>    }
+<a href=#300 id=300 data-nosnippet>300</a>}
+<a href=#301 id=301 data-nosnippet>301</a>
+<a href=#302 id=302 data-nosnippet>302</a><span class="attr">#[derive(Deserialize, Debug, Default)]
+<a href=#303 id=303 data-nosnippet>303</a>#[serde(default)]
+<a href=#304 id=304 data-nosnippet>304</a></span><span class="kw">struct </span>Input {
+<a href=#305 id=305 data-nosnippet>305</a>    icon: String,
+<a href=#306 id=306 data-nosnippet>306</a>    state: State,
+<a href=#307 id=307 data-nosnippet>307</a>    text: String,
+<a href=#308 id=308 data-nosnippet>308</a>    short_text: <span class="prelude-ty">Option</span>&lt;String&gt;,
+<a href=#309 id=309 data-nosnippet>309</a>}
+<a href=#310 id=310 data-nosnippet>310</a>
+<a href=#311 id=311 data-nosnippet>311</a><span class="attr">#[cfg(test)]
+<a href=#312 id=312 data-nosnippet>312</a></span><span class="kw">mod </span>tests {
+<a href=#313 id=313 data-nosnippet>313</a>    <span class="kw">use super</span>::<span class="kw-2">*</span>;
+<a href=#314 id=314 data-nosnippet>314</a>
+<a href=#315 id=315 data-nosnippet>315</a>    <span class="attr">#[test]
+<a href=#316 id=316 data-nosnippet>316</a>    </span><span class="kw">fn </span>icon_choices_are_open_only_with_json() {
+<a href=#317 id=317 data-nosnippet>317</a>        <span class="comment">// A plain-text command can never set an icon.
+<a href=#318 id=318 data-nosnippet>318</a>        </span><span class="kw">let </span>plan = prepare(<span class="kw-2">&amp;</span>Config::default()).unwrap();
+<a href=#319 id=319 data-nosnippet>319</a>        <span class="kw">let </span>output = plan.output(<span class="string">"main"</span>).unwrap();
+<a href=#320 id=320 data-nosnippet>320</a>        <span class="macro">assert!</span>(output.output().choices_for(<span class="string">"icon"</span>).is_none());
+<a href=#321 id=321 data-nosnippet>321</a>
+<a href=#322 id=322 data-nosnippet>322</a>        <span class="kw">let </span>config = Config {
+<a href=#323 id=323 data-nosnippet>323</a>            json: <span class="bool-val">true</span>,
+<a href=#324 id=324 data-nosnippet>324</a>            ..Config::default()
+<a href=#325 id=325 data-nosnippet>325</a>        };
+<a href=#326 id=326 data-nosnippet>326</a>        <span class="kw">let </span>plan = prepare(<span class="kw-2">&amp;</span>config).unwrap();
+<a href=#327 id=327 data-nosnippet>327</a>        <span class="kw">let </span>output = plan.output(<span class="string">"main"</span>).unwrap();
+<a href=#328 id=328 data-nosnippet>328</a>        <span class="kw">let </span>choices = output.output().choices_for(<span class="string">"icon"</span>).unwrap();
+<a href=#329 id=329 data-nosnippet>329</a>        <span class="macro">assert!</span>(<span class="macro">matches!</span>(choices, IconChoices::OpenResolvable));
+<a href=#330 id=330 data-nosnippet>330</a>        <span class="macro">assert!</span>(choices.permits(<span class="string">"any_name_the_command_emits"</span>));
+<a href=#331 id=331 data-nosnippet>331</a>    }
+<a href=#332 id=332 data-nosnippet>332</a>}
 </code></pre></div></section></main></body></html>

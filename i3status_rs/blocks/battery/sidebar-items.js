@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["BatteryDriver"],"fn":["run"],"struct":["Config"]};
+window.SIDEBAR_ITEMS = {"enum":["BatteryDriver"],"struct":["Config"]};

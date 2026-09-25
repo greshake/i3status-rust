@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["KeyboardLayoutDriver"],"fn":["run"],"struct":["Config"]};
+window.SIDEBAR_ITEMS = {"enum":["KeyboardLayoutDriver"],"struct":["Config"]};

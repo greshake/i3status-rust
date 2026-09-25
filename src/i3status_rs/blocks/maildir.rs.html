@@ -34,7 +34,7 @@
 <a href=#34 id=34 data-nosnippet>34</a>//! ```
 <a href=#35 id=35 data-nosnippet>35</a>//!
 <a href=#36 id=36 data-nosnippet>36</a>//! # Icons Used
-<a href=#37 id=37 data-nosnippet>37</a>//! - `mail`
+<a href=#37 id=37 data-nosnippet>37</a>//! - `mail` (`$icon`)
 <a href=#38 id=38 data-nosnippet>38</a>
 <a href=#39 id=39 data-nosnippet>39</a></span><span class="kw">use </span><span class="kw">super</span>::prelude::<span class="kw-2">*</span>;
 <a href=#40 id=40 data-nosnippet>40</a><span class="kw">use </span>maildir::Maildir;
@@ -61,51 +61,84 @@
 <a href=#61 id=61 data-nosnippet>61</a>    <span class="prelude-val">Ok</span>(paths.filter_map(|p| p.ok()))
 <a href=#62 id=62 data-nosnippet>62</a>}
 <a href=#63 id=63 data-nosnippet>63</a>
-<a href=#64 id=64 data-nosnippet>64</a><span class="kw">pub async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-<a href=#65 id=65 data-nosnippet>65</a>    <span class="kw">let </span>format = config.format.with_default(<span class="string">" $icon $status "</span>)<span class="question-mark">?</span>;
-<a href=#66 id=66 data-nosnippet>66</a>
-<a href=#67 id=67 data-nosnippet>67</a>    <span class="kw">let </span><span class="kw-2">mut </span>inboxes = Vec::with_capacity(config.inboxes.len());
-<a href=#68 id=68 data-nosnippet>68</a>    <span class="kw">for </span>inbox <span class="kw">in </span><span class="kw-2">&amp;</span>config.inboxes {
-<a href=#69 id=69 data-nosnippet>69</a>        inboxes.extend(expand_inbox(inbox)<span class="question-mark">?</span>.map(Maildir::from));
-<a href=#70 id=70 data-nosnippet>70</a>    }
-<a href=#71 id=71 data-nosnippet>71</a>
-<a href=#72 id=72 data-nosnippet>72</a>    <span class="kw">loop </span>{
-<a href=#73 id=73 data-nosnippet>73</a>        <span class="kw">let </span><span class="kw-2">mut </span>newmails = <span class="number">0</span>;
-<a href=#74 id=74 data-nosnippet>74</a>        <span class="kw">for </span>inbox <span class="kw">in </span><span class="kw-2">&amp;</span>inboxes {
-<a href=#75 id=75 data-nosnippet>75</a>            <span class="comment">// TODO: spawn_blocking?
-<a href=#76 id=76 data-nosnippet>76</a>            </span>newmails += <span class="kw">match </span>config.display_type {
-<a href=#77 id=77 data-nosnippet>77</a>                MailType::New =&gt; inbox.count_new(),
-<a href=#78 id=78 data-nosnippet>78</a>                MailType::Cur =&gt; inbox.count_cur(),
-<a href=#79 id=79 data-nosnippet>79</a>                MailType::All =&gt; inbox.count_new() + inbox.count_cur(),
-<a href=#80 id=80 data-nosnippet>80</a>            };
-<a href=#81 id=81 data-nosnippet>81</a>        }
-<a href=#82 id=82 data-nosnippet>82</a>
-<a href=#83 id=83 data-nosnippet>83</a>        <span class="kw">let </span><span class="kw-2">mut </span>widget = Widget::new().with_format(format.clone());
-<a href=#84 id=84 data-nosnippet>84</a>        widget.state = <span class="kw">if </span>newmails &gt;= config.threshold_critical {
-<a href=#85 id=85 data-nosnippet>85</a>            State::Critical
-<a href=#86 id=86 data-nosnippet>86</a>        } <span class="kw">else if </span>newmails &gt;= config.threshold_warning {
-<a href=#87 id=87 data-nosnippet>87</a>            State::Warning
-<a href=#88 id=88 data-nosnippet>88</a>        } <span class="kw">else </span>{
-<a href=#89 id=89 data-nosnippet>89</a>            State::Idle
-<a href=#90 id=90 data-nosnippet>90</a>        };
-<a href=#91 id=91 data-nosnippet>91</a>        widget.set_values(<span class="macro">map!</span>(
-<a href=#92 id=92 data-nosnippet>92</a>            <span class="string">"icon" </span>=&gt; Value::icon(icons::MAIL),
-<a href=#93 id=93 data-nosnippet>93</a>            <span class="string">"status" </span>=&gt; Value::number(newmails)
-<a href=#94 id=94 data-nosnippet>94</a>        ));
-<a href=#95 id=95 data-nosnippet>95</a>        api.set_widget(widget)<span class="question-mark">?</span>;
-<a href=#96 id=96 data-nosnippet>96</a>
-<a href=#97 id=97 data-nosnippet>97</a>        <span class="macro">select!</span> {
-<a href=#98 id=98 data-nosnippet>98</a>            <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt; (),
-<a href=#99 id=99 data-nosnippet>99</a>            <span class="kw">_ </span>= api.wait_for_update_request() =&gt; (),
-<a href=#100 id=100 data-nosnippet>100</a>        }
-<a href=#101 id=101 data-nosnippet>101</a>    }
-<a href=#102 id=102 data-nosnippet>102</a>}
+<a href=#64 id=64 data-nosnippet>64</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>prepare(config: <span class="kw-2">&amp;</span>Config) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;BlockPlan&gt;&gt; {
+<a href=#65 id=65 data-nosnippet>65</a>    BlockPlan::new(<span class="macro">vec!</span>[
+<a href=#66 id=66 data-nosnippet>66</a>        OutputPlan::new(<span class="string">"main"</span>, config.format.with_default(<span class="string">" $icon $status "</span>)<span class="question-mark">?</span>)
+<a href=#67 id=67 data-nosnippet>67</a>            .icon(<span class="string">"icon"</span>, IconChoices::one(icons::MAIL)),
+<a href=#68 id=68 data-nosnippet>68</a>    ])
+<a href=#69 id=69 data-nosnippet>69</a>}
+<a href=#70 id=70 data-nosnippet>70</a>
+<a href=#71 id=71 data-nosnippet>71</a><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">async fn </span>run(config: <span class="kw-2">&amp;</span>Config, api: <span class="kw-2">&amp;</span>CommonApi, plan: <span class="kw-2">&amp;</span>Arc&lt;BlockPlan&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+<a href=#72 id=72 data-nosnippet>72</a>    <span class="kw">let </span>output_main = plan.output(<span class="string">"main"</span>)<span class="question-mark">?</span>;
+<a href=#73 id=73 data-nosnippet>73</a>
+<a href=#74 id=74 data-nosnippet>74</a>    <span class="kw">let </span><span class="kw-2">mut </span>inboxes = Vec::with_capacity(config.inboxes.len());
+<a href=#75 id=75 data-nosnippet>75</a>    <span class="kw">for </span>inbox <span class="kw">in </span><span class="kw-2">&amp;</span>config.inboxes {
+<a href=#76 id=76 data-nosnippet>76</a>        inboxes.extend(expand_inbox(inbox)<span class="question-mark">?</span>.map(Maildir::from));
+<a href=#77 id=77 data-nosnippet>77</a>    }
+<a href=#78 id=78 data-nosnippet>78</a>
+<a href=#79 id=79 data-nosnippet>79</a>    <span class="kw">loop </span>{
+<a href=#80 id=80 data-nosnippet>80</a>        <span class="kw">let </span><span class="kw-2">mut </span>newmails = <span class="number">0</span>;
+<a href=#81 id=81 data-nosnippet>81</a>        <span class="kw">for </span>inbox <span class="kw">in </span><span class="kw-2">&amp;</span>inboxes {
+<a href=#82 id=82 data-nosnippet>82</a>            <span class="comment">// TODO: spawn_blocking?
+<a href=#83 id=83 data-nosnippet>83</a>            </span>newmails += <span class="kw">match </span>config.display_type {
+<a href=#84 id=84 data-nosnippet>84</a>                MailType::New =&gt; inbox.count_new(),
+<a href=#85 id=85 data-nosnippet>85</a>                MailType::Cur =&gt; inbox.count_cur(),
+<a href=#86 id=86 data-nosnippet>86</a>                MailType::All =&gt; inbox.count_new() + inbox.count_cur(),
+<a href=#87 id=87 data-nosnippet>87</a>            };
+<a href=#88 id=88 data-nosnippet>88</a>        }
+<a href=#89 id=89 data-nosnippet>89</a>
+<a href=#90 id=90 data-nosnippet>90</a>        <span class="kw">let </span><span class="kw-2">mut </span>widget = output_main.new_widget();
+<a href=#91 id=91 data-nosnippet>91</a>        widget.state = <span class="kw">if </span>newmails &gt;= config.threshold_critical {
+<a href=#92 id=92 data-nosnippet>92</a>            State::Critical
+<a href=#93 id=93 data-nosnippet>93</a>        } <span class="kw">else if </span>newmails &gt;= config.threshold_warning {
+<a href=#94 id=94 data-nosnippet>94</a>            State::Warning
+<a href=#95 id=95 data-nosnippet>95</a>        } <span class="kw">else </span>{
+<a href=#96 id=96 data-nosnippet>96</a>            State::Idle
+<a href=#97 id=97 data-nosnippet>97</a>        };
+<a href=#98 id=98 data-nosnippet>98</a>        widget.set_values(<span class="macro">map!</span>(
+<a href=#99 id=99 data-nosnippet>99</a>            <span class="string">"icon" </span>=&gt; Value::icon(icons::MAIL),
+<a href=#100 id=100 data-nosnippet>100</a>            <span class="string">"status" </span>=&gt; Value::number(newmails)
+<a href=#101 id=101 data-nosnippet>101</a>        ));
+<a href=#102 id=102 data-nosnippet>102</a>        api.set_widget(widget)<span class="question-mark">?</span>;
 <a href=#103 id=103 data-nosnippet>103</a>
-<a href=#104 id=104 data-nosnippet>104</a><span class="attr">#[derive(Clone, Debug, Deserialize)]
-<a href=#105 id=105 data-nosnippet>105</a>#[serde(rename_all = <span class="string">"lowercase"</span>)]
-<a href=#106 id=106 data-nosnippet>106</a></span><span class="kw">pub enum </span>MailType {
-<a href=#107 id=107 data-nosnippet>107</a>    New,
-<a href=#108 id=108 data-nosnippet>108</a>    Cur,
-<a href=#109 id=109 data-nosnippet>109</a>    All,
-<a href=#110 id=110 data-nosnippet>110</a>}
+<a href=#104 id=104 data-nosnippet>104</a>        <span class="macro">select!</span> {
+<a href=#105 id=105 data-nosnippet>105</a>            <span class="kw">_ </span>= sleep(config.interval.<span class="number">0</span>) =&gt; (),
+<a href=#106 id=106 data-nosnippet>106</a>            <span class="kw">_ </span>= api.wait_for_update_request() =&gt; (),
+<a href=#107 id=107 data-nosnippet>107</a>        }
+<a href=#108 id=108 data-nosnippet>108</a>    }
+<a href=#109 id=109 data-nosnippet>109</a>}
+<a href=#110 id=110 data-nosnippet>110</a>
+<a href=#111 id=111 data-nosnippet>111</a><span class="attr">#[derive(Clone, Debug, Deserialize)]
+<a href=#112 id=112 data-nosnippet>112</a>#[serde(rename_all = <span class="string">"lowercase"</span>)]
+<a href=#113 id=113 data-nosnippet>113</a></span><span class="kw">pub enum </span>MailType {
+<a href=#114 id=114 data-nosnippet>114</a>    New,
+<a href=#115 id=115 data-nosnippet>115</a>    Cur,
+<a href=#116 id=116 data-nosnippet>116</a>    All,
+<a href=#117 id=117 data-nosnippet>117</a>}
+<a href=#118 id=118 data-nosnippet>118</a>
+<a href=#119 id=119 data-nosnippet>119</a><span class="attr">#[cfg(test)]
+<a href=#120 id=120 data-nosnippet>120</a></span><span class="kw">mod </span>tests {
+<a href=#121 id=121 data-nosnippet>121</a>    <span class="kw">use super</span>::<span class="kw-2">*</span>;
+<a href=#122 id=122 data-nosnippet>122</a>
+<a href=#123 id=123 data-nosnippet>123</a>    <span class="attr">#[test]
+<a href=#124 id=124 data-nosnippet>124</a>    </span><span class="kw">fn </span>plan_declares_main_output_with_mail_icon() {
+<a href=#125 id=125 data-nosnippet>125</a>        <span class="kw">let </span>plan = prepare(<span class="kw-2">&amp;</span>Config::default()).unwrap();
+<a href=#126 id=126 data-nosnippet>126</a>        <span class="kw">let </span>declared: Vec&lt;<span class="kw">_</span>&gt; = plan.outputs().map(|o| o.id()).collect();
+<a href=#127 id=127 data-nosnippet>127</a>        <span class="macro">assert_eq!</span>(declared, [<span class="string">"main"</span>]);
+<a href=#128 id=128 data-nosnippet>128</a>        <span class="kw">let </span>output = plan.output(<span class="string">"main"</span>).unwrap();
+<a href=#129 id=129 data-nosnippet>129</a>        <span class="macro">assert_eq!</span>(output.single_icon(<span class="string">"icon"</span>).unwrap(), <span class="string">"mail"</span>);
+<a href=#130 id=130 data-nosnippet>130</a>    }
+<a href=#131 id=131 data-nosnippet>131</a>
+<a href=#132 id=132 data-nosnippet>132</a>    <span class="attr">#[test]
+<a href=#133 id=133 data-nosnippet>133</a>    </span><span class="kw">fn </span>custom_format_is_respected() {
+<a href=#134 id=134 data-nosnippet>134</a>        <span class="kw">let </span>config = Config {
+<a href=#135 id=135 data-nosnippet>135</a>            format: <span class="string">" $status "</span>.parse().unwrap(),
+<a href=#136 id=136 data-nosnippet>136</a>            ..Config::default()
+<a href=#137 id=137 data-nosnippet>137</a>        };
+<a href=#138 id=138 data-nosnippet>138</a>        <span class="kw">let </span>plan = prepare(<span class="kw-2">&amp;</span>config).unwrap();
+<a href=#139 id=139 data-nosnippet>139</a>        <span class="kw">let </span>output = plan.output(<span class="string">"main"</span>).unwrap();
+<a href=#140 id=140 data-nosnippet>140</a>        <span class="macro">assert!</span>(output.format().contains_key(<span class="string">"status"</span>));
+<a href=#141 id=141 data-nosnippet>141</a>        <span class="macro">assert!</span>(!output.format().contains_key(<span class="string">"icon"</span>));
+<a href=#142 id=142 data-nosnippet>142</a>    }
+<a href=#143 id=143 data-nosnippet>143</a>}
 </code></pre></div></section></main></body></html>
