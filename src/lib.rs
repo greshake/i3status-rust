@@ -15,8 +15,9 @@ pub mod escape;
 pub mod formatting;
 pub mod geolocator;
 pub mod icons;
+#[cfg(target_os = "linux")]
 mod netlink;
-#[cfg(feature = "pipewire")]
+#[cfg(all(feature = "pipewire", target_os = "linux"))]
 pub mod pipewire;
 pub mod protocol;
 mod signals;
@@ -154,6 +155,7 @@ pub struct Block {
 
     click_handler: ClickHandler,
     default_actions: &'static [(MouseButton, Option<&'static str>, &'static str)],
+    #[cfg(target_os = "linux")]
     signal: Option<i32>,
     shared_config: SharedConfig,
 
@@ -298,6 +300,7 @@ impl BarState {
 
             click_handler: block_config.common.click,
             default_actions: &[],
+            #[cfg(target_os = "linux")]
             signal: block_config.common.signal,
             shared_config,
 
@@ -453,6 +456,7 @@ impl BarState {
                     }
                 }
                 Signal::Usr2 => restart(),
+                #[cfg(target_os = "linux")]
                 Signal::Custom(signal) => {
                     for block in &self.blocks {
                         if block.signal == Some(signal) {

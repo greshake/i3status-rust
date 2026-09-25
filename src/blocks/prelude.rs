@@ -1,3 +1,4 @@
+#![cfg_attr(not(target_os = "linux"), allow(unused_imports))]
 pub use super::{BlockAction, CommonApi};
 
 pub(crate) use crate::REQWEST_CLIENT;
