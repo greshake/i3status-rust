@@ -2,6 +2,9 @@ name: pre-commit
 
 on: [push, pull_request]
 
+permissions:
+  contents: read
+
 jobs:
   pre-commit:
     runs-on: ubuntu-latest
