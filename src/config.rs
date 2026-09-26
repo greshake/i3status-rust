@@ -1,6 +1,8 @@
 use serde::{Deserialize, Deserializer};
 use smart_default::SmartDefault;
 use std::collections::HashMap;
+use std::os::unix::process::parent_id;
+use std::path::Path;
 use std::sync::Arc;
 
 use crate::blocks::BlockConfig;
@@ -9,7 +11,15 @@ use crate::errors::*;
 use crate::formatting::config::Config as FormatConfig;
 use crate::geolocator::Geolocator;
 use crate::icons::{Icon, Icons};
+use crate::themes::color::Color;
 use crate::themes::{Theme, ThemeOverrides, ThemeUserConfig};
+use crate::util::read_file;
+
+#[derive(Deserialize, Debug, Default)]
+#[serde(default, deny_unknown_fields)]
+pub struct SwayIntegration {
+    pub use_sway_bar_colors: bool,
+}
 
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
@@ -36,6 +46,9 @@ pub struct Config {
     #[serde(default)]
     #[serde(rename = "block")]
     pub blocks: Vec<BlockConfigEntry>,
+
+    #[serde(default)]
+    pub sway_integration: SwayIntegration,
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -124,4 +137,64 @@ where
     let theme_config = ThemeUserConfig::deserialize(deserializer)?;
     let theme = Theme::try_from(theme_config).serde_error()?;
     Ok(Arc::new(theme))
+}
+
+pub struct SwayBarColors {
+    pub background: Color,
+    pub statusline: Color,
+    pub separator: Color,
+}
+
+pub async fn try_parse_sway_bar_colors() -> Result<SwayBarColors> {
+    let mut swayipc_connection = swayipc_async::Connection::new()
+        .await
+        .error("Failed to open swayipc connection")?;
+
+    let mut current_pid = parent_id().to_string();
+    while current_pid != "1" {
+        let cmdline = read_file(Path::new("/proc").join(&current_pid).join("cmdline"))
+            .await
+            .or_error(|| format!("Failed to read /proc/{current_pid}/cmdline"))?;
+        let cmdline_parts: Vec<_> = cmdline.split('\0').collect();
+        if let Some(bar_id) = cmdline_parts
+            .iter()
+            .position(|&s| s == "-b" || s == "--bar_id")
+            .and_then(|pos| cmdline_parts.get(pos + 1))
+        {
+            let bar_config = swayipc_connection
+                .get_bar_config(&bar_id)
+                .await
+                .error("Failed to get swaybar config")?;
+            return Ok(SwayBarColors {
+                background: bar_config
+                    .colors
+                    .background
+                    .parse()
+                    .error("Failed to parse background color")?,
+                statusline: bar_config
+                    .colors
+                    .statusline
+                    .parse()
+                    .error("Failed to parse statusline color")?,
+                separator: bar_config
+                    .colors
+                    .separator
+                    .parse()
+                    .error("Failed to parse separator color")?,
+            });
+        }
+        let stat = read_file(Path::new("/proc").join(&current_pid).join("stat"))
+            .await
+            .or_error(|| format!("Failed to read /proc/{current_pid}/stat"))?;
+
+        current_pid = stat
+            .split(' ')
+            .nth(3)
+            .unwrap()
+            .parse()
+            .or_error(|| format!("Failed to parse parent PID from /proc/{current_pid}/stat"))?;
+    }
+    Err(Error::new(
+        "Unable to find swaybar process in parent process tree",
+    ))
 }
