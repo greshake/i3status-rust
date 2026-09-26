@@ -23,6 +23,8 @@ jobs:
     - name: Generate and upload manpage
       env:
         GH_TOKEN: ${{ github.token }}
+        GH_REPO: ${{ github.repository }}
+        TAG_NAME: ${{ github.event.release.tag_name }}
       run: |
         cargo xtask generate-manpage
-        gh release upload -R ${{ github.repository }} --clobber ${{ github.event.release.tag_name }} ./man/i3status-rs.1
+        gh release upload -R "$GH_REPO" --clobber "$TAG_NAME" ./man/i3status-rs.1
