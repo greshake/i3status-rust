@@ -32,16 +32,16 @@ jobs:
       run: |
         pacman --noconfirm --noprogressbar -Syu base-devel clang git libpipewire libpulse lm_sensors notmuch openssl rsync
         git config --global --add safe.directory "$GITHUB_WORKSPACE"
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       with:
         persist-credentials: false
     - uses: dtolnay/rust-toolchain@stable
       with:
         components: clippy, rustfmt
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
       with:
         python-version: '3.10'
-    - uses: pre-commit/action@v3.0.1
+    - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
       with:
         extra_args: ${{ matrix.hook }} --all-files
 

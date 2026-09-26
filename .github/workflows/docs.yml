@@ -24,7 +24,7 @@ jobs:
     - uses: dtolnay/rust-toolchain@stable
     - name: Version information
       run: rustc --version; cargo --version
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       with:
         persist-credentials: false
     - name: Generate docs
@@ -32,6 +32,6 @@ jobs:
     - name: Create index.html
       run: echo "<meta http-equiv=\"Refresh\" content=\"0; url='/i3status-rust/i3status_rs'\" />" > target/doc/index.html
     - name: Deploy 🚀
-      uses: JamesIves/github-pages-deploy-action@v4
+      uses: JamesIves/github-pages-deploy-action@fa24774553152dd7873cd16ebd8d959b010c5445 # v4.9.0
       with:
         folder: target/doc # The folder the action should deploy.
