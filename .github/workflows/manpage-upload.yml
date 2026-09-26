@@ -19,6 +19,8 @@ jobs:
         pacman --noconfirm --noprogressbar --needed -Syu base-devel clang git libpipewire libpulse lm_sensors notmuch openssl pandoc github-cli
         git config --global --add safe.directory "$GITHUB_WORKSPACE"
     - uses: actions/checkout@v5
+      with:
+        persist-credentials: false
     - uses: dtolnay/rust-toolchain@stable
     - name: Generate and upload manpage
       env:
