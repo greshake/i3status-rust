@@ -17,13 +17,21 @@
 //! `paused`  | Containers paused on the host  | Number | -
 //! `images`  | Total images on the host       | Number | -
 //!
-//! # Example
+//! # Examples
 //!
 //! ```toml
 //! [[block]]
 //! block = "docker"
 //! interval = 2
 //! format = " $icon $running/$total "
+//! ```
+//! This example allows showing Podman status by setting the socket path (path is dependent on your own setup).
+//!
+//! ```toml
+//! [[block]]
+//! block = "docker"
+//! format = " $icon $running/$total "
+//! socket_path = "/run/user/1000/podman/podman.sock"
 //! ```
 //!
 //! # Icons Used
