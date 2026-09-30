@@ -42,6 +42,7 @@ fn main() {
             bar.run_event_loop(restart).await?;
             Ok(())
         });
+
     if let Err(error) = result {
         let error_widget = Widget::new()
             .with_text(error.to_string().pango_escaped())

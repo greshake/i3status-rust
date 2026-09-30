@@ -125,6 +125,53 @@ cpu_boost_on = "ON"
 cpu_boost_off = "OFF"
 ```
 
+If you define colors in`~/.Xresources` like `*background: #aabbcc` you can use them like:
+
+```toml
+[theme]
+theme = "solarized-dark"
+[theme.overrides]
+# Example: redefine `idle_bg` with the background color
+idle_bg = "x:background"
+```
+
+If you use sway, you can also reference a bar color like:
+
+```toml
+[theme]
+theme = "solarized-dark"
+[theme.overrides]
+# Example: redefine `critical` colors
+critical_bg = "sway:urgent_workspace_bg"
+critical_fg = "sway:urgent_workspace_text"
+```
+
+These are the available sway colors:
+
+* `active_workspace_bg`
+* `active_workspace_border`
+* `active_workspace_text`
+* `background`
+* `binding_mode_bg`
+* `binding_mode_border`
+* `binding_mode_text`
+* `focused_background`
+* `focused_separator`
+* `focused_statusline`
+* `focused_workspace_bg`
+* `focused_workspace_border`
+* `focused_workspace_text`
+* `inactive_workspace_bg`
+* `inactive_workspace_border`
+* `inactive_workspace_text`
+* `separator`
+* `statusline`
+* `urgent_workspace_bg`
+* `urgent_workspace_border`
+* `urgent_workspace_text`
+
+You can see the current values for your bar with `swaymsg -t get_bar_config <bar-name>`.
+
 # Available theme overrides
 
 All `bg` and `fg` overrides are either
