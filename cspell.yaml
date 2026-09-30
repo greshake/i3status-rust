@@ -145,6 +145,7 @@ words:
   - retval
   - rofi
   - rofication
+  - RRGGBB
   - rsplit
   - rtattr
   - rtattrs

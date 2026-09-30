@@ -1648,6 +1648,7 @@ dependencies = [
  "signal-hook-tokio",
  "smart-default",
  "sunrise",
+ "swayipc",
  "swayipc-async",
  "thiserror 2.0.18",
  "tokio",
@@ -3654,6 +3655,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "15eecb5ec59a060dd9fe8f88c48b701abecd6be9d9c28d55081b80bdda73981c"
 dependencies = [
  "chrono",
+]
+
+[[package]]
+name = "swayipc"
+version = "4.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7fd6ee13016b1ae2fbf741ddb2133d983a3fecdc34686eec6202e2a80612d82f"
+dependencies = [
+ "serde",
+ "serde_json",
+ "swayipc-types",
 ]
 
 [[package]]
