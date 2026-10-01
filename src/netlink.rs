@@ -270,6 +270,9 @@ pub struct Interface {
     pub operstate: Operstate,
     pub name: String,
     pub stats: Option<InterfaceStats>,
+    /// Whether the interface is switched on (administratively up). `rfkill`
+    /// and `ip link set down` switch it off.
+    pub enabled: bool,
 }
 
 macro_rules! recv_until_done {
@@ -331,6 +334,7 @@ async fn get_interfaces(
                 operstate,
                 name,
                 stats,
+                enabled: msg.ifi_flags.contains(&Iff::Up),
             });
         }
     });
