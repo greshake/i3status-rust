@@ -59,7 +59,11 @@ net_cellular = "\ue1ef" #  https://fontawesome.com/icons/mobile-signal
 net_up = "\uf0c1" #  https://fontawesome.com/icons/link
 net_vpn = "\ue248" #  https://fontawesome.com/icons/shield-keyhole
 net_wired = "\uf796" #  https://fontawesome.com/icons/ethernet
-net_wireless = "\ue7df" #  https://fontawesome.com/icons/wireless
+net_wireless = [
+    "\uf6aa", #  https://fontawesome.com/icons/wifi-weak
+    "\uf6ab", #  https://fontawesome.com/icons/wifi-fair
+    "\uf1eb", #  https://fontawesome.com/icons/wifi
+]
 notification = "\ue6df" #  https://fontawesome.com/icons/message-dot
 phone = "\uf095" #  https://fontawesome.com/icons/phone
 phone_disconnected = "\uf3dd" #  https://fontawesome.com/icons/phone-slash
