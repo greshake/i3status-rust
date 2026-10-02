@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["Color"],"fn":["approx"],"struct":["Hsva","Rgba"]};
+window.SIDEBAR_ITEMS = {"enum":["Color"],"fn":["approx"],"mod":["sway","xresources"],"struct":["Hsva","Rgba"]};
