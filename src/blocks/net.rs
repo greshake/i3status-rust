@@ -33,6 +33,7 @@
 //! `ip`              | IPv4 address of the iface   | Text   | -
 //! `ipv6`            | IPv6 address of the iface   | Text   | -
 //! `nameserver`      | Nameserver                  | Text   | -
+//! `enabled`         | Present if the device is switched on (not turned off with `rfkill` or `ip link set down`) | Flag | -
 //!
 //! # Example
 //!
@@ -50,6 +51,17 @@
 //! [[block]]
 //! block = "net"
 //! device = "^wlo0$"
+//! ```
+//!
+//! Tell a WiFi device that is not connected from one that is switched off (with `rfkill` for
+//! example)
+//!
+//! ```toml
+//! [[block]]
+//! block = "net"
+//! device = "^wlan0$"
+//! format = " $icon $signal_strength "
+//! inactive_format = " {$enabled{not connected}|switched off} "
 //! ```
 //!
 //! # Icons Used
@@ -192,6 +204,7 @@ pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>)
                                                                                 .map(|s| s.to_string())
                                                                                 .join(" "),
                                                                         ),
+                    [if device.iface.enabled] "enabled" => Value::flag(),
                     "device" => Value::text(device.iface.name),
                 });
 
