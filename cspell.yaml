@@ -15,6 +15,11 @@ ignoreRegExpList:
   - /(\\u[0-9a-fA-F]{4}|\\U[0-9a-fA-F]{8})/g
   # Ignore words with a bolded prefix
   - /\*\*\w*\*\*\w*/g
+  # Ignore Rust's braced unicode escapes, e.g. \u{fffb}
+  - /\\u\{[0-9a-fA-F]+\}/g
+  # Ignore escape sequences and ANSI SGR codes in string literals
+  - /\\[nrt0]/g
+  - /\[[0-9;]+m/g
 words:
   - aarch
   - alacritty
@@ -30,6 +35,7 @@ words:
   - arphrd
   - backon
   - BCHARGE
+  - bidi
   - bluez
   - bokmaal
   - btrfs
@@ -38,6 +44,7 @@ words:
   - caldav
   - cbrt
   - ccache
+  - choseong
   - chrono
   - clippy
   - CLOEXEC
@@ -50,11 +57,14 @@ words:
   - dbus
   - ddcci
   - ddcutil
+  - dejavu
   - devel
   - dmenu
   - docsrs
   - dtolnay
   - dunst
+  - ELOOP
+  - esac
   - exdate
   - exdates
   - execvp
@@ -81,6 +91,7 @@ words:
   - ifinfomsg
   - ifla
   - ifname
+  - ignorables
   - imgbb
   - indx
   - inet
@@ -95,6 +106,7 @@ words:
   - kmon
   - libc
   - libdbus
+  - libpango
   - liquidctl
   - locid
   - macchiato
@@ -135,14 +147,19 @@ words:
   - posix
   - powf
   - powi
+  - ppid
+  - prctl
   - pybugz
   - rdate
   - rdates
   - recip
+  - reparent
+  - reparented
   - repr
   - reqwest
   - resolv
   - retval
+  - rfind
   - rofi
   - rofication
   - RRGGBB
@@ -192,6 +209,7 @@ words:
   - VEVENT
   - wayrs
   - wdoll
+  - wdth
   - WLAN
   - wlroots
   - wlsunset
@@ -205,6 +223,7 @@ words:
   - xkbevent
   - xkbswitch
   - XKCD
+  - XLFD
   - xrandr
   - xresources
   - xsct
