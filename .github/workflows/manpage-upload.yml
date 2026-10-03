@@ -3,6 +3,8 @@ on:
   release:
     types: [published]
 
+permissions: {}
+
 env:
   CARGO_TERM_COLOR: always
 
@@ -10,7 +12,7 @@ jobs:
   manpage:
     runs-on: ubuntu-latest
     container:
-      image: archlinux:base-devel
+      image: archlinux:base-devel-20260920.0.596911@sha256:8745817f349ed24373341ddb92776209eeec3f0364ea48f7f645ac5800d30a50
     permissions:
       contents: write
     steps:
@@ -18,11 +20,15 @@ jobs:
       run: |
         pacman --noconfirm --noprogressbar --needed -Syu base-devel clang git libpipewire libpulse lm_sensors notmuch openssl pandoc github-cli
         git config --global --add safe.directory "$GITHUB_WORKSPACE"
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
     - uses: dtolnay/rust-toolchain@stable
     - name: Generate and upload manpage
       env:
         GH_TOKEN: ${{ github.token }}
+        GH_REPO: ${{ github.repository }}
+        TAG_NAME: ${{ github.event.release.tag_name }}
       run: |
         cargo xtask generate-manpage
-        gh release upload -R ${{ github.repository }} --clobber ${{ github.event.release.tag_name }} ./man/i3status-rs.1
+        gh release upload -R "$GH_REPO" --clobber "$TAG_NAME" ./man/i3status-rs.1

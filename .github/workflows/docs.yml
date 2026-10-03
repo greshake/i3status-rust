@@ -5,6 +5,8 @@ on:
     branches:
       - master
 
+permissions: {}
+
 env:
   CARGO_TERM_COLOR: always
 
@@ -12,20 +14,24 @@ jobs:
   default:
 
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     container:
-      image: archlinux
+      image: archlinux:base-20260920.0.596911@sha256:f3691b4dde62ba4c4b6f0ae2c1fbf28e8c0c8c4b9a35c7e06dc1f70e21aa29f6
     steps:
     - name: Get required packages
       run: pacman --noconfirm --noprogressbar -Syu base-devel clang cmake git libpipewire libpulse lm_sensors notmuch openssl rsync
     - uses: dtolnay/rust-toolchain@stable
     - name: Version information
       run: rustc --version; cargo --version
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
     - name: Generate docs
       run: cargo doc --all-features --no-deps
     - name: Create index.html
       run: echo "<meta http-equiv=\"Refresh\" content=\"0; url='/i3status-rust/i3status_rs'\" />" > target/doc/index.html
     - name: Deploy 🚀
-      uses: JamesIves/github-pages-deploy-action@v4
+      uses: JamesIves/github-pages-deploy-action@fa24774553152dd7873cd16ebd8d959b010c5445 # v4.9.0
       with:
         folder: target/doc # The folder the action should deploy.
