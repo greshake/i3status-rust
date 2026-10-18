@@ -531,6 +531,7 @@ mod tests {
                 operstate,
                 name: "net0".into(),
                 stats: None,
+                enabled: true,
             },
             wifi_info: None,
             ip,
