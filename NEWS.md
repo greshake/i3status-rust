@@ -1,3 +1,38 @@
+# i3status-rust 0.36.2
+
+### New Blocks and Features
+
+* `amd_gpu`, `cpu`, `disk_space`, `memory`, `music`, `net`, `privacy`, `sound`, `temperature`, `time`, `weather`: allow specifying a list of formats in `format` and cycling through them with `next_format` and `prev_format` actions
+* `datetime` formatter: added `precision` argument for `icu4x`
+* `.eng` formatter: added `degC` and `degF` temperature units for converting between Celsius and Fahrenheit
+* `hueshift`: added support for `xsct`
+* `icons`: added `awesome7` and `awesome7pro` icon sets (#2267, #2316, #2320)
+* `icons`: added more thermometer icons to `awesome4`, `awesome5`, and `awesome6`
+* `music`: added `combo_reversed` placeholder (#2305)
+* `net`: added `enabled` flag (#2321)
+* `speedtest`: replaced `speedtest-cli` with `networkquality-rs` and added `jitter` placeholder
+* `theme`: added support for referencing `sway` bar colors in theme overrides (e.g., `sway:urgent_workspace_bg`)
+* `weather`: added top-level `units` option to configure temperature and wind speed units across all providers
+
+### Bug Fixes and Improvements
+
+* `calendar`: switched to `icalendar` crate's recurrence support
+* `custom`: debounce file changes (#2211)
+* `docker`: added example for Podman (#2317)
+* `external_ip`: prevent hammering geolocation services (#2295)
+* `keyboard_layout`: fixed logic bug in `xkb_event` driver when using 3 or more layout groups
+* `net`: fixed `inactive_format` for disconnected interfaces and VPN interfaces that are down (#2298)
+* `nvidia_gpu`: documented that `nvidia-smi` wakes the dedicated GPU (#2307)
+* `taskwarrior`: prevent creating duplicate recurrence instances (#2071)
+* `vpn`: fixed `mullvad` status command parsing (#2270)
+* `weather`: fixed place name geocoding with commas for `openweathermap` (#2266)
+* `xtask`: fixed doubled leading comment characters in manpage code blocks (#2328)
+* Fixed SI unit prefix for kilo to use lowercase `k`
+
+### Deprecation Warnings
+
+* `toggle_format` action has been deprecated in favor of `next_format` and `prev_format`
+
 # i3status-rust 0.36.1
 
 ### New Blocks and Features
