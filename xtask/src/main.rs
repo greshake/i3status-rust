@@ -10,8 +10,11 @@ use anyhow::{Context, Result};
 
 use pandoc::PandocOutput;
 
+mod font;
+
 enum XTaskSubcommand {
     GenerateManpage,
+    BuildFont,
 }
 
 impl TryFrom<&ArgMatches> for XTaskSubcommand {
@@ -21,6 +24,7 @@ impl TryFrom<&ArgMatches> for XTaskSubcommand {
         if let Some(subcommand) = value.subcommand() {
             match subcommand.0 {
                 "generate-manpage" => Ok(XTaskSubcommand::GenerateManpage),
+                "build-font" => Ok(XTaskSubcommand::BuildFont),
                 _ => Err(clap::Error::new(clap::error::ErrorKind::InvalidSubcommand)),
             }
         } else {
@@ -48,7 +52,11 @@ automation.
             clap::Command::new("generate-manpage")
                 .visible_alias("gm")
                 .about("Automatic man page generation. Saves the manpage to 'man/i3status-rs.1'"),
-        );
+        )
+        .subcommand(clap::Command::new("build-font").visible_alias("bf").about(
+            "Rebuild the \"i3status Icons\" font and its icon set from the SVG sources \
+                     in 'fonts/i3status-icons/svg'",
+        ));
 
     let program_parsed_arguments = arguments_model.get_matches();
 
@@ -56,6 +64,7 @@ automation.
 
     match parsed_subcommand {
         XTaskSubcommand::GenerateManpage => generate_manpage(),
+        XTaskSubcommand::BuildFont => font::build_font(),
     }
 }
 
