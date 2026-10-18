@@ -31,7 +31,8 @@
 //! [[block]]
 //! block = "docker"
 //! format = " $icon $running/$total "
-//! socket_path = "/run/user/1000/podman/podman.sock"
+//! socket_path = "$XDG_RUNTIME_DIR/podman/podman.sock"
+//! # socket_path = "/run/user/1000/podman/podman.sock"
 //! ```
 //!
 //! # Icons Used
