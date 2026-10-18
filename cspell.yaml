@@ -143,6 +143,7 @@ words:
   - reqwest
   - resolv
   - retval
+  - rfkill
   - rofi
   - rofication
   - RRGGBB
