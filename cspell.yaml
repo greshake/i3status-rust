@@ -78,6 +78,7 @@ words:
   - iface
   - ifaces
   - ifaddrmsg
+  - ifindex
   - ifinfomsg
   - ifla
   - ifname
@@ -109,6 +110,7 @@ words:
   - Mupi
   - neli
   - NLMSG
+  - networkd
   - nlmsghdr
   - nmtui
   - noconfirm
