@@ -14,7 +14,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `" ^icon_ping $ping.eng(prefix:m) ^icon_net_down $speed_down ^icon_net_up $speed_up "`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" ^icon_ping {$ping.eng(prefix:m)\|load} ^icon_net_down {$speed_down.eng(w:3, prefix:M)ps\|loading} ^icon_net_up {$speed_up.eng(w:3, prefix:M)ps\|loading} "`
 //! `interval` | Update interval in seconds | `1800`
 //! `config_url` | The endpoint to get the responsiveness config from. See [`SpeedtestConfig::config_url`] for the expected format of the configuration JSON returned by this endpoint. | `None`
 //! `large_download_url` | The large file endpoint which should be multiple GBs. | `"https://h3.speed.cloudflare.com/__down?bytes=10000000000"`
@@ -39,7 +39,7 @@
 //! `max_loaded_connections` | The maximum number of loaded connections that the test can use to saturate the network. | `16`
 //! `interval_duration_ms` | The duration between test intervals in milliseconds (ms). | `500` (0.5 seconds)
 //! `test_duration_ms` | The overall test duration in milliseconds (ms). | `12_000` (12 seconds)
-//! `conn_type` | The type of connection to use for the speed test. One of `"h1"`, `"h2"`, or `"h3"` | `"h2"`
+//! `conn_type` | The type of connection to use for the speed test. Either `"h1"` or `"h2"` | `"h2"`
 //! `upload_bytes_per_request` | The number of bytes to upload per request during the speed test. | `100_000_000`
 //!
 //! # Available Format Keys
@@ -205,99 +205,18 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     BlockPlan::new(vec![OutputPlan::new(
         "main",
         config.format.with_default(
-            " ^icon_ping $ping.eng(prefix:m) ^icon_net_down $speed_down ^icon_net_up $speed_up ",
+            " ^icon_ping {$ping.eng(prefix:m)|load} ^icon_net_down {$speed_down.eng(w:3, prefix:M)ps|loading} ^icon_net_up {$speed_up.eng(w:3, prefix:M)ps|loading} ",
         )?,
     )])
 }
 
 pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let output_main = plan.output("main")?;
-    let format = output_main.format();
 
-    let need_ping = format.contains_key("ping");
-    let need_jitter = format.contains_key("jitter");
-    let need_speed_down = format.contains_key("speed_down");
-    let need_speed_up = format.contains_key("speed_up");
+    let mut speedtest = Speedtest::new(api, output_main);
 
     loop {
-        let speedtest_urls = get_speedtest_urls(&config.speedtest).await?;
-
-        let mut values = HashMap::new();
-
-        if need_ping || need_jitter {
-            debug!("running latency test");
-
-            let latency_results = test_latency(LatencyConfig {
-                url: speedtest_urls.small_https_download_url.clone(),
-                runs: config.speedtest.latency.runs,
-                scoped_headers: None,
-            })
-            .await?;
-
-            if need_ping {
-                values.insert(
-                    "ping".into(),
-                    Value::seconds(latency_results.median().error("no median RTT available")?),
-                );
-            }
-
-            if need_jitter {
-                values.insert(
-                    "jitter".into(),
-                    Value::seconds(latency_results.jitter().error("no jitter available")?),
-                );
-            }
-        }
-
-        if need_speed_down || need_speed_up {
-            let responsiveness_config = ResponsivenessConfig {
-                large_download_url: speedtest_urls.large_https_download_url,
-                small_download_url: speedtest_urls.small_https_download_url,
-                upload_url: speedtest_urls.https_upload_url,
-                moving_average_distance: config.speedtest.rpm.moving_average_distance,
-                interval_duration: config.speedtest.rpm.interval_duration_ms,
-                test_duration: config.speedtest.rpm.test_duration_ms,
-                trimmed_mean_percent: config.speedtest.rpm.trimmed_mean_percent,
-                std_tolerance: config.speedtest.rpm.std_tolerance,
-                max_loaded_connections: config.speedtest.rpm.max_loaded_connections,
-                conn_type: config.speedtest.rpm.conn_type,
-                upload_bytes_per_request: config.speedtest.rpm.upload_bytes_per_request,
-                // This is false for RPM, but true for a saturation test
-                determine_load_only: false,
-                on_connection_error: ConnectionErrorPolicy::default(),
-                scoped_headers: None,
-            };
-
-            if need_speed_down {
-                debug!("running download test");
-                let download_result = test_network_speed(&responsiveness_config, true).await?;
-                values.insert(
-                    "speed_down".into(),
-                    Value::bits(
-                        download_result
-                            .throughput()
-                            .error("no download throughput available")?,
-                    ),
-                );
-            }
-
-            if need_speed_up {
-                debug!("running upload test");
-                let upload_result = test_network_speed(&responsiveness_config, false).await?;
-                values.insert(
-                    "speed_up".into(),
-                    Value::bits(
-                        upload_result
-                            .throughput()
-                            .error("no upload throughput available")?,
-                    ),
-                );
-            }
-        }
-
-        let mut widget = output_main.new_widget();
-        widget.set_values(values);
-        api.set_widget(widget)?;
+        speedtest.run_tests(config).await?;
 
         select! {
             _ = sleep(config.interval.0) => (),
@@ -347,50 +266,202 @@ async fn get_speedtest_urls(speedtest_config: &SpeedtestConfig) -> Result<Speedt
     }
 }
 
-async fn test_latency(config: LatencyConfig) -> Result<LatencyResult> {
-    let shutdown = CancellationToken::new();
-    let time: Arc<dyn Time> = Arc::new(TokioTime::new());
-    let network: Arc<dyn Network> =
-        Arc::new(TokioNetwork::new(Arc::clone(&time), shutdown.clone()));
-
-    let rtt = Latency::new(config);
-    let result = rtt
-        .run_test(network, time, shutdown.clone())
-        .await
-        .map_err(|e| Error::new(e.to_string()))?;
-
-    debug!("shutting down latency test");
-    let _ = tokio::time::timeout(tokio::time::Duration::from_secs(1), async {
-        shutdown.cancel();
-    })
-    .await;
-
-    Ok(result)
+#[derive(Default)]
+struct Metrics {
+    ping: Option<f64>,
+    jitter: Option<f64>,
+    speed_down: Option<f64>,
+    speed_up: Option<f64>,
 }
 
-async fn test_network_speed(
-    config: &ResponsivenessConfig,
-    download: bool,
-) -> Result<ResponsivenessResult> {
-    let shutdown = CancellationToken::new();
-    let time: Arc<dyn Time> = Arc::new(TokioTime::new());
-    let network: Arc<dyn Network> =
-        Arc::new(TokioNetwork::new(Arc::clone(&time), shutdown.clone()));
+struct Speedtest {
+    api: CommonApi,
+    output: OutputHandle,
+    need_ping: bool,
+    need_jitter: bool,
+    need_speed_down: bool,
+    need_speed_up: bool,
+    metrics: Metrics,
+}
 
-    let rpm =
-        Responsiveness::new(config.clone(), download).map_err(|e| Error::new(e.to_string()))?;
-    let result = rpm
-        .run_test(network, time, shutdown.clone())
-        .await
-        .map_err(|e| Error::new(e.to_string()))?;
+impl Speedtest {
+    fn new(api: &CommonApi, output: OutputHandle) -> Self {
+        let format = output.format();
 
-    debug!("shutting down network speed test");
-    let _ = tokio::time::timeout(tokio::time::Duration::from_secs(1), async {
-        shutdown.cancel();
-    })
-    .await;
+        let need_ping = format.contains_key("ping");
+        let need_jitter = format.contains_key("jitter");
+        let need_speed_down = format.contains_key("speed_down");
+        let need_speed_up = format.contains_key("speed_up");
 
-    Ok(result)
+        Self {
+            api: api.clone(),
+            output,
+            need_ping,
+            need_jitter,
+            need_speed_down,
+            need_speed_up,
+            metrics: Metrics::default(),
+        }
+    }
+
+    fn update_values(&self) -> Result<()> {
+        let mut values = HashMap::new();
+        if let Some(ping) = self.metrics.ping {
+            values.insert("ping".into(), Value::seconds(ping));
+        }
+        if let Some(jitter) = self.metrics.jitter {
+            values.insert("jitter".into(), Value::seconds(jitter));
+        }
+        if let Some(speed_down) = self.metrics.speed_down {
+            values.insert("speed_down".into(), Value::bits(speed_down));
+        }
+        if let Some(speed_up) = self.metrics.speed_up {
+            values.insert("speed_up".into(), Value::bits(speed_up));
+        }
+        let mut widget = self.output.new_widget();
+        widget.set_values(values);
+        self.api.set_widget(widget)
+    }
+
+    async fn run_tests(&mut self, config: &Config) -> Result<()> {
+        let speedtest_urls = get_speedtest_urls(&config.speedtest).await?;
+
+        // Reset metrics before running tests
+        self.metrics = Metrics::default();
+        self.update_values()?;
+
+        if self.need_ping || self.need_jitter {
+            debug!("running latency test");
+
+            let latency_results = self
+                .test_latency(LatencyConfig {
+                    url: speedtest_urls.small_https_download_url.clone(),
+                    runs: config.speedtest.latency.runs,
+                    scoped_headers: None,
+                })
+                .await?;
+
+            if self.need_ping {
+                self.metrics.ping =
+                    Some(latency_results.median().error("no median RTT available")?);
+            }
+
+            if self.need_jitter {
+                self.metrics.jitter = Some(latency_results.jitter().error("no jitter available")?);
+            }
+            self.update_values()?;
+        }
+
+        if self.need_speed_down || self.need_speed_up {
+            let responsiveness_config = ResponsivenessConfig {
+                large_download_url: speedtest_urls.large_https_download_url,
+                small_download_url: speedtest_urls.small_https_download_url,
+                upload_url: speedtest_urls.https_upload_url,
+                moving_average_distance: config.speedtest.rpm.moving_average_distance,
+                interval_duration: config.speedtest.rpm.interval_duration_ms,
+                test_duration: config.speedtest.rpm.test_duration_ms,
+                trimmed_mean_percent: config.speedtest.rpm.trimmed_mean_percent,
+                std_tolerance: config.speedtest.rpm.std_tolerance,
+                max_loaded_connections: config.speedtest.rpm.max_loaded_connections,
+                conn_type: config.speedtest.rpm.conn_type,
+                upload_bytes_per_request: config.speedtest.rpm.upload_bytes_per_request,
+                // This is false for RPM, but true for a saturation test
+                determine_load_only: false,
+                on_connection_error: ConnectionErrorPolicy::default(),
+                scoped_headers: None,
+            };
+
+            if self.need_speed_down {
+                debug!("running download test");
+                let download_result = self
+                    .test_network_speed(&responsiveness_config, true)
+                    .await?;
+                self.metrics.speed_down = Some(
+                    download_result
+                        .throughput()
+                        .error("no download throughput available")? as f64,
+                );
+                self.update_values()?;
+            }
+
+            if self.need_speed_up {
+                debug!("running upload test");
+                let upload_result = self
+                    .test_network_speed(&responsiveness_config, false)
+                    .await?;
+                self.metrics.speed_up = Some(
+                    upload_result
+                        .throughput()
+                        .error("no upload throughput available")? as f64,
+                );
+                self.update_values()?;
+            }
+        }
+        Ok(())
+    }
+
+    async fn test_latency(&self, config: LatencyConfig) -> Result<LatencyResult> {
+        let shutdown = CancellationToken::new();
+        let time: Arc<dyn Time> = Arc::new(TokioTime::new());
+        let network: Arc<dyn Network> =
+            Arc::new(TokioNetwork::new(Arc::clone(&time), shutdown.clone()));
+
+        let rtt = Latency::new(config);
+        let result = rtt
+            .run_test(network, time, shutdown.clone())
+            .await
+            .map_err(|e| Error::new(e.to_string()))?;
+
+        debug!("shutting down latency test");
+        let _ = tokio::time::timeout(tokio::time::Duration::from_secs(1), async {
+            shutdown.cancel();
+        })
+        .await;
+
+        Ok(result)
+    }
+
+    async fn test_network_speed(
+        &mut self,
+        config: &ResponsivenessConfig,
+        download: bool,
+    ) -> Result<ResponsivenessResult> {
+        let shutdown = CancellationToken::new();
+        let time: Arc<dyn Time> = Arc::new(TokioTime::new());
+        let network: Arc<dyn Network> =
+            Arc::new(TokioNetwork::new(Arc::clone(&time), shutdown.clone()));
+
+        let rpm =
+            Responsiveness::new(config.clone(), download).map_err(|e| Error::new(e.to_string()))?;
+        let mut progress = rpm.subscribe();
+        let test = rpm.run_test(network, time, shutdown.clone());
+        tokio::pin!(test);
+
+        let result = loop {
+            select! {
+                result = &mut test => break result.map_err(|e| Error::new(e.to_string()))?,
+                Ok(()) = progress.changed() => {
+                    // Moving average aggregate goodput across the load-generating
+                    // connections, in bits per second.
+                    let goodput = progress.borrow_and_update().goodput;
+                    if download{
+                        self.metrics.speed_down = Some(goodput);
+                    } else {
+                        self.metrics.speed_up = Some(goodput);
+                    }
+                    self.update_values()?;
+                }
+            }
+        };
+
+        debug!("shutting down network speed test");
+        let _ = tokio::time::timeout(tokio::time::Duration::from_secs(1), async {
+            shutdown.cancel();
+        })
+        .await;
+
+        Ok(result)
+    }
 }
 
 fn deserialize_url_opt<'de, D>(deserializer: D) -> Result<Option<Url>, D::Error>
@@ -427,9 +498,8 @@ where
     match conn_type_str.as_str() {
         "h1" => Ok(ConnectionType::H1 { use_tls: true }),
         "h2" => Ok(ConnectionType::H2),
-        "h3" => Ok(ConnectionType::H3),
         _ => Err(serde::de::Error::custom(format!(
-            "Invalid connection type: {}. Must be one of: h1, h2, h3",
+            "Invalid connection type: {}. Either: \"h1\" or \"h2\"",
             conn_type_str
         ))),
     }

@@ -516,9 +516,9 @@ dependencies = [
 
 [[package]]
 name = "cf-mach"
-version = "0.3.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ea34e904605494cc38b4430f8d5f9b128d1955fe0a355dc0afda4d3dcf3ee862"
+checksum = "2dd2f6a7c3f85ea00810bf50a0c97b797ba9974a672f0cbb1680e64f672cb5fe"
 dependencies = [
  "anyhow",
  "boring",
