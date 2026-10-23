@@ -38,6 +38,7 @@ base64 = { version = "0.22.1" }
 bitflags = "2.9"
 bytes = "1.11"
 calibright = { version = "0.1.13", features = ["watch"] }
+cf-mach = { version = "0.4", default-features = false }
 chrono = { version = "0.4", default-features = false, features = ["clock", "unstable-locales"] }
 chrono-tz = { version = "0.10", features = ["serde"] }
 clap = { workspace = true }
@@ -61,7 +62,6 @@ neli-wifi = { version = "0.6", features = ["async"] }
 nix = { version = "0.29", features = ["fs", "process"] }
 nom = "8.0.0"
 notmuch = { version = "0.8", optional = true }
-cf-mach = { version = "0.3", default-features = false }
 num-traits = "0.2"
 oauth2 = { version = "5.0.0", default-features = false, features = ["reqwest"] }
 pipewire = { version = "0.10", default-features = false, optional = true }
