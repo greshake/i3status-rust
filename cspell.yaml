@@ -39,6 +39,7 @@ words:
   - bluez
   - bokmaal
   - btrfs
+  - bssid
   - bugz
   - busctl
   - caldav
@@ -119,6 +120,7 @@ words:
   - mullvad
   - Mupi
   - neli
+  - Nlattr
   - NLMSG
   - nlmsghdr
   - nmtui
@@ -195,6 +197,7 @@ words:
   - swayipc
   - swaync
   - sysfs
+  - TDLS
   - tebi
   - tera
   - tzname

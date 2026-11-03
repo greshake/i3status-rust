@@ -13,6 +13,8 @@ extend-exclude = [
 # Identifiers are defined using unicode's XID_Continue which includes [a-zA-Z0-9_].
 [default.extend-identifiers]
 hellow554 = "hellow554"
+# Netlink's output-interface attribute.
+Oif = "Oif"
 
 # Words are split from identifiers on case changes as well as breaks in [a-zA-Z]
 # with a special case to handle acronyms. For example, First10HTMLTokens
