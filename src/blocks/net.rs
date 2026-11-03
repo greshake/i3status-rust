@@ -9,7 +9,7 @@
 //! `device` | Network interface to monitor (as specified in `/sys/class/net/`). Supports regex. | If not set, device will be automatically selected every `interval`
 //! `interval` | Update interval in seconds | `2`
 //! `wifi_generation_superscript` | Display `$wifi_generation` using Unicode superscripts (`⁴`, `⁵`, `⁶`, `⁶ᴱ`, `⁷`) | `true`
-//! `format` | A [MultiFormat][MaybeMultiFormatConfig] string to customise the output of this block. See below for available placeholders. | `[" $icon ^icon_net_down $speed_down.eng(prefix:K) ^icon_net_up $speed_up.eng(prefix:K) "]`
+//! `format` | A [MultiFormat][MaybeMultiFormatConfig] string to customise the output of this block. See below for available placeholders. | `[" $icon{$wifi_generation\|} ^icon_net_down $speed_down.eng(prefix:K) ^icon_net_up $speed_up.eng(prefix:K) "]`
 //! `inactive_format` | Same as `format` but for when the interface is inactive | `" $icon Down "`
 //! `missing_format` | Same as `format` but for when the device is missing | `" × "`
 //!
@@ -129,7 +129,7 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
     let device_output =
         |output: OutputPlan| output.icon("icon", IconChoices::fixed(NetDevice::ALL_ICONS));
     let formats = config.formats.with_default(
-        " $icon ^icon_net_down $speed_down.eng(prefix:K) ^icon_net_up $speed_up.eng(prefix:K) ",
+        " $icon{$wifi_generation|} ^icon_net_down $speed_down.eng(prefix:K) ^icon_net_up $speed_up.eng(prefix:K) ",
     )?;
     // One output per format the user can rotate to, plus the two states that
     // are not format variants at all: an inactive interface and a missing
@@ -274,26 +274,32 @@ mod tests {
     use super::*;
 
     #[test]
-    fn wifi_generation_format_uses_configured_style() {
+    fn default_format_uses_configured_wifi_generation_style() {
         use crate::netlink::WifiGeneration::Wifi6E;
-        let template: crate::formatting::template::FormatTemplate =
-            "{$wifi_generation|}".parse().unwrap();
-        for (config, generation, expected) in [
-            ("", Some(Wifi6E), "⁶ᴱ"),
-            ("wifi_generation_superscript = false", Some(Wifi6E), "6E"),
-            ("", None, ""),
+        for (config, generation, prefix) in [
+            ("", Some(Wifi6E), " wifi⁶ᴱ "),
+            (
+                "wifi_generation_superscript = false",
+                Some(Wifi6E),
+                " wifi6E ",
+            ),
+            ("", None, " wifi "),
         ] {
             let config: Config = toml::from_str(config).unwrap();
+            let plan = prepare(&config).unwrap();
+            let output = plan.output("format").unwrap();
             let values = map! {
+                "icon" => Value::text("wifi".into()),
+                "speed_down" => Value::bytes(0.),
+                "speed_up" => Value::bytes(0.),
                 [if let Some(v) = generation] "wifi_generation" => Value::text(v.as_str(config.wifi_generation_superscript).into()),
             };
-            let text: String = template
+            let (full, _) = output
+                .format()
                 .render(&values, &Default::default())
-                .unwrap()
-                .into_iter()
-                .map(|fragment| fragment.text)
-                .collect();
-            assert_eq!(text, expected);
+                .unwrap();
+            let text: String = full.into_iter().map(|fragment| fragment.text).collect();
+            assert!(text.starts_with(prefix), "{text}");
         }
     }
 
