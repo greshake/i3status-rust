@@ -19,7 +19,7 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `gpu_id` | GPU id in system. | `0`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $utilization $memory $temperature "`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $utilization $vram_used $temperature "`
 //! `interval` | Update interval in seconds. | `1`
 //! `idle` | Maximum temperature, below which state is set to idle | `50`
 //! `good` | Maximum temperature, below which state is set to good | `70`
@@ -31,11 +31,16 @@
 //! `icon`        | Icon   | -
 //! `name`        | Text   | -
 //! `utilization` | Number | Percents
-//! `memory`      | Number | Bytes
+//! `memory`      | Number *DEPRECATED* | Bytes
+//! `vram_total`  | Number | Bytes
+//! `vram_used`   | Number | Bytes
+//! `vram_used_percents` | Number | Percents
 //! `temperature` | Number | Degrees
 //! `fan_speed`   | Number | Percents
 //! `clocks`      | Number | Hertz
 //! `power`       | Number | Watts
+//!
+//! `memory` has been deprecated in favor of `vram_used` and `vram_total`.
 //!
 //! Widget    | Placeholder
 //! ----------|-------------
@@ -44,7 +49,7 @@
 //!
 //! Action                  | Default button
 //! ------------------------|----------------
-//! `toggle_mem_total`      | Left on `mem_btn`
+//! `toggle_mem_total` *DEPRECATED* | Left on `mem_btn`
 //! `toggle_fan_controlled` | Left on `fan_btn`
 //! `fan_speed_up`          | Wheel Up on `fan_btn`
 //! `fan_speed_down`        | Wheel Down on `fan_btn`
@@ -101,7 +106,7 @@ pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
             "main",
             config
                 .format
-                .with_default(" $icon $utilization $memory $temperature ")?,
+                .with_default(" $icon $utilization $vram_used $temperature ")?,
         )
         .icon("icon", IconChoices::one(icons::GPU)),
     ])
@@ -155,6 +160,9 @@ pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>)
             "name" => Value::text(info.name.clone()),
             "utilization" => Value::percents(info.utilization),
             "memory" => Value::bytes(if show_mem_total {info.mem_total} else {info.mem_used}).with_instance(MEM_BTN),
+            "vram_total" => Value::bytes(info.mem_total),
+            "vram_used" => Value::bytes(info.mem_used),
+            "vram_used_percents" => Value::percents(info.mem_used / info.mem_total * 100.0),
             "temperature" => Value::degrees_c(info.temperature),
             "fan_speed" => Value::percents(info.fan_speed).with_instance(FAN_BTN).underline(fan_controlled).italic(fan_controlled),
             "clocks" => Value::hertz(info.clocks),
