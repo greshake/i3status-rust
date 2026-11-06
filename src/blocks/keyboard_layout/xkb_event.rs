@@ -110,7 +110,10 @@ impl XkbEvent {
             .xkb_select_events(
                 ID::USE_CORE_KBD.into(),
                 EventType::default(),
-                EventType::STATE_NOTIFY,
+                EventType::STATE_NOTIFY
+                    | EventType::NAMES_NOTIFY
+                    | EventType::NEW_KEYBOARD_NOTIFY
+                    | EventType::MAP_NOTIFY,
                 MapPart::default(),
                 MapPart::default(),
                 &SelectEventsAux::new(),
@@ -139,11 +142,48 @@ impl Backend for XkbEvent {
                 .await
                 .error("Failed to read the event")?;
 
-            if let Event::XkbStateNotify(e) = event
-                && e.changed.contains(xkb::StatePart::GROUP_STATE)
-            {
-                return Ok(());
+            match event {
+                Event::XkbStateNotify(e) if e.changed.contains(xkb::StatePart::GROUP_STATE) => {
+                    return Ok(());
+                }
+                Event::XkbNamesNotify(e) if e.changed.contains(xkb::NameDetail::SYMBOLS) => {
+                    return Ok(());
+                }
+                Event::XkbNewKeyboardNotify(_) | Event::XkbMapNotify(_) => {
+                    return Ok(());
+                }
+                _ => {}
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_layout() {
+        assert_eq!(
+            parse_layout(b"pc+us(workman)+inet(evdev)", 0).unwrap(),
+            "us(workman)"
+        );
+        assert_eq!(
+            parse_layout(b"pc+us+inet(evdev)", 0).unwrap(),
+            "us"
+        );
+        assert_eq!(
+            parse_layout(b"pc+us+de:2+inet(evdev)", 1).unwrap(),
+            "de"
+        );
+        assert_eq!(
+            parse_layout(b"pc+us+ara:2+jp:3+fr:4+inet(evdev)", 2).unwrap(),
+            "jp"
+        );
+        assert_eq!(
+            parse_layout(b"pc+us+ara:2+jp:3+fr:4+inet(evdev)", 3).unwrap(),
+            "fr"
+        );
+        assert!(parse_layout(b"pc+us", 1).is_err());
     }
 }
