@@ -65,6 +65,7 @@ words:
   - dunst
   - ELOOP
   - esac
+  - evdev
   - exdate
   - exdates
   - execvp
@@ -128,6 +129,7 @@ words:
   - noicons
   - NOPASSWD
   - noprogressbar
+  - noops
   - notif
   - Noto
   - NZXT
