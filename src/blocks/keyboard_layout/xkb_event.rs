@@ -168,14 +168,8 @@ mod tests {
             parse_layout(b"pc+us(workman)+inet(evdev)", 0).unwrap(),
             "us(workman)"
         );
-        assert_eq!(
-            parse_layout(b"pc+us+inet(evdev)", 0).unwrap(),
-            "us"
-        );
-        assert_eq!(
-            parse_layout(b"pc+us+de:2+inet(evdev)", 1).unwrap(),
-            "de"
-        );
+        assert_eq!(parse_layout(b"pc+us+inet(evdev)", 0).unwrap(), "us");
+        assert_eq!(parse_layout(b"pc+us+de:2+inet(evdev)", 1).unwrap(), "de");
         assert_eq!(
             parse_layout(b"pc+us+ara:2+jp:3+fr:4+inet(evdev)", 2).unwrap(),
             "jp"
