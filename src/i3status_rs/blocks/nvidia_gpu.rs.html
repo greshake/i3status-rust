@@ -246,8 +246,8 @@
 <a href=#246 id=246 data-nosnippet>246</a>                <span class="prelude-val">Ok</span>(info)
 <a href=#247 id=247 data-nosnippet>247</a>            }}
 <a href=#248 id=248 data-nosnippet>248</a>        }
-<a href=#249 id=249 data-nosnippet>249</a>        <span class="comment">// `memory` and `clocks` are initially in MB and MHz, so we have to multiply them by 1_000_000
-<a href=#250 id=250 data-nosnippet>250</a>        </span><span class="macro">parse!</span>(s -&gt; name: String, mem_total: f64 * <span class="number">1e6</span>, utilization: f64, mem_used: f64 * <span class="number">1e6</span>, temperature: u32, fan_speed: u32, clocks: f64 * <span class="number">1e6</span>, power_draw: f64)
+<a href=#249 id=249 data-nosnippet>249</a>        <span class="comment">// `memory` and `clocks` are initially in MiB and MHz, parse them accordingly
+<a href=#250 id=250 data-nosnippet>250</a>        </span><span class="macro">parse!</span>(s -&gt; name: String, mem_total: f64 * <span class="number">1024.0 </span>* <span class="number">1024.0</span>, utilization: f64, mem_used: f64 * <span class="number">1024.0 </span>* <span class="number">1024.0</span>, temperature: u32, fan_speed: u32, clocks: f64 * <span class="number">1e6</span>, power_draw: f64)
 <a href=#251 id=251 data-nosnippet>251</a>    }
 <a href=#252 id=252 data-nosnippet>252</a>}
 <a href=#253 id=253 data-nosnippet>253</a>
