@@ -238,9 +238,6 @@ impl FromStr for Color {
         } else if color.starts_with("x:") {
             let name = color.split_at(2).1;
             xresources::get_color(name)?
-                .or_error(|| format!("color '{name}' not defined in ~/.Xresources"))?
-                .parse()
-                .or_error(|| format!("invalid color definition '{name}'"))?
         } else if color.starts_with("sway:") {
             let name = color.split_at(5).1;
             sway::get_color(name)?
