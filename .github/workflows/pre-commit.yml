@@ -30,7 +30,7 @@ jobs:
     steps:
     - name: Get required packages and config git
       run: |
-        pacman --noconfirm --noprogressbar -Syu base-devel clang cmake git libpipewire libpulse lm_sensors notmuch openssl pango rsync ttf-dejavu
+        pacman --noconfirm --noprogressbar -Syu base-devel clang cmake git libpipewire libpulse lm_sensors notmuch openssl pango pre-commit rsync ttf-dejavu
         git config --global --add safe.directory "$GITHUB_WORKSPACE"
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
@@ -38,11 +38,6 @@ jobs:
     - uses: dtolnay/rust-toolchain@stable
       with:
         components: clippy, rustfmt
-    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-      with:
-        python-version: '3.10'
-    - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
-      with:
-        extra_args: ${{ matrix.hook }} --all-files
+    - run: pre-commit run ${{ matrix.hook }} --all-files --show-diff-on-failure
 
 
