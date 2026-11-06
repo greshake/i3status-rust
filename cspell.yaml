@@ -75,6 +75,7 @@ words:
   - fmin
   - getaddr
   - getenv
+  - Ghostty
   - gibi
   - giga
   - Greshake
@@ -85,6 +86,7 @@ words:
   - hypot
   - ibus
   - icalendar
+  - ICANON
   - iface
   - ifaces
   - ifaddrmsg
@@ -92,6 +94,7 @@ words:
   - ifla
   - ifname
   - ignorables
+  - IHDR
   - imgbb
   - indx
   - inet
@@ -104,6 +107,7 @@ words:
   - kbddbus
   - kibi
   - kmon
+  - lflag
   - libc
   - libdbus
   - liquidctl
@@ -143,6 +147,7 @@ words:
   - pkill
   - playerctl
   - playerctld
+  - pollfd
   - pomodoros
   - posix
   - powf
@@ -159,12 +164,14 @@ words:
   - reqwest
   - resolv
   - retval
+  - revents
   - rfind
   - rfkill
   - Roboto
   - rofi
   - rofication
   - RRGGBB
+  - rrggbbaa
   - rsplit
   - rtattr
   - rtattrs
@@ -195,6 +202,9 @@ words:
   - swayipc
   - swaync
   - sysfs
+  - tcgetattr
+  - TCSANOW
+  - tcsetattr
   - tebi
   - tera
   - tzname
@@ -209,6 +219,8 @@ words:
   - vals
   - VCALENDAR
   - VEVENT
+  - VMIN
+  - VTIME
   - wayrs
   - wdoll
   - wdth
