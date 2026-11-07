@@ -50,6 +50,10 @@ impl SoundDevice for Device {
         self.volume_avg
     }
 
+    fn available(&self) -> bool {
+        self.id.is_some()
+    }
+
     fn muted(&self) -> bool {
         self.muted
     }
