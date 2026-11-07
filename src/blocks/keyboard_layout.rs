@@ -160,7 +160,10 @@ pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>)
         });
         api.set_widget(widget)?;
 
-        backend.wait_for_change().await?;
+        select! {
+            res = backend.wait_for_change() => res?,
+            _ = api.wait_for_update_request() => (),
+        }
     }
 }
 
