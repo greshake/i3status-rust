@@ -1,3 +1,23 @@
+# i3status-rust 0.40.0
+
+### New Blocks and Features
+
+* Added `--doctor` option to diagnose icon and font configuration (#2297)
+* `nvidia_gpu`: added `vram_used`, `vram_total`, and `vram_used_percents` placeholders (#2335)
+
+### Bug Fixes and Improvements
+
+* `nvidia_gpu`: fixed memory parsing by treating `nvidia-smi` output as MiB rather than MB (#2334)
+* `speedtest`: update results dynamically as tests run
+
+### Breaking Changes
+
+* `speedtest`: removed `"h3"` from supported `conn_type` options
+
+### Deprecation Warnings
+
+* `nvidia_gpu`: `$memory` placeholder and `toggle_mem_total` action have been deprecated in favor of `vram_*` placeholders
+
 # i3status-rust 0.36.2
 
 ### New Blocks and Features
