@@ -30,6 +30,7 @@ pub mod pipewire;
 pub mod protocol;
 mod signals;
 mod subprocess;
+mod term_graphics;
 pub mod themes;
 pub mod widget;
 mod wrappers;
