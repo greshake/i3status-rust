@@ -1,3 +1,13 @@
+# i3status-rust 0.40.1
+
+### Bug Fixes and Improvements
+
+* `keyboard_layout`: listen to additional xkb events and handle update requests (#2338)
+
+### Breaking Changes
+
+* `speedtest`: made optional behind the `speedtest` feature flag (#2340)
+
 # i3status-rust 0.40.0
 
 ### New Blocks and Features
