@@ -232,120 +232,121 @@
 <a href=#232 id=232 data-nosnippet>232</a>    service_status,
 <a href=#233 id=233 data-nosnippet>233</a>    scratchpad,
 <a href=#234 id=234 data-nosnippet>234</a>    sound,
-<a href=#235 id=235 data-nosnippet>235</a>    speedtest,
-<a href=#236 id=236 data-nosnippet>236</a>    keyboard_layout,
-<a href=#237 id=237 data-nosnippet>237</a>    taskwarrior,
-<a href=#238 id=238 data-nosnippet>238</a>    temperature,
-<a href=#239 id=239 data-nosnippet>239</a>    time,
-<a href=#240 id=240 data-nosnippet>240</a>    tea_timer,
-<a href=#241 id=241 data-nosnippet>241</a>    toggle,
-<a href=#242 id=242 data-nosnippet>242</a>    uptime,
-<a href=#243 id=243 data-nosnippet>243</a>    vpn,
-<a href=#244 id=244 data-nosnippet>244</a>    watson,
-<a href=#245 id=245 data-nosnippet>245</a>    weather,
-<a href=#246 id=246 data-nosnippet>246</a>    xrandr,
-<a href=#247 id=247 data-nosnippet>247</a>);
-<a href=#248 id=248 data-nosnippet>248</a>
-<a href=#249 id=249 data-nosnippet>249</a><span class="doccomment">/// An error which originates from a block
-<a href=#250 id=250 data-nosnippet>250</a></span><span class="attr">#[derive(Debug, thiserror::Error)]
-<a href=#251 id=251 data-nosnippet>251</a>#[error(<span class="string">"In block {}: {}"</span>, .block_name, .error)]
-<a href=#252 id=252 data-nosnippet>252</a></span><span class="kw">pub struct </span>BlockError {
-<a href=#253 id=253 data-nosnippet>253</a>    <span class="kw">pub </span>block_id: usize,
-<a href=#254 id=254 data-nosnippet>254</a>    <span class="kw">pub </span>block_name: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str,
-<a href=#255 id=255 data-nosnippet>255</a>    <span class="kw">pub </span>error: Error,
-<a href=#256 id=256 data-nosnippet>256</a>}
-<a href=#257 id=257 data-nosnippet>257</a>
-<a href=#258 id=258 data-nosnippet>258</a><span class="kw">pub type </span>BlockAction = Cow&lt;<span class="lifetime">'static</span>, str&gt;;
-<a href=#259 id=259 data-nosnippet>259</a>
-<a href=#260 id=260 data-nosnippet>260</a><span class="attr">#[derive(Clone)]
-<a href=#261 id=261 data-nosnippet>261</a></span><span class="kw">pub struct </span>CommonApi {
-<a href=#262 id=262 data-nosnippet>262</a>    <span class="kw">pub</span>(<span class="kw">crate</span>) id: usize,
-<a href=#263 id=263 data-nosnippet>263</a>    <span class="kw">pub</span>(<span class="kw">crate</span>) update_request: Arc&lt;Notify&gt;,
-<a href=#264 id=264 data-nosnippet>264</a>    <span class="kw">pub</span>(<span class="kw">crate</span>) request_sender: mpsc::UnboundedSender&lt;Request&gt;,
-<a href=#265 id=265 data-nosnippet>265</a>    <span class="kw">pub</span>(<span class="kw">crate</span>) error_interval: Duration,
-<a href=#266 id=266 data-nosnippet>266</a>    <span class="kw">pub</span>(<span class="kw">crate</span>) geolocator: Arc&lt;Geolocator&gt;,
-<a href=#267 id=267 data-nosnippet>267</a>    <span class="kw">pub</span>(<span class="kw">crate</span>) max_retries: <span class="prelude-ty">Option</span>&lt;u8&gt;,
-<a href=#268 id=268 data-nosnippet>268</a>}
-<a href=#269 id=269 data-nosnippet>269</a>
-<a href=#270 id=270 data-nosnippet>270</a><span class="kw">impl </span>CommonApi {
-<a href=#271 id=271 data-nosnippet>271</a>    <span class="doccomment">/// Sends the widget to be displayed.
-<a href=#272 id=272 data-nosnippet>272</a>    </span><span class="kw">pub fn </span>set_widget(<span class="kw-2">&amp;</span><span class="self">self</span>, widget: Widget) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-<a href=#273 id=273 data-nosnippet>273</a>        widget.check_contract()<span class="question-mark">?</span>;
-<a href=#274 id=274 data-nosnippet>274</a>        <span class="self">self</span>.request_sender
-<a href=#275 id=275 data-nosnippet>275</a>            .send(Request {
-<a href=#276 id=276 data-nosnippet>276</a>                block_id: <span class="self">self</span>.id,
-<a href=#277 id=277 data-nosnippet>277</a>                cmd: RequestCmd::SetWidget(widget),
-<a href=#278 id=278 data-nosnippet>278</a>            })
-<a href=#279 id=279 data-nosnippet>279</a>            .error(<span class="string">"Failed to send Request"</span>)
-<a href=#280 id=280 data-nosnippet>280</a>    }
-<a href=#281 id=281 data-nosnippet>281</a>
-<a href=#282 id=282 data-nosnippet>282</a>    <span class="doccomment">/// Hides the block. Send new widget to make it visible again.
-<a href=#283 id=283 data-nosnippet>283</a>    </span><span class="kw">pub fn </span>hide(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-<a href=#284 id=284 data-nosnippet>284</a>        <span class="self">self</span>.request_sender
-<a href=#285 id=285 data-nosnippet>285</a>            .send(Request {
-<a href=#286 id=286 data-nosnippet>286</a>                block_id: <span class="self">self</span>.id,
-<a href=#287 id=287 data-nosnippet>287</a>                cmd: RequestCmd::UnsetWidget,
-<a href=#288 id=288 data-nosnippet>288</a>            })
-<a href=#289 id=289 data-nosnippet>289</a>            .error(<span class="string">"Failed to send Request"</span>)
-<a href=#290 id=290 data-nosnippet>290</a>    }
-<a href=#291 id=291 data-nosnippet>291</a>
-<a href=#292 id=292 data-nosnippet>292</a>    <span class="doccomment">/// Sends the error to be displayed, no restart button will be shown.
-<a href=#293 id=293 data-nosnippet>293</a>    </span><span class="kw">pub fn </span>set_error(<span class="kw-2">&amp;</span><span class="self">self</span>, error: Error) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-<a href=#294 id=294 data-nosnippet>294</a>        <span class="self">self</span>.set_error_with_restartable(error, <span class="bool-val">false</span>)
-<a href=#295 id=295 data-nosnippet>295</a>    }
-<a href=#296 id=296 data-nosnippet>296</a>
-<a href=#297 id=297 data-nosnippet>297</a>    <span class="doccomment">/// Sends the error to be displayed.
-<a href=#298 id=298 data-nosnippet>298</a>    </span><span class="kw">pub fn </span>set_error_with_restartable(<span class="kw-2">&amp;</span><span class="self">self</span>, error: Error, restartable: bool) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-<a href=#299 id=299 data-nosnippet>299</a>        <span class="self">self</span>.request_sender
-<a href=#300 id=300 data-nosnippet>300</a>            .send(Request {
-<a href=#301 id=301 data-nosnippet>301</a>                block_id: <span class="self">self</span>.id,
-<a href=#302 id=302 data-nosnippet>302</a>                cmd: RequestCmd::SetError { error, restartable },
-<a href=#303 id=303 data-nosnippet>303</a>            })
-<a href=#304 id=304 data-nosnippet>304</a>            .error(<span class="string">"Failed to send Request"</span>)
-<a href=#305 id=305 data-nosnippet>305</a>    }
-<a href=#306 id=306 data-nosnippet>306</a>
-<a href=#307 id=307 data-nosnippet>307</a>    <span class="kw">pub fn </span>set_default_actions(
-<a href=#308 id=308 data-nosnippet>308</a>        <span class="kw-2">&amp;</span><span class="self">self</span>,
-<a href=#309 id=309 data-nosnippet>309</a>        actions: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>[(MouseButton, <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'static </span>str&gt;, <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str)],
-<a href=#310 id=310 data-nosnippet>310</a>    ) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
-<a href=#311 id=311 data-nosnippet>311</a>        <span class="self">self</span>.request_sender
-<a href=#312 id=312 data-nosnippet>312</a>            .send(Request {
-<a href=#313 id=313 data-nosnippet>313</a>                block_id: <span class="self">self</span>.id,
-<a href=#314 id=314 data-nosnippet>314</a>                cmd: RequestCmd::SetDefaultActions(actions),
-<a href=#315 id=315 data-nosnippet>315</a>            })
-<a href=#316 id=316 data-nosnippet>316</a>            .error(<span class="string">"Failed to send Request"</span>)
-<a href=#317 id=317 data-nosnippet>317</a>    }
-<a href=#318 id=318 data-nosnippet>318</a>
-<a href=#319 id=319 data-nosnippet>319</a>    <span class="kw">pub fn </span>get_actions(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;mpsc::UnboundedReceiver&lt;BlockAction&gt;&gt; {
-<a href=#320 id=320 data-nosnippet>320</a>        <span class="kw">let </span>(tx, rx) = mpsc::unbounded_channel();
-<a href=#321 id=321 data-nosnippet>321</a>        <span class="self">self</span>.request_sender
-<a href=#322 id=322 data-nosnippet>322</a>            .send(Request {
-<a href=#323 id=323 data-nosnippet>323</a>                block_id: <span class="self">self</span>.id,
-<a href=#324 id=324 data-nosnippet>324</a>                cmd: RequestCmd::SubscribeToActions(tx),
-<a href=#325 id=325 data-nosnippet>325</a>            })
-<a href=#326 id=326 data-nosnippet>326</a>            .error(<span class="string">"Failed to send Request"</span>)<span class="question-mark">?</span>;
-<a href=#327 id=327 data-nosnippet>327</a>        <span class="prelude-val">Ok</span>(rx)
-<a href=#328 id=328 data-nosnippet>328</a>    }
-<a href=#329 id=329 data-nosnippet>329</a>
-<a href=#330 id=330 data-nosnippet>330</a>    <span class="kw">pub async fn </span>wait_for_update_request(<span class="kw-2">&amp;</span><span class="self">self</span>) {
-<a href=#331 id=331 data-nosnippet>331</a>        <span class="self">self</span>.update_request.notified().<span class="kw">await</span>;
-<a href=#332 id=332 data-nosnippet>332</a>    }
-<a href=#333 id=333 data-nosnippet>333</a>
-<a href=#334 id=334 data-nosnippet>334</a>    <span class="kw">fn </span>locator_name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Cow&lt;<span class="lifetime">'static</span>, str&gt; {
-<a href=#335 id=335 data-nosnippet>335</a>        <span class="self">self</span>.geolocator.name()
-<a href=#336 id=336 data-nosnippet>336</a>    }
-<a href=#337 id=337 data-nosnippet>337</a>
-<a href=#338 id=338 data-nosnippet>338</a>    <span class="kw">fn </span>locator_rate_limit_interval(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Duration {
-<a href=#339 id=339 data-nosnippet>339</a>        <span class="self">self</span>.geolocator.rate_limit_interval()
-<a href=#340 id=340 data-nosnippet>340</a>    }
-<a href=#341 id=341 data-nosnippet>341</a>
-<a href=#342 id=342 data-nosnippet>342</a>    <span class="doccomment">/// No-op if last API call was made in the last `interval` seconds.
-<a href=#343 id=343 data-nosnippet>343</a>    </span><span class="kw">pub async fn </span>find_ip_location(
-<a href=#344 id=344 data-nosnippet>344</a>        <span class="kw-2">&amp;</span><span class="self">self</span>,
-<a href=#345 id=345 data-nosnippet>345</a>        client: <span class="kw-2">&amp;</span>reqwest::Client,
-<a href=#346 id=346 data-nosnippet>346</a>        interval: Duration,
-<a href=#347 id=347 data-nosnippet>347</a>    ) -&gt; <span class="prelude-ty">Result</span>&lt;IPAddressInfo&gt; {
-<a href=#348 id=348 data-nosnippet>348</a>        <span class="self">self</span>.geolocator.find_ip_location(client, interval).<span class="kw">await
-<a href=#349 id=349 data-nosnippet>349</a>    </span>}
-<a href=#350 id=350 data-nosnippet>350</a>}
+<a href=#235 id=235 data-nosnippet>235</a>    <span class="attr">#[cfg(feature = <span class="string">"speedtest"</span>)]
+<a href=#236 id=236 data-nosnippet>236</a>    </span>speedtest,
+<a href=#237 id=237 data-nosnippet>237</a>    keyboard_layout,
+<a href=#238 id=238 data-nosnippet>238</a>    taskwarrior,
+<a href=#239 id=239 data-nosnippet>239</a>    temperature,
+<a href=#240 id=240 data-nosnippet>240</a>    time,
+<a href=#241 id=241 data-nosnippet>241</a>    tea_timer,
+<a href=#242 id=242 data-nosnippet>242</a>    toggle,
+<a href=#243 id=243 data-nosnippet>243</a>    uptime,
+<a href=#244 id=244 data-nosnippet>244</a>    vpn,
+<a href=#245 id=245 data-nosnippet>245</a>    watson,
+<a href=#246 id=246 data-nosnippet>246</a>    weather,
+<a href=#247 id=247 data-nosnippet>247</a>    xrandr,
+<a href=#248 id=248 data-nosnippet>248</a>);
+<a href=#249 id=249 data-nosnippet>249</a>
+<a href=#250 id=250 data-nosnippet>250</a><span class="doccomment">/// An error which originates from a block
+<a href=#251 id=251 data-nosnippet>251</a></span><span class="attr">#[derive(Debug, thiserror::Error)]
+<a href=#252 id=252 data-nosnippet>252</a>#[error(<span class="string">"In block {}: {}"</span>, .block_name, .error)]
+<a href=#253 id=253 data-nosnippet>253</a></span><span class="kw">pub struct </span>BlockError {
+<a href=#254 id=254 data-nosnippet>254</a>    <span class="kw">pub </span>block_id: usize,
+<a href=#255 id=255 data-nosnippet>255</a>    <span class="kw">pub </span>block_name: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str,
+<a href=#256 id=256 data-nosnippet>256</a>    <span class="kw">pub </span>error: Error,
+<a href=#257 id=257 data-nosnippet>257</a>}
+<a href=#258 id=258 data-nosnippet>258</a>
+<a href=#259 id=259 data-nosnippet>259</a><span class="kw">pub type </span>BlockAction = Cow&lt;<span class="lifetime">'static</span>, str&gt;;
+<a href=#260 id=260 data-nosnippet>260</a>
+<a href=#261 id=261 data-nosnippet>261</a><span class="attr">#[derive(Clone)]
+<a href=#262 id=262 data-nosnippet>262</a></span><span class="kw">pub struct </span>CommonApi {
+<a href=#263 id=263 data-nosnippet>263</a>    <span class="kw">pub</span>(<span class="kw">crate</span>) id: usize,
+<a href=#264 id=264 data-nosnippet>264</a>    <span class="kw">pub</span>(<span class="kw">crate</span>) update_request: Arc&lt;Notify&gt;,
+<a href=#265 id=265 data-nosnippet>265</a>    <span class="kw">pub</span>(<span class="kw">crate</span>) request_sender: mpsc::UnboundedSender&lt;Request&gt;,
+<a href=#266 id=266 data-nosnippet>266</a>    <span class="kw">pub</span>(<span class="kw">crate</span>) error_interval: Duration,
+<a href=#267 id=267 data-nosnippet>267</a>    <span class="kw">pub</span>(<span class="kw">crate</span>) geolocator: Arc&lt;Geolocator&gt;,
+<a href=#268 id=268 data-nosnippet>268</a>    <span class="kw">pub</span>(<span class="kw">crate</span>) max_retries: <span class="prelude-ty">Option</span>&lt;u8&gt;,
+<a href=#269 id=269 data-nosnippet>269</a>}
+<a href=#270 id=270 data-nosnippet>270</a>
+<a href=#271 id=271 data-nosnippet>271</a><span class="kw">impl </span>CommonApi {
+<a href=#272 id=272 data-nosnippet>272</a>    <span class="doccomment">/// Sends the widget to be displayed.
+<a href=#273 id=273 data-nosnippet>273</a>    </span><span class="kw">pub fn </span>set_widget(<span class="kw-2">&amp;</span><span class="self">self</span>, widget: Widget) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+<a href=#274 id=274 data-nosnippet>274</a>        widget.check_contract()<span class="question-mark">?</span>;
+<a href=#275 id=275 data-nosnippet>275</a>        <span class="self">self</span>.request_sender
+<a href=#276 id=276 data-nosnippet>276</a>            .send(Request {
+<a href=#277 id=277 data-nosnippet>277</a>                block_id: <span class="self">self</span>.id,
+<a href=#278 id=278 data-nosnippet>278</a>                cmd: RequestCmd::SetWidget(widget),
+<a href=#279 id=279 data-nosnippet>279</a>            })
+<a href=#280 id=280 data-nosnippet>280</a>            .error(<span class="string">"Failed to send Request"</span>)
+<a href=#281 id=281 data-nosnippet>281</a>    }
+<a href=#282 id=282 data-nosnippet>282</a>
+<a href=#283 id=283 data-nosnippet>283</a>    <span class="doccomment">/// Hides the block. Send new widget to make it visible again.
+<a href=#284 id=284 data-nosnippet>284</a>    </span><span class="kw">pub fn </span>hide(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+<a href=#285 id=285 data-nosnippet>285</a>        <span class="self">self</span>.request_sender
+<a href=#286 id=286 data-nosnippet>286</a>            .send(Request {
+<a href=#287 id=287 data-nosnippet>287</a>                block_id: <span class="self">self</span>.id,
+<a href=#288 id=288 data-nosnippet>288</a>                cmd: RequestCmd::UnsetWidget,
+<a href=#289 id=289 data-nosnippet>289</a>            })
+<a href=#290 id=290 data-nosnippet>290</a>            .error(<span class="string">"Failed to send Request"</span>)
+<a href=#291 id=291 data-nosnippet>291</a>    }
+<a href=#292 id=292 data-nosnippet>292</a>
+<a href=#293 id=293 data-nosnippet>293</a>    <span class="doccomment">/// Sends the error to be displayed, no restart button will be shown.
+<a href=#294 id=294 data-nosnippet>294</a>    </span><span class="kw">pub fn </span>set_error(<span class="kw-2">&amp;</span><span class="self">self</span>, error: Error) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+<a href=#295 id=295 data-nosnippet>295</a>        <span class="self">self</span>.set_error_with_restartable(error, <span class="bool-val">false</span>)
+<a href=#296 id=296 data-nosnippet>296</a>    }
+<a href=#297 id=297 data-nosnippet>297</a>
+<a href=#298 id=298 data-nosnippet>298</a>    <span class="doccomment">/// Sends the error to be displayed.
+<a href=#299 id=299 data-nosnippet>299</a>    </span><span class="kw">pub fn </span>set_error_with_restartable(<span class="kw-2">&amp;</span><span class="self">self</span>, error: Error, restartable: bool) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+<a href=#300 id=300 data-nosnippet>300</a>        <span class="self">self</span>.request_sender
+<a href=#301 id=301 data-nosnippet>301</a>            .send(Request {
+<a href=#302 id=302 data-nosnippet>302</a>                block_id: <span class="self">self</span>.id,
+<a href=#303 id=303 data-nosnippet>303</a>                cmd: RequestCmd::SetError { error, restartable },
+<a href=#304 id=304 data-nosnippet>304</a>            })
+<a href=#305 id=305 data-nosnippet>305</a>            .error(<span class="string">"Failed to send Request"</span>)
+<a href=#306 id=306 data-nosnippet>306</a>    }
+<a href=#307 id=307 data-nosnippet>307</a>
+<a href=#308 id=308 data-nosnippet>308</a>    <span class="kw">pub fn </span>set_default_actions(
+<a href=#309 id=309 data-nosnippet>309</a>        <span class="kw-2">&amp;</span><span class="self">self</span>,
+<a href=#310 id=310 data-nosnippet>310</a>        actions: <span class="kw-2">&amp;</span><span class="lifetime">'static </span>[(MouseButton, <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span><span class="lifetime">'static </span>str&gt;, <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str)],
+<a href=#311 id=311 data-nosnippet>311</a>    ) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt; {
+<a href=#312 id=312 data-nosnippet>312</a>        <span class="self">self</span>.request_sender
+<a href=#313 id=313 data-nosnippet>313</a>            .send(Request {
+<a href=#314 id=314 data-nosnippet>314</a>                block_id: <span class="self">self</span>.id,
+<a href=#315 id=315 data-nosnippet>315</a>                cmd: RequestCmd::SetDefaultActions(actions),
+<a href=#316 id=316 data-nosnippet>316</a>            })
+<a href=#317 id=317 data-nosnippet>317</a>            .error(<span class="string">"Failed to send Request"</span>)
+<a href=#318 id=318 data-nosnippet>318</a>    }
+<a href=#319 id=319 data-nosnippet>319</a>
+<a href=#320 id=320 data-nosnippet>320</a>    <span class="kw">pub fn </span>get_actions(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;mpsc::UnboundedReceiver&lt;BlockAction&gt;&gt; {
+<a href=#321 id=321 data-nosnippet>321</a>        <span class="kw">let </span>(tx, rx) = mpsc::unbounded_channel();
+<a href=#322 id=322 data-nosnippet>322</a>        <span class="self">self</span>.request_sender
+<a href=#323 id=323 data-nosnippet>323</a>            .send(Request {
+<a href=#324 id=324 data-nosnippet>324</a>                block_id: <span class="self">self</span>.id,
+<a href=#325 id=325 data-nosnippet>325</a>                cmd: RequestCmd::SubscribeToActions(tx),
+<a href=#326 id=326 data-nosnippet>326</a>            })
+<a href=#327 id=327 data-nosnippet>327</a>            .error(<span class="string">"Failed to send Request"</span>)<span class="question-mark">?</span>;
+<a href=#328 id=328 data-nosnippet>328</a>        <span class="prelude-val">Ok</span>(rx)
+<a href=#329 id=329 data-nosnippet>329</a>    }
+<a href=#330 id=330 data-nosnippet>330</a>
+<a href=#331 id=331 data-nosnippet>331</a>    <span class="kw">pub async fn </span>wait_for_update_request(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+<a href=#332 id=332 data-nosnippet>332</a>        <span class="self">self</span>.update_request.notified().<span class="kw">await</span>;
+<a href=#333 id=333 data-nosnippet>333</a>    }
+<a href=#334 id=334 data-nosnippet>334</a>
+<a href=#335 id=335 data-nosnippet>335</a>    <span class="kw">fn </span>locator_name(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Cow&lt;<span class="lifetime">'static</span>, str&gt; {
+<a href=#336 id=336 data-nosnippet>336</a>        <span class="self">self</span>.geolocator.name()
+<a href=#337 id=337 data-nosnippet>337</a>    }
+<a href=#338 id=338 data-nosnippet>338</a>
+<a href=#339 id=339 data-nosnippet>339</a>    <span class="kw">fn </span>locator_rate_limit_interval(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Duration {
+<a href=#340 id=340 data-nosnippet>340</a>        <span class="self">self</span>.geolocator.rate_limit_interval()
+<a href=#341 id=341 data-nosnippet>341</a>    }
+<a href=#342 id=342 data-nosnippet>342</a>
+<a href=#343 id=343 data-nosnippet>343</a>    <span class="doccomment">/// No-op if last API call was made in the last `interval` seconds.
+<a href=#344 id=344 data-nosnippet>344</a>    </span><span class="kw">pub async fn </span>find_ip_location(
+<a href=#345 id=345 data-nosnippet>345</a>        <span class="kw-2">&amp;</span><span class="self">self</span>,
+<a href=#346 id=346 data-nosnippet>346</a>        client: <span class="kw-2">&amp;</span>reqwest::Client,
+<a href=#347 id=347 data-nosnippet>347</a>        interval: Duration,
+<a href=#348 id=348 data-nosnippet>348</a>    ) -&gt; <span class="prelude-ty">Result</span>&lt;IPAddressInfo&gt; {
+<a href=#349 id=349 data-nosnippet>349</a>        <span class="self">self</span>.geolocator.find_ip_location(client, interval).<span class="kw">await
+<a href=#350 id=350 data-nosnippet>350</a>    </span>}
+<a href=#351 id=351 data-nosnippet>351</a>}
 </code></pre></div></section></main></body></html>
