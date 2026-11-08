@@ -22,6 +22,7 @@ pipewire = ["dep:pipewire"]
 notmuch = ["dep:notmuch"]
 maildir = ["dep:maildir", "glob"]
 icu_calendar = ["dep:icu_datetime", "dep:icu_locale"]
+speedtest = ["dep:cf-mach"]
 debug_borders = []                # Make widgets' borders visible
 
 [package.metadata.docs.rs]
@@ -38,7 +39,7 @@ base64 = { version = "0.22.1" }
 bitflags = "2.9"
 bytes = "1.11"
 calibright = { version = "0.1.13", features = ["watch"] }
-cf-mach = { version = "0.4", default-features = false }
+cf-mach = { version = "0.4", optional = true, default-features = false }
 chrono = { version = "0.4", default-features = false, features = ["clock", "unstable-locales"] }
 chrono-tz = { version = "0.10", features = ["serde"] }
 clap = { workspace = true }
