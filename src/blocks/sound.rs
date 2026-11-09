@@ -23,6 +23,7 @@
 //! `mappings` | Map `output_name` to a custom name. | `None`
 //! `mappings_use_regex` | Let `mappings` match using regex instead of string equality. The replacement will be regex aware and can contain capture groups. | `true`
 //! `active_port_mappings` | Map `active_port` to a custom name. The replacement will be regex aware and can contain capture groups. | `None`
+//! `hide_when_inactive` | Hides the block when the audio device is unavailable. | `false`
 //!
 //! Placeholder          | Value                             | Type   | Unit
 //! ---------------------|-----------------------------------|--------|---------------
@@ -125,6 +126,7 @@ pub struct Config {
     pub mappings_use_regex: bool,
     pub max_vol: Option<u32>,
     pub active_port_mappings: IndexMap<SerdeRegex, String>,
+    pub hide_when_inactive: bool,
 }
 
 enum Mappings<'a> {
@@ -330,13 +332,27 @@ pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>)
             }
         }
 
+        let update_visibility = |api: &CommonApi,
+                                 widget: &crate::widget::Widget,
+                                 config: &Config,
+                                 device: &DeviceType|
+         -> Result<(), Error> {
+            if config.hide_when_inactive && !device.available() {
+                api.hide()?;
+            } else {
+                api.set_widget(widget.clone())?;
+            }
+            Ok(())
+        };
+
         widget.set_values(values);
-        api.set_widget(widget)?;
+        update_visibility(api, &widget, config, &device)?;
 
         loop {
             select! {
                 val = device.wait_for_update() => {
                     val?;
+                    update_visibility(api, &widget, config, &device)?;
                     break;
                 }
                 _ = api.wait_for_update_request() => break,
@@ -387,6 +403,7 @@ pub enum DeviceKind {
 
 #[async_trait::async_trait]
 trait SoundDevice {
+    fn available(&self) -> bool;
     fn volume(&self) -> u32;
     fn muted(&self) -> bool;
     fn output_name(&self) -> String;
