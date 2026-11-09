@@ -63,6 +63,7 @@ nom = "8.0.0"
 notmuch = { version = "0.8", optional = true }
 oauth2 = { version = "5.0.0", default-features = false, features = ["reqwest"] }
 num-traits = "0.2"
+percent-encoding = "2.3"
 pipewire = { version = "0.10", default-features = false, optional = true }
 quick-xml = { version = "0.37", features = ["serialize"] }
 regex = "1.5"

@@ -10,7 +10,7 @@ use serde::Deserialize;
 use super::{
     CalendarError,
     auth::{Auth, Authorize, AuthorizeUrl},
-    ical::{Event, parse_events},
+    ical::{Event, derive_google_event_details_urls, parse_events},
 };
 
 #[derive(Deserialize, Debug)]
@@ -23,10 +23,11 @@ pub struct Client {
     url: Url,
     client: reqwest::Client,
     auth: Auth,
+    google_event_links: bool,
 }
 
 impl Client {
-    pub fn new(url: Url, auth: Auth) -> Self {
+    pub fn new(url: Url, auth: Auth, google_event_links: bool) -> Self {
         let mut headers = HeaderMap::new();
         headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/xml"));
         Self {
@@ -37,6 +38,7 @@ impl Client {
                 .build()
                 .expect("A valid http client"),
             auth,
+            google_event_links,
         }
     }
     async fn propfind_request(
@@ -127,7 +129,11 @@ impl Client {
         let multi_status = self
             .report_request(calendar.url.clone(), 1, calendar_events_request(start, end))
             .await?;
-        parse_multistatus_events(multi_status, start, end)
+        let mut events = parse_multistatus_events(multi_status, start, end, &calendar.url)?;
+        if self.google_event_links {
+            derive_google_event_details_urls(&mut events, &calendar.url);
+        }
+        Ok(events)
     }
 
     pub async fn authorize(&mut self) -> Result<Authorize, CalendarError> {
@@ -281,12 +287,18 @@ fn parse_multistatus_events(
     multi_status: Multistatus,
     event_search_start: DateTime<Utc>,
     event_search_end: DateTime<Utc>,
+    source_url: &Url,
 ) -> Result<Vec<Event>, CalendarError> {
     let mut result = vec![];
     for response in multi_status.responses {
         for prop in response.valid_props() {
             if let PropValue::CalendarData(data) = prop {
-                result.extend(parse_events(&data, event_search_start, event_search_end)?);
+                result.extend(parse_events(
+                    &data,
+                    event_search_start,
+                    event_search_end,
+                    Some(source_url),
+                )?);
             }
         }
     }
@@ -367,7 +379,10 @@ mod tests {
         let start = Utc.with_ymd_and_hms(2026, 7, 29, 15, 0, 0).unwrap();
         let end = Utc.with_ymd_and_hms(2026, 7, 30, 15, 0, 0).unwrap();
 
-        let events = parse_multistatus_events(multistatus, start, end).unwrap();
+        let source_url =
+            Url::parse("https://apidata.googleusercontent.com/caldav/v2/user%40example.com/events/")
+                .unwrap();
+        let events = parse_multistatus_events(multistatus, start, end, &source_url).unwrap();
 
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].summary.as_deref(), Some("CalDAV event"));

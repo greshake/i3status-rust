@@ -1104,6 +1104,7 @@ dependencies = [
  "notmuch",
  "num-traits",
  "oauth2",
+ "percent-encoding",
  "pipewire",
  "quick-xml",
  "regex",

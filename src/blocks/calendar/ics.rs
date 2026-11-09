@@ -6,7 +6,7 @@ use reqwest::{
 use super::{
     CalendarError,
     auth::{Auth, Authorize, AuthorizeUrl},
-    ical::{Event, parse_events},
+    ical::{Event, derive_google_event_details_urls, parse_events},
 };
 use crate::{APP_USER_AGENT, REQWEST_TIMEOUT};
 
@@ -16,10 +16,11 @@ pub struct Client {
     url: Url,
     client: reqwest::Client,
     auth: Auth,
+    google_event_links: bool,
 }
 
 impl Client {
-    pub fn new(url: Url, auth: Auth) -> Self {
+    pub fn new(url: Url, auth: Auth, google_event_links: bool) -> Self {
         Self {
             url,
             client: ClientBuilder::new()
@@ -28,6 +29,7 @@ impl Client {
                 .build()
                 .expect("A valid HTTP client"),
             auth,
+            google_event_links,
         }
     }
 
@@ -65,7 +67,11 @@ impl Client {
                             "iCalendar feed is not valid UTF-8: {error}"
                         ))
                     })?;
-                    return parse_events(body, start, end);
+                    let mut events = parse_events(body, start, end, Some(&self.url))?;
+                    if self.google_event_links {
+                        derive_google_event_details_urls(&mut events, &self.url);
+                    }
+                    return Ok(events);
                 }
             }
         }
@@ -170,7 +176,7 @@ mod tests {
             ),
         )
         .await;
-        let mut client = Client::new(url, Auth::Unauthenticated);
+        let mut client = Client::new(url, Auth::Unauthenticated, false);
         let (start, end) = search_window();
 
         let events = client.events(start, end).await.unwrap();
@@ -195,7 +201,7 @@ mod tests {
                 .into(),
         )
         .await;
-        let mut client = Client::new(url, Auth::Unauthenticated);
+        let mut client = Client::new(url, Auth::Unauthenticated, false);
         let (start, end) = search_window();
 
         let error = client.events(start, end).await.unwrap_err();

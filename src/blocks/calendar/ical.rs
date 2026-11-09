@@ -1,13 +1,17 @@
 use std::{
+    cell::OnceCell,
     collections::{HashMap, HashSet},
     str::FromStr as _,
 };
 
+use base64::{Engine as _, prelude::BASE64_STANDARD_NO_PAD};
 use chrono::{DateTime, Days, Duration, Local, TimeZone as _, Utc};
 use icalendar::{
     CalendarDateTime, Component as _, DatePerhapsTime, EventLike as _, EventStatus,
     Tz as RecurrenceTz,
 };
+use percent_encoding::percent_decode_str;
+use reqwest::Url;
 
 use super::CalendarError;
 
@@ -21,15 +25,82 @@ pub struct Event {
     pub description: Option<String>,
     pub location: Option<String>,
     pub url: Option<String>,
+    pub details_url: Option<Url>,
+    pub is_recurring: bool,
     pub start_at: DateTime<Utc>,
     pub end_at: DateTime<Utc>,
+}
+
+/// Derive undocumented Google Calendar links for users who explicitly opt into the heuristic.
+///
+/// Google does not guarantee that an iCalendar UID maps to its opaque event ID. Recurring events
+/// need an occurrence-specific ID that is not available from a UID alone, so they are never given
+/// a derived link here.
+pub fn derive_google_event_details_urls(events: &mut [Event], source_url: &Url) {
+    let Some(calendar_id) = google_calendar_id(source_url) else {
+        return;
+    };
+
+    for event in events {
+        if event.details_url.is_none() && !event.is_recurring {
+            event.details_url = best_effort_google_event_details_url(&event.uid, &calendar_id);
+        }
+    }
+}
+
+fn google_calendar_id(source_url: &Url) -> Option<String> {
+    let host = source_url.host_str()?;
+    let mut segments: Vec<_> = source_url.path_segments()?.collect();
+    if segments.last() == Some(&"") {
+        segments.pop();
+    }
+    let encoded_calendar_id = match host {
+        "calendar.google.com" => match segments.as_slice() {
+            ["calendar", "ical", calendar_id, access, "basic.ics"]
+                if *access == "public" || access.starts_with("private-") =>
+            {
+                calendar_id
+            }
+            _ => return None,
+        },
+        "apidata.googleusercontent.com" => match segments.as_slice() {
+            ["caldav", "v2", calendar_id, "events"] => calendar_id,
+            _ => return None,
+        },
+        _ => return None,
+    };
+
+    let calendar_id = percent_decode_str(encoded_calendar_id)
+        .decode_utf8()
+        .ok()?
+        .into_owned();
+    (!calendar_id.is_empty() && !calendar_id.chars().any(char::is_control))
+        .then_some(calendar_id)
+}
+
+fn best_effort_google_event_details_url(uid: &str, calendar_id: &str) -> Option<Url> {
+    let event_id = uid.strip_suffix("@google.com")?;
+    if event_id.is_empty()
+        || !event_id
+            .chars()
+            .all(|character| character.is_ascii_alphanumeric() || matches!(character, '_' | '-'))
+    {
+        return None;
+    }
+
+    let eid = BASE64_STANDARD_NO_PAD.encode(format!("{event_id} {calendar_id}"));
+    let mut url = Url::parse("https://calendar.google.com/calendar/event").ok()?;
+    url.query_pairs_mut().append_pair("eid", &eid);
+    Some(url)
 }
 
 pub fn parse_events(
     data: &str,
     event_search_start: DateTime<Utc>,
     event_search_end: DateTime<Utc>,
+    source_url: Option<&Url>,
 ) -> Result<Vec<Event>, CalendarError> {
+    let calendar_id = source_url.and_then(google_calendar_id);
     let calendar = icalendar::Calendar::from_str(data).map_err(CalendarError::Parsing)?;
     let events = || {
         calendar
@@ -92,6 +163,28 @@ pub fn parse_events(
         if event.get_status() == Some(EventStatus::Cancelled) {
             continue;
         }
+        let declined = calendar_id.as_deref().is_some_and(|calendar_id| {
+            event
+                .multi_properties()
+                .get("ATTENDEE")
+                .is_some_and(|attendees| {
+                    attendees.iter().any(|attendee| {
+                        attendee
+                            .params()
+                            .get("PARTSTAT")
+                            .is_some_and(|status| status.value().eq_ignore_ascii_case("DECLINED"))
+                            && attendee.value().split_once(':').is_some_and(
+                                |(scheme, address)| {
+                                    scheme.eq_ignore_ascii_case("mailto")
+                                        && address.eq_ignore_ascii_case(calendar_id)
+                                },
+                            )
+                    })
+                })
+        });
+        if declined {
+            continue;
+        }
 
         let (event_start, event_end_spec) = match event_bounds(event) {
             Ok(bounds) => bounds,
@@ -107,22 +200,33 @@ pub fn parse_events(
                 continue;
             }
         };
+        let properties = event.properties();
+        let multi_properties = event.multi_properties();
+        let is_override = properties.contains_key("RECURRENCE-ID");
+        let is_recurring = is_override
+            || properties.contains_key("RRULE")
+            || multi_properties.contains_key("RDATE")
+            || multi_properties.contains_key("EXDATE");
+        let details_url = OnceCell::new();
         let mut add_if_visible = |start, end| {
             if overlaps_search_window(start, end, event_search_start, event_search_end) {
-                result.push(event_at(uid, event, start, end));
+                result.push(event_at(
+                    uid,
+                    event,
+                    start,
+                    end,
+                    is_recurring,
+                    &details_url,
+                ));
             }
         };
 
-        if event.properties().contains_key("RECURRENCE-ID") {
+        if is_override {
             add_if_visible(event_start, event_end);
             continue;
         }
 
-        let multi_properties = event.multi_properties();
-        if !event.properties().contains_key("RRULE")
-            && !multi_properties.contains_key("RDATE")
-            && !multi_properties.contains_key("EXDATE")
-        {
+        if !is_recurring {
             add_if_visible(event_start, event_end);
             continue;
         }
@@ -528,13 +632,58 @@ fn event_at(
     event: &icalendar::Event,
     start_at: DateTime<Utc>,
     end_at: DateTime<Utc>,
+    is_recurring: bool,
+    details_url: &OnceCell<Option<Url>>,
 ) -> Event {
+    let url = event.get_url().map(Into::into);
+    let description: Option<String> = event.get_description().map(Into::into);
+    let details_url = details_url
+        .get_or_init(|| {
+            url.as_deref()
+                .and_then(|url| Url::parse(url).ok())
+                .or_else(|| {
+                    event
+                        .property_value("X-GOOGLE-CONFERENCE")
+                        .and_then(|url| Url::parse(url).ok())
+                        .filter(|url| {
+                            url.scheme() == "https" && url.host_str() == Some("meet.google.com")
+                        })
+                })
+                .or_else(|| {
+                    description
+                        .as_deref()?
+                        .split_whitespace()
+                        .map(|candidate| {
+                            candidate.trim_matches(|character: char| {
+                                matches!(
+                                    character,
+                                    '<' | '>' | '(' | ')' | '[' | ']' | '"' | '\''
+                                )
+                            })
+                        })
+                        .filter(|candidate| candidate.starts_with("https://"))
+                        .find_map(|candidate| {
+                            let url = Url::parse(candidate).ok()?;
+                            let host = url.host_str()?;
+                            let meeting_id = url.path().strip_prefix("/j/")?;
+                            ((host == "zoom.us" || host.ends_with(".zoom.us"))
+                                && !meeting_id.is_empty()
+                                && meeting_id
+                                    .chars()
+                                    .all(|character| character.is_ascii_digit()))
+                            .then_some(url)
+                        })
+                    })
+                })
+        .clone();
     Event {
         uid: uid.into(),
         summary: event.get_summary().map(Into::into),
-        description: event.get_description().map(Into::into),
+        description,
         location: event.get_location().map(Into::into),
-        url: event.get_url().map(Into::into),
+        url,
+        details_url,
+        is_recurring,
         start_at,
         end_at,
     }
@@ -592,7 +741,7 @@ mod tests {
             "URL:https://calendar.example/event\r\n",
         );
 
-        let events = parse_events(data, utc(2026, 7, 29, 15, 0), utc(2026, 7, 30, 0, 0)).unwrap();
+        let events = parse_events(data, utc(2026, 7, 29, 15, 0), utc(2026, 7, 30, 0, 0), None).unwrap();
 
         assert_eq!(events.len(), 1);
         let event = &events[0];
@@ -601,8 +750,282 @@ mod tests {
         assert_eq!(event.description.as_deref(), Some("Roadmap review"));
         assert_eq!(event.location.as_deref(), Some("Room 1"));
         assert_eq!(event.url.as_deref(), Some("https://calendar.example/event"));
+        assert_eq!(
+            event.details_url.as_ref().map(Url::as_str),
+            Some("https://calendar.example/event")
+        );
+        assert!(!event.is_recurring);
         assert_eq!(event.start_at, utc(2026, 7, 29, 16, 0));
         assert_eq!(event.end_at, utc(2026, 7, 29, 17, 0));
+    }
+
+    #[test]
+    fn derives_best_effort_link_for_opted_in_one_time_google_event() {
+        let data = event!(
+            "UID:20260907_3iv7l7ja8ses3smgpgh5fqearo@google.com\r\n",
+            "DTSTART:20260907T000000Z\r\n",
+            "DTEND:20260908T000000Z\r\n",
+            "SUMMARY:Labor Day\r\n",
+        );
+        let mut events =
+            parse_events(data, utc(2026, 9, 7, 0, 0), utc(2026, 9, 9, 0, 0), None).unwrap();
+        let source_url = Url::parse(concat!(
+            "https://calendar.google.com/calendar/ical/",
+            "en.usa%23holiday%40group.v.calendar.google.com/public/basic.ics",
+        ))
+        .unwrap();
+
+        derive_google_event_details_urls(&mut events, &source_url);
+
+        assert_eq!(
+            events[0].details_url.as_ref().map(Url::as_str),
+            Some(concat!(
+                "https://calendar.google.com/calendar/event?eid=",
+                "MjAyNjA5MDdfM2l2N2w3amE4c2VzM3NtZ3BnaDVmcWVhcm8g",
+                "ZW4udXNhI2hvbGlkYXlAZ3JvdXAudi5jYWxlbmRhci5nb29nbGUuY29t",
+            ))
+        );
+    }
+
+    #[test]
+    fn explicit_event_url_takes_precedence_over_google_details_url() {
+        let data = event!(
+            "UID:nativeevent@google.com\r\n",
+            "DTSTART:20260729T160000Z\r\n",
+            "DTEND:20260729T170000Z\r\n",
+            "URL:https://calendar.example/event-details\r\n",
+            "X-GOOGLE-CONFERENCE:https://meet.google.com/abc-defg-hij\r\n",
+            "DESCRIPTION:Join Zoom Meeting: https://zoom.us/j/00000000000?pwd=dummy\r\n",
+        );
+        let mut events =
+            parse_events(data, utc(2026, 7, 29, 15, 0), utc(2026, 7, 30, 0, 0), None).unwrap();
+        let source_url = Url::parse(
+            "https://calendar.google.com/calendar/ical/user%40example.com/private-secret/basic.ics",
+        )
+        .unwrap();
+
+        derive_google_event_details_urls(&mut events, &source_url);
+
+        assert_eq!(
+            events[0].details_url.as_ref().map(Url::as_str),
+            Some("https://calendar.example/event-details")
+        );
+    }
+
+    #[test]
+    fn uses_google_meet_conference_url_for_recurring_instances() {
+        let data = event!(
+            "UID:seriesevent@google.com\r\n",
+            "DTSTART;TZID=America/New_York:20260727T123000\r\n",
+            "DTEND;TZID=America/New_York:20260727T131500\r\n",
+            "RRULE:FREQ=WEEKLY;BYDAY=MO,WE,FR\r\n",
+            "X-GOOGLE-CONFERENCE:https://meet.google.com/abc-defg-hij\r\n",
+        );
+
+        let events =
+            parse_events(data, utc(2026, 8, 3, 16, 0), utc(2026, 8, 3, 17, 0), None).unwrap();
+
+        assert_eq!(events.len(), 1);
+        assert!(events[0].is_recurring);
+        assert_eq!(events[0].start_at, utc(2026, 8, 3, 16, 30));
+        assert_eq!(
+            events[0].details_url.as_ref().map(Url::as_str),
+            Some("https://meet.google.com/abc-defg-hij")
+        );
+    }
+
+    #[test]
+    fn rejects_non_meet_google_conference_urls() {
+        let data = event!(
+            "UID:meeting@google.com\r\n",
+            "DTSTART:20260803T163000Z\r\n",
+            "DTEND:20260803T171500Z\r\n",
+            "X-GOOGLE-CONFERENCE:https://example.com/not-a-meeting\r\n",
+        );
+
+        let events =
+            parse_events(data, utc(2026, 8, 3, 16, 0), utc(2026, 8, 3, 18, 0), None).unwrap();
+
+        assert_eq!(events.len(), 1);
+        assert!(events[0].details_url.is_none());
+    }
+
+    #[test]
+    fn uses_zoom_join_url_from_recurring_event_description() {
+        let data = event!(
+            "UID:monthly@google.com\r\n",
+            "DTSTART;TZID=America/New_York:20260804T123000\r\n",
+            "DTEND;TZID=America/New_York:20260804T130000\r\n",
+            "RRULE:FREQ=MONTHLY;BYDAY=1TU\r\n",
+            "DESCRIPTION:Meeting agenda: https://docs.zoom.us/agenda/doc/example\\n\
+             Join Zoom Meeting:\\nhttps://zoom.us/j/00000000000?pwd=dummy&jst=2\\n\
+             Chat: https://zoom.us/launch/jc/00000000000\r\n",
+        );
+
+        let events =
+            parse_events(data, utc(2026, 8, 4, 16, 0), utc(2026, 8, 4, 18, 0), None).unwrap();
+
+        assert_eq!(events.len(), 1);
+        assert!(events[0].is_recurring);
+        assert_eq!(events[0].start_at, utc(2026, 8, 4, 16, 30));
+        assert_eq!(
+            events[0].details_url.as_ref().map(Url::as_str),
+            Some("https://zoom.us/j/00000000000?pwd=dummy&jst=2")
+        );
+    }
+
+    #[test]
+    fn rejects_non_join_and_lookalike_zoom_description_urls() {
+        for description in [
+            "https://docs.zoom.us/agenda/doc/example",
+            "https://zoom.us/launch/jc/00000000000",
+            "https://zoom.us.example.com/j/00000000000",
+            "http://zoom.us/j/00000000000",
+            "https://zoom.us/j/not-a-number",
+        ] {
+            let data = format!(
+                "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\n\
+                 UID:meeting@google.com\r\nDTSTART:20260804T163000Z\r\n\
+                 DTEND:20260804T170000Z\r\nDESCRIPTION:{description}\r\n\
+                 END:VEVENT\r\nEND:VCALENDAR\r\n"
+            );
+            let events =
+                parse_events(&data, utc(2026, 8, 4, 16, 0), utc(2026, 8, 4, 18, 0), None).unwrap();
+
+            assert_eq!(events.len(), 1);
+            assert!(events[0].details_url.is_none(), "accepted {description}");
+        }
+    }
+
+    #[test]
+    fn private_ics_secret_is_not_in_generated_details_url() {
+        let data = event!(
+            "UID:nativeevent@google.com\r\n",
+            "DTSTART:20260729T160000Z\r\n",
+            "DTEND:20260729T170000Z\r\n",
+        );
+        let mut events =
+            parse_events(data, utc(2026, 7, 29, 15, 0), utc(2026, 7, 30, 0, 0), None).unwrap();
+        let source_url = Url::parse(
+            "https://calendar.google.com/calendar/ical/user%40example.com/private-feed-secret/basic.ics",
+        )
+        .unwrap();
+
+        derive_google_event_details_urls(&mut events, &source_url);
+
+        let details_url = events[0].details_url.as_ref().unwrap().as_str();
+        assert!(!details_url.contains("feed-secret"));
+        assert!(!details_url.contains("private-"));
+    }
+
+    #[test]
+    fn recognizes_percent_encoded_google_caldav_calendar_id() {
+        let source_url = Url::parse(
+            "https://apidata.googleusercontent.com/caldav/v2/user%40example.com/events/",
+        )
+        .unwrap();
+
+        assert_eq!(
+            google_calendar_id(&source_url).as_deref(),
+            Some("user@example.com")
+        );
+    }
+
+    #[test]
+    fn filters_only_declines_from_the_google_calendar_owner() {
+        let data = calendar!(
+            "BEGIN:VEVENT\r\n",
+            "UID:owner-declined\r\n",
+            "DTSTART:20260803T160000Z\r\n",
+            "DTEND:20260803T170000Z\r\n",
+            "ATTENDEE;PARTSTAT=declined:MAILTO:USER@EXAMPLE.COM\r\n",
+            "ATTENDEE;PARTSTAT=ACCEPTED:mailto:guest@example.com\r\n",
+            "END:VEVENT\r\n",
+            "BEGIN:VEVENT\r\n",
+            "UID:guest-declined\r\n",
+            "DTSTART:20260803T180000Z\r\n",
+            "DTEND:20260803T190000Z\r\n",
+            "ATTENDEE;PARTSTAT=ACCEPTED:mailto:user@example.com\r\n",
+            "ATTENDEE;PARTSTAT=DECLINED:mailto:guest@example.com\r\n",
+            "END:VEVENT\r\n",
+            "BEGIN:VEVENT\r\n",
+            "UID:unrelated-decline\r\n",
+            "DTSTART:20260803T200000Z\r\n",
+            "DTEND:20260803T210000Z\r\n",
+            "ATTENDEE;PARTSTAT=DECLINED:mailto:guest@example.com\r\n",
+            "END:VEVENT\r\n",
+        );
+        let source_url = Url::parse(
+            "https://calendar.google.com/calendar/ical/user%40example.com/private-secret/basic.ics",
+        )
+        .unwrap();
+
+        let filtered = parse_events(
+            data,
+            utc(2026, 8, 3, 15, 0),
+            utc(2026, 8, 3, 22, 0),
+            Some(&source_url),
+        )
+        .unwrap();
+        let unfiltered =
+            parse_events(data, utc(2026, 8, 3, 15, 0), utc(2026, 8, 3, 22, 0), None).unwrap();
+
+        assert_eq!(
+            filtered
+                .iter()
+                .map(|event| event.uid.as_str())
+                .collect::<Vec<_>>(),
+            ["guest-declined", "unrelated-decline"]
+        );
+        assert_eq!(unfiltered.len(), 3);
+    }
+
+    #[test]
+    fn skips_non_google_sources_and_non_native_or_malformed_uids() {
+        let native =
+            best_effort_google_event_details_url("nativeevent@google.com", "user@example.com");
+        let imported =
+            best_effort_google_event_details_url("event@example.com", "user@example.com");
+        let malformed =
+            best_effort_google_event_details_url("bad event@google.com", "user@example.com");
+
+        assert!(native.is_some());
+        assert!(imported.is_none());
+        assert!(malformed.is_none());
+        assert!(google_calendar_id(
+            &Url::parse("https://calendar.example/calendar/ical/user/public/basic.ics").unwrap()
+        )
+        .is_none());
+    }
+
+    #[test]
+    fn does_not_derive_links_for_recurring_instances_or_moved_overrides() {
+        let data = calendar!(
+            "BEGIN:VEVENT\r\n",
+            "UID:seriesevent@google.com\r\n",
+            "DTSTART:20260729T160000Z\r\n",
+            "DTEND:20260729T163000Z\r\n",
+            "RRULE:FREQ=DAILY;COUNT=2\r\n",
+            "END:VEVENT\r\n",
+            "BEGIN:VEVENT\r\n",
+            "UID:seriesevent@google.com\r\n",
+            "RECURRENCE-ID:20260730T160000Z\r\n",
+            "DTSTART:20260730T200000Z\r\n",
+            "DTEND:20260730T203000Z\r\n",
+            "END:VEVENT\r\n",
+        );
+        let mut events =
+            parse_events(data, utc(2026, 7, 29, 15, 0), utc(2026, 8, 1, 0, 0), None).unwrap();
+        let source_url = Url::parse(
+            "https://calendar.google.com/calendar/ical/user%40example.com/public/basic.ics",
+        )
+        .unwrap();
+
+        derive_google_event_details_urls(&mut events, &source_url);
+
+        assert_eq!(events.len(), 2);
+        assert!(events.iter().all(|event| event.is_recurring));
+        assert!(events.iter().all(|event| event.details_url.is_none()));
     }
 
     #[test]
@@ -617,7 +1040,7 @@ mod tests {
             "SUMMARY:Standup\r\n",
         );
 
-        let events = parse_events(data, utc(2026, 7, 29, 15, 0), utc(2026, 8, 2, 0, 0)).unwrap();
+        let events = parse_events(data, utc(2026, 7, 29, 15, 0), utc(2026, 8, 2, 0, 0), None).unwrap();
         let starts: Vec<_> = events.iter().map(|event| event.start_at).collect();
 
         assert_eq!(
@@ -647,7 +1070,7 @@ mod tests {
             "END:VEVENT\r\n",
         );
 
-        let events = parse_events(data, utc(2026, 7, 29, 15, 0), utc(2026, 7, 31, 0, 0)).unwrap();
+        let events = parse_events(data, utc(2026, 7, 29, 15, 0), utc(2026, 7, 31, 0, 0), None).unwrap();
         let starts: Vec<_> = events.iter().map(|event| event.start_at).collect();
 
         assert_eq!(starts, [utc(2026, 7, 29, 16, 0), utc(2026, 7, 30, 16, 0)]);
@@ -678,7 +1101,7 @@ mod tests {
         );
 
         let mut events =
-            parse_events(data, utc(2026, 7, 29, 15, 0), utc(2026, 8, 1, 0, 0)).unwrap();
+            parse_events(data, utc(2026, 7, 29, 15, 0), utc(2026, 8, 1, 0, 0), None).unwrap();
         events.sort_by_key(|event| event.start_at);
 
         assert_eq!(events.len(), 2);
@@ -697,7 +1120,7 @@ mod tests {
             "SUMMARY:All day\r\n",
         );
 
-        let events = parse_events(data, utc(2026, 7, 29, 0, 0), utc(2026, 7, 31, 0, 0)).unwrap();
+        let events = parse_events(data, utc(2026, 7, 29, 0, 0), utc(2026, 7, 31, 0, 0), None).unwrap();
 
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].end_at - events[0].start_at, Duration::days(1));
@@ -712,7 +1135,7 @@ mod tests {
             "SUMMARY:Long event\r\n",
         );
 
-        let events = parse_events(data, utc(2026, 7, 29, 12, 0), utc(2026, 7, 30, 12, 0)).unwrap();
+        let events = parse_events(data, utc(2026, 7, 29, 12, 0), utc(2026, 7, 30, 12, 0), None).unwrap();
 
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].start_at, utc(2026, 7, 28, 18, 0));
@@ -725,6 +1148,7 @@ mod tests {
             "not an iCalendar feed",
             utc(2026, 7, 29, 0, 0),
             utc(2026, 7, 30, 0, 0),
+            None,
         )
         .unwrap_err();
 
@@ -750,7 +1174,7 @@ mod tests {
         );
 
         let mut events =
-            parse_events(data, utc(2026, 7, 29, 15, 0), utc(2026, 8, 1, 0, 0)).unwrap();
+            parse_events(data, utc(2026, 7, 29, 15, 0), utc(2026, 8, 1, 0, 0), None).unwrap();
         events.sort_by_key(|event| event.start_at);
 
         assert_eq!(events.len(), 2);
@@ -797,7 +1221,7 @@ mod tests {
             "DTSTART;TZID=America/Los_Angeles:20260307T090000\r\n",
             "DURATION:P1D\r\n",
         );
-        let event = parse_events(spring, utc(2026, 3, 7, 0, 0), utc(2026, 3, 10, 0, 0))
+        let event = parse_events(spring, utc(2026, 3, 7, 0, 0), utc(2026, 3, 10, 0, 0), None)
             .unwrap()
             .pop()
             .unwrap();
@@ -808,7 +1232,7 @@ mod tests {
             "DTSTART;TZID=America/Los_Angeles:20261031T090000\r\n",
             "DURATION:P1D\r\n",
         );
-        let event = parse_events(fall, utc(2026, 10, 31, 0, 0), utc(2026, 11, 3, 0, 0))
+        let event = parse_events(fall, utc(2026, 10, 31, 0, 0), utc(2026, 11, 3, 0, 0), None)
             .unwrap()
             .pop()
             .unwrap();
@@ -864,7 +1288,7 @@ mod tests {
             "END:VEVENT\r\n",
         );
 
-        let events = parse_events(data, utc(2026, 7, 29, 0, 0), utc(2026, 8, 1, 0, 0)).unwrap();
+        let events = parse_events(data, utc(2026, 7, 29, 0, 0), utc(2026, 8, 1, 0, 0), None).unwrap();
 
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].uid, "valid");
@@ -895,7 +1319,7 @@ mod tests {
             "END:VEVENT\r\n",
         );
 
-        let events = parse_events(data, utc(2026, 7, 29, 0, 0), utc(2026, 8, 1, 0, 0)).unwrap();
+        let events = parse_events(data, utc(2026, 7, 29, 0, 0), utc(2026, 8, 1, 0, 0), None).unwrap();
 
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].uid, "valid");
@@ -915,7 +1339,7 @@ mod tests {
             "END:VEVENT\r\n",
         );
 
-        let events = parse_events(data, utc(2026, 7, 29, 0, 0), utc(2026, 8, 1, 0, 0)).unwrap();
+        let events = parse_events(data, utc(2026, 7, 29, 0, 0), utc(2026, 8, 1, 0, 0), None).unwrap();
 
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].uid, "valid");
@@ -943,7 +1367,7 @@ mod tests {
             "END:VEVENT\r\n",
         );
 
-        let events = parse_events(data, utc(2026, 7, 29, 0, 0), utc(2026, 8, 2, 0, 0)).unwrap();
+        let events = parse_events(data, utc(2026, 7, 29, 0, 0), utc(2026, 8, 2, 0, 0), None).unwrap();
 
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].uid, "independent");
@@ -965,7 +1389,7 @@ mod tests {
             "END:VEVENT\r\n",
         );
 
-        let events = parse_events(data, utc(2026, 7, 29, 0, 0), utc(2026, 8, 1, 0, 0)).unwrap();
+        let events = parse_events(data, utc(2026, 7, 29, 0, 0), utc(2026, 8, 1, 0, 0), None).unwrap();
 
         assert_eq!(events.len(), 1);
         assert_eq!(events[0].uid, "valid");
@@ -1014,7 +1438,7 @@ mod tests {
             "DTEND:20260730T010000Z\r\n",
         );
 
-        let events = parse_events(data, utc(2026, 7, 29, 0, 0), utc(2026, 7, 30, 0, 0)).unwrap();
+        let events = parse_events(data, utc(2026, 7, 29, 0, 0), utc(2026, 7, 30, 0, 0), None).unwrap();
 
         assert!(events.is_empty());
     }

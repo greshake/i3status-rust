@@ -11,12 +11,13 @@
 //! `ongoing_event_format` | A string to customize the output of this block when an event is ongoing. | <code>\" $icon $summary (ends at $end.datetime(f:'%H:%M')) \"</code>
 //! `no_events_format` | A string to customize the output of this block when there are no events | <code>\" $icon \"</code>
 //! `redirect_format` | A string to customize the output of this block when the authorization is asked | <code>\" $icon Check your web browser \"</code>
+//! `event_details_format` | A string to customize the expanded event details shown after `toggle_details` | <code>" $icon $summary $start.datetime(f:'%a %H:%M')–$end.datetime(f:'%H:%M'){ $location\|}{ $description\|} "</code>
 //! `fetch_interval` | Fetch events interval in seconds | `60`
 //! `alternate_events_interval` | Alternate overlapping events interval in seconds | `10`
 //! `events_within_hours` | Number of hours to look for events in the future | `48`
 //! `source` | Array of sources to pull calendars from | `[]`
 //! `warning_threshold` | Warning threshold in seconds for the upcoming event | `300`
-//! `browser_cmd` | Command to open event details in a browser. The block passes the HTML link as an argument | `"xdg-open"`
+//! `browser_cmd` | Command to open an event or conference link in a browser. The block passes the link as an argument | `"xdg-open"`
 //!
 //! # Source Configuration
 //!
@@ -26,12 +27,23 @@
 //! `url` | CalDAV server or ICS feed URL | N/A
 //! `auth` | Authentication configuration (unauthenticated, basic, or oauth2) | `unauthenticated`
 //! `calendars` | CalDAV only: list of calendar names to monitor. If empty, all calendars will be fetched. | `[]`
+//! `google_event_links` | Opt into best-effort Google event-link derivation when an event has no explicit iCalendar `URL` | `false`
 //!
 //! Note: Currently only one source is supported
 //!
 //! Action          | Description                               | Default button
 //! ----------------|-------------------------------------------|---------------
-//! `open_link` | Opens the HTML link of the event | Left
+//! `open_link` | Opens the event or conference link | Left
+//! `toggle_details` | Toggles expanded details for the displayed event | Right
+//! `previous_event` | Shows the previous event for 15 seconds | Wheel up
+//! `next_event` | Shows the next event for 15 seconds | Wheel down
+//!
+//! Left- and right-click actions always apply to the displayed event. Scrolling browses events in
+//! chronological order without wrapping and pauses automatic event alternation. Each scroll
+//! restarts a 15-second timeout, after which the default event is restored.
+//!
+//! The i3bar protocol does not provide hover events or tooltips. Right-clicking is the compatible
+//! way to show event details in i3bar and swaybar.
 //!
 //! # Examples
 //!
@@ -56,6 +68,19 @@
 //! If it is exposed, reset the address in Google Calendar to invalidate the old URL. For work or
 //! school accounts, an administrator may disable secret addresses.
 //!
+//! Events with a valid iCalendar `URL` use that URL when left-clicked. When it is absent, an HTTPS
+//! Google Meet URL in Google's `X-GOOGLE-CONFERENCE` extension is used. As an ICS-only fallback,
+//! an HTTPS Zoom join URL with a numeric `/j/` meeting path can be extracted from the description;
+//! agenda, chat, documentation, and lookalike-domain links are ignored. Google feeds commonly omit
+//! all of these links. Setting `google_event_links = true` opts into deriving a Google Calendar
+//! link from a native, non-recurring event's UID and the calendar ID. Google does not document this
+//! mapping and states that an iCalendar UID is not the same as its event ID, so the derived link is
+//! best-effort only. Recurring events and overrides are not given derived links. Non-native UIDs
+//! are also skipped, but imported events or attendee copies that retain a native-looking UID can
+//! still produce an incorrect link. Resolving those correctly requires the Google Calendar API's
+//! `htmlLink`.
+//! Invitations declined by the owner of a recognized Google calendar are not displayed.
+//!
 //! See [Google Calendar Help](https://support.google.com/calendar/answer/37648) for Google's
 //! current instructions.
 //!
@@ -67,6 +92,7 @@
 //! [[block.source]]
 //! type = "ics"
 //! url = "https://calendar.google.com/calendar/ical/.../basic.ics"
+//! google_event_links = true
 //! ```
 //!
 //! ICS feeds are downloaded in full on every refresh, so use a longer `fetch_interval` for large
@@ -210,6 +236,8 @@
 //! - `$start`: Start time of the event
 //! - `$end`: End time of the event
 //!
+//! These placeholders are also available to `event_details_format`.
+//!
 //! # Icons Used
 //! - `calendar`
 
@@ -294,6 +322,7 @@ pub struct SourceConfig {
     pub url: String,
     pub auth: AuthConfig,
     pub calendars: Vec<String>,
+    pub google_event_links: bool,
 }
 
 #[derive(Deserialize, Debug, SmartDefault)]
@@ -303,6 +332,7 @@ pub struct Config {
     pub ongoing_event_format: FormatConfig,
     pub no_events_format: FormatConfig,
     pub redirect_format: FormatConfig,
+    pub event_details_format: FormatConfig,
     #[default(60.into())]
     pub fetch_interval: Seconds,
     #[default(10.into())]
@@ -321,6 +351,9 @@ enum WidgetStatus {
     FetchSources,
 }
 
+const DEFAULT_EVENT_DETAILS_FORMAT: &str = " $icon $summary $start.datetime(f:'%a %H:%M')–$end.datetime(f:'%H:%M'){ $location|}{ $description|} ";
+const SCROLL_RESET_INTERVAL: std::time::Duration = std::time::Duration::from_secs(15);
+
 pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let next_event_format = config
         .next_event_format
@@ -332,8 +365,16 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let redirect_format = config
         .redirect_format
         .with_default(" $icon Check your web browser ")?;
+    let event_details_format = config
+        .event_details_format
+        .with_default(DEFAULT_EVENT_DETAILS_FORMAT)?;
 
-    api.set_default_actions(&[(MouseButton::Left, None, "open_link")])?;
+    api.set_default_actions(&[
+        (MouseButton::Left, None, "open_link"),
+        (MouseButton::Right, None, "toggle_details"),
+        (MouseButton::WheelUp, None, "previous_event"),
+        (MouseButton::WheelDown, None, "next_event"),
+    ])?;
 
     let source_config = match config.source.as_slice() {
         [] => return Err(Error::new("A calendar source must be supplied")),
@@ -354,6 +395,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     let mut alternate_events_timer = config.alternate_events_interval.timer();
 
+    let scroll_reset_timer = sleep(SCROLL_RESET_INTERVAL);
+    tokio::pin!(scroll_reset_timer);
+
     let mut actions = api.get_actions()?;
 
     let events_within = Duration::try_hours(config.events_within_hours.into())
@@ -361,7 +405,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     let mut widget_status = WidgetStatus::FetchSources;
 
-    let mut next_events = OverlappingEvents::default();
+    let mut next_events = CalendarEvents::default();
+    let mut show_event_details = false;
+    let mut scroll_active = false;
 
     loop {
         let mut widget = Widget::new().with_format(no_events_format.clone());
@@ -405,24 +451,27 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             }
         }
 
-        if let Some(event) = next_events.current().cloned() {
+        if let Some(event) = next_events.current() {
             let start_date = event.start_at;
             let end_date = event.end_at;
             let warn_datetime = start_date - warning_threshold;
-            if warn_datetime < Utc::now() && Utc::now() < start_date {
+            let now = Utc::now();
+            if warn_datetime < now && now < start_date {
                 widget.state = State::Warning;
             }
-            if start_date < Utc::now() && Utc::now() < end_date {
+            if show_event_details {
+                widget.set_format(event_details_format.clone());
+            } else if start_date < now && now < end_date {
                 widget.set_format(ongoing_event_format.clone());
             } else {
                 widget.set_format(next_event_format.clone());
             }
             widget.set_values(map! {
                   "icon" => Value::icon("calendar"),
-                   [if let Some(summary) = event.summary] "summary" => Value::text(summary),
-                   [if let Some(description) = event.description] "description" => Value::text(description),
-                   [if let Some(location) = event.location] "location" => Value::text(location),
-                   [if let Some(url) = event.url] "url" => Value::text(url),
+                   [if let Some(summary) = event.summary.clone()] "summary" => Value::text(summary),
+                   [if let Some(description) = event.description.clone()] "description" => Value::text(description),
+                   [if let Some(location) = event.location.clone()] "location" => Value::text(location),
+                   [if let Some(url) = event.url.clone()] "url" => Value::text(url),
                    "start" => Value::datetime(start_date, None),
                    "end" => Value::datetime(end_date, None),
                 });
@@ -435,18 +484,42 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                   widget_status = WidgetStatus::FetchSources;
                   break
                 }
-                _ = alternate_events_timer.tick() => {
+                _ = alternate_events_timer.tick(), if !scroll_active => {
                   next_events.cycle_warning_or_ongoing(warning_threshold);
+                  widget_status = WidgetStatus::AlternateEvents;
+                  break
+                }
+                _ = &mut scroll_reset_timer, if scroll_active => {
+                  next_events.reset_to_default();
+                  scroll_active = false;
+                  alternate_events_timer.reset();
                   widget_status = WidgetStatus::AlternateEvents;
                   break
                 }
                 _ = api.wait_for_update_request() => break,
                 Some(action) = actions.recv() => match action.as_ref() {
                       "open_link" => {
-                          if let Some(Event { url: Some(url), .. }) = next_events.current()
-                              && let Ok(url) = Url::parse(url) {
-                                  open_browser(config, &url).await?;
-                              }
+                          if let Some(Event { details_url: Some(url), .. }) = next_events.current() {
+                              open_browser(config, url).await?;
+                          }
+                      }
+                      "toggle_details" if next_events.current().is_some() => {
+                          show_event_details = !show_event_details;
+                          widget_status = WidgetStatus::AlternateEvents;
+                          break;
+                      }
+                      "previous_event" | "next_event" if next_events.current().is_some() => {
+                          if action.as_ref() == "previous_event" {
+                              next_events.previous();
+                          } else {
+                              next_events.next();
+                          }
+                          scroll_active = true;
+                          scroll_reset_timer.as_mut().reset(
+                              tokio::time::Instant::now() + SCROLL_RESET_INTERVAL
+                          );
+                          widget_status = WidgetStatus::AlternateEvents;
+                          break;
                       }
                       _ => ()
                 }
@@ -470,6 +543,7 @@ impl Source {
             url,
             auth: auth_config,
             calendars,
+            google_event_links,
         } = config;
 
         if source_type == SourceType::Ics && !calendars.is_empty() {
@@ -534,17 +608,17 @@ impl Source {
         let url = Url::parse(&url).error("Invalid calendar source URL")?;
         Ok(match source_type {
             SourceType::CalDav => Self::CalDav {
-                client: caldav::Client::new(url, auth),
+                client: caldav::Client::new(url, auth, google_event_links),
                 calendars,
             },
-            SourceType::Ics => Self::Ics(ics::Client::new(url, auth)),
+            SourceType::Ics => Self::Ics(ics::Client::new(url, auth, google_event_links)),
         })
     }
 
     async fn get_next_events(
         &mut self,
         within: Duration,
-    ) -> Result<OverlappingEvents, CalendarError> {
+    ) -> Result<CalendarEvents, CalendarError> {
         let now = Utc::now();
         let end = now
             .checked_add_signed(within)
@@ -563,7 +637,7 @@ impl Source {
                 Self::Ics(client) => client.events(now, end).await?,
             };
         events.sort_by_key(|e| e.start_at);
-        Ok(next_overlapping_events(events))
+        Ok(CalendarEvents::new(events))
     }
 
     async fn authorize(&mut self) -> Result<Authorize, CalendarError> {
@@ -582,70 +656,79 @@ impl Source {
 }
 
 #[derive(Default)]
-struct OverlappingEvents {
-    current: Option<Event>,
+struct CalendarEvents {
+    current_index: Option<usize>,
     events: Vec<Event>,
+    automatic_events_len: usize,
 }
 
-impl OverlappingEvents {
+impl CalendarEvents {
     fn new(events: Vec<Event>) -> Self {
+        let automatic_events_len = events.first().map_or(0, |event| {
+            events
+                .partition_point(|other| other.start_at < event.end_at)
+                .max(1)
+        });
         Self {
-            current: events.first().cloned(),
+            current_index: (!events.is_empty()).then_some(0),
             events,
+            automatic_events_len,
         }
     }
 
-    fn refresh(&mut self, other: OverlappingEvents) {
-        if self.current.is_none() {
-            self.current = other.events.first().cloned();
+    fn refresh(&mut self, other: Self) {
+        self.current_index = self.current().and_then(|current| {
+            other
+                .events
+                .iter()
+                .position(|event| event.uid == current.uid && event.start_at == current.start_at)
+        });
+        if self.current_index.is_none() && !other.events.is_empty() {
+            self.current_index = Some(0);
         }
         self.events = other.events;
+        self.automatic_events_len = other.automatic_events_len;
     }
 
     fn current(&self) -> Option<&Event> {
-        self.current.as_ref()
+        self.current_index.and_then(|index| self.events.get(index))
     }
 
     fn cycle_warning_or_ongoing(&mut self, warning_threshold: Duration) {
-        self.current = if let Some(current) = &self.current {
-            if let Some(position) = self
-                .events
-                .iter()
-                .position(|event| same_event(event, current))
-            {
-                let now = Utc::now();
-                self.events
-                    .iter()
-                    .cycle()
-                    .skip(position + 1)
-                    .find(|e| {
-                        let is_ongoing = e.start_at < now && e.end_at > now;
-                        let is_warning = e.start_at - warning_threshold < now && now < e.start_at;
-                        same_event(e, current) || is_warning || is_ongoing
-                    })
-                    .cloned()
-            } else {
-                self.events.first().cloned()
-            }
-        } else {
-            self.events.first().cloned()
+        let Some(position) = self
+            .current_index
+            .filter(|position| *position < self.automatic_events_len)
+        else {
+            self.reset_to_default();
+            return;
         };
+        let now = Utc::now();
+        self.current_index = (1..=self.automatic_events_len)
+            .map(|offset| (position + offset) % self.automatic_events_len)
+            .find(|index| {
+                let event = &self.events[*index];
+                let is_ongoing = event.start_at < now && event.end_at > now;
+                let is_warning =
+                    event.start_at - warning_threshold < now && now < event.start_at;
+                *index == position || is_warning || is_ongoing
+            });
     }
-}
 
-fn next_overlapping_events(mut events: Vec<Event>) -> OverlappingEvents {
-    let Some(first_end) = events.first().map(|event| event.end_at) else {
-        return OverlappingEvents::default();
-    };
-    let overlapping_len = events
-        .partition_point(|event| event.start_at < first_end)
-        .max(1);
-    events.truncate(overlapping_len);
-    OverlappingEvents::new(events)
-}
+    fn previous(&mut self) {
+        if let Some(index) = &mut self.current_index {
+            *index = index.saturating_sub(1);
+        }
+    }
 
-fn same_event(left: &Event, right: &Event) -> bool {
-    left.uid == right.uid && left.start_at == right.start_at
+    fn next(&mut self) {
+        if let Some(index) = &mut self.current_index {
+            *index = index.saturating_add(1).min(self.events.len() - 1);
+        }
+    }
+
+    fn reset_to_default(&mut self) {
+        self.current_index = (!self.events.is_empty()).then_some(0);
+    }
 }
 
 async fn open_browser(config: &Config, url: &Url) -> Result<()> {
@@ -679,6 +762,7 @@ pub enum CalendarError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::SharedConfig;
 
     fn event(uid: &str, start: chrono::DateTime<Utc>, end: chrono::DateTime<Utc>) -> Event {
         Event {
@@ -687,6 +771,8 @@ mod tests {
             description: None,
             location: None,
             url: None,
+            details_url: None,
+            is_recurring: false,
             start_at: start,
             end_at: end,
         }
@@ -700,12 +786,15 @@ mod tests {
             r#"
             type = "ics"
             url = "https://calendar.example/private/basic.ics"
+            google_event_links = true
             "#,
         )
         .unwrap();
 
         assert_eq!(caldav.source_type, SourceType::CalDav);
         assert_eq!(ics.source_type, SourceType::Ics);
+        assert!(!caldav.google_event_links);
+        assert!(ics.google_event_links);
         assert!(
             toml::from_str::<SourceConfig>(
                 r#"
@@ -715,6 +804,32 @@ mod tests {
             )
             .is_err()
         );
+    }
+
+    #[test]
+    fn default_event_details_render_without_optional_fields() {
+        for (available_field, available_value) in
+            [("description", "Roadmap review"), ("location", "Room 1")]
+        {
+            let format = FormatConfig::default()
+                .with_default(DEFAULT_EVENT_DETAILS_FORMAT)
+                .unwrap();
+            let mut values = map! {
+                "icon" => Value::text("calendar".into()),
+                "summary" => Value::text("Planning".into()),
+                "start" => Value::datetime("2026-07-29T16:00:00Z".parse().unwrap(), None),
+                "end" => Value::datetime("2026-07-29T17:00:00Z".parse().unwrap(), None),
+            };
+            values.insert(available_field.into(), Value::text(available_value.into()));
+
+            let (full, _) = format
+                .render(&values, &SharedConfig::default())
+                .unwrap();
+            let rendered: String = full.into_iter().map(|fragment| fragment.text).collect();
+
+            assert!(rendered.contains(available_value));
+            assert!(!rendered.contains('\n'));
+        }
     }
 
     #[tokio::test]
@@ -732,27 +847,123 @@ mod tests {
     }
 
     #[test]
-    fn back_to_back_events_do_not_overlap() {
+    fn back_to_back_events_are_scrollable_but_do_not_automatically_alternate() {
         let first_start = "2026-07-29T16:00:00Z".parse().unwrap();
         let boundary = "2026-07-29T17:00:00Z".parse().unwrap();
         let second_end = "2026-07-29T18:00:00Z".parse().unwrap();
 
-        let events = next_overlapping_events(vec![
+        let mut events = CalendarEvents::new(vec![
             event("first", first_start, boundary),
             event("second", boundary, second_end),
         ]);
 
-        assert_eq!(events.events.len(), 1);
-        assert_eq!(events.events[0].uid, "first");
+        assert_eq!(events.events.len(), 2);
+        assert_eq!(events.automatic_events_len, 1);
+        events.cycle_warning_or_ongoing(Duration::minutes(5));
+        assert_eq!(events.current().unwrap().uid, "first");
     }
 
     #[test]
     fn zero_duration_next_event_is_still_selected() {
         let start = "2026-07-29T16:00:00Z".parse().unwrap();
 
-        let events = next_overlapping_events(vec![event("instant", start, start)]);
+        let events = CalendarEvents::new(vec![event("instant", start, start)]);
 
         assert_eq!(events.events.len(), 1);
         assert_eq!(events.current().unwrap().uid, "instant");
+    }
+
+    #[test]
+    fn cycling_updates_the_current_event_and_its_details_url() {
+        let now = Utc::now();
+        let mut first = event(
+            "first",
+            now - Duration::minutes(1),
+            now + Duration::minutes(30),
+        );
+        first.details_url = Some(Url::parse("https://calendar.example/first").unwrap());
+        let mut second = event(
+            "second",
+            now + Duration::minutes(1),
+            now + Duration::minutes(20),
+        );
+        second.details_url = Some(Url::parse("https://calendar.example/second").unwrap());
+        let mut events = CalendarEvents::new(vec![first, second]);
+
+        events.cycle_warning_or_ongoing(Duration::minutes(5));
+
+        let current = events.current().unwrap();
+        assert_eq!(current.uid, "second");
+        assert_eq!(
+            current.details_url.as_ref().unwrap().as_str(),
+            "https://calendar.example/second"
+        );
+    }
+
+    #[test]
+    fn refresh_replaces_removed_current_event() {
+        let now = Utc::now();
+        let old = event("old", now, now + Duration::minutes(30));
+        let replacement = event("replacement", now, now + Duration::minutes(30));
+        let mut events = CalendarEvents::new(vec![old]);
+
+        events.refresh(CalendarEvents::new(vec![replacement]));
+
+        assert_eq!(events.current().unwrap().uid, "replacement");
+    }
+
+    #[test]
+    fn refresh_uses_updated_event_data_and_clears_empty_results() {
+        let now = Utc::now();
+        let mut old = event("same", now, now + Duration::minutes(30));
+        old.summary = Some("Old summary".into());
+        old.details_url = Some(Url::parse("https://calendar.example/old").unwrap());
+        let mut updated = event("same", now, now + Duration::minutes(30));
+        updated.summary = Some("Updated summary".into());
+        updated.details_url = Some(Url::parse("https://calendar.example/updated").unwrap());
+        let mut events = CalendarEvents::new(vec![old]);
+
+        events.refresh(CalendarEvents::new(vec![updated]));
+
+        let current = events.current().unwrap();
+        assert_eq!(current.summary.as_deref(), Some("Updated summary"));
+        assert_eq!(
+            current.details_url.as_ref().map(Url::as_str),
+            Some("https://calendar.example/updated")
+        );
+
+        events.refresh(CalendarEvents::default());
+
+        assert!(events.current().is_none());
+        assert!(events.events.is_empty());
+    }
+
+    #[test]
+    fn scrolling_moves_between_events_without_wrapping_and_resets_to_default() {
+        let start = "2026-07-29T16:00:00Z".parse().unwrap();
+        let mut events = CalendarEvents::new(vec![
+            event("first", start, start + Duration::minutes(30)),
+            event(
+                "second",
+                start + Duration::hours(1),
+                start + Duration::hours(2),
+            ),
+            event(
+                "third",
+                start + Duration::hours(3),
+                start + Duration::hours(4),
+            ),
+        ]);
+
+        events.next();
+        assert_eq!(events.current().unwrap().uid, "second");
+        events.next();
+        events.next();
+        assert_eq!(events.current().unwrap().uid, "third");
+        events.previous();
+        assert_eq!(events.current().unwrap().uid, "second");
+        events.reset_to_default();
+        events.previous();
+        assert_eq!(events.current().unwrap().uid, "first");
     }
 }
