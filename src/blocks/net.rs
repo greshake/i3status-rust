@@ -8,6 +8,7 @@
 //! ----|--------|--------
 //! `device` | Network interface to monitor (as specified in `/sys/class/net/`). Supports regex. | If not set, device will be automatically selected every `interval`
 //! `interval` | Update interval in seconds | `2`
+//! `wifi_generation_superscript` | Display `$wifi_generation` using Unicode superscripts (`⁴`, `⁵`, `⁶`, `⁶ᴱ`, `⁷`) | `true`
 //! `format` | A [MultiFormat][MaybeMultiFormatConfig] string to customise the output of this block. See below for available placeholders. | `[" $icon ^icon_net_down $speed_down.eng(prefix:K) ^icon_net_up $speed_up.eng(prefix:K) "]`
 //! `inactive_format` | Same as `format` but for when the interface is inactive | `" $icon Down "`
 //! `missing_format` | Same as `format` but for when the device is missing | `" × "`
@@ -30,10 +31,21 @@
 //! `frequency`       | WiFi frequency              | Number | Hz
 //! `signal_strength` | WiFi signal                 | Number | %
 //! `bitrate`         | WiFi connection bitrate     | Number | Bits per second
+//! `wifi_generation` | WiFi generation: `4` (HT), `5` (VHT), `6` (HE on 2.4/5 GHz), `6E` (HE on 6 GHz), `7` (EHT on any band) | Text | -
 //! `ip`              | IPv4 address of the iface   | Text   | -
 //! `ipv6`            | IPv6 address of the iface   | Text   | -
 //! `nameserver`      | Nameserver                  | Text   | -
 //! `enabled`         | Present if the device is switched on (not turned off with `rfkill` or `ip link set down`) | Flag | -
+//!
+//! HT is 802.11n, VHT is 802.11ac, HE is 802.11ax and EHT is 802.11be.
+//! `wifi_generation` uses the associated station's current TX PHY metadata from
+//! nl80211. It does not report a negotiated mode or advertised capabilities.
+//! The dependency does not expose RX PHY metadata. Rate fallback can lower
+//! the reported generation.
+//! Numeric bitrate and channel width are never used to infer a generation;
+//! frequency only distinguishes HE on 6 GHz from HE on 2.4/5 GHz.
+//! The value is absent without a matching association or sufficient TX metadata,
+//! and is refreshed every `interval` without retaining previous values.
 //!
 //! # Example
 //!
@@ -43,6 +55,23 @@
 //! [[block]]
 //! block = "net"
 //! format = " $icon {$signal_strength $ssid $frequency|Wired connection} via $device "
+//! ```
+//!
+//! Display the WiFi generation in plain text, preserving the signal-strength icon
+//!
+//! ```toml
+//! [[block]]
+//! block = "net"
+//! wifi_generation_superscript = false
+//! format = " $icon{ $wifi_generation|} ↓$speed_down ↑$speed_up "
+//! ```
+//!
+//! Display the generation with Unicode superscripts (the default):
+//!
+//! ```toml
+//! [[block]]
+//! block = "net"
+//! format = " $icon{$wifi_generation|} ↓$speed_down ↑$speed_up "
 //! ```
 //!
 //! Display exact device
@@ -85,6 +114,8 @@ pub struct Config {
     pub device: Option<String>,
     #[default(2.into())]
     pub interval: Seconds,
+    #[default(true)]
+    pub wifi_generation_superscript: bool,
     #[serde(flatten)]
     pub formats: MaybeMultiFormatConfig,
     pub inactive_format: FormatConfig,
@@ -197,6 +228,7 @@ pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>)
                     [if let Some(v) = device.frequency()] "frequency" => Value::hertz(v),
                     [if let Some(v) = device.bitrate()] "bitrate" => Value::bits(v),
                     [if let Some(v) = device.signal()] "signal_strength" => Value::percents(v),
+                    [if let Some(v) = device.wifi_generation()] "wifi_generation" => Value::text(v.as_str(config.wifi_generation_superscript).into()),
                     [if !device.nameservers.is_empty()] "nameserver" => Value::text(
                                                                             device
                                                                                 .nameservers
@@ -240,6 +272,30 @@ fn push_to_hist<T>(hist: &mut [T], elem: T) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn wifi_generation_format_uses_configured_style() {
+        use crate::netlink::WifiGeneration::Wifi6E;
+        let template: crate::formatting::template::FormatTemplate =
+            "{$wifi_generation|}".parse().unwrap();
+        for (config, generation, expected) in [
+            ("", Some(Wifi6E), "⁶ᴱ"),
+            ("wifi_generation_superscript = false", Some(Wifi6E), "6E"),
+            ("", None, ""),
+        ] {
+            let config: Config = toml::from_str(config).unwrap();
+            let values = map! {
+                [if let Some(v) = generation] "wifi_generation" => Value::text(v.as_str(config.wifi_generation_superscript).into()),
+            };
+            let text: String = template
+                .render(&values, &Default::default())
+                .unwrap()
+                .into_iter()
+                .map(|fragment| fragment.text)
+                .collect();
+            assert_eq!(text, expected);
+        }
+    }
 
     #[test]
     fn plan_declares_device_icon_set_on_every_rendering_state() {
