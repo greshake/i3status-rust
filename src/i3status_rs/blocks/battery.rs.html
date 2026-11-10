@@ -16,7 +16,7 @@
 <a href=#16 id=16 data-nosnippet>16</a>//! `charging_format` | Same as `format` but for when the battery is charging | Links to `format`
 <a href=#17 id=17 data-nosnippet>17</a>//! `empty_format` | Same as `format` but for when the battery is empty | `" $icon "`
 <a href=#18 id=18 data-nosnippet>18</a>//! `not_charging_format` | Same as `format` but for when the battery is not charging. Defaults to the full battery icon as many batteries report this status when they are full. | `" $icon "`
-<a href=#19 id=19 data-nosnippet>19</a>//! `missing_format` | Same as `format` if the battery cannot be found. | `" $icon "`
+<a href=#19 id=19 data-nosnippet>19</a>//! `missing_format` | Same as `format` if the battery cannot be found. With `driver = "upower"`, this is also used while UPower is not running and while UPower reports the device as not present, e.g. the `DisplayDevice` of a machine without a battery. | `" $icon "`
 <a href=#20 id=20 data-nosnippet>20</a>//! `info` | Minimum battery level, where state is set to info | `60`
 <a href=#21 id=21 data-nosnippet>21</a>//! `good` | Minimum battery level, where state is set to good | `60`
 <a href=#22 id=22 data-nosnippet>22</a>//! `warning` | Minimum battery level, where state is set to warning | `30`
