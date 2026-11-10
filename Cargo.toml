@@ -44,7 +44,7 @@ chrono = { version = "0.4", default-features = false, features = ["clock", "unst
 chrono-tz = { version = "0.10", features = ["serde"] }
 clap = { workspace = true }
 dirs = "6.0"
-env_logger = "0.11"
+env_logger = { version = "0.11", default-features = false, features = ["humantime", "regex"] }
 futures = { version = "0.3.31", default-features = false }
 glob = { version = "0.3.1", optional = true }
 iana-time-zone = "0.1.60"
