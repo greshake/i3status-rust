@@ -28,7 +28,7 @@
 //!
 //! You can see the current values for your bar with `swaymsg -t get_bar_config <bar-name>`.
 
-use swayipc::ColorableBarPart;
+use swayipc_async::ColorableBarPart;
 
 use std::sync::LazyLock;
 
@@ -38,13 +38,15 @@ use crate::errors::*;
 use std::{fs::read_to_string, os::unix::process::parent_id, path::Path};
 
 #[cfg(not(test))]
-static COLORS: LazyLock<Result<ColorableBarPart>> =
-    LazyLock::new(|| {
-        let mut swayipc_connection =
-            swayipc::Connection::new().error("Failed to open swayipc connection")?;
-
-        let mut current_pid = parent_id().to_string();
-        while current_pid != "1" {
+static COLORS: LazyLock<Result<ColorableBarPart>> = LazyLock::new(|| {
+    let mut current_pid = parent_id().to_string();
+    let bar_id =
+        loop {
+            if current_pid == "1" {
+                return Err(Error::new(
+                    "Unable to find swaybar process in parent process tree",
+                ));
+            }
             let cmdline = read_to_string(Path::new("/proc").join(&current_pid).join("cmdline"))
                 .or_error(|| format!("Failed to read /proc/{current_pid}/cmdline"))?;
             let cmdline_parts: Vec<_> = cmdline.split('\0').collect();
@@ -53,10 +55,7 @@ static COLORS: LazyLock<Result<ColorableBarPart>> =
                 .position(|&s| s == "-b" || s == "--bar_id")
                 .and_then(|pos| cmdline_parts.get(pos + 1))
             {
-                return Ok(swayipc_connection
-                    .get_bar_config(bar_id)
-                    .error("Failed to get swaybar config")?
-                    .colors);
+                break bar_id.to_string();
             }
             let stat = read_to_string(Path::new("/proc").join(&current_pid).join("stat"))
                 .or_error(|| format!("Failed to read /proc/{current_pid}/stat"))?;
@@ -65,11 +64,19 @@ static COLORS: LazyLock<Result<ColorableBarPart>> =
                 stat.split(' ').nth(3).unwrap().parse().or_error(|| {
                     format!("Failed to parse parent PID from /proc/{current_pid}/stat")
                 })?;
-        }
-        Err(Error::new(
-            "Unable to find swaybar process in parent process tree",
-        ))
-    });
+        };
+
+    crate::util::run_sync(async move {
+        let mut swayipc_connection = swayipc_async::Connection::new()
+            .await
+            .error("Failed to open swayipc connection")?;
+        let bar_config = swayipc_connection
+            .get_bar_config(bar_id)
+            .await
+            .error("Failed to get swaybar config")?;
+        Ok(bar_config.colors)
+    })
+});
 
 #[cfg(test)]
 use tests::COLORS;

@@ -345,6 +345,34 @@ impl<T: futures::StreamExt + Unpin> StreamExtDebounced for T {
     }
 }
 
+/// Run a future to completion synchronously.
+///
+/// If invoked outside an async runtime, a temporary current-thread runtime is used.
+/// If invoked within an active Tokio runtime, the future is driven in a dedicated
+/// thread to avoid blocking or nested-runtime issues.
+pub fn run_sync<F, T>(future: F) -> T
+where
+    F: std::future::Future<Output = T> + Send + 'static,
+    T: Send + 'static,
+{
+    match tokio::runtime::Handle::try_current() {
+        Ok(_) => std::thread::spawn(move || {
+            tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .expect("failed to create tokio runtime")
+                .block_on(future)
+        })
+        .join()
+        .expect("worker thread panicked"),
+        Err(_) => tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .expect("failed to create tokio runtime")
+            .block_on(future),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -363,6 +391,18 @@ mod tests {
                 .await
                 .unwrap()
         );
+    }
+
+    #[test]
+    fn test_run_sync_outside_runtime() {
+        let res = run_sync(async { 12345 });
+        assert_eq!(res, 12345);
+    }
+
+    #[tokio::test]
+    async fn test_run_sync_inside_runtime() {
+        let res = run_sync(async { 54321 });
+        assert_eq!(res, 54321);
     }
 
     #[test]
