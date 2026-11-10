@@ -42,6 +42,6 @@ jobs:
     - uses: dtolnay/rust-toolchain@stable
       with:
         components: clippy, rustfmt
-    - run: pre-commit run ${{ matrix.hook }} --all-files --show-diff-on-failure
+    - run: pre-commit run ${{ matrix.hook }} --all-files --show-diff-on-failure --verbose
 
 
