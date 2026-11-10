@@ -157,6 +157,9 @@ fonts, add `--doctor-skip-live`.
 Icons are shown with your terminal's fonts, which may not be your bar's. If
 they look wrong in the terminal, add `--noicons` to show icon names instead;
 the codepoints and the fonts that draw them on the bar are listed either way.
+In a terminal with kitty graphics (kitty, Ghostty, WezTerm), icons are images
+drawn by `pango-view` with the bar's font instead, as the bar draws them
+(`pango-view` is in `pango` on Arch, `pango1.0-tools` on Debian/Ubuntu).
 
 ## Debugging
 
