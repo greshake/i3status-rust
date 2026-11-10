@@ -412,8 +412,7 @@ fn extract_link_type(linkinfo_bytes: &[u8]) -> Option<String> {
         }
 
         // Calculate the next attribute's offset by rounding current length up to 4-byte alignment
-        let aligned_len =
-            len.div_ceil(RTATTR_ALIGNMENT_STRIDE) * RTATTR_ALIGNMENT_STRIDE;
+        let aligned_len = len.div_ceil(RTATTR_ALIGNMENT_STRIDE) * RTATTR_ALIGNMENT_STRIDE;
         offset += aligned_len;
     }
 
