@@ -381,19 +381,18 @@ fn extract_link_type(linkinfo_bytes: &[u8]) -> Option<String> {
     const RTATTR_TYPE_FIELD_SIZE: usize = 2; // size of u16 for length/type
     const RTATTR_ALIGNMENT_STRIDE: usize = 4; // netlink attributes are 4-byte aligned
     const RTATTR_MIN_PAYLOAD_SIZE: usize = 4; // minimum size for valid payload
-    
+
     let mut offset = 0;
 
     // Continue while we have at least the header size left
-    while offset + RTATTR_HEADER_SIZE <= linkinfo_bytes.len() { 
-
+    while offset + RTATTR_HEADER_SIZE <= linkinfo_bytes.len() {
         // Read the first 2 bytes to get the total length of this attribute (header + payload)
         let len = u16::from_ne_bytes(
             linkinfo_bytes[offset..offset + RTATTR_TYPE_FIELD_SIZE]
                 .try_into()
                 .ok()?,
         ) as usize;
-        
+
         // Read the next 2 bytes to get the attribute type identifier
         let typ = u16::from_ne_bytes(
             linkinfo_bytes[offset + RTATTR_TYPE_FIELD_SIZE..offset + RTATTR_HEADER_SIZE]
@@ -404,7 +403,8 @@ fn extract_link_type(linkinfo_bytes: &[u8]) -> Option<String> {
         // Check if this is the IFLA_INFO_KIND attribute (type 1) with valid payload
         if typ == IFLA_INFO_KIND && len > RTATTR_MIN_PAYLOAD_SIZE {
             let payload_len = len - RTATTR_HEADER_SIZE;
-            let payload = &linkinfo_bytes[offset + RTATTR_HEADER_SIZE..offset + RTATTR_HEADER_SIZE + payload_len];
+            let payload = &linkinfo_bytes
+                [offset + RTATTR_HEADER_SIZE..offset + RTATTR_HEADER_SIZE + payload_len];
             let kind = String::from_utf8_lossy(payload)
                 .trim_end_matches('\0')
                 .to_string();
@@ -412,7 +412,8 @@ fn extract_link_type(linkinfo_bytes: &[u8]) -> Option<String> {
         }
 
         // Calculate the next attribute's offset by rounding current length up to 4-byte alignment
-        let aligned_len = (len + RTATTR_ALIGNMENT_STRIDE - 1) / RTATTR_ALIGNMENT_STRIDE * RTATTR_ALIGNMENT_STRIDE;
+        let aligned_len =
+            (len + RTATTR_ALIGNMENT_STRIDE - 1) / RTATTR_ALIGNMENT_STRIDE * RTATTR_ALIGNMENT_STRIDE;
         offset += aligned_len;
     }
 
@@ -719,6 +720,7 @@ mod tests {
                 operstate,
                 name: "net0".into(),
                 stats: None,
+                link_type: None,
                 enabled: true,
             },
             wifi_info: None,
