@@ -96,17 +96,17 @@ $ fc-match FontAwesome
 fontawesome-webfont.ttf: "FontAwesome" "Regular"
 ```
 
-Note that the name of the Font Awesome font may have changed in version 5 or above.  
-You can use `fc-list` to see the names of your available Awesome Fonts.
+Note that in Font Awesome 5 and above, the font family names include the major version and brand icons (`bluetooth`, `docker`, `github`) are split into a separate `Brands` family.
+You can use `fc-list` to see the names of your available Font Awesome fonts:
 
 ```shell
 $ fc-list | grep -i awesome
-/usr/share/fonts/TTF/fa-solid-900.ttf: Font Awesome 5 Free,Font Awesome 5 Free Solid:style=Solid
-/usr/share/fonts/TTF/fa-regular-400.ttf: Font Awesome 5 Free,Font Awesome 5 Free Regular:style=Regular
+/usr/share/fonts/OTF/Font Awesome 7 Free-Solid-900.otf: Font Awesome 7 Free,Font Awesome 7 Free Solid:style=Solid,Regular
+/usr/share/fonts/OTF/Font Awesome 7 Free-Regular-400.otf: Font Awesome 7 Free:style=Regular
+/usr/share/fonts/OTF/Font Awesome 7 Brands-Regular-400.otf: Font Awesome 7 Brands:style=Regular
 ```
 
-In this example, you have to use `Font Awesome 5 Free` instead of the `FontAwesome 12` in the example configuration above.
-You can verify the name again using `fc-match`
+In this example, use `Font Awesome 7 Free, Font Awesome 7 Brands 12` instead of `FontAwesome 12` in the bar `font` directive above (using the major version number you have installed, e.g. `5`, `6`, or `7`). You can verify the resolved fonts with `fc-match` or `i3status-rs --doctor`.
 
 See [#130](https://github.com/greshake/i3status-rust/issues/130) for further discussion.
 
@@ -157,6 +157,9 @@ fonts, add `--doctor-skip-live`.
 Icons are shown with your terminal's fonts, which may not be your bar's. If
 they look wrong in the terminal, add `--noicons` to show icon names instead;
 the codepoints and the fonts that draw them on the bar are listed either way.
+In a terminal with kitty graphics (kitty, Ghostty, WezTerm), icons are images
+drawn by `pango-view` with the bar's font instead, as the bar draws them
+(`pango-view` is in `pango` on Arch, `pango1.0-tools` on Debian/Ubuntu).
 
 ## Debugging
 

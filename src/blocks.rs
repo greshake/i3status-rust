@@ -232,6 +232,7 @@ define_blocks!(
     service_status,
     scratchpad,
     sound,
+    #[cfg(feature = "speedtest")]
     speedtest,
     keyboard_layout,
     taskwarrior,

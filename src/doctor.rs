@@ -38,6 +38,7 @@
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::io::IsTerminal as _;
+use std::os::unix::fs::DirBuilderExt as _;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -56,6 +57,7 @@ use crate::formatting::template as format_template;
 use crate::formatting::value::ValueInner;
 use crate::geolocator::Geolocator;
 use crate::icons::{Icon, Icons};
+use crate::term_graphics::{self, CellSize};
 use crate::util;
 use crate::widget::Widget;
 use crate::{Request, RequestCmd};
@@ -365,12 +367,26 @@ pub fn run(
             }
         }
     }
-    if display == IconDisplay::Glyphs {
-        println!(
+    // XLFD fonts are not pango's, so pango cannot draw them either.
+    let renderer = match display {
+        IconDisplay::Glyphs if !is_xlfd => {
+            BarRenderer::new(font_pattern, detected.as_ref().map(|d| &d.colors))
+        }
+        _ => None,
+    };
+    match (display, &renderer) {
+        (IconDisplay::Glyphs, Some(_)) => println!(
+            "   note: icons below are images drawn by pango with the bar's font, as the bar\n   \
+             draws them."
+        ),
+        (IconDisplay::Glyphs, None) => println!(
             "   note: icons below are drawn with this terminal's fonts, which may not be your\n   \
              bar's; the Code and \"Effectively provided by\" columns describe the bar.\n   \
-             --noicons shows icon names instead."
-        );
+             --noicons shows icon names instead. A terminal with kitty graphics (kitty,\n   \
+             Ghostty, WezTerm) shows them as the bar draws them, if pango-view is installed\n   \
+             (pango1.0-tools on Debian/Ubuntu)."
+        ),
+        (IconDisplay::Names, _) => (),
     }
     // === Per-instance pango markup ===
     // The bar's final output is pango markup, and markup can come from an
@@ -765,6 +781,7 @@ pub fn run(
         problems: &mut problems,
         skip_reason: icons_skip_reason,
         display,
+        renderer: renderer.as_ref(),
     });
 
     if !text_fallbacks.is_empty() {
@@ -1919,6 +1936,8 @@ struct IconTableInput<'a> {
     /// Set when there is nothing to list, e.g. the config does not validate.
     skip_reason: Option<&'static str>,
     display: IconDisplay,
+    /// Draws glyphs as the bar does, when the terminal can show images.
+    renderer: Option<&'a BarRenderer>,
 }
 
 fn print_icon_table(input: IconTableInput) {
@@ -1937,6 +1956,7 @@ fn print_icon_table(input: IconTableInput) {
         problems,
         skip_reason,
         display,
+        renderer,
     } = input;
     // Per-instance local overrides, keyed by instance label ("time#2"), so
     // two blocks of the same type are analyzed separately.
@@ -2078,11 +2098,24 @@ fn print_icon_table(input: IconTableInput) {
             "Effectively provided by",
             used_rows.iter().map(|r| r.provider.as_str()),
         );
+        // As the bar draws them, where the terminal can show it. Markup is
+        // left as text: doctor does not know all the markup around it.
+        let images: Vec<Option<(String, usize)>> = used_rows
+            .iter()
+            .map(|r| {
+                let renderer = renderer.filter(|_| !r.markup)?;
+                renderer.render(&r.bar_text)
+            })
+            .collect();
         // The glyph cell renders as "X" including the quotes; size it by
         // display width so multi-character text icons ("LO") stay aligned.
         let glyph_w = used_rows
             .iter()
-            .map(|r| UnicodeWidthStr::width(r.glyph.as_str()) + 2)
+            .zip(&images)
+            .map(|(r, image)| match image {
+                Some((_, cells)) => *cells,
+                None => UnicodeWidthStr::width(r.glyph.as_str()) + 2,
+            })
             .chain([UnicodeWidthStr::width("Glyph")])
             .max()
             .unwrap_or(5);
@@ -2091,6 +2124,10 @@ fn print_icon_table(input: IconTableInput) {
             IconDisplay::Glyphs => format!("{}  ", pad_right(glyph, glyph_w)),
             IconDisplay::Names => String::new(),
         };
+        // The image stays where it is drawn; spaces move the cursor past it.
+        let image_col = |(escape, cells): &(String, usize)| {
+            format!("{escape}{}  ", " ".repeat(glyph_w.max(*cells)))
+        };
         println!(
             "{}  {}{}  {}  Used by",
             pad_right("Name", name_w),
@@ -2098,11 +2135,15 @@ fn print_icon_table(input: IconTableInput) {
             pad_right("Code", codes_w),
             pad_right("Effectively provided by", provider_w)
         );
-        for row in &used_rows {
+        for (row, image) in used_rows.iter().zip(&images) {
+            let glyph = match image {
+                Some(image) => image_col(image),
+                None => glyph_col(&format!("\"{}\"", row.glyph)),
+            };
             let line = format!(
                 "{}  {}{}  {}  {}",
                 pad_right(&row.name, name_w),
-                glyph_col(&format!("\"{}\"", row.glyph)),
+                glyph,
                 pad_right(&row.codes, codes_w),
                 pad_right(&row.provider, provider_w),
                 row.used_by
@@ -2248,6 +2289,8 @@ fn push_icon_rows(
             // Icon values are user-supplied: never let one emit terminal
             // control sequences into the table.
             glyph: escape_control(&effective),
+            bar_text: effective.clone(),
+            markup,
             codes,
             provider: format!("{provider}{mark}{tag}"),
             used_by: used_by.to_string(),
@@ -2259,6 +2302,9 @@ fn push_icon_rows(
 struct IconRow {
     name: String,
     glyph: String,
+    /// What the bar draws, unescaped: only ever rendered into an image.
+    bar_text: String,
+    markup: bool,
     codes: String,
     provider: String,
     used_by: String,
@@ -2672,8 +2718,91 @@ fn fc_list_family_provides(family: &str, charset: &str) -> bool {
 struct DetectedFont {
     bar_id: String,
     font: String,
+    colors: BarColors,
     /// Ambiguity warning when several bars with different fonts exist.
     note: Option<String>,
+}
+
+/// The bar's text and background colors, as `#rrggbbaa`.
+struct BarColors {
+    text: String,
+    background: String,
+}
+
+/// What swaybar draws with when its config sets no font or colors.
+const DEFAULT_BAR_FONT: &str = "monospace 10";
+const DEFAULT_BAR_TEXT: &str = "#ffffffff";
+const DEFAULT_BAR_BACKGROUND: &str = "#000000ff";
+
+/// Draws text into images the way the bar draws it, for terminals that can
+/// show images: pango-view is pango itself, the renderer behind the bar, so
+/// its font selection and fallback are the bar's, not an emulation.
+struct BarRenderer {
+    args: Vec<String>,
+    cell: CellSize,
+    /// A private directory for pango-view's output, removed on drop.
+    dir: PathBuf,
+}
+
+impl BarRenderer {
+    /// `None` when the terminal cannot show images or pango-view is missing.
+    fn new(font: Option<&str>, colors: Option<&BarColors>) -> Option<Self> {
+        let has_pango_view = std::process::Command::new("pango-view")
+            .arg("--version")
+            .output()
+            .is_ok_and(|out| out.status.success());
+        if !has_pango_view {
+            return None;
+        }
+        let cell = term_graphics::kitty_cell_size()?;
+
+        // create_dir fails if the path exists, so nobody else's file or
+        // symlink is ever written through.
+        let dir = std::env::temp_dir().join(format!("i3status-rs-doctor-{}", std::process::id()));
+        std::fs::DirBuilder::new().mode(0o700).create(&dir).ok()?;
+        Some(Self {
+            args: pango_view_args(font, colors, &dir.join("glyph.png")),
+            cell,
+            dir,
+        })
+    }
+
+    /// The image escape for `text` and its width in cells.
+    fn render(&self, text: &str) -> Option<(String, usize)> {
+        let out = std::process::Command::new("pango-view")
+            .args(&self.args)
+            .arg(format!("--text={text}"))
+            .output()
+            .ok()?;
+        if !out.status.success() {
+            return None;
+        }
+        let png = std::fs::read(self.dir.join("glyph.png")).ok()?;
+        term_graphics::png_image(&png, self.cell)
+    }
+}
+
+impl Drop for BarRenderer {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_dir_all(&self.dir);
+    }
+}
+
+/// pango-view's arguments for drawing like the bar: its font directive
+/// (without the `pango:` prefix pango does not know) and colors, no margin.
+fn pango_view_args(font: Option<&str>, colors: Option<&BarColors>, png: &Path) -> Vec<String> {
+    let font = font.map_or(DEFAULT_BAR_FONT, |f| f.strip_prefix("pango:").unwrap_or(f));
+    let (text, background) = colors.map_or((DEFAULT_BAR_TEXT, DEFAULT_BAR_BACKGROUND), |c| {
+        (c.text.as_str(), c.background.as_str())
+    });
+    vec![
+        "--no-display".into(),
+        "--margin=0".into(),
+        format!("--font={font}"),
+        format!("--foreground={text}"),
+        format!("--background={background}"),
+        format!("--output={}", png.display()),
+    ]
 }
 
 /// Ask the running i3/sway over IPC which font the bar is configured with,
@@ -2686,21 +2815,36 @@ fn detect_bar_font() -> Option<DetectedFont> {
     // i3 or sway through I3SOCK, SWAYSOCK or `--get-socketpath`.
     let mut ipc = swayipc::Connection::new().ok()?;
 
-    // (bar_id, font, status_command)
-    let bars: Vec<(String, String, String)> = ipc
+    // (bar_id, font, status_command), and colors kept apart for pick_bar.
+    let configs: Vec<_> = ipc
         .get_bar_ids()
         .ok()?
         .into_iter()
         .filter_map(|id| ipc.get_bar_config(&id).ok())
-        .map(|bar| (bar.id, bar.font, bar.status_command.unwrap_or_default()))
+        .collect();
+    let bars: Vec<(String, String, String)> = configs
+        .iter()
+        .map(|bar| {
+            let command = bar.status_command.clone().unwrap_or_default();
+            (bar.id.clone(), bar.font.clone(), command)
+        })
         .collect();
     if bars.is_empty() {
         return None;
     }
 
     let (chosen, note) = pick_bar(&bars);
-    let (bar_id, font, _) = bars.into_iter().nth(chosen)?;
-    Some(DetectedFont { bar_id, font, note })
+    let bar = configs.into_iter().nth(chosen)?;
+    let colors = BarColors {
+        text: bar.colors.statusline,
+        background: bar.colors.background,
+    };
+    Some(DetectedFont {
+        bar_id: bar.id,
+        font: bar.font,
+        colors,
+        note,
+    })
 }
 
 /// Why IPC found no bar, when the environment explains it: a shell or tmux
@@ -2946,6 +3090,66 @@ mod tests {
         assert!(contains_markup("<b>bold</b>"));
         assert!(contains_markup("&#x1F600;"));
         assert!(contains_markup("&nbsp;"));
+    }
+
+    #[test]
+    fn pango_view_draws_with_the_bars_font_and_colors() {
+        let colors = BarColors {
+            text: "#e6e1cfff".into(),
+            background: "#1f2430ff".into(),
+        };
+        let args = pango_view_args(
+            Some("pango:DejaVu Sans Mono 12"),
+            Some(&colors),
+            Path::new("/d/glyph.png"),
+        );
+        assert_eq!(
+            args,
+            [
+                "--no-display",
+                "--margin=0",
+                "--font=DejaVu Sans Mono 12",
+                "--foreground=#e6e1cfff",
+                "--background=#1f2430ff",
+                "--output=/d/glyph.png",
+            ]
+        );
+    }
+
+    #[test]
+    fn pango_view_falls_back_to_swaybar_defaults() {
+        let args = pango_view_args(None, None, Path::new("/d/glyph.png"));
+        assert!(args.contains(&format!("--font={DEFAULT_BAR_FONT}")));
+        assert!(args.contains(&format!("--foreground={DEFAULT_BAR_TEXT}")));
+        assert!(args.contains(&format!("--background={DEFAULT_BAR_BACKGROUND}")));
+    }
+
+    #[test]
+    fn renderer_turns_a_glyph_into_a_kitty_image() {
+        let has_pango_view = std::process::Command::new("pango-view")
+            .arg("--version")
+            .output()
+            .is_ok_and(|out| out.status.success());
+        if !has_pango_view {
+            eprintln!("skipped: pango-view not installed");
+            return;
+        }
+
+        let dir = std::env::temp_dir().join(format!("i3rs-render-test-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let renderer = BarRenderer {
+            args: pango_view_args(Some("monospace 10"), None, &dir.join("glyph.png")),
+            cell: CellSize {
+                width: 10,
+                height: 20,
+            },
+            dir,
+        };
+
+        let (escape, cells) = renderer.render("W").unwrap();
+        assert!(escape.starts_with("\x1b_Ga=T,f=100,"));
+        // One monospace letter, scaled to a row, is about a cell wide.
+        assert!((1..=2).contains(&cells), "{cells} cells");
     }
 
     #[test]

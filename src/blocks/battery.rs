@@ -16,7 +16,7 @@
 //! `charging_format` | Same as `format` but for when the battery is charging | Links to `format`
 //! `empty_format` | Same as `format` but for when the battery is empty | `" $icon "`
 //! `not_charging_format` | Same as `format` but for when the battery is not charging. Defaults to the full battery icon as many batteries report this status when they are full. | `" $icon "`
-//! `missing_format` | Same as `format` if the battery cannot be found. | `" $icon "`
+//! `missing_format` | Same as `format` if the battery cannot be found. With `driver = "upower"`, this is also used while UPower is not running and while UPower reports the device as not present, e.g. the `DisplayDevice` of a machine without a battery. | `" $icon "`
 //! `info` | Minimum battery level, where state is set to info | `60`
 //! `good` | Minimum battery level, where state is set to good | `60`
 //! `warning` | Minimum battery level, where state is set to warning | `30`
