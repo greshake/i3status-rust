@@ -2813,37 +2813,40 @@ fn pango_view_args(font: Option<&str>, colors: Option<&BarColors>, png: &Path) -
 fn detect_bar_font() -> Option<DetectedFont> {
     // The same connection the sway bar colour integration uses; it finds
     // i3 or sway through I3SOCK, SWAYSOCK or `--get-socketpath`.
-    let mut ipc = swayipc::Connection::new().ok()?;
+    crate::util::run_sync(async {
+        let mut ipc = swayipc_async::Connection::new().await.ok()?;
 
-    // (bar_id, font, status_command), and colors kept apart for pick_bar.
-    let configs: Vec<_> = ipc
-        .get_bar_ids()
-        .ok()?
-        .into_iter()
-        .filter_map(|id| ipc.get_bar_config(&id).ok())
-        .collect();
-    let bars: Vec<(String, String, String)> = configs
-        .iter()
-        .map(|bar| {
-            let command = bar.status_command.clone().unwrap_or_default();
-            (bar.id.clone(), bar.font.clone(), command)
+        // (bar_id, font, status_command), and colors kept apart for pick_bar.
+        let bar_ids = ipc.get_bar_ids().await.ok()?;
+        let mut configs = Vec::with_capacity(bar_ids.len());
+        for id in bar_ids {
+            if let Ok(bar) = ipc.get_bar_config(&id).await {
+                configs.push(bar);
+            }
+        }
+        let bars: Vec<(String, String, String)> = configs
+            .iter()
+            .map(|bar| {
+                let command = bar.status_command.clone().unwrap_or_default();
+                (bar.id.clone(), bar.font.clone(), command)
+            })
+            .collect();
+        if bars.is_empty() {
+            return None;
+        }
+
+        let (chosen, note) = pick_bar(&bars);
+        let bar = configs.into_iter().nth(chosen)?;
+        let colors = BarColors {
+            text: bar.colors.statusline,
+            background: bar.colors.background,
+        };
+        Some(DetectedFont {
+            bar_id: bar.id,
+            font: bar.font,
+            colors,
+            note,
         })
-        .collect();
-    if bars.is_empty() {
-        return None;
-    }
-
-    let (chosen, note) = pick_bar(&bars);
-    let bar = configs.into_iter().nth(chosen)?;
-    let colors = BarColors {
-        text: bar.colors.statusline,
-        background: bar.colors.background,
-    };
-    Some(DetectedFont {
-        bar_id: bar.id,
-        font: bar.font,
-        colors,
-        note,
     })
 }
 
