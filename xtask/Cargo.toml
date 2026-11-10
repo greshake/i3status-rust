@@ -10,6 +10,7 @@ pipewire = ["i3status-rs/pipewire"]
 notmuch = ["i3status-rs/notmuch"]
 maildir = ["i3status-rs/maildir"]
 icu_calendar = ["i3status-rs/icu_calendar"]
+speedtest = ["i3status-rs/speedtest"]
 debug_borders = ["i3status-rs/debug_borders"]
 
 [dependencies]
