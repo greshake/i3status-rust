@@ -20,12 +20,18 @@ pub(super) struct XkbEvent {
 }
 
 fn parse_layout(buf: &[u8], index: usize) -> Result<&str> {
-    let colon_i = buf.iter().position(|c| *c == b':').unwrap_or(buf.len());
-    let layout = buf[..colon_i]
+    let segment = buf
         .split(|&c| c == b'+')
-        .skip(1) // layout names start from index 1
+        .skip(1)
         .nth(index)
         .error("Index out of range")?;
+
+    let colon_i = segment
+        .iter()
+        .position(|c| *c == b':')
+        .unwrap_or(segment.len());
+
+    let layout = &segment[..colon_i];
     std::str::from_utf8(layout).error("non utf8 layout")
 }
 
@@ -104,7 +110,10 @@ impl XkbEvent {
             .xkb_select_events(
                 ID::USE_CORE_KBD.into(),
                 EventType::default(),
-                EventType::STATE_NOTIFY,
+                EventType::STATE_NOTIFY
+                    | EventType::NAMES_NOTIFY
+                    | EventType::NEW_KEYBOARD_NOTIFY
+                    | EventType::MAP_NOTIFY,
                 MapPart::default(),
                 MapPart::default(),
                 &SelectEventsAux::new(),
@@ -133,11 +142,42 @@ impl Backend for XkbEvent {
                 .await
                 .error("Failed to read the event")?;
 
-            if let Event::XkbStateNotify(e) = event
-                && e.changed.contains(xkb::StatePart::GROUP_STATE)
-            {
-                return Ok(());
+            match event {
+                Event::XkbStateNotify(e) if e.changed.contains(xkb::StatePart::GROUP_STATE) => {
+                    return Ok(());
+                }
+                Event::XkbNamesNotify(e) if e.changed.contains(xkb::NameDetail::SYMBOLS) => {
+                    return Ok(());
+                }
+                Event::XkbNewKeyboardNotify(_) | Event::XkbMapNotify(_) => {
+                    return Ok(());
+                }
+                _ => {}
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_layout() {
+        assert_eq!(
+            parse_layout(b"pc+us(workman)+inet(evdev)", 0).unwrap(),
+            "us(workman)"
+        );
+        assert_eq!(parse_layout(b"pc+us+inet(evdev)", 0).unwrap(), "us");
+        assert_eq!(parse_layout(b"pc+us+de:2+inet(evdev)", 1).unwrap(), "de");
+        assert_eq!(
+            parse_layout(b"pc+us+ara:2+jp:3+fr:4+inet(evdev)", 2).unwrap(),
+            "jp"
+        );
+        assert_eq!(
+            parse_layout(b"pc+us+ara:2+jp:3+fr:4+inet(evdev)", 3).unwrap(),
+            "fr"
+        );
+        assert!(parse_layout(b"pc+us", 1).is_err());
     }
 }

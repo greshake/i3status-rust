@@ -1,3 +1,22 @@
+//! Color specification
+//!
+//! Colors can be specified in any of these forms:
+//!
+//! - `none` or an empty string for no color.
+//! - `auto` to let the output determine the color.
+//! - `#RRGGBB[AA]`. The alpha byte ranges from `00` (transparent) to `FF` (opaque).
+//!   Alpha is optional and defaults to `FF`.
+//! - `hsv:H:S:V[:A]` for an HSVA color. Hue is in degrees; saturation, value,
+//!   and optional alpha are percentages from 0 to 100. Alpha defaults to 100.
+//! - `x:name` to look up a color in `~/.Xresources`. For example,
+//!   `x:background` uses the value of `*background`.
+//! - `sway:name` to use a color from the active sway bar configuration. For
+//!   example, `sway:urgent_workspace_bg` uses the bar's urgent workspace
+//!   background color. See [`sway`] for more details.
+
+pub mod sway;
+pub mod xresources;
+
 use crate::errors::*;
 use serde::de::{self, Deserializer, Visitor};
 use serde::{Deserialize, Serialize, Serializer};
@@ -218,8 +237,13 @@ impl FromStr for Color {
             Color::Hsva(Hsva::new(h, s / 100., v / 100., (a / 100. * 255.) as u8))
         } else if color.starts_with("x:") {
             let name = color.split_at(2).1;
-            super::xresources::get_color(name)?
+            xresources::get_color(name)?
                 .or_error(|| format!("color '{name}' not defined in ~/.Xresources"))?
+                .parse()
+                .or_error(|| format!("invalid color definition '{name}'"))?
+        } else if color.starts_with("sway:") {
+            let name = color.split_at(5).1;
+            sway::get_color(name)?
                 .parse()
                 .or_error(|| format!("invalid color definition '{name}'"))?
         } else {

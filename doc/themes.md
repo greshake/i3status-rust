@@ -74,11 +74,15 @@ Note: screenshots were generated using [this config](../gen-screenshots/screensh
 * `awesome4` (Font Awesome 4.x)
 * `awesome5` (Font Awesome 5.x)
 * `awesome6` (Font Awesome 6.x)
+* `awesome7` (Font Awesome 7.x)
+* `awesome7pro` (Font Awesome 7.x Pro)
 * `emoji`
 * `material`
 * `material-nf` (Any font from Nerd Fonts collection)
 
  **Note**: In order to use the material icon set, you need a patched material icons font which can be found [here](https://gist.github.com/draoncc/3c20d8d4262892ccd2e227eefeafa8ef/raw/3e6e12c213fba1ec28aaa26430c3606874754c30/MaterialIcons-Regular-for-inline.ttf). Make sure to pass it in your i3 configuration bar block.
+
+ **Note**: For `awesome5`, `awesome6`, and `awesome7`, brand icons (`bluetooth`, `docker`, `github`) live in the separate `Font Awesome <N> Brands` font family rather than `Font Awesome <N> Free`, so include both in your bar's `font` directive (e.g. `font pango:DejaVu Sans Mono, Font Awesome 7 Free, Font Awesome 7 Brands 10`). Additionally, `awesome4`–`awesome7` use standard Unicode symbols/emojis for icons that have no Font Awesome Free equivalent (`backlight`, `phone_disconnected`, `pomodoro`), which fall back to your system symbol/emoji fonts (e.g. `DejaVu Sans`, `Noto Color Emoji`); only `awesome7pro` provides Font Awesome brightness icons.
 
 ## Overriding themes and icon sets
 
@@ -123,6 +127,53 @@ idle_fg = "#abcdef"
 cpu_boost_on = "ON"
 cpu_boost_off = "OFF"
 ```
+
+If you define colors in`~/.Xresources` like `*background: #aabbcc` you can use them like:
+
+```toml
+[theme]
+theme = "solarized-dark"
+[theme.overrides]
+# Example: redefine `idle_bg` with the background color
+idle_bg = "x:background"
+```
+
+If you use sway, you can also reference a bar color like:
+
+```toml
+[theme]
+theme = "solarized-dark"
+[theme.overrides]
+# Example: redefine `critical` colors
+critical_bg = "sway:urgent_workspace_bg"
+critical_fg = "sway:urgent_workspace_text"
+```
+
+These are the available sway colors:
+
+* `active_workspace_bg`
+* `active_workspace_border`
+* `active_workspace_text`
+* `background`
+* `binding_mode_bg`
+* `binding_mode_border`
+* `binding_mode_text`
+* `focused_background`
+* `focused_separator`
+* `focused_statusline`
+* `focused_workspace_bg`
+* `focused_workspace_border`
+* `focused_workspace_text`
+* `inactive_workspace_bg`
+* `inactive_workspace_border`
+* `inactive_workspace_text`
+* `separator`
+* `statusline`
+* `urgent_workspace_bg`
+* `urgent_workspace_border`
+* `urgent_workspace_text`
+
+You can see the current values for your bar with `swaymsg -t get_bar_config <bar-name>`.
 
 # Available theme overrides
 

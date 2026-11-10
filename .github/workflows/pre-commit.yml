@@ -1,6 +1,9 @@
 name: pre-commit
 
-on: [push, pull_request]
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: read
 
 jobs:
   pre-commit:
@@ -27,17 +30,14 @@ jobs:
     steps:
     - name: Get required packages and config git
       run: |
-        pacman --noconfirm --noprogressbar -Syu base-devel clang git libpipewire libpulse lm_sensors notmuch openssl rsync
+        pacman --noconfirm --noprogressbar -Syu base-devel clang cmake git libpipewire libpulse lm_sensors notmuch openssl pango pre-commit rsync ttf-dejavu
         git config --global --add safe.directory "$GITHUB_WORKSPACE"
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
     - uses: dtolnay/rust-toolchain@stable
       with:
         components: clippy, rustfmt
-    - uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
-    - uses: pre-commit/action@v3.0.1
-      with:
-        extra_args: ${{ matrix.hook }} --all-files
+    - run: pre-commit run ${{ matrix.hook }} --all-files --show-diff-on-failure
 
 

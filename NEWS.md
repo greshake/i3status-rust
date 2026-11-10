@@ -1,9 +1,123 @@
+# i3status-rust 0.40.1
+
+### Bug Fixes and Improvements
+
+* `keyboard_layout`: listen to additional xkb events and handle update requests (#2338)
+
+### Breaking Changes
+
+* `speedtest`: made optional behind the `speedtest` feature flag (#2340)
+
+# i3status-rust 0.40.0
+
+### New Blocks and Features
+
+* Added `--doctor` option to diagnose icon and font configuration (#2297)
+* `nvidia_gpu`: added `vram_used`, `vram_total`, and `vram_used_percents` placeholders (#2335)
+
+### Bug Fixes and Improvements
+
+* `nvidia_gpu`: fixed memory parsing by treating `nvidia-smi` output as MiB rather than MB (#2334)
+* `speedtest`: update results dynamically as tests run
+
+### Breaking Changes
+
+* `speedtest`: removed `"h3"` from supported `conn_type` options
+
+### Deprecation Warnings
+
+* `nvidia_gpu`: `$memory` placeholder and `toggle_mem_total` action have been deprecated in favor of `vram_*` placeholders
+
+# i3status-rust 0.36.2
+
+### New Blocks and Features
+
+* `amd_gpu`, `cpu`, `disk_space`, `memory`, `music`, `net`, `privacy`, `sound`, `temperature`, `time`, `weather`: allow specifying a list of formats in `format` and cycling through them with `next_format` and `prev_format` actions
+* `datetime` formatter: added `precision` argument for `icu4x`
+* `.eng` formatter: added `degC` and `degF` temperature units for converting between Celsius and Fahrenheit
+* `hueshift`: added support for `xsct`
+* `icons`: added `awesome7` and `awesome7pro` icon sets (#2267, #2316, #2320)
+* `icons`: added more thermometer icons to `awesome4`, `awesome5`, and `awesome6`
+* `music`: added `combo_reversed` placeholder (#2305)
+* `net`: added `enabled` flag (#2321)
+* `speedtest`: replaced `speedtest-cli` with `networkquality-rs` and added `jitter` placeholder
+* `theme`: added support for referencing `sway` bar colors in theme overrides (e.g., `sway:urgent_workspace_bg`)
+* `weather`: added top-level `units` option to configure temperature and wind speed units across all providers
+
+### Bug Fixes and Improvements
+
+* `calendar`: switched to `icalendar` crate's recurrence support
+* `custom`: debounce file changes (#2211)
+* `docker`: added example for Podman (#2317)
+* `external_ip`: prevent hammering geolocation services (#2295)
+* `keyboard_layout`: fixed logic bug in `xkb_event` driver when using 3 or more layout groups
+* `net`: fixed `inactive_format` for disconnected interfaces and VPN interfaces that are down (#2298)
+* `nvidia_gpu`: documented that `nvidia-smi` wakes the dedicated GPU (#2307)
+* `taskwarrior`: prevent creating duplicate recurrence instances (#2071)
+* `vpn`: fixed `mullvad` status command parsing (#2270)
+* `weather`: fixed place name geocoding with commas for `openweathermap` (#2266)
+* `xtask`: fixed doubled leading comment characters in manpage code blocks (#2328)
+* Fixed SI unit prefix for kilo to use lowercase `k`
+
+### Deprecation Warnings
+
+* `toggle_format` action has been deprecated in favor of `next_format` and `prev_format`
+
+# i3status-rust 0.36.1
+
+### New Blocks and Features
+
+* `packages`: added support for `zypper` (#2254)
+
+### Bug Fixes and Improvements
+
+* bump `rustls-webpki` from 0.103.4 to 0.103.10
+* `sound`: `auto` driver prefer `pulseaudio` over `pipewire` if both are enabled (#2255)
+* `sound`: handle thread crash in `pipewire` driver (#2255)
+* `sound`: removed unsafe code from `pipewire` driver (#2256)
+
+# i3status-rust 0.36.0
+
+### New Blocks and Features
+
+* `calendar`: added support for recurring events (#2226)
+* `disk_iostats`: added persistent device name and partition support (#2206)
+* `disk_space`: added support for `btrfs` (#2159)
+* `notify`: added `history_count` variable and `show_all` action (#2232)
+* `packages`: added support for `apk`, `brew`, `flatpak` and `snap` (#2217, #2221, #2222)
+* `sound`: added `pipewire` driver
+* `sound`: improved headphones detection for PipeWire (#2224)
+* `taskwarrior`: fixed high CPU usage with taskwarrior v3 (#2233)
+* `vpn`: added driver for cloudflare's `warp` (#2149)
+* `vpn`: added driver for `tailscale` (#2238)
+* `xrandr`: added `refresh_rate` (#2223)
+
+### Bug Fixes and Improvements
+* Added `max_retries` to block config. Setting `max_retries` causes the block to display an error
+after `max_retries` have been exhausted. A refresh button will be displayed to get the block to reset the retry count and retry again. (#2157)
+* Added example for toggling HDR to examples/README.md (#2215)
+* Omit line number for toml parse error for unknown spans (#2189)
+* Bumped `pipewire` from 0.8 to 0.9 which works with LLVM 22/23 (#2250)
+* Bumped `swayipc-async` from 2.1.0 to 3.0.0 to fix error when using `wtype` (#2218)
+* Added support to parse `xresources` colors with uppercase hex values (#2230)
+* Make sure that `alsactl` process isn't leaked in the `sound` block (#2236)
+* `memory`: removed double subtraction of ZFS ARC shrinkable size (#2237)
+* `xtask`: accept all i3status-rs feature combinations to avoid rebuilds (#2249)
+* Changed the default `error_fullscreen_format` to limit the width to 170 characters and rotate the text every 0.2 seconds if it exceeds that length. (#2243)
+* Disable landlock for `pacman` 7.1 (#2216)
+* Add support for prefixes in the range argument for `EngFormatter` (#2228)
+
+### Breaking changes
+
+* `weather`: `sunrise`/`sunset` will not be set during polar days/nights when using the `metno` or `nws` service (#2231)
+
+
 # i3status-rust 0.35.0
 
 ### Bug Fixes and Improvements
 
 * `battery`: fixed negative remaining time that appears in recent Linux kernels (#2177)
-* `calendar`: fixed calendar retrieval if caldav server replies with multiple <comp ..> entities (#2178)
+* `calendar`: fixed calendar retrieval if caldav server replies with multiple `<comp ..>` entities (#2178)
 * `memory`: fixed "available memory" estimate provided by the Linux kernel. This matches other tooling other than htop - refer to https://github.com/htop-dev/htop/issues/1307 (#2160)
 * `net`: fixed default interface detection to use the one with the lowest metric (#2151)
 * `packages`: fixed to handle recent updates in `pacman` package manager (#2216)

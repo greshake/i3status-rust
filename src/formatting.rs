@@ -79,11 +79,11 @@
 //! No arguments.
 //!
 //! ## `datetime` - Display datetime
-//!
-//! Argument               | Description                                                                                               |Default value
-//! -----------------------|-----------------------------------------------------------------------------------------------------------|-------------
-//! `format` or `f`        | [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options. | `'%a %d/%m %R'`
-//! `locale` or `l`        | Locale to apply when formatting the time                                                                  | System locale
+//! Argument               | Description                                                                                                                                                                           |Default value
+//! -----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------
+//! `format` or `f`        | [chrono docs](https://docs.rs/chrono/0.3.0/chrono/format/strftime/index.html#specifiers) for all options, or `short`, `medium`, `long`, or `full` for icu datetimes                   | `'%a %d/%m %R'`
+//! `locale` or `l`        | Locale to apply when formatting the time                                                                                                                                              | System locale
+//! `precision` or `p`     | Precision to apply when formatting an icu datetime (`hours`/`hour`/`h`, `minutes`/`minute`/`m`, or `seconds`/`second`/`s`), if none is specified then only the date will be displayed | None
 //!
 //!
 //! ## `duration`/`dur` - Format durations
@@ -142,6 +142,7 @@ pub mod value;
 
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::str::FromStr;
 
 use crate::config::SharedConfig;
 use crate::errors::*;
@@ -164,12 +165,26 @@ pub enum FormatError {
 
 #[derive(Debug, Clone)]
 pub struct Format {
-    full: FormatTemplate,
-    short: FormatTemplate,
+    /// Crate-visible so a prepared block plan can inspect what this format
+    /// renders without rendering it.
+    pub(crate) full: FormatTemplate,
+    pub(crate) short: FormatTemplate,
     intervals: Vec<u64>,
 }
 
 impl Format {
+    pub fn new(full: FormatTemplate, short: FormatTemplate) -> Self {
+        let mut intervals = Vec::new();
+        full.init_intervals(&mut intervals);
+        short.init_intervals(&mut intervals);
+
+        Self {
+            full,
+            short,
+            intervals,
+        }
+    }
+
     pub fn contains_key(&self, key: &str) -> bool {
         self.full.contains_key(key) || self.short.contains_key(key)
     }
@@ -192,6 +207,14 @@ impl Format {
             .render(values, config)
             .error("Failed to render short text")?;
         Ok((full, short))
+    }
+}
+
+impl FromStr for Format {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self> {
+        Ok(Self::new(s.parse()?, FormatTemplate::default()))
     }
 }
 

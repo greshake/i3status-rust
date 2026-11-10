@@ -63,7 +63,13 @@ resolution = "\uf096" # fa-square-o
 scratchpad = "\uf2d2" # fa-window-restore
 tasks = "\uf0ae" # fa-tasks
 tea = "\uf0f4" # fa-coffee
-thermometer = "\uf2c8" # fa-thermometer-3
+thermometer = [
+    "\uf2cb",
+    "\uf2ca",
+    "\uf2c9",
+    "\uf2c8",
+    "\uf2c7",
+]
 time = "\uf017" # fa-clock-o
 toggle_off = "\uf204" # fa-toggle-off
 toggle_on = "\uf205" # fa-toggle-on

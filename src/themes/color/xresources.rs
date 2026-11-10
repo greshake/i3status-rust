@@ -68,25 +68,25 @@ mod tests {
 
     #[test]
     fn test_deserializing_xcolors() {
-        use super::super::color::*;
+        use crate::themes::color::*;
         let mut parsed_color = "x:color4".parse::<Color>().unwrap();
         assert_eq!(
             parsed_color,
             Color::Rgba(Rgba {
-                r: 254,
-                g: 237,
-                b: 218,
-                a: 255
+                r: 0xfe,
+                g: 0xed,
+                b: 0xda,
+                a: 0xff
             })
         );
         parsed_color = "x:background".parse::<Color>().unwrap();
         assert_eq!(
             parsed_color,
             Color::Rgba(Rgba {
-                r: 238,
-                g: 51,
-                b: 170,
-                a: 153,
+                r: 0xee,
+                g: 0x33,
+                b: 0xaa,
+                a: 0x99,
             })
         );
     }

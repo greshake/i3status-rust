@@ -25,8 +25,33 @@ pub struct NetDevice {
     pub ip: Option<Ipv4Addr>,
     pub ipv6: Option<Ipv6Addr>,
     pub icon: &'static str,
-    pub tun_wg_ppp: bool,
     pub nameservers: Vec<IpAddr>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WifiGeneration {
+    Wifi4,
+    Wifi5,
+    Wifi6,
+    Wifi6E,
+    Wifi7,
+}
+
+impl WifiGeneration {
+    pub fn as_str(self, superscript: bool) -> &'static str {
+        let (plain, superscript_label) = match self {
+            Self::Wifi4 => ("4", "⁴"),
+            Self::Wifi5 => ("5", "⁵"),
+            Self::Wifi6 => ("6", "⁶"),
+            Self::Wifi6E => ("6E", "⁶ᴱ"),
+            Self::Wifi7 => ("7", "⁷"),
+        };
+        if superscript {
+            superscript_label
+        } else {
+            plain
+        }
+    }
 }
 
 #[derive(Debug, Default)]
@@ -35,9 +60,32 @@ pub struct WifiInfo {
     pub signal: Option<f64>,
     pub frequency: Option<f64>,
     pub bitrate: Option<f64>,
+    pub generation: Option<WifiGeneration>,
 }
 
 impl NetDevice {
+    /// Every icon name [`Self::icon_for`] can return. The interface kind is
+    /// externally determined but finite, so block plans declare the full set.
+    pub const ALL_ICONS: [&'static str; 4] = [
+        crate::icons::NET_WIRELESS,
+        crate::icons::NET_VPN,
+        crate::icons::NET_LOOPBACK,
+        crate::icons::NET_WIRED,
+    ];
+
+    /// Choose the device icon from the interface kind.
+    pub fn icon_for(is_wireless: bool, tun_wg_ppp: bool, name: &str) -> &'static str {
+        if is_wireless {
+            crate::icons::NET_WIRELESS
+        } else if tun_wg_ppp {
+            crate::icons::NET_VPN
+        } else if name == "lo" {
+            crate::icons::NET_LOOPBACK
+        } else {
+            crate::icons::NET_WIRED
+        }
+    }
+
     pub async fn new(iface_re: Option<&Regex>) -> Result<Option<Self>> {
         let mut sock = NlSocket::new(
             NlSocketHandle::connect(NlFamily::Route, None, &[]).error("Socket error")?,
@@ -82,15 +130,7 @@ impl NetDevice {
             _ => (false, false),
         };
 
-        let icon = if wifi_info.is_some() {
-            "net_wireless"
-        } else if tun || wg || ppp {
-            "net_vpn"
-        } else if iface.name == "lo" {
-            "net_loopback"
-        } else {
-            "net_wired"
-        };
+        let icon = Self::icon_for(wifi_info.is_some(), tun || wg || ppp, &iface.name);
 
         Ok(Some(Self {
             iface,
@@ -98,16 +138,21 @@ impl NetDevice {
             ip,
             ipv6,
             icon,
-            tun_wg_ppp: tun | wg | ppp,
             nameservers,
         }))
     }
 
+    /// An interface is active only when its operational state allows traffic
+    /// and it has an address. In particular, `Operstate::Up` only describes
+    /// the link state, so an Ethernet interface can remain `Up` after a
+    /// network manager disconnects it and removes its addresses (#1917).
+    ///
+    /// Tun/wireguard/ppp interfaces are not special-cased to be always up (as
+    /// they were since #350): they usually report `Operstate::Unknown`, which
+    /// is covered by the has-an-address clause below.
     pub fn is_up(&self) -> bool {
-        self.tun_wg_ppp
-            || self.iface.operstate == Operstate::Up
-            || (self.iface.operstate == Operstate::Unknown
-                && (self.ip.is_some() || self.ipv6.is_some()))
+        (self.iface.operstate == Operstate::Up || self.iface.operstate == Operstate::Unknown)
+            && (self.ip.is_some() || self.ipv6.is_some())
     }
 
     pub fn ssid(&self) -> Option<String> {
@@ -124,6 +169,10 @@ impl NetDevice {
 
     pub fn signal(&self) -> Option<f64> {
         self.wifi_info.as_ref()?.signal
+    }
+
+    pub fn wifi_generation(&self) -> Option<WifiGeneration> {
+        self.wifi_info.as_ref()?.generation
     }
 }
 
@@ -166,19 +215,22 @@ impl WifiInfo {
         for interface in interfaces {
             if let Some(index) = interface.index
                 && index == if_index
-                && let Ok(ap) = socket.get_station_info(index).await
+                && let Ok(stations) = socket.get_station_info(index).await
+                && !stations.is_empty()
             {
-                // TODO: are there any situations when there is more than one station?
-                let Some(ap) = ap.into_iter().next() else {
-                    continue;
-                };
-
                 let bss = socket
                     .get_bss_info(index)
                     .await
                     .unwrap_or_default()
                     .into_iter()
                     .find(|bss| bss.status == Some(1));
+
+                // A station dump may include TDLS peers using a different PHY mode.
+                // Match the associated AP so wifi_generation describes the AP link.
+                let ap = stations
+                    .iter()
+                    .find(|ap| bss.as_ref().is_some_and(|bss| bss.bssid == ap.bssid))
+                    .unwrap_or(&stations[0]);
 
                 let raw_signal = match ap.signal {
                     Some(signal) => Some(signal),
@@ -203,10 +255,56 @@ impl WifiInfo {
                     frequency: interface.frequency.map(|f| f as f64 * 1e6),
                     signal: raw_signal.map(|s| signal_percents(s as f64)),
                     bitrate: ap.tx_bitrate.map(|b| b as f64 * 1e5), // 100kbit/s -> bit/s
+                    generation: bss
+                        .as_ref()
+                        .filter(|bss| bss.bssid.is_some() && bss.bssid == ap.bssid)
+                        .and_then(|bss| {
+                            WifiPhy::try_from(ap)
+                                .ok()?
+                                .generation(bss.frequency.or(interface.frequency))
+                        }),
                 }));
             }
         }
         Ok(None)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum WifiPhy {
+    Ht,
+    Vht,
+    He,
+    Eht,
+}
+
+impl TryFrom<&neli_wifi::Station> for WifiPhy {
+    type Error = ();
+
+    // neli-wifi exposes the current TX PHY, not a negotiated mode or capability.
+    fn try_from(ap: &neli_wifi::Station) -> Result<Self, Self::Error> {
+        match (ap.eht_mcs, ap.he_mcs, ap.vht_mcs, ap.ht_mcs) {
+            (Some(_), ..) => Ok(Self::Eht),
+            (_, Some(_), ..) => Ok(Self::He),
+            (_, _, Some(_), _) => Ok(Self::Vht),
+            (_, _, _, Some(_)) => Ok(Self::Ht),
+            _ => Err(()),
+        }
+    }
+}
+
+impl WifiPhy {
+    fn generation(self, frequency: Option<u32>) -> Option<WifiGeneration> {
+        match self {
+            Self::Ht => Some(WifiGeneration::Wifi4),
+            Self::Vht => Some(WifiGeneration::Wifi5),
+            Self::He => match frequency? {
+                2400..=2500 | 4900..=5924 => Some(WifiGeneration::Wifi6),
+                5925..=7125 => Some(WifiGeneration::Wifi6E),
+                _ => None,
+            },
+            Self::Eht => Some(WifiGeneration::Wifi7),
+        }
     }
 }
 
@@ -253,6 +351,9 @@ pub struct Interface {
     pub name: String,
     pub stats: Option<InterfaceStats>,
     pub link_type: Option<String>,
+    /// Whether the interface is switched on (administratively up). `rfkill`
+    /// and `ip link set down` switch it off.
+    pub enabled: bool,
 }
 
 macro_rules! recv_until_done {
@@ -363,6 +464,7 @@ async fn get_interfaces(
                 name,
                 stats,
                 link_type,
+                enabled: msg.ifi_flags.contains(&Iff::Up),
             });
         }
     });
@@ -541,5 +643,111 @@ impl From<u8> for Operstate {
             6 => Self::Up,
             _ => Self::Unknown,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use neli::attr::AttrHandle;
+    use neli::genl::Nlattr;
+    use neli::types::{Buffer, GenlBuffer};
+
+    fn attr(kind: u16, data: &[u8]) -> Vec<u8> {
+        let mut bytes = Vec::from(((4 + data.len()) as u16).to_ne_bytes());
+        bytes.extend(kind.to_ne_bytes());
+        bytes.extend(data);
+        bytes.resize(bytes.len().next_multiple_of(4), 0);
+        bytes
+    }
+
+    fn station(tx: &[u8]) -> neli_wifi::Station {
+        let info = attr(8, tx); // TX_BITRATE
+        let attrs: GenlBuffer<_, Buffer> = [Nlattr::new(
+            true,
+            false,
+            neli_wifi::Nl80211Attr::AttrStaInfo,
+            Buffer::from(info),
+        )
+        .unwrap()]
+        .into_iter()
+        .collect();
+        neli_wifi::Station::try_from(AttrHandle::new(attrs)).unwrap()
+    }
+
+    #[test]
+    fn wifi_phy_from_station_metadata() {
+        // Numeric IDs verify the dependency's parsing; MCS 0 is valid.
+        for (mcs, expected) in [
+            (2, WifiPhy::Ht),
+            (6, WifiPhy::Vht),
+            (13, WifiPhy::He),
+            (19, WifiPhy::Eht),
+        ] {
+            assert_eq!(WifiPhy::try_from(&station(&attr(mcs, &[0]))), Ok(expected));
+        }
+        // An empty MCS value is rejected at the parser boundary.
+        assert_eq!(WifiPhy::try_from(&station(&attr(19, &[]))), Err(()));
+    }
+
+    #[test]
+    fn wifi_generation_by_phy_and_band() {
+        for (phy, frequency, expected) in [
+            (WifiPhy::Ht, Some(2412), Some(WifiGeneration::Wifi4)),
+            (WifiPhy::Vht, Some(5180), Some(WifiGeneration::Wifi5)),
+            (WifiPhy::He, Some(2412), Some(WifiGeneration::Wifi6)),
+            (WifiPhy::He, Some(5180), Some(WifiGeneration::Wifi6)),
+            (WifiPhy::He, Some(5955), Some(WifiGeneration::Wifi6E)),
+            (WifiPhy::He, None, None),
+            (WifiPhy::He, Some(0), None),
+            (WifiPhy::Eht, Some(5180), Some(WifiGeneration::Wifi7)),
+            (WifiPhy::Eht, Some(5955), Some(WifiGeneration::Wifi7)),
+            (WifiPhy::Eht, None, Some(WifiGeneration::Wifi7)),
+        ] {
+            assert_eq!(
+                phy.generation(frequency),
+                expected,
+                "{phy:?}, {frequency:?}"
+            );
+        }
+    }
+
+    fn device(operstate: Operstate, ip: Option<Ipv4Addr>, ipv6: Option<Ipv6Addr>) -> NetDevice {
+        NetDevice {
+            iface: Interface {
+                index: 1,
+                operstate,
+                name: "net0".into(),
+                stats: None,
+                enabled: true,
+            },
+            wifi_info: None,
+            ip,
+            ipv6,
+            icon: "net_vpn",
+            nameservers: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn is_up_by_operstate_and_address() {
+        let ip = Some(Ipv4Addr::new(10, 0, 0, 2));
+
+        // A physical link can remain up after NetworkManager disconnects it,
+        // but without an address it is inactive.
+        assert!(!device(Operstate::Up, None, None).is_up());
+        assert!(device(Operstate::Up, ip, None).is_up());
+
+        // tun/wireguard/ppp interfaces usually report Unknown; they count as
+        // up only while they have an address
+        assert!(device(Operstate::Unknown, ip, None).is_up());
+        assert!(device(Operstate::Unknown, None, Some(Ipv6Addr::LOCALHOST)).is_up());
+        assert!(!device(Operstate::Unknown, None, None).is_up());
+
+        // regression test for #1917: a VPN interface that is administratively
+        // down must not be reported as up, so that `inactive_format` is used
+        assert!(!device(Operstate::Down, None, None).is_up());
+        assert!(!device(Operstate::Down, ip, None).is_up());
+        assert!(!device(Operstate::Lowerlayerdown, None, None).is_up());
     }
 }

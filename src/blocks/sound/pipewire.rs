@@ -1,7 +1,7 @@
 use tokio::sync::mpsc::{UnboundedReceiver, unbounded_channel};
 
 use super::*;
-use crate::pipewire::{CLIENT, CommandKind, EventKind, PwSender};
+use crate::pipewire::{CLIENT, CommandKind, EventKind, PIPEWIRE_CONNECTION_ERROR_MSG, PwSender};
 
 pub(super) struct Device {
     device_kind: DeviceKind,
@@ -72,6 +72,10 @@ impl SoundDevice for Device {
 
     async fn get_info(&mut self) -> Result<()> {
         let client = CLIENT.as_ref().error("Could not get client")?;
+        if client.is_terminated() {
+            return Err(Error::new(PIPEWIRE_CONNECTION_ERROR_MSG));
+        }
+
         let data = client.data.lock().unwrap();
 
         let name = if self.match_name.is_some() {
@@ -161,6 +165,8 @@ impl SoundDevice for Device {
                     | EventKind::PORT_REMOVED,
             ) {
                 break;
+            } else if event.contains(EventKind::PIPEWIRE_CONNECTION_ERROR) {
+                return Err(Error::new(PIPEWIRE_CONNECTION_ERROR_MSG));
             }
         }
         Ok(())

@@ -13,6 +13,13 @@ ignoreRegExpList:
   - /#\[zbus::proxy\([\w\s=\.",\/]*\)\]/gm
   # Ignore unicode characters
   - /(\\u[0-9a-fA-F]{4}|\\U[0-9a-fA-F]{8})/g
+  # Ignore words with a bolded prefix
+  - /\*\*\w*\*\*\w*/g
+  # Ignore Rust's braced unicode escapes, e.g. \u{fffb}
+  - /\\u\{[0-9a-fA-F]+\}/g
+  # Ignore escape sequences and ANSI SGR codes in string literals
+  - /\\[nrt0]/g
+  - /\[[0-9;]+m/g
 words:
   - aarch
   - alacritty
@@ -28,14 +35,17 @@ words:
   - arphrd
   - backon
   - BCHARGE
+  - bidi
   - bluez
   - bokmaal
   - btrfs
+  - bssid
   - bugz
   - busctl
   - caldav
   - cbrt
   - ccache
+  - choseong
   - chrono
   - clippy
   - CLOEXEC
@@ -48,11 +58,15 @@ words:
   - dbus
   - ddcci
   - ddcutil
+  - dejavu
   - devel
   - dmenu
   - docsrs
   - dtolnay
   - dunst
+  - ELOOP
+  - esac
+  - evdev
   - exdate
   - exdates
   - execvp
@@ -63,6 +77,7 @@ words:
   - fmin
   - getaddr
   - getenv
+  - Ghostty
   - gibi
   - giga
   - Greshake
@@ -73,12 +88,15 @@ words:
   - hypot
   - ibus
   - icalendar
+  - ICANON
   - iface
   - ifaces
   - ifaddrmsg
   - ifinfomsg
   - ifla
   - ifname
+  - ignorables
+  - IHDR
   - imgbb
   - indx
   - inet
@@ -91,6 +109,7 @@ words:
   - kbddbus
   - kibi
   - kmon
+  - lflag
   - libc
   - libdbus
   - liquidctl
@@ -106,14 +125,17 @@ words:
   - mullvad
   - Mupi
   - neli
+  - Nlattr
   - NLMSG
   - nlmsghdr
   - nmtui
   - noconfirm
   - NOFLAGS
   - noheader
+  - noicons
   - NOPASSWD
   - noprogressbar
+  - noops
   - notif
   - Noto
   - NZXT
@@ -129,22 +151,31 @@ words:
   - pkill
   - playerctl
   - playerctld
+  - pollfd
   - pomodoros
   - posix
   - powf
   - powi
+  - ppid
+  - prctl
   - pybugz
   - rdate
   - rdates
   - recip
+  - reparent
+  - reparented
   - repr
   - reqwest
   - resolv
   - retval
+  - revents
+  - rfind
+  - rfkill
+  - Roboto
   - rofi
   - rofication
-  - rrule
-  - rrules
+  - RRGGBB
+  - rrggbbaa
   - rsplit
   - rtattr
   - rtattrs
@@ -155,6 +186,7 @@ words:
   - rustc
   - rustfmt
   - rustify
+  - rustls
   - scontrols
   - scrot
   - serde
@@ -174,6 +206,10 @@ words:
   - swayipc
   - swaync
   - sysfs
+  - tcgetattr
+  - TCSANOW
+  - tcsetattr
+  - TDLS
   - tebi
   - tera
   - tzname
@@ -188,13 +224,17 @@ words:
   - vals
   - VCALENDAR
   - VEVENT
+  - VMIN
+  - VTIME
   - wayrs
   - wdoll
+  - wdth
   - WLAN
   - wlroots
   - wlsunset
   - wofi
   - wttr
+  - wtype
   - xbps
   - xclip
   - xcolors
@@ -202,9 +242,14 @@ words:
   - xkbevent
   - xkbswitch
   - XKCD
+  - XLFD
   - xrandr
   - xresources
+  - xsct
   - xtask
+  - YMDE
+  - YMDET
+  - YMDT
   - zbus
   - zram
   - zswap

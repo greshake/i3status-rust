@@ -4,8 +4,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $utilization "`
-//! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
+//! `format` | A [MultiFormat][MaybeMultiFormatConfig] string to customise the output of this block. See below for available placeholders. | `[" $icon $utilization "]`
 //! `interval` | Update interval in seconds | `5`
 //! `info_cpu` | Percentage of CPU usage, where state is set to info | `30.0`
 //! `warning_cpu` | Percentage of CPU usage, where state is set to warning | `60.0`
@@ -24,7 +23,9 @@
 //!
 //! Action          | Description                               | Default button
 //! ----------------|-------------------------------------------|---------------
-//! `toggle_format` | Toggles between `format` and `format_alt` | Left
+//! `toggle_format` **DEPRECATED** | Toggles between `format` and `format_alt` | -
+//! `next_format`  | Switches to the next format in the list     | Left
+//! `prev_format`  | Switches to the previous format in the list | Right
 //!
 //! # Example
 //!
@@ -40,9 +41,9 @@
 //! ```
 //!
 //! # Icons Used
-//! - `cpu` (as a progression)
-//! - `cpu_boost_on`
-//! - `cpu_boost_off`
+//! - `cpu` (`$icon`, as a progression)
+//! - `cpu_boost_on` (`$boost`)
+//! - `cpu_boost_off` (`$boost`)
 
 use std::str::FromStr as _;
 
@@ -56,10 +57,10 @@ const CPU_BOOST_PATH: &str = "/sys/devices/system/cpu/cpufreq/boost";
 const CPU_NO_TURBO_PATH: &str = "/sys/devices/system/cpu/intel_pstate/no_turbo";
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
+#[serde(default)]
 pub struct Config {
-    pub format: FormatConfig,
-    pub format_alt: Option<FormatConfig>,
+    #[serde(flatten)]
+    pub formats: MaybeMultiFormatConfig,
     #[default(5.into())]
     pub interval: Seconds,
     #[default(30.0)]
@@ -70,15 +71,39 @@ pub struct Config {
     pub critical_cpu: f64,
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let mut actions = api.get_actions()?;
-    api.set_default_actions(&[(MouseButton::Left, None, "toggle_format")])?;
+/// Every icon name [`boost_icon`] can return. The boost status is externally
+/// selected but finite, so the block plan declares the full set.
+const BOOST_ICON_NAMES: [&str; 2] = [icons::CPU_BOOST_ON, icons::CPU_BOOST_OFF];
 
-    let mut format = config.format.with_default(" $icon $utilization ")?;
-    let mut format_alt = match &config.format_alt {
-        Some(f) => Some(f.with_default("")?),
-        None => None,
+fn boost_icon(on: bool) -> &'static str {
+    match on {
+        true => icons::CPU_BOOST_ON,
+        false => icons::CPU_BOOST_OFF,
+    }
+}
+
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    // `icon`, `barchart` and `utilization` are computed on every update.
+    // `frequency`/`max_frequency` (CPU support), `boost` (sysfs support) and
+    // the per-core `utilizationN`/`frequencyN` values are conditional or
+    // dynamically named, so they stay undeclared.
+    let declare = |output: OutputPlan| {
+        output
+            .icon("icon", IconChoices::one(icons::CPU))
+            .icon("boost", IconChoices::fixed(BOOST_ICON_NAMES))
     };
+    let formats = config.formats.with_default(" $icon $utilization ")?;
+    BlockPlan::new(format_outputs(formats, declare))
+}
+
+pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
+    let mut actions = api.get_actions()?;
+    api.set_default_actions(&[
+        (MouseButton::Left, None, "next_format"),
+        (MouseButton::Right, None, "prev_format"),
+    ])?;
+
+    let mut formats = FormatRotation::new(plan)?;
 
     // Store previous /proc/stat state
     let mut cputime = read_proc_stat().await?;
@@ -113,19 +138,20 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         }
 
         // Read boost state on intel CPUs
-        let boost = boost_status().await.map(|status| match status {
-            true => "cpu_boost_on",
-            false => "cpu_boost_off",
-        });
+        let boost = boost_status().await.map(boost_icon);
+
+        let output = formats.current();
 
         let mut values = map!(
-            "icon" => Value::icon_progression("cpu", utilization_avg),
+            "icon" => Value::icon_progression(icons::CPU, utilization_avg),
             "barchart" => Value::text(barchart),
             "utilization" => Value::percents(utilization_avg * 100.),
             [if !freqs.is_empty()] "frequency" => Value::hertz(freqs.iter().sum::<f64>() / (freqs.len() as f64)),
             [if !freqs.is_empty()] "max_frequency" => Value::hertz(freqs.iter().copied().max_by(f64::total_cmp).unwrap()),
         );
-        boost.map(|b| values.insert("boost".into(), Value::icon(b)));
+        if let Some(boost) = boost {
+            values.insert("boost".into(), Value::icon(boost));
+        }
         for (i, freq) in freqs.iter().enumerate() {
             values.insert(format!("frequency{}", i + 1).into(), Value::hertz(*freq));
         }
@@ -136,7 +162,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
             );
         }
 
-        let mut widget = Widget::new().with_format(format.clone());
+        let mut widget = output.new_widget();
         widget.set_values(values);
         widget.state = match utilization_avg * 100. {
             x if x > config.critical_cpu => State::Critical,
@@ -151,11 +177,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 _ = timer.tick() => break,
                 _ = api.wait_for_update_request() => break,
                 Some(action) = actions.recv() => match action.as_ref() {
-                    "toggle_format" => {
-                        if let Some(ref mut format_alt) = format_alt {
-                            std::mem::swap(format_alt, &mut format);
-                            break;
-                        }
+                    "next_format" | "toggle_format" => {
+                        formats.next();
+                        break;
+                    }
+                    "prev_format" => {
+                        formats.prev();
+                        break;
                     }
                     _ => (),
                 }
@@ -263,5 +291,69 @@ async fn boost_status() -> Option<bool> {
         Some(no_turbo.starts_with('0'))
     } else {
         None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_icon_and_boost_choices() {
+        let plan = prepare(&Config::default()).unwrap();
+        let format = plan.output("format").unwrap();
+        assert_eq!(format.single_icon("icon").unwrap(), "cpu");
+        let boost = format.output().choices_for("boost").unwrap();
+        assert!(boost.permits("cpu_boost_on"));
+        assert!(boost.permits("cpu_boost_off"));
+        assert!(!boost.permits("cpu"));
+        // One format configured, so there is nothing to rotate to.
+        assert!(plan.output("format2").is_err());
+    }
+
+    #[test]
+    fn every_configured_format_becomes_an_output() {
+        let config: Config =
+            toml::from_str(r#"format = [" $icon ", " $icon $frequency "]"#).unwrap();
+        let plan = prepare(&config).unwrap();
+        let second = plan.output("format2").unwrap();
+        assert!(second.format().contains_key("frequency"));
+        // Every format the user can rotate to carries the same contract.
+        assert_eq!(second.single_icon("icon").unwrap(), "cpu");
+        assert!(
+            second
+                .output()
+                .choices_for("boost")
+                .unwrap()
+                .permits("cpu_boost_off")
+        );
+    }
+
+    #[test]
+    fn every_boost_icon_is_declared() {
+        for on in [true, false] {
+            assert!(BOOST_ICON_NAMES.contains(&boost_icon(on)));
+        }
+        assert_eq!(BOOST_ICON_NAMES.len(), 2);
+    }
+
+    #[test]
+    fn legacy_format_alt_still_declares_both_formats() {
+        // Upstream kept `format` + `format_alt` working alongside the new
+        // list form, so both spellings must yield two outputs.
+        let split: Config =
+            toml::from_str("format = \" $icon \"\nformat_alt = \" $icon $frequency \"").unwrap();
+        let list: Config = toml::from_str(r#"format = [" $icon ", " $icon $frequency "]"#).unwrap();
+        for config in [split, list] {
+            let plan = prepare(&config).unwrap();
+            let ids: Vec<_> = plan.outputs().map(|o| o.id().to_string()).collect();
+            assert_eq!(ids, ["format", "format2"]);
+            assert!(
+                plan.output("format2")
+                    .unwrap()
+                    .format()
+                    .contains_key("frequency")
+            );
+        }
     }
 }

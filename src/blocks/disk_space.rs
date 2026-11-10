@@ -6,12 +6,11 @@
 //! ----|--------|--------
 //! `path` | Path to collect information from. Supports path expansions e.g. `~`. | `"/"`
 //! `interval` | Update time in seconds | `20`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $available "`
-//! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
+//! `format` | A [MultiFormat][MaybeMultiFormatConfig] string to customise the output of this block. See below for available placeholders. | `[" $icon $available "]`
 //! `warning` | A value which will trigger warning block state | `20.0`
 //! `alert` | A value which will trigger critical block state | `10.0`
 //! `info_type` | Determines which information will affect the block state. Possible values are `"available"`, `"free"` and `"used"` | `"available"`
-//! `alert_unit` | The unit of `alert` and `warning` options. If not set, percents are used. Possible values are `"B"`, `"KB"`, `"KiB"`, `"MB"`, `"MiB"`, `"GB"`, `"Gib"`, `"TB"` and `"TiB"` | `None`
+//! `alert_unit` | The unit of `alert` and `warning` options. If not set, percents are used. Possible values are `"B"`, `"kB"`, `"KB"`, `"KiB"`, `"MB"`, `"MiB"`, `"GB"`, `"Gib"`, `"TB"` and `"TiB"` | `None`
 //! `backend` | The backend to use when querying disk usage. Possible values are `"vfs"` (like `du(1)`) and `"btrfs"` | `"vfs"`
 //!
 //! Placeholder  | Value                                                              | Type   | Unit
@@ -26,7 +25,9 @@
 //!
 //! Action          | Description                               | Default button
 //! ----------------|-------------------------------------------|---------------
-//! `toggle_format` | Toggles between `format` and `format_alt` | Left
+//! `toggle_format` **DEPRECATED** | Toggles between `format` and `format_alt` | -
+//! `next_format`  | Switches to the next format in the list     | Left
+//! `prev_format`  | Switches to the previous format in the list | Right
 //!
 //! # Examples
 //!
@@ -60,7 +61,7 @@
 //! ```
 //!
 //! # Icons Used
-//! - `disk_drive`
+//! - `disk_drive` (`$icon`)
 
 // make_log_macro!(debug, "disk_space");
 
@@ -89,14 +90,14 @@ pub enum Backend {
 }
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
+#[serde(default)]
 pub struct Config {
     #[default("/".into())]
     pub path: ShellString,
     pub backend: Backend,
     pub info_type: InfoType,
-    pub format: FormatConfig,
-    pub format_alt: Option<FormatConfig>,
+    #[serde(flatten)]
+    pub formats: MaybeMultiFormatConfig,
     pub alert_unit: Option<String>,
     #[default(20.into())]
     pub interval: Seconds,
@@ -106,22 +107,29 @@ pub struct Config {
     pub alert: f64,
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let mut actions = api.get_actions()?;
-    api.set_default_actions(&[(MouseButton::Left, None, "toggle_format")])?;
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    // Every output renders the same value set, built unconditionally on
+    // every update.
+    let declare = |output: OutputPlan| output.icon("icon", IconChoices::one(icons::DISK_DRIVE));
+    let formats = config.formats.with_default(" $icon $available ")?;
+    BlockPlan::new(format_outputs(formats, declare))
+}
 
-    let mut format = config.format.with_default(" $icon $available ")?;
-    let mut format_alt = match &config.format_alt {
-        Some(f) => Some(f.with_default("")?),
-        None => None,
-    };
+pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
+    let mut actions = api.get_actions()?;
+    api.set_default_actions(&[
+        (MouseButton::Left, None, "next_format"),
+        (MouseButton::Right, None, "prev_format"),
+    ])?;
+
+    let mut formats = FormatRotation::new(plan)?;
 
     let unit = match config.alert_unit.as_deref() {
         // Decimal
         Some("TB") => Some(Prefix::Tera),
         Some("GB") => Some(Prefix::Giga),
         Some("MB") => Some(Prefix::Mega),
-        Some("KB") => Some(Prefix::Kilo),
+        Some("KB") | Some("kB") => Some(Prefix::Kilo),
         // Binary
         Some("TiB") => Some(Prefix::Tebi),
         Some("GiB") => Some(Prefix::Gibi),
@@ -139,7 +147,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut timer = config.interval.timer();
 
     loop {
-        let mut widget = Widget::new().with_format(format.clone());
+        let output = formats.current();
+        let mut widget = output.new_widget();
 
         let (total, used, available, free) = match config.backend {
             Backend::Vfs => get_vfs(&*path)?,
@@ -154,7 +163,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
         let percentage = result / (total as f64) * 100.;
         widget.set_values(map! {
-            "icon" => Value::icon("disk_drive"),
+            "icon" => Value::icon(icons::DISK_DRIVE),
             "path" => Value::text(path.to_string()),
             "percentage" => Value::percents(percentage),
             "total" => Value::bytes(total as f64),
@@ -198,11 +207,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 _ = timer.tick() => break,
                 _ = api.wait_for_update_request() => break,
                 Some(action) = actions.recv() => match action.as_ref() {
-                    "toggle_format" => {
-                        if let Some(format_alt) = &mut format_alt {
-                            std::mem::swap(format_alt, &mut format);
-                            break;
-                        }
+                    "next_format" | "toggle_format" => {
+                        formats.next();
+                        break;
+                    }
+                    "prev_format" => {
+                        formats.prev();
+                        break;
                     }
                     _ => (),
                 }
@@ -294,5 +305,32 @@ async fn get_btrfs(path: &str) -> Result<(u64, u64, u64, u64)> {
             *final_free.get().ok_or(Error::new(OUTPUT_CHANGED))?,
             *final_free.get().ok_or(Error::new(OUTPUT_CHANGED))?,
         ))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_single_format_with_disk_drive_icon() {
+        let plan = prepare(&Config::default()).unwrap();
+        let format = plan.output("format").unwrap();
+        assert_eq!(format.single_icon("icon").unwrap(), "disk_drive");
+        assert!(format.format().contains_key("available"));
+        assert!(plan.output("format2").is_err());
+    }
+
+    #[test]
+    fn every_configured_format_is_declared() {
+        let config: Config =
+            toml::from_str(r#"format = [" $icon $available ", " $icon $available / $total "]"#)
+                .unwrap();
+        let plan = prepare(&config).unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["format", "format2"]);
+        let second = plan.output("format2").unwrap();
+        assert!(second.format().contains_key("total"));
+        assert_eq!(second.single_icon("icon").unwrap(), "disk_drive");
     }
 }

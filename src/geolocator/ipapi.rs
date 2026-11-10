@@ -100,11 +100,21 @@ impl Ipapi {
     }
 
     pub async fn get_info(&self, client: &reqwest::Client) -> Result<IPAddressInfo> {
-        let response: ApiResponse = client
+        let response = client
             .get(IP_API_URL)
+            .timeout(REQUEST_TIMEOUT)
             .send()
             .await
-            .error("Failed during request for current location")?
+            .error("Failed during request for current location")?;
+
+        if response.status() == reqwest::StatusCode::TOO_MANY_REQUESTS {
+            return Err(Error {
+                message: Some("ipapi.co rate limit exceeded".into()),
+                cause: Some(Arc::new(RateLimited)),
+            });
+        }
+
+        let response: ApiResponse = response
             .json()
             .await
             .error("Failed while parsing location API result")?;

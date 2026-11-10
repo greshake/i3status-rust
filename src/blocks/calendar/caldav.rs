@@ -1,7 +1,7 @@
 use std::{str::FromStr as _, time::Duration, vec};
 
 use chrono::{DateTime, Datelike as _, Local, TimeZone as _, Timelike as _, Utc};
-use icalendar::{Component as _, EventLike as _};
+use icalendar::{Component as _, EventLike as _, Tz};
 use reqwest::{
     self, ClientBuilder, Method, Url,
     header::{CONTENT_TYPE, HeaderMap, HeaderValue},
@@ -292,41 +292,6 @@ fn parse_calendars(
     Ok(result)
 }
 
-// This function is from PR: https://github.com/hoodie/icalendar/pull/128
-// https://github.com/hoodie/icalendar/blob/46b9a8859b81854c42d823ed21773d77afac63a7/src/components.rs#L392-L422
-// Once this PR has been merged, we can remove this function.
-fn get_recurrence(event: &icalendar::Event) -> Option<rrule::RRuleSet> {
-    let dt_start_str = event.property_value("DTSTART")?;
-    let rrule_str = event.property_value("RRULE")?;
-
-    let mut rdates_str = event
-        .multi_properties()
-        .get("RDATE")
-        .unwrap_or(&vec![])
-        .iter()
-        .map(icalendar::Property::value)
-        .collect::<Vec<_>>()
-        .join(",");
-    if !rdates_str.is_empty() {
-        rdates_str = format!("\nRDATE:{rdates_str}");
-    }
-
-    let mut exdates_str = event
-        .multi_properties()
-        .get("EXDATE")
-        .unwrap_or(&vec![])
-        .iter()
-        .map(icalendar::Property::value)
-        .collect::<Vec<_>>()
-        .join(",");
-    if !exdates_str.is_empty() {
-        exdates_str = format!("\nEXDATE:{exdates_str}");
-    }
-
-    let rrules = format!("DTSTART:{dt_start_str}\nRRULE:{rrule_str}{rdates_str}{exdates_str}");
-    rrules.parse::<rrule::RRuleSet>().ok()
-}
-
 fn parse_events(
     multi_status: Multistatus,
     event_search_start: DateTime<Utc>,
@@ -357,13 +322,13 @@ fn parse_events(
 
                         if let Some(s) = event_start_at
                             && let Some(e) = event_end_at
-                            && let Some(rrule_set) = get_recurrence(&event)
                         {
                             let duration = e - s;
                             result.extend(
-                                rrule_set
+                                event
+                                    .get_recurrence()?
                                     .after(
-                                        rrule::Tz::UTC
+                                        Tz::UTC
                                             .with_ymd_and_hms(
                                                 event_search_start.year(),
                                                 event_search_start.month(),
@@ -376,7 +341,7 @@ fn parse_events(
                                             .ok_or(CalendarError::TzConversion)?,
                                     )
                                     .before(
-                                        rrule::Tz::UTC
+                                        Tz::UTC
                                             .with_ymd_and_hms(
                                                 event_search_end.year(),
                                                 event_search_end.month(),

@@ -1,4 +1,5 @@
 use super::*;
+use crate::util::mps_to_kmh;
 
 type LegendsStore = HashMap<String, LegendsResult>;
 
@@ -103,8 +104,7 @@ impl ForecastTimeStep {
             humidity,
             weather: translated.clone(),
             weather_verbose: translated,
-            wind: wind_speed,
-            wind_kmh: wind_speed * 3.6,
+            wind_kmh: mps_to_kmh(wind_speed),
             wind_direction: instant.wind_from_direction,
             icon: weather_to_icon(summary, is_night),
         }
@@ -130,8 +130,7 @@ impl ForecastTimeStep {
             temp: instant.air_temperature,
             apparent,
             humidity: instant.relative_humidity,
-            wind: instant.wind_speed,
-            wind_kmh: instant.wind_speed.map(|t| t * 3.6),
+            wind_kmh: instant.wind_speed.map(mps_to_kmh),
             wind_direction: instant.wind_from_direction,
         }
     }
@@ -235,7 +234,7 @@ impl WeatherProvider for Service<'_> {
                 "Unable to fetch the specified number of forecast_hours specified {}, only {} hours available",
                 forecast_hours,
                 data.properties.timeseries.len()
-            )))?;
+            )));
         }
 
         let data_agg: Vec<ForecastAggregateSegment> = data

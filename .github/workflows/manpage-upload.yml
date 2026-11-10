@@ -1,0 +1,34 @@
+name: Man page release upload
+on:
+  release:
+    types: [published]
+
+permissions: {}
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  manpage:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:base-devel
+    permissions:
+      contents: write
+    steps:
+    - name: Get required packages and config git
+      run: |
+        pacman --noconfirm --noprogressbar --needed -Syu base-devel clang cmake git libpipewire libpulse lm_sensors notmuch openssl rsync pandoc github-cli
+        git config --global --add safe.directory "$GITHUB_WORKSPACE"
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+    - uses: dtolnay/rust-toolchain@stable
+    - name: Generate and upload manpage
+      env:
+        GH_TOKEN: ${{ github.token }}
+        GH_REPO: ${{ github.repository }}
+        TAG_NAME: ${{ github.event.release.tag_name }}
+      run: |
+        cargo xtask generate-manpage
+        gh release upload -R "$GH_REPO" --clobber "$TAG_NAME" ./man/i3status-rs.1

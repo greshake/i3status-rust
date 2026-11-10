@@ -92,8 +92,10 @@ fn toplevel_cb(ctx: EventCtx<State, ZwlrForeignToplevelHandleV1>) {
         }
         Event::State(state) => {
             toplevel.is_active = state
-                .chunks_exact(4)
-                .map(|b| u32::from_ne_bytes(b.try_into().unwrap()))
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .map(|b| u32::from_ne_bytes(*b))
                 .any(|s| s == zwlr_foreign_toplevel_handle_v1::State::Activated as u32);
         }
         Event::Closed => {

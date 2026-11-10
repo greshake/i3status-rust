@@ -5,8 +5,7 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `device` | The device in `/sys/class/drm/` to read from. | Any AMD card
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $utilization "`
-//! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
+//! `format` | A [MultiFormat][MaybeMultiFormatConfig] string to customise the output of this block. See below for available placeholders. | `[" $icon $utilization "]`
 //! `interval` | Update interval in seconds | `5`
 //!
 //! Placeholder          | Value                               | Type   | Unit
@@ -19,7 +18,9 @@
 //!
 //! Action          | Description                               | Default button
 //! ----------------|-------------------------------------------|---------------
-//! `toggle_format` | Toggles between `format` and `format_alt` | Left
+//! `toggle_format` **DEPRECATED** | Toggles between `format` and `format_alt` | -
+//! `next_format`  | Switches to the next format in the list     | Left
+//! `prev_format`  | Switches to the previous format in the list | Right
 //!
 //! # Example
 //!
@@ -32,7 +33,7 @@
 //! ```
 //!
 //! # Icons Used
-//! - `gpu`
+//! - `gpu` (`$icon`)
 
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -43,24 +44,31 @@ use super::prelude::*;
 use crate::util::read_file;
 
 #[derive(Deserialize, Debug, SmartDefault)]
-#[serde(deny_unknown_fields, default)]
+#[serde(default)]
 pub struct Config {
     pub device: Option<String>,
-    pub format: FormatConfig,
-    pub format_alt: Option<FormatConfig>,
+    #[serde(flatten)]
+    pub formats: MaybeMultiFormatConfig,
     #[default(5.into())]
     pub interval: Seconds,
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let mut actions = api.get_actions()?;
-    api.set_default_actions(&[(MouseButton::Left, None, "toggle_format")])?;
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    // Every output renders the same value set, built unconditionally on
+    // every update.
+    let declare = |output: OutputPlan| output.icon("icon", IconChoices::one(icons::GPU));
+    let formats = config.formats.with_default(" $icon $utilization ")?;
+    BlockPlan::new(format_outputs(formats, declare))
+}
 
-    let mut format = config.format.with_default(" $icon $utilization ")?;
-    let mut format_alt = match &config.format_alt {
-        Some(f) => Some(f.with_default("")?),
-        None => None,
-    };
+pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
+    let mut actions = api.get_actions()?;
+    api.set_default_actions(&[
+        (MouseButton::Left, None, "next_format"),
+        (MouseButton::Right, None, "prev_format"),
+    ])?;
+
+    let mut formats = FormatRotation::new(plan)?;
 
     let device = match &config.device {
         Some(name) => Device::new(name).await?,
@@ -71,12 +79,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     };
 
     loop {
-        let mut widget = Widget::new().with_format(format.clone());
+        let output = formats.current();
+        let mut widget = output.new_widget();
 
         let info = device.read_info().await?;
 
         widget.set_values(map! {
-            "icon" => Value::icon("gpu"),
+            "icon" => Value::icon(icons::GPU),
             "utilization" => Value::percents(info.utilization_percents),
             "vram_total" => Value::bytes(info.vram_total_bytes),
             "vram_used" => Value::bytes(info.vram_used_bytes),
@@ -97,11 +106,13 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 _ = sleep(config.interval.0) => break,
                 _ = api.wait_for_update_request() => break,
                 Some(action) = actions.recv() => match action.as_ref() {
-                    "toggle_format" => {
-                        if let Some(ref mut format_alt) = format_alt {
-                            std::mem::swap(format_alt, &mut format);
-                            break;
-                        }
+                    "next_format" | "toggle_format" => {
+                        formats.next();
+                        break;
+                    }
+                    "prev_format" => {
+                        formats.prev();
+                        break;
                     }
                     _ => (),
                 }
@@ -190,5 +201,27 @@ mod tests {
     async fn test_non_existing_gpu_device() {
         let device = Device::new("/nope").await;
         assert!(device.is_err());
+    }
+
+    #[test]
+    fn plan_declares_single_format_with_gpu_icon() {
+        let plan = prepare(&Config::default()).unwrap();
+        let format = plan.output("format").unwrap();
+        assert_eq!(format.single_icon("icon").unwrap(), "gpu");
+        assert!(format.format().contains_key("utilization"));
+        assert!(plan.output("format2").is_err());
+    }
+
+    #[test]
+    fn every_configured_format_is_declared() {
+        let config: Config =
+            toml::from_str(r#"format = [" $icon $utilization ", " $icon $vram_used_percents "]"#)
+                .unwrap();
+        let plan = prepare(&config).unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["format", "format2"]);
+        let second = plan.output("format2").unwrap();
+        assert!(second.format().contains_key("vram_used_percents"));
+        assert_eq!(second.single_icon("icon").unwrap(), "gpu");
     }
 }

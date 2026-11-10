@@ -87,6 +87,7 @@ impl Value {
     {
         Self::new(ValueInner::Icon(name.into(), Some(value)))
     }
+
     pub fn icon_progression_bound<S>(name: S, value: f64, low: f64, high: f64) -> Self
     where
         S: Into<Cow<'static, str>>,
@@ -114,8 +115,11 @@ impl Value {
     pub fn percents(val: impl IntoF64) -> Self {
         Self::number_unit(val, Unit::Percents)
     }
-    pub fn degrees(val: impl IntoF64) -> Self {
-        Self::number_unit(val, Unit::Degrees)
+    pub fn degrees_c(val: impl IntoF64) -> Self {
+        Self::number_unit(val, Unit::DegreesC)
+    }
+    pub fn degrees_f(val: impl IntoF64) -> Self {
+        Self::number_unit(val, Unit::DegreesF)
     }
     pub fn seconds(val: impl IntoF64) -> Self {
         Self::number_unit(val, Unit::Seconds)

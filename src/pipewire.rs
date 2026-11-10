@@ -1,19 +1,19 @@
 use std::cell::{Cell, RefCell};
 use std::collections::{HashMap, HashSet};
 use std::io::Cursor;
-use std::mem::MaybeUninit;
 use std::rc::Rc;
 use std::str::FromStr;
 use std::sync::{LazyLock, Mutex};
-use std::thread;
-use std::time::Duration;
+use std::thread::JoinHandle;
+use std::{panic, thread};
 
 pub(crate) use ::pipewire::channel::Sender as PwSender;
 use ::pipewire::{
-    channel::{Receiver as PwReceiver, channel as pw_channel},
+    channel::{Receiver as PwReceiver, channel},
     context::ContextRc,
     device::Device as DeviceProxy,
     keys,
+    loop_::Timeout,
     main_loop::MainLoopRc,
     metadata::Metadata as MetadataProxy,
     node::{Node as NodeProxy, NodeState},
@@ -22,8 +22,8 @@ use ::pipewire::{
     spa::{
         param::{ParamType, audio::AudioInfoRaw},
         pod::{
-            Object, Pod, Value, ValueArray, builder::Builder as PodBuilder,
-            deserialize::PodDeserializer, serialize::PodSerializer,
+            Object, Pod, Property, Value, ValueArray, deserialize::PodDeserializer,
+            serialize::PodSerializer,
         },
         sys::{
             SPA_DIRECTION_INPUT, SPA_DIRECTION_OUTPUT, SPA_PARAM_EnumFormat,
@@ -44,6 +44,7 @@ use crate::{Error, ErrorContext as _, Result};
 make_log_macro!(debug, "pipewire");
 
 pub(crate) static CLIENT: LazyLock<Result<Client>> = LazyLock::new(Client::new);
+pub(crate) const PIPEWIRE_CONNECTION_ERROR_MSG: &str = "Could not connect to pipewire";
 
 const NORMAL: f32 = 100.0;
 const DEFAULT_SINK_KEY: &str = "default.audio.sink";
@@ -269,18 +270,19 @@ impl<T: ProxyT + 'static> Proxies<T> {
 bitflags! {
     #[derive(Debug, Clone, Copy, Default)]
     pub(crate) struct EventKind: u16 {
-        const DEFAULT_META_DATA_UPDATED = 1 <<  0;
-        const DEVICE_ADDED              = 1 <<  1;
-        const DEVICE_PARAM_UPDATE       = 1 <<  2;
-        const DEVICE_REMOVED            = 1 <<  3;
-        const LINK_ADDED                = 1 <<  4;
-        const LINK_REMOVED              = 1 <<  5;
-        const NODE_ADDED                = 1 <<  6;
-        const NODE_PARAM_UPDATE         = 1 <<  7;
-        const NODE_REMOVED              = 1 <<  8;
-        const NODE_STATE_UPDATE         = 1 <<  9;
-        const PORT_ADDED                = 1 << 10;
-        const PORT_REMOVED              = 1 << 11;
+        const PIPEWIRE_CONNECTION_ERROR = 1 <<  0;
+        const DEFAULT_META_DATA_UPDATED = 1 <<  1;
+        const DEVICE_ADDED              = 1 <<  2;
+        const DEVICE_PARAM_UPDATE       = 1 <<  3;
+        const DEVICE_REMOVED            = 1 <<  4;
+        const LINK_ADDED                = 1 <<  5;
+        const LINK_REMOVED              = 1 <<  6;
+        const NODE_ADDED                = 1 <<  7;
+        const NODE_PARAM_UPDATE         = 1 <<  8;
+        const NODE_REMOVED              = 1 <<  9;
+        const NODE_STATE_UPDATE         = 1 << 10;
+        const PORT_ADDED                = 1 << 11;
+        const PORT_REMOVED              = 1 << 12;
     }
 }
 
@@ -291,6 +293,32 @@ pub(crate) enum CommandKind {
 }
 
 impl CommandKind {
+    fn create_property_value(&self, param_type: ParamType) -> Value {
+        match self {
+            CommandKind::SetVolume(_, volume) => Value::Object(Object {
+                type_: SpaTypes::ObjectParamProps.as_raw(),
+                id: param_type.as_raw(),
+                properties: vec![Property::new(
+                    SPA_PROP_channelVolumes,
+                    Value::ValueArray(ValueArray::Float(
+                        volume
+                            .iter()
+                            .map(|vol| {
+                                let vol = vol / NORMAL;
+                                vol * vol * vol
+                            })
+                            .collect(),
+                    )),
+                )],
+            }),
+            CommandKind::Mute(_, mute) => Value::Object(Object {
+                type_: SpaTypes::ObjectParamProps.as_raw(),
+                id: param_type.as_raw(),
+                properties: vec![Property::new(SPA_PROP_mute, Value::Bool(*mute))],
+            }),
+        }
+    }
+
     fn execute(
         self,
         client: &Client,
@@ -305,65 +333,13 @@ impl CommandKind {
         let client_data = client.data.lock().unwrap();
         if let Some(node) = client_data.nodes.get(&id) {
             if let Some(node_proxy) = node_proxies.borrow_mut().proxies_t.get(&node.proxy_id) {
-                let mut pod_data = Vec::new();
-                let mut pod_builder = PodBuilder::new(&mut pod_data);
+                let node_param = self.create_property_value(ParamType::Props);
+                debug!("Setting Node Props param: {:?}", node_param);
 
-                let mut object_param_props_frame = MaybeUninit::uninit();
-
-                // Safety: Frames must be popped in the reverse order they were pushed.
-                // push_object initializes the frame.
-                // object_param_props_frame is frame 1
-                unsafe {
-                    pod_builder.push_object(
-                        &mut object_param_props_frame,
-                        SpaTypes::ObjectParamProps.as_raw(),
-                        ParamType::Props.as_raw(),
-                    )
-                }
-                .expect("Could not push object");
-
-                match &self {
-                    SetVolume(_, volume) => {
-                        pod_builder
-                            .add_prop(SPA_PROP_channelVolumes, 0)
-                            .expect("Could not add prop");
-
-                        let mut array_frame = MaybeUninit::uninit();
-
-                        // Safety: push_array initializes the frame.
-                        // array_frame is frame 2
-                        unsafe { pod_builder.push_array(&mut array_frame) }
-                            .expect("Could not push object");
-
-                        for vol in volume {
-                            let vol = vol / NORMAL;
-                            pod_builder
-                                .add_float(vol * vol * vol)
-                                .expect("Could not add bool");
-                        }
-
-                        // Safety: array_frame is popped here, which is frame 2
-                        unsafe {
-                            PodBuilder::pop(&mut pod_builder, array_frame.assume_init_mut());
-                        }
-                    }
-                    Mute(_, mute) => {
-                        pod_builder
-                            .add_prop(SPA_PROP_mute, 0)
-                            .expect("Could not add prop");
-                        pod_builder.add_bool(*mute).expect("Could not add bool");
-                    }
-                }
-
-                // Safety: object_param_props_frame is popped here, which is frame 1
-                unsafe {
-                    PodBuilder::pop(&mut pod_builder, object_param_props_frame.assume_init_mut());
-                }
-
-                debug!(
-                    "Setting Node Props param: {:?}",
-                    PodDeserializer::deserialize_from::<Value>(&pod_data)
-                );
+                let pod_data = PodSerializer::serialize(Cursor::new(Vec::new()), &node_param)
+                    .expect("Failed to serialize node props pod")
+                    .0
+                    .into_inner();
                 let pod = Pod::from_bytes(&pod_data).expect("Unable to construct pod");
                 node_proxy.set_param(ParamType::Props, 0, pod);
             }
@@ -377,105 +353,25 @@ impl CommandKind {
                     .proxies_t
                     .get(&directed_routes.proxy_id)
             {
-                let mut pod_data = Vec::new();
-                let mut pod_builder = PodBuilder::new(&mut pod_data);
+                let route_param = Value::Object(Object {
+                    type_: SpaTypes::ObjectParamRoute.as_raw(),
+                    id: ParamType::Route.as_raw(),
+                    properties: vec![
+                        Property::new(SPA_PARAM_ROUTE_index, Value::Int(route.index)),
+                        Property::new(SPA_PARAM_ROUTE_device, Value::Int(route.device)),
+                        Property::new(
+                            SPA_PARAM_ROUTE_props,
+                            self.create_property_value(ParamType::Route),
+                        ),
+                        Property::new(SPA_PARAM_ROUTE_save, Value::Bool(true)),
+                    ],
+                });
+                debug!("Setting Device Route param: {:?}", route_param);
 
-                let mut object_param_route_frame = MaybeUninit::uninit();
-
-                // Safety: Frames must be popped in the reverse order they were pushed.
-                // push_object initializes the frame.
-                // object_param_route_frame is frame 1
-                unsafe {
-                    pod_builder.push_object(
-                        &mut object_param_route_frame,
-                        SpaTypes::ObjectParamRoute.as_raw(),
-                        ParamType::Route.as_raw(),
-                    )
-                }
-                .expect("Could not push object");
-
-                pod_builder
-                    .add_prop(SPA_PARAM_ROUTE_index, 0)
-                    .expect("Could not add prop");
-
-                pod_builder.add_int(route.index).expect("Could not add int");
-
-                pod_builder
-                    .add_prop(SPA_PARAM_ROUTE_device, 0)
-                    .expect("Could not add prop");
-
-                pod_builder
-                    .add_int(route.device)
-                    .expect("Could not add int");
-
-                pod_builder
-                    .add_prop(SPA_PARAM_ROUTE_props, 0)
-                    .expect("Could not add prop");
-
-                let mut object_param_props_frame = MaybeUninit::uninit();
-
-                // Safety: object_param_props_frame is frame 2
-                unsafe {
-                    pod_builder.push_object(
-                        &mut object_param_props_frame,
-                        SpaTypes::ObjectParamProps.as_raw(),
-                        ParamType::Route.as_raw(),
-                    )
-                }
-                .expect("Could not push object");
-
-                match &self {
-                    SetVolume(_, volume) => {
-                        pod_builder
-                            .add_prop(SPA_PROP_channelVolumes, 0)
-                            .expect("Could not add prop");
-
-                        let mut array_frame = MaybeUninit::uninit();
-
-                        // Safety: push_array initializes the frame.
-                        // array_frame is frame 3
-                        unsafe { pod_builder.push_array(&mut array_frame) }
-                            .expect("Could not push object");
-
-                        for vol in volume {
-                            let vol = vol / NORMAL;
-                            pod_builder
-                                .add_float(vol * vol * vol)
-                                .expect("Could not add bool");
-                        }
-
-                        // Safety: array_frame is popped here, which is frame 3
-                        unsafe {
-                            PodBuilder::pop(&mut pod_builder, array_frame.assume_init_mut());
-                        }
-                    }
-                    Mute(_, mute) => {
-                        pod_builder
-                            .add_prop(SPA_PROP_mute, 0)
-                            .expect("Could not add prop");
-                        pod_builder.add_bool(*mute).expect("Could not add bool");
-                    }
-                }
-
-                // Safety: object_param_props_frame is popped here, which is frame 2
-                unsafe {
-                    PodBuilder::pop(&mut pod_builder, object_param_props_frame.assume_init_mut());
-                }
-
-                pod_builder
-                    .add_prop(SPA_PARAM_ROUTE_save, 0)
-                    .expect("Could not add prop");
-                pod_builder.add_bool(true).expect("Could not add bool");
-
-                // Safety: object_param_route_frame is popped here, which is frame 1
-                unsafe {
-                    PodBuilder::pop(&mut pod_builder, object_param_route_frame.assume_init_mut());
-                }
-
-                debug!(
-                    "Setting Device Route param: {:?}",
-                    PodDeserializer::deserialize_from::<Value>(&pod_data)
-                );
+                let pod_data = PodSerializer::serialize(Cursor::new(Vec::new()), &route_param)
+                    .expect("Failed to serialize route pod")
+                    .0
+                    .into_inner();
                 let pod = Pod::from_bytes(&pod_data).expect("Unable to construct pod");
                 device_proxy.set_param(ParamType::Route, 0, pod);
             }
@@ -486,27 +382,37 @@ impl CommandKind {
 pub(crate) struct Client {
     event_senders: Mutex<Vec<UnboundedSender<EventKind>>>,
     command_sender: PwSender<CommandKind>,
+    handle: JoinHandle<()>,
     pub data: Mutex<Data>,
 }
 
 impl Client {
     fn new() -> Result<Client> {
-        let (tx, rx) = pw_channel();
+        let (command_sender, command_receiver) = channel();
 
-        thread::Builder::new()
+        let handle = thread::Builder::new()
             .name("i3status_pipewire".to_string())
-            .spawn(|| Client::main_loop_thread(rx))
+            .spawn(|| Client::main_loop_thread(command_receiver))
             .error("failed to spawn a thread")?;
 
         Ok(Self {
             event_senders: Mutex::new(Vec::new()),
-            command_sender: tx,
+            command_sender,
+            handle,
             data: Mutex::new(Data::default()),
         })
     }
 
-    fn main_loop_thread(command_receiver: PwReceiver<CommandKind>) {
-        let client = CLIENT.as_ref().error("Could not get client").unwrap();
+    pub fn is_terminated(&self) -> bool {
+        self.handle.is_finished()
+    }
+
+    fn main_loop_thread(command_receiver: PwReceiver<CommandKind>) -> ! {
+        let client = CLIENT.as_ref().expect("Could not get client");
+
+        panic::set_hook(Box::new(|_| {
+            client.send_update_event(EventKind::PIPEWIRE_CONNECTION_ERROR);
+        }));
 
         let proplist = properties! {*keys::APP_NAME => env!("CARGO_PKG_NAME")};
 
@@ -929,7 +835,7 @@ impl Client {
             .expect("Could not connect input_stream");
 
         while !output_done.get() {
-            main_loop.loop_().iterate(Duration::from_secs(1));
+            main_loop.loop_().iterate(Timeout::Infinite);
             let event = update.take();
             if !event.is_empty() {
                 client.send_update_event(event);
@@ -941,7 +847,7 @@ impl Client {
         output_stream_listener.unregister();
 
         while !input_done.get() {
-            main_loop.loop_().iterate(Duration::from_secs(1));
+            main_loop.loop_().iterate(Timeout::Infinite);
             let event = update.take();
             if !event.is_empty() {
                 client.send_update_event(event);
@@ -955,7 +861,7 @@ impl Client {
         // END WORKAROUND FOR PIPEWIRE LOOPBACK BUG
 
         loop {
-            main_loop.loop_().iterate(Duration::from_hours(24));
+            main_loop.loop_().iterate(Timeout::Infinite);
             let event = update.take();
             if !event.is_empty() {
                 client.send_update_event(event);

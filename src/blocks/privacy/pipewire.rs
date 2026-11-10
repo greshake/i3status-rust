@@ -2,7 +2,7 @@ use itertools::Itertools as _;
 use tokio::sync::mpsc::{UnboundedReceiver, unbounded_channel};
 
 use super::*;
-use crate::pipewire::{CLIENT, EventKind, Link, Node};
+use crate::pipewire::{CLIENT, EventKind, Link, Node, PIPEWIRE_CONNECTION_ERROR_MSG};
 
 #[derive(Deserialize, Debug, SmartDefault)]
 #[serde(rename_all = "lowercase", deny_unknown_fields, default)]
@@ -52,6 +52,9 @@ impl<'a> Monitor<'a> {
 impl PrivacyMonitor for Monitor<'_> {
     async fn get_info(&mut self) -> Result<PrivacyInfo> {
         let client = CLIENT.as_ref().error("Could not get client")?;
+        if client.is_terminated() {
+            return Err(Error::new(PIPEWIRE_CONNECTION_ERROR_MSG));
+        }
         let data = client.data.lock().unwrap();
         let mut mapping: PrivacyInfo = PrivacyInfo::new();
 
@@ -109,6 +112,8 @@ impl PrivacyMonitor for Monitor<'_> {
                     | EventKind::LINK_REMOVED,
             ) {
                 break;
+            } else if event.contains(EventKind::PIPEWIRE_CONNECTION_ERROR) {
+                return Err(Error::new(PIPEWIRE_CONNECTION_ERROR_MSG));
             }
         }
         Ok(())

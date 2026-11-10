@@ -32,6 +32,7 @@
 //! ---------------------|---------
 //! `"redshift"`         | X11
 //! `"sct"`              | X11
+//! `"xsct"`             | X11
 //! `"gammastep"`        | X11 and Wayland
 //! `"wl_gammarelay"`    | Wayland
 //! `"wl_gammarelay_rs"` | Wayland
@@ -81,7 +82,14 @@ pub struct Config {
     pub click_temp: u16,
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    let format = config.format.with_default(" $icon $temperature ")?;
+    BlockPlan::new(vec![
+        OutputPlan::new("main", format).icon("icon", IconChoices::one(icons::HUESHIFT)),
+    ])
+}
+
+pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, None, "set_click_temp"),
@@ -90,7 +98,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         (MouseButton::WheelDown, None, "temperature_down"),
     ])?;
 
-    let format = config.format.with_default(" $icon $temperature ")?;
+    let output_main = plan.output("main")?;
 
     // limit too big steps at 500K to avoid too brutal changes
     let step = config.step.min(500);
@@ -108,6 +116,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 HueShifter::Redshift
             } else if has_command("sct").await? {
                 HueShifter::Sct
+            } else if has_command("xsct").await? {
+                HueShifter::Xsct
             } else if has_command("gammastep").await? {
                 HueShifter::Gammastep
             } else if has_command("wlsunset").await? {
@@ -120,7 +130,8 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 
     let mut driver: Box<dyn HueShiftDriver> = match hue_shifter {
         HueShifter::Redshift => Box::new(Redshift::new(config.interval)),
-        HueShifter::Sct => Box::new(Sct::new(config.interval)),
+        HueShifter::Sct => Box::new(Sct::new("sct", config.interval)),
+        HueShifter::Xsct => Box::new(Sct::new("xsct", config.interval)),
         HueShifter::Gammastep => Box::new(Gammastep::new(config.interval)),
         HueShifter::Wlsunset => Box::new(Wlsunset::new(config.interval)),
         HueShifter::WlGammarelay => Box::new(WlGammarelayRs::new("wl-gammarelay").await?),
@@ -130,9 +141,9 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut current_temp = driver.get().await?.unwrap_or(config.current_temp);
 
     loop {
-        let mut widget = Widget::new().with_format(format.clone());
+        let mut widget = output_main.new_widget();
         widget.set_values(map! {
-            "icon" => Value::icon("hueshift"),
+            "icon" => Value::icon(icons::HUESHIFT),
             "temperature" => Value::number(current_temp)
         });
         api.set_widget(widget)?;
@@ -179,6 +190,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
 pub enum HueShifter {
     Redshift,
     Sct,
+    Xsct,
     Gammastep,
     Wlsunset,
     WlGammarelay,
@@ -225,12 +237,13 @@ impl HueShiftDriver for Redshift {
 }
 
 struct Sct {
+    cmd: &'static str,
     interval: Seconds,
 }
 
 impl Sct {
-    fn new(interval: Seconds) -> Self {
-        Self { interval }
+    fn new(cmd: &'static str, interval: Seconds) -> Self {
+        Self { cmd, interval }
     }
 }
 
@@ -241,11 +254,11 @@ impl HueShiftDriver for Sct {
         Ok(None)
     }
     async fn update(&mut self, temp: u16) -> Result<()> {
-        spawn_shell(&format!("sct {temp} >/dev/null 2>&1"))
+        spawn_shell(&format!("{0} {temp} >/dev/null 2>&1", self.cmd))
             .error("Failed to set new color temperature using sct.")
     }
     async fn reset(&mut self) -> Result<()> {
-        spawn_process("sct", &[]).error("Failed to set new color temperature using sct.")
+        spawn_process(self.cmd, &["0"]).error("Failed to set new color temperature using sct.")
     }
     async fn receive_update(&mut self) -> Result<u16> {
         sleep(self.interval.0).await;
@@ -393,4 +406,31 @@ trait WlGammarelayRsBus {
     fn temperature(&self) -> zbus::Result<u16>;
     #[zbus(property)]
     fn set_temperature(&self, value: u16) -> zbus::Result<()>;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_a_single_output_with_its_icon() {
+        let plan = prepare(&Config::default()).unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["main"]);
+        let main = plan.output("main").unwrap();
+        assert_eq!(main.single_icon("icon").unwrap(), "hueshift");
+        assert!(main.format().contains_key("temperature"));
+    }
+
+    #[test]
+    fn configured_format_is_installed() {
+        let config = Config {
+            format: " $temperature ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        let main = plan.output("main").unwrap();
+        assert!(!main.format().contains_key("icon"));
+        assert!(main.format().contains_key("temperature"));
+    }
 }

@@ -1,0 +1,23 @@
+{
+    "background": "#222222ff",
+    "statusline": "#ddddddff",
+    "separator": "#93a1a1ff",
+    "focused_background": "#222222ff",
+    "focused_statusline": "#ddddddff",
+    "focused_separator": "#93a1a1ff",
+    "focused_workspace_border": "#0088ccff",
+    "focused_workspace_bg": "#0088ccff",
+    "focused_workspace_text": "#ffffffff",
+    "inactive_workspace_border": "#333333ff",
+    "inactive_workspace_bg": "#333333ff",
+    "inactive_workspace_text": "#888888ff",
+    "active_workspace_border": "#333333ff",
+    "active_workspace_bg": "#333333ff",
+    "active_workspace_text": "#ffffffff",
+    "urgent_workspace_border": "#2f343aff",
+    "urgent_workspace_bg": "#900000ff",
+    "urgent_workspace_text": "#ffffffff",
+    "binding_mode_border": "#2f343aff",
+    "binding_mode_bg": "#900000ff",
+    "binding_mode_text": "#ffffffff"
+}

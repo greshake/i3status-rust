@@ -14,11 +14,11 @@
 //! Key | Values | Default
 //! ----|--------|--------
 //! `service` | The configuration of a weather service (see below). | **Required**
-//! `format` | A string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | `" $icon $weather $temp "`
-//! `format_alt` | If set, block will switch between `format` and `format_alt` on every click | `None`
+//! `format` | A [MultiFormat][MaybeMultiFormatConfig] string to customise the output of this block. See below for available placeholders. Text may need to be escaped, refer to [Escaping Text](#escaping-text). | `[" $icon $weather $temp "]`
 //! `interval` | Update interval, in seconds. | `600`
 //! `autolocate` | Gets your location using the ipapi.co IP location service (no API key required). If the API call fails then the block will fallback to service specific location config. | `false`
 //! `autolocate_interval` | Update interval for `autolocate` in seconds or "once" | `interval`
+//! `units` | Either `"metric"` (°C, m/s) or `"imperial"` (°F, mph). If set, will supersede any `units` setting in the service-specific config. | `"metric"`
 //!
 //! # OpenWeatherMap Options
 //!
@@ -32,7 +32,7 @@
 //! `city_id` | OpenWeatherMap's ID for the city. (Deprecated) | Yes* | None
 //! `place` | OpenWeatherMap 'By {city name},{state code},{country code}' search query. See [here](https://openweathermap.org/api/geocoding-api#direct_name). Consumes an additional API call | Yes* | None
 //! `zip` | OpenWeatherMap 'By {zip code},{country code}' search query. See [here](https://openweathermap.org/api/geocoding-api#direct_zip). Consumes an additional API call | Yes* | None
-//! `units` | Either `"metric"` or `"imperial"`. | No | `"metric"`
+//! `units` *DEPRECATED* | Either `"metric"` or `"imperial"`. | No | `"metric"`
 //! `lang` | Language code. See [here](https://openweathermap.org/current#multi). Currently only affects `weather_verbose` key. | No | `"en"`
 //! `forecast_hours` | How many hours should be forecast (must be increments of 3 hours, max 120 hours) | No | 12
 //!
@@ -63,7 +63,7 @@
 //! `name` | `nws`. | Yes | None
 //! `coordinates` | GPS latitude longitude coordinates as a tuple, example: `["39.2362","9.3317"]` | Required if `autolocate = false` | None
 //! `forecast_hours` | How many hours should be forecast | No | 12
-//! `units` | Either `"metric"` or `"imperial"`. | No | `"metric"`
+//! `units` *DEPRECATED* | Either `"metric"` or `"imperial"`. | No | `"metric"`
 //!
 //! Forecasts gather statistics from each hour between now and the `forecast_hours` value, and
 //! provide predicted weather at the set number of hours into the future.
@@ -76,14 +76,18 @@
 //! `icon{,_ffin}`                               | Icon representing the weather                                                 | Icon     | -
 //! `weather{,_ffin}`                            | Textual brief description of the weather, e.g. "Raining"                      | Text     | -
 //! `weather_verbose{,_ffin}`                    | Textual verbose description of the weather, e.g. "overcast clouds"            | Text     | -
-//! `temp{,_{favg,fmin,fmax,ffin}}`              | Temperature                                                                   | Number   | degrees
-//! `apparent{,_{favg,fmin,fmax,ffin}}`          | Australian Apparent Temperature                                               | Number   | degrees
+//! `temp{,_{favg,fmin,fmax,ffin}}`              | Temperature (°C or °F, based on `units`)                                      | Number   | degrees
+//! `apparent{,_{favg,fmin,fmax,ffin}}`          | Australian Apparent Temperature (°C or °F, based on `units`)                  | Number   | degrees
 //! `humidity{,_{favg,fmin,fmax,ffin}}`          | Humidity                                                                      | Number   | %
-//! `wind{,_{favg,fmin,fmax,ffin}}`              | Wind speed                                                                    | Number   | -
+//! `wind{,_{favg,fmin,fmax,ffin}}`              | Wind speed (m/s or mph, based on `units`)                                     | Number   | -
 //! `wind_kmh{,_{favg,fmin,fmax,ffin}}`          | Wind speed. The wind speed in km/h                                            | Number   | -
 //! `direction{,_{favg,fmin,fmax,ffin}}`         | Wind direction, e.g. "NE"                                                     | Text     | -
-//! `sunrise`                                    | Time of sunrise                                                               | DateTime | -
-//! `sunset`                                     | Time of sunset                                                                | DateTime | -
+//! `sunrise`                                    | Time of sunrise (may be absent if it's a polar day or polar night)[^polar]    | DateTime | -
+//! `sunset`                                     | Time of sunset (may be absent if it's a polar day or polar night)[^polar]     | DateTime | -
+//!
+//! [^polar]: On polar days and polar nights, sunrise or sunset may not occur on a given day, and thus the corresponding value may be absent.
+//! This behaviour depends on the weather service used.
+//! For met.no and nws, both sunrise and sunset will be absent on polar days and polar nights, but OpenWeatherMap will show the same time for both sunrise and sunset.
 //!
 //! You can use the suffixes noted above to get the following:
 //!
@@ -97,7 +101,9 @@
 //!
 //! Action          | Description                               | Default button
 //! ----------------|-------------------------------------------|---------------
-//! `toggle_format` | Toggles between `format` and `format_alt` | Left
+//! `toggle_format` **DEPRECATED** | Toggles between `format` and `format_alt` | -
+//! `next_format`  | Switches to the next format in the list     | Left
+//! `prev_format`  | Switches to the previous format in the list | Right
 //!
 //! # Examples
 //!
@@ -129,42 +135,42 @@
 //!
 //! # Used Icons
 //!
-//! - `weather_sun` (when weather is reported as "Clear" during the day)
-//! - `weather_moon` (when weather is reported as "Clear" at night)
-//! - `weather_clouds` (when weather is reported as "Clouds" during the day)
-//! - `weather_clouds_night` (when weather is reported as "Clouds" at night)
-//! - `weather_fog` (when weather is reported as "Fog" or "Mist" during the day)
-//! - `weather_fog_night` (when weather is reported as "Fog" or "Mist" at night)
-//! - `weather_rain` (when weather is reported as "Rain" or "Drizzle" during the day)
-//! - `weather_rain_night` (when weather is reported as "Rain" or "Drizzle" at night)
-//! - `weather_snow` (when weather is reported as "Snow")
-//! - `weather_thunder` (when weather is reported as "Thunderstorm" during the day)
-//! - `weather_thunder_night` (when weather is reported as "Thunderstorm" at night)
+//! - `weather_sun` (`$icon` `$icon_ffin`, when weather is reported as "Clear" during the day)
+//! - `weather_moon` (`$icon` `$icon_ffin`, when weather is reported as "Clear" at night)
+//! - `weather_clouds` (`$icon` `$icon_ffin`, when weather is reported as "Clouds" during the day)
+//! - `weather_clouds_night` (`$icon` `$icon_ffin`, when weather is reported as "Clouds" at night)
+//! - `weather_fog` (`$icon` `$icon_ffin`, when weather is reported as "Fog" or "Mist" during the day)
+//! - `weather_fog_night` (`$icon` `$icon_ffin`, when weather is reported as "Fog" or "Mist" at night)
+//! - `weather_rain` (`$icon` `$icon_ffin`, when weather is reported as "Rain" or "Drizzle" during the day)
+//! - `weather_rain_night` (`$icon` `$icon_ffin`, when weather is reported as "Rain" or "Drizzle" at night)
+//! - `weather_snow` (`$icon` `$icon_ffin`, when weather is reported as "Snow")
+//! - `weather_thunder` (`$icon` `$icon_ffin`, when weather is reported as "Thunderstorm" during the day)
+//! - `weather_thunder_night` (`$icon` `$icon_ffin`, when weather is reported as "Thunderstorm" at night)
+//! - `weather_default` (`$icon` `$icon_ffin`, in all other cases)
 
 use chrono::{DateTime, Utc};
 use sunrise::{SolarDay, SolarEvent};
 
+use super::prelude::*;
 use crate::formatting::Format;
 pub(super) use crate::geolocator::IPAddressInfo;
-
-use super::prelude::*;
+use crate::util::{celsius_to_fahrenheit, kmh_to_mph, kmh_to_mps};
 
 pub mod met_no;
 pub mod nws;
 pub mod open_weather_map;
 
 #[derive(Deserialize, Debug)]
-#[serde(deny_unknown_fields)]
 pub struct Config {
     #[serde(default = "default_interval")]
     pub interval: Seconds,
-    #[serde(default)]
-    pub format: FormatConfig,
-    pub format_alt: Option<FormatConfig>,
+    #[serde(flatten)]
+    pub formats: MaybeMultiFormatConfig,
     pub service: WeatherService,
     #[serde(default)]
     pub autolocate: bool,
     pub autolocate_interval: Option<Seconds>,
+    pub units: Option<UnitSystem>,
 }
 
 fn default_interval() -> Seconds {
@@ -211,20 +217,38 @@ enum WeatherIcon {
 }
 
 impl WeatherIcon {
+    /// Every icon name [`Self::to_icon_str`] can return. The weather
+    /// condition is externally selected but finite, so the block plan
+    /// declares the full set.
+    const ALL_NAMES: [&'static str; 12] = [
+        icons::WEATHER_SUN,
+        icons::WEATHER_MOON,
+        icons::WEATHER_CLOUDS,
+        icons::WEATHER_CLOUDS_NIGHT,
+        icons::WEATHER_FOG,
+        icons::WEATHER_FOG_NIGHT,
+        icons::WEATHER_RAIN,
+        icons::WEATHER_RAIN_NIGHT,
+        icons::WEATHER_SNOW,
+        icons::WEATHER_THUNDER,
+        icons::WEATHER_THUNDER_NIGHT,
+        icons::WEATHER_DEFAULT,
+    ];
+
     fn to_icon_str(self) -> &'static str {
         match self {
-            Self::Clear { is_night: false } => "weather_sun",
-            Self::Clear { is_night: true } => "weather_moon",
-            Self::Clouds { is_night: false } => "weather_clouds",
-            Self::Clouds { is_night: true } => "weather_clouds_night",
-            Self::Fog { is_night: false } => "weather_fog",
-            Self::Fog { is_night: true } => "weather_fog_night",
-            Self::Rain { is_night: false } => "weather_rain",
-            Self::Rain { is_night: true } => "weather_rain_night",
-            Self::Snow => "weather_snow",
-            Self::Thunder { is_night: false } => "weather_thunder",
-            Self::Thunder { is_night: true } => "weather_thunder_night",
-            Self::Default => "weather_default",
+            Self::Clear { is_night: false } => icons::WEATHER_SUN,
+            Self::Clear { is_night: true } => icons::WEATHER_MOON,
+            Self::Clouds { is_night: false } => icons::WEATHER_CLOUDS,
+            Self::Clouds { is_night: true } => icons::WEATHER_CLOUDS_NIGHT,
+            Self::Fog { is_night: false } => icons::WEATHER_FOG,
+            Self::Fog { is_night: true } => icons::WEATHER_FOG_NIGHT,
+            Self::Rain { is_night: false } => icons::WEATHER_RAIN,
+            Self::Rain { is_night: true } => icons::WEATHER_RAIN_NIGHT,
+            Self::Snow => icons::WEATHER_SNOW,
+            Self::Thunder { is_night: false } => icons::WEATHER_THUNDER,
+            Self::Thunder { is_night: true } => icons::WEATHER_THUNDER_NIGHT,
+            Self::Default => icons::WEATHER_DEFAULT,
         }
     }
 }
@@ -237,7 +261,6 @@ struct WeatherMoment {
     temp: f64,
     apparent: f64,
     humidity: f64,
-    wind: f64,
     wind_kmh: f64,
     wind_direction: Option<f64>,
 }
@@ -246,7 +269,6 @@ struct ForecastAggregate {
     temp: f64,
     apparent: f64,
     humidity: f64,
-    wind: f64,
     wind_kmh: f64,
     wind_direction: Option<f64>,
 }
@@ -255,7 +277,6 @@ struct ForecastAggregateSegment {
     temp: Option<f64>,
     apparent: Option<f64>,
     humidity: Option<f64>,
-    wind: Option<f64>,
     wind_kmh: Option<f64>,
     wind_direction: Option<f64>,
 }
@@ -264,26 +285,26 @@ struct WeatherResult {
     location: String,
     current_weather: WeatherMoment,
     forecast: Option<Forecast>,
-    sunrise: DateTime<Utc>,
-    sunset: DateTime<Utc>,
+    sunrise: Option<DateTime<Utc>>,
+    sunset: Option<DateTime<Utc>>,
 }
 
 impl WeatherResult {
-    fn into_values(self) -> Values {
+    fn into_values(self, unit_system: &UnitSystem) -> Values {
         let mut values = map! {
             "location" => Value::text(self.location),
             //current_weather
             "icon" => Value::icon(self.current_weather.icon.to_icon_str()),
-            "temp" => Value::degrees(self.current_weather.temp),
-            "apparent" => Value::degrees(self.current_weather.apparent),
+            "temp" => unit_system.temperature_value(self.current_weather.temp),
+            "apparent" => unit_system.temperature_value(self.current_weather.apparent),
             "humidity" => Value::percents(self.current_weather.humidity),
             "weather" => Value::text(self.current_weather.weather),
             "weather_verbose" => Value::text(self.current_weather.weather_verbose),
-            "wind" => Value::number(self.current_weather.wind),
+            "wind" => unit_system.wind_speed_value(self.current_weather.wind_kmh),
             "wind_kmh" => Value::number(self.current_weather.wind_kmh),
             "direction" => Value::text(convert_wind_direction(self.current_weather.wind_direction).into()),
-            "sunrise" => Value::datetime(self.sunrise, None),
-            "sunset" => Value::datetime(self.sunset, None),
+            [if let Some(sunrise) = self.sunrise] "sunrise" => Value::datetime(sunrise, None),
+            [if let Some(sunset) = self.sunset] "sunset" => Value::datetime(sunset, None),
         };
 
         if let Some(forecast) = self.forecast {
@@ -291,10 +312,10 @@ impl WeatherResult {
                 ({$($suffix: literal => $src: expr),* $(,)?}) => {
                     map!{ @extend values
                         $(
-                            concat!("temp_f", $suffix) => Value::degrees($src.temp),
-                            concat!("apparent_f", $suffix) => Value::degrees($src.apparent),
+                            concat!("temp_f", $suffix) => unit_system.temperature_value($src.temp),
+                            concat!("apparent_f", $suffix) => unit_system.temperature_value($src.apparent),
                             concat!("humidity_f", $suffix) => Value::percents($src.humidity),
-                            concat!("wind_f", $suffix) => Value::number($src.wind),
+                            concat!("wind_f", $suffix) => unit_system.wind_speed_value($src.wind_kmh),
                             concat!("wind_kmh_f", $suffix) => Value::number($src.wind_kmh),
                             concat!("direction_f", $suffix) => Value::text(convert_wind_direction($src.wind_direction).into()),
                         )*
@@ -334,8 +355,6 @@ impl Forecast {
         let mut apparent_count = 0.0;
         let mut humidity_avg = 0.0;
         let mut humidity_count = 0.0;
-        let mut wind_north_avg = 0.0;
-        let mut wind_east_avg = 0.0;
         let mut wind_kmh_north_avg = 0.0;
         let mut wind_kmh_east_avg = 0.0;
         let mut wind_count = 0.0;
@@ -343,7 +362,6 @@ impl Forecast {
             temp: f64::MIN,
             apparent: f64::MIN,
             humidity: f64::MIN,
-            wind: f64::MIN,
             wind_kmh: f64::MIN,
             wind_direction: None,
         };
@@ -351,7 +369,6 @@ impl Forecast {
             temp: f64::MAX,
             apparent: f64::MAX,
             humidity: f64::MAX,
-            wind: f64::MAX,
             wind_kmh: f64::MAX,
             wind_direction: None,
         };
@@ -375,27 +392,21 @@ impl Forecast {
                 humidity_count += 1.0;
             }
 
-            if let Some(wind) = val.wind
-                && let Some(wind_kmh) = val.wind_kmh
-            {
+            if let Some(wind_kmh) = val.wind_kmh {
                 if let Some(degrees) = val.wind_direction {
                     let (sin, cos) = degrees.to_radians().sin_cos();
-                    wind_north_avg += wind * cos;
-                    wind_east_avg += wind * sin;
                     wind_kmh_north_avg += wind_kmh * cos;
                     wind_kmh_east_avg += wind_kmh * sin;
                     wind_count += 1.0;
                 }
 
-                if wind > max.wind {
+                if wind_kmh > max.wind_kmh {
                     max.wind_direction = val.wind_direction;
-                    max.wind = wind;
                     max.wind_kmh = wind_kmh;
                 }
 
-                if wind < min.wind {
+                if wind_kmh < min.wind_kmh {
                     min.wind_direction = val.wind_direction;
-                    min.wind = wind;
                     min.wind_kmh = wind_kmh;
                 }
             }
@@ -406,15 +417,14 @@ impl Forecast {
         apparent_avg /= apparent_count;
 
         // Calculate the wind results separately, discarding invalid wind values
-        let (wind_avg, wind_kmh_avg, wind_direction_avg) = if wind_count == 0.0 {
-            (0.0, 0.0, None)
+        let (wind_kmh_avg, wind_direction_avg) = if wind_count == 0.0 {
+            (0.0, None)
         } else {
             (
-                wind_east_avg.hypot(wind_north_avg) / wind_count,
                 wind_kmh_east_avg.hypot(wind_kmh_north_avg) / wind_count,
                 Some(
-                    wind_east_avg
-                        .atan2(wind_north_avg)
+                    wind_kmh_east_avg
+                        .atan2(wind_kmh_north_avg)
                         .to_degrees()
                         .rem_euclid(360.0),
                 ),
@@ -425,7 +435,6 @@ impl Forecast {
             temp: temp_avg,
             apparent: apparent_avg,
             humidity: humidity_avg,
-            wind: wind_avg,
             wind_kmh: wind_kmh_avg,
             wind_direction: wind_direction_avg,
         };
@@ -433,45 +442,70 @@ impl Forecast {
     }
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    let weather_icons = || IconChoices::fixed(WeatherIcon::ALL_NAMES);
+    let declare = |output: OutputPlan| {
+        output
+            .icon("icon", weather_icons())
+            .icon("icon_ffin", weather_icons())
+    };
+    let formats = config.formats.with_default(" $icon $weather $temp ")?;
+    BlockPlan::new(format_outputs(formats, declare))
+}
+
+pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
-    api.set_default_actions(&[(MouseButton::Left, None, "toggle_format")])?;
+    api.set_default_actions(&[
+        (MouseButton::Left, None, "next_format"),
+        (MouseButton::Right, None, "prev_format"),
+    ])?;
 
-    let mut format = config.format.with_default(" $icon $weather $temp ")?;
-    let mut format_alt = match &config.format_alt {
-        Some(f) => Some(f.with_default("")?),
-        None => None,
-    };
+    let mut formats = FormatRotation::new(plan)?;
 
-    let provider: Box<dyn WeatherProvider + Send + Sync> = match &config.service {
-        WeatherService::MetNo(service_config) => Box::new(met_no::Service::new(service_config)?),
-        WeatherService::OpenWeatherMap(service_config) => {
-            Box::new(open_weather_map::Service::new(config.autolocate, service_config).await?)
-        }
-        WeatherService::Nws(service_config) => {
-            Box::new(nws::Service::new(config.autolocate, service_config).await?)
-        }
-    };
+    let (provider, service_units): (Box<dyn WeatherProvider + Send + Sync>, UnitSystem) =
+        match &config.service {
+            WeatherService::MetNo(service_config) => (
+                Box::new(met_no::Service::new(service_config)?),
+                UnitSystem::default(),
+            ),
+            WeatherService::OpenWeatherMap(service_config) => (
+                Box::new(open_weather_map::Service::new(config.autolocate, service_config).await?),
+                service_config.units,
+            ),
+            WeatherService::Nws(service_config) => (
+                Box::new(nws::Service::new(config.autolocate, service_config).await?),
+                service_config.units,
+            ),
+        };
+    let units = config.units.unwrap_or(service_units);
 
-    let autolocate_interval = config.autolocate_interval.unwrap_or(config.interval);
-    let need_forecast = need_forecast(&format, format_alt.as_ref());
+    let autolocate_interval = config.autolocate_interval.unwrap_or(config.interval).0;
+    // The plan holds one output per configured format, so the formats the
+    // user can rotate to are exactly the ones a forecast may be needed for.
+    let declared_formats: Vec<Format> = plan.outputs().map(|o| o.format().clone()).collect();
+    let need_forecast = need_forecast(&declared_formats);
 
     let mut timer = config.interval.timer();
 
     loop {
         let location = if config.autolocate {
-            let fetch = || api.find_ip_location(&REQWEST_CLIENT, autolocate_interval.0);
-            Some(fetch.retry(ExponentialBuilder::default()).await?)
+            Some(
+                api.find_ip_location(&REQWEST_CLIENT, autolocate_interval)
+                    .await?,
+            )
         } else {
             None
         };
 
         let fetch = || provider.get_weather(location.as_ref(), need_forecast);
         let data = fetch.retry(ExponentialBuilder::default()).await?;
-        let data_values = data.into_values();
+        // Every output declares the same icon choices, so minting against the
+        // currently selected one stays valid after a format rotation.
+        let data_values = data.into_values(&units);
 
         loop {
-            let mut widget = Widget::new().with_format(format.clone());
+            let output = formats.current();
+            let mut widget = output.new_widget();
             widget.set_values(data_values.clone());
             api.set_widget(widget)?;
 
@@ -479,10 +513,11 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 _ = timer.tick() => break,
                 _ = api.wait_for_update_request() => break,
                 Some(action) = actions.recv() => match action.as_ref() {
-                        "toggle_format" => {
-                            if let Some(ref mut format_alt) = format_alt {
-                                std::mem::swap(format_alt, &mut format);
-                            }
+                        "next_format" | "toggle_format" => {
+                            formats.next();
+                        }
+                        "prev_format" => {
+                            formats.prev();
                         }
                         _ => (),
                     }
@@ -491,7 +526,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     }
 }
 
-fn need_forecast(format: &Format, format_alt: Option<&Format>) -> bool {
+fn need_forecast(formats: &[Format]) -> bool {
     fn has_forecast_key(format: &Format) -> bool {
         macro_rules! format_suffix {
             ($($suffix: literal),* $(,)?) => {
@@ -512,14 +547,14 @@ fn need_forecast(format: &Format, format_alt: Option<&Format>) -> bool {
             || format.contains_key("weather_ffin")
             || format.contains_key("weather_verbose_ffin")
     }
-    has_forecast_key(format) || format_alt.is_some_and(has_forecast_key)
+    formats.iter().any(has_forecast_key)
 }
 
 fn calculate_sunrise_sunset(
     lat: f64,
     lon: f64,
     altitude: Option<f64>,
-) -> Result<(DateTime<Utc>, DateTime<Utc>)> {
+) -> Result<(Option<DateTime<Utc>>, Option<DateTime<Utc>>)> {
     let date = Utc::now().date_naive();
     let coordinates = sunrise::Coordinates::new(lat, lon).error("Invalid coordinates")?;
     let solar_day = SolarDay::new(coordinates, date).with_altitude(altitude.unwrap_or_default());
@@ -532,7 +567,7 @@ fn calculate_sunrise_sunset(
 
 #[derive(Debug, Deserialize, Clone, Copy, PartialEq, Eq, SmartDefault)]
 #[serde(rename_all = "lowercase")]
-enum UnitSystem {
+pub enum UnitSystem {
     #[default]
     Metric,
     Imperial,
@@ -543,6 +578,22 @@ impl AsRef<str> for UnitSystem {
         match self {
             UnitSystem::Metric => "metric",
             UnitSystem::Imperial => "imperial",
+        }
+    }
+}
+
+impl UnitSystem {
+    fn temperature_value(&self, temp_celsius: f64) -> Value {
+        match self {
+            UnitSystem::Metric => Value::degrees_c(temp_celsius),
+            UnitSystem::Imperial => Value::degrees_f(celsius_to_fahrenheit(temp_celsius)),
+        }
+    }
+
+    fn wind_speed_value(&self, speed_kmh: f64) -> Value {
+        match self {
+            UnitSystem::Metric => Value::number(kmh_to_mps(speed_kmh)),
+            UnitSystem::Imperial => Value::number(kmh_to_mph(speed_kmh)),
         }
     }
 }
@@ -585,7 +636,6 @@ mod tests {
                         temp: None,
                         apparent: None,
                         humidity: None,
-                        wind: Some(1.0),
                         wind_kmh: Some(3.6),
                         wind_direction: Some(degrees),
                     },
@@ -593,14 +643,12 @@ mod tests {
                         temp: None,
                         apparent: None,
                         humidity: None,
-                        wind: Some(2.0),
                         wind_kmh: Some(7.2),
                         wind_direction: Some(degrees),
                     },
                 ],
                 WeatherMoment::default(),
             );
-            assert!((forecast.avg.wind - 1.5).abs() < 0.1);
             assert!((forecast.avg.wind_kmh - 5.4).abs() < 0.1);
             assert!((forecast.avg.wind_direction.unwrap() - degrees).abs() < 0.1);
 
@@ -620,7 +668,6 @@ mod tests {
                         temp: None,
                         apparent: None,
                         humidity: None,
-                        wind: Some(1.0),
                         wind_kmh: Some(3.6),
                         wind_direction: Some(low),
                     },
@@ -628,7 +675,6 @@ mod tests {
                         temp: None,
                         apparent: None,
                         humidity: None,
-                        wind: Some(1.0),
                         wind_kmh: Some(3.6),
                         wind_direction: Some(high),
                     },
@@ -655,7 +701,6 @@ mod tests {
                         temp: None,
                         apparent: None,
                         humidity: None,
-                        wind: Some(1.0),
                         wind_kmh: Some(3.6),
                         wind_direction: Some(low),
                     },
@@ -663,7 +708,6 @@ mod tests {
                         temp: None,
                         apparent: None,
                         humidity: None,
-                        wind: Some(2.0),
                         wind_kmh: Some(7.2),
                         wind_direction: Some(high),
                     },
@@ -678,5 +722,83 @@ mod tests {
             assert!(forecast.avg.wind_direction.unwrap() < high);
             degrees += 15.0;
         }
+    }
+
+    fn config(toml_str: &str) -> Config {
+        toml::from_str(toml_str).unwrap()
+    }
+
+    #[test]
+    fn every_condition_icon_is_declared() {
+        let all_variants = [
+            WeatherIcon::Clear { is_night: false },
+            WeatherIcon::Clear { is_night: true },
+            WeatherIcon::Clouds { is_night: false },
+            WeatherIcon::Clouds { is_night: true },
+            WeatherIcon::Fog { is_night: false },
+            WeatherIcon::Fog { is_night: true },
+            WeatherIcon::Rain { is_night: false },
+            WeatherIcon::Rain { is_night: true },
+            WeatherIcon::Snow,
+            WeatherIcon::Thunder { is_night: false },
+            WeatherIcon::Thunder { is_night: true },
+            WeatherIcon::Default,
+        ];
+        assert_eq!(all_variants.len(), WeatherIcon::ALL_NAMES.len());
+        for variant in all_variants {
+            assert!(WeatherIcon::ALL_NAMES.contains(&variant.to_icon_str()));
+        }
+    }
+
+    #[test]
+    fn every_configured_format_gets_an_output() {
+        let plan = prepare(&config("service = { name = \"metno\" }")).unwrap();
+        assert!(plan.output("format").is_ok());
+        assert!(plan.output("format2").is_err());
+
+        let plan = prepare(&config(
+            "service = { name = \"metno\" }\nformat = [\" $icon $temp \", \" $humidity \"]",
+        ))
+        .unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["format", "format2"]);
+        let alt = plan.output("format2").unwrap();
+        assert!(alt.format().contains_key("humidity"));
+        let choices = alt.output().choices_for("icon").unwrap();
+        assert!(choices.permits("weather_snow"));
+        assert!(!choices.permits("bat"));
+    }
+
+    #[test]
+    fn format_alt_still_produces_a_second_output() {
+        let plan = prepare(&config(
+            "service = { name = \"metno\" }\nformat_alt = \" $humidity \"",
+        ))
+        .unwrap();
+        let alt = plan.output("format2").unwrap();
+        assert!(alt.format().contains_key("humidity"));
+        assert!(
+            alt.output()
+                .choices_for("icon_ffin")
+                .unwrap()
+                .permits("weather_default")
+        );
+    }
+
+    #[test]
+    fn forecast_is_needed_when_any_rotated_format_asks_for_it() {
+        let plan = prepare(&config(
+            "service = { name = \"metno\" }\nformat = [\" $icon $temp \", \" $temp_favg \"]",
+        ))
+        .unwrap();
+        let formats: Vec<Format> = plan.outputs().map(|o| o.format().clone()).collect();
+        assert!(need_forecast(&formats));
+
+        let plan = prepare(&config(
+            "service = { name = \"metno\" }\nformat = [\" $icon $temp \", \" $humidity \"]",
+        ))
+        .unwrap();
+        let formats: Vec<Format> = plan.outputs().map(|o| o.format().clone()).collect();
+        assert!(!need_forecast(&formats));
     }
 }

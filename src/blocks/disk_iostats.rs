@@ -4,7 +4,7 @@
 //!
 //! Key | Values | Default
 //! ----|--------|--------
-//! `device` | Block device name to monitor (as specified in `/dev/`) | If not set, device will be automatically selected every `interval`
+//! `device` | Block device or partition name to monitor (as specified in `/dev/`) | If not set, device will be automatically selected every `interval`
 //! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $speed_read.eng(prefix:K) $speed_write.eng(prefix:K) "`
 //! `interval` | Update interval in seconds | `2`
 //! `missing_format` | Same as `format` but for when the device is missing | `" × "`
@@ -25,9 +25,18 @@
 //! format = " $icon $speed_write.eng(prefix:K) "
 //! ```
 //!
+//! Use labeled Games partition via persistent device names from /dev/disk/by-*/
+//!
+//! ```toml
+//! [[block]]
+//! block = "disk_iostats"
+//! device = "disk/by-partlabel/Games"
+//! format = " $icon $speed_write.eng(prefix:K) "
+//! ```
+//!
 //! # Icons Used
 //!
-//! - `disk_drive`
+//! - `disk_drive` (`$icon`)
 
 use super::prelude::*;
 use crate::util::read_file;
@@ -36,6 +45,7 @@ use std::ops;
 use std::path::Path;
 use std::time::Instant;
 use tokio::fs::read_dir;
+use tokio::fs::read_link;
 
 /// Path for block devices
 const BLOCK_DEVICES_PATH: &str = "/sys/class/block";
@@ -50,11 +60,23 @@ pub struct Config {
     pub missing_format: FormatConfig,
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
-    let format = config
-        .format
-        .with_default(" $icon $speed_read.eng(prefix:K) $speed_write.eng(prefix:K) ")?;
-    let missing_format = config.missing_format.with_default(" × ")?;
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    BlockPlan::new(vec![
+        OutputPlan::new(
+            "main",
+            config
+                .format
+                .with_default(" $icon $speed_read.eng(prefix:K) $speed_write.eng(prefix:K) ")?,
+        )
+        .icon("icon", IconChoices::one(icons::DISK_DRIVE)),
+        // The "missing" output sets no values at all.
+        OutputPlan::new("missing", config.missing_format.with_default(" × ")?),
+    ])
+}
+
+pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
+    let output_main = plan.output("main")?;
+    let output_missing = plan.output("missing")?;
 
     let mut timer = config.interval.timer();
     let mut old_stats = None;
@@ -67,12 +89,17 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         }
         match device {
             None => {
-                api.set_widget(Widget::new().with_format(missing_format.clone()))?;
+                api.set_widget(output_missing.new_widget())?;
             }
-            Some(device) => {
-                let mut widget = Widget::new();
+            Some(mut device) => {
+                let mut widget = output_main.new_widget();
 
-                widget.set_format(format.clone());
+                if let Ok(link) = read_link(Path::new("/dev/").join(&device)).await
+                    && let Some(name) = link.file_name()
+                    && let Ok(target) = name.to_os_string().into_string()
+                {
+                    device = target;
+                }
 
                 let new_stats = read_stats(&device).await?;
                 let sector_size = read_sector_size(&device).await?;
@@ -91,7 +118,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 old_stats = Some(new_stats);
 
                 widget.set_values(map! {
-                    "icon" => Value::icon("disk_drive"),
+                    "icon" => Value::icon(icons::DISK_DRIVE),
                     "speed_read" => Value::bytes(speed_read),
                     "speed_write" => Value::bytes(speed_write),
                     "device" => Value::text(device),
@@ -166,12 +193,65 @@ async fn read_stats(device: &str) -> Result<Stats> {
 }
 
 async fn read_sector_size(device: &str) -> Result<u64> {
-    let raw = read_file(
+    if let Ok(raw) = read_file(
         Path::new(BLOCK_DEVICES_PATH)
             .join(device)
             .join("queue/hw_sector_size"),
     )
     .await
-    .error("Failed to read HW sector size")?;
-    raw.parse::<u64>().error("Failed to parse HW sector size")
+    {
+        raw.parse::<u64>().error("Failed to parse HW sector size")
+    } else {
+        // queue/hw_sector_size didn't exist in device
+        // check for a device entry that has named device as a
+        // sub-directory and use that one instead for partitions
+        let mut sysfs_dir = read_dir(BLOCK_DEVICES_PATH)
+            .await
+            .error("Failed to open /sys/class/block directory")?;
+        while let Some(dir) = sysfs_dir
+            .next_entry()
+            .await
+            .error("Failed to read /sys/class/block directory")?
+        {
+            let path = dir.path();
+            if path.join(device).exists() {
+                let raw = read_file(path.join("queue/hw_sector_size"))
+                    .await
+                    .error("Failed to read partition HW sector size")?;
+                return raw
+                    .parse::<u64>()
+                    .error("Failed to parse partition HW sector size");
+            }
+        }
+        Err(Error::new(
+            "Failed to find device for partition HW sector size",
+        ))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_main_and_missing() {
+        let plan = prepare(&Config::default()).unwrap();
+        let main = plan.output("main").unwrap();
+        assert_eq!(main.single_icon("icon").unwrap(), "disk_drive");
+        assert!(main.format().contains_key("speed_read"));
+        assert!(main.format().contains_key("speed_write"));
+        let missing = plan.output("missing").unwrap();
+        assert_eq!(missing.output().icon_placeholders().count(), 0);
+    }
+
+    #[test]
+    fn custom_missing_format_is_used() {
+        let config = Config {
+            missing_format: " $device gone ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        let missing = plan.output("missing").unwrap();
+        assert!(missing.format().contains_key("device"));
+    }
 }

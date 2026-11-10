@@ -10,12 +10,16 @@
 //!
 //! Requires `nvidia-smi` for displaying info and `nvidia_settings` for setting fan speed.
 //!
+//! On laptops with switchable graphics, `nvidia-smi` powers on the dedicated GPU every time it
+//! runs, which keeps the GPU awake and raises power consumption. Increase `interval` or avoid this
+//! block if that matters on battery.
+//!
 //! # Configuration
 //!
 //! Key | Values | Default
 //! ----|--------|--------
 //! `gpu_id` | GPU id in system. | `0`
-//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $utilization $memory $temperature "`
+//! `format` | A string to customise the output of this block. See below for available placeholders. | `" $icon $utilization $vram_used $temperature "`
 //! `interval` | Update interval in seconds. | `1`
 //! `idle` | Maximum temperature, below which state is set to idle | `50`
 //! `good` | Maximum temperature, below which state is set to good | `70`
@@ -27,11 +31,16 @@
 //! `icon`        | Icon   | -
 //! `name`        | Text   | -
 //! `utilization` | Number | Percents
-//! `memory`      | Number | Bytes
+//! `memory`      | Number *DEPRECATED* | Bytes
+//! `vram_total`  | Number | Bytes
+//! `vram_used`   | Number | Bytes
+//! `vram_used_percents` | Number | Percents
 //! `temperature` | Number | Degrees
 //! `fan_speed`   | Number | Percents
 //! `clocks`      | Number | Hertz
 //! `power`       | Number | Watts
+//!
+//! `memory` has been deprecated in favor of `vram_used` and `vram_total`.
 //!
 //! Widget    | Placeholder
 //! ----------|-------------
@@ -40,7 +49,7 @@
 //!
 //! Action                  | Default button
 //! ------------------------|----------------
-//! `toggle_mem_total`      | Left on `mem_btn`
+//! `toggle_mem_total` *DEPRECATED* | Left on `mem_btn`
 //! `toggle_fan_controlled` | Left on `fan_btn`
 //! `fan_speed_up`          | Wheel Up on `fan_btn`
 //! `fan_speed_down`        | Wheel Down on `fan_btn`
@@ -55,7 +64,7 @@
 //! ```
 //!
 //! # Icons Used
-//! - `gpu`
+//! - `gpu` (`$icon`)
 //!
 //! # TODO
 //! - Provide a `mappings` option similar to `keyboard_layout`'s  to map GPU names to labels?
@@ -91,7 +100,19 @@ pub struct Config {
     pub warning: u32,
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    BlockPlan::new(vec![
+        OutputPlan::new(
+            "main",
+            config
+                .format
+                .with_default(" $icon $utilization $vram_used $temperature ")?,
+        )
+        .icon("icon", IconChoices::one(icons::GPU)),
+    ])
+}
+
+pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
     let mut actions = api.get_actions()?;
     api.set_default_actions(&[
         (MouseButton::Left, Some(MEM_BTN), "toggle_mem_total"),
@@ -100,9 +121,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         (MouseButton::WheelDown, Some(FAN_BTN), "fan_speed_down"),
     ])?;
 
-    let format = config
-        .format
-        .with_default(" $icon $utilization $memory $temperature ")?;
+    let output_main = plan.output("main")?;
 
     // Run `nvidia-smi` command
     let mut child = Command::new("nvidia-smi")
@@ -126,7 +145,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     let mut fan_controlled = false;
 
     loop {
-        let mut widget = Widget::new().with_format(format.clone());
+        let mut widget = output_main.new_widget();
 
         widget.state = match info.temperature {
             t if t <= config.idle => State::Idle,
@@ -137,11 +156,14 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
         };
 
         widget.set_values(map! {
-            "icon" => Value::icon("gpu"),
+            "icon" => Value::icon(icons::GPU),
             "name" => Value::text(info.name.clone()),
             "utilization" => Value::percents(info.utilization),
             "memory" => Value::bytes(if show_mem_total {info.mem_total} else {info.mem_used}).with_instance(MEM_BTN),
-            "temperature" => Value::degrees(info.temperature),
+            "vram_total" => Value::bytes(info.mem_total),
+            "vram_used" => Value::bytes(info.mem_used),
+            "vram_used_percents" => Value::percents(info.mem_used / info.mem_total * 100.0),
+            "temperature" => Value::degrees_c(info.temperature),
             "fan_speed" => Value::percents(info.fan_speed).with_instance(FAN_BTN).underline(fan_controlled).italic(fan_controlled),
             "clocks" => Value::hertz(info.clocks),
             "power" => Value::watts(info.power_draw),
@@ -232,8 +254,8 @@ impl FromStr for GpuInfo {
                 Ok(info)
             }}
         }
-        // `memory` and `clocks` are initially in MB and MHz, so we have to multiply them by 1_000_000
-        parse!(s -> name: String, mem_total: f64 * 1e6, utilization: f64, mem_used: f64 * 1e6, temperature: u32, fan_speed: u32, clocks: f64 * 1e6, power_draw: f64)
+        // `memory` and `clocks` are initially in MiB and MHz, parse them accordingly
+        parse!(s -> name: String, mem_total: f64 * 1024.0 * 1024.0, utilization: f64, mem_used: f64 * 1024.0 * 1024.0, temperature: u32, fan_speed: u32, clocks: f64 * 1e6, power_draw: f64)
     }
 }
 
@@ -261,5 +283,32 @@ async fn set_fan_speed(id: u64, speed: Option<u32>) -> Result<()> {
         Ok(())
     } else {
         Err(Error::new(ERR_MSG))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_single_output_with_gpu_icon() {
+        let plan = prepare(&Config::default()).unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["main"]);
+        let main = plan.output("main").unwrap();
+        assert_eq!(main.single_icon("icon").unwrap(), "gpu");
+        assert!(main.format().contains_key("utilization"));
+    }
+
+    #[test]
+    fn plan_uses_configured_format() {
+        let config = Config {
+            format: " $icon $fan_speed ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        let main = plan.output("main").unwrap();
+        assert!(main.format().contains_key("fan_speed"));
+        assert!(!main.format().contains_key("utilization"));
     }
 }

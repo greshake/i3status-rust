@@ -10,6 +10,7 @@
 //! - `pacman` for Arch-based systems
 //! - `snap` for Snap packages
 //! - `xbps` for Void Linux
+//! - `zypper` for openSUSE
 //!
 //! # Configuration
 //!
@@ -38,6 +39,7 @@
 //! `pacman`     | Number of updates available in Arch-based systems                                | Number | -
 //! `snap`       | Number of updates available in Snap packages                                     | Number | -
 //! `xbps`       | Number of updates available in Void Linux                                        | Number | -
+//! `zypper`     | Number of updates available in openSUSE                                          | Number | -
 //! `total`      | Number of updates available in all package manager listed                        | Number | -
 //!
 //! # Apt
@@ -252,6 +254,24 @@
 //! cmd = "xbps-install -Mun | dmenu -l 10"
 //! ```
 //!
+//! Zypper-only config:
+//!
+//! ```toml
+//! [[block]]
+//! block = "packages"
+//! package_manager = ["zypper"]
+//! interval = 1800
+//! error_interval = 300
+//! max_retries = 5
+//! format = " $icon $zypper.eng(w:1) updates available "
+//! format_singular = " $icon One update available "
+//! format_up_to_date = " $icon system up to date "
+//! [[block.click]]
+//! # shows dmenu with available updates. Any dmenu alternative should also work.
+//! button = "left"
+//! cmd = "zypper -q list-updates | tail -n +3 | rofi -dmenu -window-title 'Upgradable packages:'"
+//! ```
+//!
 //! Multiple package managers config:
 //!
 //! Update the list of pending updates every thirty minutes (1800 seconds):
@@ -259,11 +279,11 @@
 //! ```toml
 //! [[block]]
 //! block = "packages"
-//! package_manager = ["apk", "apt", "aur", "brew", "dnf", "flatpak", "pacman", "snap", "xbps"]
+//! package_manager = ["apk", "apt", "aur", "brew", "dnf", "flatpak", "pacman", "snap", "xbps", "zypper"]
 //! interval = 1800
 //! error_interval = 300
 //! max_retries = 5
-//! format = " $icon $apk + $apt + $aur + $brew + $dnf + $flatpak + $pacman + $snap + $xbps = $total updates available "
+//! format = " $icon $apk + $apt + $aur + $brew + $dnf + $flatpak + $pacman + $snap + $xbps + $zypper = $total updates available "
 //! format_singular = " $icon One update available "
 //! format_up_to_date = " $icon system up to date "
 //! # If a linux update is available, but no ZFS package, it won't be possible to
@@ -276,7 +296,7 @@
 //!
 //! # Icons Used
 //!
-//! - `update`
+//! - `update` (`$icon`)
 
 pub mod apk;
 use apk::Apk;
@@ -301,6 +321,9 @@ use xbps::Xbps;
 
 pub mod snap;
 use snap::Snap;
+
+pub mod zypper;
+use zypper::Zypper;
 
 use regex::Regex;
 
@@ -334,6 +357,7 @@ pub enum PackageManager {
     Pacman,
     Snap,
     Xbps,
+    Zypper,
 }
 
 impl PackageManager {
@@ -349,6 +373,7 @@ impl PackageManager {
             PackageManager::Pacman => "pacman",
             PackageManager::Snap => "snap",
             PackageManager::Xbps => "xbps",
+            PackageManager::Zypper => "zypper",
         }
     }
 
@@ -366,20 +391,45 @@ impl PackageManager {
             PackageManager::Pacman => Box::new(Pacman::new().await?),
             PackageManager::Snap => Box::new(Snap::new()),
             PackageManager::Xbps => Box::new(Xbps::new()),
+            PackageManager::Zypper => Box::new(Zypper::new()),
         })
     }
 }
 
-pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
+pub(crate) fn prepare(config: &Config) -> Result<Arc<BlockPlan>> {
+    BlockPlan::new(vec![
+        OutputPlan::new(
+            "main",
+            config.format.with_default(" $icon $total.eng(w:1) ")?,
+        )
+        .icon("icon", IconChoices::one(icons::UPDATE)),
+        OutputPlan::new(
+            "singular",
+            config
+                .format_singular
+                .with_default(" $icon $total.eng(w:1) ")?,
+        )
+        .icon("icon", IconChoices::one(icons::UPDATE)),
+        OutputPlan::new(
+            "up_to_date",
+            config
+                .format_up_to_date
+                .with_default(" $icon $total.eng(w:1) ")?,
+        )
+        .icon("icon", IconChoices::one(icons::UPDATE)),
+    ])
+}
+
+pub(crate) async fn run(config: &Config, api: &CommonApi, plan: &Arc<BlockPlan>) -> Result<()> {
+    let output_main = plan.output("main")?;
+    let output_singular = plan.output("singular")?;
+    let output_up_to_date = plan.output("up_to_date")?;
+
     let mut config: Config = config.clone();
 
-    let format = config.format.with_default(" $icon $total.eng(w:1) ")?;
-    let format_singular = config
-        .format_singular
-        .with_default(" $icon $total.eng(w:1) ")?;
-    let format_up_to_date = config
-        .format_up_to_date
-        .with_default(" $icon $total.eng(w:1) ")?;
+    let format = output_main.format();
+    let format_singular = output_singular.format();
+    let format_up_to_date = output_up_to_date.format();
 
     // Check if the user specified a package manager in any format string, then
     // add that package manager to the config list.
@@ -405,6 +455,7 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
     check_manager!(PackageManager::Pacman);
     check_manager!(PackageManager::Snap);
     check_manager!(PackageManager::Xbps);
+    check_manager!(PackageManager::Zypper);
 
     let warning_updates_regex = config
         .warning_updates_regex
@@ -458,16 +509,14 @@ pub async fn run(config: &Config, api: &CommonApi) -> Result<()> {
                 .is_some_and(|regex| has_matching_update(&updates, regex));
         }
 
-        let mut widget = Widget::new();
-
-        package_manager_map.insert("icon".into(), Value::icon("update"));
+        let output = match total_count {
+            0 => &output_up_to_date,
+            1 => &output_singular,
+            _ => &output_main,
+        };
+        package_manager_map.insert("icon".into(), Value::icon(icons::UPDATE));
         package_manager_map.insert("total".into(), Value::number(total_count));
-
-        widget.set_format(match total_count {
-            0 => format_up_to_date.clone(),
-            1 => format_singular.clone(),
-            _ => format.clone(),
-        });
+        let mut widget = output.new_widget();
         widget.set_values(package_manager_map);
 
         widget.state = match total_count {
@@ -500,4 +549,44 @@ pub trait Backend {
 
 pub fn has_matching_update(updates: &[String], regex: &Regex) -> bool {
     updates.iter().any(|line| regex.is_match(line))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn plan_declares_count_states_with_update_icon() {
+        let plan = prepare(&Config::default()).unwrap();
+        let ids: Vec<_> = plan.outputs().map(|o| o.id()).collect();
+        assert_eq!(ids, ["main", "singular", "up_to_date"]);
+        for id in ["main", "singular", "up_to_date"] {
+            let output = plan.output(id).unwrap();
+            assert_eq!(output.single_icon("icon").unwrap(), "update", "{id}");
+        }
+    }
+
+    #[test]
+    fn each_count_state_resolves_its_own_format() {
+        let config = Config {
+            format_singular: " one update ".parse().unwrap(),
+            ..Config::default()
+        };
+        let plan = prepare(&config).unwrap();
+        // The configured format applies only to the singular state...
+        assert!(
+            !plan
+                .output("singular")
+                .unwrap()
+                .format()
+                .contains_key("total")
+        );
+        // ...the other states keep the shared default.
+        for id in ["main", "up_to_date"] {
+            assert!(
+                plan.output(id).unwrap().format().contains_key("total"),
+                "{id}"
+            );
+        }
+    }
 }

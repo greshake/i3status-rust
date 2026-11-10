@@ -1,6 +1,7 @@
 use std::cmp::{max, min};
 use std::convert::{TryFrom, TryInto};
 use std::io;
+use std::os::fd::BorrowedFd;
 use std::os::fd::{IntoRawFd as _, RawFd};
 use std::sync::{Arc, Mutex, Weak};
 use std::thread;
@@ -501,7 +502,8 @@ impl MainloopWaker {
             _: libpulse_binding::mainloop::events::io::FlagSet,
             _: *mut c_void,
         ) {
-            nix::unistd::read(fd, &mut [0; 32]).unwrap();
+            let ufd = unsafe { BorrowedFd::borrow_raw(fd) };
+            nix::unistd::read(ufd, &mut [0; 32]).unwrap();
         }
 
         (ml.io_new.unwrap())(

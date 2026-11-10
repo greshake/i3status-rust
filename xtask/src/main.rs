@@ -88,6 +88,7 @@ fn generate_manpage() -> Result<()> {
 
             let file = fs::File::open(entry.path()).unwrap();
             let mut doc = String::new();
+            let mut in_code_block = false;
 
             for line in io::BufReader::new(file)
                 .lines()
@@ -99,7 +100,10 @@ fn generate_manpage() -> Result<()> {
                     line = &line[1..];
                 }
 
-                if line.starts_with('#') {
+                if line.starts_with("```") {
+                    in_code_block = !in_code_block;
+                }
+                if !in_code_block && line.starts_with('#') {
                     doc.push_str("##")
                 }
                 doc.push_str(line);

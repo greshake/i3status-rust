@@ -3,6 +3,7 @@ use std::str::FromStr;
 
 use super::prefix::Prefix;
 use crate::errors::*;
+use crate::util::{celsius_to_fahrenheit, fahrenheit_to_celsius};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Unit {
@@ -12,8 +13,13 @@ pub enum Unit {
     Bits,
     /// `%`
     Percents,
-    /// `deg`
-    Degrees,
+    /// `deg` (deprecated - use `degC` or `degF`)
+    #[deprecated = "Use DegreesC or DegreesF instead"]
+    DegreesUnspecified,
+    /// `degC`
+    DegreesC,
+    /// `degF`
+    DegreesF,
     /// `s`
     Seconds,
     /// `W`
@@ -30,7 +36,8 @@ impl fmt::Display for Unit {
             Self::Bytes => "B",
             Self::Bits => "b",
             Self::Percents => "%",
-            Self::Degrees => "°",
+            #[expect(deprecated)]
+            Self::DegreesUnspecified | Self::DegreesC | Self::DegreesF => "°",
             Self::Seconds => "s",
             Self::Watts => "W",
             Self::Hertz => "Hz",
@@ -47,7 +54,10 @@ impl FromStr for Unit {
             "B" => Ok(Unit::Bytes),
             "b" => Ok(Unit::Bits),
             "%" => Ok(Unit::Percents),
-            "deg" => Ok(Unit::Degrees),
+            #[expect(deprecated)]
+            "deg" => Ok(Unit::DegreesUnspecified),
+            "degC" => Ok(Unit::DegreesC),
+            "degF" => Ok(Unit::DegreesF),
             "s" => Ok(Unit::Seconds),
             "W" => Ok(Unit::Watts),
             "Hz" => Ok(Unit::Hertz),
@@ -63,6 +73,11 @@ impl Unit {
             (x, y) if x == y => Ok(value),
             (Self::Bytes, Self::Bits) => Ok(value * 8.),
             (Self::Bits, Self::Bytes) => Ok(value / 8.),
+            #[expect(deprecated)]
+            (Self::DegreesC, Self::DegreesUnspecified)
+            | (Self::DegreesF, Self::DegreesUnspecified) => Ok(value),
+            (Self::DegreesC, Self::DegreesF) => Ok(celsius_to_fahrenheit(value)),
+            (Self::DegreesF, Self::DegreesC) => Ok(fahrenheit_to_celsius(value)),
             _ => Err(Error::new(format!("Failed to convert '{self}' to '{unit}"))),
         }
     }
@@ -70,7 +85,12 @@ impl Unit {
     pub fn clamp_prefix(self, prefix: Prefix) -> Prefix {
         match self {
             Self::Bytes | Self::Bits => prefix.max(Prefix::One),
-            Self::Percents | Self::Degrees | Self::None => Prefix::One,
+            #[expect(deprecated)]
+            Self::Percents
+            | Self::DegreesUnspecified
+            | Self::DegreesC
+            | Self::DegreesF
+            | Self::None => Prefix::One,
             _ => prefix,
         }
     }

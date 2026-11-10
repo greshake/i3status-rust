@@ -43,7 +43,7 @@ Key | Description | Default
 `icons_format` | A string to customise the appearance of each icon. Can be used to edit icons' spacing or specify a font that will be applied only to icons via pango markup. For example, `" <span font_family='NotoSans Nerd Font'>{icon}</span> "`. | `" {icon} "`
 `invert_scrolling` | Whether to invert the direction of scrolling, useful for touchpad users. | `false`
 `error_format` | A string to customise how block errors are displayed. See below for available placeholders. | `"$short_error_message\|X"`
-`error_fullscreen_format` | A string to customise how block errors are displayed when clicked. See below for available placeholders. | `"$full_error_message"`
+`error_fullscreen_format` | A string to customise how block errors are displayed when clicked. See below for available placeholders. | `"$full_error_message.str(w:170,rot_interval:0.2)"`
 
 Available `error_format` and `error_fullscreen_format` placeholders:
 
@@ -96,17 +96,17 @@ $ fc-match FontAwesome
 fontawesome-webfont.ttf: "FontAwesome" "Regular"
 ```
 
-Note that the name of the Font Awesome font may have changed in version 5 or above.  
-You can use `fc-list` to see the names of your available Awesome Fonts.
+Note that in Font Awesome 5 and above, the font family names include the major version and brand icons (`bluetooth`, `docker`, `github`) are split into a separate `Brands` family.
+You can use `fc-list` to see the names of your available Font Awesome fonts:
 
 ```shell
 $ fc-list | grep -i awesome
-/usr/share/fonts/TTF/fa-solid-900.ttf: Font Awesome 5 Free,Font Awesome 5 Free Solid:style=Solid
-/usr/share/fonts/TTF/fa-regular-400.ttf: Font Awesome 5 Free,Font Awesome 5 Free Regular:style=Regular
+/usr/share/fonts/OTF/Font Awesome 7 Free-Solid-900.otf: Font Awesome 7 Free,Font Awesome 7 Free Solid:style=Solid,Regular
+/usr/share/fonts/OTF/Font Awesome 7 Free-Regular-400.otf: Font Awesome 7 Free:style=Regular
+/usr/share/fonts/OTF/Font Awesome 7 Brands-Regular-400.otf: Font Awesome 7 Brands:style=Regular
 ```
 
-In this example, you have to use `Font Awesome 5 Free` instead of the `FontAwesome 12` in the example configuration above.
-You can verify the name again using `fc-match`
+In this example, use `Font Awesome 7 Free, Font Awesome 7 Brands 12` instead of `FontAwesome 12` in the bar `font` directive above (using the major version number you have installed, e.g. `5`, `6`, or `7`). You can verify the resolved fonts with `fc-match` or `i3status-rs --doctor`.
 
 See [#130](https://github.com/greshake/i3status-rust/issues/130) for further discussion.
 
@@ -121,6 +121,45 @@ When the state is "Error", a short error will be displayed in the block. The ful
 i3bar has a "power savings" feature that pauses the bar via SIGSTOP when it is hidden or obscured by a fullscreen container. If this causes [issues](https://github.com/i3/i3/issues/4110) with your bar, try running i3status-rs with the `--never-stop` argument, which changes the signal sent by i3 from SIGSTOP to SIGCONT.
 
 In addition to the per-block `signal` config option, i3status-rs can be signalled to force an update of all blocks by sending it the SIGUSR1 signal. It can also be restarted in place (useful for testing changes to the config file) by sending it the SIGUSR2 signal.
+
+## Troubleshooting
+
+If your bar shows the wrong icons, empty boxes, or a block that never appears,
+run the doctor:
+
+```sh
+i3status-rs --doctor
+```
+
+It reports, in order:
+
+- which configuration file and icon set are in use, and which font your bar
+  actually renders with (auto-detected from a running i3/sway; pass
+  `--font "pango:DejaVu Sans Mono, Font Awesome 6 Free 12"` to state it
+  yourself, or when no bar is running);
+- a table of every configured block, run once, with the output it produced
+  and the icons it used — so a block that fails, hangs, or renders nothing
+  is obvious;
+- every icon your blocks can request, with its codepoint and, via
+  fontconfig, the font that will really draw it. This is where silently
+  substituted fonts show up: an icon your bar's fonts do not contain is
+  drawn by whatever font the system picks instead, which is the usual
+  explanation for "my icon changed after I installed a font";
+- a numbered list of problems, each with a concrete fix.
+
+The exit status is zero when nothing is wrong and nonzero when doctor found
+problems, so `--doctor` is usable in scripts.
+
+Running the blocks means doing what they really do: network requests, shell
+commands and D-Bus calls. To inspect only the configuration, icon set and
+fonts, add `--doctor-skip-live`.
+
+Icons are shown with your terminal's fonts, which may not be your bar's. If
+they look wrong in the terminal, add `--noicons` to show icon names instead;
+the codepoints and the fonts that draw them on the bar are listed either way.
+In a terminal with kitty graphics (kitty, Ghostty, WezTerm), icons are images
+drawn by `pango-view` with the bar's font instead, as the bar draws them
+(`pango-view` is in `pango` on Arch, `pango1.0-tools` on Debian/Ubuntu).
 
 ## Debugging
 
