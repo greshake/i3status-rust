@@ -82,6 +82,8 @@ Note: screenshots were generated using [this config](../gen-screenshots/screensh
 
  **Note**: In order to use the material icon set, you need a patched material icons font which can be found [here](https://gist.github.com/draoncc/3c20d8d4262892ccd2e227eefeafa8ef/raw/3e6e12c213fba1ec28aaa26430c3606874754c30/MaterialIcons-Regular-for-inline.ttf). Make sure to pass it in your i3 configuration bar block.
 
+ **Note**: For `awesome5`, `awesome6`, and `awesome7`, brand icons (`bluetooth`, `docker`, `github`) live in the separate `Font Awesome <N> Brands` font family rather than `Font Awesome <N> Free`, so include both in your bar's `font` directive (e.g. `font pango:DejaVu Sans Mono, Font Awesome 7 Free, Font Awesome 7 Brands 10`). Additionally, `awesome4`–`awesome7` use standard Unicode symbols/emojis for icons that have no Font Awesome Free equivalent (`backlight`, `phone_disconnected`, `pomodoro`), which fall back to your system symbol/emoji fonts (e.g. `DejaVu Sans`, `Noto Color Emoji`); only `awesome7pro` provides Font Awesome brightness icons.
+
 ## Overriding themes and icon sets
 
 Create a block in the configuration called `theme` or `icons` like so:
