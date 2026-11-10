@@ -119,18 +119,14 @@ impl NetDevice {
             .await
             .error("Failed to read nameservers")?;
 
-        // Detect interface type using netlink link_type data
-        let tun = iface.name.starts_with("tun")
+        let tun_wg_ppp = iface.name.starts_with("tun")
             || iface.name.starts_with("tap")
-            || iface.link_type.as_deref() == Some("tun")
-            || iface.link_type.as_deref() == Some("tap");
-        let (wg, ppp) = match iface.link_type.as_deref() {
-            Some("wireguard") => (true, false),
-            Some("ppp") => (false, true),
-            _ => (false, false),
-        };
+            || matches!(
+                iface.link_type.as_deref(),
+                Some("tun" | "tap" | "wireguard" | "ppp")
+            );
 
-        let icon = Self::icon_for(wifi_info.is_some(), tun || wg || ppp, &iface.name);
+        let icon = Self::icon_for(wifi_info.is_some(), tun_wg_ppp, &iface.name);
 
         Ok(Some(Self {
             iface,
@@ -373,52 +369,6 @@ macro_rules! recv_until_done {
     };
 }
 
-/// Extract link type (e.g., "tun", "wireguard", "ppp") from IFLA_LINKINFO attribute
-fn extract_link_type(linkinfo_bytes: &[u8]) -> Option<String> {
-    // Parse nested rtattrs in linkinfo to find IFLA_INFO_KIND (type 1)
-    const IFLA_INFO_KIND: u16 = 1; // type 1 for the kind/type of device we want
-    const RTATTR_HEADER_SIZE: usize = 4; // 2 bytes length + 2 bytes type
-    const RTATTR_TYPE_FIELD_SIZE: usize = 2; // size of u16 for length/type
-    const RTATTR_ALIGNMENT_STRIDE: usize = 4; // netlink attributes are 4-byte aligned
-    const RTATTR_MIN_PAYLOAD_SIZE: usize = 4; // minimum size for valid payload
-
-    let mut offset = 0;
-
-    // Continue while we have at least the header size left
-    while offset + RTATTR_HEADER_SIZE <= linkinfo_bytes.len() {
-        // Read the first 2 bytes to get the total length of this attribute (header + payload)
-        let len = u16::from_ne_bytes(
-            linkinfo_bytes[offset..offset + RTATTR_TYPE_FIELD_SIZE]
-                .try_into()
-                .ok()?,
-        ) as usize;
-
-        // Read the next 2 bytes to get the attribute type identifier
-        let typ = u16::from_ne_bytes(
-            linkinfo_bytes[offset + RTATTR_TYPE_FIELD_SIZE..offset + RTATTR_HEADER_SIZE]
-                .try_into()
-                .ok()?,
-        );
-
-        // Check if this is the IFLA_INFO_KIND attribute (type 1) with valid payload
-        if typ == IFLA_INFO_KIND && len > RTATTR_MIN_PAYLOAD_SIZE {
-            let payload_len = len - RTATTR_HEADER_SIZE;
-            let payload = &linkinfo_bytes
-                [offset + RTATTR_HEADER_SIZE..offset + RTATTR_HEADER_SIZE + payload_len];
-            let kind = String::from_utf8_lossy(payload)
-                .trim_end_matches('\0')
-                .to_string();
-            return Some(kind);
-        }
-
-        // Calculate the next attribute's offset by rounding current length up to 4-byte alignment
-        let aligned_len = len.div_ceil(RTATTR_ALIGNMENT_STRIDE) * RTATTR_ALIGNMENT_STRIDE;
-        offset += aligned_len;
-    }
-
-    None
-}
-
 async fn get_interfaces(
     sock: &mut NlSocket,
     filter: Option<&Regex>,
@@ -452,7 +402,12 @@ async fn get_interfaces(
                 Ifla::Ifname => name = Some(attr.get_payload_as_with_len()?),
                 Ifla::Stats64 => stats = Some(InterfaceStats::from_stats64(attr.payload().as_ref())),
                 Ifla::Operstate => operstate = attr.get_payload_as::<u8>()?.into(),
-                Ifla::Linkinfo => link_type = extract_link_type(attr.payload().as_ref()),
+                Ifla::Linkinfo => {
+                    link_type = attr
+                        .get_attr_handle()?
+                        .get_attr_payload_as_with_len(IflaInfo::Kind)
+                        .ok();
+                }
                 _ => (),
             }
         }
