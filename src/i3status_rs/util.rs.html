@@ -345,78 +345,118 @@
 <a href=#345 id=345 data-nosnippet>345</a>    }
 <a href=#346 id=346 data-nosnippet>346</a>}
 <a href=#347 id=347 data-nosnippet>347</a>
-<a href=#348 id=348 data-nosnippet>348</a><span class="attr">#[cfg(test)]
-<a href=#349 id=349 data-nosnippet>349</a></span><span class="kw">mod </span>tests {
-<a href=#350 id=350 data-nosnippet>350</a>    <span class="kw">use super</span>::<span class="kw-2">*</span>;
-<a href=#351 id=351 data-nosnippet>351</a>
-<a href=#352 id=352 data-nosnippet>352</a>    <span class="attr">#[tokio::test]
-<a href=#353 id=353 data-nosnippet>353</a>    </span><span class="kw">async fn </span>test_has_command_ok() {
-<a href=#354 id=354 data-nosnippet>354</a>        <span class="comment">// we assume sh is always available
-<a href=#355 id=355 data-nosnippet>355</a>        </span><span class="macro">assert!</span>(has_command(<span class="string">"sh"</span>).<span class="kw">await</span>.unwrap());
-<a href=#356 id=356 data-nosnippet>356</a>    }
-<a href=#357 id=357 data-nosnippet>357</a>
-<a href=#358 id=358 data-nosnippet>358</a>    <span class="attr">#[tokio::test]
-<a href=#359 id=359 data-nosnippet>359</a>    </span><span class="kw">async fn </span>test_has_command_err() {
-<a href=#360 id=360 data-nosnippet>360</a>        <span class="comment">// we assume thequickbrownfoxjumpsoverthelazydog command does not exist
-<a href=#361 id=361 data-nosnippet>361</a>        </span><span class="macro">assert!</span>(
-<a href=#362 id=362 data-nosnippet>362</a>            !has_command(<span class="string">"thequickbrownfoxjumpsoverthelazydog"</span>)
-<a href=#363 id=363 data-nosnippet>363</a>                .<span class="kw">await
-<a href=#364 id=364 data-nosnippet>364</a>                </span>.unwrap()
-<a href=#365 id=365 data-nosnippet>365</a>        );
-<a href=#366 id=366 data-nosnippet>366</a>    }
-<a href=#367 id=367 data-nosnippet>367</a>
-<a href=#368 id=368 data-nosnippet>368</a>    <span class="attr">#[test]
-<a href=#369 id=369 data-nosnippet>369</a>    </span><span class="kw">fn </span>test_flags() {
-<a href=#370 id=370 data-nosnippet>370</a>        <span class="macro">assert!</span>(country_flag_from_iso_code(<span class="string">"ES"</span>) == <span class="string">"🇪🇸"</span>);
-<a href=#371 id=371 data-nosnippet>371</a>        <span class="macro">assert!</span>(country_flag_from_iso_code(<span class="string">"US"</span>) == <span class="string">"🇺🇸"</span>);
-<a href=#372 id=372 data-nosnippet>372</a>        <span class="macro">assert!</span>(country_flag_from_iso_code(<span class="string">"USA"</span>) == <span class="string">"USA"</span>);
+<a href=#348 id=348 data-nosnippet>348</a><span class="doccomment">/// Run a future to completion synchronously.
+<a href=#349 id=349 data-nosnippet>349</a>///
+<a href=#350 id=350 data-nosnippet>350</a>/// If invoked outside an async runtime, a temporary current-thread runtime is used.
+<a href=#351 id=351 data-nosnippet>351</a>/// If invoked within an active Tokio runtime, the future is driven in a dedicated
+<a href=#352 id=352 data-nosnippet>352</a>/// thread to avoid blocking or nested-runtime issues.
+<a href=#353 id=353 data-nosnippet>353</a></span><span class="kw">pub fn </span>run_sync&lt;F, T&gt;(future: F) -&gt; T
+<a href=#354 id=354 data-nosnippet>354</a><span class="kw">where
+<a href=#355 id=355 data-nosnippet>355</a>    </span>F: std::future::Future&lt;Output = T&gt; + Send + <span class="lifetime">'static</span>,
+<a href=#356 id=356 data-nosnippet>356</a>    T: Send + <span class="lifetime">'static</span>,
+<a href=#357 id=357 data-nosnippet>357</a>{
+<a href=#358 id=358 data-nosnippet>358</a>    <span class="kw">match </span>tokio::runtime::Handle::try_current() {
+<a href=#359 id=359 data-nosnippet>359</a>        <span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; std::thread::spawn(<span class="kw">move </span>|| {
+<a href=#360 id=360 data-nosnippet>360</a>            tokio::runtime::Builder::new_current_thread()
+<a href=#361 id=361 data-nosnippet>361</a>                .enable_all()
+<a href=#362 id=362 data-nosnippet>362</a>                .build()
+<a href=#363 id=363 data-nosnippet>363</a>                .expect(<span class="string">"failed to create tokio runtime"</span>)
+<a href=#364 id=364 data-nosnippet>364</a>                .block_on(future)
+<a href=#365 id=365 data-nosnippet>365</a>        })
+<a href=#366 id=366 data-nosnippet>366</a>        .join()
+<a href=#367 id=367 data-nosnippet>367</a>        .expect(<span class="string">"worker thread panicked"</span>),
+<a href=#368 id=368 data-nosnippet>368</a>        <span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; tokio::runtime::Builder::new_current_thread()
+<a href=#369 id=369 data-nosnippet>369</a>            .enable_all()
+<a href=#370 id=370 data-nosnippet>370</a>            .build()
+<a href=#371 id=371 data-nosnippet>371</a>            .expect(<span class="string">"failed to create tokio runtime"</span>)
+<a href=#372 id=372 data-nosnippet>372</a>            .block_on(future),
 <a href=#373 id=373 data-nosnippet>373</a>    }
-<a href=#374 id=374 data-nosnippet>374</a>
-<a href=#375 id=375 data-nosnippet>375</a>    <span class="attr">#[test]
-<a href=#376 id=376 data-nosnippet>376</a>    </span><span class="kw">fn </span>doctor_flag_recorder_keeps_the_country_code() {
-<a href=#377 id=377 data-nosnippet>377</a>        enable_flag_recorder();
-<a href=#378 id=378 data-nosnippet>378</a>        <span class="kw">let </span>flag = country_flag_from_iso_code(<span class="string">"NZ"</span>);
-<a href=#379 id=379 data-nosnippet>379</a>        <span class="macro">assert!</span>(recorded_flags().contains(<span class="kw-2">&amp;</span>(<span class="string">"NZ"</span>.into(), flag)));
-<a href=#380 id=380 data-nosnippet>380</a>    }
-<a href=#381 id=381 data-nosnippet>381</a>
-<a href=#382 id=382 data-nosnippet>382</a>    <span class="attr">#[test]
-<a href=#383 id=383 data-nosnippet>383</a>    </span><span class="kw">fn </span>test_file_candidates_absolute() {
-<a href=#384 id=384 data-nosnippet>384</a>        <span class="comment">// extension is probed only when the path has none
-<a href=#385 id=385 data-nosnippet>385</a>        </span><span class="macro">assert_eq!</span>(
-<a href=#386 id=386 data-nosnippet>386</a>            file_candidates(<span class="string">"/foo/awesome5"</span>, <span class="prelude-val">Some</span>(<span class="string">"icons"</span>), <span class="prelude-val">Some</span>(<span class="string">"toml"</span>)),
-<a href=#387 id=387 data-nosnippet>387</a>            [
-<a href=#388 id=388 data-nosnippet>388</a>                PathBuf::from(<span class="string">"/foo/awesome5"</span>),
-<a href=#389 id=389 data-nosnippet>389</a>                PathBuf::from(<span class="string">"/foo/awesome5.toml"</span>)
-<a href=#390 id=390 data-nosnippet>390</a>            ]
-<a href=#391 id=391 data-nosnippet>391</a>        );
-<a href=#392 id=392 data-nosnippet>392</a>        <span class="macro">assert_eq!</span>(
-<a href=#393 id=393 data-nosnippet>393</a>            file_candidates(<span class="string">"/foo/awesome5.toml"</span>, <span class="prelude-val">Some</span>(<span class="string">"icons"</span>), <span class="prelude-val">Some</span>(<span class="string">"toml"</span>)),
-<a href=#394 id=394 data-nosnippet>394</a>            [PathBuf::from(<span class="string">"/foo/awesome5.toml"</span>)]
-<a href=#395 id=395 data-nosnippet>395</a>        );
-<a href=#396 id=396 data-nosnippet>396</a>    }
-<a href=#397 id=397 data-nosnippet>397</a>
-<a href=#398 id=398 data-nosnippet>398</a>    <span class="attr">#[test]
-<a href=#399 id=399 data-nosnippet>399</a>    </span><span class="kw">fn </span>test_file_candidates_relative() {
-<a href=#400 id=400 data-nosnippet>400</a>        <span class="kw">let </span>candidates = file_candidates(<span class="string">"awesome5"</span>, <span class="prelude-val">Some</span>(<span class="string">"icons"</span>), <span class="prelude-val">Some</span>(<span class="string">"toml"</span>));
-<a href=#401 id=401 data-nosnippet>401</a>        <span class="comment">// every candidate ends with the subdir + file, checked in pairs of
-<a href=#402 id=402 data-nosnippet>402</a>        // (no extension, with extension), with /usr/share always last
-<a href=#403 id=403 data-nosnippet>403</a>        </span><span class="macro">assert!</span>(candidates.len() &gt;= <span class="number">2</span>);
-<a href=#404 id=404 data-nosnippet>404</a>        <span class="macro">assert!</span>(candidates.len().is_multiple_of(<span class="number">2</span>));
-<a href=#405 id=405 data-nosnippet>405</a>        <span class="kw">for </span>pair <span class="kw">in </span>candidates.chunks(<span class="number">2</span>) {
-<a href=#406 id=406 data-nosnippet>406</a>            <span class="macro">assert!</span>(
-<a href=#407 id=407 data-nosnippet>407</a>                pair[<span class="number">0</span>].ends_with(<span class="string">"i3status-rust/icons/awesome5"</span>)
-<a href=#408 id=408 data-nosnippet>408</a>                    || pair[<span class="number">0</span>].ends_with(<span class="string">"icons/awesome5"</span>)
-<a href=#409 id=409 data-nosnippet>409</a>            );
-<a href=#410 id=410 data-nosnippet>410</a>            <span class="macro">assert_eq!</span>(pair[<span class="number">1</span>], pair[<span class="number">0</span>].with_extension(<span class="string">"toml"</span>));
-<a href=#411 id=411 data-nosnippet>411</a>        }
-<a href=#412 id=412 data-nosnippet>412</a>        <span class="macro">assert_eq!</span>(
-<a href=#413 id=413 data-nosnippet>413</a>            candidates[candidates.len() - <span class="number">2</span>],
-<a href=#414 id=414 data-nosnippet>414</a>            PathBuf::from(<span class="string">"/usr/share/i3status-rust/icons/awesome5"</span>)
-<a href=#415 id=415 data-nosnippet>415</a>        );
-<a href=#416 id=416 data-nosnippet>416</a>
-<a href=#417 id=417 data-nosnippet>417</a>        <span class="comment">// a name that already has an extension is not probed twice
-<a href=#418 id=418 data-nosnippet>418</a>        </span><span class="kw">let </span>candidates = file_candidates(<span class="string">"awesome5.toml"</span>, <span class="prelude-val">Some</span>(<span class="string">"icons"</span>), <span class="prelude-val">Some</span>(<span class="string">"toml"</span>));
-<a href=#419 id=419 data-nosnippet>419</a>        <span class="macro">assert!</span>(candidates.iter().all(|c| c.extension().is_some()));
+<a href=#374 id=374 data-nosnippet>374</a>}
+<a href=#375 id=375 data-nosnippet>375</a>
+<a href=#376 id=376 data-nosnippet>376</a><span class="attr">#[cfg(test)]
+<a href=#377 id=377 data-nosnippet>377</a></span><span class="kw">mod </span>tests {
+<a href=#378 id=378 data-nosnippet>378</a>    <span class="kw">use super</span>::<span class="kw-2">*</span>;
+<a href=#379 id=379 data-nosnippet>379</a>
+<a href=#380 id=380 data-nosnippet>380</a>    <span class="attr">#[tokio::test]
+<a href=#381 id=381 data-nosnippet>381</a>    </span><span class="kw">async fn </span>test_has_command_ok() {
+<a href=#382 id=382 data-nosnippet>382</a>        <span class="comment">// we assume sh is always available
+<a href=#383 id=383 data-nosnippet>383</a>        </span><span class="macro">assert!</span>(has_command(<span class="string">"sh"</span>).<span class="kw">await</span>.unwrap());
+<a href=#384 id=384 data-nosnippet>384</a>    }
+<a href=#385 id=385 data-nosnippet>385</a>
+<a href=#386 id=386 data-nosnippet>386</a>    <span class="attr">#[tokio::test]
+<a href=#387 id=387 data-nosnippet>387</a>    </span><span class="kw">async fn </span>test_has_command_err() {
+<a href=#388 id=388 data-nosnippet>388</a>        <span class="comment">// we assume thequickbrownfoxjumpsoverthelazydog command does not exist
+<a href=#389 id=389 data-nosnippet>389</a>        </span><span class="macro">assert!</span>(
+<a href=#390 id=390 data-nosnippet>390</a>            !has_command(<span class="string">"thequickbrownfoxjumpsoverthelazydog"</span>)
+<a href=#391 id=391 data-nosnippet>391</a>                .<span class="kw">await
+<a href=#392 id=392 data-nosnippet>392</a>                </span>.unwrap()
+<a href=#393 id=393 data-nosnippet>393</a>        );
+<a href=#394 id=394 data-nosnippet>394</a>    }
+<a href=#395 id=395 data-nosnippet>395</a>
+<a href=#396 id=396 data-nosnippet>396</a>    <span class="attr">#[test]
+<a href=#397 id=397 data-nosnippet>397</a>    </span><span class="kw">fn </span>test_run_sync_outside_runtime() {
+<a href=#398 id=398 data-nosnippet>398</a>        <span class="kw">let </span>res = run_sync(<span class="kw">async </span>{ <span class="number">12345 </span>});
+<a href=#399 id=399 data-nosnippet>399</a>        <span class="macro">assert_eq!</span>(res, <span class="number">12345</span>);
+<a href=#400 id=400 data-nosnippet>400</a>    }
+<a href=#401 id=401 data-nosnippet>401</a>
+<a href=#402 id=402 data-nosnippet>402</a>    <span class="attr">#[tokio::test]
+<a href=#403 id=403 data-nosnippet>403</a>    </span><span class="kw">async fn </span>test_run_sync_inside_runtime() {
+<a href=#404 id=404 data-nosnippet>404</a>        <span class="kw">let </span>res = run_sync(<span class="kw">async </span>{ <span class="number">54321 </span>});
+<a href=#405 id=405 data-nosnippet>405</a>        <span class="macro">assert_eq!</span>(res, <span class="number">54321</span>);
+<a href=#406 id=406 data-nosnippet>406</a>    }
+<a href=#407 id=407 data-nosnippet>407</a>
+<a href=#408 id=408 data-nosnippet>408</a>    <span class="attr">#[test]
+<a href=#409 id=409 data-nosnippet>409</a>    </span><span class="kw">fn </span>test_flags() {
+<a href=#410 id=410 data-nosnippet>410</a>        <span class="macro">assert!</span>(country_flag_from_iso_code(<span class="string">"ES"</span>) == <span class="string">"🇪🇸"</span>);
+<a href=#411 id=411 data-nosnippet>411</a>        <span class="macro">assert!</span>(country_flag_from_iso_code(<span class="string">"US"</span>) == <span class="string">"🇺🇸"</span>);
+<a href=#412 id=412 data-nosnippet>412</a>        <span class="macro">assert!</span>(country_flag_from_iso_code(<span class="string">"USA"</span>) == <span class="string">"USA"</span>);
+<a href=#413 id=413 data-nosnippet>413</a>    }
+<a href=#414 id=414 data-nosnippet>414</a>
+<a href=#415 id=415 data-nosnippet>415</a>    <span class="attr">#[test]
+<a href=#416 id=416 data-nosnippet>416</a>    </span><span class="kw">fn </span>doctor_flag_recorder_keeps_the_country_code() {
+<a href=#417 id=417 data-nosnippet>417</a>        enable_flag_recorder();
+<a href=#418 id=418 data-nosnippet>418</a>        <span class="kw">let </span>flag = country_flag_from_iso_code(<span class="string">"NZ"</span>);
+<a href=#419 id=419 data-nosnippet>419</a>        <span class="macro">assert!</span>(recorded_flags().contains(<span class="kw-2">&amp;</span>(<span class="string">"NZ"</span>.into(), flag)));
 <a href=#420 id=420 data-nosnippet>420</a>    }
-<a href=#421 id=421 data-nosnippet>421</a>}
+<a href=#421 id=421 data-nosnippet>421</a>
+<a href=#422 id=422 data-nosnippet>422</a>    <span class="attr">#[test]
+<a href=#423 id=423 data-nosnippet>423</a>    </span><span class="kw">fn </span>test_file_candidates_absolute() {
+<a href=#424 id=424 data-nosnippet>424</a>        <span class="comment">// extension is probed only when the path has none
+<a href=#425 id=425 data-nosnippet>425</a>        </span><span class="macro">assert_eq!</span>(
+<a href=#426 id=426 data-nosnippet>426</a>            file_candidates(<span class="string">"/foo/awesome5"</span>, <span class="prelude-val">Some</span>(<span class="string">"icons"</span>), <span class="prelude-val">Some</span>(<span class="string">"toml"</span>)),
+<a href=#427 id=427 data-nosnippet>427</a>            [
+<a href=#428 id=428 data-nosnippet>428</a>                PathBuf::from(<span class="string">"/foo/awesome5"</span>),
+<a href=#429 id=429 data-nosnippet>429</a>                PathBuf::from(<span class="string">"/foo/awesome5.toml"</span>)
+<a href=#430 id=430 data-nosnippet>430</a>            ]
+<a href=#431 id=431 data-nosnippet>431</a>        );
+<a href=#432 id=432 data-nosnippet>432</a>        <span class="macro">assert_eq!</span>(
+<a href=#433 id=433 data-nosnippet>433</a>            file_candidates(<span class="string">"/foo/awesome5.toml"</span>, <span class="prelude-val">Some</span>(<span class="string">"icons"</span>), <span class="prelude-val">Some</span>(<span class="string">"toml"</span>)),
+<a href=#434 id=434 data-nosnippet>434</a>            [PathBuf::from(<span class="string">"/foo/awesome5.toml"</span>)]
+<a href=#435 id=435 data-nosnippet>435</a>        );
+<a href=#436 id=436 data-nosnippet>436</a>    }
+<a href=#437 id=437 data-nosnippet>437</a>
+<a href=#438 id=438 data-nosnippet>438</a>    <span class="attr">#[test]
+<a href=#439 id=439 data-nosnippet>439</a>    </span><span class="kw">fn </span>test_file_candidates_relative() {
+<a href=#440 id=440 data-nosnippet>440</a>        <span class="kw">let </span>candidates = file_candidates(<span class="string">"awesome5"</span>, <span class="prelude-val">Some</span>(<span class="string">"icons"</span>), <span class="prelude-val">Some</span>(<span class="string">"toml"</span>));
+<a href=#441 id=441 data-nosnippet>441</a>        <span class="comment">// every candidate ends with the subdir + file, checked in pairs of
+<a href=#442 id=442 data-nosnippet>442</a>        // (no extension, with extension), with /usr/share always last
+<a href=#443 id=443 data-nosnippet>443</a>        </span><span class="macro">assert!</span>(candidates.len() &gt;= <span class="number">2</span>);
+<a href=#444 id=444 data-nosnippet>444</a>        <span class="macro">assert!</span>(candidates.len().is_multiple_of(<span class="number">2</span>));
+<a href=#445 id=445 data-nosnippet>445</a>        <span class="kw">for </span>pair <span class="kw">in </span>candidates.chunks(<span class="number">2</span>) {
+<a href=#446 id=446 data-nosnippet>446</a>            <span class="macro">assert!</span>(
+<a href=#447 id=447 data-nosnippet>447</a>                pair[<span class="number">0</span>].ends_with(<span class="string">"i3status-rust/icons/awesome5"</span>)
+<a href=#448 id=448 data-nosnippet>448</a>                    || pair[<span class="number">0</span>].ends_with(<span class="string">"icons/awesome5"</span>)
+<a href=#449 id=449 data-nosnippet>449</a>            );
+<a href=#450 id=450 data-nosnippet>450</a>            <span class="macro">assert_eq!</span>(pair[<span class="number">1</span>], pair[<span class="number">0</span>].with_extension(<span class="string">"toml"</span>));
+<a href=#451 id=451 data-nosnippet>451</a>        }
+<a href=#452 id=452 data-nosnippet>452</a>        <span class="macro">assert_eq!</span>(
+<a href=#453 id=453 data-nosnippet>453</a>            candidates[candidates.len() - <span class="number">2</span>],
+<a href=#454 id=454 data-nosnippet>454</a>            PathBuf::from(<span class="string">"/usr/share/i3status-rust/icons/awesome5"</span>)
+<a href=#455 id=455 data-nosnippet>455</a>        );
+<a href=#456 id=456 data-nosnippet>456</a>
+<a href=#457 id=457 data-nosnippet>457</a>        <span class="comment">// a name that already has an extension is not probed twice
+<a href=#458 id=458 data-nosnippet>458</a>        </span><span class="kw">let </span>candidates = file_candidates(<span class="string">"awesome5.toml"</span>, <span class="prelude-val">Some</span>(<span class="string">"icons"</span>), <span class="prelude-val">Some</span>(<span class="string">"toml"</span>));
+<a href=#459 id=459 data-nosnippet>459</a>        <span class="macro">assert!</span>(candidates.iter().all(|c| c.extension().is_some()));
+<a href=#460 id=460 data-nosnippet>460</a>    }
+<a href=#461 id=461 data-nosnippet>461</a>}
 </code></pre></div></section></main></body></html>
