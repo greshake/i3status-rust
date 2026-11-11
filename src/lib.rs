@@ -57,6 +57,7 @@ use crate::formatting::value::Value;
 use crate::protocol::i3bar_block::I3BarBlock;
 use crate::protocol::i3bar_event::{self, I3BarEvent};
 use crate::signals::Signal;
+use crate::themes::Theme;
 use crate::widget::{State, Widget};
 
 const APP_USER_AGENT: &str = concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"),);
@@ -176,6 +177,10 @@ enum RequestCmd {
 struct RenderedBlock {
     pub segments: Vec<I3BarBlock>,
     pub merge_with_next: bool,
+    /// The block's theme with its `theme_overrides` applied, so that
+    /// per-block separator settings can be used when the separators are
+    /// rendered (which happens across blocks, not inside one).
+    pub theme: Arc<Theme>,
 }
 
 #[derive(Debug)]
@@ -335,6 +340,8 @@ impl BarState {
             block_config.common.max_retries.is_some(),
         );
 
+        let theme = shared_config.theme.clone();
+
         let block = Block {
             id: self.blocks.len(),
             name: block_config.config.name(),
@@ -358,6 +365,7 @@ impl BarState {
         self.blocks_render_cache.push(RenderedBlock {
             segments: Vec::new(),
             merge_with_next: block_config.common.merge_with_next,
+            theme,
         });
 
         Ok(())
