@@ -34,7 +34,9 @@ words:
   - armv
   - arphrd
   - backon
+  - bbox
   - BCHARGE
+  - bezpath
   - bidi
   - bluez
   - bokmaal
@@ -80,10 +82,13 @@ words:
   - Ghostty
   - gibi
   - giga
+  - glyf
   - Greshake
   - gruvbox
   - gsettings
+  - hhea
   - HHMM
+  - hmtx
   - horiz
   - hypot
   - ibus
@@ -109,13 +114,16 @@ words:
   - kbddbus
   - kibi
   - kmon
+  - kurbo
   - lflag
   - libc
   - libdbus
   - liquidctl
+  - loca
   - locid
   - macchiato
   - maildir
+  - maxp
   - mebi
   - metno
   - milli
@@ -139,6 +147,7 @@ words:
   - notif
   - Noto
   - NZXT
+  - octocat
   - ONBATT
   - OPER
   - operstate
@@ -195,6 +204,7 @@ words:
   - SIGRTMAX
   - SIGRTMIN
   - SIGUSR
+  - skia
   - softirq
   - srcery
   - srcpkgcache
@@ -221,6 +231,7 @@ words:
   - unspec
   - upower
   - uptodate
+  - usvg
   - vals
   - VCALENDAR
   - VEVENT
