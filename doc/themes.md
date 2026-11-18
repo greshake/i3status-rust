@@ -77,12 +77,28 @@ Note: screenshots were generated using [this config](../gen-screenshots/screensh
 * `awesome7` (Font Awesome 7.x)
 * `awesome7pro` (Font Awesome 7.x Pro)
 * `emoji`
+* `i3status-icons` (this project's own icon font)
 * `material`
 * `material-nf` (Any font from Nerd Fonts collection)
 
  **Note**: In order to use the material icon set, you need a patched material icons font which can be found [here](https://gist.github.com/draoncc/3c20d8d4262892ccd2e227eefeafa8ef/raw/3e6e12c213fba1ec28aaa26430c3606874754c30/MaterialIcons-Regular-for-inline.ttf). Make sure to pass it in your i3 configuration bar block.
 
  **Note**: For `awesome5`, `awesome6`, and `awesome7`, brand icons (`bluetooth`, `docker`, `github`) live in the separate `Font Awesome <N> Brands` font family rather than `Font Awesome <N> Free`, so include both in your bar's `font` directive (e.g. `font pango:DejaVu Sans Mono, Font Awesome 7 Free, Font Awesome 7 Brands 10`). Additionally, `awesome4`–`awesome7` use standard Unicode symbols/emojis for icons that have no Font Awesome Free equivalent (`backlight`, `phone_disconnected`, `pomodoro`), which fall back to your system symbol/emoji fonts (e.g. `DejaVu Sans`, `Noto Color Emoji`); only `awesome7pro` provides Font Awesome brightness icons.
+
+ **Note**: The `i3status-icons` set was drawn for this project and covers every icon name, progressions included. It needs the "i3status Icons" font, which is built from source with `cargo xtask build-font` and attached to each release. `install.sh` builds and installs it to `$XDG_DATA_HOME/fonts`; if you installed from a distribution package, the font may be packaged separately. Check that it resolves:
+
+```shell
+$ fc-match "i3status Icons"
+i3status-icons.ttf: "i3status Icons" "Regular"
+```
+
+Then add it to your bar's `font` directive, before any Nerd Font in the list — the icons live in the Private Use Area (U+E900–U+E962), which Nerd Fonts also populate, so a Nerd Font listed first will supply its own glyphs instead:
+
+```text
+font pango:i3status Icons, DejaVu Sans Mono 12
+```
+
+To modify the icons or rebuild the font from its SVG sources, see [`fonts/i3status-icons/README.md`](../fonts/i3status-icons/README.md).
 
 ## Overriding themes and icon sets
 

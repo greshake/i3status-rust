@@ -6,3 +6,6 @@
 
 # Ignore generated manpages
 /man
+
+# Ignore the generated icon font (build it with `cargo xtask build-font`)
+/fonts/i3status-icons/i3status-icons.ttf
