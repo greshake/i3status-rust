@@ -42,6 +42,7 @@ impl DeviceKind {
 
 pub(super) struct Device {
     name: Option<String>,
+    available: bool,
     description: Option<String>,
     active_port: Option<String>,
     form_factor: Option<String>,
@@ -357,6 +358,7 @@ impl Device {
 
         let device = Device {
             name,
+            available: true,
             description: None,
             active_port: None,
             form_factor: None,
@@ -390,6 +392,10 @@ impl SoundDevice for Device {
         self.volume_avg
     }
 
+    fn available(&self) -> bool {
+        self.available
+    }
+
     fn muted(&self) -> bool {
         self.muted
     }
@@ -414,11 +420,14 @@ impl SoundDevice for Device {
         let devices = DEVICES.lock().unwrap();
 
         if let Some(info) = devices.get(&(self.device_kind, self.name())) {
+            self.available = true;
             self.volume(info.volume);
             self.muted = info.mute;
             self.description.clone_from(&info.description);
             self.active_port.clone_from(&info.active_port);
             self.form_factor.clone_from(&info.form_factor);
+        } else {
+            self.available = false;
         }
 
         Ok(())

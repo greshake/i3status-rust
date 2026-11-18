@@ -7,6 +7,7 @@ use super::SoundDevice;
 
 pub(super) struct Device {
     name: String,
+    available: bool,
     device: String,
     natural_mapping: bool,
     volume: u32,
@@ -18,6 +19,7 @@ impl Device {
     pub(super) fn new(name: String, device: String, natural_mapping: bool) -> Result<Self> {
         Ok(Device {
             name,
+            available: true,
             device,
             natural_mapping,
             volume: 0,
@@ -32,34 +34,8 @@ impl Device {
     }
 }
 
-#[async_trait::async_trait]
-impl SoundDevice for Device {
-    fn volume(&self) -> u32 {
-        self.volume
-    }
-
-    fn muted(&self) -> bool {
-        self.muted
-    }
-
-    fn output_name(&self) -> String {
-        self.name.clone()
-    }
-
-    fn output_description(&self) -> Option<String> {
-        // TODO Does Alsa has something similar like descriptions in Pulse?
-        None
-    }
-
-    fn active_port(&self) -> Option<String> {
-        None
-    }
-
-    fn form_factor(&self) -> Option<&str> {
-        None
-    }
-
-    async fn get_info(&mut self) -> Result<()> {
+impl Device {
+    async fn get_inner_info(&mut self) -> Result<()> {
         let mut args = Vec::new();
         if self.natural_mapping {
             args.push("-M");
@@ -90,6 +66,44 @@ impl SoundDevice for Device {
         self.muted = last.next().map(|muted| muted == "off").unwrap_or(false);
 
         Ok(())
+    }
+}
+
+#[async_trait::async_trait]
+impl SoundDevice for Device {
+    fn volume(&self) -> u32 {
+        self.volume
+    }
+
+    fn available(&self) -> bool {
+        self.available
+    }
+
+    fn muted(&self) -> bool {
+        self.muted
+    }
+
+    fn output_name(&self) -> String {
+        self.name.clone()
+    }
+
+    fn output_description(&self) -> Option<String> {
+        // TODO Does Alsa has something similar like descriptions in Pulse?
+        None
+    }
+
+    fn active_port(&self) -> Option<String> {
+        None
+    }
+
+    fn form_factor(&self) -> Option<&str> {
+        None
+    }
+
+    async fn get_info(&mut self) -> Result<()> {
+        let result = self.get_inner_info().await;
+        self.available = result.is_ok();
+        result
     }
 
     async fn set_volume(&mut self, step: i32, max_vol: Option<u32>) -> Result<()> {
