@@ -54,6 +54,7 @@ words:
   - consts
   - conv
   - COPR
+  - davmail
   - dbpath
   - dbus
   - ddcci
