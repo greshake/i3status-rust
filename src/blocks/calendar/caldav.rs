@@ -185,7 +185,10 @@ struct Propstat {
 
 #[derive(Debug, Deserialize)]
 struct Prop {
-    #[serde(rename = "$value")]
+    // DavMail (and some other CalDAV servers) return empty <prop/> elements
+    // for child collections when a Depth: 1 PROPFIND is made. Such a
+    // propstat has no value, so allow the list to be empty.
+    #[serde(rename = "$value", default)]
     pub values: Vec<PropValue>,
 }
 
@@ -209,7 +212,10 @@ pub struct HrefProperty {
 
 #[derive(Debug, Deserialize)]
 struct ResourceTypes {
-    #[serde(rename = "$value")]
+    // Event resources in a Depth: 1 calendar listing can also have an
+    // empty <resourcetype/>. Only collections carry <collection/> or
+    // <calendar/> children.
+    #[serde(rename = "$value", default)]
     pub values: Vec<ResourceType>,
 }
 
@@ -428,4 +434,91 @@ pub fn calendar_events_request(start: DateTime<Utc>, end: DateTime<Utc>) -> Stri
         </c:filter>
         </c:calendar-query>"#
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use quick_xml::de::from_str;
+
+    // DavMail answers a Depth: 1 PROPFIND with empty <prop/> elements for
+    // child resources. Keep this fixture in the shape DavMail returns.
+    const DAVMAIL_ROOT: &str = r#"<?xml version="1.0" encoding="UTF-8"?>
+<D:multistatus xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+  <D:response>
+    <D:href>/</D:href>
+    <D:propstat>
+      <D:prop>
+        <D:current-user-principal>
+          <D:href>/principals/users/user@example.com</D:href>
+        </D:current-user-principal>
+      </D:prop>
+      <D:status>HTTP/1.1 200 OK</D:status>
+    </D:propstat>
+  </D:response>
+  <D:response>
+    <D:href>/users</D:href>
+    <D:propstat>
+      <D:prop></D:prop>
+      <D:status>HTTP/1.1 200 OK</D:status>
+    </D:propstat>
+  </D:response>
+</D:multistatus>"#;
+
+    // Event resources in the calendar listing have an empty resourcetype.
+    const DAVMAIL_CALENDARS: &str = r#"<?xml version="1.0" encoding="UTF-8"?>
+<D:multistatus xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+  <D:response>
+    <D:href>/users/user@example.com/calendar/</D:href>
+    <D:propstat>
+      <D:prop>
+        <D:resourcetype><D:collection/><C:calendar/></D:resourcetype>
+        <D:displayname>Calendar</D:displayname>
+        <C:supported-calendar-component-set>
+          <C:comp name="VEVENT"/>
+        </C:supported-calendar-component-set>
+      </D:prop>
+      <D:status>HTTP/1.1 200 OK</D:status>
+    </D:propstat>
+  </D:response>
+  <D:response>
+    <D:href>/users/user@example.com/calendar/event.EML</D:href>
+    <D:propstat>
+      <D:prop>
+        <D:resourcetype/>
+        <D:displayname>event.EML</D:displayname>
+      </D:prop>
+      <D:status>HTTP/1.1 200 OK</D:status>
+    </D:propstat>
+  </D:response>
+</D:multistatus>"#;
+
+    #[test]
+    fn empty_propstat_is_ignored() {
+        let multistatus: Multistatus =
+            from_str(DAVMAIL_ROOT).expect("empty propstat should parse");
+        assert_eq!(multistatus.responses.len(), 2);
+
+        let base_url = reqwest::Url::parse("http://localhost/").unwrap();
+        let principal = parse_href(multistatus, base_url).unwrap();
+        assert_eq!(
+            principal.as_str(),
+            "http://localhost/principals/users/user@example.com"
+        );
+    }
+
+    #[test]
+    fn empty_resourcetype_is_ignored_in_calendar_listing() {
+        let multistatus: Multistatus =
+            from_str(DAVMAIL_CALENDARS).expect("empty resourcetype should parse");
+        let base_url = reqwest::Url::parse("http://localhost/").unwrap();
+
+        let calendars = parse_calendars(multistatus, base_url).unwrap();
+        assert_eq!(calendars.len(), 1);
+        assert_eq!(calendars[0].name, "Calendar");
+        assert_eq!(
+            calendars[0].url.as_str(),
+            "http://localhost/users/user@example.com/calendar/"
+        );
+    }
 }
